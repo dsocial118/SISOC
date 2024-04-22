@@ -1,0 +1,234 @@
+{% extends "includes/base.html" %};
+{% load static %};
+
+{% block title %}
+Intervenciones
+{%endblock %};
+
+{% block titulo-pagina %}
+Intervenciones
+{% endblock %};
+
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right">
+  <li class="breadcrumb-item">Intervenciones</li>
+  <li class="breadcrumb-item "><a href="#" title="Ver legajo">Maradona, Diego Fernando</a></li>
+  <li class="breadcrumb-item active">Intervenciones</li>
+</ol>
+{% endblock %};
+
+{% block menu-adicional %}
+{% endblock %};
+
+{% block content %}
+<!-- card-info -->
+<div class="row">
+  <!-- botones -->
+  <div class="col-12 my-3 mx-2 d-print-none">
+    <a href="{% url 'intervenciones_form' %}" class="btn btn-primary mr-1">Agregar intervención</a>
+    <!-- <a href="{% url 'preadmisiones_form' %}" class="btn btn-secondary mr-1">Editar</a> -->
+    <!-- <a href="" class="btn btn-secondary mr-1 print">Imprimir</a> -->
+    <!-- <a href="" class="btn btn-secondary mr-1 ">Finalizar admisión</a> -->
+    <!-- <a href="" class="btn btn-danger mr-1 mt-2 mt-sm-0">Eliminar</a> -->
+  </div>
+  <!-- ./botones -->
+
+  <div class="row p-0 m-0 " id="seleccion">
+
+    <!-- Datos de legajo -->
+    <div class="col-sm-4 pb-3">
+      <div class="card  card-primary card-outline h-100 mb-0">
+        <div class="card-header">
+          <h3 class="card-title">Detalle Legajo</h3>
+          <div class="card-tools">
+            <a href="#" class="ml-3 mr-2" title="Ver legajo">Ver legajo</a>
+            <button type="button" class="btn btn-tool d-md-none" data-card-widget="collapse">
+              <i class="fas fa-minus"></i>
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          <dl class="row mb-0">
+            <dd class="col-sm-5 mb-2">Nombre</dd>
+            <dt class="col-sm-7 mb-2"> Maradona, Diego Fernando</dt>
+            <dd class="col-sm-5 mb-2">DNI</dd>
+            <dt class="col-sm-7 mb-2">26698856</dt>
+            <dd class="col-sm-5 mb-2">Fecha de nacimiento</dd>
+            <dt class="col-sm-7 mb-2">30/10/1971</dt>
+            <dd class="col-sm-5 mb-2">Sexo</dd>
+            <dt class="col-sm-7 mb-2">Masculino</dt>
+          </dl>
+        </div>
+      </div>
+    </div>
+    <!-- /  -->
+
+    <!-- Datos de admisión -->
+    <div class="col-sm-5 pb-3">
+      <div class="card card-outline card-primary h-100 mb-0">
+        <div class="card-header">
+          <h3 class="card-title">Detalle Admisión</h3>
+          <div class="card-tools d-inline">
+            <a href="{% url 'preadmisiones_detail' %}" class="ml-3 mr-2">Ver pre-admisión</a>
+            <button type="button" class="btn btn-tool  d-md-none" data-card-widget="collapse">
+              <i class="fas fa-minus"></i>
+            </button>
+          </div>
+        </div>
+        <div class="card-body pb-2">
+          <dl class="row mb-0">
+            <dd class="col-sm-5 mb-2">Estado</dd>
+            <dt class="col-sm-7 mb-2"><span class="text-success font-weight-bold">Activa</span></dt>
+            <dd class="col-sm-5 mb-2">Fecha de admisión</dd>
+            <dt class="col-sm-7 mb-2">15/03/2023</dt>
+            <dd class="col-sm-5 mb-2">Estado vacante</dd>
+            <dt class="col-sm-7 mb-2"><span class="badge badge-success">Asignada</span></dt>
+            <dd class="col-sm-5 mb-2">Fecha de vacante</dd>
+            <dt class="col-sm-7 mb-2">25/03/2023</dt>
+            <dd class="col-sm-5 mb-2">Centro actual </dd>
+            <dt class="col-sm-7 mb-2">Santa Brígida</dt>
+            <dd class="col-sm-5 mb-2">Sala actual</dd>
+            <dt class="col-sm-7 mb-2">Sala de 3</dt>
+            <dd class="col-sm-5 mb-2">Turno actual</dd>
+            <dt class="col-sm-7 mb-2">Mañana</dt>
+            <dd class="col-sm-5 mb-2">Educador/a actual</dd>
+            <dt class="col-sm-7 mb-2">Gonzalez Ana Laura</dt>
+          </dl>
+        </div>
+      </div>
+    </div>
+    <!-- /  -->
+
+    <!-- Datos de indice -->
+    <div class="col-sm-3 ">
+      <div class="row h-100">
+        <div class="col-12">
+          <div class="info-box mb-2">
+            <span class="info-box-icon bg-warning">17</span>
+            <div class="info-box-content">
+              <span class="info-box-text">IVI de ingreso</span>
+              <span class="info-box-number h6">15/05/2023</span>
+            </div>
+          </div>
+        </div>
+        <div class="col-12">
+          <div class="info-box mb-2 ">
+            <span class="info-box-icon bg-secondary">5</span>
+            <div class="info-box-content">
+              <span class="info-box-text">Intervenciones</span>
+              <span class="info-box-number h6"> Última 12/06/2023</span>
+            </div>
+          </div>
+        </div>
+        <div class="col-12">
+          <div class="info-box">
+            <span class="info-box-icon bg-success">12</span>
+            <div class="info-box-content">
+              <span class="info-box-text">IVI actual</span>
+              <span class="info-box-number h6">11/06/2023</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- / -->
+
+    <!-- Detalle de intervenciones -->
+    <div class="col-12">
+      <div class="card card-primary card-outline">
+
+        <div class="card-body">
+          <table class="table table-bordered table-striped projects tabladt">
+            <!-- <table class="table table-striped projects"> -->
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Usuario</th>
+                <th>Criterio</th>
+                <th>Gestión</th>
+                <th>Acción realizada</th>
+                <th width="5%" class="notexport"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td> 12/06/2023 </td>
+                <td> Azcurra Maria Luz </td>
+                <td> Bebé, niño o niña con bajo peso o sobrepeso</td>
+                <td> Revertido</td>
+                <td> Se realizo un control del niño sano</td>
+                <td class="text-right">
+                  <a href="{% url 'intervenciones_detail' %}" class="btn btn-secondary btn-sm ver"
+                    title="Ver detalle">Ver</a>
+                </td>
+              </tr>
+              <tr>
+                <td> 15/05/2023 </td>
+                <td> Azcurra Maria Luz </td>
+                <td> Niño o niña sin DNI</td>
+                <td> Trabajado</td>
+                <td> Se la acompaño a realizar el tramite </td>
+                <td class="text-right">
+                  <a href="{% url 'intervenciones_detail' %}" class="btn btn-secondary btn-sm ver"
+                    title="Ver detalle">Ver</a>
+                </td>
+              </tr>
+              <tr>
+                <td> 15/05/2023 </td>
+                <td> Azcurra Maria Luz </td>
+                <td> Bebé, niño o niña con bajo peso o sobrepeso</td>
+                <td> Trabajado </td>
+                <td> Se brindo información </td>
+                <td class="text-right">
+                  <a href="{% url 'intervenciones_detail' %}" class="btn btn-secondary btn-sm ver"
+                    title="Ver detalle">Ver</a>
+                </td>
+              </tr>
+              <tr>
+                <td> 15/05/2023 </td>
+                <td> Azcurra Maria Luz </td>
+                <td> Niño o niña sin controles pediátricos o calendario de vacunación incompleto</td>
+                <td> Trabajado</td>
+                <td> Se articulo con una institución no municipal</td>
+                <td class="text-right">
+                  <a href="{% url 'intervenciones_detail' %}" class="btn btn-secondary btn-sm ver"
+                    title="Ver detalle">Ver</a>
+                </td>
+              </tr>
+              <tr>
+                <td> 15/05/2023 </td>
+                <td> Azcurra Maria Luz </td>
+                <td> Familia atravesando situación habitacional crítica <span
+                    class="badge badge-success mx-2">Nuevo</span></td>
+                <td> Trabajado</td>
+                <td> Se articulo con una institución no municipal</td>
+                <td class="text-right">
+                  <a href="{% url 'intervenciones_detail' %}" class="btn btn-secondary btn-sm ver"
+                    title="Ver detalle">Ver</a>
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+        <!-- /.card-body -->
+      </div>
+      <!-- /.card -->
+    </div>
+    <!-- ./ -->
+
+  </div>
+</div>
+
+<div class="row mt-4 d-print-none">
+  <div class="col-12 mx-2">
+    <div class="form-group  d-flex justify-content-between">
+      <a href="{% url 'admisiones_list' %}" class="btn btn-secondary">Volver</a>
+    </div>
+  </div>
+</div>
+
+{% endblock %};
+
+{% block customJS %}
+{% endblock %}

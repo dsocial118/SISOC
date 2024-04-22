@@ -1,0 +1,261 @@
+{% extends "includes/base.html" %};
+{% load crispy_forms_tags %}
+{% load static %};
+
+{% block head %}
+{% endblock %}
+
+{% block title %}Legajos{% endblock %};
+
+{% block titulo-pagina %} Legajos{% endblock %};
+
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right px-3">
+    <li class="breadcrumb-item"><a href="{% url 'legajos_listar' %}">Legajos</a></li>
+    {%if request.resolver_match.url_name == "legajos_editar" %}
+    <li class="breadcrumb-item"><a href="{% url 'legajos_ver' object.id %}">{{object}}</a></li>
+    <li class="breadcrumb-item active">Editar</li>
+    {% else %}
+    <li class="breadcrumb-item active">Agregar</li>
+    {% endif %}
+
+</ol>
+{% endblock %};
+
+{% block menu-adicional %}
+{% endblock %};
+
+{% block content %}
+<div class="row">
+    <div class="col-sm-12">
+        <div class="card card-primary card-outline">
+            <div class="card-body">
+                <div class="bs-stepper">
+
+                    {%if request.resolver_match.url_name == "legajos_editar" %}
+                    <div class="bs-stepper-header" role="tablist">
+                        <div class="step active">
+                            <a type="button" class="step-trigger  text-primary" role="tab" href="">
+                                <span class="bs-stepper-circle">1</span>
+                                <span class="bs-stepper-label">Datos Personales</span>
+                            </a>
+                        </div>
+                        <div class="line"></div>
+                        <div class="step">
+                            <a href="{% url 'legajosdimensiones_editar' object.dimensionfamilia.id  %}"
+                                class="step-trigger" role="tab">
+                                <span class="bs-stepper-circle">2</span>
+                                <span class="bs-stepper-label">Dimensiones</span>
+                            </a>
+                        </div>
+                        <div class="line d-none d-sm-inline"></div>
+                        <div class="step d-none d-sm-inline">
+                            <a href="{% url 'grupofamiliar_crear' object.id %}" class="step-trigger" role="tab">
+                                <span class="bs-stepper-circle">3</span>
+                                <span class="bs-stepper-label">Grupo Familiar</span>
+                            </a>
+                        </div>
+                        <div class="line d-none d-sm-inline "></div>
+                        <div class="step  d-none d-sm-inline">
+                            <a href="{% url 'legajoalertas_crear' object.id %}" class="step-trigger" role="tab">
+                                <span class="bs-stepper-circle">4</span>
+                                <span class="bs-stepper-label">Alertas</span>
+                            </a>
+                        </div>
+                        <div class="line d-none d-sm-inline"></div>
+                        <div class="step d-none d-sm-inline">
+                            <a href="{% url 'legajosarchivos_crear' object.id %}" class="step-trigger" role="tab">
+                                <span class="bs-stepper-circle">5</span>
+                                <span class="bs-stepper-label">Archivos</span>
+                            </a>
+                        </div>
+                    </div>
+                    {%else%}
+                    <div class="bs-stepper-header" role="tablist">
+
+                        <div class="step active">
+                            <button type="button" class="step-trigger" role="tab">
+                                <span class="bs-stepper-circle">1</span>
+                                <span class="bs-stepper-label text-primary">Datos Personales</span>
+                            </button>
+                        </div>
+                        <div class="line"></div>
+                        <div class="step">
+                            <button type="button" class="step-trigger disabled" role="tab">
+                                <span class="bs-stepper-circle">2</span>
+                                <span class="bs-stepper-label">Dimensiones</span>
+                            </button>
+                        </div>
+                        <div class="line d-none d-sm-inline"></div>
+                        <div class="step  d-none d-sm-inline">
+                            <button type="button" class="step-trigger disabled" role="tab">
+                                <span class="bs-stepper-circle">3</span>
+                                <span class="bs-stepper-label">Grupo Familiar</span>
+                            </button>
+                        </div>
+                        <div class="line d-none d-sm-inline"></div>
+                        <div class="step d-none d-sm-inline">
+                            <button type="button" class="step-trigger disabled" role="tab">
+                                <span class="bs-stepper-circle">4</span>
+                                <span class="bs-stepper-label">Alertas</span>
+                            </button>
+                        </div>
+                        <div class="line d-none d-sm-inline"></div>
+                        <div class="step d-none d-sm-inline">
+                            <button type="button" class="step-trigger disabled" role="tab">
+                                <span class="bs-stepper-circle">5</span>
+                                <span class="bs-stepper-label">Archivos</span>
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="row mt-5">
+                    <div class="col-12">
+                        <form action="#" method="POST" class="dropzone p-0 m-0" name="upload" id="upload" novalidate
+                            enctype="multipart/form-data" autocomplete="off">
+                            {% csrf_token %}
+                            <div class="card">
+                                <div class="card-body bg-light">
+                                    <div class="row mt-3">
+                                        <div class="col-sm-3">
+                                            <div class="card">
+                                                <div class="card-header box-profile">
+                                                    <div class="text-center">
+                                                        {% if object.foto%}
+                                                        <img src="{{object.foto.url}}" data-holder-rendered="true"
+                                                            alt="avatar" class="avatar p-1" height="150" id="blah" />
+                                                        {% else %}
+                                                        <img src="{% static 'custom/img/default.png' %}"
+                                                            data-holder-rendered="true" alt="avatar" class="avatar p-1"
+                                                            height="150" id="blah">
+                                                        {% endif %}
+                                                        {% if form.foto.errors %}
+                                                        <div class="error-message">
+                                                            {% for error in form.foto.errors %}
+                                                            <span class="text-danger">{{ error }}</span>
+                                                            {% endfor %}
+                                                        </div>
+                                                        {% endif %}
+
+                                                    </div>
+                                                </div>
+                                                <div class="card-footer pb-1 mb-0">
+                                                    <label for="id_foto"
+                                                        class="btn btn-primary btn-block font-weight-normal">
+                                                        <span>
+                                                            {%if request.resolver_match.url_name == "legajos_editar" %}
+                                                            Cambiar
+                                                            foto
+                                                            {% else %} Agregar foto
+                                                            {% endif %}
+                                                        </span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-9 px-0 px-sm-2">
+                                            <div class="form-row">
+                                                <div class="form-group col-sm-6">
+                                                    {{form.nombre| as_crispy_field}}
+                                                </div>
+                                                <div class="form-group col-sm-6">
+                                                    {{form.apellido| as_crispy_field}}
+                                                </div>
+                                                <div class="form-group col-sm-3">
+                                                    {{form.tipo_doc| as_crispy_field}}
+                                                </div>
+                                                <div class="form-group col-sm-3">
+                                                    {{form.documento| as_crispy_field}}
+                                                </div>
+                                                <div class="form-group col-sm-3">
+                                                    {{form.sexo| as_crispy_field}}
+                                                </div>
+                                                <div class="form-group col-sm-3">
+                                                    {{form.fecha_nacimiento| as_crispy_field}}
+                                                </div>
+                                                <div class="form-group col-sm-3">
+                                                    {{form.nacionalidad| as_crispy_field}}
+                                                </div>
+                                                <div class="form-group col-sm-3">
+                                                    {{form.estado_civil| as_crispy_field}}
+                                                </div>
+                                                <div class="form-group col-sm-3">
+                                                    {{form.telefono| as_crispy_field}}
+                                                </div>
+                                                <div class="form-group col-sm-3">
+                                                    {{form.email| as_crispy_field}}
+                                                </div>
+                                                <div class="form-group col-sm-4">
+                                                    {{form.calle| as_crispy_field}}
+                                                </div>
+                                                <div class="form-group col-sm-4">
+                                                    {{form.altura| as_crispy_field}}
+                                                </div>
+                                                <div class="form-group col-sm-4">
+                                                    {{form.piso| as_crispy_field}}
+                                                </div>
+                                                <div class="form-group col-sm-4">
+                                                    {{form.circuito| as_crispy_field}}
+                                                </div>
+                                                <div class="form-group col-sm-4">
+                                                    {{form.barrio| as_crispy_field}}
+                                                </div>
+                                                <div class="form-group col-sm-4">
+                                                    {{form.localidad| as_crispy_field}}
+                                                </div>
+                                                <div class="form-group col-12
+                                                    {%if request.resolver_match.url_name != 'legajos_editar' %}
+                                                    d-none
+                                                    {%endif%}">
+                                                    {{form.estado| as_crispy_field}}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <input type="file" name="foto" id="id_foto" class="input-file" id="id_foto"
+                                            accept="image/*" hidden>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- botones del pie -->
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group mb-0 mt-3 d-flex justify-content-between">
+                                        {%if request.resolver_match.url_name == "legajos_editar" %}
+                                        <a href="{% url 'legajos_ver' object.id %}"
+                                            class="btn btn-secondary mb-3">Cancelar</a>
+                                        <button type="submit" id="form_legajos" name="form_legajos"
+                                            class="btn btn-primary mb-3 form_legajo">Guardar</button>
+                                        <button type="submit" id="form_step2" name="form_step2"
+                                            class="btn btn-secondary mb-3 form_legajo">Continuar</button>
+                                        {% else %}
+                                        <a href="{% url 'legajos_listar' %}" class="btn btn-secondary mb-3">Cancelar</a>
+                                        <button type="submit" id="form_step2" name="form_step2"
+                                            class="btn btn-primary mb-3  form_legajo">Continuar</button>
+                                        {% endif %}
+
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- /botones del pie -->
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %};
+
+{% block customJS %}
+<script>
+    id_foto.onchange = (evt) => {
+        const [file] = id_foto.files;
+        if (file) {
+            blah.src = URL.createObjectURL(file);
+        }
+    };
+</script>
+{% endblock %}

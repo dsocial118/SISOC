@@ -1,0 +1,301 @@
+{% extends "includes/base.html" %};
+{% load static %};
+
+{% block title %}
+Admisiones Formulario
+{%endblock %};
+
+{% block titulo-pagina %}
+Admisiones
+{% endblock %};
+
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right">
+  <li class="breadcrumb-item"><a href="" title="Ver listado de admisiones">Admisiones</a></li>
+  <li class="breadcrumb-item "><a href="" title="Ver legajo">Maradona, Diego Armando</a></li>
+  <li class="breadcrumb-item active">Detalle</li>
+</ol>
+{% endblock %};
+
+{% block menu-adicional %}
+{% endblock %};
+
+{% block content %}
+<!-- card-info -->
+<div class="row">
+  <!-- botones -->
+  <div class="col-12 my-3 mx-2 d-print-none">
+    <a href="{% url 'intervenciones_legajolist' %}" class="btn btn-primary mr-1">Ver intervenciones</a>
+    <a href="" class="btn btn-secondary mr-1 print">Imprimir</a>
+  </div>
+  <!-- ./botones -->
+
+</div>
+<div class="row p-0 m-0 " id="seleccion">
+
+  <!-- Datos de legajo -->
+  <div class="col-sm-4 pb-3">
+    <div class="card card-outline card-primary h-100 mb-0">
+      <div class="card-header">
+        <h3 class="card-title">Detalle Legajo</h3>
+        <div class="card-tools d-inline">
+          <a href="#" class="ml-3 mr-2">Ver detalles</a>
+          <button type="button" class="btn btn-tool d-md-none" data-card-widget="collapse">
+            <i class="fas fa-minus"></i>
+          </button>
+        </div>
+      </div>
+      <div class="card-body">
+        <dl class="row">
+          <dd class="col-sm-5 mb-2">Nombre</dd>
+          <dt class="col-sm-7 mb-2"><a href="#" title="Ver legajo"> Peña, Juan</a> </dt>
+          <dd class="col-sm-5 mb-2">DNI</dd>
+          <dt class="col-sm-7 mb-2">26698856</dt>
+          <dd class="col-sm-5 mb-2">Fecha de nacimiento</dd>
+          <dt class="col-sm-7 mb-2">30/10/2014</dt>
+          <dd class="col-sm-5 mb-2">Sexo</dd>
+          <dt class="col-sm-7 mb-2">Masculino</dt>
+        </dl>
+      </div>
+    </div>
+  </div>
+  <!-- /  -->
+
+  <!-- Datos de pre-admisión -->
+  <div class="col-sm-5 pb-3">
+    <div class="card card-outline card-primary h-100 mb-0">
+      <div class="card-header">
+        <h3 class="card-title">Detalle Admisión</h3>
+        <div class="card-tools d-inline">
+          <a href="{% url 'preadmisiones_detail' %}" class="ml-3 mr-2">Ver pre-admisión</a>
+          <button type="button" class="btn btn-tool  d-md-none" data-card-widget="collapse">
+            <i class="fas fa-minus"></i>
+          </button>
+        </div>
+      </div>
+      <div class="card-body pb-2">
+        <dl class="row mb-0">
+          <dd class="col-sm-5 mb-2">Estado</dd>
+          <dt class="col-sm-7 mb-2"><span class="text-danger font-weight-bold">Inactiva</span></dt>
+          <dd class="col-sm-5 mb-2">Fecha de inactivación</dd>
+          <dt class="col-sm-7 mb-2">15/03/2023</dt>
+          <dd class="col-sm-5 mb-2">Motivo </dd>
+          <dt class="col-sm-7 mb-2">Mudanza fuera de SM</dt>
+
+        </dl>
+      </div>
+    </div>
+  </div>
+  <!-- /  -->
+
+  <!-- Datos de indice -->
+  <div class="col-sm-3">
+    <div class="row h-100">
+      <div class="col-12">
+        <div class="info-box mb-2">
+          <span class="info-box-icon badge-danger">25</span>
+          <div class="info-box-content">
+            <span class="info-box-text">IVI de ingreso</span>
+            <span class="info-box-number h6">15/05/2020</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-12">
+        <div class="info-box mb-2 ">
+          <span class="info-box-icon bg-secondary">45</span>
+          <div class="info-box-content">
+            <span class="info-box-text">Intervenciones</span>
+            <span class="info-box-number h6"> Última 12/06/2023</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-12">
+        <div class="info-box">
+          <span class="info-box-icon bg-warning">17</span>
+          <div class="info-box-content">
+            <span class="info-box-text">IVI de egreso</span>
+            <span class="info-box-number h6">11/06/2023</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- / -->
+
+  <!-- evolucion de criterios -->
+  <div class="col-12">
+    <div class="card card-primary card-outline">
+      <div class="card-header">
+        <h3 class="card-title">Evolución de impacto </h3>
+        <div class="card-tools d-inline">
+          <span class="badge badge-success description-percentage h6 my-0 mx-2"><i class="fas fa-caret-up"></i>
+            15%</span>
+          <button type="button" class="btn btn-tool d-md-none" data-card-widget="collapse">
+            <i class="fas fa-minus"></i>
+          </button>
+        </div>
+      </div>
+      <div class="card-body table-responsive p-0">
+        <table class="table table-head-fixed table-bordered">
+          <thead>
+            <tr>
+              <th>Criterios modificables</th>
+              <th class="text-center px-1" width="6%">Puntaje</th>
+              <th class="text-center px-1" width="10%">Intervenciones</th>
+              <th class="text-center px-1" width="10%">Impacto</th>
+            </tr>
+          </thead>
+          <tbody>
+
+            <tr>
+              <td colspan="4" class="text-center bg-secondary py-1">Madre o Cuidador principal
+              </td>
+            </tr>
+            <tr>
+              <td>Madre o Cuidador principal no posee DNI</td>
+              <td class="text-center">3</td>
+              <td class="text-center">0</td>
+              <td class="text-center"><span class="description-percentage text-warning"><i
+                    class="fas fa-caret-left"></i> 0%</span></td>
+            </tr>
+
+            <tr>
+              <td>Madre o Cuidador principal sin ocupación</td>
+              <td class="text-center">2</td>
+              <td class="text-center">7</td>
+              <td class="text-center"><span class="description-percentage text-warning"><i
+                    class="fas fa-caret-left"></i> 0%</span></td>
+            </tr>
+            <tr>
+              <td>Madre o Cuidador principal con sospecha de sufrir violencia familiar</td>
+              <td class="text-center">4</td>
+              <td class="text-center">5</td>
+              <td class="text-center"><span class="description-percentage text-warning"><i
+                    class="fas fa-caret-left"></i> 0%</span></td>
+            </tr>
+            <tr>
+              <td>Madre o Cuidador principal no sabe leer o escribir</td>
+              <td class="text-center">4</td>
+              <td class="text-center">1</td>
+              <td class="text-center"><span class="description-percentage text-success"><i class="fas fa-caret-up"></i>
+                  5%</span></td>
+            </tr>
+            <tr>
+              <td colspan="4" class="text-center bg-secondary py-1">Bebé, niño o niña</td>
+            </tr>
+            <tr>
+              <td>Bebé, niño o niña sin DNI</td>
+              <td class="text-center">4</td>
+              <td class="text-center">5</td>
+              <td class="text-center"><span class="description-percentage text-success"><i class="fas fa-caret-up"></i>
+                  1%</span></td>
+            </tr>
+
+            <tr>
+              <td>Bebé, niño o niña sin controles pediátricos o sin calendario vacunacion
+                completo </td>
+              <td class="text-center">4</td>
+              <td class="text-center">8</td>
+              <td class="text-center"><span class="description-percentage text-success"><i class="fas fa-caret-up"></i>
+                  3%</span></td>
+            </tr>
+            <tr>
+              <td>Familia atravesando situación habitacional crítica <span class="badge badge-success mx-2">Nuevo</span>
+              </td>
+              <td class="text-center">4</td>
+              <td class="text-center">8</td>
+              <td class="text-center"><span class="description-percentage text-danger"><i class="fas fa-caret-down"></i>
+                  4%</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <!-- / -->
+
+  <!-- historial de vacantes -->
+  <div class="col-12 mt-3">
+    <div class="card card-primary card-outline">
+      <div class="card-header">
+        <h3 class="card-title">Historial de vacantes </h3>
+        <div class="card-tools ">
+          <button type="button" class="btn btn-tool d-md-none" data-card-widget="collapse">
+            <i class="fas fa-minus"></i>
+          </button>
+        </div>
+      </div>
+      <div class="card-body table-responsive p-0">
+        <table class="table table-head-fixed table-bordered">
+          <thead>
+            <tr>
+              <th>Ingreso</th>
+              <th>Centro</th>
+              <th>Sala</th>
+              <th>Turno</th>
+              <th>Educadora</th>
+              <th>Egreso</th>
+              <th>Motivo</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>15/03/2021</td>
+              <td>Santa Brígida</td>
+              <td>Bebés</td>
+              <td>Mañana</td>
+              <td>Ganduglia Lourdes Rocío</td>
+              <td>15/11/2021</td>
+              <td>Cambio de ciclo</td>
+            </tr>
+            <tr>
+              <td>15/03/2022</td>
+              <td>Santa Brígida</td>
+              <td>2 años</td>
+              <td>Mañana</td>
+              <td>Bastrate Brenda Yamila</td>
+              <td>20/06/2022</td>
+              <td>Cambio de turno</td>
+            </tr>
+            <tr>
+              <td>21/06/2022</td>
+              <td>Huellitas</td>
+              <td>2 años</td>
+              <td>Tarde</td>
+              <td>Gonzalez Ana Laura</td>
+              <td>15/11/2022</td>
+              <td>Cambio de centro</td>
+            </tr>
+            <tr>
+              <td>15/03/2023</td>
+              <td>Santa Brígida</td>
+              <td>3 años</td>
+              <td>Mañana</td>
+              <td>Gonzalez Ana Laura</td>
+              <td>15/12/2023</td>
+              <td>Inactivación de admisión</td>
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <!-- / -->
+
+</div>
+<!-- /  -->
+
+
+<div class="row mt-4 d-print-none">
+  <div class="col-12 mx-2">
+    <div class="form-group  d-flex justify-content-between">
+      <a href="{% url 'admisiones_list' %}" class="btn btn-secondary">Volver</a>
+    </div>
+  </div>
+</div>
+
+{% endblock %};
+
+{% block customJS %}
+{% endblock %}

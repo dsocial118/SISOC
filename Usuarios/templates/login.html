@@ -1,0 +1,147 @@
+{% load static %} {% load crispy_forms_tags %}
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    
+	<link rel="shortcut icon" type="image/png" href="{% static 'custom/img/hsu_logo.ico'%}"/>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="{% static 'plugins/fontawesome-free/css/all.min.css' %}" />
+    <!-- Estilos y JS principales -->
+    <link rel="stylesheet" href="{% static 'dist/css/adminlte.min.css' %}" />
+    <!-- Estilos custom -->
+    <link rel="stylesheet" href="{% static 'custom/css/custom.css' %}" />
+    <link rel="stylesheet" href="{% static 'custom/css/nuevoColorPrimary.css' %}" />
+    <link rel="stylesheet" href="{% static 'custom/css/nuevoColorInfo.css' %}" />
+
+    <!-- Bloque titulo -->
+    <title>HSU - Login</title>
+</head>
+
+<body class="hold-transition login-page dark-mode">
+    <div class="login-box">
+
+
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{message.tags}} alert-dismissible" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span
+                    aria-hidden="true">&times;</span> </button>
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <div class="card card-outline card-primary">
+            <div class="card-header text-center">
+                <div class="register-logo">
+                    <img class="img-fluid rounded-circle img-size-64" src="{% static 'custom/img/hsu_logo.png' %}"
+                        alt="logo" />
+                </div>
+                <h4>Historia Social Única</h4>
+                <h6 class="text-center">Municipalidad de San Miguel</h6>
+            </div>
+            <div class="card-body">
+                <form method="post" id="form-login">
+                    {% csrf_token %}
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" placeholder="Usuario" required name="username"
+                            id="id_username" required="required">
+                        <div class="input-group-append">
+                            <div class="input-group-text">
+                                <span class="fas fa-user"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-group mb-3">
+                        <input type="password" class="form-control" placeholder="Contraseña" required name="password"
+                            id="id_password" required="required">
+                        <div class="input-group-append">
+                            <div class="input-group-text">
+                                <span class="fas fa-lock"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row justify-content-center mt-3">
+                        <div class="col-4">
+                            <button class="btn btn-primary btn-block" type="submit">Ingresar</button>
+                        </div>
+                    </div>
+                </form>
+                <p class="mb-0 text-center mt-5">
+                    <a tabindex="0" class="text-muted text-center " role="button" data-toggle="popover"
+                        data-trigger="focus" data-placement="bottom"
+                        data-content="<span class='fas fa-info-circle text-warning text-center pr-2'></span><span class='text-white text-center'>Contáctese con el Administrador del sistema.</span> "
+                        data-html="true" data-animation="true">
+                        Olvidó su contraseña?</a>
+                </p>
+
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        {% if form.errors %}
+                        <div class="alert alert-danger mb-0 text-center">
+                            Usuario y/o contraseña incorrectos.
+                            Inténtelo nuevamente.
+                        </div>
+                        {% endif %}
+
+                        {% if next %}
+                        {% if user.is_authenticated %}
+                        <div class="alert alert-warning mb-0 text-center ">
+                            Su cuenta no tiene acceso a esta página. Para proceder,
+                            por favor inicie sesión con una cuenta que tenga acceso.
+                        </div>
+                        {% else %}
+                        <div class="alert alert-info mb-0 text-center">
+                            Por favor, inicie sesión para ver esta página.
+                        </div>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12 mt-2">
+            <div class="register-logo">
+                <img class="img-responsive" style="height:100px" src="{% static 'custom/img/msm_logo.png' %}"
+                    alt="logo" />
+            </div>
+        </div>
+    </div>
+    </div>
+
+
+    <!-- Adicionales JS fin de pagina -->
+    <!-- JQuery -->
+    <script src="{% static 'plugins/jquery/jquery.min.js' %}"></script>
+    <script src="{% static 'plugins/jquery-ui/jquery-ui.min.js' %}"></script>
+    <!-- Bootstrap -->
+    <script src="{% static 'plugins/bootstrap/js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'plugins/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <!-- Dist -->
+    <script src="{% static 'dist/js/adminlte.js' %}"></script>
+
+    <script>
+        setTimeout(function () {
+            // desaparecer los Success messages
+            $(".alert").alert('close');
+        }, 3000);
+
+        //popovers
+        $(function () {
+            $('[data-toggle="popover"]').popover()
+        })
+        $('.popover-dismiss').popover({
+            trigger: 'focus'
+        });
+
+    </script>
+
+
+</html>
