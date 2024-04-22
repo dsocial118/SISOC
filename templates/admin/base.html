@@ -1,0 +1,16 @@
+<!-- template de personalizacion del sitio admin -->
+
+{% extends 'admin/base.html' %}
+
+{% block extrastyle %}{{ block.super }}
+<style>
+:root {
+  --primary: #5a5b5b;
+  --secondary: #4b5053;
+  --link-fg: #f4f6f8;
+  --link-selected-fg: #8b8b8e;
+  --header-color: #ffffff;
+  --accent: #fafafd;
+}
+</style>
+{% endblock %}

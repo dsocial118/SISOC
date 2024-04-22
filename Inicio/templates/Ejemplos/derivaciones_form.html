@@ -1,0 +1,137 @@
+{% extends "includes/base.html" %}
+{% load static %}
+{% block title %}Derivaciones{% endblock %}
+{% block titulo-pagina %}Derivaciones{% endblock %};
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right ">
+    <li class="breadcrumb-item"><a href="{% url 'derivaciones_bandeja' %}">Derivaciones </a></li>
+    <li class="breadcrumb-item"><a href="#" title="Ver legajo">Maradona, Diego Armando </a></li>
+    <li class="breadcrumb-item active">
+        [Agregar/Editar]
+    </li>
+</ol>
+{% endblock %};
+{% load crispy_forms_tags %}
+
+{% block content %}
+<!-- Datos de legajo -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card card-outline card-primary">
+            <div class="card-header">
+                <h3 class="card-title">Detalle Legajo</h3>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dd class="col-sm-2 mb-2">Nombre</dd>
+                    <dt class="col-sm-10 mb-2"><a href="#" title="Ver legajo">Maradona, Diego
+                            Armando </a></dt>
+                    <dt class="col-sm-2 mb-2 font-weight-normal">DNI</dt>
+                    <dd class="col-sm-10 mb-2 font-weight-bold">26698856</dd>
+                    <dt class="col-sm-2 mb-2 font-weight-normal">Fecha de nacimiento</dt>
+                    <dd class="col-sm-10 mb-2 font-weight-bold">30/10/1971</dd>
+                    <dt class="col-sm-2 mb-2 font-weight-normal">Sexo</dt>
+                    <dd class="col-sm-10 mb-2 font-weight-bold">Masculino</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- /  -->
+<div class="row">
+    <div class="col">
+        <form class="needs-validation" novalidate method="POST" enctype="multipart/form-data">
+            <!-- Security token -->
+            {% csrf_token %}
+            <div class="card card-primary card-outline">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        [Agregar/Editar] derivación
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Derivar a*</label>
+                                <select class="select2" multiple="multiple" data-placeholder="" style="width: 100%;">
+                                    <option>CDIF</option>
+                                    <option>CDLE</option>
+                                    <option>1000D</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="col-sm-3">
+                            <div class="form-group">
+                                <label for="inputStatus1">Prioridad*</label>
+                                <select id="inputStatus1" class="form-control custom-select">
+                                    <option selected="" disabled=""></option>
+                                    <option>Alta</option>
+                                    <option>Media</option>
+                                    <option>Baja</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-sm-3">
+                            <div class="form-group">
+                                <label for="inputStatus2">Alertas detectadas*</label>
+                                <select class="select2" multiple="multiple" data-placeholder="" style="width: 100%;">
+                                    <option selected="" disabled=""></option>
+                                    <option>Sin DNI</option>
+                                    <option>Madre criando en soledad</option>
+                                    <option>Violencia de género</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label for="inputStatus2">Organismos interviniendo</label>
+                                <select class="select2" multiple="multiple" data-placeholder="" style="width: 100%;">
+                                    <option selected="" disabled=""></option>
+                                    <option>Hospital Larcade</option>
+                                    <option>Escuela Nº12</option>
+                                    <option>Merendero Evita</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label for="exampleInputFile">Adjuntar archivos</label>
+                                <div class="input-group">
+                                    <div class="custom-file">
+                                        <input type="file" class="custom-file-input" id="exampleInputFile" multiple
+                                            name="archivos" />
+                                        <label class="custom-file-label" for="exampleInputFile"></label>
+                                    </div>
+                                    <div class="input-group-append">
+                                        <span class="input-group-text"><i class="fas fa-paperclip"></i></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-group">
+                                <label>Detalle de derivación*</label>
+                                <textarea class="form-control" rows="3" placeholder=""></textarea>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 mx-2">
+                <a href="{% url 'derivaciones_detail' %}" class="btn btn-primary mr-1">Confirmar</a>
+                <a href="{% url 'derivaciones_historial' %}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block customJS %}
+{% endblock %};

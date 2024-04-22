@@ -1,0 +1,376 @@
+{% extends "includes/base.html" %};
+{% load static %}
+{% block head %}
+<link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+<!-- Chart -->
+<link rel="stylesheet" href="{% static 'plugins/chart.js/Chart.min.css' %}" />
+{% endblock %}
+
+{% block title %}Dashboard{% endblock %};
+
+{% block titulo-pagina %}Dashboard{% endblock %};
+
+{% block breadcrumb %}
+
+{% endblock %};
+
+{% block menu-adicional %}
+{% endblock %};
+
+{% block content %}
+
+<div class="row">
+    <div class="col-12 col-sm-6 col-md-3">
+        <div class="info-box">
+            <span class="info-box-icon bg-info elevation-1"><i class="fas fa-address-card"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text text-center h6">Legajos Activos</span>
+                <span class="info-box-number text-center h4">{{ cantidad_legajos_activos }}</span>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-12 col-sm-6 col-md-3">
+        <div class="info-box mb-3">
+            <span class="info-box-icon bg-danger elevation-1"><i class="fas fa-bell"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text text-center h6">Alarmas Activas</span>
+                <span class="info-box-number text-center h4">{{ cantidad_legajos_con_alarmas_activas }}</span>
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="clearfix hidden-md-up"></div>
+    <div class="col-12 col-sm-6 col-md-3">
+        <div class="info-box mb-3">
+            <span class="info-box-icon bg-success elevation-1"><i class="fas fa-share-square"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text text-center h6">Derivaciones Pendientes</span>
+                <span class="info-box-number text-center h4">{{ cantidad_dv_Pendientes }}</span>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-12 col-sm-6 col-md-3">
+        <div class="info-box mb-3">
+            <span class="info-box-icon bg-warning elevation-1"><i class="fas fa-handshake"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text text-center h6 text-nowrap">Benef. de Acciones Sociales</span>
+                <span class="info-box-number text-center h4">{{ cantidad_legajos_con_planes_sociales }}</span>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-md-8">
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Mapa San Miguel por Barrio</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="card-body p-0">
+                <div class="row">
+                    <div class="col-12 mr-0 pr-2 pl-2 text-center">
+                        <div class="embed-responsive embed-responsive-4by3 text-center">
+                            <iframe
+                                src="https://www.google.com/maps/d/embed?mid=15CqmhYaH679MR6fWKTYTiKkuZjI&ehbc=2E312F"></iframe>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+
+
+    </div>
+
+    <!--
+    <div class="col-lg-8">
+        <iframe src="https://www.google.com/maps/d/embed?mid=15CqmhYaH679MR6fWKTYTiKkuZjI&ehbc=2E312F" width="1000"
+            height="380"></iframe>
+
+    </div>
+    -->
+
+
+
+    <div class="col-md-4 pt-5">
+
+        <div class="info-box mb-2 bg-dark">
+            <span class="info-box-icon bg-success elevation-1"><i class="fas fa-users"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text text-left h6 text-nowrap">Población total SM (censo)</span>
+                <span class="info-box-number text-center h4">327.000 hab</span>
+            </div>
+
+        </div>
+        <div class="info-box mb-2 bg-dark">
+            <span class="info-box-icon bg-success elevation-1"><i class="fas fa-child"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text text-left h6 text-nowrap">Población total 018 (censo)</span>
+                <span class="info-box-number text-center h4">66.000</span>
+            </div>
+
+        </div>
+        <div class="info-box mb-2 bg-dark">
+            <span class="info-box-icon bg-success elevation-1"><i class="fas fa-user-check"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text text-left h6 text-nowrap">Poblacion total con NBI (censo)</span>
+                <span class="info-box-number text-center h4">128.000 (39%)</span>
+            </div>
+
+        </div>
+        <div class="info-box mb-2 bg-dark">
+            <span class="info-box-icon bg-success elevation-1"><i class="fas fa-child"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text text-left h6 text-nowrap">Poblacion 018 con NBI (censo)</span>
+                <span class="info-box-number text-center h4">35.640 (11%)</span>
+            </div>
+        </div>
+
+        <div class="info-box mb-2 bg-dark">
+            <span class="info-box-icon bg-success elevation-1"><i class="fas fa-address-card"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text text-left h6 text-nowrap">Poblacion total registrada en HSU</span>
+                <span class="info-box-number text-center h4">{{ cantidad_total_legajos }} ({{ porcentaje_legajos|floatformat:2 }}%)</span>
+            </div>
+        </div>
+        <div class="info-box mb-2 bg-dark">
+            <span class="info-box-icon bg-success elevation-1"><i class="fas fa-address-card"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text text-left h6 text-nowrap">Poblacion 018 en HSU</span>
+                <span class="info-box-number text-center h4">{{ cantidad_legajos }} (37%)</span>
+            </div>
+        </div>
+      
+        </div>
+
+    <div class="col-lg-4 mt-3 ">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    Nacimientos
+                </h3>
+            </div>
+
+            <div class="card-body">
+                <div class="small-box bg-green mb-2">
+                    <div class="inner">
+                        <h3>{{ cantidad_legajos_40_dias }}</h3>
+                        <p>Nuevos</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fas fa-baby"></i>
+                    </div>
+                </div>
+                <div class="small-box bg-green mb-2">
+                    <div class="inner">
+                        <h3>{{ cantidad_bb_riesgo }}</h3>
+                        <p>En Riesgo</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-user-md"></i>
+                    </div>
+                </div>
+                <div class="small-box bg-green mb-2">
+                    <div class="inner">
+                        <h3>{{ cantidad_bb_sin_derivacion_aceptada }}</h3>
+                        <p>Sin Derivación</p>
+                    </div>
+                    <div class="icon">
+                        <i class="far fa-share-square"></i>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-lg-4 mt-3">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    Niños de 0 a 18
+                </h3>
+            </div>
+
+            <div class="card-body">
+                <div class="small-box bg-primary mb-2">
+                    <div class="inner">
+                        <h3>{{ cantidad_legajos }}</h3>
+                        <p>Total</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fas fa-child"></i>
+                    </div>
+                </div>
+                <div class="small-box bg-primary mb-2">
+                    <div class="inner">
+                        <h3>{{ cantidad_adolescente_riesgo }}</h3>
+                        <p>En Riesgo</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-user-md"></i>
+                    </div>
+                </div>
+                <div class="small-box bg-primary mb-2">
+                    <div class="inner">
+                        <h3>{{ cantidad_adolescente_sin_derivacion_aceptada }}</h3>
+                        <p>Sin Derivación</p>
+                    </div>
+                    <div class="icon">
+                        <i class="far fa-share-square"></i>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-lg-4 mt-3">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    Embarazadas
+                </h3>
+            </div>
+
+            <div class="card-body">
+                <div class="small-box bg-danger mb-2">
+                    <div class="inner">
+                        <h3>{{ cantidad_legajos_embarazados }}</h3>
+                        <p>Total</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-female"></i>
+                    </div>
+                </div>
+                <div class="small-box bg-danger mb-2">
+                    <div class="inner">
+                        <h3>{{ cantidad_embarazos_en_riesgo }}</h3>
+                        <p>En Riesgo / Sin Control </p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-user-md"></i>
+                    </div>
+                </div>
+                <div class="small-box bg-danger mb-2">
+                    <div class="inner">
+                        <h3>{{ embarazos_sin_derivacion_aceptada }}</h3>
+                        <p>Sin adherencia</p>
+                    </div>
+                    <div class="icon">
+                        <i class="far fa-share-square"></i>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+
+</div>
+
+
+
+
+
+
+
+
+{% endblock %}
+{% block customJS %}
+
+<!-- Chart -->
+<script src="{% static 'plugins/chart.js/Chart.min.js' %}"></script>
+
+<script>
+    $(function () {
+        /* ChartJS
+         * -------
+         * Here we will create a few charts using ChartJS
+         */
+
+        //--------------
+        //- AREA CHART -
+        //--------------
+
+        // Get context with jQuery - using jQuery's .get() method.
+
+        var areaChartData = {
+            labels: ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO'],
+            datasets: [
+                {
+                    label: 'Riesgo Hogar',
+                    backgroundColor: 'rgba(60,141,188,0.5)',
+                    fill: true,
+                    borderColor: '#14afe4 ',
+                    data: [28, 32, 36, 24, 31, 30, 25, 18]
+                },
+                {
+                    label: 'Riesgo Educacion',
+                    backgroundColor: 'rgba(210, 214, 222, 0.5)',
+                    fill: true,
+                    borderColor: '#5d5d5d ',
+                    data: [32, 28, 30, 29, 25, 22, 28, 12]
+                },
+            ]
+        }
+
+        var areaChartOptions = {
+            maintainAspectRatio: false,
+            responsive: true,
+            legend: {
+                display: false
+            },
+            scales: {
+                xAxes: [{
+                    gridLines: {
+                        display: true,
+                    }
+                }],
+                yAxes: [{
+                    gridLines: {
+                        display: true,
+                    }
+                }]
+            }
+        }
+
+        //-------------
+        //- LINE CHART -
+        //--------------
+        var lineChartCanvas = $('#lineChart').get(0).getContext('2d')
+        var lineChartOptions = $.extend(true, {}, areaChartOptions)
+        var lineChartData = $.extend(true, {}, areaChartData)
+        lineChartData.datasets[0].fill = true;
+        lineChartData.datasets[1].fill = true;
+        lineChartOptions.datasetFill = true
+
+        var lineChart = new Chart(lineChartCanvas, {
+            type: 'line',
+            data: lineChartData,
+            options: lineChartOptions
+        })
+    })
+</script>
+{% endblock %}

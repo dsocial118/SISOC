@@ -1,0 +1,981 @@
+{% load static %}
+{% with pagina_actual=request.resolver_match.route %}
+
+<div class="user-panel mt-3 pb-3 mb-3 d-flex  align-items-center">
+
+
+	<div class="image">
+		<!-- <img src="../../dist/img/user2-160x160.jpg" class="img-circle elevation-2" alt="User Image"> -->
+		{% if request.user.usuarios.imagen %}
+		<img class="user-image img-circle elevation-1 " src="{{request.user.usuarios.imagen.url}}" alt="User Image" />
+		{% else %}
+		<img class="user-image img-circle elevation-1" src="{% static 'custom/img/default.png'%}" alt="User Image" />
+		{% endif %}
+	</div>
+	<div class="info">
+		{% if request.user.first_name or request.user.last_name %}
+		<a href="{% url 'usuarios_ver' request.user.id %}" class="">{{request.user.first_name}}
+			{{request.user.last_name}} </a>
+		{% else %}
+		<a href="{% url 'usuarios_ver' request.user.id %}" class="">{{request.user.username}} </a>
+		{% endif %}
+	</div>
+</div>
+
+<div class="form-inline mb-3">
+	<form action="{% url 'legajos_listar' %}" method="GET">
+		<div class="input-group ">
+			<input class="form-control form-control-sidebar" type="text" placeholder="Buscar" aria-label="Search"
+				name="busqueda" />
+			<div class="input-group-append">
+				<button class="btn btn-primary btn-sm">
+					<i class="fas fa-search fa-fw"></i>
+				</button>
+			</div>
+		</div>
+	</form>
+</div>
+{%if perms.Usuarios.programa_Dashboard%}
+<li class="nav-item">
+	<a href="{% url 'dashboard' %}" class="nav-link {% if 'dashboard' in pagina_actual %}active{% endif %}">
+		<i class="nav-icon fas fa-chart-pie"></i>
+		<p>Dashboard</p>
+	</a>
+</li>
+<li class="nav-item">
+	<a href="{% url 'metricas' %}" class="nav-link {% if 'metricas' in pagina_actual %}active{% endif %}">
+		<i class="nav-icon fas fa-chart-bar"></i>
+		<p>Métricas</p>
+	</a>
+</li>
+{%endif%}
+
+
+
+{%if perms.Usuarios.programa_Configuracion %}
+
+<li class="nav-item  {% if 'configuracion' in pagina_actual %}menu-open{% endif %}">
+	<a href="#" class="nav-link {% if 'configuracion' in pagina_actual %}active{% endif %}">
+		<i class="nav-icon fas fa-cog"></i>
+		<p>Configuración<i class="right fas fa-angle-left"></i></p>
+	</a>
+	<ul class="nav nav-treeview">
+
+		<li class="nav-item">
+			<a href="{% url 'secretarias_listar' %}"
+				class="nav-link {% if 'configuracion/secretarias' in pagina_actual%}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Secretarías</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'subsecretarias_listar' %}"
+				class="nav-link {% if 'configuracion/subsecretarias' in pagina_actual%}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Subsecretarías</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'programas_listar' %}"
+				class="nav-link {% if 'configuracion/programas' in pagina_actual%}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Programas</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'organismos_listar' %}"
+				class="nav-link {% if 'configuracion/organismos' in pagina_actual%}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Organismos</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'planes_sociales_listar' %}"
+				class="nav-link {% if 'configuracion/planes_sociales' in pagina_actual%}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Planes sociales</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'agentesexternos_listar' %}"
+				class="nav-link {% if 'configuracion/agentesexternos' in pagina_actual%}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Agentes externos</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'gruposdestinatarios_listar' %}"
+				class="nav-link {% if 'configuracion/gruposdestinatarios' in pagina_actual%}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Grupos de agentes</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'vacantes_listar' %}"
+				class="nav-link {% if 'configuracion/vacantes' in pagina_actual%}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Vacantes</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'categoriaalertas_listar' %}"
+				class="nav-link {% if 'configuracion/categoriaalertas' in pagina_actual%}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Categoría de alertas</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'alertas_listar' %}"
+				class="nav-link {% if 'configuracion/alertas/' in pagina_actual%}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Alertas</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'equipos_listar' %}"
+				class="nav-link {% if 'configuracion/equipos' in pagina_actual%}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Equipos</p>
+			</a>
+		</li>
+		<!-- <li class="nav-item">
+			<a href="{% url 'acciones_listar' %}"
+				class="nav-link {% if 'configuracion/acciones' in pagina_actual%}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Acciones</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'criterios_listar' %}"
+				class="nav-link {% if 'configuracion/criterios' in pagina_actual%}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Criterios</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'indices_listar' %}"
+				class="nav-link {% if 'configuracion/indices' in pagina_actual%}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Índices</p>
+			</a>
+		</li> -->
+	</ul>
+</li>
+{%endif%}
+
+{%if perms.Usuarios.programa_Administracion%}
+<li class="nav-item {% if 'administracion' in pagina_actual %}menu-open {% endif %}">
+	<a href="#" class="nav-link {% if 'administracion' in pagina_actual %}active{% endif %}">
+		<i class="nav-icon fas fa-users"></i>
+		<p>Administración<i class="right fas fa-angle-left"></i>
+		</p>
+	</a>
+	<ul class="nav nav-treeview">
+
+		<li class="nav-item">
+			<a href="{% url 'usuarios_listar' %}"
+				class="nav-link {% if 'usuarios' in pagina_actual or 'password' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Usuarios</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'grupos_listar' %}"
+				class="nav-link {% if 'administracion/grupos' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Grupos de usuario</p>
+			</a>
+		</li>
+	</ul>
+</li>
+{%endif%}
+
+{%if perms.Usuarios.programa_Legajo%}
+<li class="nav-item">
+	<a href="{% url 'legajos_listar' %}" class="nav-link {% if 'legajos/listar' in pagina_actual %}active{% endif %}">
+		<i class="nav-icon fas fa-user"></i>
+		<p>Legajos</p>
+	</a>
+</li>
+{%endif%}
+
+{%if perms.Usuarios.programa_Reporte%}
+<li class="nav-item">
+	<a href="{% url 'legajos_reportes' %}" class="nav-link  {% if 'legajos/reportes' in pagina_actual %}active{% endif %}">
+		<i class="nav-icon fas fa-clipboard"></i>
+		<p>Reportes</p>
+	</a>
+</li>
+{%endif%}
+
+{%if perms.Usuarios.programa_CDIF%}
+<li class="nav-item {% if 'CDIF' in pagina_actual %}menu-open{% endif %}">
+	<a href="#" class="nav-link {% if 'CDIF' in pagina_actual %}active{% endif %}">
+		<i class=" nav-icon fas fa-circle"></i>
+		<p>CDIF<i class="right fas fa-angle-left"></i>
+		</p>
+	</a>
+	<ul class="nav nav-treeview">
+		<li class="nav-item">
+			<a href="{% url 'CDIF_derivaciones_listar' %}"
+				class="nav-link {% if 'derivaciones' in pagina_actual %}active{% endif %}">
+				<i class="nav-icon fas fa-inbox"></i>
+				<p>Derivaciones</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'CDIF_preadmisiones_listar' %}"
+				class="nav-link  {% if 'preadmisiones' in pagina_actual %}active{% endif %}">
+				<i class="nav-icon fas fa-tasks"></i>
+				<p>Pre-admisiones</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'CDIF_admisiones_listar' %}"
+				class="nav-link  {% if '/admisiones' in pagina_actual %}active{% endif %}{% if '/asignado_admisiones' in pagina_actual %}active{% endif %} {% if '/inactiva_admisiones' in pagina_actual %}active{% endif %}">
+				<i class="nav-icon fas fa-id-badge"></i>
+				<p>Admisiones</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'CDIF_vacantes_listar' %}"
+				class="nav-link {% if 'vacantes' in pagina_actual %}active{% endif %}">
+				<i class="nav-icon fas fa-sign-in-alt"></i>
+				<p>Vacantes</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{%url 'CDIF_intervenciones_listar' %}"
+				class="nav-link {% if 'intervencion' in pagina_actual %}active{% endif %}">
+				<i class="nav-icon fas fa-people-arrows"></i>
+				<p>Intervenciones</p>
+			</a>
+		</li>
+		<!--<li class="nav-item">
+			<a href="{% url 'intervenciones_list' %}"
+				class="nav-link {% if 'intervenciones_list' in pagina_actual %}active{% endif %}">
+				<i class="nav-icon fas fa-clipboard"></i>
+				<p>Reportes CDIF</p>
+			</a>
+		</li>-->
+	</ul>
+</li>
+{%endif%}
+
+{%if perms.Usuarios.programa_CDLE%}
+<li class="nav-item {% if 'CDLE' in pagina_actual %}menu-open{% endif %}">
+	<a href="#" class="nav-link {% if 'CDLE' in pagina_actual %}active{% endif %}">
+		<i class=" nav-icon fas fa-circle"></i>
+		<p>CDLE<i class="right fas fa-angle-left"></i>
+		</p>
+	</a>
+	<ul class="nav nav-treeview">
+		<li class="nav-item">
+			<a href="{% url 'CDLE_derivaciones_listar' %}"
+				class="nav-link {% if 'derivaciones' in pagina_actual %}active{% endif %}">
+				<i class="nav-icon fas fa-inbox"></i>
+				<p>Derivaciones</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'CDLE_preadmisiones_listar' %}"
+				class="nav-link  {% if 'preadmisiones' in pagina_actual %}active{% endif %}">
+				<i class="nav-icon fas fa-tasks"></i>
+				<p>Pre-admisiones</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'CDLE_admisiones_listar' %}"
+				class="nav-link  {% if '/admisiones' in pagina_actual %}active{% endif %}{% if '/asignado_admisiones' in pagina_actual %}active{% endif %} {% if '/inactiva_admisiones' in pagina_actual %}active{% endif %}">
+				<i class="nav-icon fas fa-id-badge"></i>
+				<p>Admisiones</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{%url 'CDLE_intervenciones_listar' %}"
+				class="nav-link {% if 'intervencion' in pagina_actual %}active{% endif %}">
+				<i class="nav-icon fas fa-people-arrows"></i>
+				<p>Intervenciones</p>
+			</a>
+		</li>
+		<!--<li class="nav-item">
+			<a href="{% url 'intervenciones_list' %}"
+				class="nav-link {% if 'intervenciones_list' in pagina_actual %}active{% endif %}">
+				<i class="nav-icon fas fa-clipboard"></i>
+				<p>Reportes CDIF</p>
+			</a>
+		</li>-->
+	</ul>
+</li>
+{%endif%}
+{%if perms.Usuarios.programa_1000D%}
+<li class="nav-item {% if 'MILD' in pagina_actual %}menu-open{% endif %}">
+	<a href="#" class="nav-link {% if 'MILD' in pagina_actual %}active{% endif %}">
+		<i class=" nav-icon fas fa-circle"></i>
+		<p>1000 Dias<i class="right fas fa-angle-left"></i>
+		</p>
+	</a>
+	<ul class="nav nav-treeview">
+		<li class="nav-item">
+			<a href="{% url 'MILD_derivaciones_listar' %}"
+				class="nav-link {% if 'derivaciones' in pagina_actual %}active{% endif %}">
+				<i class="nav-icon fas fa-inbox"></i>
+				<p>Derivaciones</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'MILD_preadmisiones_listar' %}"
+				class="nav-link  {% if 'preadmisiones' in pagina_actual %}active{% endif %}">
+				<i class="nav-icon fas fa-tasks"></i>
+				<p>Pre-admisiones</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'MILD_admisiones_listar' %}"
+				class="nav-link  {% if '/admisiones' in pagina_actual %}active{% endif %}{% if '/asignado_admisiones' in pagina_actual %}active{% endif %} ">
+				<i class="nav-icon fas fa-id-badge"></i>
+				<p>Admisiones</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{%url 'MILD_intervenciones_listar' %}"
+				class="nav-link {% if 'intervenciones' in pagina_actual %}active{% endif %}">
+				<i class="nav-icon fas fa-people-arrows"></i>
+				<p>Intervenciones</p>
+			</a>
+		</li>
+		<!--<li class="nav-item">
+			<a href="{% url 'intervenciones_list' %}"
+				class="nav-link {% if 'intervenciones_list' in pagina_actual %}active{% endif %}">
+				<i class="nav-icon fas fa-clipboard"></i>
+				<p>Reportes CDIF</p>
+			</a>
+		</li>-->
+	</ul>
+</li>
+{%endif%}
+
+{%if perms.Usuarios.programa_PDV%}
+<li class="nav-item {% if 'PDV' in pagina_actual %}menu-open{% endif %}">
+	<a href="#" class="nav-link {% if 'PDV' in pagina_actual %}active{% endif %}">
+		<i class=" nav-icon fas fa-circle"></i>
+		<p>PDV<i class="right fas fa-angle-left"></i>
+		</p>
+	</a>
+	<ul class="nav nav-treeview">
+		<li class="nav-item">
+			<a href="{% url 'PDV_derivaciones_listar' %}" 
+				class="nav-link {% if 'derivaciones' in pagina_actual %}active{% endif %}">
+				<i class="nav-icon fas fa-inbox"></i>
+				<p>Derivaciones</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'PDV_preadmisiones_listar' %}"
+				class="nav-link  {% if 'preadmisiones' in pagina_actual %}active{% endif %}">
+				<i class="nav-icon fas fa-tasks"></i>
+				<p>Pre-admisiones</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'PDV_admisiones_listar' %}"
+				class="nav-link  {% if '/admisiones' in pagina_actual %}active{% endif %}{% if '/asignado_admisiones' in pagina_actual %}active{% endif %} ">
+				<i class="nav-icon fas fa-id-badge"></i>
+				<p>Admisiones</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'PDV_vacantes_listar' %}"
+				class="nav-link {% if 'vacantes' in pagina_actual %}active{% endif %}">
+				<i class="nav-icon fas fa-sign-in-alt"></i>
+				<p>Vacantes</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{%url 'PDV_intervenciones_listar' %}"
+				class="nav-link {% if 'intervenciones' in pagina_actual %}active{% endif %}">
+				<i class="nav-icon fas fa-people-arrows"></i>
+				<p>Intervenciones</p>
+			</a>
+		</li>
+		<!--<li class="nav-item">
+			<a href="{% url 'intervenciones_list' %}"
+				class="nav-link {% if 'intervenciones_list' in pagina_actual %}active{% endif %}">
+				<i class="nav-icon fas fa-clipboard"></i>
+				<p>Reportes CDIF</p>
+			</a>
+		</li>-->
+	</ul>
+</li>
+{%endif%}
+{%if perms.Usuarios.programa_SL%}
+<li class="nav-item {% if 'SL' in pagina_actual %}menu-open{% endif %}">
+	<a href="#" class="nav-link {% if 'SL' in pagina_actual %}active{% endif %}">
+		<i class=" nav-icon fas fa-circle"></i>
+		<p>Servicio local<i class="right fas fa-angle-left"></i>
+		</p>
+	</a>
+	<ul class="nav nav-treeview">
+		<li class="nav-item">
+			<a href="{% url 'SL_derivaciones_listar' %}"
+				class="nav-link {% if 'derivaciones' in pagina_actual %}active{% endif %}">
+				<i class="nav-icon fas fa-inbox"></i>
+				<p>Derivaciones</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'SL_preadmisiones_listar' %}"
+				class="nav-link  {% if 'preadmisiones' in pagina_actual %}active{% endif %}">
+				<i class="nav-icon fas fa-tasks"></i>
+				<p>Pre-admisiones</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'SL_admisiones_listar' %}"
+				class="nav-link  {% if '/admisiones' in pagina_actual %}active{% endif %}{% if '/asignado_admisiones' in pagina_actual %}active{% endif %} ">
+				<i class="nav-icon fas fa-id-badge"></i>
+				<p>Admisiones</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{%url 'SL_intervenciones_listar' %}"
+				class="nav-link {% if 'intervenciones' in pagina_actual %}active{% endif %}">
+				<i class="nav-icon fas fa-people-arrows"></i>
+				<p>Intervenciones</p>
+			</a>
+		</li>
+		<!--<li class="nav-item">
+			<a href="{% url 'intervenciones_list' %}"
+				class="nav-link {% if 'intervenciones_list' in pagina_actual %}active{% endif %}">
+				<i class="nav-icon fas fa-clipboard"></i>
+				<p>Reportes CDIF</p>
+			</a>
+		</li>-->
+	</ul>
+</li>
+{%endif%}
+{%if perms.Usuarios.programa_MA%}
+<li class="nav-item {% if 'MA' in pagina_actual %}menu-open{% endif %}">
+	<a href="#" class="nav-link {% if 'MA' in pagina_actual %}active{% endif %}">
+		<i class=" nav-icon fas fa-circle"></i>
+		<p>Medidas de abrigo<i class="right fas fa-angle-left"></i>
+		</p>
+	</a>
+	<ul class="nav nav-treeview">
+		<li class="nav-item">
+			<a href="{% url 'MA_derivaciones_listar' %}"
+				class="nav-link {% if 'derivaciones' in pagina_actual %}active{% endif %}">
+				<i class="nav-icon fas fa-inbox"></i>
+				<p>Derivaciones</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'MA_preadmisiones_listar' %}"
+				class="nav-link  {% if 'preadmisiones' in pagina_actual %}active{% endif %}">
+				<i class="nav-icon fas fa-tasks"></i>
+				<p>Pre-admisiones</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'MA_admisiones_listar' %}"
+				class="nav-link  {% if '/admisiones' in pagina_actual %}active{% endif %}{% if '/asignado_admisiones' in pagina_actual %}active{% endif %} ">
+				<i class="nav-icon fas fa-id-badge"></i>
+				<p>Admisiones</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{%url 'MA_intervenciones_listar' %}"
+				class="nav-link {% if 'intervenciones' in pagina_actual %}active{% endif %}">
+				<i class="nav-icon fas fa-people-arrows"></i>
+				<p>Intervenciones</p>
+			</a>
+		</li>
+		<!--<li class="nav-item">
+			<a href="{% url 'intervenciones_list' %}"
+				class="nav-link {% if 'intervenciones_list' in pagina_actual %}active{% endif %}">
+				<i class="nav-icon fas fa-clipboard"></i>
+				<p>Reportes CDIF</p>
+			</a>
+		</li>-->
+	</ul>
+</li>
+{%endif%}
+
+{% if request.user.is_superuser %}
+<li class="nav-header menu-extra-header mt-5">PLANTILLA</li>
+<li class="nav-item {% if 'plantilla/ejemplos' in pagina_actual %}menu-open{% endif %}">
+	<a href="#" class="nav-link  {% if 'plantilla/ejemplos' in pagina_actual %}active{% endif %}">
+		<i class="nav-icon fas fa-th"></i>
+		<p>
+			Ejemplos
+			<i class="right fas fa-angle-left"></i>
+			<!--<span class="right badge badge-danger">New</span>-->
+		</p>
+	</a>
+	<ul class="nav nav-treeview">
+		<ul class="nav nav-treeview">
+			<li class="nav-item">
+				<a href="{% url 'vista_detalle_simple' %}"
+					class="nav-link {% if 'vista_detalle_simple' in pagina_actual %}active{% endif %}">
+					<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+					<p>Vista detalle simple</p>
+				</a>
+			</li>
+			<li class="nav-item">
+				<a href="{% url 'vista_detalle_doble' %}"
+					class="nav-link {% if 'vista_detalle_doble' in pagina_actual %}active{% endif %}">
+					<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+					<p>Vista detalle doble</p>
+				</a>
+			</li>
+			<li class="nav-item">
+				<a href="{% url 'vista_detalle_desplegable' %}"
+					class="nav-link {% if 'vista_detalle_desplegable' in pagina_actual %}active{% endif %}">
+					<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+					<p>Vista detalle desplegable</p>
+				</a>
+			</li>
+			<li class="nav-item">
+				<a href="{% url 'formularios' %}"
+					class="nav-link {% if 'plantilla/formularios' in pagina_actual %}active{% endif %}">
+					<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+					<p>Formularios</p>
+				</a>
+			</li>
+			<li class="nav-item">
+				<a href="{% url 'steps' %}" class="nav-link {% if 'steps' in pagina_actual %}active{% endif %}">
+					<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+					<p>Steps</p>
+				</a>
+			</li>
+			<li class="nav-item">
+				<a href="{% url 'tablas' %}" class="nav-link {% if 'tablas' in pagina_actual %}active{% endif %}">
+					<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+					<p>Tablas</p>
+				</a>
+			</li>
+			<li class="nav-item">
+				<a href="{% url 'timelineh' %}"
+					class="nav-link {% if 'timelineh/' in pagina_actual %}active{% endif %}">
+					<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+					<p>Timeline horizontal 1</p>
+				</a>
+			</li>
+			<li class="nav-item">
+				<a href="{% url 'timelineh2' %}"
+					class="nav-link {% if 'timelineh2' in pagina_actual %}active{% endif %}">
+					<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+					<p>Timeline horizontal 2</p>
+				</a>
+			</li>
+			<li class="nav-item">
+				<a href="{% url 'confirm_delete' %}"
+					class="nav-link {% if 'confirm_delete' in pagina_actual %}active{% endif %}">
+					<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+					<p>Confirm delete</p>
+				</a>
+			</li>
+			<li class="nav-item">
+				<a href="{% url '500' %}" class="nav-link {% if '500' in pagina_actual %}active{% endif %}">
+					<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+					<p>Error 500 </p>
+				</a>
+			</li>
+			<li class="nav-item">
+				<a href="{% url '404' %}" class="nav-link {% if '404' in pagina_actual %}active{% endif %}">
+					<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+					<p>Error 404 </p>
+				</a>
+			</li>
+			<li class="nav-item">
+				<a href="{% url '403' %}" class="nav-link {% if '403' in pagina_actual %}active{% endif %}">
+					<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+					<p>Error 403 </p>
+				</a>
+			</li>
+		</ul>
+
+		<li class="nav-item">
+			<a href="{% url 'vista_detalle_simple' %}"
+				class="nav-link {% if 'vista_detalle_simple' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Vista detalle simple</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'vista_detalle_doble' %}"
+				class="nav-link {% if 'vista_detalle_doble' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Vista detalle doble</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'vista_detalle_desplegable' %}"
+				class="nav-link {% if 'vista_detalle_desplegable' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Vista detalle desplegable</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'formularios' %}"
+				class="nav-link {% if 'plantilla/formularios' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Formularios</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'steps' %}" class="nav-link {% if 'steps' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Steps</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'tablas' %}" class="nav-link {% if 'tablas' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Tablas</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'timelineh' %}" class="nav-link {% if 'timelineh/' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Timeline horizontal 1</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'timelineh2' %}" class="nav-link {% if 'timelineh2' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Timeline horizontal 2</p>
+			</a>
+		</li>
+
+		<li class="nav-item">
+			<a href="{% url 'confirm_delete' %}"
+				class="nav-link {% if 'confirm_delete' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Confirm delete</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url '500' %}" class="nav-link {% if '500' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Error 500 </p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url '404' %}" class="nav-link {% if '404' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Error 404 </p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'intervenciones_salud_HC' %}" class="nav-link {% if 'intervenciones_salud_HC' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Intervenciones salud </p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url '403' %}" class="nav-link {% if '403' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Error 403 </p>
+			</a>
+		</li>
+	</ul>
+</li>
+<li class="nav-item {% if 'plantilla/legajos' in pagina_actual %}menu-open{% endif %}">
+	<a href="#" class="nav-link  {% if 'plantilla/legajos' in pagina_actual %}menu-open active{% endif %}">
+		<i class="nav-icon fas fa-th"></i>
+		<p>
+			Legajos
+			<i class="right fas fa-angle-left"></i>
+			<!--<span class="right badge badge-danger">New</span>-->
+		</p>
+	</a>
+
+	<ul class="nav nav-treeview">
+
+		<li class="nav-item">
+			<a href="{% url 'busqueda_legajo' %}"
+				class="nav-link {% if 'busqueda_legajo' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Búsqueda legajos</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'grupo_familiar' %}"
+				class="nav-link {% if 'plantilla/legajos/grupo_familiar' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Grupo familiar</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'programas_interviniendo' %}"
+				class="nav-link {% if 'plantilla/legajos/programas_interviniendo' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Programas interviniendo</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'grupo_familiar' %}"
+				class="nav-link {% if 'plantilla/legajos/grupo_familiar' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Grupo familiar</p>
+			</a>
+		</li>
+	</ul>
+</li>
+<li class="nav-item {% if 'plantilla/programas' in pagina_actual %}menu-open{% endif %}">
+	<a href="#" class="nav-link  {% if 'plantilla/programas' in pagina_actual %}menu-open active{% endif %}">
+		<i class="nav-icon fas fa-th"></i>
+		<p>
+			Programas (CDIF)
+			<i class="right fas fa-angle-left"></i>
+			<!--<span class="right badge badge-danger">New</span>-->
+		</p>
+	</a>
+	<ul class="nav nav-treeview">
+		<li class="nav-item">
+			<a href="{% url 'derivaciones_bandeja' %}"
+				class="nav-link {% if 'derivaciones_bandeja' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Derivaciones bandeja</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'derivaciones_buscar' %}"
+				class="nav-link {% if 'derivaciones_buscar' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Derivaciones buscar</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'derivaciones_historial' %}"
+				class="nav-link {% if 'derivaciones_historial' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Derivaciones historial</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'historial_derivaciones' %}"
+				class="nav-link {% if 'historial_derivaciones' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Historial derivaciones</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'derivaciones_new_detail' %}"
+				class="nav-link {% if 'derivaciones_new_detail' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Derivaciones detalle</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'derivaciones_form'  %}"
+				class="nav-link {% if 'derivaciones_form' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Derivaciones formulario</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'derivaciones_detail'  %}"
+				class="nav-link {% if 'derivaciones_detail' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Derivaciones detalle</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'indice_ivi_form'  %}"
+				class="nav-link {% if 'indice_ivi_form' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>IVI formulario</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'indice_ivi_detail'  %}"
+				class="nav-link {% if 'indice_ivi_detail' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>IVI detalle</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'indice_ivi_legajo'  %}"
+				class="nav-link {% if 'indice_ivi_legajo' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>IVI detalle</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'indice_ivi_form_legajo'  %}"
+				class="nav-link {% if 'indice_ivi_form_legajo' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>IVI formulario</p>
+			</a>
+		</li>
+
+		<li class="nav-item">
+			<a href="{% url 'preadmisiones_list' %}"
+				class="nav-link {% if 'preadmisiones_list' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Pre-admisiones listado</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'preadmisiones_buscar' %}"
+				class="nav-link {% if 'preadmisiones_buscar' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Pre-admisiones buscar</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'preadmisiones_form'%}"
+				class="nav-link {% if 'preadmisiones_form' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Pre-admisiones formulario</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'preadmisiones_detail'%}"
+				class="nav-link {% if 'preadmisiones_detail' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Pre-admisiones detalle</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'admisiones_list' %}"
+				class="nav-link {% if '/admisiones_list' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Admisiones listado</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'admisiones_detail' %}"
+				class="nav-link {% if '/admisiones_detail' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Admisiones detalle</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'admisiones_historial' %}"
+				class="nav-link {% if 'admisiones_historial' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Admisiones historial</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'historial_admisiones' %}"
+				class="nav-link {% if 'historial_admisiones' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Historial admisiones</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'acciones_sociales' %}"
+				class="nav-link {% if 'acciones_sociales' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Acciones sociales</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'indices' %}"
+				class="nav-link {% if 'indices' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Indices</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'indices_egreso' %}"
+				class="nav-link {% if 'indices_egreso' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Indices egreso</p>
+			</a>
+		</li>
+
+		<li class="nav-item">
+			<a href="{% url 'intervenciones' %}"
+				class="nav-link {% if 'intervenciones' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Intervenciones</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'intervenciones_new_detail' %}"
+				class="nav-link {% if 'intervenciones_new_detail' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Intervenciones nuevo detalle</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'intervenciones_salud' %}"
+				class="nav-link {% if 'intervenciones_salud' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Intervenciones asistencia</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'vacantesxcentro'%}"
+				class="nav-link {% if 'vacantesxcentro' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Vacantes por centro</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'vacantes_list'%}"
+				class="nav-link {% if 'vacantes_list' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Vacantes listado</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'vacantes_form'%}"
+				class="nav-link {% if 'vacantes_form' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Vacantes formulario</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'vacantes_detail'%}"
+				class="nav-link {% if 'vacantes_detail' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Vacantes detalle</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'intervenciones_list'%}"
+				class="nav-link {% if 'intervenciones_list' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Intervenciones listado</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'intervenciones_legajolist'%}"
+				class="nav-link {% if 'intervenciones_legajolist' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Intervenciones de legajo</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'intervenciones_form'%}"
+				class="nav-link {% if 'intervenciones_form' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Intervenciones formulario</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'intervenciones_detail'%}"
+				class="nav-link {% if 'intervenciones_detail' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Intervenciones detalle</p>
+			</a>
+		</li>
+		<li class="nav-item">
+			<a href="{% url 'cdif_reportes'%}"
+				class="nav-link {% if 'cdif_reportes' in pagina_actual %}active{% endif %}">
+				<i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+				<p>Reportes CDIF</p>
+			</a>
+		</li>
+
+	</ul>
+</li>
+{%endif%}
+
+{% endwith %}

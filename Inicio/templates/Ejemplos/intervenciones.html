@@ -1,0 +1,229 @@
+{% extends "includes/base.html" %};
+{% load static %};
+
+{% block title %}
+Historia de intervenciones
+{%endblock %};
+
+{% block titulo-pagina %}
+Historia de intervenciones
+{% endblock %};
+
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right">
+  <li class="breadcrumb-item">Legajos</li>
+  <li class="breadcrumb-item "><a href="#" title="Ver legajo">Baez, Jessica</a></li>
+  <li class="breadcrumb-item active">Historia de intervenciones</li>
+</ol>
+{% endblock %};
+
+{% block menu-adicional %}
+{% endblock %};
+
+{% block content %}
+<!-- card-info -->
+<div class="row">
+  <!-- botones -->
+  <!--<div class="col-12 my-3 mx-2 d-print-none">-->
+   <!-- <a href="{% url 'intervenciones_form' %}" class="btn btn-primary mr-1">Agregar intervención</a> -->
+    <!-- <a href="{% url 'preadmisiones_form' %}" class="btn btn-secondary mr-1">Editar</a> -->
+    <!-- <a href="" class="btn btn-secondary mr-1 print">Imprimir</a> -->
+    <!-- <a href="" class="btn btn-secondary mr-1 ">Finalizar admisión</a> -->
+    <!-- <a href="" class="btn btn-danger mr-1 mt-2 mt-sm-0">Eliminar</a> -->
+  <!--</div> -->
+  <!-- ./botones -->
+  <div class="row">
+    <!-- botones -->
+    <div class="col-12 my-3 mx-2">
+      <a href="#" class="btn btn-primary mr-1">Agregar intervenciones</a>
+    </div>
+  </div>
+  <div class="row p-0 m-0 " id="seleccion">
+
+    <!-- Datos de legajo -->
+    <div class="col-sm-8 pb-3">
+      <div class="card card-outline card-primary h-100 mb-0">
+        <div class="card-header">
+          <h3 class="card-title">Datos personales</h3>
+        </div>
+        <div class="card-body">
+          <dl class="row mb-0">
+            <dd class="col-sm-3 mb-2">Nombre</dd>
+            <dt class="col-sm-9 mb-2"><a href="#" title="Ver legajo">Baez, Jessica
+              </a>
+            </dt>
+            <dd class="col-sm-3 mb-2">DNI</dd>
+            <dt class="col-sm-9 mb-2">54321012</dt>
+            <dd class="col-sm-3 mb-2">Fecha de nacimiento</dd>
+            <dt class="col-sm-9 mb-2">15/04/2005</dt>
+            <dd class="col-sm-3 mb-2">Sexo</dd>
+            <dt class="col-sm-9">Femenino</dt>
+          </dl>
+        </div>
+      </div>
+    </div>
+    <!-- /  -->
+
+    <!-- Datos de admisión -->
+    <!--
+    <div class="col-sm-5 pb-3">
+      <div class="card card-outline card-primary h-100 mb-0">
+        <div class="card-header">
+          <h3 class="card-title">Detalle Admisión</h3>
+          <div class="card-tools d-inline">
+            <button type="button" class="btn btn-tool  d-md-none" data-card-widget="collapse">
+              <i class="fas fa-minus"></i>
+            </button>
+          </div>
+        </div>
+        <div class="card-body pb-2">
+          <dl class="row mb-0">
+            <dd class="col-sm-5 mb-2">Estado</dd>
+            <dt class="col-sm-7 mb-2"><span class="text-success font-weight-bold">Activa</span></dt>
+            <dd class="col-sm-5 mb-2">Fecha de admisión</dd>
+            <dt class="col-sm-7 mb-2">15/03/2023</dt>
+            <dd class="col-sm-5 mb-2">Estado vacante</dd>
+            <dt class="col-sm-7 mb-2"><span class="badge badge-success">Asignada</span></dt>
+            <dd class="col-sm-5 mb-2">Fecha de vacante</dd>
+            <dt class="col-sm-7 mb-2">25/03/2023</dt>
+          </dl>
+        </div>
+      </div>
+    </div>
+    -->
+    <!-- /  -->
+
+    <!-- Datos de indice -->
+    <div class="col-sm-4 ">
+      <div class="row h-100">
+        <div class="col-12">
+            <div class="info-box mb-2 ">
+              <span class="info-box-icon bg-secondary">5</span>
+              <div class="info-box-content">
+                <span class="info-box-text">Intervenciones</span>
+                <span class="info-box-number h6"> Última 12/06/2023</span>
+              </div>
+            </div>
+          </div>
+        <div class="col-12">
+          <div class="info-box mb-2">
+            <span class="info-box-icon bg-danger">40</span>
+            <div class="info-box-content">
+              <span class="info-box-text">IVI de ingreso</span>
+              <span class="info-box-number h6">10/07/2020</span>
+            </div>
+          </div>
+        </div>
+        <div class="col-12">
+          <div class="info-box">
+            <span class="info-box-icon bg-danger">16</span>
+            <div class="info-box-content">
+              <span class="info-box-text">IVI de egreso</span>
+              <span class="info-box-number h6">11/06/2023</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- / -->
+
+    <!-- Detalle de intervenciones -->
+    <div class="col-12">
+      <div class="card card-primary card-outline">
+
+        <div class="card-body">
+          <table class="table table-bordered table-striped projects tabladt">
+            <!-- <table class="table table-striped projects"> -->
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Usuario</th>
+                <th>Criterio</th>
+                <th>Gestión</th>
+                <th>Acción realizada</th>
+                <th width="5%" class="notexport"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td> 12/06/2023 </td>
+                <td> Azcurra Maria Luz </td>
+                <td> Bebé, niño o niña con bajo peso o sobrepeso</td>
+                <td> Revertido</td>
+                <td> Se realizo un control del niño sano</td>
+                <td class="text-right">
+                  <a href="{% url 'intervenciones_new_detail' %}" class="btn btn-secondary btn-sm ver"
+                    title="Ver detalle">Ver</a>
+                </td>
+              </tr>
+              <tr>
+                <td> 15/05/2023 </td>
+                <td> Azcurra Maria Luz </td>
+                <td> Niño o niña sin DNI</td>
+                <td> Trabajado</td>
+                <td> Se la acompaño a realizar el tramite </td>
+                <td class="text-right">
+                  <a href="{% url 'intervenciones_new_detail' %}" class="btn btn-secondary btn-sm ver"
+                    title="Ver detalle">Ver</a>
+                </td>
+              </tr>
+              <tr>
+                <td> 15/05/2023 </td>
+                <td> Azcurra Maria Luz </td>
+                <td> Bebé, niño o niña con bajo peso o sobrepeso</td>
+                <td> Trabajado </td>
+                <td> Se brindo información </td>
+                <td class="text-right">
+                  <a href="{% url 'intervenciones_new_detail' %}" class="btn btn-secondary btn-sm ver"
+                    title="Ver detalle">Ver</a>
+                </td>
+              </tr>
+              <tr>
+                <td> 15/05/2023 </td>
+                <td> Azcurra Maria Luz </td>
+                <td> Niño o niña sin controles pediátricos o calendario de vacunación incompleto</td>
+                <td> Trabajado</td>
+                <td> Se articulo con una institución no municipal</td>
+                <td class="text-right">
+                  <a href="{% url 'intervenciones_new_detail' %}" class="btn btn-secondary btn-sm ver"
+                    title="Ver detalle">Ver</a>
+                </td>
+              </tr>
+              <tr>
+                <td> 15/05/2023 </td>
+                <td> Azcurra Maria Luz </td>
+                <td> Familia atravesando situación habitacional crítica <span
+                    class="badge badge-success mx-2">Nuevo</span></td>
+                <td> Trabajado</td>
+                <td> Se articulo con una institución no municipal</td>
+                <td class="text-right">
+                  <a href="{% url 'intervenciones_new_detail' %}" class="btn btn-secondary btn-sm ver"
+                    title="Ver detalle">Ver</a>
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+        <!-- /.card-body -->
+      </div>
+      <!-- /.card -->
+    </div>
+    <!-- ./ -->
+
+  </div>
+</div>
+
+
+<!--<div class="row mt-4 d-print-none">
+  <div class="col-12 mx-2">
+    <div class="form-group  d-flex justify-content-between">
+      <a href="{% url 'admisiones_list' %}" class="btn btn-secondary">Volver</a>
+    </div>
+  </div>
+</div> -->
+
+{% endblock %};
+
+{% block customJS %}
+{% endblock %}

@@ -1,0 +1,485 @@
+{% extends "includes/base.html" %};
+{% load crispy_forms_tags %}
+{% load static %};
+
+{% block head %}{% endblock %}
+
+{% block title %}Pre-admisiones formulario{% endblock %};
+
+{% block titulo-pagina %} Pre-admisiones {% endblock %};
+
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right">
+    <li class="breadcrumb-item"><a href="{% url 'SL_derivaciones_listar'%}"
+            title="Ver listado de Pre-admisiones">Pre-admisiones</a></li>
+    <li class="breadcrumb-item "><a href="{% url 'legajos_ver' legajo.fk_legajo.id %}"
+            title="Ver legajo">{{legajo.fk_legajo}}</a></li>
+            {%if request.resolver_match.url_name == "SL_preadmisiones_editar" %}
+            <li class="breadcrumb-item active">Editar</li>
+            {% else %}
+            <li class="breadcrumb-item active">Agregar</li>
+            {% endif %}
+</ol>
+{% endblock %};
+
+{% block menu-adicional %}
+{% endblock %};
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card card-primary card-outline">
+            <div class="bs-stepper">
+                <div class="bs-stepper-header" role="tablist">
+                    <div class="step" data-target="#expediente">
+                        <button type="button" class="step-trigger" role="tab" aria-controls="expediente"
+                            id="expediente-trigger">
+                            <span class="bs-stepper-circle">1</span>
+                            <span class="bs-stepper-label">Expediente</span>
+                        </button>
+                    </div>
+                    <div class="line"></div>
+                    <div class="step" data-target="#vulneracion">
+                        <button type="button" class="step-trigger" role="tab" aria-controls="vulneracion"
+                            id="vulneracion-trigger">
+                            <span class="bs-stepper-circle">2</span>
+                            <span class="bs-stepper-label">Informacion de vulneración</span>
+                        </button>
+                    </div>
+                    <div class="line"></div>
+                    <div class="step" data-target="#riesgo">
+                        <button type="button" class="step-trigger" role="tab" aria-controls="riesgo"
+                            id="riesgo-trigger">
+                            <span class="bs-stepper-circle">3</span>
+                            <span class="bs-stepper-label">Riesgo y alertas</span>
+                        </button>
+                    </div>
+                    <div class="line"></div>
+                    <div class="step" data-target="#info-referentes">
+                        <button type="button" class="step-trigger" role="tab" aria-controls="info-referentes"
+                            id="info-referentes-trigger">
+                            <span class="bs-stepper-circle">4</span>
+                            <span class="bs-stepper-label">Referentes</span>
+                        </button>
+                    </div>
+                    <div class="line"></div>
+                    <div class="step" data-target="#info-documentacion">
+                        <button type="button" class="step-trigger" role="tab" aria-controls="info-documentacion"
+                            id="info-documentacion-trigger">
+                            <span class="bs-stepper-circle">5</span>
+                            <span class="bs-stepper-label">Documentación</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body py-0 px-2 mt-5">
+                    <form novalidate method="POST" enctype="multipart/form-data">
+                        <!-- Security token -->
+                        {% csrf_token %}
+                        <input type="hidden" id="id_fk_derivacion" name="fk_derivacion" value={{pk}}>
+                        <input type="hidden" id="id_fk_legajo" name="fk_legajo" value={{legajo.fk_legajo.id}}>
+                        {%if request.resolver_match.url_name == "SL_preadmisiones_editar" %}
+                        <input type="hidden" id="id_modificado_por" name="modificado_por" value={{ user.id }}>
+                        {% else %}
+                        <input type="hidden" id="id_creado_por" name="creado_por" value={{ user.id }}>
+                        {% endif %}
+                    <div class="bs-stepper-content">
+
+                        <div id="expediente" class="content" role="tabpanel"
+                            aria-labelledby="expediente-trigger">
+                            <div class="col-12 mt-3">
+                                <div class="card ">
+                                    <div class="card-header">
+                                        <div class="card-title font-weight-bold">
+                                            Expedientes
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-sm-12">
+                                                <div class="row pl-3">
+                                                    <div class="col-sm-3 form-group">
+                                                        {{form.expediente_nro| as_crispy_field}}
+                                                    </div>
+                                                    <div class="col-sm-3 form-group">
+                                                        {{form.tipo_organismo| as_crispy_field}}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-12">
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <a href="{% url 'SL_derivaciones_listar' %}"
+                                class="btn btn-secondary float-left mb-3 mt-5">Cancelar</a>
+                                <a class="btn btn-primary float-right mb-3 mt-5 " onclick="stepper.next()">Continuar</a>
+                        </div>
+
+                        <div id="vulneracion" class="content" role="tabpanel"
+                        aria-labelledby="vulneracion-trigger">
+                        <div class="col-12 mt-3">
+                            <div class="card ">
+                                <div class="card-header">
+                                    <div class="card-title font-weight-bold">
+                                        Información de vulneración
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-sm-12">
+                                            <div class="row pl-3">
+                                                <div class="col-sm-3 form-group">
+                                                    {{form.vulneracion| as_crispy_field}}
+                                                </div>
+                                            </div>
+                                            <div class="row pl-3">
+                                                <div class="col-sm-6 form-group">
+                                                    {{form.obs_vulneracion| as_crispy_field}}
+                                                </div>
+                                            </div>
+                                            <div class="row pl-3">
+                                                <div class="col-sm-6 form-group">
+                                                    {{form.dinamica_familiar| as_crispy_field}}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <a href="{% url 'SL_derivaciones_listar' %}"
+                            class="btn btn-secondary float-left mb-3 mt-5">Cancelar</a>
+                            <a class="btn btn-primary float-right mb-3 mt-5 " onclick="stepper.next()">Continuar</a>
+                    </div>
+
+                    <div id="riesgo" class="content" role="tabpanel"
+                    aria-labelledby="riesgo-trigger">
+                    <div class="col-12 mt-3">
+                        <div class="card ">
+                            <div class="card-header">
+                                <div class="card-title font-weight-bold">
+                                    Indicadores de riesgo y alertas
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h3 class="card-title font-weight-bold mr-3 pt-1"> Alarmas</h3>
+                                                {% if count_alta %}
+                                                <span title="{{ count_alta }} alertas" class="badge badge-alertas p-2">
+                                                    {{count_alta}}
+                                                </span>
+                                                {%endif%}
+                                                <div class="card-tools">
+                                                    {% if count_alta %}
+                                                    <a href="{% url 'legajoalertas_listar' legajo.fk_legajo.id %}" class="ml-3 mr-2">Ver detalles </a>
+                                                    {%else%}
+                                                    <a href="{% url 'legajoalertas_crear' legajo.fk_legajo.id %}" class="ml-3 mr-2">Agregar Alerta </a>
+                                                    {%endif%}
+                                                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                                        <i class="fas fa-minus"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <!-- ALERTAS POR CATEGORIAS
+                                            <div class="card-body bg-light">
+                                                <div class="row">
+                                                    {% for a in nombres_categorias %}
+                                                    <div class="col-md-3 col-sm-6 col-12">
+                                                        <div class="callout callout-danger">
+                                                            <h6 class="font-weight-bold"><i class="fas fa-exclamation-triangle px-1"></i> {{a}}
+                                                            </h6>
+                                                        </div>
+                                                    </div>
+                                                    {% empty %}
+                                                    <div class="col-12 text-center">
+                                                        <h6 class="text-center text-muted py-3">Sin alertas</h6>
+                                                    </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>-->
+                                            <div class="card-body bg-light">
+                                                <div class="row">
+                                                    {% for a in alertas_alta|slice:":4" %}
+                                                    <div class="col-md-3 col-sm-6 col-12">
+                                                        <div class="callout callout-danger h-100 pb-0">
+                                                            <h6 class="font-weight-bold"><i class="fas fa-exclamation-triangle px-1"></i> {{a.fk_alerta}}
+                                                            </h6>
+                                                        </div>
+                                                    </div>
+                                                    {% empty %}
+                                                    <div class="col-12 text-center">
+                                                        <h6 class="text-center text-muted py-3">Sin alarmas</h6>
+                                                    </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h3 class="card-title font-weight-bold mr-3 pt-1"> Indicadores de riesgo</h3>
+                                                {% if count_media or count_baja %}
+                                                <span title="{{ count_media }} alertas" class="badge badge-Importante p-2">
+                                                    {{count_media}}
+                                                </span>
+                                                <span title="{{ count_baja }} alertas" class="badge badge-Precaución p-2">
+                                                    {{count_baja}}
+                                                </span>
+                                                {%endif%}
+                                                <div class="card-tools">
+                                                    {% if count_media or count_baja %}
+                                                    <a href="{% url 'legajoalertas_listar' legajo.fk_legajo.id %}" class="ml-3 mr-2">Ver detalles </a>
+                                                    {%else%}
+                                                    <a href="{% url 'legajoalertas_crear' legajo.fk_legajo.id %}" class="ml-3 mr-2">Agregar indicador de riesgo </a>
+                                                    {%endif%}
+                                                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                                        <i class="fas fa-minus"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="card-body bg-light">
+                                                <div class="row">
+                                                    {% if count_media or count_baja %}
+                                                    {% for a in alertas_media|slice:":4" %}
+                                                    <div class="col-md-3 col-sm-6 col-12 mb-3">
+                                                        <div class="callout callout-{{a.fk_alerta.gravedad}} h-100 pb-0">
+                                                            <h6 class="font-weight-bold"><i class="fas fa-exclamation-triangle px-1"></i> {{a.fk_alerta}}
+                                                            </h6>
+                                                        </div>
+                                                    </div>
+                                                    {% endfor %}
+                                                    {% for a in alertas_baja|slice:":4" %}
+                                                    <div class="col-md-3 col-sm-6 col-12 mb-3">
+                                                        <div class="callout callout-{{a.fk_alerta.gravedad}} h-100 pb-0">
+                                                            <h6 class="font-weight-bold"><i class="fas fa-exclamation-triangle  px-1"></i> {{a.fk_alerta}}
+                                                            </h6>
+                                                        </div>
+                                                    </div>
+                                                    {% endfor %}
+                                                    {% else %}
+                                                    <div class="col-12 text-center">
+                                                        <h6 class="text-center text-muted py-3">Sin indicadores de riesgo</h6>
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="{% url 'SL_derivaciones_listar' %}"
+                        class="btn btn-secondary float-left mb-3 mt-5">Cancelar</a>
+                        <a class="btn btn-primary float-right mb-3 mt-5 " onclick="stepper.next()">Continuar</a>
+                </div>
+
+                <div id="info-referentes" class="content" role="tabpanel"
+                aria-labelledby="info-referentes-trigger">
+                <div class="col-12 mt-3">
+                    <div class="card ">
+                        <div class="card-header">
+                            <div class="card-title font-weight-bold">
+                                Referentes
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-sm-12">
+
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <a href="{% url 'SL_derivaciones_listar' %}"
+                    class="btn btn-secondary float-left mb-3 mt-5">Cancelar</a>
+                    <a class="btn btn-primary float-right mb-3 mt-5 " onclick="stepper.next()">Continuar</a>
+            </div>
+
+
+
+                    <div id="info-documentacion" class="content" role="tabpanel" aria-labelledby="info-documentacion-trigger">
+                        <div class="col-12 mt-3">
+                            <div class="card ">
+                                <div class="card-header">
+                                    <div class="card-title font-weight-bold">
+                                        Documentación
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-sm-12 ">
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <a class="btn btn-secondary float-left mb-3 mt-5 " onclick="stepper.previous()">Volver</a>
+    <button type="submit" class="btn btn-primary float-right mb-3 mt-5">Confirmar</button>
+
+                </div>
+                </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock content %}
+
+
+{% block customJS %}
+<script>
+    // BS-Stepper Init
+    document.addEventListener('DOMContentLoaded', function () {
+        window.stepper = new Stepper(document.querySelector('.bs-stepper'))
+    });
+    //Date picker
+    $('#reservationdate').datetimepicker({
+        format: 'L'
+    });
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+    // Asocia un evento change al SELECT
+    $('#id_fk_legajo_1').change(function() {
+        // Obtiene el valor seleccionado
+        var seleccion = $(this).val();
+        var tipo_doc = document.getElementById("tipo_doc");
+        var documento = document.getElementById("documento");
+        var vinculo = document.getElementById("vinculo1");
+
+        // Lógica para determinar el contenido del div basado en la selección
+        {% for f in familia %}
+        if (seleccion === '{{f.fk_legajo_1.id}}') {
+            tipo_doc.value = '{{f.fk_legajo_1.tipo_doc}}';
+            documento.value = '{{f.fk_legajo_1.documento}}';
+            vinculo.value = '{{f.vinculo_inverso}}';
+        }
+        {% endfor %}
+        {% for f in familia_inversa %}
+        if (seleccion === '{{f.fk_legajo_2.id}}') {
+            tipo_doc.value = '{{f.fk_legajo_2.tipo_doc}}';
+            documento.value = '{{f.fk_legajo_2.documento}}';
+            vinculo.value = '{{f.vinculo}}';
+        }
+        {% endfor %}
+    });
+
+    // Asocia un evento change al SELECT
+    $('#id_fk_legajo_2').change(function() {
+        // Obtiene el valor seleccionado
+        var seleccion = $(this).val();
+        var tipo_doc = document.getElementById("tipo_doc2");
+        var documento = document.getElementById("documento2");
+        var vinculo = document.getElementById("vinculo2");
+
+        // Lógica para determinar el contenido del div basado en la selección
+        {% for f in familia %}
+        if (seleccion === '{{f.fk_legajo_1.id}}') {
+            tipo_doc.value = '{{f.fk_legajo_1.tipo_doc}}';
+            documento.value = '{{f.fk_legajo_1.documento}}';
+            vinculo.value = '{{f.vinculo_inverso}}';
+        }
+        {% endfor %}
+        {% for f in familia_inversa %}
+        if (seleccion === '{{f.fk_legajo_2.id}}') {
+            tipo_doc.value = '{{f.fk_legajo_2.tipo_doc}}';
+            documento.value = '{{f.fk_legajo_2.documento}}';
+            vinculo.value = '{{f.vinculo}}';
+        }
+        {% endfor %}
+    });
+
+    // Asocia un evento change al SELECT
+    $('#id_fk_legajo_3').change(function() {
+        // Obtiene el valor seleccionado
+        var seleccion = $(this).val();
+        var tipo_doc = document.getElementById("tipo_doc3");
+        var documento = document.getElementById("documento3");
+        var vinculo = document.getElementById("vinculo3");
+
+        // Lógica para determinar el contenido del div basado en la selección
+        {% for f in familia %}
+        if (seleccion === '{{f.fk_legajo_1.id}}') {
+            tipo_doc.value = '{{f.fk_legajo_1.tipo_doc}}';
+            documento.value = '{{f.fk_legajo_1.documento}}';
+            vinculo.value = '{{f.vinculo_inverso}}';
+        }
+        {% endfor %}
+        {% for f in familia_inversa %}
+        if (seleccion === '{{f.fk_legajo_2.id}}') {
+            tipo_doc.value = '{{f.fk_legajo_2.tipo_doc}}';
+            documento.value = '{{f.fk_legajo_2.documento}}';
+            vinculo.value = '{{f.vinculo}}';
+        }
+        {% endfor %}
+    });
+
+    // Asocia un evento change al SELECT
+    $('#id_fk_legajo_4').change(function() {
+        // Obtiene el valor seleccionado
+        var seleccion = $(this).val();
+        var tipo_doc = document.getElementById("tipo_doc4");
+        var documento = document.getElementById("documento4");
+        var vinculo = document.getElementById("vinculo4");
+
+        // Lógica para determinar el contenido del div basado en la selección
+        {% for f in familia %}
+        if (seleccion === '{{f.fk_legajo_1.id}}') {
+            tipo_doc.value = '{{f.fk_legajo_1.tipo_doc}}';
+            documento.value = '{{f.fk_legajo_1.documento}}';
+            vinculo.value = '{{f.vinculo_inverso}}';
+        }
+        {% endfor %}
+        {% for f in familia_inversa %}
+        if (seleccion === '{{f.fk_legajo_2.id}}') {
+            tipo_doc.value = '{{f.fk_legajo_2.tipo_doc}}';
+            documento.value = '{{f.fk_legajo_2.documento}}';
+            vinculo.value = '{{f.vinculo}}';
+        }
+        {% endfor %}
+    });
+
+    // Asocia un evento change al SELECT
+    $('#id_fk_legajo_5').change(function() {
+        // Obtiene el valor seleccionado
+        var seleccion = $(this).val();
+        var tipo_doc = document.getElementById("tipo_doc5");
+        var documento = document.getElementById("documento5");
+        var vinculo = document.getElementById("vinculo5");
+
+        // Lógica para determinar el contenido del div basado en la selección
+        {% for f in familia %}
+        if (seleccion === '{{f.fk_legajo_1.id}}') {
+            tipo_doc.value = '{{f.fk_legajo_1.tipo_doc}}';
+            documento.value = '{{f.fk_legajo_1.documento}}';
+            vinculo.value = '{{f.vinculo_inverso}}';
+        }
+        {% endfor %}
+        {% for f in familia_inversa %}
+        if (seleccion === '{{f.fk_legajo_2.id}}') {
+            tipo_doc.value = '{{f.fk_legajo_2.tipo_doc}}';
+            documento.value = '{{f.fk_legajo_2.documento}}';
+            vinculo.value = '{{f.vinculo}}';
+        }
+        {% endfor %}
+    });
+});
+</script>
+{% endblock %}
