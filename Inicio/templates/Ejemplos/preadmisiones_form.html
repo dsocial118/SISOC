@@ -1,0 +1,1188 @@
+{% extends "includes/base.html" %};
+{% load crispy_forms_tags %}
+{% load static %};
+
+{% block head %}{% endblock %}
+
+{% block title %}Pre-admisiones formulario{% endblock %};
+
+{% block titulo-pagina %} Pre-admisiones {% endblock %};
+
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right">
+    <li class="breadcrumb-item"><a href="{% url 'preadmisiones_list'%}"
+            title="Ver listado de Pre-admisiones">Pre-admisiones</a></li>
+    <li class="breadcrumb-item "><a href="" title="Ver legajo">Maradona, Diego Fernando</a></li>
+    <li class="breadcrumb-item active">
+        [Agregar/Editar]
+    </li>
+</ol>
+{% endblock %};
+
+{% block menu-adicional %}
+{% endblock %};
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card card-primary card-outline">
+            <div class="bs-stepper">
+                <div class="bs-stepper-header" role="tablist">
+                    <div class="step" data-target="#cuidador-principal">
+                        <button type="button" class="step-trigger" role="tab" aria-controls="cuidador-principal"
+                            id="cuidador-principal-trigger">
+                            <span class="bs-stepper-circle">1</span>
+                            <span class="bs-stepper-label">Madre o cuidador principal</span>
+                        </button>
+                    </div>
+                    <div class="line"></div>
+                    <div class="step" data-target="#cuidador-secundario">
+                        <button type="button" class="step-trigger" role="tab" aria-controls="cuidador-secundario"
+                            id="cuidador-secundario-trigger">
+                            <span class="bs-stepper-circle">2</span>
+                            <span class="bs-stepper-label">Padre o apoyo en la crianza</span>
+                        </button>
+                    </div>
+                    <div class="line"></div>
+                    <div class="step" data-target="#convivientes">
+                        <button type="button" class="step-trigger" role="tab" aria-controls="convivientes"
+                            id="convivientes-trigger">
+                            <span class="bs-stepper-circle">3</span>
+                            <span class="bs-stepper-label">Otros convivientes</span>
+                        </button>
+                    </div>
+                    <div class="line"></div>
+                    <div class="step" data-target="#info-centro">
+                        <button type="button" class="step-trigger" role="tab" aria-controls="info-centro"
+                            id="info-centro-trigger">
+                            <span class="bs-stepper-circle">4</span>
+                            <span class="bs-stepper-label">Información de la postulación</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body py-0 px-2 mt-5">
+                    <div class="bs-stepper-content">
+
+                        <div id="cuidador-principal" class="content" role="tabpanel"
+                            aria-labelledby="cuidador-principal-trigger">
+                            <div class="col-12 mt-3">
+                                <div class="card ">
+                                    <div class="card-header">
+                                        <div class="card-title font-weight-bold">
+                                            Datos de la Madre o cuidador principal
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-sm-12 ">
+                                                <div class="row my-3 pl-2">
+                                                    1. DATOS PERSONALES
+                                                </div>
+                                                <div class="row pl-3">
+                                                    <div class="col-sm-3 form-group">
+                                                        <label>Madre o cuidador
+                                                            principal</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>Diego Armando Maradona</option>
+                                                            <option>Verónica Ojeda</option>
+                                                            <option>Jana Maradona</option>
+                                                            <option>Giannina Maradona</option>
+                                                            <option>Dalma Maradona</option>
+                                                            <option>Diego Maradona Jr.</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-3 form-group">
+                                                        <label>Vínculo con el niño, niña o bebé</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>Madre</option>
+                                                            <option>Padre</option>
+                                                            <option>Abuelo/a</option>
+                                                            <option>Tío/a</option>
+                                                            <option>Hermano/a</option>
+                                                            <option>Otro</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-3 form-group">
+                                                        <label>Número documento</label>
+                                                        <input type="number" class="form-control" />
+                                                    </div>
+                                                    <div class="col-sm-3 form-group">
+                                                        <label>Tipo</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>DNI</option>
+                                                            <option>Doc. Extranjero</option>
+                                                            <option>Pasaporte</option>
+                                                            <option>Sin documento</option>
+                                                        </select>
+                                                    </div>
+
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-12">
+                                                <div class="row my-3 pl-2">
+                                                    2. FAMILIA
+                                                </div>
+                                                <div class="row pl-3">
+                                                    <div class="col-sm-3 form-group">
+                                                        <label>Cantidad de menores a cargo </label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>0</option>
+                                                            <option>1</option>
+                                                            <option>2</option>
+                                                            <option>3</option>
+                                                            <option>4</option>
+                                                            <option>5</option>
+                                                            <option>Más de 5</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                            <div class="col-sm-12">
+                                                <div class="row my-3 pl-2">
+                                                    3. SALUD
+                                                </div>
+                                                <div class="row pl-3">
+                                                    <div class="col-sm-3 form-group">
+                                                        <label>¿Realiza controles ginecológicos?</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>SI</option>
+                                                            <option>NO</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-3 form-group">
+                                                        <label>Cantidad total de hijos</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>0</option>
+                                                            <option>1</option>
+                                                            <option>2</option>
+                                                            <option>3</option>
+                                                            <option>4</option>
+                                                            <option>5</option>
+                                                            <option>Más de 5</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-3 form-group">
+                                                        <label>Cantidad total de embarazos</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>0</option>
+                                                            <option>1</option>
+                                                            <option>2</option>
+                                                            <option>3</option>
+                                                            <option>4</option>
+                                                            <option>5</option>
+                                                            <option>Más de 5</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-3 form-group">
+                                                        <label>Cantidad de abortos espontáneos</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>0</option>
+                                                            <option>1</option>
+                                                            <option>2</option>
+                                                            <option>3</option>
+                                                            <option>4</option>
+                                                            <option>5</option>
+                                                            <option>Más de 5</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-3 form-group">
+                                                        <label>Cantidad de abortos provocados</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>0</option>
+                                                            <option>1</option>
+                                                            <option>2</option>
+                                                            <option>3</option>
+                                                            <option>4</option>
+                                                            <option>5</option>
+                                                            <option>Más de 5</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-12  form-group">
+                                                        <div class="row my-3 font-weight-bold pl-2">¿Tiene
+                                                            alguno
+                                                            de estos
+                                                            Antecedentes? <span
+                                                                class="text-muted font-weight-normal pl-2 font-italic">(Marcar
+                                                                todos los que correspondan)</span></div>
+                                                        <div class="row pl-2">
+                                                            <div class="icheck-primary col-sm-4">
+                                                                <input type="checkbox" id="controlado" checked>
+                                                                <label for="controlado">
+                                                                    Embarazo NO controlado
+                                                                </label>
+                                                            </div>
+                                                            <div class="icheck-primary col-sm-4">
+                                                                <input type="checkbox" id="adolescente" checked>
+                                                                <label for="adolescente">
+                                                                    Embarazo adolescente
+                                                                </label>
+                                                            </div>
+                                                            <div class="icheck-primary col-sm-4">
+                                                                <input type="checkbox" id="riesgo" checked>
+                                                                <label for="riesgo">
+                                                                    Embarazo de riesgo
+                                                                </label>
+                                                            </div>
+                                                            <div class="icheck-primary col-sm-4">
+                                                                <input type="checkbox" id="cmultiples" checked>
+                                                                <label for="cmultiples">
+                                                                    Cesáreas múltiples
+                                                                </label>
+                                                            </div>
+                                                            <div class="icheck-primary col-sm-4">
+                                                                <input type="checkbox" id="pmultiples" checked>
+                                                                <label for="pmultiples">
+                                                                    Partos múltiples
+                                                                </label>
+                                                            </div>
+                                                            <div class="icheck-primary col-sm-4">
+                                                                <input type="checkbox" id="prematuros" checked>
+                                                                <label for="prematuros">
+                                                                    Partos prematuros
+                                                                </label>
+                                                            </div>
+                                                            <div class="icheck-primary col-sm-4">
+                                                                <input type="checkbox" id="intervalo" checked>
+                                                                <label for="intervalo">
+                                                                    Partos con menos de 18 meses de intervalo
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-sm-3 form-group">
+                                                        <label>¿Está embarazada actualmente?</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>SI</option>
+                                                            <option>NO</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-3 form-group">
+                                                        <label>¿Tiene los controles?</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>SI</option>
+                                                            <option>NO</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-6 form-group">
+                                                        <label>Embarazo actual</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>De riesgo (Diabetes, Hipertension, Sífilis,
+                                                                etc.)
+                                                            </option>
+                                                            <option>Normal</option>
+                                                            <option>Adolescente</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-12">
+                                                <div class="row my-3 pl-2">
+                                                    4. EDUCACIÓN
+                                                </div>
+                                                <div class="row pl-3">
+                                                    <div class="col-sm-6 form-group">
+                                                        <label>Máximo nivel alcanzado</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>Primaria</option>
+                                                            <option>Secundaria</option>
+                                                            <option>Terciario</option>
+                                                            <option>Universitario</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-6 form-group">
+                                                        <label>Estado</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>Completo</option>
+                                                            <option>Incompleto</option>
+                                                            <option>En curso</option>
+                                                            <option>No aplica</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-12 form-group ">
+                                                        <div class="row my-3 font-weight-bold pl-2">Situación
+                                                            actual
+                                                            <span
+                                                                class="text-muted font-weight-normal pl-2 font-italic">(Marcar
+                                                                todos los que correspondan)</span>
+                                                        </div>
+                                                        <div class="row pl-2">
+                                                            <div class="icheck-primary col-sm-6">
+                                                                <input type="checkbox" id="mleer" checked>
+                                                                <label for="mleer">
+                                                                    Sabe leer
+                                                                </label>
+                                                            </div>
+                                                            <div class="icheck-primary col-sm-6">
+                                                                <input type="checkbox" id="mescribir" checked>
+                                                                <label for="mescribir">
+                                                                    Sabe escribir
+                                                                </label>
+                                                            </div>
+                                                            <div class="icheck-primary col-sm-6">
+                                                                <input type="checkbox" id="mretomar" checked>
+                                                                <label for="mretomar">
+                                                                    Quiere
+                                                                    retomar
+                                                                    estudios
+                                                                </label>
+                                                            </div>
+                                                            <div class="icheck-primary col-sm-6">
+                                                                <input type="checkbox" id="moficio" checked>
+                                                                <label for="moficio">
+                                                                    Quiere
+                                                                    aprender
+                                                                    un oficio
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-12 mt-2">
+                                                <div class="row my-3 pl-2">
+                                                    5. ECONOMÍA
+                                                </div>
+                                                <div class="row pl-3">
+                                                    <div class="col-12 form-group">
+                                                        <label>Planes sociales que recibe</label>
+                                                        <select class="select2" multiple="multiple"
+                                                            style="width: 100%;">
+                                                            <option>AUH (Asignacion Universal por Hijo)</option>
+                                                            <option>Asignación Universal por Embarazo</option>
+                                                            <option>Tarjeta Alimentar</option>
+                                                            <option>Potenciar Trabajo</option>
+                                                            <option>Plan Más Vida</option>
+                                                            <option>Plan 1000 Días (ANSES)</option>
+                                                            <option>Progresar</option>
+                                                            <option>Cooperativas</option>
+                                                            <option>Pensión por discapacidad</option>
+                                                            <option>Pensión madre de 7 hijos</option>
+                                                            <option>Pensión por viudez</option>
+                                                            <option>SI</option>
+                                                            <option>NO</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-12 mt-2">
+                                                <div class="row my-3 pl-2">
+                                                    4. TRABAJO
+                                                </div>
+                                                <div class="row pl-3">
+                                                    <div class="col-sm-4 form-group">
+                                                        <label>¿Tiene trabajo actualmente?</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>SI</option>
+                                                            <option>NO</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-4 form-group">
+                                                        <label>Ocupación</label>
+                                                        <input type="text" class="form-control" />
+                                                    </div>
+                                                    <div class="col-sm-4 form-group">
+                                                        <label>Modo de contratación</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>Relación de dependencia</option>
+                                                            <option>Monotributista / Contratado</option>
+                                                            <option>Informal con cobro mensual</option>
+                                                            <option>Jornal</option>
+                                                            <option>Changarín</option>
+                                                            <option>Otro</option>
+                                                            <option>SI</option>
+                                                            <option>NO</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <a href="{% url 'preadmisiones_list' %}"
+                                class="btn btn-secondary float-left mb-3 mt-5">Cancelar</a>
+                            <button class="btn btn-primary float-right mb-3 mt-5"
+                                onclick="stepper.next()">Continuar</button>
+                        </div>
+
+                        <div id="cuidador-secundario" class="content" role="tabpanel"
+                            aria-labelledby="cuidador-secundario-trigger">
+                            <div class="col-12 mt-3">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <div class="card-title font-weight-bold">
+                                            Datos del padre o apoyo en la crianza
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-sm-12">
+                                                <div class="row my-3 pl-2">
+                                                    1. DATOS PERSONALES
+                                                </div>
+                                                <div class="row pl-3">
+                                                    <div class="col-sm-3 form-group">
+                                                        <label>Padre o apoyo en la crianza</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>Diego Armando Maradona</option>
+                                                            <option>Verónica Ojeda</option>
+                                                            <option>Jana Maradona</option>
+                                                            <option>Giannina Maradona</option>
+                                                            <option>Dalma Maradona</option>
+                                                            <option>Diego Maradona Jr.</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-3 form-group">
+                                                        <label>Vínculo con el niño, niña o bebé</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>Madre</option>
+                                                            <option>Padre</option>
+                                                            <option>Abuelo/a</option>
+                                                            <option>Tío/a</option>
+                                                            <option>Hermano/a</option>
+                                                            <option>Otro</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-3 form-group">
+                                                        <label>Tipo documento</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>DNI</option>
+                                                            <option>Doc. Extranjero</option>
+                                                            <option>Pasaporte</option>
+                                                            <option>Sin documento</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-3 form-group">
+                                                        <label>Número documento</label>
+                                                        <input type="number" class="form-control" />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-sm-12 mt-2">
+                                                <div class="row my-3 pl-2">
+                                                    2. EDUCACIÓN
+                                                </div>
+                                                <div class="row pl-3">
+                                                    <div class="col-sm-6 form-group">
+                                                        <label>Máximo nivel alcanzado</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>Primaria</option>
+                                                            <option>Secundaria</option>
+                                                            <option>Terciario</option>
+                                                            <option>Universitario</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-6 form-group">
+                                                        <label>Estado</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>Completo</option>
+                                                            <option>Incompleto</option>
+                                                            <option>En curso</option>
+                                                            <option>No aplica</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-12 ">
+                                                        <div class="row my-3 font-weight-bold pl-2">Situación
+                                                            actual
+                                                            <span
+                                                                class="text-muted font-weight-normal pl-3 font-italic">(Marcar
+                                                                todos los que correspondan)</span>
+                                                        </div>
+                                                        <div class="row pl-2">
+                                                            <div class="icheck-primary col-sm-6">
+                                                                <input type="checkbox" checked>
+                                                                <label>
+                                                                    Sabe leer
+                                                                </label>
+                                                            </div>
+                                                            <div class="icheck-primary col-sm-6">
+                                                                <input type="checkbox" checked>
+                                                                <label>
+                                                                    Sabe escribir
+                                                                </label>
+                                                            </div>
+                                                            <div class="icheck-primary col-sm-6">
+                                                                <input type="checkbox" checked>
+                                                                <label>
+                                                                    Quiere
+                                                                    retomar
+                                                                    estudios
+                                                                </label>
+                                                            </div>
+                                                            <div class="icheck-primary col-sm-6">
+                                                                <input type="checkbox" checked>
+                                                                <label>
+                                                                    Quiere
+                                                                    aprender
+                                                                    un oficio
+                                                                </label>
+                                                            </div>
+                                                            <div class="icheck-primary col-sm-6">
+                                                                <input type="checkbox" checked>
+                                                                <label>
+                                                                    Quiere
+                                                                    participar
+                                                                    del
+                                                                    Programa
+                                                                    Pilares
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-12 mt-2">
+                                                <div class="row my-3 pl-2">
+                                                    3. ECONOMÍA
+                                                </div>
+                                                <div class="row pl-3">
+                                                    <div class="col-12 form-group">
+                                                        <label>Planes sociales que recibe</label>
+                                                        <select class="select2" multiple="multiple"
+                                                            style="width: 100%;">
+                                                            <option>AUH (Asignacion Universal por Hijo)</option>
+                                                            <option>Asignación Universal por Embarazo</option>
+                                                            <option>Tarjeta Alimentar</option>
+                                                            <option>Potenciar Trabajo</option>
+                                                            <option>Plan Más Vida</option>
+                                                            <option>Plan 1000 Días (ANSES)</option>
+                                                            <option>Progresar</option>
+                                                            <option>Cooperativas</option>
+                                                            <option>Pensión por discapacidad</option>
+                                                            <option>Pensión madre de 7 hijos</option>
+                                                            <option>Pensión por viudez</option>
+                                                            <option>SI</option>
+                                                            <option>NO</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-12 mt-2">
+                                                <div class="row my-3 pl-2">
+                                                    4. TRABAJO
+                                                </div>
+                                                <div class="row pl-3">
+                                                    <div class="col-sm-4 form-group">
+                                                        <label>¿Tiene trabajo actualmente?</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>SI</option>
+                                                            <option>NO</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-4 form-group">
+                                                        <label>Ocupación</label>
+                                                        <input type="text" class="form-control" />
+                                                    </div>
+                                                    <div class="col-sm-4 form-group">
+                                                        <label>Modo de contratación</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>Relación de dependencia</option>
+                                                            <option>Monotributista / Contratado</option>
+                                                            <option>Informal con cobro mensual</option>
+                                                            <option>Jornal</option>
+                                                            <option>Changarín</option>
+                                                            <option>Otro</option>
+                                                            <option>SI</option>
+                                                            <option>NO</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- ./padre o apoyo a la crianza -->
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="btn btn-secondary float-left mb-3 mt-5"
+                                onclick="stepper.previous()">Volver</button>
+                            <button class="btn btn-primary float-right mb-3 mt-5"
+                                onclick="stepper.next()">Continuar</button>
+                        </div>
+
+                        <div id="convivientes" class="content" role="tabpanel" aria-labelledby="convivientes-trigger">
+                            <div class="col-12 mt-3">
+
+                                <div class="card  collapsed-card">
+                                    <div class="card-header">
+                                        <div class="card-title font-weight-bold">
+                                            Conviviente
+                                        </div>
+                                        <div class="card-tools">
+                                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                                <i class="fas fa-minus"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-sm-12">
+                                                <div class="row my-3 pl-2">
+                                                    1. DATOS PERSONALES
+                                                </div>
+                                                <div class="row pl-3">
+                                                    <div class="col-sm-3 form-group">
+                                                        <label>Conviviente</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>Diego Armando Maradona</option>
+                                                            <option>Verónica Ojeda</option>
+                                                            <option>Jana Maradona</option>
+                                                            <option>Giannina Maradona</option>
+                                                            <option>Dalma Maradona</option>
+                                                            <option>Diego Maradona Jr.</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-3 form-group">
+                                                        <label>Vínculo con el niño, niña o bebé</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>Madre</option>
+                                                            <option>Padre</option>
+                                                            <option>Abuelo/a</option>
+                                                            <option>Tío/a</option>
+                                                            <option>Hermano/a</option>
+                                                            <option>Otro</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-3 form-group">
+                                                        <label>Tipo documento</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>DNI</option>
+                                                            <option>Doc. Extranjero</option>
+                                                            <option>Pasaporte</option>
+                                                            <option>Sin documento</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-3 form-group">
+                                                        <label>Número documento</label>
+                                                        <input type="number" class="form-control" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-12 mt-2">
+                                                <div class="row my-3 pl-2">
+                                                    2. EDUCACIÓN
+                                                </div>
+                                                <div class="row pl-3">
+                                                    <div class="col-sm-6 form-group">
+                                                        <label>Máximo nivel alcanzado</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>Primaria</option>
+                                                            <option>Secundaria</option>
+                                                            <option>Terciario</option>
+                                                            <option>Universitario</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-6 form-group">
+                                                        <label>Estado</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>Completo</option>
+                                                            <option>Incompleto</option>
+                                                            <option>En curso</option>
+                                                            <option>No aplica</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-12 ">
+                                                        <div class="row my-3 font-weight-bold pl-2">Situación
+                                                            actual
+                                                            <span
+                                                                class="text-muted font-weight-normal pl-3 font-italic">(Marcar
+                                                                todos los que correspondan)</span>
+                                                        </div>
+                                                        <div class="row pl-2">
+                                                            <div class="icheck-primary col-sm-6">
+                                                                <input type="checkbox" checked>
+                                                                <label>
+                                                                    Sabe leer
+                                                                </label>
+                                                            </div>
+                                                            <div class="icheck-primary col-sm-6">
+                                                                <input type="checkbox" checked>
+                                                                <label>
+                                                                    Sabe escribir
+                                                                </label>
+                                                            </div>
+                                                            <div class="icheck-primary col-sm-6">
+                                                                <input type="checkbox" checked>
+                                                                <label>
+                                                                    Quiere
+                                                                    retomar
+                                                                    estudios
+                                                                </label>
+                                                            </div>
+                                                            <div class="icheck-primary col-sm-6">
+                                                                <input type="checkbox" checked>
+                                                                <label>
+                                                                    Quiere
+                                                                    aprender
+                                                                    un oficio
+                                                                </label>
+                                                            </div>
+                                                            <div class="icheck-primary col-sm-6">
+                                                                <input type="checkbox" checked>
+                                                                <label>
+                                                                    Quiere
+                                                                    participar
+                                                                    del
+                                                                    Programa
+                                                                    Pilares
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                                <div class="card  collapsed-card mt-4">
+                                    <div class="card-header">
+                                        <div class="card-title font-weight-bold">
+                                            Conviviente
+                                        </div>
+                                        <div class="card-tools">
+                                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                                <i class="fas fa-minus"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-sm-12">
+                                                <div class="row my-3 pl-2">
+                                                    1. DATOS PERSONALES
+                                                </div>
+                                                <div class="row pl-3">
+                                                    <div class="col-sm-3 form-group">
+                                                        <label>Conviviente</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>Diego Armando Maradona</option>
+                                                            <option>Verónica Ojeda</option>
+                                                            <option>Jana Maradona</option>
+                                                            <option>Giannina Maradona</option>
+                                                            <option>Dalma Maradona</option>
+                                                            <option>Diego Maradona Jr.</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-3 form-group">
+                                                        <label>Vínculo con el niño, niña o bebé</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>Madre</option>
+                                                            <option>Padre</option>
+                                                            <option>Abuelo/a</option>
+                                                            <option>Tío/a</option>
+                                                            <option>Hermano/a</option>
+                                                            <option>Otro</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-3 form-group">
+                                                        <label>Tipo documento</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>DNI</option>
+                                                            <option>Doc. Extranjero</option>
+                                                            <option>Pasaporte</option>
+                                                            <option>Sin documento</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-3 form-group">
+                                                        <label>Número documento</label>
+                                                        <input type="number" class="form-control" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-12 mt-2">
+                                                <div class="row my-3 pl-2">
+                                                    2. EDUCACIÓN
+                                                </div>
+                                                <div class="row pl-3">
+                                                    <div class="col-sm-6 form-group">
+                                                        <label>Máximo nivel alcanzado</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>Primaria</option>
+                                                            <option>Secundaria</option>
+                                                            <option>Terciario</option>
+                                                            <option>Universitario</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-6 form-group">
+                                                        <label>Estado</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>Completo</option>
+                                                            <option>Incompleto</option>
+                                                            <option>En curso</option>
+                                                            <option>No aplica</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-12 ">
+                                                        <div class="row my-3 font-weight-bold pl-2">Situación
+                                                            actual
+                                                            <span
+                                                                class="text-muted font-weight-normal pl-3 font-italic">(Marcar
+                                                                todos los que correspondan)</span>
+                                                        </div>
+                                                        <div class="row pl-2">
+                                                            <div class="icheck-primary col-sm-6">
+                                                                <input type="checkbox" checked>
+                                                                <label>
+                                                                    Sabe leer
+                                                                </label>
+                                                            </div>
+                                                            <div class="icheck-primary col-sm-6">
+                                                                <input type="checkbox" checked>
+                                                                <label>
+                                                                    Sabe escribir
+                                                                </label>
+                                                            </div>
+                                                            <div class="icheck-primary col-sm-6">
+                                                                <input type="checkbox" checked>
+                                                                <label>
+                                                                    Quiere
+                                                                    retomar
+                                                                    estudios
+                                                                </label>
+                                                            </div>
+                                                            <div class="icheck-primary col-sm-6">
+                                                                <input type="checkbox" checked>
+                                                                <label>
+                                                                    Quiere
+                                                                    aprender
+                                                                    un oficio
+                                                                </label>
+                                                            </div>
+                                                            <div class="icheck-primary col-sm-6">
+                                                                <input type="checkbox" checked>
+                                                                <label>
+                                                                    Quiere
+                                                                    participar
+                                                                    del
+                                                                    Programa
+                                                                    Pilares
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                                <div class="card  collapsed-card mt-4">
+                                    <div class="card-header">
+                                        <div class="card-title font-weight-bold">
+                                            Conviviente
+                                        </div>
+                                        <div class="card-tools">
+                                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                                <i class="fas fa-minus"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-sm-12">
+                                                <div class="row my-3 pl-2">
+                                                    1. DATOS PERSONALES
+                                                </div>
+                                                <div class="row pl-3">
+                                                    <div class="col-sm-3 form-group">
+                                                        <label>Conviviente</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>Diego Armando Maradona</option>
+                                                            <option>Verónica Ojeda</option>
+                                                            <option>Jana Maradona</option>
+                                                            <option>Giannina Maradona</option>
+                                                            <option>Dalma Maradona</option>
+                                                            <option>Diego Maradona Jr.</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-3 form-group">
+                                                        <label>Vínculo con el niño, niña o bebé</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>Madre</option>
+                                                            <option>Padre</option>
+                                                            <option>Abuelo/a</option>
+                                                            <option>Tío/a</option>
+                                                            <option>Hermano/a</option>
+                                                            <option>Otro</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-3 form-group">
+                                                        <label>Tipo documento</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>DNI</option>
+                                                            <option>Doc. Extranjero</option>
+                                                            <option>Pasaporte</option>
+                                                            <option>Sin documento</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-3 form-group">
+                                                        <label>Número documento</label>
+                                                        <input type="number" class="form-control" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-12 mt-2">
+                                                <div class="row my-3 pl-2">
+                                                    2. EDUCACIÓN
+                                                </div>
+                                                <div class="row pl-3">
+                                                    <div class="col-sm-6 form-group">
+                                                        <label>Máximo nivel alcanzado</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>Primaria</option>
+                                                            <option>Secundaria</option>
+                                                            <option>Terciario</option>
+                                                            <option>Universitario</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-6 form-group">
+                                                        <label>Estado</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>Completo</option>
+                                                            <option>Incompleto</option>
+                                                            <option>En curso</option>
+                                                            <option>No aplica</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-12 ">
+                                                        <div class="row my-3 font-weight-bold pl-2">Situación
+                                                            actual
+                                                            <span
+                                                                class="text-muted font-weight-normal pl-3 font-italic">(Marcar
+                                                                todos los que correspondan)</span>
+                                                        </div>
+                                                        <div class="row pl-2">
+                                                            <div class="icheck-primary col-sm-6">
+                                                                <input type="checkbox" checked>
+                                                                <label>
+                                                                    Sabe leer
+                                                                </label>
+                                                            </div>
+                                                            <div class="icheck-primary col-sm-6">
+                                                                <input type="checkbox" checked>
+                                                                <label>
+                                                                    Sabe escribir
+                                                                </label>
+                                                            </div>
+                                                            <div class="icheck-primary col-sm-6">
+                                                                <input type="checkbox" checked>
+                                                                <label>
+                                                                    Quiere
+                                                                    retomar
+                                                                    estudios
+                                                                </label>
+                                                            </div>
+                                                            <div class="icheck-primary col-sm-6">
+                                                                <input type="checkbox" checked>
+                                                                <label>
+                                                                    Quiere
+                                                                    aprender
+                                                                    un oficio
+                                                                </label>
+                                                            </div>
+                                                            <div class="icheck-primary col-sm-6">
+                                                                <input type="checkbox" checked>
+                                                                <label>
+                                                                    Quiere
+                                                                    participar
+                                                                    del
+                                                                    Programa
+                                                                    Pilares
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                            </div>
+                            <button class="btn btn-secondary float-left mb-3 mt-5"
+                                onclick="stepper.previous()">Volver</button>
+                            <button class="btn btn-primary float-right mb-3 mt-5"
+                                onclick="stepper.next()">Continuar</button>
+                        </div>
+
+                        <div id="alertas" class="content" role="tabpanel" aria-labelledby="alertas-trigger">
+                            <div class="col-12 mt-5">
+                                <div class="card">
+
+                                    <div class="card-header">
+                                        <h3 class="card-title font-weight-bold pt-1 mr-3">
+                                            Alertas
+                                        </h3>
+                                    </div>
+                                    <div class="card-body  bg-light">
+                                        - En construcción (idéntico a como se defina en legajo) -
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="btn btn-secondary float-left mb-3 mt-5"
+                                onclick="stepper.previous()">Volver</button>
+                            <button class="btn btn-primary float-right mb-3 mt-5"
+                                onclick="stepper.next()">Continuar</button>
+                        </div>
+
+                        <div id="info-centro" class="content" role="tabpanel" aria-labelledby="info-centro-trigger">
+                            <div class="form-row">
+                                <div class="col-sm-3 form-group">
+                                    <label>Centro al que postula</label>
+                                    <select class="form-control custom-select">
+                                        <option selected disabled></option>
+                                        <option>CDIF Huellitas de Mitre</option>
+                                        <option>CDIF Abriendo Alas</option>
+                                        <option>CDIF Semillitas del Polo</option>
+                                        <option>CDIF Rayito de Luz</option>
+                                        <option>CDIF Creciendo Juntos</option>
+                                        <option>CDIF Casa del Niño</option>
+                                        <option>CDIF La Merced</option>
+                                        <option>CDIF Santa Brígida</option>
+                                        <option>CDIF Madre Esperanza</option>
+                                    </select>
+                                </div>
+                                <div class="col-sm-3 form-group">
+                                    <label>Sala a la que postula</label>
+                                    <select class="form-control custom-select">
+                                        <option selected disabled></option>
+                                        <option>Bebés</option>
+                                        <option>2</option>
+                                        <option>3</option>
+                                    </select>
+                                </div>
+                                <div class="col-sm-3 form-group">
+                                    <label>Turno al que postula</label>
+                                    <select class="form-control custom-select">
+                                        <option selected disabled></option>
+                                        <option>Mañana</option>
+                                        <option>Tarde</option>
+                                    </select>
+                                </div>
+                                <!-- <div class="col-sm-3 form-group">
+                                    <label>Centro actual</label>
+                                    <select class="form-control custom-select">
+                                        <option selected disabled></option>
+                                        <option>CDIF Huellitas de Mitre</option>
+                                        <option>CDIF Abriendo Alas</option>
+                                        <option>CDIF Semillitas del Polo</option>
+                                        <option>CDIF Rayito de Luz</option>
+                                        <option>CDIF Creciendo Juntos</option>
+                                        <option>CDIF Casa del Niño</option>
+                                        <option>CDIF La Merced</option>
+                                        <option>CDIF Santa Brígida</option>
+                                        <option>CDIF Madre Esperanza</option>
+                                    </select>
+                                </div>
+                                <div class="col-sm-3 form-group">
+                                    <label>Fecha de ingreso actual</label>
+                                    <div class="input-group date" id="reservationdate" data-target-input="nearest">
+                                        <input type="text" class="form-control datetimepicker-input"
+                                            data-target="#reservationdate" />
+                                        <div class="input-group-append" data-target="#reservationdate"
+                                            data-toggle="datetimepicker">
+                                            <div class="input-group-text"><i class="fa fa-calendar-alt"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-3 form-group">
+                                    <label>Sala actual</label>
+                                    <select class="form-control custom-select">
+                                        <option selected disabled></option>
+                                        <option>Bebés</option>
+                                        <option>2</option>
+                                        <option>3</option>
+                                    </select>
+                                </div>
+                                <div class="col-sm-3 form-group">
+                                    <label>Turno actual</label>
+                                    <select class="form-control custom-select">
+                                        <option selected disabled></option>
+                                        <option>Mañana</option>
+                                        <option>Tarde</option>
+                                    </select>
+                                </div>
+                                <div class="col-sm-3 form-group">
+                                    <label>Educador/a actual</label>
+                                    <select class="form-control custom-select">
+                                        <option selected disabled></option>
+                                        <option>Torres Liliana Yanet</option>
+                                        <option>Ganduglia Lourdes Rocío</option>
+                                        <option>Bastrate Brenda Yamila</option>
+                                        <option>Gonzalez Ana Laura</option>
+                                    </select>
+                                </div> -->
+
+
+                            </div>
+                            <button class="btn btn-secondary float-left mb-3 mt-5"
+                                onclick="stepper.previous()">Volver</button>
+                            <a href="{% url 'preadmisiones_detail'%}"
+                                class="btn btn-primary float-right mb-3 mt-5 ">Confirmar</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}
+
+
+{% block customJS %}
+<script>
+    // BS-Stepper Init
+    document.addEventListener('DOMContentLoaded', function () {
+        window.stepper = new Stepper(document.querySelector('.bs-stepper'))
+    });
+    //Date picker
+    $('#reservationdate').datetimepicker({
+        format: 'L'
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends "includes/base.html" %};
+{% load static %};
+{% load crispy_forms_tags %}
+
+{% block head %}
+
+{% endblock %}
+
+{% block title %}Grupos de usuarios{% endblock %};
+{% block titulo-pagina %}Grupos de usuarios{% endblock %};
+
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right ">
+    <li class="breadcrumb-item">Administración</li>
+    <li class="breadcrumb-item"><a href="{% url 'grupos_listar' %}">Grupos de Usuarios</a></li>
+    <li class="breadcrumb-item active"> {{ object.name}}</li>
+</ol>
+{% endblock %}
+
+{% block content %}
+
+<div class="row">
+    <!-- botones -->
+    <div class="col-12 my-3 mx-2 d-print-none">
+        {%if perms.Usuarios.rol_admin%}
+        <a href="{% url 'grupos_editar' object.id%}" class="btn btn-primary mr-1">Editar</a>
+        {%endif%}
+        <a href="" class="btn btn-secondary mr-1 print">Imprimir</a>
+        {%if perms.Usuarios.rol_admin%}
+        <a href="{% url 'grupos_eliminar' object.id%}" class="btn btn-danger mr-1">Eliminar</a>
+        {%endif%}
+    </div>
+    <!-- ./botones -->
+    <div class="col-12">
+        <div class="card card-outline card-primary h-100">
+            <div class="card-header">
+                <h3 class="card-title">{{ object.name}}</h3>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    {%for p in object.permissions.all %}
+
+                    {%if 'programa' in p.codename %}
+                    <dt class="col-sm-3 font-weight-normal">Modulo</dt>
+                    <dd class="col-sm-9 font-weight-bold">
+                        {{p|cut:'Usuarios | Usuario |'}}
+                        </ul>
+                    </dd>
+                    {%else%}
+                    <dt class="col-sm-3 font-weight-normal">Permiso</dt>
+                    <dd class="col-sm-9 font-weight-bold">
+                        {{p|cut:'Usuarios | Usuario |'}}
+                    </dd>
+                    {%endif%}
+                    {%endfor%}
+                </dl>
+            </div>
+        </div>
+    </div>
+    <!-- /card-info  -->
+
+</div>
+<!-- /card-info  -->
+<div class="row mt-4 d-print-none">
+    <div class="col-12 mx-2">
+        <a href="{% url 'grupos_listar' %}" class="btn btn-secondary">Volver</a>
+    </div>
+</div>
+
+
+{% endblock content %}
+
+{% block customJS %}
+{% endblock %}

@@ -1,0 +1,226 @@
+{% extends "includes/base.html" %};
+{% load static %};
+
+{% block title %}
+Índices
+{%endblock %};
+
+{% block titulo-pagina %}
+Índices
+{% endblock %};
+
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right ">
+  <li class="breadcrumb-item">Índices</li>
+  <li class="breadcrumb-item"><a href="{% url 'legajos_ver' object.fk_derivacion.fk_legajo_id %}" title="Ver legajo">{{object.fk_derivacion}}</a></li>
+  <li class="breadcrumb-item active">
+    Detalle
+  </li>
+</ol>
+{% endblock %};
+
+{% block menu-adicional %}
+{% endblock %};
+
+{% block content %}
+<!-- card-info -->
+<div class="row">
+  <!-- botones -->
+  <div class="col-12 my-3 mx-2 d-print-none">
+    <!-- <a href="{% url 'admisiones_historial'%}" class="btn btn-primary mr-1">Ver admisiones</a> -->
+    <a href="{% url 'CDLE_preadmisiones_ver3' object.id %}" class="btn btn-primary mr-1">Volver pre-admisión</a>
+    <a href="{% url 'CDLE_indiceivi_editar' object.id %}" class="btn btn-secondary mr-1">Editar</a>
+    <a href="" class="btn btn-secondary mr-1 print">Imprimir</a>
+  </div>
+</div>
+<!-- ./botones -->
+
+<div class="row p-0 m-0 " id="seleccion">
+
+  <!-- Datos de indice -->
+  <div class="col-sm-8">
+    <div class="card card-outline card-primary ">
+      <div class="card-header">
+        <h3 class="card-title">Detalle Índice</h3>
+      </div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dd class="col-sm-3 mb-2">Índice</dd>
+          <dt class="col-sm-9 mb-2">Índice de vulnerabilidad infantil (IVI)</dt>
+          <dd class="col-sm-3 mb-2">Tipo</dd>
+          <dt class="col-sm-9 mb-2">{{foto_ivi.tipo}}</dt>
+          <dd class="col-sm-3 mb-2">Fecha</dd>
+          <dt class="col-sm-9 mb-2">{{foto_ivi.creado|date:'d/m/Y'}}</dt>
+          <dd class="col-sm-3 mb-2">Para el programa</dd>
+          <dt class="col-sm-9 mb-2">CDLE</dt>
+          <dd class="col-sm-3 mb-2">Generado por</dd>
+          <dt class="col-sm-9 mb-2">{{foto_ivi.creado_por}}</dt>
+          <dd class="col-sm-3 mb-2">Observaciones</dd>
+          <dt class="col-sm-9 mb-2">{{foto_ivi.observaciones}}</dt>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <!-- Datos legajo -->
+  <div class="col-sm-4 pb-3">
+    <div class="card card-outline card-primary h-100 ">
+      <div class="card-header">
+        <h3 class="card-title">Detalle Legajo</h3>
+      </div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dd class="col-sm-5 mb-2">Nombre</dd>
+          <dt class="col-sm-7 mb-2"><a href="{% url 'legajos_ver' object.fk_derivacion.fk_legajo.id %}" title="Ver legajo">{{object.fk_derivacion}}</a></dt>
+          <dd class="col-sm-5 mb-2">DNI</dd>
+          <dt class="col-sm-7 mb-2">{{object.fk_derivacion.fk_legajo.documento}}</dt>
+          <dd class="col-sm-5 mb-2">Fecha de nacimiento</dd>
+          <dt class="col-sm-7 mb-2">{{object.fk_derivacion.fk_legajo.fecha_nacimiento|date:'d/m/Y'}}</dt>
+          <dd class="col-sm-5 mb-2">Sexo</dd>
+          <dt class="col-sm-7 mb-2">{{object.fk_derivacion.fk_legajo.sexo}}</dt>
+        </dl>
+      </div>
+    </div>
+  </div>
+  <!-- /  -->
+
+  <!-- Detalle puntajes del indice -->
+  <div class="col-sm-4">
+    <div class="info-box mb-2 ">
+      <span class="info-box-icon bg-warning">{{foto_ivi.puntaje}}</span>
+      <div class="info-box-content h5 my-0">
+        <span class="info-box-text">Puntaje</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="info-box mb-2 ">
+      <span class="info-box-icon bg-secondary">{{cantidad}}</span>
+      <div class="info-box-content h5 my-0">
+        <span class="info-box-text">Criterios presentes</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="info-box mb-2 ">
+      <span class="info-box-icon bg-secondary"> {{modificables}}</span>
+      <div class="info-box-content h5 my-0">
+        <span class="info-box-text">Criterios modificables</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="info-box mb-2 ">
+      <span class="info-box-icon bg-secondary"> {{foto_ivi.puntaje_max}}</span>
+      <div class="info-box-content h5 my-0">
+        <span class="info-box-text"> Puntaje máximo posible</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="info-box mb-2 ">
+      <span class="info-box-icon bg-secondary"> {{mod_puntaje.total|default:"0"}}</span>
+      <div class="info-box-content h5 my-0">
+        <span class="info-box-text"> Puntaje modificable total</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="info-box mb-2 ">
+      <span class="info-box-icon bg-secondary"> {{ajustes}}</span>
+      <div class="info-box-content h5 my-0">
+        <span class="info-box-text"> Ajustes</span>
+      </div>
+    </div>
+  </div>
+  <!-- /  -->
+</div>
+<div class="col-12 mt-3 mt-sm-5">
+  <div class="card card-outline card-primary">
+    <div class="card-header">
+      <h3 class="card-title">Criterios presentes</h3>
+    </div>
+    <div class="card-body table-responsive p-0">
+      <table class="table table-head-fixed table-bordered">
+        <thead>
+          <tr>
+            <th>Criterio</th>
+            <th class="text-center px-1" width="8%">Puntaje</th>
+            <th class="text-center px-1" width="8%">Modificable</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <tr>
+            <td colspan="3" class="text-center bg-secondary py-1">Madre o Cuidador principal
+            </td>
+          </tr>
+          {% for c in criterio %}
+          {% if c.fk_criterios_ivi.tipo == 'Madre o Cuidador principal' %}
+          <tr>
+              <td>{{c.fk_criterios_ivi.criterio}}</td>
+              <td class="text-center">{{c.fk_criterios_ivi.puntaje}}</td>
+              <td class="text-center"><span class=" badge {% if c.fk_criterios_ivi.modificable == 'No' %}badge-primary {% else %}badge-info {% endif %}px-2">{{c.fk_criterios_ivi.modificable}}</span></td>
+          </tr>
+
+          {% endif %}
+          {% endfor %}
+          <tr>
+            <td colspan="3" class="text-center bg-secondary py-1">Bebé, niño o niña</td>
+          </tr>
+          {% for c in criterio %}
+          {% if c.fk_criterios_ivi.tipo == 'Bebé, niño o niña' %}
+          <tr>
+              <td>{{c.fk_criterios_ivi.criterio}}</td>
+              <td class="text-center">{{c.fk_criterios_ivi.puntaje}}</td>
+              <td class="text-center"><span class=" badge {% if c.fk_criterios_ivi.modificable == 'No' %}badge-primary {% else %}badge-info {% endif %}px-2">{{c.fk_criterios_ivi.modificable}}</span></td>
+          </tr>
+
+          {% endif %}
+          {% endfor %}
+          <tr>
+            <td colspan="3" class="text-center bg-secondary py-1">Familia
+            </td>
+          </tr>
+          {% for c in criterio %}
+          {% if c.fk_criterios_ivi.tipo == 'Familia' %}
+          <tr>
+              <td>{{c.fk_criterios_ivi.criterio}}</td>
+              <td class="text-center">{{c.fk_criterios_ivi.puntaje}}</td>
+              <td class="text-center"><span class=" badge {% if c.fk_criterios_ivi.modificable == 'No' %}badge-primary {% else %}badge-info {% endif %}px-2">{{c.fk_criterios_ivi.modificable}}</span></td>
+          </tr>
+
+          {% endif %}
+          {% endfor %}
+          <tr>
+            <td colspan="3" class="text-center bg-secondary py-1">Ajustes</td>
+          </tr>
+          {% for c in criterio %}
+          {% if c.fk_criterios_ivi.tipo == 'Ajustes' %}
+          <tr>
+              <td>{{c.fk_criterios_ivi.criterio}}</td>
+              <td class="text-center">{{c.fk_criterios_ivi.puntaje}}</td>
+              <td class="text-center"><span class=" badge {% if c.fk_criterios_ivi.modificable == 'No' %}badge-primary {% else %}badge-info {% endif %}px-2">{{c.fk_criterios_ivi.modificable}}</span></td>
+          </tr>
+
+          {% endif %}
+          {% endfor %}
+
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-4 d-print-none">
+  <div class="col-12 mx-2">
+    <div class="form-group  d-flex justify-content-between">
+      <a href="{% url 'CDLE_preadmisiones_listar' %}" class="btn btn-secondary">Volver</a>
+    </div>
+  </div>
+</div>
+
+{% endblock %};
+
+{% block customJS %}
+{% endblock %}

@@ -1,0 +1,375 @@
+{% extends "includes/base.html" %};
+{% load static %};
+
+{% block title %}
+Vista de detalle
+{%endblock %};
+
+{% block titulo-pagina %}
+Admisiones
+{% endblock %};
+
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right">
+  <li class="breadcrumb-item">Legajos</li>
+  <li class="breadcrumb-item"><a href="#">[legajo nombre]</a></li>
+  <li class="breadcrumb-item active">Derivaciones</li>
+</ol>
+{% endblock %};
+
+{% block menu-adicional %}
+{% endblock %};
+
+{% block content %}
+<!-- card-info -->
+<div class="row">
+  <!-- botones -->
+  <div class="col-12 my-3 mx-2 d-print-none"><!-- clase para que no se imprima este div -->
+    <a href="#" class="btn btn-primary mr-1">Admitir</a>
+  </div>
+</div>
+<!-- ./botones -->
+<div class="m-0 p-0" id="seleccion"><!-- row que se imprime -->
+
+  <!-- Datos de legajo -->
+  <div class="row mb-3">
+    <div class="col-sm-10">
+      <div class="card card-outline card-primary">
+        <div class="card-header">
+          <h3 class="card-title">Diego Armando Maradona</h3>
+        </div>
+        <div class="card-body">
+          <dl class="row mb-0">
+            <dt class="col-sm-3 font-weight-normal">Documento</dt>
+            <dd class="col-sm-9 font-weight-bold">DNI 26698856</dd>
+            <dt class="col-sm-3 font-weight-normal">Fecha de nacimiento</dt>
+            <dd class="col-sm-9 font-weight-bold">30/10/1971</dd>
+            <dt class="col-sm-3 font-weight-normal">Sexo</dt>
+            <dd class="col-sm-9 font-weight-bold">Masculino</dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-2">
+      <div class="row mt-1">
+
+        <div class="col-12">
+          <div class="info-box mb-3 bg-success">
+            <span class="info-box-icon"><i class="fas fa-thumbs-up"></i></span>
+            <div class="info-box-content">
+              <span class="info-box-text">Activas</span>
+              <span class="info-box-number">5</span>
+            </div>
+
+          </div>
+        </div>
+        <div class="col-12">
+          <div class="info-box mb-3 bg-secondary">
+            <span class="info-box-icon"><i class="far fa-thumbs-down"></i></span>
+            <div class="info-box-content">
+              <span class="info-box-text">Cerradas</span>
+              <span class="info-box-number">8</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <!-- /  -->
+
+  <!-- tabla derivaciones -->
+  <div class="row ">
+    <div class="col-12">
+      <div class="card">
+        <!-- /.card-header -->
+        <div class="card-body">
+          <table class="table table-bordered table-striped projects tabladt">
+            <!-- <table class="table table-striped projects"> -->
+            <thead>
+              <tr>
+                <th>
+                  Solicitud
+                </th>
+                <th>
+                  Derivación
+                </th>
+                <th>
+                  Programa
+                </th>
+                <th>
+                  Derivación
+                </th>
+                <th>
+                  Estado
+                </th>
+                <th style="width: 15%" class="notexport">
+
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  15/05/2023
+                </td>
+                <td>
+                  <a>
+                    AdminLTE v3
+                  </a>
+
+                </td>
+                <td>
+                  usuario - organismo
+                </td>
+                <td class="project_progress">
+                  15/05/2023
+                </td>
+                <td class="project-state">
+                  <span class="badge badge-success">Aceptada</span>
+                </td>
+                <td class="text-right">
+                  <div class="btn-group" role="group">
+                    <a href="" class="btn btn-primary btn-sm editar">Consultar</a>
+                    <a href="" class="btn btn-secondary btn-sm ver">Ver</a>
+
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  13/05/2023
+                </td>
+                <td>
+                  <a>
+                    AdminLTE v3
+                  </a>
+
+                </td>
+                <td>
+                  usuario - organismo
+                </td>
+                <td class="project_progress">
+                  15/05/2023
+                </td>
+                <td class="project-state">
+                  <span class="badge badge-secondary">Asesorada</span>
+                </td>
+                <td class="project-actions text-right">
+                  <div class="btn-group" role="group">
+                    <a href="" class="btn btn-primary btn-sm editar">Consultar</a>
+                    <a href="" class="btn btn-secondary btn-sm ver">Ver</a>
+
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  09/05/2023
+                </td>
+                <td>
+                  <a>
+                    AdminLTE v3
+                  </a>
+
+                </td>
+                <td>
+                  usuario - organismo
+                </td>
+                <td class="project_progress">
+                  15/05/2023
+                </td>
+                <td class="project-state">
+                  <span class="badge badge-info">En análsis</span>
+                </td>
+                <td class="project-actions text-right">
+                  <div class="btn-group" role="group">
+                    <a href="" class="btn btn-primary btn-sm editar">Consultar</a>
+                    <a href="" class="btn btn-secondary btn-sm ver">Ver</a>
+                  </div>
+
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  02/05/2023
+                </td>
+                <td>
+                  <a>
+                    AdminLTE v3
+                  </a>
+
+                </td>
+                <td>
+                  usuario - organismo
+                </td>
+                <td class="project_progress">
+                  15/05/2023
+                </td>
+                <td class="project-state">
+                  <span class="badge badge-warning">Pendiente</span>
+                </td>
+                <td class="project-actions text-right">
+
+                  <div class="btn-group" role="group">
+                    <a href="" class="btn btn-primary btn-sm editar">Consultar</a>
+                    <a href="" class="btn btn-secondary btn-sm ver">Ver</a>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  25/04/2023
+                </td>
+                <td>
+                  <a>
+                    AdminLTE v3
+                  </a>
+
+                </td>
+                <td>
+                  usuario - organismo
+                </td>
+                <td class="project_progress">
+                  15/05/2023
+                </td>
+                <td class="project-state">
+                  <span class="badge badge-info">En análsis</span>
+                </td>
+                <td class="project-actions text-right">
+                  <div class="btn-group" role="group">
+                    <a href="" class="btn btn-primary btn-sm editar">Consultar</a>
+                    <a href="" class="btn btn-secondary btn-sm ver">Ver</a>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  22/04/2023
+                </td>
+                <td>
+                  <a>
+                    AdminLTE v3
+                  </a>
+
+                </td>
+                <td>
+                  usuario - organismo
+                </td>
+                <td class="project_progress">
+                  15/05/2023
+                </td>
+                <td class="project-state">
+                  <span class="badge badge-warning">Pendiente</span>
+                </td>
+                <td class="project-actions text-right">
+                  <div class="btn-group" role="group">
+                    <a href="" class="btn btn-primary btn-sm editar">Consultar</a>
+                    <a href="" class="btn btn-secondary btn-sm ver">Ver</a>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  17/04/2023
+                </td>
+                <td>
+                  <a>
+                    AdminLTE v3
+                  </a>
+
+                </td>
+                <td>
+                  usuario - organismo
+                </td>
+                <td class="project_progress">
+                  15/05/2023
+                </td>
+                <td class="project-state">
+                  <span class="badge badge-warning">Pendiente</span>
+                </td>
+                <td class="project-actions text-right">
+                  <div class="btn-group" role="group">
+                    <a href="" class="btn btn-primary btn-sm editar">Consultar</a>
+                    <a href="" class="btn btn-secondary btn-sm ver">Ver</a>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  10/04/2023
+                </td>
+                <td>
+                  <a>
+                    AdminLTE v3
+                  </a>
+
+                </td>
+                <td>
+                  usuario - organismo
+                </td>
+                <td class="project_progress">
+                  15/05/2023
+                </td>
+                <td class="project-state">
+                  <span class="badge badge-info">En análsis</span>
+                </td>
+                <td class="project-actions text-right">
+                  <div class="btn-group" role="group">
+                    <a href="" class="btn btn-primary btn-sm editar">Consultar</a>
+                    <a href="" class="btn btn-secondary btn-sm ver">Ver</a>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  03/04/2023
+                </td>
+                <td>
+                  <a>
+                    AdminLTE v3
+                  </a>
+
+                </td>
+                <td>
+                  usuario - organismo
+                </td>
+                <td class="project_progress">
+                  15/05/2023
+                </td>
+                <td class="project-state">
+                  <span class="badge badge-secondary">Asesorada</span>
+                </td>
+                <td class="project-actions text-right">
+                  <div class="btn-group" role="group">
+                    <a href="" class="btn btn-primary btn-sm editar">Consultar</a>
+                    <a href="" class="btn btn-secondary btn-sm ver">Ver</a>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- /.card-body -->
+      </div>
+      <!-- /.card -->
+    </div>
+    <!-- /.col -->
+  </div>
+  <!-- /.row -->
+
+
+  <div class="row mt-4 d-print-none">
+    <div class="col-12 mx-2">
+      <a href="" class="btn btn-secondary">Volver</a>
+    </div>
+  </div>
+  {% endblock %};
+
+  {% block customJS %}
+  <script language="Javascript">
+    $(".print").click(function () {
+      window.print();
+    });
+  </script>
+  {% endblock %}

@@ -1,0 +1,116 @@
+{% extends "includes/base.html" %};
+{% load static %};
+
+{% block head %}
+{% endblock %}
+
+{% block title %}Legajos{% endblock %};
+
+{% block titulo-pagina %}{% endblock %};
+
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right">
+    <li class="breadcrumb-item"><a href="{% url 'legajos_listar' %}">Legajos</a></li>
+    <li class="breadcrumb-item active">Listar</li>
+</ol>
+{% endblock %};
+
+{% block menu-adicional %}
+{% endblock %};
+
+{% block content %}
+
+
+<h2 class="text-center display-4 mb-4">Buscar legajo</h2>
+<form method="GET">
+    <div class="row">
+        <div class="col-md-10 offset-md-1">          
+            <div class="form-group">
+                <div class="input-group input-group-lg">
+                    <input type="search" class="form-control form-control-lg" placeholder="Buscar"
+                        title="Ingresar DNI o apellido." name="busqueda">
+                    <div class="input-group-append">
+                        <button type="submit" class="btn btn-lg btn-primary">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+
+{% if mostrar_resultados%}
+<div class="row mt-3">
+    <div class="col-12 text-center">
+        {%if perms.Usuarios.rol_admin%}
+        <a href="{% url 'legajos_crear' %}" class="btn btn-primary btn-lg d-block d-sm-inline mt-2 mr-2 ">Agregar</a>
+        {%endif%}
+        <a href="{% url 'legajos_listar' %}" class="btn btn-secondary btn-lg d-block d-sm-inline mt-2 ">Resetear</a>
+    </div>
+</div>
+
+
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card">
+            <!-- /.card-header -->
+            <div class="card-body">
+                <table class="table table-bordered table-striped projects {%if perms.Usuarios.rol_admin or perms.Usuarios.rol_consultante%} tabladt {%endif%}">
+                    <!-- <table class="table table-striped projects"> -->
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Documento</th>
+                            <th>Sexo</th>
+                            <th>Fecha de nacimiento</th>
+                            <th>Edad</th>
+                            <th>Estado</th>
+                            <th style="width: 15%" class="notexport"> </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for o in object_list %}
+                        <tr>
+                            <td><a href="{% url 'legajos_ver' o.id %}" class="font-weight-bold" title="Ver detalles">
+                                {{o}}</a></td>
+                            <td>{{o.tipo_doc}} {{o.documento}}</td>
+                            <td>{{o.sexo}}</td>
+                            <td>{{o.fecha_nacimiento|date:'d/m/Y'}}</td>
+                            <td>{{o.edad}} </td>
+                            <td > 
+                                {% if o.estado  %}
+                                <span class="text-success font-weight-bold">Activo</span>
+                                {% else %}
+                                <span class="text-danger font-weight-bold">Inactivo</span>
+                                {% endif %}
+                              </td>
+                            <td class="project-actions text-right"> 
+                                {%if perms.Usuarios.rol_admin%} 
+                                <div class="btn-group" role="group"> 
+                                    <a href="{% url 'legajos_ver' o.id %}" class="btn btn-primary btn-sm ver">Ver</a> 
+                                    <a href="{% url 'legajos_editar' o.id %}" class="btn btn-primary btn-sm editar">Editar</a> 
+                                    <a href="{% url 'legajos_eliminar' o.id %}" class="btn btn-danger btn-sm eliminar">Eliminar</a> 
+                                    </div>
+                                {%endif%}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <!-- /.card-body -->
+        </div>
+        <!-- /.card -->
+    </div>
+    <!-- /.col -->
+</div>
+
+{%endif%}
+
+
+{% endblock %}
+
+{% block customJS %}
+{% endblock %}

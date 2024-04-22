@@ -1,0 +1,128 @@
+{% extends "includes/base.html" %}
+{% load static %};
+{% block title %} Template de ejemplos {%endblock %}
+
+{% block titulo-pagina %}
+Grupo familiar
+{% endblock %}
+
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right">
+    <li class="breadcrumb-item"><a href="#">Plantilla</a></li>
+    <li class="breadcrumb-item active">Formularios</li>
+</ol>
+{% endblock %};
+
+{% block menu-adicional %}
+{% endblock %}
+
+{% block content %}
+
+<div class="row ">
+  <!-- botones -->
+  <div class="col-12 my-3 mx-2 d-print-none">
+    <a href="" class="btn btn-primary mr-1">Editar</a>
+    <button type="button" class="btn btn-secondary mr-1 print">Imprimir</button>
+  </div>
+  <!-- ./botones -->
+</div>
+
+<div class="row">
+    <div class="col-12 col-sm-6 col-md-4 d-flex align-items-stretch flex-column">
+        <div class="card bg-solid d-flex flex-fill">
+            <div class="card-header border-bottom-0">
+                <h1 class="card-title"><b class="pr-2">Zoe Baez</b>| Hija</h1>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-sm-7">
+                        <dl class="row mb-0">
+                            <dt class="col-lg-5 font-weight-normal">Dirección</dt>
+                            <dd class="col-lg-7 font-weight-bold">Esmeralda 1898, La Esperanza, San Miguel </dd>
+                            <dt class="col-lg-5 font-weight-normal">Teléfono</dt>
+                            <dd class="col-lg-7 font-weight-bold">01158576006</dd>
+                            <dt class="col-lg-5 font-weight-normal">Relación</dt>
+                            <dd class="col-lg-7 font-weight-bold "><span class="badge bg-success">Buena</span> </dd>
+                        </dl>
+                    </div>
+                    <div class="col-5 text-center">
+                        <img src="/static/dist/img/bebe.png" alt="user-avatar" class="img-circle img-fluid  justify-content-center" />
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="text-right">
+
+                    <a href="#" class="btn btn-sm btn-primary"> Ver legajo</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-md-4 d-flex align-items-stretch flex-column">
+        <div class="card bg-solid d-flex flex-fill">
+            <div class="card-header border-bottom-0">
+                <h1 class="card-title"><b class="pr-2">Jésica Baez</b>| Hermana</h1>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-sm-7">
+                        <dl class="row mb-0">
+                            <dt class="col-lg-5 font-weight-normal">Dirección</dt>
+                            <dd class="col-lg-7 font-weight-bold">Esmeralda 1898, La Esperanza, San Miguel </dd>
+                            <dt class="col-lg-5 font-weight-normal">Teléfono</dt>
+                            <dd class="col-lg-7 font-weight-bold">01158576006</dd>
+                            <dt class="col-lg-5 font-weight-normal">Relación</dt>
+                            <dd class="col-lg-7 font-weight-bold "><span class="badge bg-danger">Mala</span> </dd>
+                        </dl>
+                    </div>
+                    <div class="col-5 justify-content-center">
+                        <img src="/static/dist/img/jesica.png" alt="user-avatar" class="img-circle img-fluid" />
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="text-right">
+
+                    <a href="#" class="btn btn-sm btn-primary"> Ver legajo</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-md-4 d-flex align-items-stretch flex-column">
+        <div class="card bg-solid d-flex flex-fill">
+            <div class="card-header border-bottom-0">
+                <h1 class="card-title"><b class="pr-2">Carlos Baez</b>| Pareja </h1>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-sm-7">
+                        <dl class="row mb-0">
+                            <dt class="col-lg-5 font-weight-normal">Dirección</dt>
+                            <dd class="col-lg-7 font-weight-bold">Esmeralda 1898, La Esperanza, San Miguel </dd>
+                            <dt class="col-lg-5 font-weight-normal">Teléfono</dt>
+                            <dd class="col-lg-7 font-weight-bold">01158576006</dd>
+                            <dt class="col-lg-5 font-weight-normal">Relación</dt>
+                            <dd class="col-lg-7 font-weight-bold "><span class="badge bg-secondary">Indiferente</span>
+                            </dd>
+                        </dl>
+                    </div>
+                    <div class="col-5 text-center">
+                        <img src="/static/dist/img/padre.png" alt="user-avatar" class="img-circle img-fluid" />
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="text-right">
+
+                    <a href="#" class="btn btn-sm btn-primary"> Ver legajo</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row mt-2">
+    <div class="col-12 mx-2">
+        <a href="" class="btn btn-secondary">Volver</a>
+    </div>
+</div>
+{% endblock %};
