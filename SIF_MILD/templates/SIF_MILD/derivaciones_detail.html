@@ -1,0 +1,176 @@
+{% extends "includes/base.html" %};
+{% load static %};
+
+{% block title %}
+Detalle de derivaciones
+{%endblock %};
+
+{% block titulo-pagina %}
+Derivaciones
+{% endblock %};
+
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right">
+  <li class="breadcrumb-item"><a href="{% url 'MILD_derivaciones_listar'%}"
+      title="Ver historial de derivaciones">1000 Dias Derivaciones</a></li>
+  <li class="breadcrumb-item "><a href="{% url 'legajos_ver' object.fk_legajo.id %}" title="Ver legajo">{{object.fk_legajo}}</a></li>
+  <li class="breadcrumb-item active">Detalle</li>
+</ol>
+{% endblock %};
+
+{% block menu-adicional %}
+{% endblock %};
+
+{% block content %}
+<!-- card-info -->
+<div class="row">
+  <!-- botones -->
+  <div class="col-12 my-3 mx-2 d-print-none">
+    {% if object.estado == "Pendiente" %}
+    <a href="{% url 'MILD_preadmisiones_crear' object.pk %}" class="btn btn-primary mr-1 ">Aceptar</a>
+    <a href="{% url 'MILD_derivaciones_rechazo'  object.pk %}" class="btn btn-secondary mr-1 ">Rechazar</a>
+    {% endif %}
+    <a href="" class="btn btn-secondary mr-1 print">Imprimir</a>
+    {% if request.user.id == object.fk_usuario.id and object.estado == 'Pendiente' %}
+    <a href="{% url 'MILD_derivaciones_editar' object.id %}" class="btn btn-primary mr-1">Editar</a>
+    {%endif%}
+    {% if request.user.id == object.fk_usuario.id and object.estado == 'Pendiente' %}
+    <a href="{% url 'legajosderivaciones_eliminar' object.id %}" class="btn btn-danger mr-1">Eliminar</a>
+    {%endif%}
+  </div>
+  <!-- ./botones -->
+
+  <div class="row p-0 m-0 " id="seleccion">
+
+    <!-- Datos derivacion -->
+    <div class="col-sm-6">
+      <div class="card card-outline card-primary h-100 mt-3 mt-sm-0">
+        <div class="card-header">
+          <h3 class="card-title">Detalle Derivación</h3>
+        </div>
+        <div class="card-body">
+          <dl class="row mb-0">
+            <dd class="col-sm-3 mb-2">Fecha de solicitud</dt>
+            <dt class="col-sm-9 mb-2">{{object.fecha_creado|date:"d/m/Y"}}</dt>
+            <dd class="col-sm-3 mb-2">Estado</dt>
+            <dt class="col-sm-9 mb-2 "><span class="badge {% if object.estado == "Pendiente" %}badge-warning{% endif %}{% if object.estado == "Rechazada" %}badge-danger{% endif %}{% if object.estado == "Aceptada" %}badge-success{% endif %}">{{object.estado}}</span></dt>
+            <dd class="col-sm-3 mb-2">Prioridad</dt>
+            <dt class="col-sm-9 mb-2"><span class="badge badge-gb-color">{{object.importancia}}</span></dt>
+            <dd class="col-sm-3 mb-2">Alertas</dt>
+            <dt class="col-sm-9 mb-2">
+              <ul class="mb-1">
+                {% for o in object.m2m_alertas.all %}
+                <li>{{o.nombre}}</li>
+                {% endfor %}
+              </ul>
+            </dt>
+            <dd class="col-sm-3 mb-2">Organismos interviniendo</dt>
+            <dt class="col-sm-9 mb-2">
+              {% if object.fk_organismo %}
+              <ul class="mb-1">
+                <li>{{object.fk_organismo}}</li>
+              </ul>
+              {% else %}
+              -
+              {% endif %}
+            </dt>
+            <dd class="col-sm-3 mb-2">Observaciones</dt>
+            <dt class="col-sm-9 mb-2">{{object.detalles|default_if_none:"-"}}</dt>
+            <dd class="col-sm-3 mb-2 mt-2">Archivos adjuntos</dd>
+            <dt class="col-sm-9 mb-2 mt-2">
+              <ul class="list-unstyled mb-1">
+                {% if object.archivos %}
+                <li><a href="{{object.archivos.url}}" target="_blank">{{object.archivos|cut:'legajos/archivos/'}}</a></li>
+                {% else %}
+                <li>-</li>
+                {% endif %}
+              </ul>
+            </dt>
+            <dd class="col-sm-3 mb-2">Programa solicitante</dd>
+            <dt class="col-sm-9 mb-2"> {{object.fk_programa_solicitante}}</dt>
+            <dd class="col-sm-3 mb-2">Usuario solicitante</dd>
+            <dt class="col-sm-9 mb-2"> {{object.fk_usuario}}</dt>
+          </dl>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card card-outline card-primary h-100">
+        <div class="card-header">
+          <h3 class="card-title">Legajo derivado </h3>
+        </div>
+        <div class="card-body">
+          <dl class="row mb-0">
+            <dt class="col-sm-3 font-weight-normal">Nombre</dt>
+            <dd class="col-sm-9 font-weight-bold"><a href="{% url 'legajos_ver' object.fk_legajo.id %}"
+                title="Ver legajo">{{ object.fk_legajo}}</a></dd>
+            <dt class="col-sm-3 font-weight-normal">DNI</dt>
+            <dd class="col-sm-9 font-weight-bold">{{ object.fk_legajo.documento}}</dd>
+            <dt class="col-sm-3 font-weight-normal">Fecha de nacimiento</dt>
+            <dd class="col-sm-9 font-weight-bold">{{ object.fk_legajo.fecha_nacimiento|date:'d/m/Y'}}</dd>
+            <dt class="col-sm-3 font-weight-normal">Sexo</dt>
+            <dd class="col-sm-9 font-weight-bold">{{ object.fk_legajo.sexo}}</dd>
+            <dt class="col-sm-3 font-weight-normal">Teléfono</dt>
+            <dd class="col-sm-9 font-weight-bold">{{ object.fk_legajo.telefono|default_if_none:'-'}}</dd>
+            <dt class="col-sm-3 font-weight-normal">Email</dt>
+            <dd class="col-sm-9 font-weight-bold">{{ object.fk_legajo.email|default_if_none:'-'}}</dd>
+            <dt class="col-sm-3 font-weight-normal">Observaciones</dt>
+            <dd class="col-sm-9 font-weight-bold">{{ object.fk_legajo.observaciones|default_if_none:'-'}}</dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+      <!-- /  -->
+
+      <!-- Datos de Indices 
+      <div class="card card-outline card-primary h-50">
+        <div class="card-header">
+          <h3 class="card-title">Detalle Índices</h3>
+          <div class="card-tools">
+            {% if object.estado == "Finalizada" %}
+            <a href="{% url 'MILD_indiceivi_crear' object.fk_legajo.id %}" class="btn btn-sm btn-primary">Generar nuevo</a>
+            {% endif %}
+          </div>
+        </div>
+        <div class="card-body p-2">
+          <ul class="products-list product-list-in-card pl-2 pr-2">
+            {% if resultado %}
+            {% for r in resultado %}
+            <li class="item p-1">
+              <a href="javascript:void(0)">
+                <div class="product-img h4 p-0">
+                  <span class="badge badge-success float-center p-3">{{r.total}}</span>
+                </div>
+                <div class="product-info">
+                  <span class="product-title">IVI</span>
+                  <span class="product-description">
+                    {{r.programa}} | {{ r.creado|date:"d/m/Y" }}
+                  </span>
+                </div>
+              </a>
+            </li>
+            {% endfor %}
+            {% else %}
+            <h6>Sin índices.</h6>
+            {% endif %}
+          </ul>          
+        </div>
+      </div>
+        -->
+
+    </div>
+  </div>
+
+  <div class="row mt-4 d-print-none">
+    <div class="col-12 mx-2">
+      <div class="form-group  d-flex justify-content-between">
+        <a href="{% url 'MILD_derivaciones_listar' %}" class="btn btn-secondary">Volver</a>
+      </div>
+    </div>
+  </div>
+
+  {% endblock %};
+
+  {% block customJS %}
+  {% endblock %}

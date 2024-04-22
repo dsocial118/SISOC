@@ -1,0 +1,292 @@
+{% load static %} {% load crispy_forms_tags %}
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+	<meta charset="UTF-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+	<link rel="shortcut icon" type="image/png" href="{% static 'custom/img/hsu_logo.ico'%}" />
+
+	<link rel="stylesheet"
+		href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&amp;display=fallback">
+	<!-- JQuery Confirm -->
+	<link rel="stylesheet" href="{% static 'plugins/jquery-confirm/jquery-confirm.min.css' %}">
+	<!-- Font Awesome -->
+	<link rel="stylesheet" href="{% static 'plugins/fontawesome-free/css/all.min.css' %}" />
+	<!-- Flags -->
+	<link rel="stylesheet" href="{% static 'plugins/flag-icon-css/css/flag-icon.min.css' %}" />
+	<!-- Toastr -->
+	<link rel="stylesheet" href="{% static 'plugins/toastr/toastr.min.css' %}" />
+	<!-- Select 2-->
+	<link rel="stylesheet" href="{% static 'plugins/select2/css/select2.min.css' %}" />
+	<!-- bs-stepper -->
+	<link rel="stylesheet" href="{% static 'plugins/bs-stepper/css/bs-stepper.min.css'%}">
+	<!-- Datatables -->
+	<link rel="stylesheet" href="{% static 'plugins/datatables-bs4/css/dataTables.bootstrap4.min.css'%}">
+	<link rel="stylesheet" href="{% static 'plugins/datatables-responsive/css/responsive.bootstrap4.min.css'%}">
+	<link rel="stylesheet" href="{% static 'plugins/datatables-buttons/css/buttons.bootstrap4.min.css'%}">
+	<!-- Date inputs -->
+	<link rel="stylesheet" href="{% static 'plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css'%}">
+	<link rel="stylesheet" href="{% static 'plugins/daterangepicker/daterangepicker.css'%}">
+	<!-- Chart -->
+	<link rel="stylesheet" href="{% static 'plugins/chart.js/Chart.min.css' %}" />
+	<!-- Editor enriquecido -->
+	<link rel="stylesheet" href="{% static 'plugins/summernote/summernote-bs4.min.css' %}" />
+	<!-- Icheck bootstrap -->
+	<link rel="stylesheet" href="{% static 'plugins/icheck-bootstrap/icheck-bootstrap.min.css' %}" />
+	<!-- Estilo principal -->
+	<link rel="stylesheet" href="{% static 'dist/css/adminlte.css' %}" />
+	<!-- custom -->
+	<link rel="stylesheet" href="{% static 'custom/css/custom.css' %}" />
+	<link rel="stylesheet" href="{% static 'custom/css/nuevoColorPrimary.css' %}" />
+	<link rel="stylesheet" href="{% static 'custom/css/nuevoColorInfo.css' %}" />
+	<!-- Estilos adicionales por pagina-->
+	{% block head %}{% endblock %}
+	<!-- Bloque titulo -->
+	<title>HSU - {% block title %}{% endblock %}</title>
+</head>
+
+<body
+	class="hold-transition sidebar-mini layout-fixed layout-navbar-fixed layout-footer-fixed {% if request.user.usuarios.darkmode %} dark-mode {% endif %} ">
+	<div class="wrapper">
+
+		<div class="preloader flex-column justify-content-center align-items-center">
+			<img class="animation__shake" src="{% static 'custom/img/hsu_logo.ico'%}" alt="HSULogo" height="60"
+				width="60">
+		</div>
+
+		<!-- Navbar Barra navegación superior-->
+		{% include 'includes/navbar.html' %}
+		<!-- /.Navbar Barra navegación superior-->
+
+		<!-- Sidebar Menu -->
+		<!-- Main Sidebar Container -->
+		<aside class="main-sidebar sidebar-dark-primary elevation-2">
+			<!-- Brand Logo -->
+			<a href="{% url 'legajos_listar' %}" class="brand-link">
+				<img src="{% static 'custom/img/hsu_logo.png'%}" alt="Logo" class="brand-image img-circle"
+					style="opacity: 0.8" />
+				<span class="brand-text text-muted">Historia Social Única</span>
+			</a>
+			<!-- Sidebar -->
+			<div class="sidebar">
+				<!-- Sidebar Menu -->
+				<nav class="mt-2">
+					<ul class="nav nav-pills nav-sidebar flex-column text-sm nav-child-indent  mb-5"
+						data-widget="treeview" role="menu" data-accordion="false" id="menu">
+						{% include 'includes/sidebar.html' %}
+						{% block menu-adicional %}{% endblock %}
+					</ul>
+				</nav>
+				<!-- /.sidebar-menu -->
+			</div>
+		</aside>
+		<!-- /.Sidebar Menu -->
+
+		<!-- Principal -->
+		<div class="content-wrapper">
+			<!-- Header de Contenido -->
+			<section class="content-header">
+				<div class="container-fluid">
+					<div class="row mb-2">
+						<div class="col-sm-6">
+							<h1 class="m-0">
+								{% block titulo-pagina %} {% endblock %}
+							</h1>
+						</div>
+						<div class="col-sm-6">
+							<ol class="breadcrumb float-sm-right">
+								<!-- contenido derecha del titulo -->
+								{% block breadcrumb %}{% endblock %}
+								<!-- /.contenido derecha del titulo -->
+							</ol>
+						</div>
+					</div>
+				</div>
+			</section>
+			<!-- /.Header de Contenido -->
+
+			<!-- Contenido -->
+			<section class="content">
+				<div class="container-fluid mb-3">
+					{% block content %}
+					{% endblock %}
+				</div>
+			</section>
+			<!-- /.contenido -->
+		</div>
+		<!-- /.principal -->
+
+		<!-- Footer -->
+		<footer class="main-footer text-sm">
+			<div class="float-right d-none d-sm-block"><b>Version</b> 0.1
+			</div>
+			<strong>&copy;
+				<script>
+					document.write(new Date().getFullYear());
+				</script> -
+			</strong><img class="img-size-50 mr-2 pb-1" src="{% static 'custom/img/icore_logo.png' %}"></img>para
+			Municipalidad de San Miguel
+			</strong>
+		</footer>
+		<!-- /.Footer -->
+
+		<!-- Control Sidebar -->
+		<aside class="control-sidebar control-sidebar-dark">
+		</aside>
+		<!-- /.control-sidebar -->
+
+		<!-- Modal logout -->
+		<div class="modal fade" id="modal-logout">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content bg-grey-dark">
+					<div class="modal-header">
+						<h4 class="modal-title">Cierre de sesión</h4>
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+							<span aria-hidden="true">&times;</span>
+						</button>
+					</div>
+					<div class="modal-body">
+						<p>¿Estás seguro de que deseas cerrar sesión?</p>
+					</div>
+					<div class="modal-footer justify-content-end">
+						<a class="btn btn-danger" href="{% url 'logout' %}">Cerrar sesión</a>
+						<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- /modal logout -->
+
+
+
+		<!-- Adicionales JS fin de pagina -->
+
+		<!-- JQuery -->
+		<script src="{% static 'plugins/jquery/jquery.min.js' %}"></script>
+		<script src="{% static 'plugins/jquery-ui/jquery-ui.min.js' %}"></script>
+		<script> $.widget.bridge("uibutton", $.ui.button);	</script>
+		<script src="{% static 'plugins/moment/moment.min.js' %}"></script>
+		<script src="{% static 'plugins/inputmask/jquery.inputmask.min.js' %}"></script>
+
+		<!-- Select 2-->
+		<script src="{% static 'plugins/select2/js/select2.min.js' %}"></script>
+		<!-- JQuery Confirm -->
+		<script src="{% static 'plugins/jquery-confirm/jquery-confirm.min.js' %}"></script>
+		<!-- Bootstrap -->
+		<script src="{% static 'plugins/bootstrap/js/bootstrap.min.js' %}"></script>
+		<script src="{% static 'plugins/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+		<!-- datatables -->
+		<script src="{% static 'plugins/datatables/jquery.dataTables.min.js'%}"></script>
+		<script src="{% static 'plugins/datatables-bs4/js/dataTables.bootstrap4.min.js'%}"></script>
+		<script src="{% static 'plugins/datatables-responsive/js/dataTables.responsive.min.js'%}"></script>
+		<script src="{% static 'plugins/datatables-responsive/js/responsive.bootstrap4.min.js'%}"></script>
+		<script src="{% static 'plugins/datatables-buttons/js/dataTables.buttons.min.js'%}"></script>
+		<script src="{% static 'plugins/datatables-buttons/js/buttons.bootstrap4.min.js'%}"></script>
+		<script src="{% static 'plugins/jszip/jszip.min.js'%}"></script>
+		<script src="{% static 'plugins/pdfmake/pdfmake.min.js'%}"></script>
+		<script src="{% static 'plugins/pdfmake/vfs_fonts.js'%}"></script>
+		<script src="{% static 'plugins/datatables-buttons/js/buttons.html5.min.js'%}"></script>
+		<script src="{% static 'plugins/datatables-buttons/js/buttons.print.min.js'%}"></script>
+		<script src="{% static 'plugins/datatables-buttons/js/buttons.colVis.min.js'%}"></script>
+		<!-- Toastr -->
+		<script src="{% static 'plugins/toastr/toastr.min.js' %}"></script>
+		<!-- bs-stepper -->
+		<script src="{% static 'plugins/bs-stepper/js/bs-stepper.min.js' %}"></script>
+		<!-- Validations -->
+		<script src="{% static 'plugins/jquery-validation/jquery.validate.min.js' %}"></script>
+		<script src="{% static 'plugins/jquery-validation/additional-methods.min.js' %}"></script>
+		<!-- Custom file imput -->
+		<script src="{% static 'plugins/bs-custom-file-input/bs-custom-file-input.min.js' %}"></script>
+		<!-- Date input-->
+		<script src="{% static 'plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js' %}"></script>
+		<script src="{% static 'plugins/daterangepicker/daterangepicker.js' %}"></script>
+		<!-- Chart -->
+		<script src="{% static 'plugins/chart.js/Chart.min.js' %}"></script>
+		<!-- Editor enriquecido -->
+		<script src="{% static 'plugins/summernote/summernote-bs4.min.js' %}"></script>
+		<!-- Dist -->
+		<script src="{% static 'dist/js/adminlte.min.js' %}"></script>
+		<!-- Custom-->
+		<script src="{% static 'custom/js/custom.js' %}"></script>
+
+
+		{% if messages %}
+		{% for message in messages %}
+		<!-- Mensajes Success y Error --- TOASTR-->
+		<script language="JavaScript" type="text/javascript">
+			toastr.options = {
+				"positionClass": "toast-bottom-right",
+			}
+			toastr.{{ message.tags }}("{{ message }}");
+		</script>
+		{% endfor %}
+		{% endif %}
+
+		<script>
+			//control color logout icon
+			$("#logout_icon").hover(function () {
+				$(this).addClass("text-danger");
+				$(this).removeClass("text-success");
+			}, function () {
+				$(this).addClass("text-success");
+				$(this).removeClass("text-danger");
+			});
+
+
+			//control Darkmode como opcion de usuario
+			$("#darkmode").on('click', function () {
+				var checked = $('body').hasClass('dark-mode');
+
+				if (checked) {
+					$('body').removeClass('dark-mode')
+					$("#darkmode_icon").removeClass("fas").addClass("far").attr("title", "Cambiar a modo oscuro");
+				} else {
+					$('body').addClass('dark-mode')
+					$("#darkmode_icon").removeClass("far").addClass("fas").attr("title", "Cambiar a modo claro");
+				}
+				$.ajaxSetup({
+					beforeSend: function (xhr, settings) {
+						xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
+					}
+				});
+
+				$.ajax({
+					url: '/set_dark_mode/',
+					type: 'POST',
+					data: { 'dark_mode': checked },
+					success: function (data) {
+						console.log(data);
+					}
+				});
+			});
+
+		</script>
+		
+		<script>
+            function mostrarRespuesta() {
+				var selectElement = document.getElementById("id_nombre3");
+                var selectedValue = selectElement.value;
+                var respuestaDetalle = document.getElementById("respuestaDetalle");
+				// Verificar la opción seleccionada y actualizar el detalle
+				if (selectedValue === "Vos sola") {
+					respuestaDetalle.innerText = "Vos sola";
+				 } else if (selectedValue === "Vos con tu pareja") {
+					respuestaDetalle.innerText = "Vos con tu pareja";
+				} else if (selectedValue === "Tu pareja sola") {
+					respuestaDetalle.innerText = "Tu pareja sola";
+				} else {
+					respuestaDetalle.innerText = "";
+				}
+			}
+		</script>
+
+
+		{% block customJS %}{% endblock %}
+
+	</div>
+</body>
+
+</html>

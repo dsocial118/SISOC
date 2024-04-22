@@ -1,0 +1,167 @@
+{% extends "includes/base.html" %};
+{% load static %};
+{% load crispy_forms_tags %}
+
+{% block title %}
+Vacantes formulario
+{%endblock %};
+
+{% block titulo-pagina %}
+Vacantes
+{% endblock %};
+
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right">
+  <li class="breadcrumb-item"><a href="{% url 'PDV_vacantes_listar'%}" title="Ver lisatdo de vacantes">Vacantes</a></li>
+  <li class="breadcrumb-item "><a href="{% url 'legajos_ver' object.fk_preadmi.fk_legajo.id %}" title="Ver legajo">{{object.fk_preadmi.fk_legajo}}</a></li>
+  <li class="breadcrumb-item active">Detalle</li>
+</ol>
+{% endblock %};
+
+{% block menu-adicional %}
+{% endblock %};
+
+{% block content %}
+<!-- card-info -->
+<div class="row">
+
+  <!-- Datos de Admisión -->
+  <div class="col-sm-4 pb-3">
+    <div class="card card-outline card-primary h-100 mb-0">
+      <div class="card-header">
+        <h3 class="card-title">Detalle Admisión</h3>
+        <div class="card-tools d-inline">
+          <button type="button" class="btn btn-tool d-md-none" data-card-widget="collapse">
+            <i class="fas fa-minus"></i>
+          </button>
+        </div>
+      </div>
+      <div class="card-body pb-2">
+        <dl class="row mb-0">
+          <dd class="col-sm-5 mb-2">Estado</dd>
+          <dt class="col-sm-7 mb-2"><span class="badge badge-warning">{{object.estado_vacante}}</span></dt>
+          <dd class="col-sm-5 mb-2">Fecha de solicitud</dd>
+          <dt class="col-sm-7 mb-2">{{object.creado|date:'d/m/Y'}}</dt>
+          <dd class="col-sm-5 mb-2">Solicitud creada por</dd>
+          <dt class="col-sm-7 mb-2">{{object.creado_por}}</dt>
+          <dd class="col-sm-5 mb-2">Centro solicitado</dd>
+          <dt class="col-sm-7 mb-2">{{object.fk_preadmi.centro_postula}}</dt>
+          <dd class="col-sm-5 mb-2">Sala solicitada</dd>
+          <dt class="col-sm-7 mb-2">{{object.fk_preadmi.sala_postula}}</dt>
+          <dd class="col-sm-5 mb-2">Turno solicitado</dd>
+          <dt class="col-sm-7 mb-2">{{object.fk_preadmi.turno_postula}}</dt>
+        </dl>
+      </div>
+    </div>
+  </div>
+  <!-- /  -->
+
+  <!-- Datos de legajo -->
+  <div class="col-sm-4 pb-3">
+    <div class="card card-outline card-primary h-100 mb-0">
+      <div class="card-header">
+        <h3 class="card-title">Detalle Legajo</h3>
+        <div class="card-tools d-inline">
+          <button type="button" class="btn btn-tool d-md-none" data-card-widget="collapse">
+            <i class="fas fa-minus"></i>
+          </button>
+        </div>
+      </div>
+      <div class="card-body">
+        <dl class="row">
+          <dd class="col-sm-5 mb-2">Nombre</dd>
+          <dt class="col-sm-7 mb-2"><a href="{% url 'legajos_ver' object.fk_preadmi.fk_legajo.id %}" title="Ver legajo">{{object.fk_preadmi.fk_legajo}}</a> </dt>
+          <dd class="col-sm-5 mb-2">DNI</dd>
+          <dt class="col-sm-7 mb-2">{{object.fk_preadmi.fk_legajo.documento}}</dt>
+          <dd class="col-sm-5 mb-2">Fecha de nacimiento</dd>
+          <dt class="col-sm-7 mb-2">{{object.fk_preadmi.fk_legajo.fecha_nacimiento|date:'d/m/Y'}}</dt>
+          <dd class="col-sm-5 mb-2">Sexo</dd>
+          <dt class="col-sm-7 mb-2">{{object.fk_preadmi.fk_legajo.sexo}}</dt>
+        </dl>
+      </div>
+    </div>
+  </div>
+  <!-- /  -->
+
+  <!-- Datos de Indice -->
+  <div class="col-sm-4 pb-3">
+    <div class="card card-outline card-primary h-100 mb-0">
+      <div class="card-header">
+        <h3 class="card-title">Detalle IVI de ingreso</h3>
+        <div class="card-tools d-inline">
+          <a href="{% url 'PDV_indiceivi_ver' object.fk_preadmi.id %}" class="ml-3 mr-2">Ver detalles</a>
+          <button type="button" class="btn btn-tool  d-md-none" data-card-widget="collapse">
+            <i class="fas fa-minus"></i>
+          </button>
+        </div>
+      </div>
+      <div class="card-body pb-1">
+        <dl class="row mb-0">
+          <dd class="col-sm-7 mb-2">Puntaje</dd>
+          <dt class="col-sm-5 mb-2"><span class=" badge badge-warning">{{puntaje}}</span></dt>
+          <dd class="col-sm-7 mb-2">Fecha del índice</dd>
+          <dt class="col-sm-5 mb-2">{{foto_ivi.creado|date:'d/m/Y'}}</dt>
+          <dd class="col-sm-7 mb-2">Puntaje máximo posible</dd>
+          <dt class="col-sm-5 mb-2">{{maximo}}</dt>
+          <dd class="col-sm-7 mb-2">Criterios presentes</dd>
+          <dt class="col-sm-5 mb-2">{{cantidad}}</dt>
+          <dd class="col-sm-7 mb-2">Criterios modificables</dd>
+          <dt class="col-sm-5 mb-2">{{modificables}}</dt>
+          <dd class="col-sm-7 mb-2">Puntaje modificable</dd>
+          <dt class="col-sm-5 mb-2">{{mod_puntaje.total}}</dt>
+          <dd class="col-sm-12 mb-0 mt-4 pb-0 text-muted text-sm font-italic text-right">Generado por {{foto_ivi.creado_por}}</dd>
+        </dl>
+      </div>
+
+    </div>
+  </div>
+  <!-- /  -->
+
+  <!-- Form -->
+  <div class="col">
+    <form class="needs-validation" novalidate method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="fk_admision" value="{{object.id}}" maxlength="150" class="form-control" id="id_fk_admision">
+      <!-- Security token -->
+      {% csrf_token %}
+      <div class="card card-primary card-outline">
+        <div class="card-header">
+          <h3 class="card-title">Confirmar vacante</h3>
+        </div>
+        <div class="card-body">
+          <div class="form-row">
+            <div class="col-sm-2 form-group">
+                {{ form.fecha_ingreso| as_crispy_field }}
+            </div>
+            <div class="col-sm-3 form-group">
+                {{ form.fk_organismo2| as_crispy_field }}
+            </div>
+
+            <div class="col-sm-2 form-group">
+                {{ form.fk_organismo| as_crispy_field }}
+            </div>
+            <div class="col-sm-2 form-group">
+              {{ form.turno| as_crispy_field }}
+            </div>
+
+           
+           
+
+          </div>
+        </div>
+      </div>
+
+
+      <div class="mt-4 mx-2 btn-toolbar" role="toolbar">
+        <button type="submit" class="btn btn-primary mr-2">Confirmar</button>
+        <a href="{% url 'PDV_admisiones_ver' object.id %}" class="btn btn-secondary">Cancelar</a>
+      </div>
+    </form>
+  </div>
+
+</div>
+
+
+{% endblock %};
+
+{% block customJS %}
+{% endblock %}

@@ -1,0 +1,153 @@
+{% extends "includes/base.html" %};
+{% load static %};
+
+{% block title %}
+Admisiones
+{%endblock %};
+
+{% block titulo-pagina %}
+Admisiones
+{% endblock %};
+
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right">
+  <li class="breadcrumb-item"><a href="" title="Ver listado de admisiones">Admisiones</a></li>
+  <li class="breadcrumb-item "><a href="{% url 'legajos_ver' object.fk_preadmi.fk_legajo.id %}" title="Ver legajo">{{object.fk_preadmi.fk_legajo}}</a></li>
+  <li class="breadcrumb-item active">Detalle</li>
+</ol>
+{% endblock %};
+
+{% block menu-adicional %}
+{% endblock %};
+
+{% block content %}
+<!-- card-info -->
+<div class="row">
+  <!-- botones -->
+  <div class="col-12 my-3 mx-2 d-print-none">
+    {% if object.estado != "Inactiva" %}
+    {% if object.estado_vacante == "Lista de espera" %}
+    <a href="{% url 'PDV_vacantes_form' object.id %}" class="btn btn-primary mr-1">Otorgar vacante</a>
+    {% endif %}
+    {% if object.estado_vacante == "Finalizada" %}
+    <a href="{% url 'PDV_vacantes_form_cambio' object.id %}" class="btn btn-primary mr-1">Modificar vacante</a>
+    {% endif %}
+    {% endif %}
+    <a href="" class="btn btn-secondary mr-1 print">Imprimir</a>
+  </div>
+  <!-- ./botones -->
+
+</div>
+<div class="row p-0 m-0 " id="seleccion">
+
+  <!-- Datos de legajo -->
+  <div class="col-sm-4 pb-3">
+    <div class="card card-outline card-primary h-100 mb-0">
+      <div class="card-header">
+        <h3 class="card-title">Detalle Legajo</h3>
+        <div class="card-tools d-inline">
+          <a href="{% url 'legajos_ver' object.fk_preadmi.fk_legajo.id %}" class="ml-3 mr-2">Ver detalles</a>
+          <button type="button" class="btn btn-tool d-md-none" data-card-widget="collapse">
+            <i class="fas fa-minus"></i>
+          </button>
+        </div>
+      </div>
+      <div class="card-body">
+        <dl class="row">
+          <dd class="col-sm-5 mb-2">Nombre</dd>
+          <dt class="col-sm-7 mb-2"><a href="{% url 'legajos_ver' object.fk_preadmi.fk_legajo.id %}" title="Ver legajo">{{object.fk_preadmi.fk_legajo}}</a> </dt>
+          <dd class="col-sm-5 mb-2">DNI</dd>
+          <dt class="col-sm-7 mb-2">{{object.fk_preadmi.fk_legajo.documento}}</dt>
+          <dd class="col-sm-5 mb-2">Fecha de nacimiento</dd>
+          <dt class="col-sm-7 mb-2">{{object.fk_preadmi.fk_legajo.fecha_nacimiento|date:'d/m/Y'}}</dt>
+          <dd class="col-sm-5 mb-2">Sexo</dd>
+          <dt class="col-sm-7 mb-2">{{object.fk_preadmi.fk_legajo.sexo}}</dt>
+        </dl>
+      </div>
+    </div>
+  </div>
+  <!-- /  -->
+
+  <!-- Datos de pre-admisión -->
+  <div class="col-sm-4 pb-3">
+    <div class="card card-outline card-primary h-100 mb-0">
+      <div class="card-header">
+        <h3 class="card-title">Detalle Admisión</h3>
+        <div class="card-tools d-inline">
+          <a href="{% url 'PDV_preadmisiones_ver3' object.fk_preadmi.id %}" class="ml-3 mr-2">Ver pre-admisión</a>
+          <button type="button" class="btn btn-tool  d-md-none" data-card-widget="collapse">
+            <i class="fas fa-minus"></i>
+          </button>
+        </div>
+      </div>
+      <div class="card-body pb-2">
+        <dl class="row mb-0">
+          <dd class="col-sm-5 mb-2">Estado admisión</dd>
+          <dt class="col-sm-7 mb-2"><span class="text-success font-weight-bold">{{object.estado}}</span></dt>
+          <dd class="col-sm-5 mb-2">Fecha de admisión</dd>
+          <dt class="col-sm-7 mb-2">{{object.creado|date:'d/m/Y'}}</dt>
+          <dd class="col-sm-5 mb-2">Estado vacante</dd>
+          <dt class="col-sm-7 mb-2"><span class="badge badge-warning">{{object.estado_vacante}}</span></dt>
+          <dd class="col-sm-5 mb-2">Fecha de vacante</dd>
+          <dt class="col-sm-7 mb-2">-</dt>
+          <dd class="col-sm-5 mb-2">Centro </dd>
+          <dt class="col-sm-7 mb-2">{{object.fk_preadmi.centro_postula}}</dt>
+          <dd class="col-sm-5 mb-2">Sala</dd>
+          <dt class="col-sm-7 mb-2">{{object.fk_preadmi.sala_postula}}</dt>
+          <dd class="col-sm-5 mb-2">Turno</dd>
+          <dt class="col-sm-7 mb-2">{{object.fk_preadmi.turno_postula}}</dt>
+        </dl>
+      </div>
+    </div>
+  </div>
+  <!-- /  -->
+
+  <!-- Datos de Indice -->
+  <div class="col-sm-4 pb-3">
+    <div class="card card-outline card-primary h-100 mb-0">
+      <div class="card-header">
+        <h3 class="card-title">Detalle IVI de ingreso</h3>
+        <div class="card-tools d-inline">
+          <a href="{% url 'PDV_indiceivi_ver' object.fk_preadmi.id %}" class="ml-3 mr-2">Ver detalles</a>
+          <button type="button" class="btn btn-tool  d-md-none" data-card-widget="collapse">
+            <i class="fas fa-minus"></i>
+          </button>
+        </div>
+      </div>
+      <div class="card-body pb-1">
+        <dl class="row mb-0">
+          <dd class="col-sm-7 mb-2">Puntaje</dd>
+          <dt class="col-sm-5 mb-2"><span class=" badge badge-warning">{{puntaje}}</span></dt>
+          <dd class="col-sm-7 mb-2">Fecha del índice</dd>
+          <dt class="col-sm-5 mb-2">{{foto_ivi.creado|date:'d/m/Y'}}</dt>
+          <dd class="col-sm-7 mb-2">Puntaje máximo posible</dd>
+          <dt class="col-sm-5 mb-2">{{maximo}}</dt>
+          <dd class="col-sm-7 mb-2">Criterios presentes</dd>
+          <dt class="col-sm-5 mb-2">{{cantidad}}</dt>
+          <dd class="col-sm-7 mb-2">Criterios modificables</dd>
+          <dt class="col-sm-5 mb-2">{{modificables}}</dt>
+          <dd class="col-sm-7 mb-2">Puntaje modificable</dd>
+          <dt class="col-sm-5 mb-2">{{mod_puntaje.total}}</dt>
+          <dd class="col-sm-12 mb-0 mt-4 pb-0 text-muted text-sm font-italic text-right">Generado por {{foto_ivi.creado_por}}</dd>
+        </dl>
+      </div>
+
+    </div>
+  </div>
+  <!-- /  -->
+</div>
+<!-- /  -->
+
+
+<div class="row mt-4 d-print-none">
+  <div class="col-12 mx-2">
+    <div class="form-group  d-flex justify-content-between">
+      <a href="{% url 'PDV_admisiones_listar' %}" class="btn btn-secondary">Volver</a>
+    </div>
+  </div>
+</div>
+
+{% endblock %};
+
+{% block customJS %}
+{% endblock %}

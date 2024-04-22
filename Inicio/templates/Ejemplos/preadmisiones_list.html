@@ -1,0 +1,171 @@
+{% extends "includes/base.html" %};
+{% load static %};
+
+{% block head %}
+
+{% endblock %}
+
+{% block title %}Pre-admisiones Listado{% endblock %};
+
+{% block titulo-pagina %}Pre-admisiones{% endblock %};
+
+{% block menu-adicional %}
+{% endblock %};
+
+{% block content %}
+
+<div class="row">
+  <!-- botones -->
+  <div class="col-12 my-3 mx-2 d-print-none">
+    <a href="{% url 'preadmisiones_buscar' %}" class="btn btn-primary mr-1">Agregar pre-admisión</a>
+    <!-- <a href="{% url 'preadmisiones_form' %}" class="btn btn-secondary mr-1">Editar</a> -->
+    <!-- <a href="" class="btn btn-secondary mr-1 print">Imprimir</a> -->
+    <!-- <a href="" class="btn btn-secondary mr-1 ">Finalizar admisión</a> -->
+    <!-- <a href="" class="btn btn-danger mr-1 mt-2 mt-sm-0">Eliminar</a> -->
+  </div>
+  <!-- ./botones -->
+
+  <div class="col-12 ">
+    <div class="card">
+      <div class="card-body ">
+        <div class="table-responsive mailbox-messages">
+          <table class="table table-bordered table-striped projects tabladt">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Estado</th>
+                <th>Nombre</th>
+                <th>Documento</th>
+                <th>Creado por</th>
+                <th style="width: 12%" class="notexport">
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="mailbox-date">15/05/2023</td>
+                <td> <span class="badge badge-success">Finalizada</span></td>
+                <td class=""><a href="{% url 'vacantes_form'%}" title="Ver detalle de admisión">Maradona, Diego
+                    Fernando</a></td>
+                <td class=""> DNI 27373129</td>
+                <td class="">Mariela Sanz</td>
+                <td class="project-actions text-right">
+                  <div class="btn-group" role="group">
+                    <a href="{% url 'indice_ivi_form' %}" class="btn btn-primary btn-sm">Agregar IVI</a>
+                    <a href="{% url 'preadmisiones_detail' %}" class="btn btn-secondary btn-sm">Ver</a>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td class="mailbox-date">14/05/2023</td>
+                <td> <span class="badge badge-success">Finalizada</span></td>
+                <td class=""><a href="{% url 'vacantes_form'%}" title="Ver detalle de admisión">Micaela López</a></td>
+                <td class=""> DNI 27373129</td>
+                <td class="">Mariela Sanz</td>
+                <td class="project-actions text-right">
+                  <div class="btn-group" role="group">
+                    <a href="{% url 'indice_ivi_form' %}" class="btn btn-primary btn-sm">Agregar IVI</a>
+                    <a href="{% url 'preadmisiones_detail' %}" class="btn btn-secondary btn-sm">Ver</a>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td class="mailbox-date">15/05/2023</td>
+                <td> <span class="badge badge-success">Finalizada</span></td>
+                <td class=""><a href="{% url 'intervenciones_legajolist'%}" title="Ver detalle de admisión">Mamani,
+                    Britney</a>
+                </td>
+                <td class=""> DNI 27373129</td>
+                <td class="">Mariela Sanz</td>
+                <td class="project-actions text-right">
+                  <div class="btn-group" role="group">
+                    <a href="{% url 'vacantes_detail' %}" class="btn btn-primary btn-sm">Admitir</a>
+                    <a href="{% url 'preadmisiones_detail3' %}" class="btn btn-secondary btn-sm">Ver</a>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td class="mailbox-date">15/05/2023</td>
+                <td> <span class="badge badge-success">Finalizada</span></td>
+                <td class=""><a href="{% url 'preadmisiones_detail'%}" title="Ver detalle de admisión">Peña, Juan</a>
+                </td>
+                <td class=""> DNI 27373129</td>
+                <td class="">Mariela Sanz</td>
+                <td class="project-actions text-right">
+                  <div class="btn-group" role="group">
+                    <a href="{% url 'vacantes_detail' %}" class="btn btn-primary btn-sm">Admitir</a>
+                    <a href="{% url 'preadmisiones_detail3' %}" class="btn btn-secondary btn-sm">Ver</a>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td class="mailbox-date">13/03/2023</td>
+                <td><span class=" badge badge-warning">En proceso</span> </td>
+                <td class=""><a href="{% url 'preadmisiones_detail'%}" title="Ver detalle de admisión">Del Mar, María
+                  </a>
+                </td>
+                <td class=""> DNI 27373129</td>
+                <td class="">Mariela Sanz</td>
+                <td class="project-actions text-right">
+                  <div class="btn-group" role="group">
+                    <a href="{% url 'preadmisiones_detail'%}" class="btn btn-primary btn-sm ver">Ver</a>
+                    <a href="{% url 'preadmisiones_form'%}" class="btn btn-secondary btn-sm editar">Editar</a>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td class="mailbox-date">10/03/2023</td>
+                <td><span class=" badge badge-warning">En proceso</span> </td>
+                <td class=""><a href="{% url 'preadmisiones_detail'%}" title="Ver detalle de admisión">Morales, Matías
+                  </a>
+                </td>
+                <td class=""> DNI 27373129</td>
+                <td class="">Mariela Sanz</td>
+                <td class="project-actions text-right">
+                  <div class="btn-group" role="group">
+                    <a href="{% url 'preadmisiones_detail'%}" class="btn btn-primary btn-sm ver">Ver</a>
+                    <a href="{% url 'preadmisiones_form'%}" class="btn btn-secondary btn-sm editar">Editar</a>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td class="mailbox-date">09/03/2023</td>
+                <td><span class=" badge badge-warning">En proceso</span> </td>
+                <td class=""><a href="{% url 'preadmisiones_detail'%}" title="Ver detalle de admisión">Peña, Juan</a>
+                </td>
+                <td class=""> DNI 27373129</td>
+                <td class="">Mariela Sanz</td>
+                <td class="project-actions text-right">
+                  <div class="btn-group" role="group">
+                    <a href="{% url 'preadmisiones_detail'%}" class="btn btn-primary btn-sm ver">Ver</a>
+                    <a href="{% url 'preadmisiones_form'%}" class="btn btn-secondary btn-sm editar">Editar</a>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td class="mailbox-date">02/03/2023</td>
+                <td><span class=" badge badge-warning">En proceso</span> </td>
+                <td class=""><a href="{% url 'preadmisiones_detail'%}" title="Ver detalle de admisión">Mamani,
+                    Britney</a>
+                </td>
+                <td class=""> DNI 27373129</td>
+                <td class="">Mariela Sanz</td>
+                <td class="project-actions text-right">
+                  <div class="btn-group" role="group">
+                    <a href="{% url 'preadmisiones_detail'%}" class="btn btn-primary btn-sm ver">Ver</a>
+                    <a href="{% url 'preadmisiones_form'%}" class="btn btn-secondary btn-sm editar">Editar</a>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock content %}
+
+{% block customJS %}
+{% endblock %}

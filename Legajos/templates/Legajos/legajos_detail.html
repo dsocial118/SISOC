@@ -1,0 +1,1213 @@
+{% extends "includes/base.html" %};
+{% load static %};
+
+{% block head %}
+<!-- Timeline -->
+<link rel="stylesheet" href="{% static 'custom/css/timeline.css' %}">
+{% endblock %}
+
+{% block title %}Legajo{% endblock %};
+
+{% block titulo-pagina %}{{object.apellido}}, {{object.nombre}}
+<span class="ml-2 h5">| {{object.edad}} </span>
+<span class="info-box-icon h5 pl-2"><i class="flag-icon {{emoji_nacionalidad}}"></i></span>
+{% endblock %};
+
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right mt-2 mr-2">
+    <li class="breadcrumb-item"><a href="{% url 'legajos_listar' %}">Legajos</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'legajos_ver' object.id %}">{{object}}</a></li>
+    <li class="breadcrumb-item active"> Detalle</li>
+</ol>
+{% endblock %};
+
+{% block menu-adicional %}
+{% endblock %};
+
+{% block content %}
+<div class="row justify-content-sm-start justify-content-between d-print-none mx-1 mb-2">
+    {%if perms.Usuarios.rol_admin%}
+    <a href="{% url 'legajos_editar' object.id  %}" class="btn btn-primary mr-1">Editar</a>
+    <a href="{% url 'legajosderivaciones_historial' object.id %}" class="btn btn-secondary mr-1">Derivar</a>
+    <!--<a href="{% url 'historial_admisiones'  %}" class="btn btn-secondary mr-1">Admitir</a>-->
+    <!--<a href="{% url 'intervenciones'  %}" class="btn btn-secondary mr-1">Agregar intervención</a>-->
+    {%endif%}
+    <a href="#" class="btn btn-secondary print mr-1 d-none d-sm-inline">Imprimir</a>
+    {%if perms.Usuarios.rol_admin%}
+    <a href="{% url 'legajos_eliminar' object.id %}" class="btn btn-danger">Eliminar</a>
+    {%endif%}
+</div>
+<div class="row">
+
+    <div class="col-sm-3">
+        <div class="card bg-dark p-4">
+            {% if object.foto %}
+            <img class="card-img-top rounded" src="{{ MEDIA_URL }}{{object.foto.url}}" alt="Foto de perfil" />
+            {%else%}
+            <img class="card-img-top rounded" src="{% static 'custom/img/default.png'  %}" alt="Foto de perfil" />
+            {%endif%}
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool d-md-none" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
+                <h3 class="card-title font-weight-bold pt-1 mr-3">
+                    Datos Personales
+                </h3>
+            </div>
+
+            
+            <div class="card-body card-comments p-0 pb-1">
+                <ul class="nav nav-pills flex-column">
+                    <li class="nav-item">
+                        <div class="comment-text">
+                            Nombre
+                            <span class="username">{{object}}</span>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="comment-text">
+                            Documento
+                            <span class="username">{{object.tipo_doc}} {{object.documento}}</span>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="comment-text">
+                            Sexo
+                            <span class="username">{{object.sexo}}</span>
+                        </div>
+                    </li>
+
+                    <li class="nav-item">
+                        <div class="comment-text">
+                            Fecha de nacimiento
+                            <span class="username">{{object.fecha_nacimiento|date:'d/m/Y'}}</span>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="comment-text">
+                            Nacionalidad
+                            <span class="username">{{object.nacionalidad|default_if_none:"-"}}</span>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="comment-text">
+                            Estado civil
+                            <span class="username">{{object.estado_civil|default_if_none:"-"}}</span>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="comment-text">
+                            Teléfono
+                            <span class="username">{{object.telefono|default_if_none:"-"}}</span>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="comment-text">
+                            Email
+                            <span class="username">{{object.email|default_if_none:"-"}}</span>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="comment-text">
+                            Estado
+                            {% if object.estado %}
+                            <span class="username text-success font-weight-bold">Activo</span>
+                            {% else %}
+                            <span class="username text-danger font-weight-bold">Inactivo</span>
+                            {% endif %}
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool d-md-none" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
+
+                <h3 class="card-title font-weight-bold pt-1 mr-3">
+                    Grupo familiar
+                </h3>
+                <span title="Cantidad total de familiares" class="badge badge-secondary mt-1">{{count_familia}}</span>
+            </div>
+            {% if count_familia != 0 %}
+            <div class="card-body bg-light p-0">
+                <ul class="users-list">
+                    {% for f in familiares_fk1 %}
+                    <li><a class="users-list-name" href="{% url 'legajos_ver' f.fk_legajo_2_id %}" title="{{f.fk_legajo_2}} - {{f.vinculo}}">
+                        {% if f.fk_legajo_2.foto %}
+                        <img src="{{f.fk_legajo_2.foto.url}}" alt="User Image" width="60px">
+                        {%else%}
+                        <img src="{% static 'custom/img/default.png'  %}" alt="User Image" width="60px">
+                        {%endif%}                        
+                        <span class="users-list-date">{{f.fk_legajo_2}}</span>
+                        <span class="users-list-date">{{f.vinculo}}</span>
+                    </a>
+                    </li>
+                    {% empty %}
+                    {% endfor %}
+                    {% for f in familiares_fk2 %}
+                    <li>
+                        <a class="users-list-name" href="{% url 'legajos_ver' f.fk_legajo_1_id %}" title="{{f.fk_legajo_1}} - {{f.vinculo_inverso}}">
+                            {% if f.fk_legajo_1.foto %}
+                            <img src="{{f.fk_legajo_1.foto.url}}" alt="User Image" width="60px">
+                            {%else%}
+                            <img src="{% static 'custom/img/default.png'  %}" alt="User Image" width="60px">
+                            {%endif%}                            
+                            <span class="users-list-date">{{f.fk_legajo_1}}</span>
+                            <span class="users-list-date">{{f.vinculo_inverso}}</span>
+                        </a>
+                    </li>
+                    {% empty %}
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="card-footer text-center">
+                <a href="{% url 'grupofamiliar_listar' object.id %}">Ver detalles</a>
+            </div>
+            {% else %}
+            <div class="card-body bg-light p-0">
+                <h6 class="text-center text-muted py-3">Sin familiares</h6>
+            </div>
+            <div class="card-footer text-center">
+                {%if perms.Usuarios.rol_admin%}
+                <a href="{% url 'grupofamiliar_crear' object.id %}">Agregar familiares</a>
+                {%endif%}
+            </div>
+            {% endif %}
+        </div>
+        <!-- <<<<<<<<<<<< EN DESARROLLO >>>>>>>>>>>>>>>>>>>>>>
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title font-weight-bold">Intervenciones en grupo familiar</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool d-md-none" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body bg-light">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="chart-responsive">
+                            <div class="chartjs-size-monitor">
+                                <div class="chartjs-size-monitor-expand">
+                                    <div class=""></div>
+                                </div>
+                                <div class="chartjs-size-monitor-shrink">
+                                    <div class=""></div>
+                                </div>
+                            </div>
+                            <canvas id="pieChart" height="105" width="210"
+                                style="display: block; height: 94px; width: 188px;"
+                                class="chartjs-render-monitor"></canvas>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="card-footer p-0">
+                <ul class="nav nav-pills flex-column">
+                    <li class="nav-item">
+                        {% for f in familiares_fk1 %}
+                        <a href="{% url 'legajos_ver' f.fk_legajo_2_id %}"  class="nav-link">
+                            <span class="username">{{f.fk_legajo_2}}</span>
+                            <span class="float-right text-danger">
+                                20</span>
+                        </a>
+                    
+                    {% empty %}
+                    {% endfor %}
+                    {% for f in familiares_fk2 %}
+                    
+                        <a href="{% url 'legajos_ver' f.fk_legajo_1_id %}"  class="nav-link">
+                            <span class="username">{{f.fk_legajo_1}}</span>
+                            <span class="float-right text-success">18
+                            </span>
+                        </a>
+                    </li>
+                    {% empty %}
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    -->
+    <!-- <<<<<<<<<<<<<<<<<<<< EN DESARROLLO >>>>>>>>>>>>>>
+        <div class="card ">
+            <div class="card-header">
+                <h3 class="card-title font-weight-bold">Indices</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool d-md-none" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="card-body p-0">
+                <ul class="products-list product-list-in-card pl-2 pr-2">
+                    <li class="item">
+                        <div class="product-img h4">
+                            <span class="badge badge-danger float-center p-3">40</span>
+                        </div>
+                        <div class="product-info">
+                            <a href="javascript:void(0)" class="product-title">IVI</a> <span class="badge badge-secondary">Ingreso</span><br>
+                            <span class="product-description">
+                                CDLE | 10/07/2020
+                            </span>
+                        </div>
+                    </li>
+                    <li class="item">
+                        <div class="product-img h4">
+                            <span class="badge badge-danger float-center p-3">36</span>
+                        </div>
+                        <div class="product-info">
+                            <a href="javascript:void(0)" class="product-title">IVI</a> <span class="badge badge-secondary">Egreso</span><br>
+                            <span class="product-description">
+                                CDLE | 11/06/2023
+                            </span>
+                        </div>
+                    </li>
+                </ul>
+               
+            </div>
+           
+            <div class="card-footer text-center">
+                <a href="{% url 'indices' object.id  %}" class="uppercase">Ver detalles</a>
+            </div>
+
+        </div>
+    -->
+        <div class="card ">
+            <div class="card-header">
+                <h3 class="card-title font-weight-bold"> Imágenes</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool d-md-none" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
+            </div>
+            {% if files_img %}
+            <div class="card-body bg-light p-0">
+                <div id="carouselExampleIndicators" class="carousel slide" data-ride="carousel" data-interval="false">
+                    <ol class="carousel-indicators">
+                        {% for f in files_img %}
+                        <li data-target="#carouselExampleIndicators" data-slide-to="{{forloop.counter}}"
+                            class="{% if forloop.counter == 1 %}active{% endif %}">
+                        </li>
+                        {% endfor %}
+                    </ol>
+                    <div class="carousel-inner rounded">
+                        {% for f in files_img %}
+                        <div class="carousel-item {% if forloop.counter == 1 %}active{% endif %}">
+                            <a href="{{ MEDIA_URL }}{{ f.archivo.url }}" target="_blank"
+                                title="{{f.archivo|cut:'legajos/archivos/'}}">
+                                <img class="d-block w-100 carousel-image" src="{{ MEDIA_URL }}{{ f.archivo.url }}">
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <a class="carousel-control-prev" href="#carouselExampleIndicators" role="button" data-slide="prev">
+                        <span class="carousel-control-custom-icon" aria-hidten="true">
+                            <i class="fas fa-chevron-left"></i>
+                        </span>
+                        <span class="sr-only">Anterior</span>
+                    </a>
+                    <a class="carousel-control-next" href="#carouselExampleIndicators" role="button" data-slide="next">
+                        <span class="carousel-control-custom-icon" aria-hidten="true">
+                            <i class="fas fa-chevron-right"></i>
+                        </span>
+                        <span class="sr-only">Siguiente</span>
+                    </a>
+                </div>
+            </div>
+            {% else %}
+            <div class="card-body bg-light p-0">
+                <h6 class="text-center text-muted py-3">Sin imágenes</h6>
+            </div>
+            {% endif %}
+            <div class="card-footer text-center">
+                {%if perms.Usuarios.rol_admin%}
+                <a href="{% url 'legajosarchivos_crear' object.id %}">Agregar imagenes</a>
+                {%endif%}
+            </div>
+
+        </div>
+
+        <div class="card ">
+            <div class="card-header">
+                <h3 class="card-title font-weight-bold"> Archivos</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool d-md-none" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
+            </div>
+            {% if files_docs %}
+            <div class="card-body">
+                {% for f in files_docs %}
+                <ul class="list-unstyled">
+                    <li class="py-1">
+                        <a href="{{ MEDIA_URL }}{{f.archivo.url}}" class="" target="_blank"
+                            title="{{f.archivo|cut:'legajos/archivos/'}}"><i class="fas fa-file pr-1"></i>
+                            {{f.archivo|cut:"legajos/archivos/"|truncatechars:35 }}
+                        </a>
+                    </li>
+                </ul>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="card-body bg-light p-0">
+                <h6 class="text-center text-muted py-3">Sin archivos</h6>
+            </div>
+            {% endif %}
+            {% if files_docs or files_img %}
+            <div class="card-footer text-center">
+                <a href="{% url 'legajosarchivos_listar' object.id %}">Ver detalles</a>
+            </div>
+            {% else %}
+            <div class="card-footer text-center">
+                {%if perms.Usuarios.rol_admin%}
+                <a href="{% url 'legajosarchivos_crear' object.id %}">Agregar archivos</a>
+                {%endif%}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="col-sm-9">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title font-weight-bold mr-3 pt-1"> Alarmas</h3>
+                        {% if count_alta %}
+                        <span title="{{ count_alta }} alertas" class="badge badge-alertas p-2">
+                            {{count_alta}}
+                        </span>
+                        {%endif%}
+                        <div class="card-tools">
+                            {% if count_alta %}
+                            <a href="{% url 'legajoalertas_listar' object.id %}" class="ml-3 mr-2">Ver detalles </a>
+                            {%else%}
+                            <a href="{% url 'legajoalertas_crear' object.id %}" class="ml-3 mr-2">Agregar Alerta </a>
+                            {%endif%}
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- ALERTAS POR CATEGORIAS
+                    <div class="card-body bg-light">
+                        <div class="row">
+                            {% for a in nombres_categorias %}
+                            <div class="col-md-3 col-sm-6 col-12">
+                                <div class="callout callout-danger">
+                                    <h6 class="font-weight-bold"><i class="fas fa-exclamation-triangle px-1"></i> {{a}}
+                                    </h6>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div class="col-12 text-center">
+                                <h6 class="text-center text-muted py-3">Sin alertas</h6>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>-->
+                    <div class="card-body bg-light">
+                        <div class="row">
+                            {% for a in alertas_alta|slice:":4" %}
+                            <div class="col-md-3 col-sm-6 col-12">
+                                <div class="callout callout-danger h-100 pb-0">
+                                    <h6 class="font-weight-bold"><i class="fas fa-exclamation-triangle px-1"></i> {{a.fk_alerta}}
+                                    </h6>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div class="col-12 text-center">
+                                <h6 class="text-center text-muted py-3">Sin alarmas</h6>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            {% comment %} <div class="col-sm-5">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title font-weight-bold"> Datos personales</h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool d-sm-none" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body card-comments p-0 pb-1">
+                        <ul class="nav nav-pills flex-column">
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Nombre
+                                    <span class="username">{{object}}</span>
+                                </div>
+                            </li>
+
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Documento
+                                    <span class="username">{{object.tipo_doc}} {{object.documento}}</span>
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Sexo
+                                    <span class="username">{{object.sexo}}</span>
+                                </div>
+                            </li>
+
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Fecha de nacimiento
+                                    <span class="username">{{object.fecha_nacimiento|date:'d/m/Y'}}</span>
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Nacionalidad
+                                    <span class="username">{{object.nacionalidad|default_if_none:"-"}}</span>
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Estado civil
+                                    <span class="username">{{object.estado_civil|default_if_none:"-"}}</span>
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Teléfono
+                                    <span class="username">{{object.telefono|default_if_none:"-"}}</span>
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Email
+                                    <span class="username">{{object.email|default_if_none:"-"}}</span>
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Estado
+                                    {% if object.estado %}
+                                    <span class="username text-success font-weight-bold">Activo</span>
+                                    {% else %}
+                                    <span class="username text-danger font-weight-bold">Inactivo</span>
+                                    {% endif %}
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div> {% endcomment %}
+            <div class="col-sm-9">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title font-weight-bold">Ubicación</h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool d-sm-none" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                        {% comment %} <div class="card-tools">
+                            <a href="{% url 'legajosdimensiones_ver' object.id  %}"
+                                class="ml-3 mr-2">Ver
+                                detalles</a>
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div> {% endcomment %}
+                    
+                    </div>
+                    
+                    <div class="card-body card-comments">
+                        <div class="row my-sm-4 pb-sm-1">
+                            <!-- <div class="col embed-responsive embed-responsive-16by9"> -->
+                            <iframe
+                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3285.0070299761087!2d-58.727604824311015!3d-34.57868867296322!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95bcbded9b818d6f%3A0x4f92ab2cfce3c024!2sC.%20El%20Zonda%20115%2C%20B1663CQC%20San%20Miguel%2C%20Provincia%20de%20Buenos%20Aires!5e0!3m2!1sen!2sar!4v1694143900980!5m2!1sen!2sar"                                width="100%" height="350" style="border:0;" allowfullscreen="" loading="lazy"
+                                referrerpolicy="no-referrer-when-downgrade"></iframe>
+                            <!-- </div> -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-3 pb-sm-3">
+                <div class="row mx-0 mx-sm-1 ">
+                    <div class="small-box bg-olive col-12 mb-0 px-0">
+                        <div class="inner">
+                            <h3> {{count_intervenciones}}</h3>
+                            <h6 class="font-weight-bold">Programas en intervención</h6>
+                        </div>
+                        <div class="icon">
+                            <i class="ion ion-android-home"></i>
+                        </div>
+                        <a href="{% url 'programas_intervencion' object.id  %}" class="small-box-footer">Ver
+                            más <i class="fas fa-arrow-circle-right"></i></a>
+                    </div>
+                    <!-- <<<<<<<<<<<<< EN DESARROLLO >>>>>>>>>>>>>>>>
+                    <div class="small-box bg-purple col-12 my-2 px-0">
+                        <div class="inner">
+                            <h3>21</h3>
+                            <h6 class="font-weight-bold">Acciones sociales</h6>
+                        </div>
+                        <div class="icon">
+                            <i class="ion ion-android-home"></i>
+                        </div>
+                        <a href="{% url 'acciones_sociales' object.id  %}" class="small-box-footer">Ver
+                            más <i class="fas fa-arrow-circle-right"></i></a>
+                    </div>
+                    <div class="small-box bg-lightblue col-12 mb-3 mb-sm-0 px-0">
+                        <div class="inner">
+                            <h3>15</h3>
+                            <h6 class="font-weight-bold">Intervenciones de salud</h6>
+                        </div>
+                        <div class="icon">
+                            <i class="ion ion-ios-clock-outline"></i>
+                        </div>
+                        <a href="{% url 'intervenciones_salud' object.id  %}" class="small-box-footer">Ver
+                            más <i class="fas fa-arrow-circle-right"></i></a>
+                    </div>
+                -->
+                </div>
+            </div>
+        </div>
+
+
+
+        <div class="row">
+            <div class="col-12">
+                <!-- card dimensiones -->
+
+                <div class="card">
+                    <div class="card-header">
+                        <ul class="nav nav-pills card-title justify-content-between">
+
+                            <li class="nav-item"><a class="nav-link py-0 active" href="#dimensionfamilia"
+                                    data-toggle="tab">Familia</a></li>
+                            <li class="nav-item"><a class="nav-link py-0" href="#dimensionvivienda"
+                                    data-toggle="tab">Vivienda</a></li>
+                            <li class="nav-item"><a class="nav-link py-0" href="#dimensionsalud"
+                                    data-toggle="tab">Salud</a></li>
+                            <li class="nav-item"><a class="nav-link py-0" href="#dimensioneducacion"
+                                    data-toggle="tab">Educación</a></li>
+                            <li class="nav-item"><a class="nav-link py-0" href="#dimensioneconomia"
+                                    data-toggle="tab">Economía</a></li>
+                            <li class="nav-item"><a class="nav-link py-0" href="#dimensiontrabajo"
+                                    data-toggle="tab">Trabajo</a></li>
+
+                        </ul>
+                        <div class="card-tools">
+                            <a href="{% url 'legajosdimensiones_ver' object.id  %}"
+                                class="ml-3 mr-2">Ver
+                                detalles</a>
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div><!-- /.card-header -->
+                    <div class="card-body  bg-light">
+                        <div class="tab-content">
+
+                            <div class="active tab-pane" id="dimensionfamilia">
+                                <!-- dimension familia -->
+                                <dl class="row mb-0 ">
+                                    <dd class="col-sm-8">Estado civil</dd>
+                                    <dt class="col-sm-4">
+                                        {{object.dimensionfamilia.estado_civil|default_if_none:"-"}}
+                                    </dt>
+                                    <dd class="col-sm-8">Cantidad de hijos</dd>
+                                    <dt class="col-sm-4">{{object.dimensionfamilia.cant_hijos|default_if_none:"-"}}
+                                    </dt>
+                                    <dd class="col-sm-8">¿Convive otro adulto responsable? (Padre o apoyo en la
+                                        crianza)</dd>
+                                    <dt class="col-sm-4">{{object.dimensionfamilia.otro_responsable|yesno:'Sí,No'}}
+                                    </dt>
+                                    <dd class="col-sm-8">Personas en el hogar embarazadas</dd>
+                                    <dt class="col-sm-4">{{object.dimensionfamilia.hay_embarazadas|yesno:'Sí,No'}}
+                                    </dt>
+                                    <dd class="col-sm-8">Personas en el hogar privados de su libertad</dd>
+                                    <dt class="col-sm-4">{{object.dimensionfamilia.hay_priv_libertad|yesno:'Sí,No'}}
+                                    </dt>
+                                    <dd class="col-sm-8">Personas en el hogar con problemas de salud mental</dd>
+                                    <dt class="col-sm-4">{{object.dimensionfamilia.hay_prbl_smental|yesno:'Sí,No'}}
+                                    </dt>
+                                    <dd class="col-sm-8">Personas en el hogar con enfermedades crónicas</dd>
+                                    <dt class="col-sm-4">{{object.dimensionfamilia.hay_enf_cronica|yesno:'Sí,No'}}
+                                    </dt>
+                                    <dd class="col-sm-8">Personas en el hogar con discapacidad</dd>
+                                    <dt class="col-sm-4">{{object.dimensionfamilia.hay_discapacidad|yesno:'Sí,No'}}
+                                    </dt>
+                                    <dd class="col-12 mt-3">Observaciones</dd>
+                                    <dt class="col-12">
+                                        {{object.dimensionfamilia.obs_familia|default_if_none:"-"}}
+                                    </dt>
+
+                                </dl>
+                                <!-- ./dimension familia  -->
+                            </div>
+
+                            <div class=" tab-pane" id="dimensionvivienda">
+                                <!-- dimension vivienda -->
+                                <dl class="row mb-0">
+                                    <dd class="col-sm-8">Posesión de la vivienda</dd>
+                                    <dt class="col-sm-4">{{object.dimensionvivienda.posesion|default_if_none:"-"}}
+                                    </dt>
+                                    <dd class="col-sm-8">Tipo de vivienda</dd>
+                                    <dt class="col-sm-4">{{object.dimensionvivienda.tipo|default_if_none:"-"}}</dt>
+                                    <dd class="col-sm-8">Material de la vivienda</dd>
+                                    <dt class="col-sm-4">{{object.dimensionvivienda.material|default_if_none:"-"}}
+                                    </dt>
+                                    <dd class="col-sm-8">Material principal de los pisos interiores</dd>
+                                    <dt class="col-sm-4">{{object.dimensionvivienda.pisos|default_if_none:"-"}}</dt>
+                                    <dd class="col-sm-8">¿Cuántas habitaciones tiene el hogar? (sin contar baño/s,
+                                        cocina, pasillo/s, lavadero)</dd>
+                                    <dt class="col-sm-4">
+                                        {{object.dimensionvivienda.cant_ambientes|default_if_none:"-"}}
+                                    </dt>
+                                    <dd class="col-sm-8">¿Cuántas camas/ colchones tienen?</dd>
+                                    <dt class="col-sm-4">{{object.dimensionvivienda.cant_camas|default_if_none:"-"}}
+                                    </dt>
+                                    <dd class="col-sm-8">¿Cuantos hogares hay en la vivienda?</dd>
+                                    <dt class="col-sm-4">
+                                        {{object.dimensionvivienda.cant_hogares|default_if_none:"-"}}
+                                    </dt>
+                                    <dd class="col-sm-8">¿Cuantas personas viven en la vivienda?</dd>
+                                    <dt class="col-sm-4">
+                                        {{object.dimensionvivienda.cant_convivientes|default_if_none:"-"}}</dt>
+                                    <dd class="col-sm-8">¿Cuántos de ellos son menores de 18 años?</dd>
+                                    <dt class="col-sm-4">
+                                        {{object.dimensionvivienda.cant_menores|default_if_none:"-"}}
+                                    </dt>
+                                    <dd class="col-sm-8">Baño dentro de la vivienda con descarga</dd>
+                                    <dt class="col-sm-4">{{object.dimensionvivienda.hay_banio|yesno:'Sí,No'}}</dt>
+                                    <dd class="col-sm-8">Posee Agua caliente</dd>
+                                    <dt class="col-sm-4">
+                                        {{object.dimensionvivienda.hay_agua_caliente|yesno:'Sí,No'}}
+                                    </dt>
+                                    <dd class="col-sm-8">Riesgo de desmoronamiento</dd>
+                                    <dt class="col-sm-4">
+                                        {{object.dimensionvivienda.hay_desmoronamiento|yesno:'Sí,No'}}
+                                    </dt>
+                                    <dd class="col-12 mt-3">Observaciones</dd>
+                                    <dt class="col-12">
+                                        {{object.dimensionvivienda.obs_vivienda|default_if_none:"-"}}
+                                    </dt>
+
+                                </dl>
+                                <!-- ./dimension vivienda -->
+                            </div>
+
+                            <div class=" tab-pane" id="dimensionsalud">
+                                <!-- dimension salud -->
+                                <dl class="row mb-0">
+                                    <dd class="col-sm-8">Centro de Salud en donde se atiende</dd>
+                                    <dt class="col-sm-4">
+                                        {{object.dimensionsalud.lugares_atencion|default_if_none:"-"}}
+                                    </dt>
+                                    <dd class="col-sm-8">Frecuencia de controles médicos</dd>
+                                    <dt class="col-sm-4">
+                                        {{object.dimensionsalud.frec_controles|default_if_none:"-"}}
+                                    </dt>
+                                    <dd class="col-sm-8">Posee alguna enfermedad recurrente o algún diagnóstico de
+                                        enfermedad crónic?</dd>
+                                    <dt class="col-sm-4">{{object.dimensionsalud.hay_enfermedad|yesno:'Sí,No'}}</dt>
+                                    <dd class="col-sm-8">Posee cobertura de salud</dd>
+                                    <dt class="col-sm-4">{{object.dimensionsalud.hay_obra_social|yesno:'Sí,No'}}
+                                    </dt>
+                                    <dd class="col-sm-8">Posee alguna discapacidad</dd>
+                                    <dt class="col-sm-4">{{object.dimensionsalud.hay_discapacidad|yesno:'Sí,No'}}
+                                    </dt>
+                                    <dd class="col-sm-8">Posee certificado de discapacidad</dd>
+                                    <dt class="col-sm-4">{{object.dimensionsalud.hay_cud|yesno:'Sí,No'}}</dt>
+                                    <dd class="col-12 mt-3">Observaciones</dd>
+                                    <dt class="col-12">
+                                        {{object.dimensionsalud.obs_salud|default_if_none:"-"}}
+                                    </dt>
+
+                                </dl>
+                                <!-- ./dimension salud -->
+                            </div>
+
+                            <div class=" tab-pane" id="dimensioneducacion">
+                                <!-- deimension educacion -->
+                                <dl class="row mb-0">
+                                    <dd class="col-sm-8">Asiste a la escuela</dd>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.asiste_escuela|yesno:'Sí,No'}}
+                                    </dt>
+                                    <dd class="col-sm-8">Máximo nivel educativo alcanzado</dd>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.max_nivel|default_if_none:"-"}}
+                                    </dt>
+                                    <dd class="col-sm-8">Estado del nivel</dd>
+                                    <dt class="col-sm-4">
+                                        {{object.dimensioneducacion.estado_nivel|default_if_none:"-"}}
+                                    </dt>
+                                    <dd class="col-sm-8">Institución</dd>
+                                    <dt class="col-sm-4">
+                                        {{object.dimensioneducacion.institucion|default_if_none:"-"}}
+                                    </dt>
+                                    <dd class="col-sm-8">Gestión</dd>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.gestion|default_if_none:"-"}}
+                                    </dt>
+                                    <dd class="col-sm-8">Ciclo</dd>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.ciclo|default_if_none:"-"}}
+                                    </dt>
+                                    <dd class="col-sm-8">Grado</dd>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.grado|default_if_none:"-"}}
+                                    </dt>
+                                    <dd class="col-sm-8">Turno</dd>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.turno|default_if_none:"-"}}
+                                    </dt>
+                                    <dd class="col-12 mt-3">Observaciones</dd>
+                                    <dt class="col-12">
+                                        {{object.dimensioneducacion.obs_educacion|default_if_none:"-"}}
+                                    </dt>
+                                </dl>
+                                <!-- ./dimension educacion -->
+                            </div>
+
+                            <div class=" tab-pane" id="dimensioneconomia">
+                                <!-- dimension economia -->
+                                <dl class="row mb-0">
+                                    <dd class="col-sm-8">Calificación de Ingresos</dd>
+                                    <dt class="col-sm-4">{{object.dimensioneconomia.ingresos|default_if_none:"-"}}
+                                    </dt>
+                                    <dd class="col-sm-8">¿Recibe Plan Social?</dd>
+                                    <dt class="col-sm-4">{{object.dimensioneconomia.recibe_plan|yesno:'Sí,No'}}</dt>
+                                    <dd class="col-sm-8">Planes sociales que recibe</dd>
+                                    <dt class="col-sm-4">
+                                        {% if object.dimensioneconomia.m2m_planes.all.count > 0 %}
+                                        {{object.dimensioneconomia.m2m_planes.all|join:', '}}
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </dt>
+                                    <dd class="col-sm-8">Miembros de la familia que trabajan o aportan al grupo
+                                        conviviente</dd>
+                                    <dt class="col-sm-4">
+                                        {{object.dimensioneconomia.cant_aportantes|default_if_none:"-"}}</dt>
+                                    <dd class="col-12 mt-3">Observaciones</dd>
+                                    <dt class="col-12">
+                                        {{object.dimensioneconomia.obs_economia|default_if_none:"-"}}
+                                    </dt>
+                                </dl>
+                                <!-- ./dimension economia  -->
+                            </div>
+
+
+                            <div class=" tab-pane" id="dimensiontrabajo">
+                                <!-- dimension trabajo -->
+                                <dl class="row mb-0">
+                                    <dd class="col-sm-8">¿El jefe o jefa de hogar trabaja?</dd>
+                                    <dt class="col-sm-4">{{object.dimensiontrabajo.tiene_trabajo|yesno:'Sí,No'}}
+                                    </dt>
+                                    <dd class="col-sm-8">Ocupación</dd>
+                                    <dt class="col-sm-4">{{object.dimensiontrabajo.ocupacion|default_if_none:"-"}}
+                                    </dt>
+                                    <dd class="col-sm-8">Modo de contratación</dd>
+                                    <dt class="col-sm-4">
+                                        {{object.dimensiontrabajo.modo_contratacion|default_if_none:"-"}}</dt>
+                                    <dd class="col-sm-8">¿Conviviente trabaja?</dd>
+                                    <dt class="col-sm-4">
+                                        {{object.dimensiontrabajo.conviviente_trabaja|yesno:'Sí,No'}}
+                                    </dt>
+                                    <dd class="col-12 mt-3">Observaciones</dd>
+                                    <dt class="col-12">
+                                        {{object.dimensiontrabajo.obs_trabajo|default_if_none:"-"}}
+                                    </dt>
+                                </dl>
+                                <!-- ./dimension trabajo -->
+                            </div>
+                        </div>
+                        <!-- /.tab-content -->
+                    </div><!-- /.card-body -->
+                </div>
+                <!-- /.card dimensiones-->
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title font-weight-bold mr-3 pt-1"> Indicadores de riesgo</h3>
+                        {% if count_media or count_baja %}
+                        <span title="{{ count_media }} alertas" class="badge badge-Importante p-2">
+                            {{count_media}}
+                        </span>
+                        <span title="{{ count_baja }} alertas" class="badge badge-Precaución p-2">
+                            {{count_baja}}
+                        </span>
+                        {%endif%}
+                        <div class="card-tools">
+                            {% if count_media or count_baja %}
+                            <a href="{% url 'legajoalertas_listar' object.id %}" class="ml-3 mr-2">Ver detalles </a>
+                            {%else%}
+                            <a href="{% url 'legajoalertas_crear' object.id %}" class="ml-3 mr-2">Agregar indicador de riesgo </a>
+                            {%endif%}
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body bg-light">
+                        <div class="row">
+                            {% if count_media or count_baja %}
+                            {% for a in alertas_media|slice:":4" %}
+                            <div class="col-md-3 col-sm-6 col-12 mb-3">
+                                <div class="callout callout-{{a.fk_alerta.gravedad}} h-100 pb-0">
+                                    <h6 class="font-weight-bold"><i class="fas fa-exclamation-triangle px-1"></i> {{a.fk_alerta}}
+                                    </h6>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            {% for a in alertas_baja|slice:":4" %}
+                            <div class="col-md-3 col-sm-6 col-12 mb-3">
+                                <div class="callout callout-{{a.fk_alerta.gravedad}} h-100 pb-0">
+                                    <h6 class="font-weight-bold"><i class="fas fa-exclamation-triangle  px-1"></i> {{a.fk_alerta}}
+                                    </h6>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                            <div class="col-12 text-center">
+                                <h6 class="text-center text-muted py-3">Sin indicadores de riesgo</h6>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+<!-- <<<<<<<<<<<<<<<< EN DESARROLLO >>>>>>>>>>>>>>>>>>>>>
+        <div class="row">
+            <div class="col-12">
+                <div class="card card-collapse">
+                    <div class="card-header border-transparent">
+                        <h3 class="card-title font-weight-bold">Hitos de abordaje</h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body bg-light p-0">
+
+
+                        <div class="cd-horizontal-timeline loaded">
+                            <div class="timeline ">
+                                <div class="events-wrapper">
+                                    <div class="events" style="width: 500px;">
+                                        <ol>
+                                            <li><a href="#0" data-date="01/01/2020" class="older-event selected" style="left: 0px;">{{derivacion.fecha_creado}}</a></li>
+                                            <li><a href="#0" data-date="02/01/2020" style="left: 0px;">{{derivacion.fecha_creado}}</a></li>
+                                            <li><a href="#0" data-date="03/01/2020" style="left: 0px;">{{derivacion.fecha_creado}}</a></li>
+                                            <li><a href="#0" data-date="04/01/2020" style="left: 0px;">{{derivacion.fecha_creado}}</a></li>
+                                            <li><a href="#0" data-date="06/01/2020" style="left: 0px;">{{derivacion.fecha_creado}}</a></li>
+                                            <li><a href="#0" data-date="08/01/2020" style="left: 0px;">{{derivacion.fecha_creado}}</a></li>
+                                        </ol>
+                                        <span class="filling-line" aria-hidten="true" style="transform: scaleX(0.281506);"></span>
+                                    </div>
+                                    
+                                </div>
+                                
+                                <ul class="cd-timeline-navigation">
+                                    <li><a href="#0" class="prev inactive">Prev</a></li>
+                                    <li><a href="#0" class="next">Next</a></li>
+                                </ul>
+                                
+                            </div>
+                            
+                        {% for derivacion in derivaciones %}
+                            <div class="events-content pb-2 pb-sm-0">
+                                <ol class="pb-0 mb-0">
+                                    <li class="selected" data-date="01/01/2020">
+                                        <h5 class="text-bold"> 
+                                          {{derivacion.fk_programa}}<span class="badge badge-secondary">{{derivacion.estado}}</span> <br> 
+                                            <small>{{derivacion.fecha_creado}}</small>
+                                            </h4>
+                                            <hr>
+                                            <p>{{derivacion.detalles}}
+                                            </p> 
+                                    </li>
+                                    <li data-date="02/01/2020" class="">
+                                        <h5 class="text-bold">
+                                            {{derivacion.fk_programa}} <span class="badge badge-secondary">{{derivacion.estado}}</span><br>
+                                            <small>{{derivacion.fecha_creado}}</small>
+                                        </h5>
+                                        <hr>
+                                        <p>{{derivacion.detalles}}
+                                        </p>
+                                    </li>
+                                    <li data-date="03/01/2020" >
+                                        <br>
+                                        <h5 class="text-bold">
+                                            {{derivacion.fk_programa}} <span class="badge badge-secondary">{{derivacion.estado}}</span><br>
+                                            <small>{{derivacion.fecha_creado}}</small>
+                                            </h4>
+                                            <hr>
+                                            <p>{{derivacion.detalles}}
+                                            </p>
+                                    </li>
+                                    <li data-date="04/01/2020">
+                                        <h5 class="text-bold">
+                                            {{derivacion.fk_programa}} <span class="badge badge-secondary">{{derivacion.estado}}</span> <br>
+                                            <small>{{derivacion.fecha_creado}}</small>
+                                            </h4>
+                                            <hr>
+                                            <p>{{derivacion.detalles}} 
+                                            </p>
+                                    </li>
+                                    <li data-date="06/01/2020">
+                                        <h5 class="text-bold"> 
+                                            {{derivacion.fk_programa}} <span class="badge badge-secondary">{{derivacion.estado}}</span> <br>
+                                            <small>{{derivacion.fecha_creado}}</small>
+                                            </h4>
+                                            <hr>
+                                            <p>{{derivacion.detalles}}
+                                            </p>
+                                    </li>
+                                    <li data-date="08/01/2021">
+                                        <h5 class="text-bold"> 
+                                            {{derivacion.fk_programa}} <span class="badge badge-secondary">{{derivacion.estado}}</span> <br>
+                                            <small>{{derivacion.fecha_creado}}</small>
+                                            </h4>
+                                            <hr>
+                                            <p>{{derivacion.detalles}}
+                                            </p>
+                                    </li>
+                                </ol>
+                            </div>
+                        {% endfor %}
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    -->
+
+        {% if datos_json %}
+        <div class="row d-none d-sm-inline">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                        <h3 class="card-title font-weight-bold">Evolución de riesgos</h3>
+                    </div>
+                    <div class="card-body bg-light">
+                        <canvas id="lineChart"
+                            style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%; display: block; width: 612px;"
+                            width="765" height="312" class="chartjs-render-monitor"></canvas>
+                        <div class="d-flex flex-row justify-content-end">
+                            <span class="mr-3">
+                                <i class="fas fa-square text-fuchsia"></i> Riesgo familiar
+                            </span>
+                            <span class="mr-3">
+                                <i class="fas fa-square text-lime"></i> Riesgo habitacional
+                            </span>
+                            <span class="mr-3">
+                                <i class="fas fa-square text-red"></i> Riesgo Salud
+                            </span>
+                            <span class="mr-3">
+                                <i class="fas fa-square text-blue"></i> Riesgo económico
+                            </span>
+                            <span class="mr-3">
+                                <i class="fas fa-square text-orange"></i> Riesgo educacional
+                            </span>
+                            <span class="mr-3">
+                                <i class="fas fa-square text-gray"></i> Riesgo laboral
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %};
+{% block customJS %}
+<script type="text/javascript" src="{% static 'custom/js/timeline.js' %}"></script>
+
+<script>
+    jQuery(document).ready(function ($) {
+
+
+        $(function () {
+            /* ChartJS
+             * -------
+             * Here we will create a few charts using ChartJS
+             */
+
+
+
+            //--------------
+            //- AREA CHART - 
+            //--------------
+
+            // Obtener el objeto JSON desde la variable de contexto 'datos_json'
+            var datosJson = JSON.parse('{{ datos_json|escapejs }}');
+
+            // Validar si datosJson no es un objeto JSON vacío
+            if (Object.keys(datosJson).length > 0) {
+                var areaChartData = {
+                    labels: datosJson.meses,
+                    datasets: [
+                        {
+                            label: 'Riesgo familiar',
+                            //backgroundColor: 'rgba(60,141,188,0.9)',
+                            fill: false,
+                            borderColor: 'fuchsia',
+                            data: datosJson.Familia
+                        },
+                        {
+                            label: 'Riesgo habitacional',
+                            //backgroundColor: 'rgba(210, 214, 222, 1)',
+                            fill: false,
+                            borderColor: 'lime',
+                            data: datosJson.Vivienda
+                        },
+                        {
+                            label: 'Riesgo Salud',
+                            //backgroundColor: 'rgba(210, 214, 222, 1)',
+                            fill: false,
+                            borderColor: 'red',
+                            data: datosJson.Salud
+                        },
+                        {
+                            label: 'Riesgo económico',
+                            //backgroundColor: 'rgba(210, 214, 222, 1)',
+                            fill: false,
+                            borderColor: 'blue',
+                            data: datosJson.Econom\u00eda
+                        },
+                        {
+                            label: 'Riesgo educacional',
+                            //backgroundColor: 'rgba(210, 214, 222, 1)',
+                            fill: false,
+                            borderColor: 'orange',
+                            data: datosJson.Educaci\u00f3n
+                        },
+                        {
+                            label: 'Riesgo laboral',
+                            //backgroundColor: 'rgba(210, 214, 222, 1)',
+                            fill: false,
+                            borderColor: 'gray',
+                            data: datosJson.Trabajo
+                        },
+                    ]
+                }
+
+                var areaChartOptions = {
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    legend: {
+                        display: false
+                    },
+                    scales: {
+                        xAxes: [{
+                            gridLines: {
+                                display: true,
+                            }
+                        }],
+                        yAxes: [{
+                            gridLines: {
+                                display: true,
+                            }
+                        }]
+                    }
+                }
+
+                //-------------
+                //- LINE CHART -
+                //--------------
+                var lineChartCanvas = $('#lineChart').get(0).getContext('2d')
+                var lineChartOptions = $.extend(true, {}, areaChartOptions)
+                var lineChartData = $.extend(true, {}, areaChartData)
+                lineChartData.datasets[0].fill = false;
+                lineChartData.datasets[1].fill = false;
+                lineChartOptions.datasetFill = false
+
+                var lineChart = new Chart(lineChartCanvas, {
+                    type: 'line',
+                    data: lineChartData,
+                    options: lineChartOptions
+                });
+            };
+        });
+
+                
+        //-------------
+        // - PIE CHART -
+        //-------------
+        // Get context with jQuery - using jQuery's .get() method.
+        var pieChartCanvas = $('#pieChart').get(0).getContext('2d')
+        var pieData = {
+            labels: [
+                'Santiago Baez',
+                'Jessica Baez',
+                'Catalina Villalba',
+                'Morena Baez',
+                'Rocio Baez',
+                'Ricardo Baez',
+                'Salomé Baez',
+                'Jorge Baez',
+                'Zoe Rivera',
+                'Hermindo Baez',
+                'Bautista Rivera',
+                'Martín Baez',
+            ],
+            datasets: [
+                {
+                    data: [20, 18, 11, 11, 11, 11, 11, 9, 7, 6, 6, 4],
+                    backgroundColor: ['#f56954', '#00a65a', '#f39c12', '#3c8dbc', '#ff851b', '#6610f2','#6c757d','#01ff70','#f012be','#3d9970','#3c8dbc','#e83e8c']
+                }
+            ]
+        }
+        var pieOptions = {
+            legend: {
+                display: false
+            }
+        }
+        // Create pie or douhnut chart
+        // You can switch between pie and douhnut using the method below.
+        // eslint-disable-next-line no-unused-vars
+        var pieChart = new Chart(pieChartCanvas, {
+            type: 'doughnut',
+            data: pieData,
+            options: pieOptions
+        })
+        //
+        //  //-----------------
+        //  // - END PIE CHART -
+        //  //-----------------                                     
+    }); 
+</script>
+{% endblock %}

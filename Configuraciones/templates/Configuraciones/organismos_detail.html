@@ -1,0 +1,126 @@
+{% extends "includes/base.html" %}
+{% load static %}
+{% block title %}Organismos{% endblock %}
+{% block titulo-pagina %}Organismos{% endblock %};
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right ">
+  <li class="breadcrumb-item">Configuraciones </li>
+  <li class="breadcrumb-item"><a href="{% url 'organismos_listar' %}">Organismos</a></li>
+  <li class="breadcrumb-item active"> {{ object.nombre}}</li>
+</ol>
+{% endblock %};
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+<!-- card-info -->
+<div class="row">
+  <!-- botones -->
+  <div class="col-12 my-3 mx-2 d-print-none">
+    {%if perms.Usuarios.rol_admin%}
+    <a href="{% url 'organismos_editar' object.id %}" class="btn btn-primary mr-1">Editar</a>
+    <a href="{% url 'agentesexternos_crear' object.id %}" class="btn btn-secondary mr-1">Agregar referente</a>
+    {%endif%}
+    <button type="button" class="btn btn-secondary mr-1 print">Imprimir</button>
+    {%if perms.Usuarios.rol_admin%}
+    <a href="{% url 'organismos_eliminar' object.id %}" class="btn btn-danger mr-1">Eliminar</a>
+    {%endif%}
+  </div>
+ </div>
+
+  <!-- ./botones -->
+  <div class="row p-0 m-0" id="seleccion">
+
+
+    <div class="col-sm-6">
+      <div class="card card-outline card-primary h-100">
+        <div class="card-header">
+          <h3 class="card-title">Detalle  de organismo</h3>
+        </div>
+        <div class="card-body">
+          <dl class="row mb-0">
+            <dt class="col-sm-3 font-weight-normal">Tipo </dt>
+            <dd class="col-sm-9 font-weight-bold">{{ object.tipo }}</dd>
+            <dt class="col-sm-3 font-weight-normal">Calle</dt>
+            <dd class="col-sm-9 font-weight-bold">{{ object.calle|default_if_none:"-" }} </dd>
+            <dt class="col-sm-3 font-weight-normal">Número </dt>
+            <dd class="col-sm-9 font-weight-bold">{{ object.altura|default_if_none:"-" }}</dd>
+            <dt class="col-sm-3 font-weight-normal">Piso </dt>
+            <dd class="col-sm-9 font-weight-bold">{{ object.piso|default_if_none:"-" }} </dd>
+            <dt class="col-sm-3 font-weight-normal">Barrio</dt>
+            <dd class="col-sm-9 font-weight-bold">{{ object.barrio|default_if_none:"-" }}</dd>
+            <dt class="col-sm-3 font-weight-normal">Localidad</dt>
+            <dd class="col-sm-9 font-weight-bold">{{ object.localidad|default_if_none:"-" }}</dd>
+            <dt class="col-sm-3 font-weight-normal">Teléfono </dt>
+            <dd class="col-sm-9 font-weight-bold">{{ object.telefono|default_if_none:"-" }} </dd>
+            <dt class="col-sm-3 font-weight-normal">Email </dt>
+            <dd class="col-sm-9 font-weight-bold">{{ object.email|default_if_none:"-" }} </dd>
+            <dt class="col-sm-3 font-weight-normal">Observaciones </dt>
+            <dd class="col-sm-9 font-weight-bold ">{{ object.observaciones|default_if_none:"-" }} </dd>
+            <dt class="col-sm-3 font-weight-normal">Estado</dt>
+            <dd class="col-sm-9 font-weight-bold">{% if object.estado %}
+              <span class="text-success font-weight-bold">Activo</span>
+              {% else %}
+              <span class="text-danger font-weight-bold">Inactivo</span>
+              {% endif %}
+            </dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+    <!-- /card-info  -->
+
+    <!-- card-info -->
+    <div class="col-sm-6">
+      <div class="card card-outline card-primary h-100 mt-3 mt-sm-0 ">
+        <div class="card-header">
+          <h3 class="card-title">Referentes</h3>
+          <div class="card-tools">
+            <button type="button" class="btn btn-tool">
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          {% for o in referentes %}
+          <div class="row mt-2">
+            <div class="user-block">
+              <img class="img-circle img-bordered-sm ocultar-al-imprimir" src="{% static 'custom/img/default.png'%}"
+                alt="User Image">
+
+              <span class="username">
+                <a href="{% url 'agentesexternos_ver' o.id %}"> {{o}} </a>
+              </span>
+                
+                <span class="description">{{o.rol |default_if_none:"-" }}</span>
+            </div>
+          </div>
+          {% empty %}
+          <span class="text-center text-muted">Sin referentes</span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+<!-- /card-info  -->
+<div class="row mt-4 d-print-none">
+  <div class="col-12 mx-2">
+    <a href="{% url 'organismos_listar' %}" class="btn btn-secondary">Volver</a>
+  </div>
+</div>
+
+
+
+
+
+
+{% endblock content %}
+
+
+{% block customJS %}
+
+{% endblock %}

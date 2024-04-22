@@ -1,0 +1,1348 @@
+{% extends "includes/base.html" %};
+{% load crispy_forms_tags %}
+{% load static %};
+
+{% block head %}{% endblock %}
+
+{% block title %}Legajo formulario{% endblock %};
+
+{% block titulo-pagina %} Legajos{% endblock %};
+
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right">
+    <li class="breadcrumb-item"><a href="">Legajos</a></li>
+    <li class="breadcrumb-item active">
+        [Agregar/Editar]
+    </li>
+</ol>
+{% endblock %};
+
+{% block menu-adicional %}
+{% endblock %};
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card card-primary card-outline">
+            <div class="bs-stepper">
+                <div class="bs-stepper-header" role="tablist">
+                    <div class="step" data-target="#datos-personales">
+                        <button type="button" class="step-trigger" role="tab" aria-controls="datos-personales"
+                            id="datos-personales-trigger">
+                            <span class="bs-stepper-circle">1</span>
+                            <span class="bs-stepper-label">Datos personales del bebé, niño o niña</span>
+                        </button>
+                    </div>
+                    <div class="line"></div>
+                    <div class="step" data-target="#dimensiones">
+                        <button type="button" class="step-trigger" role="tab" aria-controls="dimensiones"
+                            id="dimensiones-trigger">
+                            <span class="bs-stepper-circle">2</span>
+                            <span class="bs-stepper-label">Dimensiones</span>
+                        </button>
+                    </div>
+                    <div class="line"></div>
+                    <div class="step" data-target="#familiares">
+                        <button type="button" class="step-trigger" role="tab" aria-controls="familiares"
+                            id="familiares-trigger">
+                            <span class="bs-stepper-circle">4</span>
+                            <span class="bs-stepper-label">Familiares</span>
+                        </button>
+                    </div>
+                    <div class="line"></div>
+
+                    <div class="step" data-target="#alertas">
+                        <button type="button" class="step-trigger" role="tab" aria-controls="alertas"
+                            id="alertas-trigger">
+                            <span class="bs-stepper-circle">3</span>
+                            <span class="bs-stepper-label">Alertas</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body py-0 px-2 mt-5">
+                    <div class="bs-stepper-content">
+
+                        <div id="datos-personales" class="content" role="tabpanel"
+                            aria-labelledby="datos-personales-trigger">
+                            <div class="form-row">
+                                <div class="col-12 ">
+                                    <div class="row bg-secondary mb-2 p-2">Datos visibles en el
+                                        legajo
+                                    </div>
+                                </div>
+                                <div class="form-group col-sm-6">
+                                    <label for="exampleInputnombre">Nombre*</label>
+                                    <input type="text" class="form-control" id="exampleInputnombre"
+                                        value="Diego Fernando">
+                                </div>
+                                <div class="form-group col-sm-6">
+                                    <label for="exampleInputapellido">Apellidos*</label>
+                                    <input type="text" class="form-control" id="exampleInputapellido" value="Maradona">
+                                </div>
+                                <div class="form-group col-sm-3">
+                                    <label for="exampleInputsexo">Sexo*</label>
+                                    <select id="exampleInputsexo" class="form-control custom-select">
+                                        <option disabled></option>
+                                        <option>FEMENINO</option>
+                                        <option selected>MASCULINO</option>
+                                        <option>X</option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-sm-3">
+                                    <div class="form-group">
+                                        <label>Fecha de nacimiento*</label>
+                                        <div class="input-group date" id="reservationdate" data-target-input="nearest">
+                                            <input type="text" class="form-control datetimepicker-input"
+                                                data-target="#reservationdate" value="06/05/2012" />
+                                            <div class="input-group-append" data-target="#reservationdate"
+                                                data-toggle="datetimepicker">
+                                                <div class="input-group-text"><i class="fa fa-calendar-alt"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group col-sm-3">
+                                    <div class="form-group">
+                                        <label for="inputtipodoc">Tipo*</label>
+                                        <select id="inputtipodoc" class="form-control custom-select">
+                                            <option disabled></option>
+                                            <option selected=>DNI</option>
+                                            <option>DOCUMENTO EXTRANJERO</option>
+                                            <option>PASAPORTE</option>
+                                            <option>OTRO</option>
+                                            <option>SIN DOCUMENTO</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group col-sm-3">
+                                    <label for="inputdocumento">Documento*</label>
+                                    <input type="number" class="form-control" for="inputdocumento" value="52046698" />
+                                </div>
+                                <div class="form-group col-sm-4">
+                                    <div class="form-group">
+                                        <label for="inputnacionalidad">Nacionalidad</label>
+                                        <select id="inputnacionalidad" class="form-control custom-select">
+                                            <option selected disabled></option>
+                                            <option>ARGENTINA</option>
+                                            <option>BOLIVIANA</option>
+                                            <option>PERUANA</option>
+                                            <option>PARAGUAYA</option>
+                                            <option>CHILENA</option>
+                                            <option>URUGUAYA</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group col-sm-4">
+                                    <div class="form-group">
+                                        <label for="inputtelefono">Teléfono</label>
+                                        <input type="number" class="form-control" for="inputtelefono" />
+                                    </div>
+                                </div>
+                                <div class="form-group col-sm-4">
+                                    <label for="exampleInputEmail1">Email </label>
+                                    <input type="email" class="form-control" id="exampleInputEmail1">
+                                </div>
+                                <div class="form-group col-sm-3">
+                                    <label for="inputcalle">Calle</label>
+                                    <input type="text" class="form-control" id="inputcalle">
+                                </div>
+                                <div class="form-group col-sm-1">
+                                    <label for="inputaltura">Altura</label>
+                                    <input type="number" class="form-control" for="inputaltura" />
+                                </div>
+                                <div class="form-group col-sm-1">
+                                    <label for="inputpiso2">Piso</label>
+                                    <input type="number" class="form-control" for="inputpiso2" />
+                                </div>
+                                <div class="form-group col-sm-1">
+                                    <label for="inputdepto2">Depto</label>
+                                    <input type="number" class="form-control" for="inputdepto2" />
+                                </div>
+                                <div class="form-group col-sm-3">
+                                    <label>Barrio</label>
+                                    <select class="select2 w-100">
+                                        <option disabled selected></option>
+                                        <option>Barrio</option>
+                                        <option>Barrio</option>
+                                        <option>Barrio</option>
+                                        <option>Barrio</option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-sm-3">
+                                    <label>Localidad</label>
+                                    <select class="select2 w-100">
+                                        <option disabled selected></option>
+                                        <option>Localidad</option>
+                                        <option>Localidad</option>
+                                        <option>Localidad</option>
+                                        <option>Localidad</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-12">
+                                    <div class="row bg-secondary mb-2 mt-3 p-2">
+                                        Datos visibles solo en Primera Infancia
+                                    </div>
+                                </div>
+                                <div class="form-group col-sm-6">
+                                    <label>Lugar de nacimiento</label>
+                                    <select class="select2 w-100">
+                                        <option disabled selected></option>
+                                        <option>Hospital Larcade</option>
+                                        <option>Parto Domiciliario</option>
+                                        <option>Parto Extrapartidario</option>
+                                        <option>Parto en institución privada</option>
+                                    </select>
+                                </div>
+                                <div class="col-sm-6 form-group">
+                                    <label>DNI con domicilio en
+                                        San Miguel</label>
+                                    <select class="form-control custom-select">
+                                        <option selected disabled></option>
+                                        <option>SI</option>
+                                        <option>NO</option>
+                                    </select>
+                                </div>
+
+                            </div>
+                            <button class="btn btn-primary float-right mb-3 mt-5"
+                                onclick="stepper.next()">Continuar</button>
+                        </div>
+
+                        <div id="dimensiones" class="content" role="tabpanel" aria-labelledby="dimensiones-trigger">
+                            <div class="col-12 mt-5">
+                                <div class="card">
+                                    <div class="card-header ml-3">
+                                        <ul class="nav nav-pills card-title">
+                                            <li class="nav-item"><a class="nav-link py-0 active"
+                                                    href="#dimensionfamilia" data-toggle="tab">Familia</a></li>
+                                            <li class="nav-item"><a class="nav-link py-0" href="#dimensionvivienda"
+                                                    data-toggle="tab">Vivienda</a>
+                                            </li>
+                                            <li class="nav-item"><a class="nav-link py-0" href="#dimensionsalud"
+                                                    data-toggle="tab">Salud</a></li>
+                                            <li class="nav-item"><a class="nav-link py-0" href="#dimensioneducacion"
+                                                    data-toggle="tab">Educación</a></li>
+                                            <li class="nav-item"><a class="nav-link py-0" href="#dimensioneconomia"
+                                                    data-toggle="tab">Economía</a>
+                                            </li>
+                                        </ul>
+                                    </div>
+
+                                    <div class="card-body  bg-light">
+                                        <div class="tab-content">
+
+                                            <!-- dimension familia -->
+                                            <div class="active tab-pane" id="dimensionfamilia">
+                                                <div class="form-row  mt-3">
+
+                                                    <div class="col-sm-6 form-group">
+                                                        <label>¿Cuántas personas hay en el hogar
+                                                            embarazadas?</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>0</option>
+                                                            <option>1</option>
+                                                            <option>2</option>
+                                                            <option>3</option>
+                                                            <option>4</option>
+                                                            <option>5</option>
+                                                            <option>Más de 5</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-6 form-group">
+                                                        <label for="inputStatus4">¿Cuántas personas hay en el hogar
+                                                            con problemas de salud mental?</label>
+                                                        <select id="inputStatus4" class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>0</option>
+                                                            <option>1</option>
+                                                            <option>2</option>
+                                                            <option>3</option>
+                                                            <option>4</option>
+                                                            <option>5</option>
+                                                            <option>Más de 5</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-6 form-group">
+                                                        <label for="inputStatus5">¿Cuántas personas hay en el hogar
+                                                            con discapacidad?</label>
+                                                        <select id="inputStatus5" class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>0</option>
+                                                            <option>1</option>
+                                                            <option>2</option>
+                                                            <option>3</option>
+                                                            <option>4</option>
+                                                            <option>5</option>
+                                                            <option>Más de 5</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-6 form-group">
+                                                        <label for="inputStatus6">¿Cuántas personas hay en el hogar
+                                                            con enfermedades crónicas?</label>
+                                                        <select id="inputStatus6" class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>0</option>
+                                                            <option>1</option>
+                                                            <option>2</option>
+                                                            <option>3</option>
+                                                            <option>4</option>
+                                                            <option>5</option>
+                                                            <option>Más de 5</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-6 form-group">
+                                                        <label for="inputStatus7">¿Cuántas personas hay en el hogar
+                                                            privados de su libertad?</label>
+                                                        <select id="inputStatus7" class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>0</option>
+                                                            <option>1</option>
+                                                            <option>2</option>
+                                                            <option>3</option>
+                                                            <option>4</option>
+                                                            <option>5</option>
+                                                            <option>Más de 5</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-12 form-group">
+                                                        <label>Observaciones</label>
+                                                        <textarea class="form-control" rows="3"></textarea>
+                                                    </div>
+                                                    <!-- <div class="col-12">
+                                                        <div class="row bg-secondary mb-3 mt-3 p-2">Datos
+                                                            visibles solo en Primera Infancia</d>
+                                                        </div>
+                                                    </div> -->
+
+
+
+
+                                                </div>
+                                            </div>
+                                            <!-- ./didivsion familia  -->
+
+                                            <!-- dimension vivienda -->
+                                            <div class=" tab-pane" id="dimensionvivienda">
+                                                <div class="form-row">
+                                                    <div class="col-12">
+                                                        <div class="row bg-secondary mb-2 p-2">Datos
+                                                            visibles en el legajo
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-3">
+                                                        <div class="form-group">
+                                                            <label for="inputStatus9">Tipo de vivienda</label>
+                                                            <select id="inputStatus9"
+                                                                class="form-control custom-select">
+                                                                <option selected disabled></option>
+                                                                <option>Casa</option>
+                                                                <option>Departamento</option>
+                                                                <option>Pieza de alquiler</option>
+                                                                <option>Pieza en hotel</option>
+                                                                <option>Pensión</option>
+                                                                <option>Local no construido para
+                                                                    habitación
+                                                                </option>
+                                                                <option>Otro</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-3">
+                                                        <div class="form-group">
+                                                            <label for="inputStatus10">Tipo de posesión</label>
+                                                            <select id="inputStatus10"
+                                                                class="form-control custom-select">
+                                                                <option selected disabled></option>
+                                                                <option> Propia</option>
+                                                                <option> Alquilada</option>
+                                                                <option> Cedida</option>
+                                                                <option> Otro</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-3">
+                                                        <div class="form-group">
+                                                            <label for="inputStatus11">Estructura de la
+                                                                vivienda</label>
+                                                            <select id="inputStatus11"
+                                                                class="form-control custom-select">
+                                                                <option selected disabled></option>
+                                                                <option>De material</option>
+                                                                <option>Mixta (chapa y madera)</option>
+                                                                <option>Casilla (materiales no pensados
+                                                                    para la
+                                                                    construcción)</option>
+                                                                <option>Otro</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-3">
+                                                        <div class="form-group">
+                                                            <label for="inputStatus12">Material de los pisos
+                                                                interiores</label>
+                                                            <select id="inputStatus12"
+                                                                class="form-control custom-select">
+                                                                <option selected disabled></option>
+                                                                <option>Mosaico/ Baldosa/ Madera/
+                                                                    Cerámica
+                                                                </option>
+                                                                <option>Cemento/ Ladrillo fijo</option>
+                                                                <option>Ladrillo suelto /Tierra
+                                                                </option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <div class="form-group ">
+                                                            <label for="inputStatus13">¿Cuántas habitaciones
+                                                                tiene el
+                                                                hogar? (sin contar baño/s, cocina, pasillo/s,
+                                                                lavadero)</label>
+                                                            <select id="inputStatus13"
+                                                                class="form-control custom-select">
+                                                                <option selected disabled></option>
+                                                                <option>0</option>
+                                                                <option>1</option>
+                                                                <option>2</option>
+                                                                <option>3</option>
+                                                                <option>4</option>
+                                                                <option>5</option>
+                                                                <option>Más de 5</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-3">
+                                                        <div class="form-group">
+                                                            <label for="inputStatus14">¿Cuantas personas viven en
+                                                                el
+                                                                hogar?</label>
+                                                            <select id="inputStatus14"
+                                                                class="form-control custom-select">
+                                                                <option selected disabled></option>
+                                                                <option>0</option>
+                                                                <option>1</option>
+                                                                <option>2</option>
+                                                                <option>3</option>
+                                                                <option>4</option>
+                                                                <option>5</option>
+                                                                <option>Más de 5</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-3">
+                                                        <div class="form-group">
+                                                            <label for="inputStatus15">¿Cuántos de ellos son
+                                                                menores de
+                                                                18 años?</label>
+                                                            <select id="inputStatus15"
+                                                                class="form-control custom-select">
+                                                                <option selected disabled></option>
+                                                                <option>0</option>
+                                                                <option>1</option>
+                                                                <option>2</option>
+                                                                <option>3</option>
+                                                                <option>4</option>
+                                                                <option>5</option>
+                                                                <option>Más de 5</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-3">
+                                                        <div class="form-group">
+                                                            <label for="inputStatus16">¿Cuántas camas/ colchones
+                                                                tienen?</label>
+                                                            <select id="inputStatus16"
+                                                                class="form-control custom-select">
+                                                                <option selected disabled></option>
+                                                                <option>0</option>
+                                                                <option>1</option>
+                                                                <option>2</option>
+                                                                <option>3</option>
+                                                                <option>4</option>
+                                                                <option>5</option>
+                                                                <option>Más de 5</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-3">
+                                                        <div class="form-group">
+                                                            <label for="inputStatus17">¿Cuántos hogares hay en la
+                                                                vivienda?</label>
+                                                            <select id="inputStatus17"
+                                                                class="form-control custom-select">
+                                                                <option selected disabled></option>
+                                                                <option>0</option>
+                                                                <option>1</option>
+                                                                <option>2</option>
+                                                                <option>3</option>
+                                                                <option>4</option>
+                                                                <option>5</option>
+                                                                <option>Más de 5</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-6 mb-3">
+                                                        <div class="form-group">
+                                                            <div class="icheck-primary ">
+                                                                <input type="checkbox" id="checkboxPrimaryv1" checked>
+                                                                <label for="checkboxPrimaryv1">
+                                                                    ¿La vivienda tiene agua caliente?
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-6 mb-3">
+                                                        <div class="form-group">
+                                                            <div class="icheck-primary ">
+                                                                <input type="checkbox" id="checkboxPrimaryv2" checked>
+                                                                <label for="checkboxPrimaryv2">
+                                                                    ¿La vivienda tiene riesgo de
+                                                                    desmoronamiento?
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-6 mb-3">
+                                                        <div class="form-group">
+                                                            <div class="icheck-primary ">
+                                                                <input type="checkbox" id="checkboxPrimaryv3" checked>
+                                                                <label for="checkboxPrimaryv3">
+                                                                    ¿La vivenda posee baño en su interior?
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-6 mb-3">
+                                                        <div class="form-group">
+                                                            <div class="icheck-primary ">
+                                                                <input type="checkbox" id="checkboxPrimaryv4" checked>
+                                                                <label for="checkboxPrimaryv4">
+                                                                    ¿El baño dentro de la vivienda tiene
+                                                                    descarga?
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-12 form-group">
+                                                        <label>Observaciones</label>
+                                                        <textarea class="form-control" rows="3"></textarea>
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <div class="row bg-secondary mb-2 p-2 mt-3">Datos visibles solo
+                                                            para
+                                                            Primera Infancia
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-6">
+                                                        <div class="form-group">
+                                                            <label for="inputStatus2">Fuente de agua</label>
+                                                            <select id="inputStatus2"
+                                                                class="form-control custom-select">
+                                                                <option selected disabled></option>
+                                                                <option>Corriente</option>
+                                                                <option>Pozo</option>
+                                                                <option>No tiene</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-6">
+                                                        <div class="form-group">
+                                                            <label for="inputStatus18">Provisión de gas</label>
+                                                            <select id="inputStatus18"
+                                                                class="form-control custom-select">
+                                                                <option selected disabled></option>
+                                                                <option>Envasado</option>
+                                                                <option>Red de gas</option>
+                                                                <option>No tiene</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-6 mb-3">
+                                                        <div class="form-group">
+                                                            <div class="icheck-primary ">
+                                                                <input type="checkbox" id="checkboxPrimaryv10" checked>
+                                                                <label for="checkboxPrimaryv9">
+                                                                    ¿La vivienda tiene luz?
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-6 mb-3">
+                                                        <div class="form-group">
+                                                            <div class="icheck-primary ">
+                                                                <input type="checkbox" id="checkboxPrimaryv7" checked>
+                                                                <label for="checkboxPrimaryv7">
+                                                                    ¿La vivienda tiene cocina?
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-6 mb-3">
+                                                        <div class="form-group">
+                                                            <div class="icheck-primary ">
+                                                                <input type="checkbox" id="checkboxPrimaryv8" checked>
+                                                                <label for="checkboxPrimaryv8">
+                                                                    ¿La vivienda tiene heladera?
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-6 mb-3">
+                                                        <div class="form-group">
+                                                            <div class="icheck-primary ">
+                                                                <input type="checkbox" id="checkboxPrimaryv10" checked>
+                                                                <label for="checkboxPrimaryv10">
+                                                                    ¿La vivienda se inunda?
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-6 mb-3">
+                                                        <div class="form-group">
+                                                            <div class="icheck-primary ">
+                                                                <input type="checkbox" id="checkboxPrimaryv5" checked>
+                                                                <label for="checkboxPrimaryv5">
+                                                                    ¿Cada conviviente tiene su colchón?
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-6 mb-3">
+                                                        <div class="form-group">
+                                                            <div class="icheck-primary ">
+                                                                <input type="checkbox" id="checkboxPrimaryv6" checked>
+                                                                <label for="checkboxPrimaryv6">
+                                                                    ¿Duermen más de 4 personas por habitación?
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-6 mb-3">
+                                                        <label for="inputStatus20">¿El niño comparte habitación?</label>
+                                                        <select id="inputStatus20" class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>No</option>
+                                                            <option>Con sus padres</option>
+                                                            <option>Con otros hermanos</option>
+                                                            <option>Con otros adultos</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-6 mb-3">
+                                                        <label for="inputStatus21">¿El niño comparte cama o
+                                                            colchón?</label>
+                                                        <select id="inputStatus21" class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>No</option>
+                                                            <option>Con sus padres</option>
+                                                            <option>Con otros hermanos</option>
+                                                            <option>Con otros adultos</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- ./dimension vivienda -->
+
+                                            <!-- dimension salud -->
+                                            <div class=" tab-pane" id="dimensionsalud">
+                                                <div class="form-row">
+
+                                                    <div class="col-12">
+                                                        <div class="row bg-secondary mb-2 p-2 mt-3">Datos visibles solo
+                                                            en el legajo
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-6 form-group">
+                                                        <label for="inputStatus22">¿Cada cuánto se realiza
+                                                            controles
+                                                            médicos?</label>
+                                                        <select id="inputStatus22" class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>Mensual</option>
+                                                            <option>Semestral</option>
+                                                            <option>Anual</option>
+                                                            <option>Dos años</option>
+                                                            <option>Tres años</option>
+                                                            <option>Cuatro años</option>
+                                                            <option>Cinco años</option>
+                                                            <option>Más de cinco años</option>
+                                                            <option>Nunca</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-6  form-group">
+                                                        <label for="inputStatus23">Centro de Salud en donde
+                                                            se
+                                                            atiende</label>
+                                                        <select id="inputStatus23" class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>20 de Julio</option>
+                                                            <option>29 de Septiembre</option>
+                                                            <option>Ana Teresa Barthalot</option>
+                                                            <option>C.I.C Maria Lobato</option>
+                                                            <option>Camila Rolón</option>
+                                                            <option>Cándido Castello</option>
+                                                            <option>Rodolfo Podestá</option>
+                                                            <option>Cura Brochero</option>
+                                                            <option>Alberto Sabin</option>
+                                                            <option>Federico Leloir</option>
+                                                            <option>Suárez París</option>
+                                                            <option>Raúl Matera</option>
+                                                            <option>René Favaloro</option>
+                                                            <option>Marta Antoniazzi</option>
+                                                            <option>Padre Mora</option>
+                                                            <option>Pte. Perón</option>
+                                                            <option>Ramón Castillo</option>
+                                                            <option>San Miguel Oeste</option>
+                                                            <option>U.F.O (Manuelita)</option>
+                                                            <option>Hospital Público</option>
+                                                            <option>Clínica Privada o Sanatorio
+                                                            </option>
+                                                            <option>No asiste a instituciones de
+                                                                salud
+                                                            </option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-6 form-group">
+                                                        <div class="icheck-primary ">
+                                                            <input type="checkbox" id="checkboxPrimarys1" checked>
+                                                            <label for="checkboxPrimarys1">
+                                                                ¿Tiene cobertura de salud?
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-6 form-group">
+                                                        <div class="icheck-primary ">
+                                                            <input type="checkbox" id="checkboxPrimarys2" checked>
+                                                            <label for="checkboxPrimarys2">
+                                                                ¿Tiene alguna enfermedad recurrente o
+                                                                crónica?
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-6 form-group">
+                                                        <div class="icheck-primary ">
+                                                            <input type="checkbox" id="checkboxPrimarys3" checked>
+                                                            <label for="checkboxPrimarys3">
+                                                                ¿Tiene alguna discapacidad?
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-6 form-group">
+                                                        <div class="icheck-primary ">
+                                                            <input type="checkbox" id="checkboxPrimarys4" checked>
+                                                            <label for="checkboxPrimarys4">
+                                                                ¿Tiene certificado de discapacidad?
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-6 form-group">
+                                                        <div class="icheck-primary ">
+                                                            <input type="checkbox" id="checkboxPrimarys5" checked>
+                                                            <label for="checkboxPrimarys5">
+                                                                ¿Tiene el calendario de vacunación al día?
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-12 form-group">
+                                                        <label>Observaciones</label>
+                                                        <textarea class="form-control" rows="3"></textarea>
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <div class="row bg-secondary mb-2 p-2 mt-3">Datos visibles solo
+                                                            para
+                                                            Primera Infancia
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-12  form-group">
+                                                        <label for="inputenfermedad">¿Cuál patología posee? ¿Dónde
+                                                            se trata?
+                                                            ¿Con
+                                                            quién?</label>
+                                                        <input class="form-control" type="text"
+                                                            id="inputenfermedad"></input>
+                                                    </div>
+                                                    <div class="col-sm-6 form-group">
+                                                        <label for="complicacion">¿Alguna otra complicación
+                                                            o
+                                                            dificultad?</label>
+                                                        <select id="complicacion" class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>Auditiva</option>
+                                                            <option>Respiratoria</option>
+                                                            <option>Visual</option>
+                                                            <option>Traumatológica</option>
+                                                            <option>Emocional</option>
+                                                            <option>Psíquica o psicológica</option>
+                                                            <option>Digestiva</option>
+                                                            <option>Alergias</option>
+                                                            <option>Neurológica</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-6 form-group">
+                                                        <label for="catpeso">Categoría de peso del niño</label>
+                                                        <select id="catpeso" class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>Bajo peso</option>
+                                                            <option>Peso normal</option>
+                                                            <option>Sobrepeso</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <div class="row text-muted font-weight-bold my-3">Antecedentes
+                                                            prenatales,
+                                                            embarazo y parto</div>
+                                                    </div>
+
+                                                    <div class="col-sm-6 form-group">
+                                                        <label for="inputStatus24">¿Cómo fue el embarazo del niño
+                                                            que
+                                                            ingresa a Primera Infancia?</label>
+                                                        <select id="inputStatus24" class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>Embarazo normal</option>
+                                                            <option>Embarazo de riesgo (dos o más
+                                                                cesáreas,cinco o más partos naturales, mellizos,
+                                                                madre adolescente, patología en embarazo)</option>
+                                                            <option>Controlado totalmente</option>
+                                                            <option>Controlado parcialmente (Menos de 5
+                                                                controles VER CON CDLE)</option>
+                                                            <option>No controlado</option>
+                                                            <option>Embarazo adolescente</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-6 form-group">
+                                                        <label for="inputStatus24">Tipo de Parto del niño
+                                                            que
+                                                            ingresa a Primera Infancia</label>
+                                                        <select id="inputStatus24" class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>Vaginal</option>
+                                                            <option>Cesárea</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-6 form-group">
+                                                        <label for="inputStatus24">¿Cómo fue el Parto del niño
+                                                            que
+                                                            ingresa a Primera Infancia?</label>
+                                                        <select id="inputStatus24" class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>A término (desde 38 semanas)</option>
+                                                            <option>Prematuro</option>
+                                                            <option>Pasado de fecha (más de 40 sem)</option>
+                                                            <option>Controlado parcialmente (Menos de 5
+                                                                controles VER CON CDLE)</option>
+                                                            <option>No controlado</option>
+                                                            <option>Embarazo adolescente</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <div class="col-sm-6 form-group">
+                                                        <label for="pesoalnacer"> Peso al nacer</label>
+                                                        <input type="number" class="form-control" for="pesoalnacer" />
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- ./dimension salud -->
+
+                                            <!-- deimension educacion -->
+                                            <div class=" tab-pane" id="dimensioneducacion">
+                                                <div class="form-row">
+
+                                                    <div class="col-12 form-group my-3">
+                                                        <div class="icheck-primary ">
+                                                            <input type="checkbox" checked>
+                                                            <label>
+                                                                ¿Asiste a la Escuela?
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-4 form-group">
+                                                        <label>Escuela</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected="" disabled></option>
+                                                            <option>Anexo I A Escuela De Educación Secundaria N° 3 -
+                                                                Anexo</option>
+                                                            <option>C.e.pro.m</option>
+                                                            <option>Centro De Formacion Profesional Fuce (Ex 9003)
+                                                            </option>
+                                                            <option>Centro De Formación Integral N° 1</option>
+                                                            <option>Centro De Formación Profesional N° 402</option>
+                                                            <option>Centro De Formación Profesional N° 403</option>
+                                                            <option>Centro Educativo De Nivel Secundario N° 453</option>
+                                                            <option>Centro Educativo Nivel Secundaria N° 451</option>
+                                                            <option>Centro Educativo Nivel Secundaria N° 452</option>
+                                                            <option>Centro Educativo Nivel Secundaria N° 454</option>
+                                                            <option>Centro Educativo Nivel Secundaria N° 455</option>
+                                                            <option>Centro Educativo Nivel Secundaria N° 456</option>
+                                                            <option>Centro Formación Profesional N° 401</option>
+                                                            <option>Colegio Aberdare</option>
+                                                            <option>Colegio De La Providencia</option>
+                                                            <option>Colegio De Los Santos Padres</option>
+                                                            <option>Colegio Divina Pastora</option>
+                                                            <option>Colegio El Tato</option>
+                                                            <option>Colegio Glasgow</option>
+                                                            <option>Colegio Las Marias</option>
+                                                            <option>Colegio Madre Teresa</option>
+                                                            <option>Colegio Madre Tierra</option>
+                                                            <option>Colegio Monseñor Terrero</option>
+                                                            <option>Colegio Naciones Unidas Del Mundo</option>
+                                                            <option>Colegio Parroquial Del Patriarca San Jose</option>
+                                                            <option>Colegio Parroquial Nuestra Señora De Itati</option>
+                                                            <option>Colegio Parroquial Nuestra Señora De Lujan</option>
+                                                            <option>Colegio Parroquial Santa Maria Del Trujui</option>
+                                                            <option>Colegio Parroquial Santa Teresa De Jesus</option>
+                                                            <option>Colegio Sagrada Familia</option>
+                                                            <option>Colegio San Agustin</option>
+                                                            <option>Colegio San Jose De Oro Ocampo</option>
+                                                            <option>Colegio San Miguel Arcangel</option>
+                                                            <option>Colegio Santa Ethnea</option>
+                                                            <option>Colgio Tolkien</option>
+                                                            <option>Conservatorio De Musica N° 1</option>
+                                                            <option>Ctro. Int. De Form. Para El Trabajo Mi Encuentro (Ex
+                                                                9001)</option>
+                                                            <option>Escuela Almafuerte</option>
+                                                            <option>Escuela Angel D' Elia</option>
+                                                            <option>Escuela Atahualpa Yupanqui</option>
+                                                            <option>Escuela Club Atletico San Miguel</option>
+                                                            <option>Escuela De Artes Visuales N° 1</option>
+                                                            <option>Escuela De Educacion De Adultos N° 701</option>
+                                                            <option>Escuela De Educacion De Adultos N° 702</option>
+                                                            <option>Escuela De Educacion De Adultos N° 703</option>
+                                                            <option>Escuela De Educacion De Adultos N° 704</option>
+                                                            <option>Escuela De Educacion De Adultos N° 705</option>
+                                                            <option>Escuela De Educacion De Adultos N° 706</option>
+                                                            <option>Escuela De Educacion De Adultos N° 707</option>
+                                                            <option>Escuela De Educacion De Adultos N° 708</option>
+                                                            <option>Escuela De Educacion De Adultos N° 709</option>
+                                                            <option>Escuela De Educacion De Adultos N° 710</option>
+                                                            <option>Escuela De Educación Especial N° 502</option>
+                                                            <option>Escuela De Educación Especial N° 503</option>
+                                                            <option>Escuela De Educación Especial N° 504</option>
+                                                            <option>Escuela De Educación Primaria N° 1 Domingo Faustino
+                                                                Sarmiento</option>
+                                                            <option>Escuela De Educación Primaria N° 10 Mariano Moreno
+                                                            </option>
+                                                            <option>Escuela De Educación Primaria N° 11 Jorge Newbery
+                                                            </option>
+                                                            <option>Escuela De Educación Primaria N° 12 Gabriela Mistral
+                                                            </option>
+                                                            <option>Escuela De Educación Primaria N° 13 Jose Gervasio
+                                                                Artigas</option>
+                                                            <option>Escuela De Educación Primaria N° 14 Dr. Francisco
+                                                                Javier Muñiz</option>
+                                                            <option>Escuela De Educación Primaria N° 15 Fray Mamerto
+                                                                Esquiu</option>
+                                                            <option>Escuela De Educación Primaria N° 16 Justo Jose De
+                                                                Urquiza</option>
+                                                            <option>Escuela De Educación Primaria N° 17 Esteban
+                                                                Echeverria</option>
+                                                            <option>Escuela De Educación Primaria N° 18 Maestro E
+                                                                Ferreyra</option>
+                                                            <option>Escuela De Educación Primaria N° 19 Rafael Obligado
+                                                            </option>
+                                                            <option>Escuela De Educación Primaria N° 2 Bernardino
+                                                                Rivadavia</option>
+                                                            <option>Escuela De Educación Primaria N° 20 Dr. Angel
+                                                                Gallardo</option>
+                                                            <option>Escuela De Educación Primaria N° 21 Ceferino
+                                                                Namuncura</option>
+                                                            <option>Escuela De Educación Primaria N° 22 Ejercito
+                                                                Argentino</option>
+                                                            <option>Escuela De Educación Primaria N° 23 Alfonsina Storni
+                                                            </option>
+                                                            <option>Escuela De Educación Primaria N° 24 Yapeyu</option>
+                                                            <option>Escuela De Educación Primaria N° 25 San Ignacio
+                                                            </option>
+                                                            <option>Escuela De Educación Primaria N° 26 Jose De San
+                                                                Martin</option>
+                                                            <option>Escuela De Educación Primaria N° 27 Juana Azurduy De
+                                                                Padilla</option>
+                                                            <option>Escuela De Educación Primaria N° 28</option>
+                                                            <option>Escuela De Educación Primaria N° 29 Dr. Jose Maria
+                                                                Ramos Mejia</option>
+                                                            <option>Escuela De Educación Primaria N° 3 Hipolito Yrigoyen
+                                                            </option>
+                                                            <option>Escuela De Educación Primaria N° 30 Clorinda T.b. De
+                                                                Munzon</option>
+                                                            <option>Escuela De Educación Primaria N° 31 Juana Paula
+                                                                Manso</option>
+                                                            <option>Escuela De Educación Primaria N° 32 Pablo Pizzurno
+                                                            </option>
+                                                            <option>Escuela De Educación Primaria N° 33 Manuel Moreno
+                                                            </option>
+                                                            <option>Escuela De Educación Primaria N° 34 Mariano Acosta
+                                                            </option>
+                                                            <option>Escuela De Educación Primaria N° 35 Ricardo
+                                                                Güiraldes</option>
+                                                            <option>Escuela De Educación Primaria N° 36 Crucero Gral.
+                                                                Belgrano</option>
+                                                            <option>Escuela De Educación Primaria N° 37 Domingo Faustino
+                                                                Sarmiento</option>
+                                                            <option>Escuela De Educación Primaria N° 38 Manuel Belgrano
+                                                            </option>
+                                                            <option>Escuela De Educación Primaria N° 39 Jose Hernandez
+                                                            </option>
+                                                            <option>Escuela De Educación Primaria N° 4 Nuestra Señora De
+                                                                Las Mercedes</option>
+                                                            <option>Escuela De Educación Primaria N° 5 Andres Bello
+                                                            </option>
+                                                            <option>Escuela De Educación Primaria N° 6 General Don Jose
+                                                                De San Martin</option>
+                                                            <option>Escuela De Educación Primaria N° 7 Juan Bautista
+                                                                Alberdi</option>
+                                                            <option>Escuela De Educación Primaria N° 8 Jose Manuel
+                                                                Estrada</option>
+                                                            <option>Escuela De Educación Primaria N° 9 Tambor De Tacuari
+                                                            </option>
+                                                            <option>Escuela De Educación Secundaria N° 1 Brigadier Gral.
+                                                                Juan F. Quiroga</option>
+                                                            <option>Escuela De Educación Secundaria N° 10</option>
+                                                            <option>Escuela De Educación Secundaria N° 11</option>
+                                                            <option>Escuela De Educación Secundaria N° 12</option>
+                                                            <option>Escuela De Educación Secundaria N° 13</option>
+                                                            <option>Escuela De Educación Secundaria N° 14</option>
+                                                            <option>Escuela De Educación Secundaria N° 15</option>
+                                                            <option>Escuela De Educación Secundaria N° 16</option>
+                                                            <option>Escuela De Educación Secundaria N° 17</option>
+                                                            <option>Escuela De Educación Secundaria N° 18</option>
+                                                            <option>Escuela De Educación Secundaria N° 19</option>
+                                                            <option>Escuela De Educación Secundaria N° 2 Ing. Adolfo
+                                                                Sourdeaux</option>
+                                                            <option>Escuela De Educación Secundaria N° 20</option>
+                                                            <option>Escuela De Educación Secundaria N° 21</option>
+                                                            <option>Escuela De Educación Secundaria N° 22</option>
+                                                            <option>Escuela De Educación Secundaria N° 23</option>
+                                                            <option>Escuela De Educación Secundaria N° 24</option>
+                                                            <option>Escuela De Educación Secundaria N° 25</option>
+                                                            <option>Escuela De Educación Secundaria N° 26</option>
+                                                            <option>Escuela De Educación Secundaria N° 27</option>
+                                                            <option>Escuela De Educación Secundaria N° 28</option>
+                                                            <option>Escuela De Educación Secundaria N° 29</option>
+                                                            <option>Escuela De Educación Secundaria N° 3 Heroes De
+                                                                Malvinas</option>
+                                                            <option>Escuela De Educación Secundaria N° 30</option>
+                                                            <option>Escuela De Educación Secundaria N° 31</option>
+                                                            <option>Escuela De Educación Secundaria N° 32</option>
+                                                            <option>Escuela De Educación Secundaria N° 33</option>
+                                                            <option>Escuela De Educación Secundaria N° 34</option>
+                                                            <option>Escuela De Educación Secundaria N° 35</option>
+                                                            <option>Escuela De Educación Secundaria N° 36</option>
+                                                            <option>Escuela De Educación Secundaria N° 37</option>
+                                                            <option>Escuela De Educación Secundaria N° 38</option>
+                                                            <option>Escuela De Educación Secundaria N° 4 Raul Scalabrini
+                                                                Ortiz</option>
+                                                            <option>Escuela De Educación Secundaria N° 4 - Anexo
+                                                            </option>
+                                                            <option>Escuela De Educación Secundaria N° 5 Belgrano
+                                                                Educador</option>
+                                                            <option>Escuela De Educación Secundaria N° 6 Juana Manso
+                                                            </option>
+                                                            <option>Escuela De Educación Secundaria N° 7 Domingo F.
+                                                                Sarmiento</option>
+                                                            <option>Escuela De Educación Secundaria N° 8</option>
+                                                            <option>Escuela De Educación Secundaria N° 9</option>
+                                                            <option>Escuela De Educación Secundaria Técnica N° 1 Nuestra
+                                                                Señora Del Valle</option>
+                                                            <option>Escuela De Educación Secundaria Técnica N° 2
+                                                                República Argentina</option>
+                                                            <option>Escuela De Educación Secundaria Técnica N° 3 Japón
+                                                            </option>
+                                                            <option>Escuela De Teatro N° 1</option>
+                                                            <option>Escuela Especial Buscando El Sol</option>
+                                                            <option>Escuela Especial Mi Encuentro</option>
+                                                            <option>Escuela Integral Jorge Luis Borges</option>
+                                                            <option>Escuela Jorge Luis Borges</option>
+                                                            <option>Escuela La Inmaculada</option>
+                                                            <option>Escuela Malvinas Argentinas</option>
+                                                            <option>Escuela Maria Rosa Mistica</option>
+                                                            <option>Escuela Martin Fierro</option>
+                                                            <option>Escuela Mi Jardin</option>
+                                                            <option>Escuela Modelo Bella Vista</option>
+                                                            <option>Escuela Nuestra Señora Del Valle</option>
+                                                            <option>Escuelita Fundacion Suzuki</option>
+                                                            <option>Extension I De Escuela De Educación Secundaria N° 28
+                                                            </option>
+                                                            <option>Extension Nº1 De Esc. Secundaria N° 9</option>
+                                                            <option>Fundacion Ser</option>
+                                                            <option>Hogar Escuela Ezpeleta</option>
+                                                            <option>Hogar Escuela La Inmaculada</option>
+                                                            <option>Hogar Escuela San Jose</option>
+                                                            <option>Instituto Aberdare (Ex 025)</option>
+                                                            <option>Instituto Alejandro Bunge</option>
+                                                            <option>Instituto Angel D' Elia</option>
+                                                            <option>Instituto Club Atletico San Miguel</option>
+                                                            <option>Instituto De Educación Dr. Luis F. Leloir</option>
+                                                            <option>Instituto De Enseñanza Secundaria Almafuerte
+                                                            </option>
+                                                            <option>Instituto De Los Padres Redentoristas</option>
+                                                            <option>Instituto Del Bicentenario</option>
+                                                            <option>Instituto Don Jose De San Martin</option>
+                                                            <option>Instituto Don Jose De San Martin (Ex 9003)</option>
+                                                            <option>Instituto Educacional Buenos Aires</option>
+                                                            <option>Instituto Educacional Dr. Luis F. Leloir</option>
+                                                            <option>Instituto Educacional Maria Rosa Mistica</option>
+                                                            <option>Instituto Educacional San Miguel</option>
+                                                            <option>Instituto Futuro Argentino</option>
+                                                            <option>Instituto Gaspar Campos</option>
+                                                            <option>Instituto Independencia</option>
+                                                            <option>Instituto Jesus Maria</option>
+                                                            <option>Instituto Jorge Newbery (Ex 9011)</option>
+                                                            <option>Instituto Jose De San Martin</option>
+                                                            <option>Instituto Luigi Pirandello</option>
+                                                            <option>Instituto Luis Federico Leloir</option>
+                                                            <option>Instituto Manuel Dorrego</option>
+                                                            <option>Instituto Mariano Moreno</option>
+                                                            <option>Instituto Modelo De Bellla Vista</option>
+                                                            <option>Instituto Naciones Unidas</option>
+                                                            <option>Instituto Naciones Unidas Del Mundo</option>
+                                                            <option>Instituto Nuestra Señora De Itati (Ex 9027)</option>
+                                                            <option>Instituto Nuestra Señora De La Asuncion</option>
+                                                            <option>Instituto Nuestra Señora De La Compasion</option>
+                                                            <option>Instituto Nuestra Señora De Lujan</option>
+                                                            <option>Instituto Nuestra Señora Del Valle</option>
+                                                            <option>Instituto Parroquial Nuestra Señora De La Asuncion
+                                                            </option>
+                                                            <option>Instituto Patriarca San Jose</option>
+                                                            <option>Instituto Polimodal Culturas Unidas Del Mundo (Ex
+                                                                9021)</option>
+                                                            <option>Instituto Privado Leon Gallardo</option>
+                                                            <option>Instituto San Alfonso</option>
+                                                            <option>Instituto San Miguel</option>
+                                                            <option>Instituto San Pio X</option>
+                                                            <option>Instituto Santa Ethnea</option>
+                                                            <option>Instituto Santa Maria Del Trujui</option>
+                                                            <option>Instituto Superior Cultural Britanico</option>
+                                                            <option>Instituto Superior De Carreras Paramedicas</option>
+                                                            <option>Instituto Superior De Ciencias Sagradas San Miguel
+                                                                Arcangel</option>
+                                                            <option>Instituto Superior De Formacion Docente N° 112
+                                                            </option>
+                                                            <option>Instituto Superior De Formacion Docente N° 42
+                                                            </option>
+                                                            <option>Instituto Superior De Formación Docente Y Técnica N°
+                                                                182</option>
+                                                            <option>Instituto Superior De Formación Docente Y Técnica N°
+                                                                42</option>
+                                                            <option>Instituto Tato Hermano Pequeño (Ex 9013)</option>
+                                                            <option>Jesus Maria</option>
+                                                            <option>Lirios Del Sol</option>
+                                                            <option>Monseñor Terrero</option>
+                                                            <option>Nuestra Señora De La Paz</option>
+                                                            <option>Nuestra Señora Del Valle</option>
+                                                            <option>Opción 149</option>
+                                                            <option>Opción 194</option>
+                                                            <option>Otra</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-4 form-group">
+                                                        <label>Gestión</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>Estatal</option>
+                                                            <option>Privada</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-4 form-group">
+                                                        <label>Ciclo</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>Jardín</option>
+                                                            <option>Primaria</option>
+                                                            <option>Secundaria</option>
+                                                            <option>Terciario</option>
+                                                            <option>Universitario</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-4 form-group">
+                                                        <label>Grado</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>1º Grado</option>
+                                                            <option>2º Grado</option>
+                                                            <option>3º Grado</option>
+                                                            <option>4º Grado</option>
+                                                            <option>5º Grado</option>
+                                                            <option>6º Grado</option>
+                                                            <option>1º año</option>
+                                                            <option>2º año</option>
+                                                            <option>3º año</option>
+                                                            <option>4º año</option>
+                                                            <option>5º año</option>
+                                                            <option>6º año</option>
+                                                            <option>Otro</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-4 form-group">
+                                                        <label>Estado</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>Completo</option>
+                                                            <option>Incompleto</option>
+                                                            <option>En curso</option>
+                                                            <option>No aplica</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-4 form-group">
+                                                        <label>Turno</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option> Mañana</option>
+                                                            <option> Tarde</option>
+                                                            <option> Noche</option>
+                                                            <option> Jornada Completa (Mañana y tarde)</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-12 form-group">
+                                                        <label>Observaciones</label>
+                                                        <textarea class="form-control" rows="3"></textarea>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- ./dimension educacion -->
+
+                                            <!-- dimension economia -->
+                                            <div class=" tab-pane" id="dimensioneconomia">
+                                                <div class="form-row">
+                                                    <div class="col-sm-6 form-group">
+                                                        <label>Plan social que recibe</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>AUH</option>
+                                                            <option>Tarjeta alimentar</option>
+                                                            <option>Asignación Universal por Embarazo</option>
+                                                            <option>Potenciar Trabajo</option>
+                                                            <option>Plan Mas Vida</option>
+                                                            <option>Progresar</option>
+                                                            <option>Cooperativas</option>
+                                                            <option>Pensión por discapacidad</option>
+                                                            <option>Pensión por viudez</option>
+                                                            <option>Alimentos de otras instituciones</option>
+                                                            <option>Beca de ayuda Escolar</option>
+                                                            <option>Otro</option>
+                                                            <option>No recibe plan social</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-6 form-group">
+                                                        <label>Calificación de ingresos familiar</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>Por debajo de la canasta básica alimentaria CBA
+                                                                (Indigencia)</option>
+                                                            <option>Por debajo de la canasta básica total CBT (pobreza)
+                                                            </option>
+                                                            <option>Por encima de la Canasta básica total</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <div class="col-sm-6 form-group">
+                                                        <label>¿Cuántos miembros reciben ingresos por plan
+                                                            social?</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>0</option>
+                                                            <option>1</option>
+                                                            <option>2</option>
+                                                            <option>3</option>
+                                                            <option>4</option>
+                                                            <option>5</option>
+                                                            <option>Más de 5</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-sm-6 form-group">
+                                                        <label>¿Cuántos miembros aportan al hogar?</label>
+                                                        <select class="form-control custom-select">
+                                                            <option selected disabled></option>
+                                                            <option>0</option>
+                                                            <option>1</option>
+                                                            <option>2</option>
+                                                            <option>3</option>
+                                                            <option>4</option>
+                                                            <option>5</option>
+                                                            <option>Más de 5</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-12 form-group">
+                                                        <label>Observaciones</label>
+                                                        <textarea class="form-control" rows="3"></textarea>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- ./dimension economia  -->
+
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="btn btn-secondary float-left mb-3 mt-5"
+                                onclick="stepper.previous()">Volver</button>
+                            <button class="btn btn-primary float-right mb-3 mt-5"
+                                onclick="stepper.next()">Continuar</button>
+                        </div>
+
+                        <div id="familiares" class="content" role="tabpanel" aria-labelledby="familiares-trigger">
+                            <div class="col-12 mt-5">
+                                <div class="card">
+
+                                    <div class="card-header">
+                                        <h3 class="card-title font-weight-bold pt-1 mr-3">
+                                            Familiares
+                                        </h3>
+                                    </div>
+                                    <div class="card-body  bg-light">
+                                        - En construcción (idéntico a como se defina en legajo) -
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="btn btn-secondary float-left mb-3 mt-5"
+                                onclick="stepper.previous()">Volver</button>
+                            <button class="btn btn-primary float-right mb-3 mt-5"
+                                onclick="stepper.next()">Continuar</button>
+                        </div>
+
+                        <div id="alertas" class="content" role="tabpanel" aria-labelledby="alertas-trigger">
+                            <div class="col-12 mt-5">
+                                <div class="card">
+
+                                    <div class="card-header">
+                                        <h3 class="card-title font-weight-bold pt-1 mr-3">
+                                            Alertas
+                                        </h3>
+                                    </div>
+                                    <div class="card-body  bg-light">
+                                        - En construcción (idéntico a como se defina en legajo) -
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="btn btn-secondary float-left mb-3 mt-5"
+                                onclick="stepper.previous()">Volver</button>
+                            <a href="{% url 'vacantes_detail'%}"
+                                class="btn btn-primary float-right mb-3 mt-5 ">Confirmar</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock content %}
+
+
+{% block customJS %}
+<script>
+    // BS-Stepper Init
+    document.addEventListener('DOMContentLoaded', function () {
+        window.stepper = new Stepper(document.querySelector('.bs-stepper'))
+    });
+    //Date picker
+    $('#reservationdate').datetimepicker({
+        format: 'L'
+    });
+</script>
+{% endblock %}
