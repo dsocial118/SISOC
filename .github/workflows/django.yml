@@ -23,7 +23,7 @@ jobs:
         
     - name: Print current directory
       run: | 
-        ||pwd
+        pwd
         
     - name: Install dependencies
       run: |
