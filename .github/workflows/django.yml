@@ -37,7 +37,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install pipenv
-        pipenv lock --keep-outdated --requirements --dev > requirements.txt
+        pipenv lock --keep-outdated --requirements --main > requirements.txt
         pip install -r requirements.txt
 
     - name: Run tests
