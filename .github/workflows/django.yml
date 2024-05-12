@@ -31,12 +31,12 @@ jobs:
         
     - name: Install dependencies
       run: | 
-        apt-get update && \
-        apt-get -y install python3-dev ... && \
-        pip3 install pipenv ... && \
-        pipenv lock -r > requirements.txt && \
-        pipenv lock --dev -r > dev-requirements.txt && \
-        pip3 install -r requirements.txt && \
+        apt-get update
+        apt-get -y install python3-dev
+        pip3 install pipenv
+        pipenv lock -r > requirements.txt
+        pipenv lock --dev -r > dev-requirements.txt
+        pip3 install -r requirements.txt
 
     - name: Run tests
       run: |
