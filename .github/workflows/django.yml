@@ -9,13 +9,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
         python-version: 3.x
+
+    - name: Set up locale
+      run: |
+        sudo apt-get install -y locales
+        sudo locale-gen es_AR.UTF-8
+        sudo update-locale LANG=es_AR.UTF-8 LC_ALL=es_AR.UTF-8
+        export LC_ALL="es_AR.UTF-8"
 
     - name: Install dependencies
       run: |
