@@ -41,4 +41,4 @@ jobs:
 
     - name: Run tests
       run: |
-        python3 manage.py test
+        pipenv run python3 manage.py test
