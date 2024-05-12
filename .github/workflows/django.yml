@@ -35,7 +35,7 @@ jobs:
         sudo apt-get -y install python3-dev
         pip3 install pipenv
         pipenv lock
-        pipenv install --deploy --system --dev
+        pipenv install --deploy --system --main
         pipenv run pip freeze > requirements.txt
         pipenv run pip freeze --all > main-requirements.txt
 
