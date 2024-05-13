@@ -38,3 +38,9 @@ jobs:
     - name: Run tests
       run: |
         python manage.py test
+
+    - name: Deploy to server
+      if: success()
+      # run: |
+          # Add your deployment script here
+          # Example: rsync or scp to copy files to your server
