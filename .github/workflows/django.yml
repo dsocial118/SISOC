@@ -40,6 +40,6 @@ jobs:
         pipenv run pip freeze > requirements.txt
         pipenv run pip freeze --all > main-requirements.txt
 
-    #- name: Run tests
-    #  run: |
-    #    pipenv run python3 manage.py test
+    - name: Run tests
+      run: |
+        pipenv run python3 manage.py test
