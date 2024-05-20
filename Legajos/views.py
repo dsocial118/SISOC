@@ -998,6 +998,14 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
             "grado": "grado",
             "turno": "turno",
             "obs_educacion": "obs_educacion",
+            "provinciaInstitucion": "provinciaInstitucion",
+            "localidadInstitucion": "localidadInstitucion",
+            "municipioInstitucion": "municipioInstitucion",
+            "barrioInstitucion": "barrioInstitucion",
+            "calleInstitucion": "calleInstitucion",
+            "numeroInstitucion": "numeroInstitucion",
+            "interesEstudio": "interesEstudio",
+            "interesCurso": "interesCurso"
         }
 
         for field in fields_mapping_educacion:

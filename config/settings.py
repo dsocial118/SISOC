@@ -52,7 +52,7 @@ SECRET_KEY = 'django-insecure-nkd=f=s!(abn(-tan&ceplfpumy5#j$6v$hl_=5d@q)dni4477
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['10.80.9.15','localhost']
+ALLOWED_HOSTS = ['127.0.0.1','localhost']
 
 
 # Application definition
@@ -138,9 +138,9 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'hsu-dev',
-        'USER': 'admin-ssies',
-        'PASSWORD': 'aqV0hqqy0r',
+        'NAME': 'HsuDev',
+        'USER': 'root',
+        'PASSWORD': 'matias123',
         'HOST': '127.0.0.1',
         'PORT': '3306',
         'OPTIONS': {

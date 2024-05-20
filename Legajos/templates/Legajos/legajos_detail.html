@@ -755,35 +755,39 @@
                                 <!-- deimension educacion -->
                                 <dl class="row mb-0">
                                     <dd class="col-sm-8">Asiste a la escuela</dd>
-                                    <dt class="col-sm-4">{{object.dimensioneducacion.asiste_escuela|yesno:'Sí,No'}}
-                                    </dt>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.asiste_escuela|yesno:'Sí,No,-'}}</dt>
                                     <dd class="col-sm-8">Máximo nivel educativo alcanzado</dd>
-                                    <dt class="col-sm-4">{{object.dimensioneducacion.max_nivel|default_if_none:"-"}}
-                                    </dt>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.max_nivel|default_if_none:"-"}} </dt>
                                     <dd class="col-sm-8">Estado del nivel</dd>
-                                    <dt class="col-sm-4">
-                                        {{object.dimensioneducacion.estado_nivel|default_if_none:"-"}}
-                                    </dt>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.estado_nivel|default_if_none:"-"}} </dt>
                                     <dd class="col-sm-8">Institución</dd>
-                                    <dt class="col-sm-4">
-                                        {{object.dimensioneducacion.institucion|default_if_none:"-"}}
-                                    </dt>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.institucion|default_if_none:"-"}} </dt>
                                     <dd class="col-sm-8">Gestión</dd>
-                                    <dt class="col-sm-4">{{object.dimensioneducacion.gestion|default_if_none:"-"}}
-                                    </dt>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.gestion|default_if_none:"-"}} </dt>
                                     <dd class="col-sm-8">Ciclo</dd>
-                                    <dt class="col-sm-4">{{object.dimensioneducacion.ciclo|default_if_none:"-"}}
-                                    </dt>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.ciclo|default_if_none:"-"}} </dt>
                                     <dd class="col-sm-8">Grado</dd>
-                                    <dt class="col-sm-4">{{object.dimensioneducacion.grado|default_if_none:"-"}}
-                                    </dt>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.grado|default_if_none:"-"}} </dt>
                                     <dd class="col-sm-8">Turno</dd>
-                                    <dt class="col-sm-4">{{object.dimensioneducacion.turno|default_if_none:"-"}}
-                                    </dt>
-                                    <dd class="col-12 mt-3">Observaciones</dd>
-                                    <dt class="col-12">
-                                        {{object.dimensioneducacion.obs_educacion|default_if_none:"-"}}
-                                    </dt>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.turno|default_if_none:"-"}} </dt>
+                                    <dd class="col-sm-8">provincia Institucion</dd>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.provinciaInstitucion|default_if_none:"-"}} </dt>
+                                    <dd class="col-sm-8 ">localidad Institucion </dd>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.localidadInstitucion|default_if_none:"-"}} </dt>
+                                    <dd class="col-sm-8 ">municipio Institucion </dd>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.municipioInstitucion|default_if_none:"-"}} </dt>
+                                    <dd class="col-sm-8 ">barrio Institucion</dd>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.barrioInstitucion|default_if_none:"-"}} </dt>
+                                    <dd class="col-sm-8 ">calle Institucion</dd>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.calleInstitucion|default_if_none:"-"}} </dt>
+                                    <dd class="col-sm-8 ">numero Institucion</dd>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.numeroInstitucion|default_if_none:"-"}} </dt>
+                                    <dd class="col-sm-8 ">interes Estudio</dd>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.interesEstudio|yesno:'Sí,No,-'}} </dt>
+                                    <dd class="col-sm-8 ">interes Curso</dd>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.interesCurso|yesno:'Sí,No,-'}} </dt>
+                                    <dd class="col-sm-8 ">Observaciones</dd>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.obs_educacion|default_if_none:"-"}} </dt>
                                 </dl>
                                 <!-- ./dimension educacion -->
                             </div>

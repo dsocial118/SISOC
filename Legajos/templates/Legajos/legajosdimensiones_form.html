@@ -267,7 +267,6 @@
                       <!-- deimension educacion -->
                       <div class=" tab-pane" id="dimensioneducacion">
                         <div class="row">
-
                           <div class="col-12 d-none">
                             <div class="form-group">
                               {{form_educacion.fk_legajo| as_crispy_field}}
@@ -286,6 +285,16 @@
                           <div class="col-12 my-3">
                             <div class="form-group">
                               {{form_educacion.asiste_escuela| as_crispy_field}}
+                            </div>
+                          </div>
+                          <div class="col-12 my-3">
+                            <div class="form-group">
+                              {{form_educacion.interesEstudio| as_crispy_field}}
+                            </div>
+                          </div>
+                          <div class="col-12 my-3">
+                            <div class="form-group">
+                              {{form_educacion.interesCurso| as_crispy_field}}
                             </div>
                           </div>
                           <div class="col-sm-6">
@@ -313,7 +322,36 @@
                               {{form_educacion.turno| as_crispy_field}}
                             </div>
                           </div>
-
+                          <div class="col-sm-3">
+                            <div class="form-group">
+                              {{ form_educacion.provinciaInstitucion | as_crispy_field }}
+                            </div>
+                          </div>
+                          <div class="col-sm-3">
+                              <div class="form-group">
+                              {{ form_educacion.localidadInstitucion | as_crispy_field }}
+                            </div>
+                          </div>
+                          <div class="col-sm-3">
+                            <div class="form-group">
+                              {{ form_educacion.municipioInstitucion | as_crispy_field }}
+                            </div>
+                          </div>
+                          <div class="col-sm-3">
+                            <div class="form-group">
+                              {{ form_educacion.barrioInstitucion | as_crispy_field }}
+                            </div>
+                          </div>
+                          <div class="col-sm-3">
+                            <div class="form-group">
+                              {{ form_educacion.calleInstitucion | as_crispy_field }}
+                            </div>
+                          </div>
+                          <div class="col-12">
+                            <div class="form-group">
+                              {{ form_educacion.numeroInstitucion | as_crispy_field }}
+                            </div>
+                          </div>
                           <div class="col-12">
                             <div class="form-group">
                               {{form_educacion.obs_educacion| as_crispy_field}}
