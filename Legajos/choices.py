@@ -54,6 +54,31 @@ CHOICE_TURNO = [
     ('Jornada Completa', 'Jornada Completa'),
 ]
 
+PROVINCE_CHOICES = [
+    ('AC', 'Córdoba'),
+    ('AR', 'Buenos Aires'),
+    ('BA', 'Buenos Aires (CABA)'),
+    ('CA', 'Catamarca'),
+    ('CH', 'Chubut'),
+    ('CO', 'Córdoba'),
+    ('CR', 'Corrientes'),
+    ('CT', 'Entre Ríos'),
+    ('ER', 'Entre Ríos'),
+    ('FO', 'Formosa'),
+    ('GO', 'Goiás'),
+    ('JU', 'Jujuy'),
+    ('LA', 'La Pampa'),
+    ('LP', 'La Rioja'),
+    ('MC', 'Mendoza'),
+    ('MN', 'Misiones'),
+    ('NE', 'Neuquén'),
+    ('RN', 'Río Negro'),
+    ('SA', 'Santa Cruz'),
+    ('SF', 'Santa Fe'),
+    ('SJ', 'San Juan'),
+    ('SL', 'San Luis'),
+]
+
 CHOICE_INSTITUCIONES_EDUCATIVAS = [
     ('Anexo I A Escuela De Educación Secundaria N° 3 - Anexo', 'Anexo I A Escuela De Educación Secundaria N° 3 - Anexo'),
     ('C.e.pro.m', 'C.e.pro.m'),

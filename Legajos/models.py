@@ -232,10 +232,15 @@ class DimensionEducacion(models.Model):
     Guardado de los datos de índole educativa asociada a un Legajo.
     '''
 
+    from django.db import models
+
+class DimensionEducacion(models.Model):  # Assuming your model class name is DimensionEducacion
     fk_legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
     max_nivel = models.CharField(verbose_name='Máximo nivel educativo alcanzado', max_length=50, choices=CHOICE_NIVEL_EDUCATIVO, null=True, blank=True)
     estado_nivel = models.CharField(verbose_name='Estado del nivel', max_length=50, choices=CHOICE_ESTADO_NIVEL_EDUCATIVO, null=True, blank=True)
     asiste_escuela = models.BooleanField(verbose_name='¿Asiste a la Escuela?', null=True, blank=True)
+    interesEstudio = models.BooleanField(verbose_name='¿Le interesa estudiar?', null=True, blank=True)
+    interesCurso = models.BooleanField(verbose_name='¿le interesa algun curso?', null=True, blank=True)
     institucion = models.CharField(verbose_name='Escuela', max_length=200, choices=CHOICE_INSTITUCIONES_EDUCATIVAS, null=True, blank=True)
     gestion = models.CharField(verbose_name='Gestión', max_length=50, choices=CHOICE_TIPO_GESTION, null=True, blank=True)
     ciclo = models.CharField(max_length=20, choices=CHOICE_NIVEL_EDUCATIVO, null=True, blank=True)
@@ -244,7 +249,15 @@ class DimensionEducacion(models.Model):
     obs_educacion = models.CharField(max_length=300, verbose_name='Observaciones', null=True, blank=True)
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
-
+    acepta_terminos = models.BooleanField(verbose_name='Acepto los términos y condiciones', default=False)
+    # Nuevos campos dimencion estudio
+    provinciaInstitucion = models.CharField(verbose_name='Provincia', max_length=200 ,choices=PROVINCE_CHOICES, null=True, blank=True)
+    localidadInstitucion = models.CharField(verbose_name='Localidad', max_length=100, null=True, blank=True)
+    municipioInstitucion = models.CharField(verbose_name='Municipio', max_length=100, null=True, blank=True)
+    barrioInstitucion = models.CharField(verbose_name='Barrio', max_length=100, null=True, blank=True)
+    calleInstitucion = models.CharField(verbose_name='Calle', max_length=255, null=True, blank=True)
+    numeroInstitucion = models.CharField(verbose_name='Número', max_length=10, null=True, blank=True)
+    
     def __str__(self):
         return f"{self.fk_legajo}"
 

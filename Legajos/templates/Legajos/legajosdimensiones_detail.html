@@ -132,30 +132,6 @@ Dimensiones
         <!-- dimension salud -->
         <div class="h3 mb-3">Salud</div>
         <dl class="row mb-0">
-          <dd class="col-sm-8">Centro de Salud en donde se atiende</dd>
-          <dt class="col-sm-4">{{object.dimensionsalud.lugares_atencion|default_if_none:"-"}}</dt>
-          <dd class="col-sm-8">Frecuencia de controles médicos</dd>
-          <dt class="col-sm-4">{{object.dimensionsalud.frec_controles|default_if_none:"-"}}</dt>
-          <dd class="col-sm-8">Posee alguna enfermedad recurrente o algún diagnóstico de enfermedad crónic?</dd>
-          <dt class="col-sm-4">{{object.dimensionsalud.hay_enfermedad|yesno:'Sí,No,-'}}</dt>
-          <dd class="col-sm-8">Posee cobertura de salud</dd>
-          <dt class="col-sm-4">{{object.dimensionsalud.hay_obra_social|yesno:'Sí,No,-'}}</dt>
-          <dd class="col-sm-8">Posee alguna discapacidad</dd>
-          <dt class="col-sm-4">{{object.dimensionsalud.hay_discapacidad|yesno:'Sí,No,-'}}</dt>
-          <dd class="col-sm-8">Posee certificado de discapacidad</dd>
-          <dt class="col-sm-4">{{object.dimensionsalud.hay_cud|yesno:'Sí,No,-'}}</dt>
-          <dd class="col-12 mt-3">Observaciones</dd>
-          <dt class="col-12">
-            {{object.dimensionsalud.obs_salud|default_if_none:"-"}}
-          </dt>
-        </dl>
-        <!-- /dimension salud -->
-
-        <hr class="mt-4 mb-3 border-secondary" />
-
-        <!-- dimension educacion -->
-        <div class="h3 mb-3">Educación</div>
-        <dl class="row mb-0">
           <dd class="col-sm-8">Asiste a la escuela</dd>
           <dt class="col-sm-4">{{object.dimensioneducacion.asiste_escuela|yesno:'Sí,No,-'}}</dt>
           <dd class="col-sm-8">Máximo nivel educativo alcanzado</dd>
@@ -172,10 +148,24 @@ Dimensiones
           <dt class="col-sm-4">{{object.dimensioneducacion.grado|default_if_none:"-"}} </dt>
           <dd class="col-sm-8">Turno</dd>
           <dt class="col-sm-4">{{object.dimensioneducacion.turno|default_if_none:"-"}} </dt>
-          <dd class="col-12 mt-3">Observaciones</dd>
-          <dt class="col-12">
-            {{object.dimensioneducacion.obs_educacion|default_if_none:"-"}}
-          </dt>
+          <dd class="col-sm-8">provincia Institucion</dd>
+          <dt class="col-sm-4">{{object.dimensioneducacion.provinciaInstitucion|default_if_none:"-"}} </dt>
+          <dd class="col-sm-8 ">localidad Institucion </dd>
+          <dt class="col-sm-4">{{object.dimensioneducacion.localidadInstitucion|default_if_none:"-"}} </dt>
+          <dd class="col-sm-8 ">municipio Institucion </dd>
+          <dt class="col-sm-4">{{object.dimensioneducacion.municipioInstitucion|default_if_none:"-"}} </dt>
+          <dd class="col-sm-8 ">barrio Institucion</dd>
+          <dt class="col-sm-4">{{object.dimensioneducacion.barrioInstitucion|default_if_none:"-"}} </dt>
+          <dd class="col-sm-8 ">calle Institucion</dd>
+          <dt class="col-sm-4">{{object.dimensioneducacion.calleInstitucion|default_if_none:"-"}} </dt>
+          <dd class="col-sm-8 ">numero Institucion</dd>
+          <dt class="col-sm-4">{{object.dimensioneducacion.numeroInstitucion|default_if_none:"-"}} </dt>
+          <dd class="col-sm-8 ">interes Estudio</dd>
+          <dt class="col-sm-4">{{object.dimensioneducacion.interesEstudio|yesno:'Sí,No,-'}} </dt>
+          <dd class="col-sm-8 ">interes Curso</dd>
+          <dt class="col-sm-4">{{object.dimensioneducacion.interesCurso|yesno:'Sí,No,-'}} </dt>
+          <dd class="col-sm-8 ">Observaciones</dd>
+          <dt class="col-sm-4">{{object.dimensioneducacion.obs_educacion|default_if_none:"-"}} </dt>
         </dl>
         <!-- /dimension educacion -->
 
