@@ -269,6 +269,9 @@ class DimensionEducacionForm(forms.ModelForm):
                 }
             ),
             'asiste_escuela': forms.CheckboxInput(),
+            'interesEstudio': forms.CheckboxInput(),
+            'interesCurso': forms.CheckboxInput()
+            
         }
 
 
