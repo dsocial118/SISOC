@@ -167,10 +167,10 @@ class DimensionVivienda(models.Model):
     Guardado de los datos de vivienda asociados a un Legajo.
     '''
     fk_legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
-    tipo = models.CharField(verbose_name='Tipo de vivienda', max_length=50, choices=CHOICE_CondicionDe, null=True, blank=True)
+    tipo = models.CharField(verbose_name='Tipo de vivienda', max_length=50, choices=CHOICE_TIPO_VIVIENDA, null=True, blank=True)
     material = models.CharField(verbose_name='Material principal de la vivienda', max_length=50, choices=CHOICE_TIPO_CONSTRUCCION_VIVIENDA, null=True, blank=True)
     pisos = models.CharField(verbose_name='Material principal de los pisos', max_length=50, choices=CHOICE_TIPO_PISOS_VIVIENDA, null=True, blank=True)
-    posesion = models.CharField(verbose_name='Tipo de posesión', max_length=50, choices=CHOICE_TIPO_POSESION_VIVIENDA, null=True, blank=True)
+    posesion = models.CharField(verbose_name='Tipo de posesión', max_length=50, choices=CHOICE_CondicionDe, null=True, blank=True)
     cant_ambientes = models.SmallIntegerField(verbose_name='¿Cuántas habitaciones posee la vivienda?', null=True, blank=True)
     cant_convivientes = models.SmallIntegerField(verbose_name='¿Cuántas personas viven en la vivienda?', null=True, blank=True)
     cant_menores = models.SmallIntegerField(verbose_name='¿Cuántos de ellos son menores de 18 años?', null=True, blank=True)

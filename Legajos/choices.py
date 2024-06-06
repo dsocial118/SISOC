@@ -424,10 +424,14 @@ CHOICE_TIPO_ENFERMEDAD = [
 CHOICE_TIPO_VIVIENDA = [
     (None, ''),
     ('Casa', 'Casa'),
+    ('Rancho', 'Rancho'),
+    ('Casilla', 'Casilla'),
+    ('Vivienda móvil', 'Vivienda móvil'),
+    ('Situación de calle', 'Situación de calle'),
     ('Departamento', 'Departamento'),
-    ('Pieza de alquiler', 'Pieza de alquiler'),
+    ('Pieza en hotel familiar o pensión', 'Pieza en hotel familiar o pensión'),
     ('Pieza en hotel/Pensón', 'Pieza en hotel/Pensón'),
-    ('Local no construido para habitación', 'Local no construido para habitación'),
+    ('Sitio no construido para vivienda', 'Sitio no construido para vivienda'),
     ('Otro', 'Otro'),
 ]
 
