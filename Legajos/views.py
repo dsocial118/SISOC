@@ -941,6 +941,13 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
             "hay_agua_caliente": "hay_agua_caliente",
             "hay_desmoronamiento": "hay_desmoronamiento",
             "hay_banio": "hay_banio",
+            "PoseenCeludar":"PoseenCeludar",
+            "PoseenPC":"PoseenPC",
+            "Poseeninternet":"Poseeninternet",
+            "ContextoCasa":"ContextoCasa",
+            "CondicionDe":"CondicionDe",
+            "CantidadAmbientes":"CantidadAmbientes",
+            "gas":"gas",
             "obs_vivienda": "obs_vivienda",
         }
 
@@ -1265,3 +1272,128 @@ class indicesDetalleView(TemplateView):
 
 
 # endregion ###########################################################
+
+# region ############################################################### GRUPO Hogar
+
+
+class LegajosGrupoHogarCreateView(CreateView):
+    permission_required = "Usuarios.rol_admin"
+    model = LegajoHogar
+    form_class = LegajoHogarForm
+
+    def get_context_data(self, **kwargs):
+        pk = self.kwargs["pk"]
+        legajo_principal = Legajos.objects.filter(pk=pk).first()
+        # Calcula la edad utilizando la función 'edad' del modelo
+        edad_calculada = legajo_principal.edad()
+
+        # Verifica si tiene más de 18 años
+        if isinstance(edad_calculada, str) and 'años' in edad_calculada:
+            edad_num = int(edad_calculada.split()[0])
+            if edad_num >= 18:
+                es_menor_de_18 = False
+        else:
+            es_menor_de_18 = True
+
+         # Verificar si tiene un cuidador principal asignado utilizando el método que agregaste al modelo
+        tiene_cuidador_ppal = LegajoHogar.objects.filter(
+            fk_legajo_1Hogar=legajo_principal
+        ).exists()
+
+        context = super().get_context_data(**kwargs)
+        context["hogar_fk1"] = LegajoHogar.objects.filter(fk_legajo_1Hogar=pk)
+        context["hogar_fk2"] = LegajoHogar.objects.filter(fk_legajo_2Hogar=pk)
+        context["count_familia"] = context["hogar_fk1"].count() + context["hogar_fk2"].count()
+        context["legajo_principal"] = legajo_principal
+        context["es_menor_de_18"] = es_menor_de_18
+        context["pk"] = pk
+        context["hogar_fk"] = LegajoHogar.objects.get(fk_legajo=pk).id
+        return context
+
+    def form_valid(self, form):
+        pk = self.kwargs["pk"]
+        estado_relacion = form.cleaned_data['estado_relacion']
+
+
+        # Crea el objeto Legajos
+        try:
+            nuevo_legajo = form.save()
+            DimensionFamilia.objects.create(fk_legajo=nuevo_legajo)
+            DimensionVivienda.objects.create(fk_legajo=nuevo_legajo)
+            DimensionSalud.objects.create(fk_legajo=nuevo_legajo)
+            DimensionEconomia.objects.create(fk_legajo=nuevo_legajo)
+            DimensionEducacion.objects.create(fk_legajo=nuevo_legajo)
+            DimensionTrabajo.objects.create(fk_legajo=nuevo_legajo)
+            LegajoHogar.objects.create(fk_legajo=nuevo_legajo)
+        except:
+            return messages.error(self.request, "Verifique que no exista un legajo con ese DNI y NÚMERO.")
+
+        # Crea el objeto LegajoGrupoFamiliar con los valores del formulario
+        vinculo_data = VINCULO_MAP.get(vinculo)
+        if not vinculo_data:
+            return messages.error(self.request, "Vinculo inválido.")
+
+        # crea la relacion de grupo familiar
+        legajo_principal = Legajos.objects.get(id=pk)
+        try:
+            legajo_grupo_familiar = LegajoGrupoFamiliar.objects.create(
+                fk_legajo_1=legajo_principal,
+                fk_legajo_2=nuevo_legajo,
+                vinculo=vinculo_data["vinculo"],
+                vinculo_inverso=vinculo_data["vinculo_inverso"],
+                estado_relacion=estado_relacion
+            )
+
+            familiar = {
+                "id": legajo_grupo_familiar.id,
+                "fk_legajo_1": legajo_grupo_familiar.fk_legajo_1.id,
+                "fk_legajo_2": legajo_grupo_familiar.fk_legajo_2.id,
+                "vinculo": legajo_grupo_familiar.vinculo,
+                "nombre": legajo_grupo_familiar.fk_legajo_2.nombre,
+                "apellido": legajo_grupo_familiar.fk_legajo_2.apellido,
+                "foto": legajo_grupo_familiar.fk_legajo_2.foto.url if legajo_grupo_familiar.fk_legajo_2.foto else None,
+                "cuidador_principal": legajo_grupo_familiar.cuidador_principal,
+            }
+        except:
+            return messages.error(self.request, "Verifique que no exista un legajo con ese DNI y NÚMERO.")
+
+        messages.success(self.request, "Familair agregado correctamente.")
+        # Redireccionar a la misma página después de realizar la acción con éxito
+        return HttpResponseRedirect(self.request.path_info)
+
+
+def busqueda_familiares(request):
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        res = None
+        busqueda = request.POST.get("busqueda")
+        legajo_principal_id = request.POST.get("id")
+        legajos_asociadosfk1 = LegajoGrupoFamiliar.objects.filter(fk_legajo_1_id=legajo_principal_id).values_list('fk_legajo_2_id', flat=True)
+        legajos_asociadosfk2 = LegajoGrupoFamiliar.objects.filter(fk_legajo_2_id=legajo_principal_id).values_list('fk_legajo_1_id', flat=True)
+        familiares = (
+            Legajos.objects.filter(~Q(id=legajo_principal_id) & (Q(apellido__icontains=busqueda) | Q(documento__icontains=busqueda)))
+            .exclude(id__in=legajos_asociadosfk1)
+            .exclude(id__in=legajos_asociadosfk2)
+        )
+
+        if len(familiares) > 0 and busqueda:
+            data = [
+                {
+                    'pk': familiar.pk,
+                    'nombre': familiar.nombre,
+                    'apellido': familiar.apellido,
+                    'documento': familiar.documento,
+                    'tipo_doc': familiar.tipo_doc,
+                    'fecha_nacimiento': familiar.fecha_nacimiento,
+                    'sexo': familiar.sexo,
+                    # Otros campos que deseas incluir
+                }
+                for familiar in familiares
+            ]
+            res = data
+
+        else:
+            res = ""
+
+        return JsonResponse({"data": res})
+
+    return JsonResponse({"data": "this is data"})
