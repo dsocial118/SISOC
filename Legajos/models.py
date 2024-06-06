@@ -164,12 +164,10 @@ class DimensionFamilia(models.Model):
 
 class DimensionVivienda(models.Model):
     '''
-
     Guardado de los datos de vivienda asociados a un Legajo.
     '''
-
     fk_legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
-    tipo = models.CharField(verbose_name='Tipo de vivienda', max_length=50, choices=CHOICE_TIPO_VIVIENDA, null=True, blank=True)
+    tipo = models.CharField(verbose_name='Tipo de vivienda', max_length=50, choices=CHOICE_CondicionDe, null=True, blank=True)
     material = models.CharField(verbose_name='Material principal de la vivienda', max_length=50, choices=CHOICE_TIPO_CONSTRUCCION_VIVIENDA, null=True, blank=True)
     pisos = models.CharField(verbose_name='Material principal de los pisos', max_length=50, choices=CHOICE_TIPO_PISOS_VIVIENDA, null=True, blank=True)
     posesion = models.CharField(verbose_name='Tipo de posesión', max_length=50, choices=CHOICE_TIPO_POSESION_VIVIENDA, null=True, blank=True)
@@ -184,6 +182,14 @@ class DimensionVivienda(models.Model):
     obs_vivienda = models.CharField(verbose_name='Observaciones', max_length=300, null=True, blank=True)
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
+    ###Nuevos campos
+    PoseenCeludar = models.BooleanField(verbose_name='En tu hogar cuentan con Celular', max_length=255, null=True, blank=True)
+    PoseenPC = models.BooleanField(verbose_name='En tu hogar cuentan con PC', max_length=255, null=True, blank=True)
+    Poseeninternet = models.BooleanField(verbose_name='En tu hogar cuentan con Internet', max_length=255, null=True, blank=True)
+    ContextoCasa = models.CharField(verbose_name='La vivienda está ubicada...', max_length=255,choices=CHOICE_ContextoCasa,null=False, blank=True )
+    CantidadAmbientes = models.CharField(verbose_name='ambientes tiene la vivienda', max_length=50, choices= CHOICE_CantidadAmbientes, null=True, blank=True)
+    gas = models.CharField(verbose_name='ambientes tiene la vivienda', max_length=50, choices= CHOICE_CantidadAmbientes, null=True, blank=True)
+
 
     def __str__(self):
         return f"{self.fk_legajo}"
@@ -299,13 +305,14 @@ class DimensionEconomia(models.Model):
 
 class DimensionTrabajo(models.Model):
     fk_legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
-    tiene_trabajo = models.BooleanField(verbose_name='¿El jefe o jefa de hogar trabaja?', null=True, blank=True)
+    tiene_trabajo = models.BooleanField(verbose_name='¿Actualmente realizás alguna actividad laboral, productiva o comunitaria?', null=True, blank=True)
     modo_contratacion = models.CharField(max_length=50, choices=CHOICE_MODO_CONTRATACION, null=True, blank=True)
     ocupacion = models.CharField(max_length=50, null=True, blank=True)
     conviviente_trabaja = models.BooleanField(verbose_name='¿Conviviente trabaja?', null=True, blank=True)
     obs_trabajo = models.CharField(max_length=300, verbose_name='Observaciones', null=True, blank=True)
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
+
 
     def __str__(self):
         return f"{self.fk_legajo}"
@@ -509,4 +516,32 @@ class LegajosArchivos(models.Model):
     
     def __str__(self):
         return f"Archivo {self.id} del legajo {self.fk_legajo}"
+    
+    
+#####################HOGAR###############################   
+class LegajoHogar(models.Model):
+    '''
+    Guardado de las relaciones familiares de los vecinos y vecinas registrados,
+    con una valoración que permita conocer el estado del vínculo desde la
+    consideración de cada parte involucrada.
+    '''
 
+    fk_legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
+    fk_legajo_1Hogar = models.ForeignKey(Legajos, on_delete=models.CASCADE, related_name='hogar_1')
+    fk_legajo_2Hogar = models.ForeignKey(Legajos, on_delete=models.CASCADE, related_name='hogar_2')
+    estado_relacion = models.CharField(max_length=50, choices=CHOICE_ESTADO_RELACION)
+    AyudaHogar = models.BooleanField(verbose_name='¿Reciben en el hogar ayuda de algún tipo?', null=True, blank=True)
+    AyudaHogar2 = models.BooleanField(verbose_name='¿Reciben en el hogar ayuda de algún tipo?', null=True, blank=True)
+    TipoAyudaHogar = models.CharField(max_length=100, choices=TipoAyudaHogar, null=True, blank=True)
+    
+    def __str__(self):
+        return f"{self.fk_legajo}"
+
+    class Meta:
+        ordering = ['fk_legajo']
+        verbose_name = 'LegajoHogar'
+        verbose_name_plural = 'LegajoHogar'
+
+    def get_absolute_url(self):
+        return reverse('LegajoHogar_ver', kwargs={'pk': self.pk})
+    

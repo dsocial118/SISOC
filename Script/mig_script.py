@@ -7,7 +7,7 @@ from sqlalchemy.exc import OperationalError
 import time
 
 # Define the database connection
-engine = create_engine('mysql+mysqlconnector://root:REDACTED_DB_PASSWORD@localhost:3306/pas_padron_01_05_2024')
+engine = create_engine('mysql+mysqlconnector://root:REDACTED_DB_PASSWORD@localhost:3306/sisocdev')
 
 # Define the ORM Base
 Base = declarative_base()
