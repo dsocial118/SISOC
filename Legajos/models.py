@@ -519,7 +519,7 @@ class LegajosArchivos(models.Model):
     
     
 #####################HOGAR###############################   
-class LegajoHogar(models.Model):
+class LegajoGrupoHogar(models.Model):
     '''
     Guardado de las relaciones familiares de los vecinos y vecinas registrados,
     con una valoración que permita conocer el estado del vínculo desde la
@@ -539,9 +539,9 @@ class LegajoHogar(models.Model):
 
     class Meta:
         ordering = ['fk_legajo']
-        verbose_name = 'LegajoHogar'
-        verbose_name_plural = 'LegajoHogar'
+        verbose_name = 'LegajoGrupoHogarForm'
+        verbose_name_plural = 'LegajoGrupoHogarForm'
 
     def get_absolute_url(self):
-        return reverse('LegajoHogar_ver', kwargs={'pk': self.pk})
+        return reverse('LegajoGrupoHogarForm_ver', kwargs={'pk': self.pk})
     

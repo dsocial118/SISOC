@@ -128,12 +128,6 @@ class NuevoLegajoFamiliarForm(forms.ModelForm):
 #############HOGAR###########
 
 class LegajoGrupoHogarForm(forms.ModelForm):
-    class Meta:
-        model = LegajoHogar
-        fields = '__all__'
-
-
-class LegajoHogarForm(forms.ModelForm):
     vinculo = forms.ChoiceField(choices=CHOICE_VINCULO_FAMILIAR, required=True)
     documento = forms.IntegerField(
         required=False,
