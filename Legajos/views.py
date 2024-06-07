@@ -1278,8 +1278,8 @@ class indicesDetalleView(TemplateView):
 
 class LegajosGrupoHogarCreateView(CreateView):
     permission_required = "Usuarios.rol_admin"
-    model = LegajoHogar
-    form_class = LegajoHogarForm
+    model = LegajoGrupoHogar
+    form_class = LegajoGrupoHogarForm
 
     def get_context_data(self, **kwargs):
         pk = self.kwargs["pk"]
@@ -1296,19 +1296,19 @@ class LegajosGrupoHogarCreateView(CreateView):
             es_menor_de_18 = True
 
          # Verificar si tiene un cuidador principal asignado utilizando el método que agregaste al modelo
-        tiene_cuidador_ppal = LegajoHogar.objects.filter(
+        tiene_cuidador_ppal = LegajoGrupoHogar.objects.filter(
             fk_legajo_1Hogar=legajo_principal
         ).exists()
 
         context = super().get_context_data(**kwargs)
-        context["hogar_fk1"] = LegajoHogar.objects.filter(fk_legajo_1Hogar=pk)
-        context["hogar_fk2"] = LegajoHogar.objects.filter(fk_legajo_2Hogar=pk)
-        context["count_familia"] = context["hogar_fk1"].count() + context["hogar_fk2"].count()
+        context["hogar_1"] = LegajoGrupoHogar.objects.filter(fk_legajo_1Hogar=pk)
+        context["hogar_2"] = LegajoGrupoHogar.objects.filter(fk_legajo_2Hogar=pk)
+        context["count_hogar"] = context["hogar_1"].count() + context["hogar_2"].count()
         context["legajo_principal"] = legajo_principal
-        context["es_menor_de_18"] = es_menor_de_18
         context["pk"] = pk
-        context["hogar_fk"] = LegajoHogar.objects.get(fk_legajo=pk).id
+        context["hogar_fk"] = LegajoGrupoHogar.objects.get(fk_legajo=pk).id
         return context
+        
 
     def form_valid(self, form):
         pk = self.kwargs["pk"]
@@ -1324,14 +1324,14 @@ class LegajosGrupoHogarCreateView(CreateView):
             DimensionEconomia.objects.create(fk_legajo=nuevo_legajo)
             DimensionEducacion.objects.create(fk_legajo=nuevo_legajo)
             DimensionTrabajo.objects.create(fk_legajo=nuevo_legajo)
-            LegajoHogar.objects.create(fk_legajo=nuevo_legajo)
+            LegajoGrupoHogar.objects.create(fk_legajo=nuevo_legajo)
         except:
             return messages.error(self.request, "Verifique que no exista un legajo con ese DNI y NÚMERO.")
 
         # Crea el objeto LegajoGrupoFamiliar con los valores del formulario
-        vinculo_data = VINCULO_MAP.get(vinculo)
-        if not vinculo_data:
-            return messages.error(self.request, "Vinculo inválido.")
+         # vinculo_data = VINCULO_MAP.get(vinculo)
+         # if not vinculo_data:
+           #   return messages.error(self.request, "Vinculo inválido.")
 
         # crea la relacion de grupo familiar
         legajo_principal = Legajos.objects.get(id=pk)
@@ -1339,8 +1339,8 @@ class LegajosGrupoHogarCreateView(CreateView):
             legajo_grupo_familiar = LegajoGrupoFamiliar.objects.create(
                 fk_legajo_1=legajo_principal,
                 fk_legajo_2=nuevo_legajo,
-                vinculo=vinculo_data["vinculo"],
-                vinculo_inverso=vinculo_data["vinculo_inverso"],
+                #  vinculo=vinculo_data["vinculo"],
+                 # vinculo_inverso=vinculo_data["vinculo_inverso"],
                 estado_relacion=estado_relacion
             )
 

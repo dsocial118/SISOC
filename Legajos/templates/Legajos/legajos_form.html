@@ -55,21 +55,28 @@
                                 <span class="bs-stepper-label">Grupo Familiar</span>
                             </a>
                         </div>
+                        <div class="line d-none d-sm-inline"></div>
+                        <div class="step d-none d-sm-inline">
+                            <a href="{% url 'legajosgrupohogar_crear' object.id %}" class="step-trigger" role="tab">
+                                <span class="bs-stepper-circle">4</span>
+                                <span class="bs-stepper-label">Grupo Hogar</span>
+                            </a>
+                        </div>
+                      
                         <div class="line d-none d-sm-inline "></div>
                         <div class="step  d-none d-sm-inline">
                             <a href="{% url 'legajoalertas_crear' object.id %}" class="step-trigger" role="tab">
-                                <span class="bs-stepper-circle">4</span>
+                                <span class="bs-stepper-circle">5</span>
                                 <span class="bs-stepper-label">Alertas</span>
                             </a>
                         </div>
                         <div class="line d-none d-sm-inline"></div>
                         <div class="step d-none d-sm-inline">
                             <a href="{% url 'legajosarchivos_crear' object.id %}" class="step-trigger" role="tab">
-                                <span class="bs-stepper-circle">5</span>
+                                <span class="bs-stepper-circle">6</span>
                                 <span class="bs-stepper-label">Archivos</span>
                             </a>
                         </div>
-                    </div>
                     {%else%}
                     <div class="bs-stepper-header" role="tablist">
 
@@ -93,17 +100,25 @@
                                 <span class="bs-stepper-label">Grupo Familiar</span>
                             </button>
                         </div>
+                        <!--Formulario boton hogar-->
+                        <div class="line d-none d-sm-inline"></div>
+                        <div class="step d-none d-sm-inline">
+                              <a href="{% url 'grupofamiliar_crear' pk   %}" class="step-trigger" role="tab">
+                                <span class="bs-stepper-circle">4</span>
+                                                        <span class="bs-stepper-label">Grupo Hogar</span>
+                             </a>
+                        </div>
                         <div class="line d-none d-sm-inline"></div>
                         <div class="step d-none d-sm-inline">
                             <button type="button" class="step-trigger disabled" role="tab">
-                                <span class="bs-stepper-circle">4</span>
+                                <span class="bs-stepper-circle">5</span>
                                 <span class="bs-stepper-label">Alertas</span>
                             </button>
                         </div>
                         <div class="line d-none d-sm-inline"></div>
                         <div class="step d-none d-sm-inline">
                             <button type="button" class="step-trigger disabled" role="tab">
-                                <span class="bs-stepper-circle">5</span>
+                                <span class="bs-stepper-circle">6</span>
                                 <span class="bs-stepper-label">Archivos</span>
                             </button>
                         </div>
