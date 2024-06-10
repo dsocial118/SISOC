@@ -526,7 +526,6 @@ class LegajoGrupoHogar(models.Model):
     consideración de cada parte involucrada.
     '''
 
-    fk_legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
     fk_legajo_1Hogar = models.ForeignKey(Legajos, on_delete=models.CASCADE, related_name='hogar_1')
     fk_legajo_2Hogar = models.ForeignKey(Legajos, on_delete=models.CASCADE, related_name='hogar_2')
     estado_relacion = models.CharField(max_length=50, choices=CHOICE_ESTADO_RELACION)
@@ -535,13 +534,16 @@ class LegajoGrupoHogar(models.Model):
     TipoAyudaHogar = models.CharField(max_length=100, choices=TipoAyudaHogar, null=True, blank=True)
     
     def __str__(self):
-        return f"{self.fk_legajo}"
+        return f"Legajo: {self.fk_legajo_1Hogar} - Hogar: {self.fk_legajo_2Hogar}"
 
     class Meta:
-        ordering = ['fk_legajo']
+        ordering = ['fk_legajo_2Hogar']
         verbose_name = 'LegajoGrupoHogarForm'
         verbose_name_plural = 'LegajoGrupoHogarForm'
 
     def get_absolute_url(self):
         return reverse('LegajoGrupoHogarForm_ver', kwargs={'pk': self.pk})
+    
+    
+    ##########
     
