@@ -49,6 +49,8 @@ Dimensiones
           <dd class="col-sm-9 font-weight-bold">{{object.fecha_nacimiento|date:'d/m/Y'}}</dd>
           <dt class="col-sm-3 font-weight-normal">Sexo</dt>
           <dd class="col-sm-9 font-weight-bold">{{object.sexo}}</dd>
+          <dt class="col-sm-3 font-weight-normal">Sexo</dt>
+          <dd class="col-sm-9 font-weight-bold">{{object.sexo}}</dd>
         </dl>
       </div>
     </div>
@@ -127,8 +129,8 @@ Dimensiones
 
         <hr class="mt-4 mb-3 border-secondary" />
 
-        <!-- dimension salud -->
-        <div class="h3 mb-3">Salud</div>
+        <!-- dimension Educación -->
+        <div class="h3 mb-3">Educación</div>
         <dl class="row mb-0">
           <dd class="col-sm-8">Asiste a la escuela</dd>
           <dt class="col-sm-4">{{object.dimensioneducacion.asiste_escuela|yesno:'Sí,No,-'}}</dt>
