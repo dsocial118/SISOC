@@ -1344,30 +1344,29 @@ def busqueda_hogar(request):
         res = None
         busqueda = request.POST.get("busqueda")
         legajo_principal_id = request.POST.get("id")
-        legajos_asociadosfk1 = LegajoGrupoFamiliar.objects.filter(fk_legajo_1_id=legajo_principal_id).values_list('fk_legajo_2_id', flat=True)
-        legajos_asociadosfk2 = LegajoGrupoFamiliar.objects.filter(fk_legajo_2_id=legajo_principal_id).values_list('fk_legajo_1_id', flat=True)
-        familiares = (
+        legajos_asociadosfk1 = LegajoGrupoHogar.objects.filter(fk_legajo_1Hogar_id=legajo_principal_id).values_list('fk_legajo_2Hogar_id', flat=True)
+        legajos_asociadosfk2 = LegajoGrupoHogar.objects.filter(fk_legajo_2Hogar_id=legajo_principal_id).values_list('fk_legajo_1Hogar_id', flat=True)
+        hogares = (
             Legajos.objects.filter(~Q(id=legajo_principal_id) & (Q(apellido__icontains=busqueda) | Q(documento__icontains=busqueda)))
             .exclude(id__in=legajos_asociadosfk1)
             .exclude(id__in=legajos_asociadosfk2)
         )
 
-        if len(familiares) > 0 and busqueda:
+        if len(hogares) > 0 and busqueda:
             data = [
                 {
-                    'pk': familiar.pk,
-                    'nombre': familiar.nombre,
-                    'apellido': familiar.apellido,
-                    'documento': familiar.documento,
-                    'tipo_doc': familiar.tipo_doc,
-                    'fecha_nacimiento': familiar.fecha_nacimiento,
-                    'sexo': familiar.sexo,
+                    'pk': hogar.pk,
+                    'nombre': hogar.nombre,
+                    'apellido': hogar.apellido,
+                    'documento': hogar.documento,
+                    'tipo_doc': hogar.tipo_doc,
+                    'fecha_nacimiento': hogar.fecha_nacimiento,
+                    'sexo': hogar.sexo,
                     # Otros campos que deseas incluir
                 }
-                for familiar in familiares
+                for hogar in hogares
             ]
             res = data
-
         else:
             res = ""
 
