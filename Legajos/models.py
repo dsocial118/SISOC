@@ -30,6 +30,7 @@ class Legajos(models.Model):
     barrio = models.CharField(max_length=100, choices=CHOICE_BARRIOS, null=True, blank=True)
     localidad = models.CharField(max_length=250, choices=CHOICE_LOCALIDAD, null=True, blank=True)
     telefono = models.IntegerField(null=True, blank=True)
+    telefonoalt = models.IntegerField(null=True, blank=True,verbose_name='Telefono Alternativo')
     email = models.EmailField(null=True, blank=True)
     foto = models.ImageField(upload_to='legajos', blank=True, null=True)
     m2m_alertas = models.ManyToManyField(Alertas, through='LegajoAlertas', blank=True)

@@ -86,8 +86,8 @@
                                 <div class="card-body bg-light">
                                     <div id="tablaResultado"
                                         class="row text-center d-flex justify-content-center justify-content-sm-start px-2">
-                                        {% if familiares_fk1 or familiares_fk2 %}
-                                            {% for f in familiares_fk1 %}
+                                        {% if hogar_1 or hogar_2 %}
+                                            {% for f in hogar_1 %}
                                             <div id="familiar-{{f.id}}" class="px-2">
                                                 <ul class="users-list">
                                                     <li style="width:auto">
@@ -108,7 +108,7 @@
                                             </div>
                                             {% empty %}
                                             {% endfor %}
-                                        {% for f in familiares_fk2 %}
+                                        {% for f in hogar_2 %}
                                         <div id="familiar-{{f.id}}" class="px-2">
                                             <ul class="users-list">
                                                 <li style="width:auto">
@@ -166,10 +166,7 @@
                                                     <th>Apellido</th>
                                                     <th>Nombre</th>
                                                     <th>Documento</th>
-                                                    <th>Vínculo</th>
                                                     <th>Estado Relación</th>
-                                                    <th class="text-center">Convive</th>
-                                                    <th class="text-center">Cuidador Principal</th>
                                                     <th class="text-right"></th>
                                                 </tr>
                                             </thead>
@@ -345,7 +342,7 @@
                 data: {
                     'fk_legajo_1': '{{pk}}',
                     'fk_legajo_2': pk,
-                    'vinculo': addParentesco,
+                    'vinculo': addRelacion,
                     'estado_relacion': addRelacion,
                     'conviven': addConviven,
                     'cuidador_principal': addCuidador,
