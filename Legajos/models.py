@@ -186,7 +186,7 @@ class DimensionVivienda(models.Model):
     PoseenCeludar = models.BooleanField(verbose_name='En tu hogar cuentan con Celular', max_length=255, null=True, blank=True)
     PoseenPC = models.BooleanField(verbose_name='En tu hogar cuentan con PC', max_length=255, null=True, blank=True)
     Poseeninternet = models.BooleanField(verbose_name='En tu hogar cuentan con Internet', max_length=255, null=True, blank=True)
-    ContextoCasa = models.CharField(verbose_name='La vivienda está ubicada...', max_length=255,choices=CHOICE_ContextoCasa,null=False, blank=True )
+    ContextoCasa = models.CharField(verbose_name='La vivienda está ubicada...', max_length=255,choices=CHOICE_ContextoCasa, null=True, blank=True )
     CantidadAmbientes = models.CharField(verbose_name='ambientes tiene la vivienda', max_length=50, choices= CHOICE_CantidadAmbientes, null=True, blank=True)
     gas = models.CharField(verbose_name='ambientes tiene la vivienda', max_length=50, choices= CHOICE_CantidadAmbientes, null=True, blank=True)
 
