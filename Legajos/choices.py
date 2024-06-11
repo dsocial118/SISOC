@@ -2,10 +2,12 @@
 CHOICE_NIVEL_EDUCATIVO = [
     (None, ''),
     ('No aplica', 'No aplica'),
-    ('Especial', 'Especial'),
+    ('Educación especial', 'Educación especial'),
     ('Jardín', 'Jardín'),
     ('Primario', 'Primario'),
+    ('EGB', 'EGB'),
     ('Secundario', 'Secundario'),
+    ('Polimodal', 'Polimodal'),
     ('Terciario', 'Terciario'),
     ('Universitario', 'Universitario'),
 ]

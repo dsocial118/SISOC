@@ -1,4 +1,4 @@
-#!C:\Users\MDS\SISOC\venv2\Scripts\python.exe
+#!C:\Users\Navar\OneDrive\SISOC\SISOC\venv2\Scripts\python.exe
 
 # $Id: rst2odt_prepstyles.py 8932 2022-01-05 14:59:31Z milde $
 # Author: Dave Kuhlman <dkuhlman@rexx.com>
