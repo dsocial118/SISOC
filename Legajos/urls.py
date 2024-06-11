@@ -60,7 +60,7 @@ urlpatterns = [
     #path('legajos/grupoHogar/crear/<pk>', login_required(LegajosGrupoHogarCreateView.as_view()), name='grupofamiliar_crear'),
     #path('legajos/grupoHogar/crear/ajax/', login_required(CreateGrupoFamiliar.as_view()), name='grupofamiliar_ajax_crear'),
     #path('legajos/grupoHogar/borrar/ajax/', login_required(DeleteGrupoFamiliar.as_view()), name='grupofamiliar_ajax_borrar'),
-    #path('legajos/grupoHogar/buscar/', login_required(busqueda_familiares), name='familiares_buscar'),
+    path('legajos/grupoHogar/buscar/', login_required(busqueda_hogar), name='hogar_buscar'),
    # path('legajos/grupoHogar/nuevo/', login_required(LegajosGrupoFamiliarCreateView.as_view()), name='nuevoLegajoFamiliar_ajax')
     path('legajos/hogar/crear/<pk>', login_required(LegajosGrupoHogarCreateView.as_view()), name='legajosgrupohogar_crear'),
 

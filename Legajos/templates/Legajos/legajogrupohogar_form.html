@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-confirm/3.3.2/jquery-confirm.min.css">
 {% endblock %}
 
-{% block title %}Grupo Familiar{% endblock %};
+{% block title %}Grupo Hogar{% endblock %};
 
 {% block titulo-pagina %}Legajos{% endblock %};
 
@@ -15,7 +15,7 @@
 <ol class="breadcrumb float-sm-right mt-2 mr-2">
     <li class="breadcrumb-item"><a href="{% url 'legajos_listar' %}">Legajos</a></li>
     <li class="breadcrumb-item"><a href="{% url 'legajos_ver' pk %}">{{legajo_principal}}</a></li>
-    <li class="breadcrumb-item active">Grupo familiar</li>
+    <li class="breadcrumb-item active">Grupo Hogar</li>
 </ol>
 {% endblock %};
 
@@ -45,16 +45,16 @@
                             </a>
                         </div>
                         <div class="line d-none d-sm-inline"></div>
-                        <div class="step active">
-                            <a type="button" class="step-trigger text-primary" role="tab" href="">
+                        <div class="step d-none d-sm-inline">
+                            <a type="button" class="step-trigger " role="tab" href="">
                                 <span class="bs-stepper-circle">3</span>
                                 <span class="bs-stepper-label">Grupo Familiar</span>
                             </a>
                         </div>
                         <!--Formulario boton hogar-->
                         <div class="line d-none d-sm-inline"></div>
-                        <div class="step d-none d-sm-inline">
-                                <a href="{% url 'legajosgrupohogar_crear' pk   %}" class="step-trigger" role="tab">
+                        <div class="step active">
+                                <a type="button" href="{% url 'legajosgrupohogar_crear' pk   %}" class="step-trigger text-primary" role="tab">
                                 <span class="bs-stepper-circle">4</span>
                                 <span class="bs-stepper-label">Grupo Hogar</span>
                             </a>
@@ -80,14 +80,14 @@
                             <div class="card">
                                 <div class="card-header">
                                     <h3 class="card-title font-weight-bold">
-                                        Grupo familiar
+                                        Grupo Hogar
                                     </h3>
                                 </div>
                                 <div class="card-body bg-light">
                                     <div id="tablaResultado"
                                         class="row text-center d-flex justify-content-center justify-content-sm-start px-2">
-                                        {% if familiares_fk1 or familiares_fk2 %}
-                                            {% for f in familiares_fk1 %}
+                                        {% if hogar_1 or hogar_2 %}
+                                            {% for f in hogar_1 %}
                                             <div id="familiar-{{f.id}}" class="px-2">
                                                 <ul class="users-list">
                                                     <li style="width:auto">
@@ -108,7 +108,7 @@
                                             </div>
                                             {% empty %}
                                             {% endfor %}
-                                        {% for f in familiares_fk2 %}
+                                        {% for f in hogar_2 %}
                                         <div id="familiar-{{f.id}}" class="px-2">
                                             <ul class="users-list">
                                                 <li style="width:auto">
@@ -130,7 +130,7 @@
                                         {% endfor %}
                                         {%else%}
                                         <div class="col-12 text-center" id="sin-familiares">
-                                            <h6 class="text-muted">Sin grupo familiar</h6>
+                                            <h6 class="text-muted">Sin grupo Hogar</h6>
                                         </div>
                                         {%endif%}
                                     </div>
@@ -143,7 +143,7 @@
 
                                     <div class="row align-items-between">
                                         <div class="col mb-3 mb-sm-none ">
-                                            <h3 class="card-title font-weight-bold pt-1 mr-3"> Agregar familiar</h3>
+                                            <h3 class="card-title font-weight-bold pt-1 mr-3"> Agregar Convivente de hogar</h3>
                                         </div>
                                         <div class="col-sm-8">
                                             <form id="search-form" autocomplete="off">
@@ -166,10 +166,7 @@
                                                     <th>Apellido</th>
                                                     <th>Nombre</th>
                                                     <th>Documento</th>
-                                                    <th>Vínculo</th>
                                                     <th>Estado Relación</th>
-                                                    <th class="text-center">Convive</th>
-                                                    <th class="text-center">Cuidador Principal</th>
                                                     <th class="text-right"></th>
                                                 </tr>
                                             </thead>
@@ -210,15 +207,6 @@
                                                 <div class="form-group col-sm-3">
                                                     {{ form.vinculo|as_crispy_field }}
                                                 </div>
-                                                <div class="form-group col-sm-3">
-                                                    {{ form.estado_relacion|as_crispy_field }}
-                                                </div>
-                                                <div class="form-group col-sm-3">
-                                                    {{ form.conviven|as_crispy_field }}
-                                                </div>
-                                                <div class="form-group col-sm-3">
-                                                    {{ form.cuidador_principal|as_crispy_field }}
-                                                </div>
                                                 <div class="form-group col-12 text-right">
                                                     <button type="submit" name="form_nuevo" id="form_nuevo"
                                                         class="btn btn-primary mb-3">Agregar</button>
@@ -235,10 +223,9 @@
                     <div class="row">
                         <div class="col-md-12">
                             <div class="form-group mb-0 mt-3 d-flex justify-content-between">
-                                <a href="{% url 'legajosdimensiones_editar' id_dimensionfamiliar %}"
-                                    class="btn btn-secondary mb-3 float-right">Volver</a>
+
                                 <a href="{% url 'legajos_ver' pk %}" class="btn btn-primary mb-3">Guardar</a>
-                                <a href="{% url 'legajosgrupohogar_crear' pk %}"
+                                <a href="{% url 'legajoalertas_crear' pk %}"
                                     class="btn btn-secondary mb-3 float-right">Continuar</a>
                             </div>
                         </div>
@@ -355,7 +342,7 @@
                 data: {
                     'fk_legajo_1': '{{pk}}',
                     'fk_legajo_2': pk,
-                    'vinculo': addParentesco,
+                    'vinculo': addRelacion,
                     'estado_relacion': addRelacion,
                     'conviven': addConviven,
                     'cuidador_principal': addCuidador,
