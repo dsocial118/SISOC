@@ -97,7 +97,7 @@ class LegajosListView(TemplateView):
         mostrar_btn_resetear = False
         query = self.request.GET.get("busqueda")
         if query:
-            object_list = Legajos.objects.filter(Q(apellido__iexact=query) | Q(documento__iexact=query)).distinct()
+            object_list = Legajos.objects.filter(Q(apellido__icontains=query) | Q(documento__icontains=query)).distinct()
             if object_list and object_list.count() == 1:
                 id = None
                 for o in object_list:
@@ -601,8 +601,8 @@ class LegajosDerivacionesBuscar(PermisosMixin, TemplateView):
         mostrar_btn_resetear = False
         query = self.request.GET.get("busqueda")
         if query:
-            derivaciones_filtrado = derivaciones.filter(Q(fk_legajo__apellido__iexact=query) | Q(fk_legajo__documento__iexact=query)).values("fk_legajo").distinct()
-            legajos_filtrado = legajos.filter(Q(apellido__iexact=query) | Q(documento__iexact=query)).distinct()
+            derivaciones_filtrado = derivaciones.filter(Q(fk_legajo__apellido__icontains=query) | Q(fk_legajo__documento__icontains=query)).values("fk_legajo").distinct()
+            legajos_filtrado = legajos.filter(Q(apellido__icontains=query) | Q(documento__icontains=query)).distinct()
 
             if derivaciones_filtrado:
                 sin_derivaciones = legajos_filtrado.exclude(id__in=derivaciones_filtrado)
@@ -651,7 +651,7 @@ class LegajosDerivacionesListView(PermisosMixin, ListView):
         query = self.request.GET.get("busqueda")
 
         if query:
-            object_list = model.filter(Q(fk_legajo__apellido__iexact=query) | Q(fk_legajo__documento__iexact=query)).distinct()
+            object_list = model.filter(Q(fk_legajo__apellido__icontains=query) | Q(fk_legajo__documento__icontains=query)).distinct()
 
         else:
             object_list = model.all()
