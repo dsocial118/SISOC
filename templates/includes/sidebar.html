@@ -408,6 +408,7 @@
 	</ul>
 </li>
 {%endif%}
+<!--
 {%if perms.Usuarios.programa_SL%}
 <li class="nav-item {% if 'SL' in pagina_actual %}menu-open{% endif %}">
 	<a href="#" class="nav-link {% if 'SL' in pagina_actual %}active{% endif %}">
@@ -444,15 +445,9 @@
 				<p>Intervenciones</p>
 			</a>
 		</li>
-		<!--<li class="nav-item">
-			<a href="{% url 'intervenciones_list' %}"
-				class="nav-link {% if 'intervenciones_list' in pagina_actual %}active{% endif %}">
-				<i class="nav-icon fas fa-clipboard"></i>
-				<p>Reportes CDIF</p>
-			</a>
-		</li>-->
 	</ul>
-</li>
+</li>-->
+<!--
 {%endif%}
 {%if perms.Usuarios.programa_MA%}
 <li class="nav-item {% if 'MA' in pagina_actual %}menu-open{% endif %}">
@@ -490,17 +485,11 @@
 				<p>Intervenciones</p>
 			</a>
 		</li>
-		<!--<li class="nav-item">
-			<a href="{% url 'intervenciones_list' %}"
-				class="nav-link {% if 'intervenciones_list' in pagina_actual %}active{% endif %}">
-				<i class="nav-icon fas fa-clipboard"></i>
-				<p>Reportes CDIF</p>
-			</a>
-		</li>-->
+
 	</ul>
 </li>
-{%endif%}
-
+{%endif%}-->
+<!--
 {% if request.user.is_superuser %}
 <li class="nav-header menu-extra-header mt-5">PLANTILLA</li>
 <li class="nav-item {% if 'plantilla/ejemplos' in pagina_actual %}menu-open{% endif %}">
@@ -509,7 +498,7 @@
 		<p>
 			Ejemplos
 			<i class="right fas fa-angle-left"></i>
-			<!--<span class="right badge badge-danger">New</span>-->
+			
 		</p>
 	</a>
 	<ul class="nav nav-treeview">
@@ -687,7 +676,7 @@
 		<p>
 			Legajos
 			<i class="right fas fa-angle-left"></i>
-			<!--<span class="right badge badge-danger">New</span>-->
+	
 		</p>
 	</a>
 
@@ -729,7 +718,7 @@
 		<p>
 			Programas (CDIF)
 			<i class="right fas fa-angle-left"></i>
-			<!--<span class="right badge badge-danger">New</span>-->
+			
 		</p>
 	</a>
 	<ul class="nav nav-treeview">
@@ -977,5 +966,15 @@
 	</ul>
 </li>
 {%endif%}
+-->
+<li class="nav-item {% if 'programas' in pagina_actual %}menu-open{% endif %}">
+    <a href="#" class="nav-link {% if 'programas' in pagina_actual %}active{% endif %}">
+        <i class="nav-icon fas fa-th"></i>
+        <p>
+            PROGRAMAS
+            <i class="right fas fa-angle-left"></i>
+        </p>
+    </a>
 
+</li>
 {% endwith %}
