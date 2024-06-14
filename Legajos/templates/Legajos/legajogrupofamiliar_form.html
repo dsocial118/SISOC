@@ -51,17 +51,25 @@
                                 <span class="bs-stepper-label">Grupo Familiar</span>
                             </a>
                         </div>
+                        <!--Formulario boton hogar-->
+                        <div class="line d-none d-sm-inline"></div>
+                        <div class="step d-none d-sm-inline">
+                                <a href="{% url 'legajosgrupohogar_crear' pk   %}" class="step-trigger" role="tab">
+                                <span class="bs-stepper-circle">4</span>
+                                <span class="bs-stepper-label">Grupo Hogar</span>
+                            </a>
+                        </div>
                         <div class="line"></div>
                         <div class="step">
                             <a href="{% url 'legajoalertas_crear' pk  %}" class="step-trigger" role="tab">
-                                <span class="bs-stepper-circle">4</span>
+                                <span class="bs-stepper-circle">5</span>
                                 <span class="bs-stepper-label">Alertas</span>
                             </a>
                         </div>
                         <div class="line d-none d-sm-inline"></div>
                         <div class="step d-none d-sm-inline">
                             <a href="{% url 'legajosarchivos_crear' pk   %}" class="step-trigger" role="tab">
-                                <span class="bs-stepper-circle">5</span>
+                                <span class="bs-stepper-circle">6</span>
                                 <span class="bs-stepper-label">Archivos</span>
                             </a>
                         </div>
@@ -230,7 +238,7 @@
                                 <a href="{% url 'legajosdimensiones_editar' id_dimensionfamiliar %}"
                                     class="btn btn-secondary mb-3 float-right">Volver</a>
                                 <a href="{% url 'legajos_ver' pk %}" class="btn btn-primary mb-3">Guardar</a>
-                                <a href="{% url 'legajoalertas_crear' pk %}"
+                                <a href="{% url 'legajosgrupohogar_crear' pk %}"
                                     class="btn btn-secondary mb-3 float-right">Continuar</a>
                             </div>
                         </div>

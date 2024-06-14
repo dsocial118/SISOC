@@ -97,7 +97,7 @@ class LegajosListView(TemplateView):
         mostrar_btn_resetear = False
         query = self.request.GET.get("busqueda")
         if query:
-            object_list = Legajos.objects.filter(Q(apellido__iexact=query) | Q(documento__iexact=query)).distinct()
+            object_list = Legajos.objects.filter(Q(apellido__icontains=query) | Q(documento__icontains=query)).distinct()
             if object_list and object_list.count() == 1:
                 id = None
                 for o in object_list:
@@ -325,7 +325,7 @@ class LegajosCreateView(PermisosMixin, CreateView):
             DimensionEconomia.objects.create(fk_legajo_id=self.object.id)
             DimensionEducacion.objects.create(fk_legajo_id=self.object.id)
             DimensionTrabajo.objects.create(fk_legajo_id=self.object.id)
-
+            
             if "form_legajos" in self.request.POST:
                 return redirect("legajos_ver", pk=int(self.object.id))
 
@@ -601,8 +601,8 @@ class LegajosDerivacionesBuscar(PermisosMixin, TemplateView):
         mostrar_btn_resetear = False
         query = self.request.GET.get("busqueda")
         if query:
-            derivaciones_filtrado = derivaciones.filter(Q(fk_legajo__apellido__iexact=query) | Q(fk_legajo__documento__iexact=query)).values("fk_legajo").distinct()
-            legajos_filtrado = legajos.filter(Q(apellido__iexact=query) | Q(documento__iexact=query)).distinct()
+            derivaciones_filtrado = derivaciones.filter(Q(fk_legajo__apellido__icontains=query) | Q(fk_legajo__documento__icontains=query)).values("fk_legajo").distinct()
+            legajos_filtrado = legajos.filter(Q(apellido__icontains=query) | Q(documento__icontains=query)).distinct()
 
             if derivaciones_filtrado:
                 sin_derivaciones = legajos_filtrado.exclude(id__in=derivaciones_filtrado)
@@ -651,7 +651,7 @@ class LegajosDerivacionesListView(PermisosMixin, ListView):
         query = self.request.GET.get("busqueda")
 
         if query:
-            object_list = model.filter(Q(fk_legajo__apellido__iexact=query) | Q(fk_legajo__documento__iexact=query)).distinct()
+            object_list = model.filter(Q(fk_legajo__apellido__icontains=query) | Q(fk_legajo__documento__icontains=query)).distinct()
 
         else:
             object_list = model.all()
@@ -941,6 +941,13 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
             "hay_agua_caliente": "hay_agua_caliente",
             "hay_desmoronamiento": "hay_desmoronamiento",
             "hay_banio": "hay_banio",
+            "PoseenCeludar":"PoseenCeludar",
+            "PoseenPC":"PoseenPC",
+            "Poseeninternet":"Poseeninternet",
+            "ContextoCasa":"ContextoCasa",
+            "CondicionDe":"CondicionDe",
+            "CantidadAmbientes":"CantidadAmbientes",
+            "gas":"gas",
             "obs_vivienda": "obs_vivienda",
         }
 
@@ -998,6 +1005,14 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
             "grado": "grado",
             "turno": "turno",
             "obs_educacion": "obs_educacion",
+            "provinciaInstitucion": "provinciaInstitucion",
+            "localidadInstitucion": "localidadInstitucion",
+            "municipioInstitucion": "municipioInstitucion",
+            "barrioInstitucion": "barrioInstitucion",
+            "calleInstitucion": "calleInstitucion",
+            "numeroInstitucion": "numeroInstitucion",
+            "interesEstudio": "interesEstudio",
+            "interesCurso": "interesCurso"
         }
 
         for field in fields_mapping_educacion:
@@ -1257,3 +1272,176 @@ class indicesDetalleView(TemplateView):
 
 
 # endregion ###########################################################
+
+# region ############################################################### GRUPO Hogar
+
+
+class LegajosGrupoHogarCreateView(CreateView):
+    permission_required = "Usuarios.rol_admin"
+    model = LegajoGrupoHogar
+    form_class = LegajoGrupoHogarForm
+    
+
+    def get_context_data(self, **kwargs):
+        pk = self.kwargs["pk"]
+        legajo_principal = Legajos.objects.filter(pk=pk).first()
+        # Calcula la edad utilizando la función 'edad' del modelo
+             
+
+        context = super().get_context_data(**kwargs)
+        context["hogar_1"] = LegajoGrupoHogar.objects.filter(fk_legajo_1Hogar=pk)
+        context["hogar_2"] = LegajoGrupoHogar.objects.filter(fk_legajo_2Hogar=pk)
+        context["count_hogar"] = context["hogar_1"].count() + context["hogar_2"].count()
+        context["legajo_principal"] = legajo_principal
+        context["pk"] = pk
+        #context["hogar_fk"] = LegajoGrupoHogar.objects.get(fk_legajo=pk).id
+        #context["hogar_fk"] = LegajoGrupoHogar.objects.filter(fk_legajo=pk).id
+        return context
+        
+
+    def form_valid(self, form):
+        pk = self.kwargs["pk"]
+        estado_relacion = form.cleaned_data['estado_relacion']
+
+
+        # Crea el objeto Legajos
+        try:
+            nuevo_legajo = form.save()
+            DimensionFamilia.objects.create(fk_legajo=nuevo_legajo)
+            DimensionVivienda.objects.create(fk_legajo=nuevo_legajo)
+            DimensionSalud.objects.create(fk_legajo=nuevo_legajo)
+            DimensionEconomia.objects.create(fk_legajo=nuevo_legajo)
+            DimensionEducacion.objects.create(fk_legajo=nuevo_legajo)
+            DimensionTrabajo.objects.create(fk_legajo=nuevo_legajo)
+            LegajoGrupoHogar.objects.create(fk_legajo=nuevo_legajo)
+        except:
+            return messages.error(self.request, "Verifique que no exista un legajo con ese DNI y NÚMERO.")
+
+        # Crea el objeto LegajoGrupoFamiliar con los valores del formulario
+         # vinculo_data = VINCULO_MAP.get(vinculo)
+         # if not vinculo_data:
+           #   return messages.error(self.request, "Vinculo inválido.")
+
+        # crea la relacion de grupo familiar
+        legajo_principal = Legajos.objects.get(id=pk)
+        try:
+            legajo_grupo_familiar = LegajoGrupoFamiliar.objects.create(
+                fk_legajo_1=legajo_principal,
+                fk_legajo_2=nuevo_legajo,
+                #  vinculo=vinculo_data["vinculo"],
+                 # vinculo_inverso=vinculo_data["vinculo_inverso"],
+                estado_relacion=estado_relacion
+            )
+        except:
+            return messages.error(self.request, "Verifique que no exista un legajo con ese DNI y NÚMERO.")
+
+        messages.success(self.request, "Familair agregado correctamente.")
+        # Redireccionar a la misma página después de realizar la acción con éxito
+        return HttpResponseRedirect(self.request.path_info)
+    
+def busqueda_hogar(request):
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        res = None
+        busqueda = request.POST.get("busqueda")
+        legajo_principal_id = request.POST.get("id")
+        legajos_asociadosfk1 = LegajoGrupoHogar.objects.filter(fk_legajo_1Hogar_id=legajo_principal_id).values_list('fk_legajo_2Hogar_id', flat=True)
+        legajos_asociadosfk2 = LegajoGrupoHogar.objects.filter(fk_legajo_2Hogar_id=legajo_principal_id).values_list('fk_legajo_1Hogar_id', flat=True)
+        hogares = (
+            Legajos.objects.filter(~Q(id=legajo_principal_id) & (Q(apellido__icontains=busqueda) | Q(documento__icontains=busqueda)))
+            .exclude(id__in=legajos_asociadosfk1)
+            .exclude(id__in=legajos_asociadosfk2)
+        )
+
+        if len(hogares) > 0 and busqueda:
+            data = [
+                {
+                    'pk': hogar.pk,
+                    'nombre': hogar.nombre,
+                    'apellido': hogar.apellido,
+                    'documento': hogar.documento,
+                    'tipo_doc': hogar.tipo_doc,
+                    'fecha_nacimiento': hogar.fecha_nacimiento,
+                    'sexo': hogar.sexo,
+                    # Otros campos que deseas incluir
+                }
+                for hogar in hogares
+            ]
+            res = data
+        else:
+            res = ""
+
+        return JsonResponse({"data": res})
+
+    return JsonResponse({"data": "this is data"})
+
+
+class LegajoGrupoHogarList(ListView):
+    model = LegajoGrupoFamiliar
+
+    def get_context_data(self, **kwargs):
+        pk = self.kwargs["pk"]
+        context = super().get_context_data(**kwargs)
+        context["familiares_fk1"] = LegajoGrupoFamiliar.objects.filter(fk_legajo_1=pk)
+        context["familiares_fk2"] = LegajoGrupoFamiliar.objects.filter(fk_legajo_2=pk)
+        context["count_familia"] = context["familiares_fk1"].count() + context["familiares_fk1"].count()
+        context["nombre"] = Legajos.objects.filter(pk=pk).first()
+        context["pk"] = pk
+        return context
+
+
+class CreateGrupoHogar(View):
+    def get(self, request, **kwargs):
+        fk_legajo_1 = request.GET.get("fk_legajo_1", None)
+        fk_legajo_2 = request.GET.get("fk_legajo_2", None)
+        vinculo = request.GET.get("vinculo", None)
+        estado_relacion = request.GET.get("estado_relacion", None)
+        conviven = request.GET.get("conviven", None)
+        cuidador_principal = request.GET.get("cuidador_principal", None)
+        obj = None
+        vinculo_data = VINCULO_MAP.get(vinculo)
+
+        if not vinculo_data:
+            return messages.error(self.request, "Vinculo inválido.")
+
+        obj = LegajoGrupoFamiliar.objects.create(
+            fk_legajo_1_id=fk_legajo_1,
+            fk_legajo_2_id=fk_legajo_2,
+            vinculo=vinculo_data["vinculo"],
+            vinculo_inverso=vinculo_data["vinculo_inverso"],
+            estado_relacion=estado_relacion,
+            conviven=conviven,
+            cuidador_principal=cuidador_principal,
+        )
+
+        familiar = {
+            "id": obj.id,
+            "fk_legajo_1": obj.fk_legajo_1.id,
+            "fk_legajo_2": obj.fk_legajo_2.id,
+            "vinculo": obj.vinculo,
+            "nombre": obj.fk_legajo_2.nombre,
+            "apellido": obj.fk_legajo_2.apellido,
+            "foto": obj.fk_legajo_2.foto.url if obj.fk_legajo_2.foto else None,
+            "cuidador_principal": obj.cuidador_principal,
+        }
+        data = {  
+                "tipo_mensaje": "success",             
+                "mensaje" : "Vínculo familiar agregado correctamente."}  
+
+        return JsonResponse({"familiar": familiar, "data": data})
+
+
+class DeleteGrupoHogar(View):
+    def get(self, request):
+        pk = request.GET.get("id", None)
+        try:
+            familiar = get_object_or_404(LegajoGrupoFamiliar, pk=pk)
+            familiar.delete()
+            data = {"deleted": True,   
+                "tipo_mensaje": "success",             
+                "mensaje" : "Vínculo familiar eliminado correctamente."} 
+        except:
+            data = {"deleted": False,   
+                "tipo_mensaje": "error",             
+                "mensaje" : "No fue posible eliminar el archivo."}  
+
+        return JsonResponse(data)

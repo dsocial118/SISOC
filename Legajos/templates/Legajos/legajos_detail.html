@@ -108,6 +108,12 @@
                     </li>
                     <li class="nav-item">
                         <div class="comment-text">
+                            Teléfono Alternativa
+                            <span class="username">{{object.telefonoalt|default_if_none:"-"}}</span>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="comment-text">
                             Email
                             <span class="username">{{object.email|default_if_none:"-"}}</span>
                         </div>
@@ -182,6 +188,7 @@
             <div class="card-footer text-center">
                 {%if perms.Usuarios.rol_admin%}
                 <a href="{% url 'grupofamiliar_crear' object.id %}">Agregar familiares</a>
+                
                 {%endif%}
             </div>
             {% endif %}
@@ -290,6 +297,67 @@
 
         </div>
     -->
+    <!--HOGAR INICIO-->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-tools">
+                <button type="button" class="btn btn-tool d-md-none" data-card-widget="collapse">
+                    <i class="fas fa-minus"></i>
+                </button>
+            </div>
+
+            <h3 class="card-title font-weight-bold pt-1 mr-3">
+                Grupo Conviviente Hogar
+            </h3>
+            <span title="Cantidad total de Conviviente en el Hogar" class="badge badge-secondary mt-1">{{count_familia}}</span>
+        </div>
+        {% if count_familia != 0 %}
+        <div class="card-body bg-light p-0">
+            <ul class="users-list">
+                {% for f in familiares_fk1 %}
+                <li><a class="users-list-name" href="{% url 'legajos_ver' f.fk_legajo_2_id %}" title="{{f.fk_legajo_2}} - {{f.vinculo}}">
+                    {% if f.fk_legajo_2.foto %}
+                    <img src="{{f.fk_legajo_2.foto.url}}" alt="User Image" width="60px">
+                    {%else%}
+                    <img src="{% static 'custom/img/default.png'  %}" alt="User Image" width="60px">
+                    {%endif%}                        
+                    <span class="users-list-date">{{f.fk_legajo_2}}</span>
+                    <span class="users-list-date">{{f.vinculo}}</span>
+                </a>
+                </li>
+                {% empty %}
+                {% endfor %}
+                {% for f in familiares_fk2 %}
+                <li>
+                    <a class="users-list-name" href="{% url 'legajos_ver' f.fk_legajo_1_id %}" title="{{f.fk_legajo_1}} - {{f.vinculo_inverso}}">
+                        {% if f.fk_legajo_1.foto %}
+                        <img src="{{f.fk_legajo_1.foto.url}}" alt="User Image" width="60px">
+                        {%else%}
+                        <img src="{% static 'custom/img/default.png'  %}" alt="User Image" width="60px">
+                        {%endif%}                            
+                        <span class="users-list-date">{{f.fk_legajo_1}}</span>
+                        <span class="users-list-date">{{f.vinculo_inverso}}</span>
+                    </a>
+                </li>
+                {% empty %}
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="card-footer text-center">
+            <a href="{% url 'grupofamiliar_listar' object.id %}">Ver detalles</a>
+        </div>
+        {% else %}
+        <div class="card-body bg-light p-0">
+            <h6 class="text-center text-muted py-3">Sin Conviviente</h6>
+        </div>
+        <div class="card-footer text-center">
+            {%if perms.Usuarios.rol_admin%}
+            <a href="{% url 'legajosgrupohogar_crear' object.id %}">Agregar Conviviente</a>
+            {%endif%}
+        </div>
+        {% endif %}
+    </div>
+    <!--Fin HOGAR-->
         <div class="card ">
             <div class="card-header">
                 <h3 class="card-title font-weight-bold"> Imágenes</h3>
@@ -711,6 +779,14 @@
                                     <dt class="col-sm-4">
                                         {{object.dimensionvivienda.hay_desmoronamiento|yesno:'Sí,No'}}
                                     </dt>
+                                    <dd class="col-sm-8">La vivienda está ubicada...</dd>
+                                    <dt class="col-sm-4">{{object.dimensionvivienda.ContextoCasa|default_if_none:"-"}}</dt>
+                                    <dd class="col-sm-8">Posee PC</dd>
+                                    <dt class="col-sm-4">{{object.dimensionvivienda.PoseenPC|yesno:'Sí,No,-'}}</dt>
+                                    <dd class="col-sm-8">Posee Internet</dd>
+                                    <dt class="col-sm-4">{{object.dimensionvivienda.Poseeninternet|yesno:'Sí,No,-'}}</dt>
+                                    <dd class="col-sm-8">Posee Celular</dd>
+                                    <dt class="col-sm-4">{{object.dimensionvivienda.PoseenCeludar|yesno:'Sí,No,-'}}</dt>
                                     <dd class="col-12 mt-3">Observaciones</dd>
                                     <dt class="col-12">
                                         {{object.dimensionvivienda.obs_vivienda|default_if_none:"-"}}
@@ -755,35 +831,39 @@
                                 <!-- deimension educacion -->
                                 <dl class="row mb-0">
                                     <dd class="col-sm-8">Asiste a la escuela</dd>
-                                    <dt class="col-sm-4">{{object.dimensioneducacion.asiste_escuela|yesno:'Sí,No'}}
-                                    </dt>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.asiste_escuela|yesno:'Sí,No,-'}}</dt>
                                     <dd class="col-sm-8">Máximo nivel educativo alcanzado</dd>
-                                    <dt class="col-sm-4">{{object.dimensioneducacion.max_nivel|default_if_none:"-"}}
-                                    </dt>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.max_nivel|default_if_none:"-"}} </dt>
                                     <dd class="col-sm-8">Estado del nivel</dd>
-                                    <dt class="col-sm-4">
-                                        {{object.dimensioneducacion.estado_nivel|default_if_none:"-"}}
-                                    </dt>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.estado_nivel|default_if_none:"-"}} </dt>
                                     <dd class="col-sm-8">Institución</dd>
-                                    <dt class="col-sm-4">
-                                        {{object.dimensioneducacion.institucion|default_if_none:"-"}}
-                                    </dt>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.institucion|default_if_none:"-"}} </dt>
                                     <dd class="col-sm-8">Gestión</dd>
-                                    <dt class="col-sm-4">{{object.dimensioneducacion.gestion|default_if_none:"-"}}
-                                    </dt>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.gestion|default_if_none:"-"}} </dt>
                                     <dd class="col-sm-8">Ciclo</dd>
-                                    <dt class="col-sm-4">{{object.dimensioneducacion.ciclo|default_if_none:"-"}}
-                                    </dt>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.ciclo|default_if_none:"-"}} </dt>
                                     <dd class="col-sm-8">Grado</dd>
-                                    <dt class="col-sm-4">{{object.dimensioneducacion.grado|default_if_none:"-"}}
-                                    </dt>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.grado|default_if_none:"-"}} </dt>
                                     <dd class="col-sm-8">Turno</dd>
-                                    <dt class="col-sm-4">{{object.dimensioneducacion.turno|default_if_none:"-"}}
-                                    </dt>
-                                    <dd class="col-12 mt-3">Observaciones</dd>
-                                    <dt class="col-12">
-                                        {{object.dimensioneducacion.obs_educacion|default_if_none:"-"}}
-                                    </dt>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.turno|default_if_none:"-"}} </dt>
+                                    <dd class="col-sm-8">provincia Institucion</dd>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.provinciaInstitucion|default_if_none:"-"}} </dt>
+                                    <dd class="col-sm-8 ">localidad Institucion </dd>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.localidadInstitucion|default_if_none:"-"}} </dt>
+                                    <dd class="col-sm-8 ">municipio Institucion </dd>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.municipioInstitucion|default_if_none:"-"}} </dt>
+                                    <dd class="col-sm-8 ">barrio Institucion</dd>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.barrioInstitucion|default_if_none:"-"}} </dt>
+                                    <dd class="col-sm-8 ">calle Institucion</dd>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.calleInstitucion|default_if_none:"-"}} </dt>
+                                    <dd class="col-sm-8 ">numero Institucion</dd>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.numeroInstitucion|default_if_none:"-"}} </dt>
+                                    <dd class="col-sm-8 ">interes Estudio</dd>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.interesEstudio|yesno:'Sí,No,-'}} </dt>
+                                    <dd class="col-sm-8 ">interes Curso</dd>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.interesCurso|yesno:'Sí,No,-'}} </dt>
+                                    <dd class="col-sm-8 ">Observaciones</dd>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.obs_educacion|default_if_none:"-"}} </dt>
                                 </dl>
                                 <!-- ./dimension educacion -->
                             </div>
@@ -820,7 +900,7 @@
                             <div class=" tab-pane" id="dimensiontrabajo">
                                 <!-- dimension trabajo -->
                                 <dl class="row mb-0">
-                                    <dd class="col-sm-8">¿El jefe o jefa de hogar trabaja?</dd>
+                                    <dd class="col-sm-8">¿Actualmente realizás alguna actividad laboral, productiva o comunitaria?</dd>
                                     <dt class="col-sm-4">{{object.dimensiontrabajo.tiene_trabajo|yesno:'Sí,No'}}
                                     </dt>
                                     <dd class="col-sm-8">Ocupación</dd>

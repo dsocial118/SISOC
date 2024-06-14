@@ -30,6 +30,7 @@ class Legajos(models.Model):
     barrio = models.CharField(max_length=100, choices=CHOICE_BARRIOS, null=True, blank=True)
     localidad = models.CharField(max_length=250, choices=CHOICE_LOCALIDAD, null=True, blank=True)
     telefono = models.IntegerField(null=True, blank=True)
+    telefonoalt = models.IntegerField(null=True, blank=True,verbose_name='Telefono Alternativo')
     email = models.EmailField(null=True, blank=True)
     foto = models.ImageField(upload_to='legajos', blank=True, null=True)
     m2m_alertas = models.ManyToManyField(Alertas, through='LegajoAlertas', blank=True)
@@ -164,15 +165,13 @@ class DimensionFamilia(models.Model):
 
 class DimensionVivienda(models.Model):
     '''
-
     Guardado de los datos de vivienda asociados a un Legajo.
     '''
-
     fk_legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
     tipo = models.CharField(verbose_name='Tipo de vivienda', max_length=50, choices=CHOICE_TIPO_VIVIENDA, null=True, blank=True)
     material = models.CharField(verbose_name='Material principal de la vivienda', max_length=50, choices=CHOICE_TIPO_CONSTRUCCION_VIVIENDA, null=True, blank=True)
     pisos = models.CharField(verbose_name='Material principal de los pisos', max_length=50, choices=CHOICE_TIPO_PISOS_VIVIENDA, null=True, blank=True)
-    posesion = models.CharField(verbose_name='Tipo de posesión', max_length=50, choices=CHOICE_TIPO_POSESION_VIVIENDA, null=True, blank=True)
+    posesion = models.CharField(verbose_name='Tipo de posesión', max_length=50, choices=CHOICE_CondicionDe, null=True, blank=True)
     cant_ambientes = models.SmallIntegerField(verbose_name='¿Cuántas habitaciones posee la vivienda?', null=True, blank=True)
     cant_convivientes = models.SmallIntegerField(verbose_name='¿Cuántas personas viven en la vivienda?', null=True, blank=True)
     cant_menores = models.SmallIntegerField(verbose_name='¿Cuántos de ellos son menores de 18 años?', null=True, blank=True)
@@ -184,6 +183,14 @@ class DimensionVivienda(models.Model):
     obs_vivienda = models.CharField(verbose_name='Observaciones', max_length=300, null=True, blank=True)
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
+    ###Nuevos campos
+    PoseenCeludar = models.BooleanField(verbose_name='En tu hogar cuentan con Celular', max_length=255, null=True, blank=True)
+    PoseenPC = models.BooleanField(verbose_name='En tu hogar cuentan con PC', max_length=255, null=True, blank=True)
+    Poseeninternet = models.BooleanField(verbose_name='En tu hogar cuentan con Internet', max_length=255, null=True, blank=True)
+    ContextoCasa = models.CharField(verbose_name='La vivienda está ubicada...', max_length=255,choices=CHOICE_ContextoCasa, null=True, blank=True )
+    CantidadAmbientes = models.CharField(verbose_name='ambientes tiene la vivienda', max_length=50, choices= CHOICE_CantidadAmbientes, null=True, blank=True)
+    gas = models.CharField(verbose_name='ambientes tiene la vivienda', max_length=50, choices= CHOICE_CantidadAmbientes, null=True, blank=True)
+
 
     def __str__(self):
         return f"{self.fk_legajo}"
@@ -232,10 +239,15 @@ class DimensionEducacion(models.Model):
     Guardado de los datos de índole educativa asociada a un Legajo.
     '''
 
+    from django.db import models
+
+class DimensionEducacion(models.Model):  # Assuming your model class name is DimensionEducacion
     fk_legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
     max_nivel = models.CharField(verbose_name='Máximo nivel educativo alcanzado', max_length=50, choices=CHOICE_NIVEL_EDUCATIVO, null=True, blank=True)
     estado_nivel = models.CharField(verbose_name='Estado del nivel', max_length=50, choices=CHOICE_ESTADO_NIVEL_EDUCATIVO, null=True, blank=True)
     asiste_escuela = models.BooleanField(verbose_name='¿Asiste a la Escuela?', null=True, blank=True)
+    interesEstudio = models.BooleanField(verbose_name='¿Le interesa estudiar?', null=True, blank=True)
+    interesCurso = models.BooleanField(verbose_name='¿le interesa algun curso?', null=True, blank=True)
     institucion = models.CharField(verbose_name='Escuela', max_length=200, choices=CHOICE_INSTITUCIONES_EDUCATIVAS, null=True, blank=True)
     gestion = models.CharField(verbose_name='Gestión', max_length=50, choices=CHOICE_TIPO_GESTION, null=True, blank=True)
     ciclo = models.CharField(max_length=20, choices=CHOICE_NIVEL_EDUCATIVO, null=True, blank=True)
@@ -244,7 +256,15 @@ class DimensionEducacion(models.Model):
     obs_educacion = models.CharField(max_length=300, verbose_name='Observaciones', null=True, blank=True)
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
-
+    acepta_terminos = models.BooleanField(verbose_name='Acepto los términos y condiciones', default=False)
+    # Nuevos campos dimencion estudio
+    provinciaInstitucion = models.CharField(verbose_name='Provincia', max_length=200 ,choices=PROVINCE_CHOICES, null=True, blank=True)
+    localidadInstitucion = models.CharField(verbose_name='Localidad', max_length=100, null=True, blank=True)
+    municipioInstitucion = models.CharField(verbose_name='Municipio', max_length=100, null=True, blank=True)
+    barrioInstitucion = models.CharField(verbose_name='Barrio', max_length=100, null=True, blank=True)
+    calleInstitucion = models.CharField(verbose_name='Calle', max_length=255, null=True, blank=True)
+    numeroInstitucion = models.CharField(verbose_name='Número', max_length=10, null=True, blank=True)
+    
     def __str__(self):
         return f"{self.fk_legajo}"
 
@@ -286,13 +306,14 @@ class DimensionEconomia(models.Model):
 
 class DimensionTrabajo(models.Model):
     fk_legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
-    tiene_trabajo = models.BooleanField(verbose_name='¿El jefe o jefa de hogar trabaja?', null=True, blank=True)
+    tiene_trabajo = models.BooleanField(verbose_name='¿Actualmente realizás alguna actividad laboral, productiva o comunitaria?', null=True, blank=True)
     modo_contratacion = models.CharField(max_length=50, choices=CHOICE_MODO_CONTRATACION, null=True, blank=True)
     ocupacion = models.CharField(max_length=50, null=True, blank=True)
     conviviente_trabaja = models.BooleanField(verbose_name='¿Conviviente trabaja?', null=True, blank=True)
     obs_trabajo = models.CharField(max_length=300, verbose_name='Observaciones', null=True, blank=True)
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
+
 
     def __str__(self):
         return f"{self.fk_legajo}"
@@ -496,4 +517,34 @@ class LegajosArchivos(models.Model):
     
     def __str__(self):
         return f"Archivo {self.id} del legajo {self.fk_legajo}"
+    
+    
+#####################HOGAR###############################   
+class LegajoGrupoHogar(models.Model):
+    '''
+    Guardado de las relaciones familiares de los vecinos y vecinas registrados,
+    con una valoración que permita conocer el estado del vínculo desde la
+    consideración de cada parte involucrada.
+    '''
 
+    fk_legajo_1Hogar = models.ForeignKey(Legajos, on_delete=models.CASCADE, related_name='hogar_1')
+    fk_legajo_2Hogar = models.ForeignKey(Legajos, on_delete=models.CASCADE, related_name='hogar_2')
+    estado_relacion = models.CharField(max_length=50, choices=CHOICE_ESTADO_RELACION)
+    AyudaHogar = models.BooleanField(verbose_name='¿Reciben en el hogar ayuda de algún tipo?', null=True, blank=True)
+    AyudaHogar2 = models.BooleanField(verbose_name='¿Reciben en el hogar ayuda de algún tipo?', null=True, blank=True)
+    TipoAyudaHogar = models.CharField(max_length=100, choices=TipoAyudaHogar, null=True, blank=True)
+    
+    def __str__(self):
+        return f"Legajo: {self.fk_legajo_1Hogar} - Hogar: {self.fk_legajo_2Hogar}"
+
+    class Meta:
+        ordering = ['fk_legajo_2Hogar']
+        verbose_name = 'LegajoGrupoHogarForm'
+        verbose_name_plural = 'LegajoGrupoHogarForm'
+
+    def get_absolute_url(self):
+        return reverse('LegajoGrupoHogarForm_ver', kwargs={'pk': self.pk})
+    
+    
+    ##########
+    

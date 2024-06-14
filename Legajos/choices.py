@@ -53,6 +53,67 @@ CHOICE_TURNO = [
     ('Noche', 'Noche'),
     ('Jornada Completa', 'Jornada Completa'),
 ]
+CHOICE_CantidadAmbientes = [
+    ('1', '1'),
+    ('2', '2'),
+    ('3', '3'),
+    ('4', '4'),
+]
+
+CHOICE_CondicionDe = [
+   ( "Propietario del terreno y la vivienda","Propietario del terreno y la vivienda",),
+   ( "Propietario de la vivienda solamente","Propietario de la vivienda solamente",),
+   ( "Inquilino","Inquilino",),
+   ( "beneficios laborales","beneficios laborales",),
+("Préstamo o cesión (de un conocido, familiar, etc.)","Préstamo o cesión (de un conocido, familiar, etc.)",),
+   ( "Ocupante de hecho","Ocupante de hecho",),
+   ( "Otro","Otro"),
+]
+
+CHOICE_ContextoCasa = [
+    ('En una zona inundable (en el último año)', 'En una zona inundable (en el último año)'),
+    ('Cerca de basurales (a 3 cuadras o menos)', 'Cerca de basurales (a 3 cuadras o menos)'),
+    ('En una cuadra con alumbrado público', 'En una cuadra con alumbrado público'),
+    ('En una cuadra pavimentada o empedrada', 'En una cuadra pavimentada o empedrada'),
+    ('En una cuadra con servicio regular de recolección de residuos','En una cuadra con servicio regular de recolección de residuos'),
+]
+
+
+PROVINCE_CHOICES = [
+    ('AC', 'Córdoba'),
+    ('AR', 'Buenos Aires'),
+    ('BA', 'Buenos Aires (CABA)'),
+    ('CA', 'Catamarca'),
+    ('CH', 'Chubut'),
+    ('CO', 'Córdoba'),
+    ('CR', 'Corrientes'),
+    ('CT', 'Entre Ríos'),
+    ('ER', 'Entre Ríos'),
+    ('FO', 'Formosa'),
+    ('GO', 'Goiás'),
+    ('JU', 'Jujuy'),
+    ('LA', 'La Pampa'),
+    ('LP', 'La Rioja'),
+    ('MC', 'Mendoza'),
+    ('MN', 'Misiones'),
+    ('NE', 'Neuquén'),
+    ('RN', 'Río Negro'),
+    ('SA', 'Santa Cruz'),
+    ('SF', 'Santa Fe'),
+    ('SJ', 'San Juan'),
+    ('SL', 'San Luis'),
+]
+
+TipoAyudaHogar = [
+    ('Comida/vianda de comedor comunitario', 'Comida/vianda de comedor comunitario'),
+    ('Merienda o desayuno de un merendero / comedor comunitario', 'Merienda o desayuno de un merendero / comedor comunitario'),
+    ('Comida/ vianda de comedor escolar', 'Comida/ vianda de comedor escolar'),
+    ('Merienda o desayuno de un comedor escolar', 'Merienda o desayuno de un comedor escolar'),
+    ('Libros y/o útiles escolares', 'Libros y/o útiles escolares'),
+    ('Comida/vianda de comedor comunitario', 'Comida/vianda de comedor comunitario'),
+    ('Ropa', 'Ropa'),
+    ('Medicamentos', 'Medicamentos')
+]
 
 CHOICE_INSTITUCIONES_EDUCATIVAS = [
     ('Anexo I A Escuela De Educación Secundaria N° 3 - Anexo', 'Anexo I A Escuela De Educación Secundaria N° 3 - Anexo'),
@@ -363,10 +424,14 @@ CHOICE_TIPO_ENFERMEDAD = [
 CHOICE_TIPO_VIVIENDA = [
     (None, ''),
     ('Casa', 'Casa'),
+    ('Rancho', 'Rancho'),
+    ('Casilla', 'Casilla'),
+    ('Vivienda móvil', 'Vivienda móvil'),
+    ('Situación de calle', 'Situación de calle'),
     ('Departamento', 'Departamento'),
-    ('Pieza de alquiler', 'Pieza de alquiler'),
+    ('Pieza en hotel familiar o pensión', 'Pieza en hotel familiar o pensión'),
     ('Pieza en hotel/Pensón', 'Pieza en hotel/Pensón'),
-    ('Local no construido para habitación', 'Local no construido para habitación'),
+    ('Sitio no construido para vivienda', 'Sitio no construido para vivienda'),
     ('Otro', 'Otro'),
 ]
 
