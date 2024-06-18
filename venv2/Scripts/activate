@@ -37,7 +37,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="C:\Users\Navar\OneDrive\SISOC\SISOC\venv2"
+VIRTUAL_ENV="C:\Users\MDS\SISOC\venv2"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"

@@ -141,7 +141,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'sisoc',
         'USER': 'root',
-        'PASSWORD': 'REDACTED_PASSWORD',
+        'PASSWORD': 'REDACTED_DB_PASSWORD',
         'HOST': '127.0.0.1',
         'PORT': '3306',
         'OPTIONS': {
