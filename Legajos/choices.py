@@ -2,10 +2,12 @@
 CHOICE_NIVEL_EDUCATIVO = [
     (None, ''),
     ('No aplica', 'No aplica'),
-    ('Especial', 'Especial'),
+    ('Educación especial', 'Educación especial'),
     ('Jardín', 'Jardín'),
     ('Primario', 'Primario'),
+    ('EGB', 'EGB'),
     ('Secundario', 'Secundario'),
+    ('Polimodal', 'Polimodal'),
     ('Terciario', 'Terciario'),
     ('Universitario', 'Universitario'),
 ]
@@ -21,6 +23,38 @@ CHOICE_ESTADO_EDUCATIVO = [
     ('En curso', 'En curso'),
     ('Incompleto', 'Incompleto'),
     ('Completo', 'Completo'),
+]
+
+CHOICE_MOTIVO_NIVEL_INCOMPLETO = [
+    ('El establecimiento quedaba lejos y/o no tenía cómo llegar','El establecimiento quedaba lejos y/o no tenía cómo llegar'),
+    ('Necesitaba trabajar', 'Necesitaba trabajar'),
+    ('No podía pagar los gastos', 'No podía pagar los gastos'),
+    ('Tenía que cuidar a otras personas del hogar (niños/as, personas mayores, otras)', 'Tenía que cuidar a otras personas del hogar (niños/as, personas mayores, otras)'),
+    ('Estaba embarazada', 'Estaba embarazada'),
+    ('No tenía de interés', 'No tenía de interés'),
+    ('Tenía dificultades para aprender o estudiar', 'Tenía dificultades para aprender o estudiar'),
+    ('Tenía problemas de salud', 'Tenía problemas de salud'),
+]
+
+CHOICE_AREA_CURSO=[
+    ('Albañilería','Albañilería'),
+    ('Mecánica Automotor básica','Mecánica Automotor básica'),
+    ('Venta en comercio', 'Venta en comercio'),
+    ('Elaboración de alimentos', 'Elaboración de alimentos'),
+    ('Colocación de cerámicos','Colocación de cerámicos'),
+    ('Instalaciones eléctricas domiciliarias', 'Instalaciones eléctricas domiciliarias'),
+    ('Instalación de gas domiciliario', 'Instalación de gas domiciliario'),
+    ('Instalación de sanitarios en casas', 'Instalación de sanitarios en casas'),
+    ('Jardinería y mantenimiento espacios verdes', 'Jardinería y mantenimiento espacios verdes'),
+    ('Mecánica de Motos', 'Mecánica de Motos'),
+    ('Atención en bares y restaurantes', 'Atención en bares y restaurantes'),
+    ('Mucamo/a de hotel', 'Mucamo/a de hotel'),
+    ('Confección de indumentaria', 'Confección de indumentaria'),
+    ('Industrias de la carne', 'Industrias de la carne'),
+    ('Tareas generales en Industrias varias', 'Tareas generales en Industrias varias'),
+    ('Cuidado de personas', 'Cuidado de personas'),
+    ('Servicios generales en casas particulares', 'Servicios generales en casas particulares'),
+    ('Pintura de Obra', 'Pintura de Obra'),
 ]
 
 CHOICE_TIPO_GESTION = [
@@ -451,6 +485,56 @@ CHOICE_TIPO_PISOS_VIVIENDA = [
     ('Ladrillo suelto / tierra', 'Ladrillo suelto / tierra'),
     ('Otro', 'Otro'),
 ]
+
+CHOICE_TIPO_TECHO_VIVIENDA = [
+    ('Cubierta asfáltica o membrana', 'Cubierta asfáltica o membrana'),
+	('Baldosa o losa (sin cubierta)', 'Baldosa o losa (sin cubierta)'),
+	('Pizarra o teja', 'Pizarra o teja'),
+	('Chapa de metal (sin cubierta)', 'Chapa de metal (sin cubierta)'),
+	('Chapa de fibrocemento o plástico', 'Chapa de fibrocemento o plástico'),
+	('Chapa de cartón', 'Chapa de cartón'),
+	('Caña, palma, tabla o paja con o sin barro', 'Caña, palma, tabla o paja con o sin barro'),
+	('Otro', 'Otro'),
+	('Ns/Nc', 'Ns/Nc')
+]
+
+CHOICE_AGUA = [
+	('Red pública', 'Red pública'),
+	('Perforación bomba a motor', 'Perforación bomba a motor'),
+	('Perforación bomba manual', 'Perforación bomba manual'),
+    ('Pozo', 'Pozo'),
+	('Transporte con cisterna', 'Transporte con cisterna'),
+	('Agua de lluvia, canal, río, arroyo o acequia', 'Agua de lluvia, canal, río, arroyo o acequia'),
+	('Otro', 'Otro')
+]
+
+CHOICE_DESAGUE = [
+	('A red pública', 'A red pública'),
+	('A cámara séptica', 'A cámara séptica') ,
+	('A pozo ciego', 'A pozo ciego'),
+	('A hoyo, excavación en la tierra, etc', 'A hoyo, excavación en la tierra, etc'),
+    ('Otro', 'Otro'),
+	('Ns/Nc', 'Ns/Nc')
+]
+
+CHOICE_INODORO = [
+    ('Inodoro con botón o cadena', 'Inodoro con botón o cadena') ,
+	('Inodoro sin botón o cadena', 'Inodoro sin botón o cadena'),
+	('No tiene inodoro', 'No tiene inodoro'),
+	('No tiene baño', 'No tiene baño')
+]
+
+CHOICE_GAS = [
+    ('Gas de red', 'Gas de red'),
+	('Gas a granel', 'Gas a granel'),
+	('Gas en tubo', 'Gas en tubo'),
+	('Gas en garrafa sin subsidio', 'Gas en garrafa sin subsidio'),
+	('Gas en garrafa con subsidio estatal', 'Gas en garrafa con subsidio estatal'),
+	('Electricidad', 'Electricidad'),
+	('Leña o carbón', 'Leña o carbón'),
+	('Otro', 'Otro')
+]
+
 CHOICE_TIPO_CONSTRUCCION_VIVIENDA = [
     (None, ''),
     ('Material', 'Material'),
@@ -510,6 +594,56 @@ CHOICE_MODO_CONTRATACION = [
     ('Changarín', 'Changarín'),
     ('Otro', 'Otro'),
 ]
+
+CHOICE_ACTIVIDAD_REALIZADA = [
+    ('Patrón o empleador', 'Patrón o empleador'),
+    ('Trabajador por cuenta propia solo', 'Trabajador por cuenta propia solo'),
+    ('Trabajador por cuenta propia asociado (en cooperativa, en emprendimiento familiar, etc.)', 'Trabajador por cuenta propia asociado (en cooperativa, en emprendimiento familiar, etc.)'),
+    ('Obrero o empleado del sector privado (asalariado)', 'Obrero o empleado del sector privado (asalariado)'),
+    ('Obrero o empleado del sector público (asalariado)', 'Obrero o empleado del sector público (asalariado)'),
+    ('Servicio doméstico', 'Servicio doméstico'),
+    ('Trabajador sin remuneración', 'Trabajador sin remuneración'),
+    ('Cuenta con un programa de empleo o comunitario', 'Cuenta con un programa de empleo o comunitario')
+]
+
+CHOICE_DURACION_TRABAJO = [
+    ('Permanente', 'Permanente'),
+    ('Temporario (plazo fijo/ obra) por más de un mes', 'Temporario (plazo fijo/ obra) por más de un mes'),
+    ('Changa (1 mes o menos)', 'Changa (1 mes o menos)'),
+    ('Duración desconocida (inestable)', 'Duración desconocida (inestable)')
+]
+
+CHOICE_APORTES_JUBILACION= [
+    ('Me descuentan', 'Me descuentan'),
+    ('Soy monotributista o autónomo', 'Soy monotributista o autónomo'),
+    ('Soy monotributista social', 'Soy monotributista social'),
+    ('Ni me descuentan ni aporto', 'Ni me descuentan ni aporto')
+]
+
+CHOICE_TIEMPO_BUSQUEDA_LABORAL = [
+    ('Menos de un mes', 'Menos de un mes'),
+    ('De 1 a 3 meses', 'De 1 a 3 meses'),
+    (' Más de 3 a 6 meses', ' Más de 3 a 6 meses'),
+    ('Más de 6 meses a 1 año', 'Más de 6 meses a 1 año'),
+    ('Más de 1 año', 'Más de 1 año')
+    
+]
+
+CHOICE_NO_BUSQUEDA_LABORAL = [
+    ('Espero respuesta de un empleador', 'Espero respuesta de un empleador'),
+    ('Espero comienzo de un nuevo trabajo (trabajo estacional)', 'Espero comienzo de un nuevo trabajo (trabajo estacional)'),
+    ('Soy estudiante/ me estoy capacitando', 'Soy estudiante/ me estoy capacitando'),
+    ('Por motivos de edad (menor o anciano)', 'Por motivos de edad (menor o anciano)'),
+    ('Me dedico a quehaceres del hogar/ cuido personas en el hogar', 'Me dedico a quehaceres del hogar/ cuido personas en el hogar'),
+    ('Soy pensionado/ jubilado', 'Soy pensionado/ jubilado'),
+    ('Soy rentista', 'Soy rentista'),
+    ('Soy discapacitado', 'Soy discapacitado'),
+    ('Estoy enfermo', 'Estoy enfermo'),
+    ('Creo no poder encontrarlo/ no hay', 'Creo no poder encontrarlo/ no hay'),
+    ('No tengo dinero para viajar', 'No tengo dinero para viajar'),
+    ('Otro motivo', 'Otro motivo')
+]
+
 
 CHOICE_NIVEL = [
     (None, ''),

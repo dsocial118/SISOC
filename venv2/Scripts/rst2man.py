@@ -1,4 +1,4 @@
-#!C:\Users\MDS\SISOC\venv2\Scripts\python.exe
+#!C:\Users\Navar\OneDrive\SISOC\SISOC\venv2\Scripts\python.exe
 
 # Author:
 # Contact: grubert@users.sf.net

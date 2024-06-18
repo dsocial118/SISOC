@@ -99,7 +99,7 @@ class Organismos(models.Model):
 
     def get_absolute_url(self):
         return reverse('organismos_ver', kwargs={'pk': self.pk})
-
+ 
 
 class PlanesSociales(models.Model):
     nombre = models.CharField(max_length=250, unique=True)
