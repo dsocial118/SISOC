@@ -108,6 +108,12 @@
                     </li>
                     <li class="nav-item">
                         <div class="comment-text">
+                            Telefono Alternativo
+                            <span class="username">{{object.telefonoalt|default_if_none:"-"}}</span>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="comment-text">
                             Email
                             <span class="username">{{object.email|default_if_none:"-"}}</span>
                         </div>
@@ -830,6 +836,10 @@
                                     <dt class="col-sm-4">{{object.dimensioneducacion.max_nivel|default_if_none:"-"}} </dt>
                                     <dd class="col-sm-8">Estado del nivel</dd>
                                     <dt class="col-sm-4">{{object.dimensioneducacion.estado_nivel|default_if_none:"-"}} </dt>
+                                    <dd class="col-sm-8 ">Motivo principal por el que no terminaste tus estudios</dd>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.nivelIncompleto|default_if_none:"-"}} </dt>
+                                    <dd class="col-sm-8 ">Motivo principal por el que no tuviste educación formal</dd>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.sinEduFormal|default_if_none:"-"}} </dt>
                                     <dd class="col-sm-8">Institución</dd>
                                     <dt class="col-sm-4">{{object.dimensioneducacion.institucion|default_if_none:"-"}} </dt>
                                     <dd class="col-sm-8">Gestión</dd>
@@ -856,6 +866,8 @@
                                     <dt class="col-sm-4">{{object.dimensioneducacion.interesEstudio|yesno:'Sí,No,-'}} </dt>
                                     <dd class="col-sm-8 ">interes Curso</dd>
                                     <dt class="col-sm-4">{{object.dimensioneducacion.interesCurso|yesno:'Sí,No,-'}} </dt>
+                                    <dd class="col-sm-8 ">Actualmente te encontrás haciendo algún curso de capacitación</dd>
+                                    <dt class="col-sm-4">{{object.dimensioneducacion.realizandoCurso|yesno:'Sí,No,-'}} </dt>
                                     <dd class="col-sm-8 ">Observaciones</dd>
                                     <dt class="col-sm-4">{{object.dimensioneducacion.obs_educacion|default_if_none:"-"}} </dt>
                                 </dl>
