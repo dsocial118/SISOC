@@ -21,7 +21,7 @@
 {% block content %}
 
 
-<h2 class="text-center display-4 mb-4">Buscar legajo</h2>
+<h2 class="text-center display-4 mb-4">Buscar Ciudadano</h2>
 <form method="GET">
     <div class="row">
         <div class="col-md-10 offset-md-1">          
@@ -64,8 +64,9 @@
                             <th>Nombre</th>
                             <th>Documento</th>
                             <th>Sexo</th>
-                            <th>Fecha de nacimiento</th>
+                            <!--<th>Fecha de nacimiento</th>-->
                             <th>Edad</th>
+                            <th>Localidad</th>
                             <th>Estado</th>
                             <th style="width: 15%" class="notexport"> </th>
                         </tr>
@@ -77,8 +78,9 @@
                                 {{o}}</a></td>
                             <td>{{o.tipo_doc}} {{o.documento}}</td>
                             <td>{{o.sexo}}</td>
-                            <td>{{o.fecha_nacimiento|date:'d/m/Y'}}</td>
+                             <!--<td>{{o.fecha_nacimiento|date:'d/m/Y'}}</td>-->
                             <td>{{o.edad}} </td>
+                            <td>{{o.localidad}} </td>
                             <td > 
                                 {% if o.estado  %}
                                 <span class="text-success font-weight-bold">Activo</span>
