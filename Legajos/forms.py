@@ -3,6 +3,7 @@ from datetime import date
 from .models import *
 from .validators import MaxSizeFileValidator
 from django.core.validators import MinValueValidator, MaxValueValidator
+from .models import DimensionEducacion
 
 
 class LegajosForm(forms.ModelForm):
@@ -268,7 +269,7 @@ class DimensionViviendaForm(forms.ModelForm):
             ),
             'hay_agua_caliente': forms.CheckboxInput(),
             'hay_desmoronamiento': forms.CheckboxInput(),
-            'hay_banio': forms.CheckboxInput(),
+            #'hay_banio': forms.CheckboxInput(),
             'PoseenCeludar': forms.CheckboxInput(),
             'PoseenPC': forms.CheckboxInput(),
             'Poseeninternet': forms.CheckboxInput()
@@ -306,10 +307,19 @@ class DimensionEducacionForm(forms.ModelForm):
             ),
             'asiste_escuela': forms.CheckboxInput(),
             'interesEstudio': forms.CheckboxInput(),
-            'interesCurso': forms.CheckboxInput()
-            
+            'interesCurso': forms.CheckboxInput(),
+            #'realizandoCurso': forms.CheckboxInput()
+            #pruebas para hacer funcionar la seleccion multiple
+            'areaCurso': forms.SelectMultiple(attrs={'class': 'form-control'}),
+            'areaOficio': forms.SelectMultiple(attrs={'class': 'form-control'}),
         }
-
+    def clean_areaCurso(self):
+        data = self.cleaned_data['areaCurso']
+        if len(data) > 3:
+            raise forms.ValidationError("Solo puedes seleccionar hasta 3 opciones.")
+        return data
+    
+    #fin de prueba
 
 class DimensionEconomiaForm(forms.ModelForm):
     class Meta:
