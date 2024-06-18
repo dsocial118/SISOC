@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     let idIncompletoFormParent = document.querySelector("#div_id_nivelIncompleto").parentNode.parentNode;
     let sinEduFormalParent = document.querySelector("#div_id_sinEduFormal").parentNode.parentNode;
-
+    let areaCursoParent = document.querySelector("#div_id_areaCurso").parentNode.parentNode;
 
     selects.forEach(function(select) {
         select.setAttribute('multiple', 'multiple');
@@ -44,4 +44,18 @@ document.addEventListener("DOMContentLoaded", function() {
         esconderPreguntasForm();
       }
     });
+    let realizandoCursoForm = document.querySelector('#id_realizandoCurso');
+    if (realizandoCursoForm.value == "False"){
+      areaCursoParent.classList.add("hide");
+    }
+    realizandoCursoForm.addEventListener('change',function(event){
+      if ( event.target.value == 'True')
+        areaCursoParent.classList.remove("hide"); //classList.remove es para eliminar una clase de un elemento
+      else{
+        areaCursoParent.classList.add("hide"); //classList.add es para agregar una clase a un elemento
+        //la clase hide esconde visualmente a un elemento en el DOM
+        //event.taget es el elemento al que aplica el listener.
+      }
+    });
+
 });
