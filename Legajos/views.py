@@ -1012,7 +1012,15 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
             "calleInstitucion": "calleInstitucion",
             "numeroInstitucion": "numeroInstitucion",
             "interesEstudio": "interesEstudio",
-            "interesCurso": "interesCurso"
+            "interesCurso": "interesCurso",
+            "nivelIncompleto": "nivelIncompleto",
+            "sinEduFormal": "sinEduFormal",
+            "realizandoCurso": "realizandoCurso",
+            "areaCurso": "areaCurso",
+            "interesCapLab": "interesCapLab",
+            "areaOficio": "areaOficio",
+            "oficio":"oficio"
+            
         }
 
         for field in fields_mapping_educacion:
@@ -1069,6 +1077,14 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
             "ocupacion": "ocupacion",
             "conviviente_trabaja": "conviviente_trabaja",
             "obs_trabajo": "obs_trabajo",
+            "horasSemanales": "horasSemanales",
+            "actividadRealizadaComo": "actividadRealizadaComo",
+            "duracionTrabajo": "duracionTrabajo",
+            "aportesJubilacion": "aportesJubilacion",
+            "TiempoBusquedaLaboral": "TiempoBusquedaLaboral",
+            "busquedaLaboral": "busquedaLaboral",
+            "noBusquedaLaboral": "noBusquedaLaboral"
+
         }
 
         for field in fields_mapping_trabajo:

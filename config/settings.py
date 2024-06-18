@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     'crispy_bootstrap4',
     'django_extensions',
     'import_export',
+    'multiselectfield',
     # aplicaciones propias
     'Usuarios',
     'Configuraciones',
@@ -140,7 +141,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'sisoc',
         'USER': 'root',
-        'PASSWORD': 'matias123',
+        'PASSWORD': 'Avesdepasos14!',
         'HOST': '127.0.0.1',
         'PORT': '3306',
         'OPTIONS': {
