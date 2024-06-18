@@ -224,6 +224,26 @@
                               {{form_vivienda.hay_desmoronamiento| as_crispy_field}}
                             </div>
                           </div>
+                          <div class="col-sm-4">
+                            <div class="form-group">
+                            {{form_vivienda.gas| as_crispy_field}}
+                            </div>
+                          </div>
+                          <div class="col-sm-4">
+                            <div class="form-group">
+                            {{form_vivienda.techos| as_crispy_field}}
+                            </div>
+                          </div>
+                          <div class="col-sm-4">
+                            <div class="form-group">
+                            {{form_vivienda.agua| as_crispy_field}}
+                            </div>
+                          </div>
+                          <div class="col-sm-4">
+                            <div class="form-group">
+                            {{form_vivienda.desague| as_crispy_field}}
+                            </div>
+                          </div>
                           <!-- ./Nuevos campos vivienda Form Editar o cargar -->
                           <div class="col-sm-4 mb-3">
                             <div class="form-group">
@@ -306,6 +326,41 @@
                           <div class="col-sm-6">
                             <div class="form-group">
                               {{form_educacion.estado_nivel| as_crispy_field}}
+                            </div>
+                          </div>
+                          <div class="col-sm-6">
+                            <div class="form-group">
+                              {{form_educacion.nivelIncompleto| as_crispy_field}}
+                            </div>
+                          </div>
+                          <div class="col-sm-6">
+                            <div class="form-group">
+                              {{form_educacion.sinEduFormal| as_crispy_field}}
+                            </div>
+                          </div>
+                          <div class="col-sm-6">
+                            <div class="form-group">
+                              {{form_educacion.realizandoCurso| as_crispy_field}}
+                            </div>
+                          </div>
+                          <div class="col-sm-6">
+                            <div class="form-group">
+                              {{form_educacion.areaCurso| as_crispy_field}}
+                            </div>
+                          </div>
+                          <div class="col-sm-6">
+                            <div class="form-group">
+                              {{form_educacion.interesCapLab| as_crispy_field}}
+                            </div>
+                          </div>
+                          <div class="col-sm-6">
+                            <div class="form-group">
+                              {{form_educacion.oficio| as_crispy_field}}
+                            </div>
+                          </div>
+                          <div class="col-sm-6">
+                            <div class="form-group">
+                              {{form_educacion.areaOficio| as_crispy_field}}
                             </div>
                           </div>
                           <div class="col-12 my-3">
@@ -460,7 +515,41 @@
                               {{form_trabajo.modo_contratacion| as_crispy_field}}
                             </div>
                           </div>
-
+                          <div class="col-sm-6">
+                            <div class="form-group">
+                              {{form_trabajo.horasSemanales| as_crispy_field}}
+                            </div>
+                          </div>
+                          <div class="col-sm-6">
+                            <div class="form-group">
+                              {{form_trabajo.actividadRealizadaComo| as_crispy_field}}
+                            </div>
+                          </div>
+                          <div class="col-sm-6">
+                            <div class="form-group">
+                              {{form_trabajo.duracionTrabajo| as_crispy_field}}
+                            </div>
+                          </div>
+                          <div class="col-sm-6">
+                            <div class="form-group">
+                              {{form_trabajo.aportesJubilacion| as_crispy_field}}
+                            </div>
+                          </div>
+                          <div class="col-sm-6">
+                            <div class="form-group">
+                              {{form_trabajo.TiempoBusquedaLaboral| as_crispy_field}}
+                            </div>
+                          </div>
+                          <div class="col-sm-6">
+                            <div class="form-group">
+                              {{form_trabajo.busquedaLaboral| as_crispy_field}}
+                            </div>
+                          </div>
+                          <div class="col-sm-6">
+                            <div class="form-group">
+                              {{form_trabajo.noBusquedaLaboral| as_crispy_field}}
+                            </div>
+                          </div>
                           <div class="col-12">
                             <div class="form-group">
                               {{form_trabajo.obs_trabajo| as_crispy_field}}
@@ -498,5 +587,31 @@
 </div>
 {% endblock %}
 
+{% load crispy_forms_tags %}
+
+<form method="post">
+    {% csrf_token %}
+    {{ form|crispy }}
+    <button type="submit">Enviar</button>
+</form>
+
 {% block customJS %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    var selects = document.querySelectorAll('select[name="areaCurso"], select[name="areaOficio"]');
+    var maxSelections = 3;
+
+    selects.forEach(function(select) {
+        select.setAttribute('multiple', 'multiple');
+
+        select.addEventListener('change', function() {
+            var selectedOptions = Array.from(select.selectedOptions);
+            if (selectedOptions.length > maxSelections) {
+                alert('Solo puedes seleccionar hasta 3 opciones.');
+                selectedOptions[selectedOptions.length - 1].selected = false;
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

@@ -202,8 +202,11 @@
                                                 <div class="form-group col-sm-3">
                                                     {{form.telefonoalt| as_crispy_field}}
                                                 </div>
-                                                <div class="form-group col-sm-3">
+                                                <div class="form-group col-sm-4">
                                                     {{form.email| as_crispy_field}}
+                                                </div>
+                                                <div class="form-group col-sm-4">
+                                                    {{form.PROVINCIA| as_crispy_field}}
                                                 </div>
                                                 <div class="form-group col-sm-4">
                                                     {{form.calle| as_crispy_field}}
@@ -212,7 +215,13 @@
                                                     {{form.altura| as_crispy_field}}
                                                 </div>
                                                 <div class="form-group col-sm-4">
-                                                    {{form.piso| as_crispy_field}}
+                                                    {{form.pisodpto| as_crispy_field}}
+                                                </div>
+                                                <div class="form-group col-sm-4">
+                                                    {{form.torrepasillo| as_crispy_field}}
+                                                </div>
+                                                <div class="form-group col-sm-4">
+                                                    {{form.escaleramanzana| as_crispy_field}}
                                                 </div>
                                                 <div class="form-group col-sm-4">
                                                     {{form.circuito| as_crispy_field}}
@@ -223,11 +232,17 @@
                                                 <div class="form-group col-sm-4">
                                                     {{form.localidad| as_crispy_field}}
                                                 </div>
-                                                <div class="form-group col-12
+                                                <div class="form-group col-sm-4">
+                                                    {{form.codigopostal| as_crispy_field}}
+                                                </div>
+                                                <div class="form-group col-4
                                                     {%if request.resolver_match.url_name != 'legajos_editar' %}
                                                     d-none
                                                     {%endif%}">
                                                     {{form.estado| as_crispy_field}}
+                                                </div>
+                                                <div class="form-group col-12">
+                                                    {{ form.observaciones|as_crispy_field }}
                                                 </div>
                                             </div>
                                         </div>
