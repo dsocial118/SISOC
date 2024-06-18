@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     'crispy_bootstrap4',
     'django_extensions',
     'import_export',
+    'multiselectfield',
     # aplicaciones propias
     'Usuarios',
     'Configuraciones',
