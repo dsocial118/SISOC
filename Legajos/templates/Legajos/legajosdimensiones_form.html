@@ -596,22 +596,5 @@
 </form>
 
 {% block customJS %}
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    var selects = document.querySelectorAll('select[name="areaCurso"], select[name="areaOficio"]');
-    var maxSelections = 3;
-
-    selects.forEach(function(select) {
-        select.setAttribute('multiple', 'multiple');
-
-        select.addEventListener('change', function() {
-            var selectedOptions = Array.from(select.selectedOptions);
-            if (selectedOptions.length > maxSelections) {
-                alert('Solo puedes seleccionar hasta 3 opciones.');
-                selectedOptions[selectedOptions.length - 1].selected = false;
-            }
-        });
-    });
-});
-</script>
+<script src="{% static 'custom/js/legajosdimensionesform.js' %}"></script>
 {% endblock %}
