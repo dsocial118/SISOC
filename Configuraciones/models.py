@@ -78,7 +78,7 @@ class Organismos(models.Model):
     tipo = models.CharField(max_length=50, choices=CHOICE_TIPO_ORGANISMO)
     calle = models.CharField(max_length=250, null=True, blank=True)
     altura = models.IntegerField(null=True, blank=True)
-    piso = models.CharField(max_length=100, null=True, blank=True)
+    piso = models.CharField(max_length=100, null=False, blank=True)
     barrio = models.CharField(max_length=250, choices=CHOICE_BARRIOS, null=True, blank=True)
     localidad = models.CharField(max_length=250, choices=CHOICE_LOCALIDAD, null=True, blank=True)
     telefono = models.IntegerField(null=True, blank=True)
