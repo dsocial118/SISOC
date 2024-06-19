@@ -318,8 +318,7 @@ class DimensionEducacion(models.Model):
                                  max_length=50, choices=CHOICE_NIVEL_EDUCATIVO, null=True, blank=True)
     estado_nivel = models.CharField(verbose_name='Estado del nivel', max_length=50,
                                     choices=CHOICE_ESTADO_NIVEL_EDUCATIVO, null=True, blank=True)
-    asiste_escuela = models.BooleanField(
-        verbose_name='¿Asiste a la Escuela?', null=True, blank=True)
+    asiste_escuela = models.CharField(verbose_name='¿Asistís o asististe alguna vez a algún establecimiento educativo?', max_length=100, choices= CHOICE_ASISTE_ESCUELA, null=True, blank=True)
     interesEstudio = models.BooleanField(
         verbose_name='¿Le interesa estudiar?', null=True, blank=True)
     interesCurso = models.BooleanField(
