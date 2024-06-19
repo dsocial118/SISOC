@@ -18,6 +18,12 @@ CHOICE_ESTADO_NIVEL_EDUCATIVO = [
     ('Completo', 'Completo'),
 ]
 
+CHOICE_ASISTE_ESCUELA = [
+     ('a','Sí, asisto actualmente'),
+	 ('b', 'Sí, asistí en algún momento'),
+	 ('c', 'No, nunca asistí')
+]
+
 CHOICE_ESTADO_EDUCATIVO = [
     (None, ''),
     ('En curso', 'En curso'),

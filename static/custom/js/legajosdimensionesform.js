@@ -7,6 +7,8 @@ document.addEventListener("DOMContentLoaded", function() {
     let idIncompletoFormParent = document.querySelector("#div_id_nivelIncompleto").parentNode.parentNode;
     let sinEduFormalParent = document.querySelector("#div_id_sinEduFormal").parentNode.parentNode;
     let areaCursoParent = document.querySelector("#div_id_areaCurso").parentNode.parentNode;
+    let maxNivelParent = document.querySelector("#div_id_max_nivel").parentNode.parentNode;
+    let estadoNivelParent = document.querySelector("#div_id_estado_nivel").parentNode.parentNode;
 
     selects.forEach(function(select) {
         select.setAttribute('multiple', 'multiple');
@@ -21,12 +23,43 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     let estadoNivelForm = document.querySelector('#id_estado_nivel');
+    let asisteEscuelaForm = document.querySelector('#id_asiste_escuela');
 
     function esconderPreguntasForm()
     {
       idIncompletoFormParent.classList.add("hide");
       sinEduFormalParent.classList.add("hide");
     }
+    
+    function asisteEscuelaChoices(value){
+      if(value == "a"){
+        maxNivelParent.classList.remove("hide");
+        estadoNivelParent.classList.remove("hide");
+        idIncompletoFormParent.classList.add("hide");
+        sinEduFormalParent.classList.add("hide");
+      }
+      else if(value == "b"){
+        maxNivelParent.classList.remove("hide");
+        estadoNivelParent.classList.remove("hide");
+        idIncompletoFormParent.classList.remove("hide");
+        sinEduFormalParent.classList.add("hide");
+      }
+      else if(value == "c"){
+        maxNivelParent.classList.add("hide");
+        estadoNivelParent.classList.add("hide");
+        sinEduFormalParent.classList.remove("hide");
+        idIncompletoFormParent.classList.add("hide");
+
+      }
+    }
+
+    asisteEscuelaChoices(asisteEscuelaForm.value);
+
+    //Evento para el cambio en asisteEscuelaForm
+    asisteEscuelaForm.addEventListener('change', function(event){
+      console.log('Valor seleccionado en asisteEscuelaForm:', event.target.value);
+      asisteEscuelaChoices(event.target.value);
+    });
 
     if(estadoNivelForm.value != INCOMPLETO_OPTION)
     {
