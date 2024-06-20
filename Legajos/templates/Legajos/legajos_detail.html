@@ -309,33 +309,33 @@
             <h3 class="card-title font-weight-bold pt-1 mr-3">
                 Grupo Conviviente Hogar
             </h3>
-            <span title="Cantidad total de Conviviente en el Hogar" class="badge badge-secondary mt-1">{{count_familia}}</span>
+            <span title="Cantidad total de Conviviente en el Hogar" class="badge badge-secondary mt-1">{{hogar_count_familia}}</span>
         </div>
-        {% if count_familia != 0 %}
+        {% if hogar_count_familia != 0 %}
         <div class="card-body bg-light p-0">
             <ul class="users-list">
-                {% for f in familiares_fk1 %}
-                <li><a class="users-list-name" href="{% url 'legajos_ver' f.fk_legajo_2_id %}" title="{{f.fk_legajo_2}} - {{f.vinculo}}">
-                    {% if f.fk_legajo_2.foto %}
-                    <img src="{{f.fk_legajo_2.foto.url}}" alt="User Image" width="60px">
+                {% for f in hogar_familiares_fk1 %}
+                <li><a class="users-list-name" href="{% url 'legajos_ver' f.fk_legajo_2Hogar_id %}" title="{{f.fk_legajo_2Hogar}} - {{f.vinculo}}">
+                    {% if f.fk_legajo_2Hogar.foto %}
+                    <img src="{{f.fk_legajo_2Hogar.foto.url}}" alt="User Image" width="60px">
                     {%else%}
                     <img src="{% static 'custom/img/default.png'  %}" alt="User Image" width="60px">
                     {%endif%}                        
-                    <span class="users-list-date">{{f.fk_legajo_2}}</span>
+                    <span class="users-list-date">{{f.fk_legajo_2Hogar}}</span>
                     <span class="users-list-date">{{f.vinculo}}</span>
                 </a>
                 </li>
                 {% empty %}
                 {% endfor %}
-                {% for f in familiares_fk2 %}
+                {% for f in hogar_familiares_fk2 %}
                 <li>
-                    <a class="users-list-name" href="{% url 'legajos_ver' f.fk_legajo_1_id %}" title="{{f.fk_legajo_1}} - {{f.vinculo_inverso}}">
-                        {% if f.fk_legajo_1.foto %}
-                        <img src="{{f.fk_legajo_1.foto.url}}" alt="User Image" width="60px">
+                    <a class="users-list-name" href="{% url 'legajos_ver' f.fk_legajo_1Hogar_id %}" title="{{f.fk_legajo_1Hogar}} - {{f.vinculo_inverso}}">
+                        {% if f.fk_legajo_1Hogar.foto %}
+                        <img src="{{f.fk_legajo_1Hogar.foto.url}}" alt="User Image" width="60px">
                         {%else%}
                         <img src="{% static 'custom/img/default.png'  %}" alt="User Image" width="60px">
                         {%endif%}                            
-                        <span class="users-list-date">{{f.fk_legajo_1}}</span>
+                        <span class="users-list-date">{{f.fk_legajo_1Hogar}}</span>
                         <span class="users-list-date">{{f.vinculo_inverso}}</span>
                     </a>
                 </li>

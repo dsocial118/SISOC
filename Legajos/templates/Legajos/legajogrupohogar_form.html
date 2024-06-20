@@ -91,17 +91,17 @@
                                             <div id="familiar-{{f.id}}" class="px-2">
                                                 <ul class="users-list">
                                                     <li style="width:auto">
-                                                        {% if f.fk_legajo_2.foto %}
+                                                        {% if f.fk_legajo_2Hogar.foto %}
                                                         
-                                                        <img src="{{MEDIA_URL}}{{f.fk_legajo_2.foto.url}}" alt="User Image"
+                                                        <img src="{{MEDIA_URL}}{{f.fk_legajo_2Hogar.foto.url}}" alt="User Image"
                                                             width="60px">
                                                         {%else%}
                                                         <img src="{% static 'custom/img/default.png'  %}" alt="User Image" width="60px">
                                                         {%endif%}
-                                                        <span class="users-list-name">{{f.fk_legajo_2}}</span>
+                                                        <span class="users-list-name">{{f.fk_legajo_2Hogar}}</span>
                                                         <span class="users-list-date">{{f.vinculo}}</span>
                                                         <span class="users-list-date"><button class="btn btn-danger btn-sm"
-                                                                onclick='deleteFamiliar("{{f.id}}")'
+                                                                onclick='deleteHogar("{{f.id}}")'
                                                                 type="submit">Eliminar</button></span>
                                                     </li>
                                                 </ul>
@@ -121,7 +121,7 @@
                                                     <span class="users-list-name">{{f.fk_legajo_1}}</span>
                                                     <span class="users-list-date">{{f.vinculo_inverso}}</span>
                                                     <span class="users-list-date"><button class="btn btn-danger btn-sm"
-                                                            onclick='deleteFamiliar("{{f.id}}")'
+                                                            onclick='deleteHogar("{{f.id}}")'
                                                             type="submit">Eliminar</button></span>
                                                 </li>
                                             </ul>
@@ -187,26 +187,15 @@
                                                 </div>
                                                 <input type="hidden" name="pk" value="{{ pk }}">
                                                 <div class="form-group col-sm-6">
-                                                    {{ form.nombre|as_crispy_field }}
+                                                    {{ form.vinculo|as_crispy_field }}
                                                 </div>
                                                 <div class="form-group col-sm-6">
-                                                    {{ form.apellido|as_crispy_field }}
-                                                </div>
-                                                <div class="form-group col-sm-3">
-                                                    {{ form.sexo|as_crispy_field }}
-                                                </div>
-                                                <div class="form-group col-sm-3">
-                                                    {{ form.fecha_nacimiento|as_crispy_field }}
-                                                </div>
-                                                <div class="form-group col-sm-3">
-                                                    {{ form.tipo_doc|as_crispy_field }}
-                                                </div>
-                                                <div class="form-group col-sm-3">
                                                     {{ form.documento|as_crispy_field }}
                                                 </div>
                                                 <div class="form-group col-sm-3">
-                                                    {{ form.vinculo|as_crispy_field }}
+                                                    {{ form.estado_relacion|as_crispy_field }}
                                                 </div>
+                                               
                                                 <div class="form-group col-12 text-right">
                                                     <button type="submit" name="form_nuevo" id="form_nuevo"
                                                         class="btn btn-primary mb-3">Agregar</button>
@@ -254,7 +243,7 @@
     const sendSearchData = (busqueda) => {
         $.ajax({
             type: 'POST',
-            url: "{% url 'familiares_buscar' %}",
+            url: "{% url 'hogar_buscar' %}",
             data: {
                 'csrfmiddlewaretoken': csrf,
                 'busqueda': busqueda,
@@ -271,10 +260,7 @@
                                 <td>${r.apellido}</td>
                                 <td>${r.nombre}</td>
                                 <td>${r.documento}</td>
-                                <td>{{form.vinculo}}</td>
                                 <td>{{form.estado_relacion}}</td>
-                                <td class="text-center">{{form.conviven}}</td>
-                                <td class="text-center">{{form.cuidador_principal}}</td>
                                 <td class="text-right">
                                     <button class="btn btn-primary btn-sm" id="btn_1" onclick="submitForms('id_tr${r.pk}','${r.pk}');" type="button">Agregar</button>
                                 </td>
@@ -319,11 +305,8 @@
         const addNombre = tdValues[0].innerHTML;
         const addApellido = tdValues[1].innerHTML;
         const addDocumento = tdValues[2].innerHTML;
-        const addParentesco = selectValues[0].value;
-        const addRelacion = selectValues[1].value;
-        const addConviven = selectValues[2].value;
-        const addCuidador = selectValues[3].value;
-
+        const addRelacion = selectValues[0].value;
+        console.log(addRelacion)
         // Validar que todos los campos select estén seleccionados
         var allFieldsSelected = true;
         Array.from(selectValues).forEach(function (select) {
@@ -338,31 +321,27 @@
         if (allFieldsSelected) {
             // Create Ajax Call
             $.ajax({
-                url: '{% url "grupofamiliar_ajax_crear" %}',
+                url: '{% url "grupohogar_ajax_crear" %}',
                 data: {
                     'fk_legajo_1': '{{pk}}',
                     'fk_legajo_2': pk,
-                    'vinculo': addRelacion,
                     'estado_relacion': addRelacion,
-                    'conviven': addConviven,
-                    'cuidador_principal': addCuidador,
                 },
                 dataType: 'json',
                 success: function (data) {
                     $("#tablaResultado").append(`
-                    <div id="familiar-${data.familiar.id} class="col-md-3">
+                    <div id="familiar-${data.hogar.id} class="col-md-3">
                         <ul class="users-list">
                             <li style="width:auto">
-                                {% if data.familiar.foto is not None %}
-                                <img src="{{MEDIA_URL}}${data.familiar.foto}" alt="User Image" width="60px">
+                                {% if data.hogar.foto is not None %}
+                                <img src="{{MEDIA_URL}}${data.hogar.foto}" alt="User Image" width="60px">
                                 {%else%}
                                 <img src="{% static 'custom/img/default.png'  %}" alt="User Image" width="60px">
                                 {%endif%}
-                                <span class="users-list-name">${data.familiar.apellido}, ${data.familiar.nombre}</span>
-                                <span class="users-list-date">${data.familiar.vinculo}</span>
+                                <span class="users-list-name">${data.hogar.apellido}, ${data.hogar.nombre}</span>
                                 <span class="users-list-date"><button
                                     class="btn btn-danger btn-sm"
-                                    onclick='deleteFamiliar("${data.familiar.id}")'
+                                    onclick='deleteHogar("${data.hogar.id}")'
                                     type="submit">Eliminar</button></span>
                             </li>
                         </ul>
@@ -381,9 +360,9 @@
         }
     }
 
-    function deleteFamiliar(id) {
+    function deleteHogar(id) {
         $.ajax({
-            url: '{% url "grupofamiliar_ajax_borrar" %}',
+            url: '{% url "grupohogar_ajax_borrar" %}',
             data: {
                 'id': id,
             },

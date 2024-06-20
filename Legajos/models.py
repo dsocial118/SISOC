@@ -665,12 +665,6 @@ class LegajoGrupoHogar(models.Model):
         Legajos, on_delete=models.CASCADE, related_name='hogar_2')
     estado_relacion = models.CharField(
         max_length=50, choices=CHOICE_ESTADO_RELACION)
-    AyudaHogar = models.BooleanField(
-        verbose_name='¿Reciben en el hogar ayuda de algún tipo?', null=True, blank=True)
-    AyudaHogar2 = models.BooleanField(
-        verbose_name='¿Reciben en el hogar ayuda de algún tipo?', null=True, blank=True)
-    TipoAyudaHogar = models.CharField(
-        max_length=100, choices=TipoAyudaHogar, null=True, blank=True)
 
     def __str__(self):
         return f"Legajo: {self.fk_legajo_1Hogar} - Hogar: {self.fk_legajo_2Hogar}"

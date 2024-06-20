@@ -137,8 +137,8 @@ class LegajoGrupoHogarForm(forms.ModelForm):
     )
 
     class Meta:
-        model = Legajos
-        fields = ['apellido', 'nombre', 'fecha_nacimiento', 'tipo_doc', 'documento', 'sexo']
+        model = LegajoGrupoHogar
+        fields = ['vinculo','documento','estado_relacion']
         widgets = {
             'fecha_nacimiento': forms.DateInput(attrs={'type': 'date'}, format="%Y-%m-%d"),
         }
