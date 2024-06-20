@@ -32,6 +32,8 @@ class Legajos(models.Model):
         verbose_name='Provincia', max_length=200, choices=PROVINCE_CHOICES, null=True, blank=True)
     calle = models.CharField(max_length=250, null=True, blank=True)
     altura = models.IntegerField(null=True, blank=True)
+    latitud = models.CharField(max_length=250, null=True, blank=True)
+    longitud = models.CharField(max_length=250, null=True, blank=True)
     pisodpto = models.CharField(
         max_length=100, null=True, blank=True, verbose_name='Piso/Dpto (optativo)')
     circuito = models.CharField(
