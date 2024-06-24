@@ -217,9 +217,13 @@
                             <div class="form-group">
                               {{form_vivienda.hay_banio| as_crispy_field}}
                             </div>
+                          </div>
+                          <div class="col-sm-4">
                             <div class="form-group">
                               {{form_vivienda.hay_agua_caliente| as_crispy_field}}
                             </div>
+                          </div>
+                          <div class="col-sm-4">
                             <div class="form-group">
                               {{form_vivienda.hay_desmoronamiento| as_crispy_field}}
                             </div>
@@ -249,9 +253,13 @@
                             <div class="form-group">
                               {{form_vivienda.PoseenPC| as_crispy_field}}
                             </div>
+                          </div>
+                          <div class="col-sm-4 mb-3">
                             <div class="form-group">
                               {{form_vivienda.Poseeninternet| as_crispy_field}}
                             </div>
+                          </div>
+                          <div class="col-sm-4 mb-3">
                             <div class="form-group">
                               {{form_vivienda.PoseenCeludar| as_crispy_field}}
                             </div>
@@ -318,6 +326,11 @@
                               {{form_educacion.fk_legajo| as_crispy_field}}
                             </div>
                           </div>
+                          <div class="col-sm my-6">
+                            <div class="form-group">
+                              {{form_educacion.asiste_escuela| as_crispy_field}}
+                            </div>
+                          </div>
                           <div class="col-sm-6">
                             <div class="form-group">
                               {{form_educacion.max_nivel| as_crispy_field}}
@@ -363,17 +376,12 @@
                               {{form_educacion.areaOficio| as_crispy_field}}
                             </div>
                           </div>
-                          <div class="col-12 my-3">
-                            <div class="form-group">
-                              {{form_educacion.asiste_escuela| as_crispy_field}}
-                            </div>
-                          </div>
-                          <div class="col-12 my-3">
+                          <div class="col-sm-6">
                             <div class="form-group">
                               {{form_educacion.interesEstudio| as_crispy_field}}
                             </div>
                           </div>
-                          <div class="col-12 my-3">
+                          <div class="col-sm-6">
                             <div class="form-group">
                               {{form_educacion.interesCurso| as_crispy_field}}
                             </div>
@@ -452,7 +460,7 @@
                             </div>
                           </div>
 
-                          <div class="col-12 mb-3">
+                          <div class="col-sm-6">
                             <div class="form-group">
                               {{form_economia.recibe_plan| as_crispy_field}}
                             </div>
@@ -487,19 +495,19 @@
                       <div class=" tab-pane" id="dimensiontrabajo">
                         <div class="row">
 
-                          <div class="col-12 d-none">
+                          <div class="col-6 d-none">
                             <div class="form-group">
                               {{form_trabajo.fk_legajo| as_crispy_field}}
                             </div>
                           </div>
 
-                          <div class="col-12 mb-3">
+                          <div class="col-6 mb-3">
                             <div class="form-group">
                               {{form_trabajo.tiene_trabajo| as_crispy_field}}
                             </div>
                           </div>
 
-                          <div class="col-12 mb-3">
+                          <div class="col-6 mb-3">
                             <div class="form-group">
                               {{form_trabajo.conviviente_trabaja| as_crispy_field}}
                             </div>
