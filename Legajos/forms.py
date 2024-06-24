@@ -267,12 +267,12 @@ class DimensionViviendaForm(forms.ModelForm):
                     'rows': 3,
                 }
             ),
-            'hay_agua_caliente': forms.CheckboxInput(),
-            'hay_desmoronamiento': forms.CheckboxInput(),
+            #'hay_agua_caliente': forms.CheckboxInput(),
+            #'hay_desmoronamiento': forms.CheckboxInput(),
             #'hay_banio': forms.CheckboxInput(),
-            'PoseenCeludar': forms.CheckboxInput(),
-            'PoseenPC': forms.CheckboxInput(),
-            'Poseeninternet': forms.CheckboxInput()
+            #'PoseenCeludar': forms.CheckboxInput(),
+            #'PoseenPC': forms.CheckboxInput(),
+            #'Poseeninternet': forms.CheckboxInput()
         }
     #<!-- ./Nuevos campos vivienda Form Editar o cargar -->
 
@@ -305,9 +305,9 @@ class DimensionEducacionForm(forms.ModelForm):
                     'rows': 3,
                 }
             ),
-            'asiste_escuela': forms.CheckboxInput(),
-            'interesEstudio': forms.CheckboxInput(),
-            'interesCurso': forms.CheckboxInput(),
+            #'asiste_escuela': forms.CheckboxInput(),
+            #'interesEstudio': forms.CheckboxInput(),
+            #'interesCurso': forms.CheckboxInput(),
             #'realizandoCurso': forms.CheckboxInput()
             #pruebas para hacer funcionar la seleccion multiple
             'areaCurso': forms.SelectMultiple(attrs={'class': 'form-control'}),
@@ -332,7 +332,7 @@ class DimensionEconomiaForm(forms.ModelForm):
                     'rows': 3,
                 }
             ),
-            'recibe_plan': forms.CheckboxInput(),
+            #'recibe_plan': forms.CheckboxInput(),
             'm2m_planes': forms.SelectMultiple(attrs={'class': 'select2 w-100', 'multiple': True}),
         }
         labels = {'m2m_planes': 'Planes sociales que recibe'}
@@ -349,8 +349,8 @@ class DimensionTrabajoForm(forms.ModelForm):
                     'rows': 3,
                 }
             ),
-            'tiene_trabajo': forms.CheckboxInput(),
-            'conviviente_trabaja': forms.CheckboxInput(),
+            #'tiene_trabajo': forms.CheckboxInput(),
+            #'conviviente_trabaja': forms.CheckboxInput(),
         }
 
 class DerivacionesRechazoForm(forms.ModelForm):
