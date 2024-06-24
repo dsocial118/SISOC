@@ -52,7 +52,7 @@ SECRET_KEY = 'django-insecure-nkd=f=s!(abn(-tan&ceplfpumy5#j$6v$hl_=5d@q)dni4477
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['.hsu.dev-test.secretarianaf.gob.ar', '.sisoc.dev-test.secretarianaf.gob.ar']
+ALLOWED_HOSTS = ['localhost','127.0.0.1:8000']
 
 # Application definition
 
@@ -144,7 +144,7 @@ DATABASES = {
         'NAME': 'hsu-dev',
         'USER': 'admin-ssies',
         'PASSWORD': 'aqV0hqqy0r',
-        'HOST': '127.0.0.1',
+        'HOST': '10.80.9.15',
         'PORT': '3306',
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
