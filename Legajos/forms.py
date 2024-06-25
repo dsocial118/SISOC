@@ -42,7 +42,7 @@ class LegajosForm(forms.ModelForm):
             'm2m_alertas': forms.Select(attrs={'class': 'select2'}),
             'm2m_familiares': forms.Select(attrs={'class': 'select2'}),
         }
-        labels = {'nombre': 'Nombre', 'apellido': 'Apellidos', 'foto': '', 'm2m_alertas': ''}
+        labels = {'nombre': 'Nombre', 'apellido': 'Apellidos', 'foto': '', 'm2m_alertas': '','Longitud': 'Longitud','Latitud': 'Latitud'}
 
 
 class LegajosUpdateForm(forms.ModelForm):
@@ -137,8 +137,8 @@ class LegajoGrupoHogarForm(forms.ModelForm):
     )
 
     class Meta:
-        model = Legajos
-        fields = ['apellido', 'nombre', 'fecha_nacimiento', 'tipo_doc', 'documento', 'sexo']
+        model = LegajoGrupoHogar
+        fields = ['vinculo','documento','estado_relacion']
         widgets = {
             'fecha_nacimiento': forms.DateInput(attrs={'type': 'date'}, format="%Y-%m-%d"),
         }
