@@ -32,6 +32,8 @@ class Legajos(models.Model):
         verbose_name='Provincia', max_length=200, choices=PROVINCE_CHOICES, null=True, blank=True)
     calle = models.CharField(max_length=250, null=True, blank=True)
     altura = models.IntegerField(null=True, blank=True)
+    latitud = models.CharField(max_length=250, null=True, blank=True)
+    longitud = models.CharField(max_length=250, null=True, blank=True)
     pisodpto = models.CharField(
         max_length=100, null=True, blank=True, verbose_name='Piso/Dpto (optativo)')
     circuito = models.CharField(
@@ -664,12 +666,6 @@ class LegajoGrupoHogar(models.Model):
         Legajos, on_delete=models.CASCADE, related_name='hogar_2')
     estado_relacion = models.CharField(
         max_length=50, choices=CHOICE_ESTADO_RELACION)
-    AyudaHogar = models.BooleanField(
-        verbose_name='¿Reciben en el hogar ayuda de algún tipo?', null=True, blank=True)
-    AyudaHogar2 = models.BooleanField(
-        verbose_name='¿Reciben en el hogar ayuda de algún tipo?', null=True, blank=True)
-    TipoAyudaHogar = models.CharField(
-        max_length=100, choices=TipoAyudaHogar, null=True, blank=True)
 
     def __str__(self):
         return f"Legajo: {self.fk_legajo_1Hogar} - Hogar: {self.fk_legajo_2Hogar}"
