@@ -28,7 +28,7 @@ class Legajos(models.Model):
         max_length=50, choices=CHOICE_NACIONALIDAD, null=True, blank=True)
     estado_civil = models.CharField(
         max_length=50, choices=CHOICE_ESTADO_CIVIL, null=True, blank=True)
-    PROVINCIA = models.CharField(
+    Provincia = models.CharField(
         verbose_name='Provincia', max_length=200, choices=PROVINCE_CHOICES, null=True, blank=True)
     calle = models.CharField(max_length=250, null=True, blank=True)
     altura = models.IntegerField(null=True, blank=True)
