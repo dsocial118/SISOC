@@ -304,13 +304,7 @@ class DimensionSalud(models.Model):
         return reverse('legajos_ver', kwargs={'pk': self.fk_legajo.id})
 
 
-class DimensionEducacion(models.Model):
-    '''
 
-    Guardado de los datos de índole educativa asociada a un Legajo.
-    '''
-
-    from django.db import models
 
 
 # Assuming your model class name is DimensionEducacion
