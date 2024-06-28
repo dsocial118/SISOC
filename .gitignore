@@ -34,6 +34,7 @@ __pycache__/
 .Python
 env/
 venv/
+venv2/
 build/
 myenv/
 develop-eggs/
@@ -100,3 +101,4 @@ logs/
 Pipfile
 Virtuales/
 
+config/settings.py

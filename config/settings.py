@@ -6,6 +6,7 @@ from pathlib import Path
 from django.contrib.messages import constants as messages
 from .validators import UppercaseValidator, LowercaseValidator
 
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -22,8 +23,7 @@ log_file = os.path.join(log_dir, f'app_{current_month}.log')
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(message)s',
-    handlers=[TimedRotatingFileHandler(log_file, when='MIDNIGHT', backupCount=12, encoding='utf-8'),
-              logging.StreamHandler()],
+    handlers=[TimedRotatingFileHandler(log_file, when='MIDNIGHT', backupCount=12, encoding='utf-8'), logging.StreamHandler()],
 )
 LOGGING = {
     'version': 1,
@@ -52,7 +52,8 @@ SECRET_KEY = 'django-insecure-nkd=f=s!(abn(-tan&ceplfpumy5#j$6v$hl_=5d@q)dni4477
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost','127.0.0.1:8000']
+ALLOWED_HOSTS = ['127.0.0.1','localhost']
+
 
 # Application definition
 
@@ -83,8 +84,6 @@ INSTALLED_APPS = [
     'SIF_PDV',
     'SIF_SL',
     'SIF_MA',
-    # silk
-    'silk',
 ]
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
@@ -99,7 +98,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.contrib.admindocs.middleware.XViewMiddleware',
-    'silk.middleware.SilkyMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -132,19 +130,19 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
-# DATABASES = {
+#DATABASES = {
 #    'default': {
 #        'ENGINE': 'django.db.backends.sqlite3',
 #        'NAME': BASE_DIR / 'db.sqlite3',
 #    }
-# }
+#}
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'hsu-dev',
-        'USER': 'admin-ssies',
-        'PASSWORD': 'aqV0hqqy0r',
-        'HOST': '10.80.9.15',
+        'NAME': 'sisoc',
+        'USER': 'root',
+        'PASSWORD': 'Avesdepasos14!',
+        'HOST': '127.0.0.1',
         'PORT': '3306',
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
@@ -275,5 +273,3 @@ PROG_CDLE = 25
 PROG_PDV = 26
 PROG_MA = 30
 PROG_SL = 21
-
-SILKY_PYTHON_PROFILER = True
