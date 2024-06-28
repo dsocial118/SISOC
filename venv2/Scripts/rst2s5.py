@@ -1,4 +1,4 @@
-#!C:\Users\MDS\SISOC\venv2\Scripts\python.exe
+#!C:\Users\Navar\OneDrive\SISOC\SISOC\venv2\Scripts\python.exe
 
 # $Id: rst2s5.py 8927 2022-01-03 23:50:05Z milde $
 # Author: Chris Liechti <cliechti@gmx.net>
