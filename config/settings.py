@@ -144,7 +144,7 @@ DATABASES = {
         'NAME': 'hsu-dev',
         'USER': 'admin-ssies',
         'PASSWORD': 'aqV0hqqy0r',
-        'HOST': '127.0.0.1',
+        'HOST': '10.80.9.15',
         'PORT': '3306',
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
