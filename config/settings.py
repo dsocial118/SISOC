@@ -52,7 +52,7 @@ SECRET_KEY = 'django-insecure-nkd=f=s!(abn(-tan&ceplfpumy5#j$6v$hl_=5d@q)dni4477
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['.hsu.dev-test.secretarianaf.gob.ar', '.sisoc.dev-test.secretarianaf.gob.ar']
+ALLOWED_HOSTS = ['localhost']
 
 # Application definition
 
