@@ -176,5 +176,20 @@ document.addEventListener("DOMContentLoaded", function() {
         
       }
     });
+      //fin dimension trabajo
+
+     //Dimension economia
+    
+    let planSocialForm = document.querySelector("#id_recibe_plan");
+    const ID_PLAN_SOCIAL = "#container_plan_social"
+    planSocialForm.addEventListener('change',function(event){
+      if ( event.target.value == "True"){
+        mostrar(ID_PLAN_SOCIAL);
+      }
+      else{
+        mostrar(ID_PLAN_SOCIAL, false);
+      }
+    });
+    
 });
 
