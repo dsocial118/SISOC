@@ -24,6 +24,7 @@ urlpatterns = [
     path('', include('SIF_SL.urls')),
     path('', include('SIF_MA.urls')),
 
+    path("__debug__/", include("debug_toolbar.urls")),
 ]
 
 urlpatterns += staticfiles_urlpatterns()
