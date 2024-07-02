@@ -90,6 +90,7 @@ class LegajosReportesListView(ListView):
 class LegajosListView(TemplateView):
     template_name = "Legajos/legajos_list.html"
 
+    # FIXME: Eliminaria bucles redundantes y variables no usadas. El contexto base deberia estar separado (con el get_context_data). Si la data buscada no se pagina, la query tarda siglos antes de renderizar cualquier cosa
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
         object_list = Legajos.objects.none()
@@ -100,7 +101,7 @@ class LegajosListView(TemplateView):
             object_list = Legajos.objects.filter(Q(apellido__icontains=query) | Q(documento__icontains=query)).distinct()
             if object_list and object_list.count() == 1:
                 id = None
-                for o in object_list:
+                for o in object_list: 
                     pk = o.id
                 return redirect("legajos_ver", pk)
 
@@ -120,22 +121,24 @@ class LegajosListView(TemplateView):
 
 class LegajosDetailView(DetailView):
     model = Legajos
+    # FIXME: Por legibilidad de codigo, yo añadiria que esta utilizando legajos_detail.html (Esto va para TODAS las views)
 
+    # FIXME: Toda la logica deberia estar en un provider y que la vista solo maneje el HTTP (Esto va para TODAS las views)
     def get_context_data(self, **kwargs):
         pk = self.kwargs["pk"]
         resto_alertas = 0
         # Obtener la fecha actual
-        fecha_actual = fecha_actual = datetime.now().date()
+        fecha_actual = fecha_actual = datetime.now().date() #FIXME: No entiendo como esto no rompe
 
         # Calcular la fecha hace 12 meses desde la fecha actual
         fecha_inicio = fecha_actual - timedelta(days=365)
 
-        legajo_alertas = LegajoAlertas.objects.filter(fk_legajo=pk)        
+        legajo_alertas = LegajoAlertas.objects.filter(fk_legajo=pk) # FIXME: Se trae toda la data y solo usamos fk_alerta__fk_categoria
 
         count_intervenciones = LegajosDerivaciones.objects.filter(fk_legajo_id=pk).count()
         
         
-        derivaciones = LegajosDerivaciones.objects.filter(fk_legajo_id=pk)
+        derivaciones = LegajosDerivaciones.objects.filter(fk_legajo_id=pk) # FIXME: Por que lo traemos si esta en desarrollo? se necesitan todas las columnas? 
         
 
         # Obtener todas las categorías con la cantidad de alertas en cada una
@@ -149,7 +152,7 @@ class LegajosDetailView(DetailView):
         ids_categorias = [item['fk_alerta__fk_categoria'] for item in categorias_con_alertas]
 
         # Obtener todas las categorías completas
-        categorias_completas = CategoriaAlertas.objects.filter(id__in=ids_categorias).order_by('nombre')
+        categorias_completas = CategoriaAlertas.objects.filter(id__in=ids_categorias).order_by('nombre') # FIXME: Esta query podria evitarse usando un select_related en la de antes o alguna otra forma que use JOIN 
 
         # Verificar si categorias_completas no es None antes de aplicar el slicing
         if categorias_completas is not None:
@@ -176,13 +179,13 @@ class LegajosDetailView(DetailView):
                 Q(fecha_inicio__gt=fecha_inicio_doce_meses_excepto_mes_anterior) |
                 Q(fecha_fin__gt=fecha_inicio_doce_meses_excepto_mes_anterior) |
                 Q(fecha_fin__isnull=True)
-            ).distinct()
+            ).distinct() # FIXME: Esta query podria evitarse si cambiamos la previa en el if y se simplifican en 1. Tampoco deberia usarse un doble filter
 
             # Obtener todas las dimensiones existentes del CHOICE_DIMENSIONES
             todas_dimensiones = [dimension for dimension, _ in CHOICE_DIMENSIONES[1:]]
 
             # Definir el diccionario para almacenar los datos
-            datos_por_dimension = {dimension: [0] * 12 for dimension in todas_dimensiones}
+            datos_por_dimension = {dimension: [0] * 12 for dimension in todas_dimensiones} # FIXME: Esto creo que no se entiende y deberia estar doc
 
             for alerta in alertas_ultimo_anio:
                 dimension = alerta.fk_alerta.fk_categoria.dimension
@@ -224,16 +227,23 @@ class LegajosDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         emoji_nacionalidad = EMOJIS_BANDERAS.get(context['object'].nacionalidad, '')
         context['emoji_nacionalidad'] = emoji_nacionalidad
+        # FIXME: Esto podria ser solo 1 query y luego separar con py y realmente necesitamos todas las columnas?
         context["familiares_fk1"] = LegajoGrupoFamiliar.objects.filter(fk_legajo_1=pk)
         context["familiares_fk2"] = LegajoGrupoFamiliar.objects.filter(fk_legajo_2=pk)
+        # ----
         context["count_familia"] = context["familiares_fk1"].count() + context["familiares_fk2"].count()
+        # FIXME: Esto podria ser solo 1 query y luego separar con py y realmente necesitamos todas las columnas?
         context["hogar_familiares_fk1"] = LegajoGrupoHogar.objects.filter(fk_legajo_1Hogar=pk)
         context["hogar_familiares_fk2"] = LegajoGrupoHogar.objects.filter(fk_legajo_2Hogar=pk)
+        # ---
         context["hogar_count_familia"] = context["hogar_familiares_fk1"].count() + context["hogar_familiares_fk2"].count()
+        # FIXME: Esto podria ser solo 1 query y luego separar con py y realmente necesitamos todas las columnas?
         context['files_img'] = LegajosArchivos.objects.filter(fk_legajo=pk, tipo="Imagen")
         context['files_docs'] = LegajosArchivos.objects.filter(fk_legajo=pk, tipo="Documento")
+        # ---
         context["nombres_categorias"] = nombres_categorias
         context["resto_alertas"] = resto_alertas
+        # FIXME: Aca tenemos 7 queries que podria ser solo 1 con algo como: legajo_alertas.values('fk_alerta__gravedad').annotate(count=Count('id')) 
         context["count_alertas"] = legajo_alertas.count()
         context["alertas_alta"] = LegajoAlertas.objects.filter(fk_legajo=pk, fk_alerta__gravedad="Critica")
         context["alertas_media"] = LegajoAlertas.objects.filter(fk_legajo=pk, fk_alerta__gravedad="Importante")
@@ -241,7 +251,8 @@ class LegajosDetailView(DetailView):
         context["count_alta"] = LegajoAlertas.objects.filter(fk_legajo=pk, fk_alerta__gravedad="Critica").count()
         context["count_media"] = LegajoAlertas.objects.filter(fk_legajo=pk, fk_alerta__gravedad="Importante").count()
         context["count_baja"] = LegajoAlertas.objects.filter(fk_legajo=pk, fk_alerta__gravedad="Precaución").count()
-        context["historial_alertas"] = True if HistorialLegajoAlertas.objects.filter(fk_legajo=pk).exists() else False
+        # ----
+        context["historial_alertas"] = True if HistorialLegajoAlertas.objects.filter(fk_legajo=pk).exists() else False # FIXME: Esta query ya se hizo antes
         context["datos_json"] = datos_json
         context['count_intervenciones'] = count_intervenciones
         context['derivaciones'] = derivaciones

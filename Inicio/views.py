@@ -259,8 +259,10 @@ class DashboardView(TemplateView):
     template_name = "dashboard.html"
     queryset = Legajos.objects.filter(estado=True)
 
+    # FIXME: Todas las funciones que se usan aca deberian estar en un Provider, no en la view. En ese caso podriamos ejecutar SOLO UNA VEZ la query de legajos y filtrar con Py para luego hacer el count ahorrandonos +- 12 consultas
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
 
         # Obtén las cantidades de legajos
         cantidad_total_legajos, cantidad_legajos_activos  = contar_legajos()
