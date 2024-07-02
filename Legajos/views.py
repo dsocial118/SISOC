@@ -227,6 +227,9 @@ class LegajosDetailView(DetailView):
         context["familiares_fk1"] = LegajoGrupoFamiliar.objects.filter(fk_legajo_1=pk)
         context["familiares_fk2"] = LegajoGrupoFamiliar.objects.filter(fk_legajo_2=pk)
         context["count_familia"] = context["familiares_fk1"].count() + context["familiares_fk2"].count()
+        context["hogar_familiares_fk1"] = LegajoGrupoHogar.objects.filter(fk_legajo_1Hogar=pk)
+        context["hogar_familiares_fk2"] = LegajoGrupoHogar.objects.filter(fk_legajo_2Hogar=pk)
+        context["hogar_count_familia"] = context["hogar_familiares_fk1"].count() + context["hogar_familiares_fk2"].count()
         context['files_img'] = LegajosArchivos.objects.filter(fk_legajo=pk, tipo="Imagen")
         context['files_docs'] = LegajosArchivos.objects.filter(fk_legajo=pk, tipo="Documento")
         context["nombres_categorias"] = nombres_categorias
@@ -1409,55 +1412,42 @@ class CreateGrupoHogar(View):
     def get(self, request, **kwargs):
         fk_legajo_1 = request.GET.get("fk_legajo_1", None)
         fk_legajo_2 = request.GET.get("fk_legajo_2", None)
-        vinculo = request.GET.get("vinculo", None)
         estado_relacion = request.GET.get("estado_relacion", None)
-        conviven = request.GET.get("conviven", None)
-        cuidador_principal = request.GET.get("cuidador_principal", None)
         obj = None
-        vinculo_data = VINCULO_MAP.get(vinculo)
 
-        if not vinculo_data:
-            return messages.error(self.request, "Vinculo inválido.")
-
-        obj = LegajoGrupoFamiliar.objects.create(
-            fk_legajo_1_id=fk_legajo_1,
-            fk_legajo_2_id=fk_legajo_2,
-            vinculo=vinculo_data["vinculo"],
-            vinculo_inverso=vinculo_data["vinculo_inverso"],
+        obj = LegajoGrupoHogar.objects.create(
+            fk_legajo_1Hogar_id=fk_legajo_1,
+            fk_legajo_2Hogar_id=fk_legajo_2,
             estado_relacion=estado_relacion,
-            conviven=conviven,
-            cuidador_principal=cuidador_principal,
         )
 
         familiar = {
             "id": obj.id,
-            "fk_legajo_1": obj.fk_legajo_1.id,
-            "fk_legajo_2": obj.fk_legajo_2.id,
-            "vinculo": obj.vinculo,
-            "nombre": obj.fk_legajo_2.nombre,
-            "apellido": obj.fk_legajo_2.apellido,
-            "foto": obj.fk_legajo_2.foto.url if obj.fk_legajo_2.foto else None,
-            "cuidador_principal": obj.cuidador_principal,
+            "fk_legajo_1": obj.fk_legajo_1Hogar.id,
+            "fk_legajo_2": obj.fk_legajo_2Hogar.id,
+            "nombre": obj.fk_legajo_2Hogar.nombre,
+            "apellido": obj.fk_legajo_2Hogar.apellido,
+            "foto": obj.fk_legajo_2Hogar.foto.url if obj.fk_legajo_2Hogar.foto else None,
         }
         data = {  
                 "tipo_mensaje": "success",             
-                "mensaje" : "Vínculo familiar agregado correctamente."}  
+                "mensaje" : "Vínculo hogar agregado correctamente."}  
 
-        return JsonResponse({"familiar": familiar, "data": data})
+        return JsonResponse({"hogar": familiar, "data": data})
 
 
 class DeleteGrupoHogar(View):
     def get(self, request):
         pk = request.GET.get("id", None)
         try:
-            familiar = get_object_or_404(LegajoGrupoFamiliar, pk=pk)
+            familiar = get_object_or_404(LegajoGrupoHogar, pk=pk)
             familiar.delete()
             data = {"deleted": True,   
                 "tipo_mensaje": "success",             
-                "mensaje" : "Vínculo familiar eliminado correctamente."} 
+                "mensaje" : "Vínculo del hogar eliminado correctamente."} 
         except:
             data = {"deleted": False,   
                 "tipo_mensaje": "error",             
-                "mensaje" : "No fue posible eliminar el archivo."}  
+                "mensaje" : "No fue posible eliminar el vinculo."}  
 
         return JsonResponse(data)

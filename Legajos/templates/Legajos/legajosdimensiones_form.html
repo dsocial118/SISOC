@@ -72,7 +72,7 @@
               <form novalidate method="POST" enctype="multipart/form-data">
                 <!-- Security token -->
                 {% csrf_token %}
-
+                
                 <div class="card">
                   <div class="card-header ml-sm-3 px-0">
                     <ul class="nav nav-pills card-title justify-content-between">
@@ -217,9 +217,13 @@
                             <div class="form-group">
                               {{form_vivienda.hay_banio| as_crispy_field}}
                             </div>
+                          </div>
+                          <div class="col-sm-4">
                             <div class="form-group">
                               {{form_vivienda.hay_agua_caliente| as_crispy_field}}
                             </div>
+                          </div>
+                          <div class="col-sm-4">
                             <div class="form-group">
                               {{form_vivienda.hay_desmoronamiento| as_crispy_field}}
                             </div>
@@ -239,7 +243,7 @@
                             {{form_vivienda.agua| as_crispy_field}}
                             </div>
                           </div>
-                          <div class="col-sm-4">
+                          <div class="col-sm-4" id="container_desague">
                             <div class="form-group">
                             {{form_vivienda.desague| as_crispy_field}}
                             </div>
@@ -249,9 +253,13 @@
                             <div class="form-group">
                               {{form_vivienda.PoseenPC| as_crispy_field}}
                             </div>
+                          </div>
+                          <div class="col-sm-4 mb-3">
                             <div class="form-group">
                               {{form_vivienda.Poseeninternet| as_crispy_field}}
                             </div>
+                          </div>
+                          <div class="col-sm-4 mb-3">
                             <div class="form-group">
                               {{form_vivienda.PoseenCeludar| as_crispy_field}}
                             </div>
@@ -318,22 +326,27 @@
                               {{form_educacion.fk_legajo| as_crispy_field}}
                             </div>
                           </div>
-                          <div class="col-sm-6">
+                          <div class="col-sm my-6">
+                            <div class="form-group">
+                              {{form_educacion.asiste_escuela| as_crispy_field}}
+                            </div>
+                          </div>
+                          <div class="col-sm-6" id="container_max_nivel">
                             <div class="form-group">
                               {{form_educacion.max_nivel| as_crispy_field}}
                             </div>
                           </div>
-                          <div class="col-sm-6">
+                          <div class="col-sm-6" id="container_nivel">
                             <div class="form-group">
                               {{form_educacion.estado_nivel| as_crispy_field}}
                             </div>
                           </div>
-                          <div class="col-sm-6">
+                          <div class="col-sm-6" id="container_incompleto">
                             <div class="form-group">
                               {{form_educacion.nivelIncompleto| as_crispy_field}}
                             </div>
                           </div>
-                          <div class="col-sm-6">
+                          <div class="col-sm-6" id="container_sin_edu">
                             <div class="form-group">
                               {{form_educacion.sinEduFormal| as_crispy_field}}
                             </div>
@@ -343,7 +356,7 @@
                               {{form_educacion.realizandoCurso| as_crispy_field}}
                             </div>
                           </div>
-                          <div class="col-sm-6">
+                          <div class="col-sm-6" id="container_area_curso">
                             <div class="form-group">
                               {{form_educacion.areaCurso| as_crispy_field}}
                             </div>
@@ -363,21 +376,17 @@
                               {{form_educacion.areaOficio| as_crispy_field}}
                             </div>
                           </div>
-                          <div class="col-12 my-3">
-                            <div class="form-group">
-                              {{form_educacion.asiste_escuela| as_crispy_field}}
-                            </div>
-                          </div>
-                          <div class="col-12 my-3">
+                          <div class="col-sm-6">
                             <div class="form-group">
                               {{form_educacion.interesEstudio| as_crispy_field}}
                             </div>
                           </div>
-                          <div class="col-12 my-3">
+                          <div class="col-sm-6">
                             <div class="form-group">
                               {{form_educacion.interesCurso| as_crispy_field}}
                             </div>
                           </div>
+                          <div class="row" id="container_institucion">
                           <div class="col-sm-6">
                             <div class="form-group">
                               {{form_educacion.institucion| as_crispy_field}}
@@ -423,15 +432,16 @@
                               {{ form_educacion.barrioInstitucion | as_crispy_field }}
                             </div>
                           </div>
-                          <div class="col-sm-3">
+                          <div class="col-sm-6">
                             <div class="form-group">
                               {{ form_educacion.calleInstitucion | as_crispy_field }}
                             </div>
                           </div>
-                          <div class="col-12">
+                          <div class="col-sm-6">
                             <div class="form-group">
                               {{ form_educacion.numeroInstitucion | as_crispy_field }}
                             </div>
+                          </div>
                           </div>
                           <div class="col-12">
                             <div class="form-group">
@@ -452,13 +462,13 @@
                             </div>
                           </div>
 
-                          <div class="col-12 mb-3">
+                          <div class="col-sm-6">
                             <div class="form-group">
                               {{form_economia.recibe_plan| as_crispy_field}}
                             </div>
                           </div>
 
-                          <div class="col-12">
+                          <div class="col-sm-6" id="container_plan_social">
                             <div class="form-group">
                               {{form_economia.m2m_planes| as_crispy_field}}
                             </div>
@@ -492,62 +502,61 @@
                               {{form_trabajo.fk_legajo| as_crispy_field}}
                             </div>
                           </div>
-
-                          <div class="col-12 mb-3">
-                            <div class="form-group">
+                          
+                          <div class="col-sm my-6">
+                            <div class="form-group"> 
                               {{form_trabajo.tiene_trabajo| as_crispy_field}}
                             </div>
                           </div>
-
-                          <div class="col-12 mb-3">
-                            <div class="form-group">
-                              {{form_trabajo.conviviente_trabaja| as_crispy_field}}
-                            </div>
-                          </div>
-
-                          <div class="col-sm-6">
-                            <div class="form-group">
-                              {{form_trabajo.ocupacion| as_crispy_field}}
-                            </div>
-                          </div>
-                          <div class="col-sm-6">
-                            <div class="form-group">
-                              {{form_trabajo.modo_contratacion| as_crispy_field}}
-                            </div>
-                          </div>
-                          <div class="col-sm-6">
-                            <div class="form-group">
-                              {{form_trabajo.horasSemanales| as_crispy_field}}
-                            </div>
-                          </div>
-                          <div class="col-sm-6">
-                            <div class="form-group">
-                              {{form_trabajo.actividadRealizadaComo| as_crispy_field}}
-                            </div>
-                          </div>
-                          <div class="col-sm-6">
-                            <div class="form-group">
-                              {{form_trabajo.duracionTrabajo| as_crispy_field}}
-                            </div>
-                          </div>
-                          <div class="col-sm-6">
-                            <div class="form-group">
-                              {{form_trabajo.aportesJubilacion| as_crispy_field}}
-                            </div>
-                          </div>
-                          <div class="col-sm-6">
-                            <div class="form-group">
-                              {{form_trabajo.TiempoBusquedaLaboral| as_crispy_field}}
-                            </div>
-                          </div>
-                          <div class="col-sm-6">
+                          <div class="col-sm-6 mb-0" id="container_busquedaLaboral">
                             <div class="form-group">
                               {{form_trabajo.busquedaLaboral| as_crispy_field}}
                             </div>
                           </div>
-                          <div class="col-sm-6">
+                          <div class="col-sm-6" id="container_ocupacion">
+                            <div class="form-group" >
+                              {{form_trabajo.ocupacion| as_crispy_field}}
+                            </div>
+                          </div>
+                          <div class="col-sm-6 mb-0" id="container_tiempo_busqueda">
+                            <div class="form-group">
+                              {{form_trabajo.TiempoBusquedaLaboral| as_crispy_field}}
+                            </div>
+                          </div>
+                          <div class="col-sm-6 mb-0" id="container_no_busqueda">
                             <div class="form-group">
                               {{form_trabajo.noBusquedaLaboral| as_crispy_field}}
+                            </div>
+                          </div>
+                          <div class="col-sm-6" id="container_contratacion">
+                            <div class="form-group">
+                              {{form_trabajo.modo_contratacion| as_crispy_field}}
+                            </div>
+                          </div>
+                          <div class="col-sm-6" id="container_horas_semanales">
+                            <div class="form-group">
+                              {{form_trabajo.horasSemanales| as_crispy_field}}
+                            </div>
+                          </div>
+                          <div class="col-sm-6" id="container_actividad_realizada">
+                            <div class="form-group">
+                              {{form_trabajo.actividadRealizadaComo| as_crispy_field}}
+                            </div>
+                          </div>
+                          <div class="col-sm-6" id="container_duracion_trabajo">
+                            <div class="form-group">
+                              {{form_trabajo.duracionTrabajo| as_crispy_field}}
+                            </div>
+                          </div>
+                          <div class="col-sm-6" id="container_jubilacion">
+                            <div class="form-group">
+                              {{form_trabajo.aportesJubilacion| as_crispy_field}}
+                            </div>
+                          </div>
+                          
+                          <div class="col-sm-6 mb-0" id="container_conviviente">
+                            <div class="form-group">
+                              {{form_trabajo.conviviente_trabaja| as_crispy_field}}
                             </div>
                           </div>
                           <div class="col-12">

@@ -235,7 +235,7 @@ def contar_embarazos_sin_derivacion_aceptada():
     alertas_embarazo = Alertas.objects.filter(fk_categoria__nombre__istartswith='embarazo')
     # Realiza el filtro de legajos que tienen alertas de la categoría 'embarazo'
     legajos_con_alerta_embarazo = Legajos.objects.filter(m2m_alertas__in=alertas_embarazo)
-    # Realiza el filtro de legajos con estado de derivación diferente a "Aceptada"
+    # Realiza el filtro de legajos con estado de derivación diferente a "Aceptada" prueba
     embarazos_sin_derivacion_aceptada = legajos_con_alerta_embarazo .exclude(legajosderivaciones__estado='Aceptada').count()
     return embarazos_sin_derivacion_aceptada
 
