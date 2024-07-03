@@ -98,7 +98,9 @@ class LegajosListView(TemplateView):
         mostrar_btn_resetear = False
         query = self.request.GET.get("busqueda")
         if query:
-            object_list = Legajos.objects.filter(Q(apellido__icontains=query) | Q(documento__icontains=query)).distinct()
+            # FIXME: Aca si seria bastante util agregar un indice compartido entre apellido y documento para que la busqueda sea lo mas rapida posible
+            # FIXME: Podriamos separar la query dependiendo si viene numerico o no numerico, para no buscar por documento innecesariamente, ademas en dni podriamos usar el contains no casesensitive que es mas performante
+            object_list = Legajos.objects.filter(Q(apellido__icontains=query) | Q(documento__icontains=query)).distinct() # FIXME: Aca estoy seguro de que no se necesita todo el legajo
             if object_list and object_list.count() == 1:
                 id = None
                 for o in object_list: 
@@ -124,6 +126,7 @@ class LegajosDetailView(DetailView):
     # FIXME: Por legibilidad de codigo, yo añadiria que esta utilizando legajos_detail.html (Esto va para TODAS las views)
 
     # FIXME: Toda la logica deberia estar en un provider y que la vista solo maneje el HTTP (Esto va para TODAS las views)
+    # FIXME: Ya que todo esta relacionado con el legajo seleccionado, podriamos modificar el metodo get_queryset para que haga un select_related y prefetch_related y asi solo hacer 1 query que contenga todas las relaciones. Esto mejoraria mucho el rendimiento
     def get_context_data(self, **kwargs):
         pk = self.kwargs["pk"]
         resto_alertas = 0
@@ -225,13 +228,15 @@ class LegajosDetailView(DetailView):
         # >>>>>>>>>>>>>>>>>>Fin de la query para el gráfico de evolución de riesgos>>>>>>>>>>>>>>>>
 
         context = super().get_context_data(**kwargs)
+        print(context)
         emoji_nacionalidad = EMOJIS_BANDERAS.get(context['object'].nacionalidad, '')
         context['emoji_nacionalidad'] = emoji_nacionalidad
         # FIXME: Esto podria ser solo 1 query y luego separar con py y realmente necesitamos todas las columnas?
         context["familiares_fk1"] = LegajoGrupoFamiliar.objects.filter(fk_legajo_1=pk)
         context["familiares_fk2"] = LegajoGrupoFamiliar.objects.filter(fk_legajo_2=pk)
         # ----
-        context["count_familia"] = context["familiares_fk1"].count() + context["familiares_fk2"].count()
+        # FIXME: Estos count() podrian ser len() porque asi lo hace python y no lo agrega a la query (Esto para todos los count)
+        context["count_familia"] = context["familiares_fk1"].count() + context["familiares_fk2"].count() 
         # FIXME: Esto podria ser solo 1 query y luego separar con py y realmente necesitamos todas las columnas?
         context["hogar_familiares_fk1"] = LegajoGrupoHogar.objects.filter(fk_legajo_1Hogar=pk)
         context["hogar_familiares_fk2"] = LegajoGrupoHogar.objects.filter(fk_legajo_2Hogar=pk)
@@ -419,8 +424,10 @@ class LegajosGrupoFamiliarCreateView(CreateView):
         ).exists()
 
         context = super().get_context_data(**kwargs)
+        # FIXME: Estas 2 queries podrian ser 1
         context["familiares_fk1"] = LegajoGrupoFamiliar.objects.filter(fk_legajo_1=pk)
         context["familiares_fk2"] = LegajoGrupoFamiliar.objects.filter(fk_legajo_2=pk)
+        # ---
         context["count_familia"] = context["familiares_fk1"].count() + context["familiares_fk2"].count()
         context["legajo_principal"] = legajo_principal
         context["es_menor_de_18"] = es_menor_de_18
@@ -665,6 +672,7 @@ class LegajosDerivacionesListView(PermisosMixin, ListView):
         query = self.request.GET.get("busqueda")
 
         if query:
+            # FIXME: Podriamos separar la query dependiendo si viene numerico o no numerico, para no buscar por documento innecesariamente, ademas en dni podriamos usar el contains no casesensitive que es mas performante
             object_list = model.filter(Q(fk_legajo__apellido__icontains=query) | Q(fk_legajo__documento__icontains=query)).distinct()
 
         else:
@@ -729,7 +737,7 @@ class LegajosDerivacionesHistorial(PermisosMixin, ListView):
         context = super(LegajosDerivacionesHistorial, self).get_context_data(**kwargs)
         pk = self.kwargs.get("pk")
 
-        legajo = Legajos.objects.filter(id=pk).first()
+        legajo = Legajos.objects.filter(id=pk).first() # FIXME: Esto podria traerse en la query del historial con un select_related
         historial = LegajosDerivaciones.objects.filter(fk_legajo_id=pk)
 
         context["historial"] = historial
@@ -789,7 +797,7 @@ class LegajosAlertasListView(PermisosMixin, ListView):
         pk = self.kwargs["pk"]
         context = super().get_context_data(**kwargs)
         context["legajo_alertas"] = HistorialLegajoAlertas.objects.filter(fk_legajo=pk)
-        context["legajo"] = Legajos.objects.filter(id=pk).first()
+        context["legajo"] = Legajos.objects.filter(id=pk).first() # FIXME: Cuando se manda el modelo asi entero, realmente usamos todas las columnas? (Esto va para todas las veces que se hace esto, se pueden usar DTOs para delimitar la informacion que requerimos)
         return context
 
 
@@ -1370,16 +1378,18 @@ class LegajosGrupoHogarCreateView(CreateView):
         return HttpResponseRedirect(self.request.path_info)
     
 def busqueda_hogar(request):
+    # FIXME: por que usamos function view y no class? 
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         res = None
         busqueda = request.POST.get("busqueda")
         legajo_principal_id = request.POST.get("id")
+        # FIXME: Estas 2 queries podrian ser 1
         legajos_asociadosfk1 = LegajoGrupoHogar.objects.filter(fk_legajo_1Hogar_id=legajo_principal_id).values_list('fk_legajo_2Hogar_id', flat=True)
         legajos_asociadosfk2 = LegajoGrupoHogar.objects.filter(fk_legajo_2Hogar_id=legajo_principal_id).values_list('fk_legajo_1Hogar_id', flat=True)
         hogares = (
             Legajos.objects.filter(~Q(id=legajo_principal_id) & (Q(apellido__icontains=busqueda) | Q(documento__icontains=busqueda)))
             .exclude(id__in=legajos_asociadosfk1)
-            .exclude(id__in=legajos_asociadosfk2)
+            .exclude(id__in=legajos_asociadosfk2) # FIXME: Estos 2 excludes podrian ser 1
         )
 
         if len(hogares) > 0 and busqueda:
@@ -1411,10 +1421,11 @@ class LegajoGrupoHogarList(ListView):
     def get_context_data(self, **kwargs):
         pk = self.kwargs["pk"]
         context = super().get_context_data(**kwargs)
+        # FIXME: Estas 2 queries podrian ser 1
         context["familiares_fk1"] = LegajoGrupoFamiliar.objects.filter(fk_legajo_1=pk)
         context["familiares_fk2"] = LegajoGrupoFamiliar.objects.filter(fk_legajo_2=pk)
         context["count_familia"] = context["familiares_fk1"].count() + context["familiares_fk1"].count()
-        context["nombre"] = Legajos.objects.filter(pk=pk).first()
+        context["nombre"] = Legajos.objects.filter(pk=pk).first() # FIXME: Necesitamos todos los campos? 
         context["pk"] = pk
         return context
 
