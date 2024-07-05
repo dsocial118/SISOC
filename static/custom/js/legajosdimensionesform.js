@@ -1,31 +1,3 @@
-function mostrar(id, mostrar = true) {
-  let elemento = document.querySelector(id);
-  if (elemento) {
-      if (mostrar) {
-          elemento.classList.remove("hide");
-      } else {
-          elemento.classList.add("hide");
-      }
-  } else {
-      console.error(`Elemento no encontrado: ${id}`);
-  }
-}
-
-function mostrarOcultar(valor, condiciones) {
-  condiciones.forEach(condicion => {
-    if (valor == condicion.valor) {
-        condicion.mostrar.forEach(id => mostrar(id, true));
-        condicion.ocultar.forEach(id => mostrar(id, false));
-    }
-});
-}
-
-function manejarCambioMostrarOcultar(elemento, condiciones) {
-  elemento.addEventListener('change', function(event) {
-      mostrarOcultar(event.target.value, condiciones);
-  });
-}
-
 document.addEventListener("DOMContentLoaded", function() {
   const INCOMPLETO_OPTION = "Incompleto";
   const maxSelections = 3;
@@ -111,20 +83,20 @@ document.addEventListener("DOMContentLoaded", function() {
   ];
 
   // Condiciones de cambio
-  manejarCambioMostrarOcultar(asisteEscuelaForm, asisteEscuelaFormEstados);
-  manejarCambioMostrarOcultar(estadoNivelForm, estadoNivelFormEstados);
-  manejarCambioMostrarOcultar(realizandoCursoForm, realizandoCursoFormEstados);
-  manejarCambioMostrarOcultar(hayBanioForm, hayBanioFormEstados );
-  manejarCambioMostrarOcultar(tieneTrabajoForm, tieneTrabajoFormEstados);
-  manejarCambioMostrarOcultar(busquedaLaboralForm, busquedaLaboralFormEstados);
-  manejarCambioMostrarOcultar(planSocialForm, planSocialFormEstados);
+  FormUtils.manejarCambioMostrarOcultar(asisteEscuelaForm, asisteEscuelaFormEstados);
+  FormUtils.manejarCambioMostrarOcultar(estadoNivelForm, estadoNivelFormEstados);
+  FormUtils.manejarCambioMostrarOcultar(realizandoCursoForm, realizandoCursoFormEstados);
+  FormUtils.manejarCambioMostrarOcultar(hayBanioForm, hayBanioFormEstados );
+  FormUtils.manejarCambioMostrarOcultar(tieneTrabajoForm, tieneTrabajoFormEstados);
+  FormUtils.manejarCambioMostrarOcultar(busquedaLaboralForm, busquedaLaboralFormEstados);
+  FormUtils.manejarCambioMostrarOcultar(planSocialForm, planSocialFormEstados);
 
   // Inicializar estado de formularios
-  mostrarOcultar(asisteEscuelaForm.value, asisteEscuelaFormEstados);
-  mostrarOcultar(estadoNivelForm.value, estadoNivelFormEstados);
-  mostrarOcultar(realizandoCursoForm.value, realizandoCursoFormEstados);
-  mostrarOcultar(hayBanioForm.value, hayBanioFormEstados);
-  mostrarOcultar(tieneTrabajoForm.value, tieneTrabajoFormEstados);
-  mostrarOcultar(busquedaLaboralForm.value, busquedaLaboralFormEstados);
-  mostrarOcultar(planSocialForm.value, planSocialFormEstados)
+  FormUtils.mostrarOcultar(asisteEscuelaForm.value, asisteEscuelaFormEstados);
+  FormUtils.mostrarOcultar(estadoNivelForm.value, estadoNivelFormEstados);
+  FormUtils.mostrarOcultar(realizandoCursoForm.value, realizandoCursoFormEstados);
+  FormUtils.mostrarOcultar(hayBanioForm.value, hayBanioFormEstados);
+  FormUtils.mostrarOcultar(tieneTrabajoForm.value, tieneTrabajoFormEstados);
+  FormUtils.mostrarOcultar(busquedaLaboralForm.value, busquedaLaboralFormEstados);
+  FormUtils.mostrarOcultar(planSocialForm.value, planSocialFormEstados)
 });
