@@ -83,13 +83,13 @@ class BusquedaMenu(LoginRequiredMixin, FormView):
         
 def contar_legajos():
     # Cuenta la cantidad total de legajos
-    cantidad_total_legajos = Legajos.objects.count()
+    cantidad_total_legajos = total_legajos.count()
 
     # Realiza el cálculo de la cantidad de legajos activos
-    legajos_activos = Legajos.objects.filter(estado=True)
+    legajos_activos = total_legajos.filter(estado=True)
     cantidad_legajos_activos = legajos_activos.count()
     
-    return  cantidad_total_legajos,cantidad_legajos_activos
+    return  cantidad_total_legajos, cantidad_legajos_activos
 
 def contar_legajos_entre_0_y_18_anios():
     # Obtiene la fecha actual
@@ -99,7 +99,7 @@ def contar_legajos_entre_0_y_18_anios():
     fecha_hace_18_anios = today - timedelta(days=18 * 365)
 
     # Realiza una consulta para contar los legajos que tienen entre 0 y 18 años
-    cantidad_legajos = Legajos.objects.filter(fecha_nacimiento__gte=fecha_hace_18_anios).count()
+    cantidad_legajos = total_legajos.filter(fecha_nacimiento__gte=fecha_hace_18_anios).count()
     return cantidad_legajos
 
 def contar_adolescente_riesgo():
@@ -110,7 +110,7 @@ def contar_adolescente_riesgo():
     fecha_hace_18_anios = today - timedelta(days=18 * 365)
 
     # Realiza el filtro de adolescentes
-    adolescente = Legajos.objects.filter(fecha_nacimiento__gte=fecha_hace_18_anios)
+    adolescente = total_legajos.filter(fecha_nacimiento__gte=fecha_hace_18_anios)
 
     # Realiza el filtro de alarmas activas
     alarmas_activas = Alertas.objects.filter(gravedad='Critica')
@@ -129,7 +129,7 @@ def contar_adolescente_sin_derivacion_aceptada():
     fecha_hace_18_anios = today - timedelta(days=18 * 365)
 
     # Realiza el filtro de adolescentes
-    adolescente = Legajos.objects.filter(fecha_nacimiento__gte=fecha_hace_18_anios)
+    adolescente = total_legajos.filter(fecha_nacimiento__gte=fecha_hace_18_anios)
 
     # calculo de adolescente con estado de derivación diferente a "Aceptada"
     cantidad_adolescente_sin_derivacion_aceptada = adolescente.exclude(legajosderivaciones__estado='Aceptada').distinct().count()
@@ -145,7 +145,7 @@ def contar_legajos_entre_0_y_40_dias():
     fecha_hace_40_dias = today - timedelta(days=40)
 
     # Realiza una consulta para contar los legajos que tienen entre 0 y 40 días
-    cantidad_legajos_40_dias = Legajos.objects.filter(fecha_nacimiento__gte=fecha_hace_40_dias).distinct().count()
+    cantidad_legajos_40_dias = total_legajos.filter(fecha_nacimiento__gte=fecha_hace_40_dias).distinct().count()
     return cantidad_legajos_40_dias
 
 def contar_bb_riesgo():
@@ -156,7 +156,7 @@ def contar_bb_riesgo():
     fecha_hace_40_dias = today - timedelta(days=40)
 
     # Realiza el filtro de bebés que tienen entre 0 y 40 días
-    bb_40_dias = Legajos.objects.filter(fecha_nacimiento__gte=fecha_hace_40_dias)
+    bb_40_dias = total_legajos.filter(fecha_nacimiento__gte=fecha_hace_40_dias)
 
     # Realiza el filtro de alarmas activas
     alarmas_activas = Alertas.objects.filter(gravedad='Critica')
@@ -174,7 +174,7 @@ def contar_bb_sin_derivacion_aceptada():
     fecha_hace_40_dias = today - timedelta(days=40)
 
     # Realiza el filtro de legajos que tienen entre 0 y 40 días
-    bb_40_dias = Legajos.objects.filter(fecha_nacimiento__gte=fecha_hace_40_dias)
+    bb_40_dias = total_legajos.filter(fecha_nacimiento__gte=fecha_hace_40_dias)
 
     # calculo de legajos con estado de derivación diferente a "Aceptada"
     cantidad_bb_sin_derivacion_aceptada = bb_40_dias.exclude(legajosderivaciones__estado='Aceptada').distinct().count()
@@ -203,7 +203,7 @@ def contar_legajos_con_alarmas_activas():
 
 def contar_legajos_con_planes_sociales():
     # Utiliza una subconsulta para contar los Legajos con planes sociales a través de DimensionEconomia
-    cantidad = Legajos.objects.filter(dimensioneconomia__m2m_planes__isnull=False).distinct().count()
+    cantidad = total_legajos.filter(dimensioneconomia__m2m_planes__isnull=False).distinct().count()
     return cantidad
 
 def calcular_porcentaje_respecto_a_poblacion(cantidad_legajos):
@@ -226,7 +226,7 @@ def contar_legajos_embarazados():
     # Realiza el filtro de alertas que tienen nombre que comienza con 'embarazo'
     alertas_embarazo = Alertas.objects.filter(fk_categoria__nombre__istartswith='embarazo')
     # Realiza el filtro de legajos que tienen alertas de la categoría 'embarazo'
-    legajos_con_alerta_embarazo = Legajos.objects.filter(m2m_alertas__in=alertas_embarazo)
+    legajos_con_alerta_embarazo = total_legajos.filter(m2m_alertas__in=alertas_embarazo)
     cantidad_legajos_embarazados = legajos_con_alerta_embarazo.count()
     return cantidad_legajos_embarazados
 
@@ -234,7 +234,7 @@ def contar_embarazos_sin_derivacion_aceptada():
     # Realiza el filtro de alertas que tienen nombre que comienza con 'embarazo'
     alertas_embarazo = Alertas.objects.filter(fk_categoria__nombre__istartswith='embarazo')
     # Realiza el filtro de legajos que tienen alertas de la categoría 'embarazo'
-    legajos_con_alerta_embarazo = Legajos.objects.filter(m2m_alertas__in=alertas_embarazo)
+    legajos_con_alerta_embarazo = total_legajos.filter(m2m_alertas__in=alertas_embarazo)
     # Realiza el filtro de legajos con estado de derivación diferente a "Aceptada" prueba
     embarazos_sin_derivacion_aceptada = legajos_con_alerta_embarazo .exclude(legajosderivaciones__estado='Aceptada').count()
     return embarazos_sin_derivacion_aceptada
@@ -243,7 +243,7 @@ def contar_embarazos_en_riesgo():
     # Realiza el filtro de alertas que tienen nombre que comienza con 'embarazo'
     alertas_embarazo = Alertas.objects.filter(fk_categoria__nombre__istartswith='embarazo')
     # Realiza el filtro de legajos que tienen alertas de la categoría 'embarazo'
-    legajos_con_alerta_embarazo = Legajos.objects.filter(m2m_alertas__in=alertas_embarazo)
+    legajos_con_alerta_embarazo = total_legajos.filter(m2m_alertas__in=alertas_embarazo)
     # Realiza el filtro de alarmas activas
     alarmas_activas = Alertas.objects.filter(gravedad='Critica')
     # Realiza la consulta para contar los legajos
@@ -253,11 +253,15 @@ def contar_embarazos_en_riesgo():
 
 
     
-        
+total_legajos = Legajos.objects.select_related('dimensioneconomia').prefetch_related('m2m_alertas').values(
+    'estado',
+    'fecha_nacimiento',
+    'dimensioneconomia__m2m_planes'
+)
 
 class DashboardView(TemplateView):
     template_name = "dashboard.html"
-    queryset = Legajos.objects.filter(estado=True)
+    queryset = total_legajos
 
     # FIXME: Todas las funciones que se usan aca deberian estar en un Provider, no en la view. En ese caso podriamos ejecutar SOLO UNA VEZ la query de legajos y filtrar con Py para luego hacer el count ahorrandonos +- 12 consultas
     def get_context_data(self, **kwargs):
@@ -278,23 +282,21 @@ class DashboardView(TemplateView):
         cantidad_embarazos_en_riesgo = contar_embarazos_en_riesgo()
         cantidad_legajos_con_alarmas_activas = contar_legajos_con_alarmas_activas()
         
-        # Filtrar las alertas con gravedad "Critica" y estado "alarmas_activas"
-        cantidad_alarmas_activas = Alertas.objects.filter(gravedad='Critica').count()
-
-        # Agrega la cantidad de alarmas activas al contexto
-        context['cantidad_alarmas_activas'] = cantidad_alarmas_activas
+        # No usado en el template
+        # cantidad_alarmas_activas = Alertas.objects.filter(gravedad='Critica').count()
+        # context['cantidad_alarmas_activas'] = cantidad_alarmas_activas
 
         # Obtén la cantidad de legajos con planes sociales utilizando la función
-        cantidad_legajos_con_planes_sociales = contar_legajos_con_planes_sociales()
+        # cantidad_legajos_con_planes_sociales = contar_legajos_con_planes_sociales()
 
         # Agrega la cantidad al contexto
-        context['cantidad_legajos_con_planes_sociales'] = cantidad_legajos_con_planes_sociales
+        # context['cantidad_legajos_con_planes_sociales'] = cantidad_legajos_con_planes_sociales
 
         # Calcular el porcentaje de legajos en comparación con la población total
-        porcentaje_legajos = calcular_porcentaje_respecto_a_poblacion(cantidad_total_legajos)
+        # porcentaje_legajos = calcular_porcentaje_respecto_a_poblacion(cantidad_total_legajos)
         
         # Agrega el porcentaje al contexto
-        context['porcentaje_legajos'] = porcentaje_legajos
+        # context['porcentaje_legajos'] = porcentaje_legajos
  
  
 
