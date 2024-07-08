@@ -209,9 +209,9 @@ class DashboardView(TemplateView):
         cantidad_embarazos_en_riesgo = contar_embarazos_en_riesgo()
         cantidad_legajos_con_alarmas_activas = contar_legajos_con_alarmas_activas()
         cantidad_legajos_con_planes_sociales = contar_legajos_con_planes_sociales()
+        porcentaje_legajos = calcular_porcentaje_respecto_a_poblacion(cantidad_total_legajos)
 
         context['cantidad_legajos_con_planes_sociales'] = cantidad_legajos_con_planes_sociales
-        porcentaje_legajos = calcular_porcentaje_respecto_a_poblacion(cantidad_total_legajos)
         context['porcentaje_legajos'] = porcentaje_legajos
         context['cantidad_legajos'] = cantidad_legajos_entre_0_y_18_anios
         context['cantidad_total_legajos'] = cantidad_total_legajos
