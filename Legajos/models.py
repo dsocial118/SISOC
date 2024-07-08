@@ -16,13 +16,13 @@ class Legajos(models.Model):
     Guardado de los perfiles de las personas con las que interviene el Municipio.
     '''
 
-    apellido = models.CharField(max_length=250)
+    apellido = models.CharField(max_length=250, db_index=True)
     nombre = models.CharField(max_length=250)
-    fecha_nacimiento = models.DateField()
+    fecha_nacimiento = models.DateField(db_index=True)
     tipo_doc = models.CharField(max_length=50, choices=CHOICE_TIPO_DOC,
                                 verbose_name="Tipo documento", null=True, blank=True)
     documento = models.PositiveIntegerField(validators=[MinValueValidator(
-        3000000), MaxValueValidator(100000000)], null=True, blank=True)
+        3000000), MaxValueValidator(100000000)], null=True, blank=True, db_index=True)
     sexo = models.CharField(max_length=50, choices=CHOICE_SEXO)
     nacionalidad = models.CharField(
         max_length=50, choices=CHOICE_NACIONALIDAD, null=True, blank=True)
@@ -54,12 +54,12 @@ class Legajos(models.Model):
     email = models.EmailField(null=True, blank=True)
     foto = models.ImageField(upload_to='legajos', blank=True, null=True)
     m2m_alertas = models.ManyToManyField(
-        Alertas, through='LegajoAlertas', blank=True)
+        Alertas, through='LegajoAlertas', blank=True, db_index=True)
     m2m_familiares = models.ManyToManyField(
         'self', through='LegajoGrupoFamiliar', symmetrical=True, blank=True)
     observaciones = models.CharField(
         max_length=300, blank=True, null=True, verbose_name='Observaciones (optativo)')
-    estado = models.BooleanField(default=True)
+    estado = models.BooleanField(default=True, db_index=True)
     creado_por = models.ForeignKey(
         Usuarios, related_name='creado_por', on_delete=models.CASCADE, blank=True, null=True)
     modificado_por = models.ForeignKey(
@@ -456,9 +456,9 @@ class LegajoAlertas(models.Model):
     '''
 
     fk_alerta = models.ForeignKey(
-        Alertas, related_name='alerta', on_delete=models.CASCADE)
+        Alertas, related_name='alerta', on_delete=models.CASCADE, db_index=True)
     fk_legajo = models.ForeignKey(
-        Legajos, related_name='legajo_alerta', on_delete=models.CASCADE)
+        Legajos, related_name='legajo_alerta', on_delete=models.CASCADE, db_index=True)
     fecha_inicio = models.DateField(auto_now=True)
     creada_por = models.ForeignKey(
         Usuarios, related_name='creada_por', on_delete=models.CASCADE, blank=True, null=True)
@@ -604,7 +604,7 @@ class LegajosDerivaciones(models.Model):
     importancia = models.CharField(
         max_length=15, choices=CHOICE_IMPORTANCIA, default="Alta")
     estado = models.CharField(
-        max_length=15, choices=CHOICE_ESTADO_DERIVACION, default="Pendiente")
+        max_length=15, choices=CHOICE_ESTADO_DERIVACION, default="Pendiente", db_index=True)
     m2m_alertas = models.ManyToManyField(CategoriaAlertas, blank=True)
     archivos = models.FileField(
         upload_to='legajos/archivos', null=True, blank=True)
