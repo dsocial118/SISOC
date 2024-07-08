@@ -6,6 +6,7 @@ from Legajos.models import *
 from Configuraciones.models import *
 from datetime import date, timedelta
 from django.utils import timezone
+from django.core.cache import cache
 
 today = date.today()
 fecha_hace_18_anios = today - timedelta(days=18 * 365)
@@ -101,44 +102,70 @@ class BusquedaMenu(LoginRequiredMixin, FormView):
         
 def contar_legajos():
     # Cuenta la cantidad total de legajos
-    cantidad_total_legajos = total_legajos.count()
-
+    cantidad_total_legajos = cache.get('cantidad_total_legajos')
+    if cantidad_total_legajos is None:
+        cantidad_total_legajos = total_legajos.count()
+        cache.set('cantidad_total_legajos', cantidad_total_legajos, timeout=300)  # Guarda en caché por 5 minutos
     # Realiza el cálculo de la cantidad de legajos activos
-    legajos_activos = total_legajos.filter(estado=True)
-    cantidad_legajos_activos = legajos_activos.count()
+    legajos_activos = cache.get('legajos_activos')
+    if legajos_activos is None:
+        legajos_activos = total_legajos.filter(estado=True)
+        cache.set('legajos_activos', legajos_activos, timeout=300)  # Guarda en caché por 5 minutos
+    
+    cantidad_legajos_activos = cache.get('cantidad_legajos_activos')
+    if cantidad_legajos_activos is None:
+        cantidad_legajos_activos = legajos_activos.count()
+        cache.set('cantidad_legajos_activos', cantidad_legajos_activos, timeout=300)
     
     return  cantidad_total_legajos, cantidad_legajos_activos
 
 def contar_legajos_entre_0_y_18_anios():    # Realiza una consulta para contar los legajos que tienen entre 0 y 18 años
-    cantidad_legajos = legajos_mayores_de_edad.count()
+    cantidad_legajos = cache.get('cantidad_legajos')
+    if cantidad_legajos is None:
+        cantidad_legajos = legajos_mayores_de_edad.count()
+        cache.set('cantidad_legajos', cantidad_legajos, timeout=300)
     return cantidad_legajos
 
 def contar_adolescente_riesgo():
     # FIXME: Los adolescentes son todos los mayores de edad?
-    cantidad_adolescente_riesgo = legajos_mayores_de_edad.filter(m2m_alertas__in=alarmas_activas).distinct().count() 
+    cantidad_adolescente_riesgo = cache.get('cantidad_adolescente_riesgo')
+    if cantidad_adolescente_riesgo is None:
+        cantidad_adolescente_riesgo = legajos_mayores_de_edad.filter(m2m_alertas__in=alarmas_activas).distinct().count()
+        cache.set('cantidad_adolescente_riesgo', cantidad_adolescente_riesgo, timeout=300)
 
     return cantidad_adolescente_riesgo
 
 def contar_adolescente_sin_derivacion_aceptada():
+    cantidad_adolescente_sin_derivacion_aceptada = cache.get('cantidad_adolescente_sin_derivacion_aceptada')
+    if cantidad_adolescente_sin_derivacion_aceptada is None:
+        cantidad_adolescente_sin_derivacion_aceptada = legajos_mayores_de_edad.exclude(legajosderivaciones__estado='Aceptada').distinct().count()
+        cache.set('cantidad_adolescente_sin_derivacion_aceptada', cantidad_adolescente_sin_derivacion_aceptada, timeout=300)
     # calculo de adolescente con estado de derivación diferente a "Aceptada"
-    cantidad_adolescente_sin_derivacion_aceptada = legajos_mayores_de_edad.exclude(legajosderivaciones__estado='Aceptada').distinct().count()
-
     return cantidad_adolescente_sin_derivacion_aceptada
 
 def contar_legajos_entre_0_y_40_dias():
+    cantidad_legajos_40_dias = cache.get('cantidad_legajos_40_dias')
+    if cantidad_legajos_40_dias is None:
+        cantidad_legajos_40_dias = legajos_40_dias.distinct().count()
+        cache.set('cantidad_legajos_40_dias', cantidad_legajos_40_dias, timeout=300)
     # Realiza una consulta para contar los legajos que tienen entre 0 y 40 días
-    cantidad_legajos_40_dias = legajos_40_dias.distinct().count()
+    
     return cantidad_legajos_40_dias
 
 def contar_bb_riesgo():
+    cantidad_bb_riesgo = cache.get('cantidad_bb_riesgo')
+    if cantidad_bb_riesgo is None:
+        cantidad_bb_riesgo = legajos_40_dias.filter(m2m_alertas__in=alarmas_activas).distinct().count()
+        cache.set('cantidad_bb_riesgo', cantidad_bb_riesgo, timeout=300)
     # Realiza la consulta para contar los bebés con alarmas activas
-    cantidad_bb_riesgo = legajos_40_dias.filter(m2m_alertas__in=alarmas_activas).distinct().count()
-
     return cantidad_bb_riesgo
 
 def contar_bb_sin_derivacion_aceptada():
+    cantidad_bb_sin_derivacion_aceptada = cache.get('cantidad_bb_sin_derivacion_aceptada')
+    if cantidad_bb_sin_derivacion_aceptada is None:
+        cantidad_bb_sin_derivacion_aceptada = legajos_40_dias.exclude(legajosderivaciones__estado='Aceptada').distinct().count()
+        cache.set('cantidad_bb_sin_derivacion_aceptada', cantidad_bb_sin_derivacion_aceptada, timeout=300)
     # calculo de legajos con estado de derivación diferente a "Aceptada"
-    cantidad_bb_sin_derivacion_aceptada = legajos_40_dias.exclude(legajosderivaciones__estado='Aceptada').distinct().count()
 
     return cantidad_bb_sin_derivacion_aceptada
 
@@ -152,8 +179,11 @@ def contar_legajos_con_alarmas_activas():
     return cantidad_legajos_con_alarmas_activas
 
 def contar_legajos_con_planes_sociales():
+    cantidad = cache.get('cantidad')
+    if cantidad is None:
+        cantidad = total_legajos.filter(dimensioneconomia__m2m_planes__isnull=False).distinct().count()
+        cache.set('cantidad', cantidad, timeout=300) # Guarda en caché por 5 minutos
     # Utiliza una subconsulta para contar los Legajos con planes sociales a través de DimensionEconomia
-    cantidad = total_legajos.filter(dimensioneconomia__m2m_planes__isnull=False).distinct().count()
     return cantidad
 
 def calcular_porcentaje_respecto_a_poblacion(cantidad_legajos):
@@ -168,22 +198,35 @@ def calcular_porcentaje_respecto_a_poblacion(cantidad_legajos):
     return porcentaje
 
 def deriv_pendientes():
-    cantidad_deriv_pendientes = LegajosDerivaciones.objects.filter(estado='Pendiente').distinct().count()
+    cantidad_deriv_pendientes = cache.get('cantidad_deriv_pendientes')
+    if cantidad_deriv_pendientes is None:
+        cantidad_deriv_pendientes = LegajosDerivaciones.objects.filter(estado='Pendiente').distinct().count()
+        cache.set('cantidad_deriv_pendientes', cantidad_deriv_pendientes, timeout=300)  # Guarda en caché por 5 minutos
     return cantidad_deriv_pendientes
 
 def contar_legajos_embarazados():
-    cantidad_legajos_embarazados = legajos_con_alerta_embarazo.count()
+    # Intenta obtener la respuesta del caché
+    cantidad_legajos_embarazados = cache.get('cantidad_legajos_embarazados')
+    
+    # Si no está en caché, calcula el valor y lo guarda en el caché
+    if cantidad_legajos_embarazados is None:
+        cantidad_legajos_embarazados = legajos_con_alerta_embarazo.count()
+        cache.set('cantidad_legajos_embarazados', cantidad_legajos_embarazados, timeout=300)  # Guarda en caché por 5 minutos
     return cantidad_legajos_embarazados
 
 def contar_embarazos_sin_derivacion_aceptada():
-    # Realiza el filtro de legajos con estado de derivación diferente a "Aceptada" prueba
-    embarazos_sin_derivacion_aceptada = legajos_con_alerta_embarazo.exclude(legajosderivaciones__estado='Aceptada').count()
+    embarazos_sin_derivacion_aceptada = cache.get('embarazos_sin_derivacion_aceptada')
+    if embarazos_sin_derivacion_aceptada is None:
+        embarazos_sin_derivacion_aceptada = legajos_con_alerta_embarazo.exclude(legajosderivaciones__estado='Aceptada').count() # Realiza el filtro de legajos con estado de derivación diferente a "Aceptada" prueba
+        cache.set('embarazos_sin_derivacion_aceptada', embarazos_sin_derivacion_aceptada, timeout=300)  # Guarda en caché por 5 minutos
     return embarazos_sin_derivacion_aceptada
 
 def contar_embarazos_en_riesgo():
     # Realiza la consulta para contar los legajos
-    cantidad_embarazos_en_riesgo = legajos_con_alerta_embarazo.filter(m2m_alertas__in=alarmas_activas).distinct().count()
-
+    cantidad_embarazos_en_riesgo = cache.get('cantidad_embarazos_en_riesgo')
+    if cantidad_embarazos_en_riesgo is None:
+        cantidad_embarazos_en_riesgo = legajos_con_alerta_embarazo.filter(m2m_alertas__in=alarmas_activas).distinct().count()
+        cache.set('cantidad_embarazos_en_riesgo', cantidad_embarazos_en_riesgo, timeout=300)  # Guarda en caché por 5 minutos
     return cantidad_embarazos_en_riesgo
 
 
