@@ -96,74 +96,33 @@ def contar_legajos_entre_0_y_18_anios():    # Realiza una consulta para contar l
     return cantidad_legajos
 
 def contar_adolescente_riesgo():
-    # Obtiene la fecha actual
-    today = date.today()
-
-    # Realiza el filtro de adolescentes
-    adolescente = legajos_mayores_de_edad
-
-    # Realiza el filtro de alarmas activas
-    
-
-    # Realiza la consulta para contar los adolescentes con alarmas activas
-    cantidad_adolescente_riesgo = adolescente.filter(m2m_alertas__in=alarmas_activas).distinct().count()
+    # FIXME: Los adolescentes son todos los mayores de edad?
+    cantidad_adolescente_riesgo = legajos_mayores_de_edad.filter(m2m_alertas__in=alarmas_activas).distinct().count() 
 
     return cantidad_adolescente_riesgo
 
 
 def contar_adolescente_sin_derivacion_aceptada():
-    # Obtiene la fecha actual
-    today = date.today()
-
-    adolescente = legajos_mayores_de_edad
-
     # calculo de adolescente con estado de derivación diferente a "Aceptada"
-    cantidad_adolescente_sin_derivacion_aceptada = adolescente.exclude(legajosderivaciones__estado='Aceptada').distinct().count()
+    cantidad_adolescente_sin_derivacion_aceptada = legajos_mayores_de_edad.exclude(legajosderivaciones__estado='Aceptada').distinct().count()
 
     return cantidad_adolescente_sin_derivacion_aceptada
 
 
 def contar_legajos_entre_0_y_40_dias():
-    # Obtiene la fecha actual
-    today = date.today()
-
-    # Calcula la fecha de hace 40 días
-    fecha_hace_40_dias = today - timedelta(days=40)
-
     # Realiza una consulta para contar los legajos que tienen entre 0 y 40 días
-    cantidad_legajos_40_dias = total_legajos.filter(fecha_nacimiento__gte=fecha_hace_40_dias).distinct().count()
+    cantidad_legajos_40_dias = legajos_40_dias.distinct().count()
     return cantidad_legajos_40_dias
 
 def contar_bb_riesgo():
-    # Obtiene la fecha actual
-    today = date.today()
-
-    # Calcula la fecha de hace 40 días
-    fecha_hace_40_dias = today - timedelta(days=40)
-
-    # Realiza el filtro de bebés que tienen entre 0 y 40 días
-    bb_40_dias = total_legajos.filter(fecha_nacimiento__gte=fecha_hace_40_dias)
-
-    # Realiza el filtro de alarmas activas
-    
-
     # Realiza la consulta para contar los bebés con alarmas activas
-    cantidad_bb_riesgo = bb_40_dias.filter(m2m_alertas__in=alarmas_activas).distinct().count()
+    cantidad_bb_riesgo = legajos_40_dias.filter(m2m_alertas__in=alarmas_activas).distinct().count()
 
     return cantidad_bb_riesgo
 
 def contar_bb_sin_derivacion_aceptada():
-    # Obtiene la fecha actual
-    today = date.today()
-
-    # Calcula la fecha de hace 40 días
-    fecha_hace_40_dias = today - timedelta(days=40)
-
-    # Realiza el filtro de legajos que tienen entre 0 y 40 días
-    bb_40_dias = total_legajos.filter(fecha_nacimiento__gte=fecha_hace_40_dias)
-
     # calculo de legajos con estado de derivación diferente a "Aceptada"
-    cantidad_bb_sin_derivacion_aceptada = bb_40_dias.exclude(legajosderivaciones__estado='Aceptada').distinct().count()
+    cantidad_bb_sin_derivacion_aceptada = legajos_40_dias.exclude(legajosderivaciones__estado='Aceptada').distinct().count()
 
     return cantidad_bb_sin_derivacion_aceptada
 
@@ -218,10 +177,8 @@ def contar_embarazos_sin_derivacion_aceptada():
     return embarazos_sin_derivacion_aceptada
 
 def contar_embarazos_en_riesgo():
-    # Realiza el filtro de alarmas activas
-    
     # Realiza la consulta para contar los legajos
-    cantidad_embarazos_en_riesgo =legajos_con_alerta_embarazo.filter(m2m_alertas__in=alarmas_activas).distinct().count()
+    cantidad_embarazos_en_riesgo = legajos_con_alerta_embarazo.filter(m2m_alertas__in=alarmas_activas).distinct().count()
 
     return cantidad_embarazos_en_riesgo
 
@@ -232,15 +189,18 @@ total_legajos = Legajos.objects.select_related('dimensioneconomia').prefetch_rel
     'fecha_nacimiento',
     'dimensioneconomia__m2m_planes'
 )
-alertas_embarazo = Alertas.objects.filter(fk_categoria__nombre__istartswith='embarazo').values_list('id')
-legajos_con_alerta_embarazo = total_legajos.filter(m2m_alertas__in=alertas_embarazo)
+
+alertas_embarazo_ids = Alertas.objects.filter(fk_categoria__nombre__istartswith='embarazo').values_list('id', flat=True)
+legajos_con_alerta_embarazo = total_legajos.filter(m2m_alertas__id__in=alertas_embarazo_ids)
 alarmas_activas = Alertas.objects.filter(gravedad='Critica')
 
-# Calcula la fecha de hace 18 años
 today = date.today()
 fecha_hace_18_anios = today - timedelta(days=18 * 365)
+fecha_hace_40_dias = today - timedelta(days=40)
 
 legajos_mayores_de_edad = total_legajos.filter(fecha_nacimiento__gte=fecha_hace_18_anios)
+
+legajos_40_dias = total_legajos.filter(fecha_nacimiento__gte=fecha_hace_40_dias)
 
 class DashboardView(TemplateView):
     template_name = "dashboard.html"
@@ -264,7 +224,6 @@ class DashboardView(TemplateView):
         embarazos_sin_derivacion_aceptada = contar_embarazos_sin_derivacion_aceptada()
         cantidad_embarazos_en_riesgo = contar_embarazos_en_riesgo()
         cantidad_legajos_con_alarmas_activas = contar_legajos_con_alarmas_activas()
-        
         # No usado en el template
         # cantidad_alarmas_activas = Alertas.objects.filter(gravedad='Critica').count()
         # context['cantidad_alarmas_activas'] = cantidad_alarmas_activas
