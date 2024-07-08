@@ -193,7 +193,7 @@ def contar_legajos_con_planes_sociales():
     return cantidad
 
 def calcular_porcentaje_respecto_a_poblacion(cantidad_legajos):
-    poblacion_san_miguel = 327000  # Total de población de San Miguel (dato del censo)
+    poblacion_san_miguel = 327000  # FIXME: Cual es la poblacion que hay que poner????
     
     # Calcula el porcentaje de legajos en comparación con la población total
     if poblacion_san_miguel > 0:
@@ -255,7 +255,7 @@ class DashboardView(TemplateView):
         cantidad_total_legajos, cantidad_legajos_activos  = contar_legajos()
         cantidad_legajos_entre_0_y_18_anios = contar_legajos_entre_0_y_18_anios()
         cantidad_dv_Pendientes = deriv_Pendientes()
-        cantidad_legajos_40_dias =  contar_legajos_entre_0_y_40_dias()
+        cantidad_legajos_40_dias = contar_legajos_entre_0_y_40_dias()
         cantidad_legajos_embarazados = contar_legajos_embarazados()
         cantidad_bb_riesgo = contar_bb_riesgo()
         cantidad_adolescente_riesgo = contar_adolescente_riesgo()
