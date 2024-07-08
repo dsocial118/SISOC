@@ -20,7 +20,7 @@ total_legajos = Legajos.objects.select_related('dimensioneconomia').prefetch_rel
 
 alertas_embarazo_ids = Alertas.objects.filter(fk_categoria__nombre__istartswith='embarazo').values_list('id', flat=True)
 legajos_con_alerta_embarazo = total_legajos.filter(m2m_alertas__id__in=alertas_embarazo_ids)
-alarmas_activas = Alertas.objects.filter(gravedad='Critica')
+alarmas_activas = Alertas.objects.filter(gravedad='Critica').values_list('id')
 
 legajos_mayores_de_edad = total_legajos.filter(fecha_nacimiento__gte=fecha_hace_18_anios)
 
