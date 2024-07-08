@@ -170,13 +170,7 @@ def contar_bb_sin_derivacion_aceptada():
     return cantidad_bb_sin_derivacion_aceptada
 
 def contar_legajos_con_alarmas_activas():
-    # Obtener los IDs de los legajos con al menos una alerta crítica
-    legajos_con_alarmas_activas_ids = LegajoAlertas.objects.filter(fk_alerta__gravedad='Critica').values_list('fk_legajo_id', flat=True).distinct().count()
-    
-    # Contar la cantidad de legajos
-    cantidad_legajos_con_alarmas_activas = (legajos_con_alarmas_activas_ids)
-    
-    return cantidad_legajos_con_alarmas_activas
+    return LegajoAlertas.objects.filter(fk_alerta__gravedad='Critica').values_list('fk_legajo_id', flat=True).distinct().count()
 
 def contar_legajos_con_planes_sociales():
     cantidad = cache.get('cantidad')
