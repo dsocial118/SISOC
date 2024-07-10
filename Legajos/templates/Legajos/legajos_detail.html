@@ -193,110 +193,6 @@
             </div>
             {% endif %}
         </div>
-        <!-- <<<<<<<<<<<< EN DESARROLLO >>>>>>>>>>>>>>>>>>>>>>
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title font-weight-bold">Intervenciones en grupo familiar</h3>
-                <div class="card-tools">
-                    <button type="button" class="btn btn-tool d-md-none" data-card-widget="collapse">
-                        <i class="fas fa-minus"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="card-body bg-light">
-                <div class="row">
-                    <div class="col-12">
-                        <div class="chart-responsive">
-                            <div class="chartjs-size-monitor">
-                                <div class="chartjs-size-monitor-expand">
-                                    <div class=""></div>
-                                </div>
-                                <div class="chartjs-size-monitor-shrink">
-                                    <div class=""></div>
-                                </div>
-                            </div>
-                            <canvas id="pieChart" height="105" width="210"
-                                style="display: block; height: 94px; width: 188px;"
-                                class="chartjs-render-monitor"></canvas>
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-            <div class="card-footer p-0">
-                <ul class="nav nav-pills flex-column">
-                    <li class="nav-item">
-                        {% for f in familiares_fk1 %}
-                        <a href="{% url 'legajos_ver' f.fk_legajo_2_id %}"  class="nav-link">
-                            <span class="username">{{f.fk_legajo_2}}</span>
-                            <span class="float-right text-danger">
-                                20</span>
-                        </a>
-                    
-                    {% empty %}
-                    {% endfor %}
-                    {% for f in familiares_fk2 %}
-                    
-                        <a href="{% url 'legajos_ver' f.fk_legajo_1_id %}"  class="nav-link">
-                            <span class="username">{{f.fk_legajo_1}}</span>
-                            <span class="float-right text-success">18
-                            </span>
-                        </a>
-                    </li>
-                    {% empty %}
-                    {% endfor %}
-                </ul>
-            </div>
-        </div>
-    -->
-    <!-- <<<<<<<<<<<<<<<<<<<< EN DESARROLLO >>>>>>>>>>>>>>
-        <div class="card ">
-            <div class="card-header">
-                <h3 class="card-title font-weight-bold">Indices</h3>
-                <div class="card-tools">
-                    <button type="button" class="btn btn-tool d-md-none" data-card-widget="collapse">
-                        <i class="fas fa-minus"></i>
-                    </button>
-                </div>
-            </div>
-
-            <div class="card-body p-0">
-                <ul class="products-list product-list-in-card pl-2 pr-2">
-                    <li class="item">
-                        <div class="product-img h4">
-                            <span class="badge badge-danger float-center p-3">40</span>
-                        </div>
-                        <div class="product-info">
-                            <a href="javascript:void(0)" class="product-title">IVI</a> <span class="badge badge-secondary">Ingreso</span><br>
-                            <span class="product-description">
-                                CDLE | 10/07/2020
-                            </span>
-                        </div>
-                    </li>
-                    <li class="item">
-                        <div class="product-img h4">
-                            <span class="badge badge-danger float-center p-3">36</span>
-                        </div>
-                        <div class="product-info">
-                            <a href="javascript:void(0)" class="product-title">IVI</a> <span class="badge badge-secondary">Egreso</span><br>
-                            <span class="product-description">
-                                CDLE | 11/06/2023
-                            </span>
-                        </div>
-                    </li>
-                </ul>
-               
-            </div>
-           
-            <div class="card-footer text-center">
-                <a href="{% url 'indices' object.id  %}" class="uppercase">Ver detalles</a>
-            </div>
-
-        </div>
-    -->
     <!--HOGAR INICIO-->
     <div class="card">
         <div class="card-header">
@@ -315,28 +211,28 @@
         <div class="card-body bg-light p-0">
             <ul class="users-list">
                 {% for f in hogar_familiares_fk1 %}
-                <li><a class="users-list-name" href="{% url 'legajos_ver' f.fk_legajo_2Hogar_id %}" title="{{f.fk_legajo_2Hogar}} - {{f.vinculo}}">
+                <li><a class="users-list-name" href="{% url 'legajos_ver' f.fk_legajo_2Hogar_id %}" title="{{f.fk_legajo_2Hogar}} - {{f.estado_relacion}}">
                     {% if f.fk_legajo_2Hogar.foto %}
                     <img src="{{f.fk_legajo_2Hogar.foto.url}}" alt="User Image" width="60px">
                     {%else%}
                     <img src="{% static 'custom/img/default.png'  %}" alt="User Image" width="60px">
                     {%endif%}                        
                     <span class="users-list-date">{{f.fk_legajo_2Hogar}}</span>
-                    <span class="users-list-date">{{f.vinculo}}</span>
+                    <span class="users-list-date">{{f.estado_relacion}}</span>
                 </a>
                 </li>
                 {% empty %}
                 {% endfor %}
                 {% for f in hogar_familiares_fk2 %}
                 <li>
-                    <a class="users-list-name" href="{% url 'legajos_ver' f.fk_legajo_1Hogar_id %}" title="{{f.fk_legajo_1Hogar}} - {{f.vinculo_inverso}}">
+                    <a class="users-list-name" href="{% url 'legajos_ver' f.fk_legajo_1Hogar_id %}" title="{{f.fk_legajo_1Hogar}} - {{f.estado_relacion}}">
                         {% if f.fk_legajo_1Hogar.foto %}
                         <img src="{{f.fk_legajo_1Hogar.foto.url}}" alt="User Image" width="60px">
                         {%else%}
                         <img src="{% static 'custom/img/default.png'  %}" alt="User Image" width="60px">
                         {%endif%}                            
                         <span class="users-list-date">{{f.fk_legajo_1Hogar}}</span>
-                        <span class="users-list-date">{{f.vinculo_inverso}}</span>
+                        <span class="users-list-date">{{f.estado_relacion}}</span>
                     </a>
                 </li>
                 {% empty %}
@@ -477,23 +373,6 @@
                             </button>
                         </div>
                     </div>
-                    <!-- ALERTAS POR CATEGORIAS
-                    <div class="card-body bg-light">
-                        <div class="row">
-                            {% for a in nombres_categorias %}
-                            <div class="col-md-3 col-sm-6 col-12">
-                                <div class="callout callout-danger">
-                                    <h6 class="font-weight-bold"><i class="fas fa-exclamation-triangle px-1"></i> {{a}}
-                                    </h6>
-                                </div>
-                            </div>
-                            {% empty %}
-                            <div class="col-12 text-center">
-                                <h6 class="text-center text-muted py-3">Sin alertas</h6>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>-->
                     <div class="card-body bg-light">
                         <div class="row">
                             {% for a in alertas_alta|slice:":4" %}
@@ -725,8 +604,6 @@
                                     <dd class="col-sm-8">Personas en el hogar con enfermedades crónicas</dd>
                                     <dt class="col-sm-4">{{object.dimensionfamilia.hay_enf_cronica|yesno:'Sí,No'}}
                                     </dt>
-                                    <dd class="col-sm-8">Personas en el hogar con discapacidad</dd>
-                                    <dt class="col-sm-4">{{object.dimensionfamilia.hay_discapacidad|yesno:'Sí,No'}}
                                     </dt>
                                     <dd class="col-12 mt-3">Observaciones</dd>
                                     <dt class="col-12">
@@ -987,113 +864,6 @@
                 </div>
             </div>
         </div>
-<!-- <<<<<<<<<<<<<<<< EN DESARROLLO >>>>>>>>>>>>>>>>>>>>> FIXME: Por que si esto esta en desarrollo esta pusheado? 
-        <div class="row">
-            <div class="col-12">
-                <div class="card card-collapse">
-                    <div class="card-header border-transparent">
-                        <h3 class="card-title font-weight-bold">Hitos de abordaje</h3>
-                        <div class="card-tools">
-                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                <i class="fas fa-minus"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="card-body bg-light p-0">
-
-
-                        <div class="cd-horizontal-timeline loaded">
-                            <div class="timeline ">
-                                <div class="events-wrapper">
-                                    <div class="events" style="width: 500px;">
-                                        <ol>
-                                            <li><a href="#0" data-date="01/01/2020" class="older-event selected" style="left: 0px;">{{derivacion.fecha_creado}}</a></li>
-                                            <li><a href="#0" data-date="02/01/2020" style="left: 0px;">{{derivacion.fecha_creado}}</a></li>
-                                            <li><a href="#0" data-date="03/01/2020" style="left: 0px;">{{derivacion.fecha_creado}}</a></li>
-                                            <li><a href="#0" data-date="04/01/2020" style="left: 0px;">{{derivacion.fecha_creado}}</a></li>
-                                            <li><a href="#0" data-date="06/01/2020" style="left: 0px;">{{derivacion.fecha_creado}}</a></li>
-                                            <li><a href="#0" data-date="08/01/2020" style="left: 0px;">{{derivacion.fecha_creado}}</a></li>
-                                        </ol>
-                                        <span class="filling-line" aria-hidten="true" style="transform: scaleX(0.281506);"></span>
-                                    </div>
-                                    
-                                </div>
-                                
-                                <ul class="cd-timeline-navigation">
-                                    <li><a href="#0" class="prev inactive">Prev</a></li>
-                                    <li><a href="#0" class="next">Next</a></li>
-                                </ul>
-                                
-                            </div>
-                            
-                        {% for derivacion in derivaciones %}
-                            <div class="events-content pb-2 pb-sm-0">
-                                <ol class="pb-0 mb-0">
-                                    <li class="selected" data-date="01/01/2020">
-                                        <h5 class="text-bold"> 
-                                          {{derivacion.fk_programa}}<span class="badge badge-secondary">{{derivacion.estado}}</span> <br> 
-                                            <small>{{derivacion.fecha_creado}}</small>
-                                            </h4>
-                                            <hr>
-                                            <p>{{derivacion.detalles}}
-                                            </p> 
-                                    </li>
-                                    <li data-date="02/01/2020" class="">
-                                        <h5 class="text-bold">
-                                            {{derivacion.fk_programa}} <span class="badge badge-secondary">{{derivacion.estado}}</span><br>
-                                            <small>{{derivacion.fecha_creado}}</small>
-                                        </h5>
-                                        <hr>
-                                        <p>{{derivacion.detalles}}
-                                        </p>
-                                    </li>
-                                    <li data-date="03/01/2020" >
-                                        <br>
-                                        <h5 class="text-bold">
-                                            {{derivacion.fk_programa}} <span class="badge badge-secondary">{{derivacion.estado}}</span><br>
-                                            <small>{{derivacion.fecha_creado}}</small>
-                                            </h4>
-                                            <hr>
-                                            <p>{{derivacion.detalles}}
-                                            </p>
-                                    </li>
-                                    <li data-date="04/01/2020">
-                                        <h5 class="text-bold">
-                                            {{derivacion.fk_programa}} <span class="badge badge-secondary">{{derivacion.estado}}</span> <br>
-                                            <small>{{derivacion.fecha_creado}}</small>
-                                            </h4>
-                                            <hr>
-                                            <p>{{derivacion.detalles}} 
-                                            </p>
-                                    </li>
-                                    <li data-date="06/01/2020">
-                                        <h5 class="text-bold"> 
-                                            {{derivacion.fk_programa}} <span class="badge badge-secondary">{{derivacion.estado}}</span> <br>
-                                            <small>{{derivacion.fecha_creado}}</small>
-                                            </h4>
-                                            <hr>
-                                            <p>{{derivacion.detalles}}
-                                            </p>
-                                    </li>
-                                    <li data-date="08/01/2021">
-                                        <h5 class="text-bold"> 
-                                            {{derivacion.fk_programa}} <span class="badge badge-secondary">{{derivacion.estado}}</span> <br>
-                                            <small>{{derivacion.fecha_creado}}</small>
-                                            </h4>
-                                            <hr>
-                                            <p>{{derivacion.detalles}}
-                                            </p>
-                                    </li>
-                                </ol>
-                            </div>
-                        {% endfor %}
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-        </div>
-    -->
 
         {% if datos_json %}
         <div class="row d-none d-sm-inline">
