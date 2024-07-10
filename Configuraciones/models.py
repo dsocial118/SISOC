@@ -253,9 +253,9 @@ class Alertas(models.Model):
     '''
 
     nombre = models.CharField(max_length=100, unique=True)
-    fk_categoria = models.ForeignKey(CategoriaAlertas, on_delete=models.CASCADE, db_index=True) 
+    fk_categoria = models.ForeignKey(CategoriaAlertas, on_delete=models.CASCADE) 
     estado = models.BooleanField(default=True)
-    gravedad = models.CharField(max_length=500, null=False, blank=False, db_index=True)
+    gravedad = models.CharField(max_length=500, null=False, blank=False)
 
     def __str__(self):
         return self.nombre
@@ -267,6 +267,10 @@ class Alertas(models.Model):
         ordering = ['nombre']
         verbose_name = 'Alerta'
         verbose_name_plural = 'Alertas'
+        indexes = [
+            models.Index(fields=['fk_categoria']),
+            models.Index(fields=['gravedad']),
+        ]
 
     def get_absolute_url(self):
         return reverse('alertas_ver', kwargs={'pk': self.pk})
