@@ -38,6 +38,7 @@ locale.setlocale(locale.LC_ALL, 'es_AR.UTF-8')
 import logging
 logger = logging.getLogger('django')
 
+admin_role = "Usuarios.rol_admin"
 
 # region ############################################################### LEGAJOS
 
@@ -129,149 +130,119 @@ class LegajosListView(TemplateView):
 
 class LegajosDetailView(DetailView):
     model = Legajos
-    # FIXME: Por legibilidad de codigo, yo añadiria que esta utilizando legajos_detail.html (Esto va para TODAS las views)
+    template_name = "Legajos/legajos_detail.html"
 
-    # FIXME: Toda la logica deberia estar en un provider y que la vista solo maneje el HTTP (Esto va para TODAS las views)
-    # FIXME: Ya que todo esta relacionado con el legajo seleccionado, podriamos modificar el metodo get_queryset para que haga un select_related y prefetch_related y asi solo hacer 1 query que contenga todas las relaciones. Esto mejoraria mucho el rendimiento
     def get_context_data(self, **kwargs):
         pk = self.kwargs["pk"]
-        resto_alertas = 0
-        # Obtener la fecha actual
-        fecha_actual = fecha_actual = datetime.now().date() #FIXME: No entiendo como esto no rompe
-
-        # Calcular la fecha hace 12 meses desde la fecha actual
-        fecha_inicio = fecha_actual - timedelta(days=365)
-
-        legajo_alertas = LegajoAlertas.objects.filter(fk_legajo=pk) # FIXME: Se trae toda la data y solo usamos fk_alerta__fk_categoria
-
-        count_intervenciones = LegajosDerivaciones.objects.filter(fk_legajo_id=pk).count()
+        context = super().get_context_data(**kwargs)
         
+        legajo = context['object']
         
-        derivaciones = LegajosDerivaciones.objects.filter(fk_legajo_id=pk) # FIXME: Por que lo traemos si esta en desarrollo? se necesitan todas las columnas? 
-        
+        fecha_actual = datetime.now().date()
 
-        # Obtener todas las categorías con la cantidad de alertas en cada una
-        categorias_con_alertas = legajo_alertas.values(
-            'fk_alerta__fk_categoria'
-        ).annotate(
-            cantidad_alertas=Count('fk_alerta__fk_categoria')
+        legajo_alertas = LegajoAlertas.objects.filter(fk_legajo=pk).select_related('fk_alerta__fk_categoria')
+
+        alertas = HistorialLegajoAlertas.objects.filter(fk_legajo=pk).values('fecha_inicio', 'fecha_fin', 'fk_alerta')
+
+        familiares = LegajoGrupoFamiliar.objects.filter(Q(fk_legajo_1=pk) | Q(fk_legajo_2=pk)).values('fk_legajo_1', 'fk_legajo_1_id', 'fk_legajo_2_id', 'fk_legajo_2', 'vinculo', 'vinculo_inverso')
+        context["familiares_fk1"] = [familiar for familiar in familiares if familiar['fk_legajo_1'] == int(pk)]
+        context["familiares_fk2"] = [familiar for familiar in familiares if familiar['fk_legajo_2'] == int(pk)]
+        context["count_familia"] = len(familiares)
+
+        hogar_familiares = LegajoGrupoHogar.objects.filter(Q(fk_legajo_1Hogar=pk) | Q(fk_legajo_2Hogar=pk)).values('fk_legajo_2Hogar_id', 'fk_legajo_2Hogar', 'estado_relacion')
+        context["hogar_familiares_fk1"] = [familiar for familiar in hogar_familiares if familiar['fk_legajo_1Hogar'] == int(pk)]
+        context["hogar_familiares_fk2"] = [familiar for familiar in hogar_familiares if familiar['fk_legajo_2Hogar'] == int(pk)]
+        context["hogar_count_familia"] = len(hogar_familiares)
+
+        files = LegajosArchivos.objects.filter(Q(tipo="Imagen") | Q(tipo="Documento"), fk_legajo=pk)
+        context['files_img'] = files.filter(tipo="Imagen")
+        context['files_docs'] = files.filter(tipo="Documento")
+
+        legajo_alertas_organizadas = legajo_alertas.annotate(
+            es_critica=Case(When(fk_alerta__gravedad="Critica", then=Value(1)), default=Value(0), output_field=IntegerField()),
+            es_importante=Case(When(fk_alerta__gravedad="Importante", then=Value(1)), default=Value(0), output_field=IntegerField()),
+            es_precaucion=Case(When(fk_alerta__gravedad="Precaución", then=Value(1)), default=Value(0), output_field=IntegerField()),
         )
 
-        # Obtener las IDs de las categorías con alertas
-        ids_categorias = [item['fk_alerta__fk_categoria'] for item in categorias_con_alertas]
+        context["count_alertas"] = legajo_alertas.count()
+        context["count_alta"] = legajo_alertas_organizadas.aggregate(count=Count('es_critica')).get('count', 0)
+        context["count_media"] = legajo_alertas_organizadas.aggregate(count=Count('es_importante')).get('count', 0)
+        context["count_baja"] = legajo_alertas_organizadas.aggregate(count=Count('es_precaucion')).get('count', 0)
 
-        # Obtener todas las categorías completas
-        categorias_completas = CategoriaAlertas.objects.filter(id__in=ids_categorias).order_by('nombre') # FIXME: Esta query podria evitarse usando un select_related en la de antes o alguna otra forma que use JOIN 
+        # Context data for categorized alerts
+        context["alertas_alta"] = legajo_alertas_organizadas.filter(es_critica=True)
+        context["alertas_media"] = legajo_alertas_organizadas.filter(es_importante=True)
+        context["alertas_baja"] = legajo_alertas_organizadas.filter(es_precaucion=True)
 
-        # Verificar si categorias_completas no es None antes de aplicar el slicing
-        if categorias_completas is not None:
-            # Obtener solo los primeros 8 nombres de categorías (o menos si hay menos de 8)
-            nombres_categorias = categorias_completas.values_list('nombre', flat=True)[:8]
-            if categorias_completas.count() > 8:
-                resto_alertas = categorias_completas.count() - 8
-        else:
-            nombres_categorias = []
+        # Check if there's alert history
+        context["historial_alertas"] = alertas.exists()
 
+        # Count interventions
+        count_intervenciones = LegajosDerivaciones.objects.filter(fk_legajo=pk).count()
+        context['count_intervenciones'] = count_intervenciones
 
-        # >>>>>>>>>>>>>>>>>>Comienzo de la query para el gráfico de evolución de riesgos>>>>>>>>>>>>>>>>
-        if HistorialLegajoAlertas.objects.filter(fk_legajo=pk).exists():
-            # Calcular la fecha de inicio hace doce meses
-            fecha_inicio_doce_meses = fecha_actual - timedelta(days=365)
+        # Generate JSON data for risk evolution chart
+        datos_json = self.grafico_evolucion_de_riesgo(fecha_actual, alertas)
+        context["datos_json"] = datos_json
 
-            # Calcular la fecha de inicio a partir del primer día del mes siguiente al mes actual
+        # Add emoji for nationality
+        context['emoji_nacionalidad'] = EMOJIS_BANDERAS.get(legajo.nacionalidad, '')
+
+        return context
+
+    def grafico_evolucion_de_riesgo(self, fecha_actual, alertas):
+        if alertas.exists():
             primer_dia_siguiente_mes = datetime(fecha_actual.year, fecha_actual.month % 12 + 1, 1)
-
-            # Calcular la fecha de inicio hace doce meses, excepto el mes del año anterior al mes actual
             fecha_inicio_doce_meses_excepto_mes_anterior = primer_dia_siguiente_mes - timedelta(days=365)
 
-            alertas_ultimo_anio = HistorialLegajoAlertas.objects.filter(fk_legajo=pk).filter(
+            alertas_ultimo_anio = alertas.filter(
                 Q(fecha_inicio__gt=fecha_inicio_doce_meses_excepto_mes_anterior) |
                 Q(fecha_fin__gt=fecha_inicio_doce_meses_excepto_mes_anterior) |
                 Q(fecha_fin__isnull=True)
-            ).distinct() # FIXME: Esta query podria evitarse si cambiamos la previa en el if y se simplifican en 1. Tampoco deberia usarse un doble filter
+            ).distinct()
 
-            # Obtener todas las dimensiones existentes del CHOICE_DIMENSIONES
+            # Initialize data matrix for the chart
             todas_dimensiones = [dimension for dimension, _ in CHOICE_DIMENSIONES[1:]]
+            datos_por_dimension = {dimension: [0] * 12 for dimension in todas_dimensiones}
 
-            # Definir el diccionario para almacenar los datos
-            datos_por_dimension = {dimension: [0] * 12 for dimension in todas_dimensiones} # FIXME: Esto creo que no se entiende y deberia estar doc
-
+            # Populate data matrix with alert counts by month
             for alerta in alertas_ultimo_anio:
                 dimension = alerta.fk_alerta.fk_categoria.dimension
-                fecha_inicio = alerta.fecha_inicio if datetime.combine(alerta.fecha_inicio, time.min)>= fecha_inicio_doce_meses_excepto_mes_anterior else fecha_inicio_doce_meses_excepto_mes_anterior.date()
-                fecha_fin = alerta.fecha_fin if alerta.fecha_fin else date.today()
+                fecha_inicio = alerta.fecha_inicio
+                fecha_fin = alerta.fecha_fin or fecha_actual
 
-                # Calcular la lista de meses activos
+                # Calculate active months
                 meses_activos = []
                 while fecha_inicio <= fecha_fin:
                     meses_activos.append(fecha_inicio.month)
-                    # Avanzamos al primer día del mes siguiente
                     fecha_inicio = fecha_inicio.replace(day=1) + timedelta(days=32)
                     fecha_inicio = fecha_inicio.replace(day=1)
 
-                # Actualizar la lista de la dimensión con la cantidad de alertas por mes
+                # Increment counts for active months
                 for mes in meses_activos:
-                    datos_por_dimension[dimension][mes - 1] += 1  # Restamos 1 al mes para que sea el índice correcto en la lista
+                    datos_por_dimension[dimension][mes - 1] += 1
 
-            # Convertir los números de meses a nombres de meses en el diccionario
-            nombres_meses = [calendar.month_name[mes].capitalize() for mes in range(1, 13)]
-            datos_por_dimension = {dimension: [datos_por_dimension[dimension][mes] for mes in range(12)] for dimension in todas_dimensiones}
-
-            # Mover el último mes al final de la lista
-            mes_actual = date.today().month
+            # Adjust month order for the chart
+            mes_actual = fecha_actual.month
             datos_por_dimension = {dimension: datos_por_dimension[dimension][mes_actual:] + datos_por_dimension[dimension][:mes_actual] for dimension in todas_dimensiones}
 
-            # Convertir los números de meses a nombres de meses en español y en orden ascendente
+            # Convert month numbers to Spanish month names in ascending order
             nombres_meses = [calendar.month_name[mes].capitalize() for mes in range(1, 13)]
             nombres_meses_ordenados = nombres_meses[mes_actual:] + nombres_meses[:mes_actual]
 
-            # Agregar los nombres de los meses al diccionario
+            # Add month names to the data dictionary
             datos_por_dimension['meses'] = nombres_meses_ordenados
-            # Convertir a JSON
+
+            # Convert data to JSON
             datos_json = json.dumps(datos_por_dimension)
         else:
             datos_json = {}
-        # >>>>>>>>>>>>>>>>>>Fin de la query para el gráfico de evolución de riesgos>>>>>>>>>>>>>>>>
 
-        context = super().get_context_data(**kwargs)
-        print(context)
-        emoji_nacionalidad = EMOJIS_BANDERAS.get(context['object'].nacionalidad, '')
-        context['emoji_nacionalidad'] = emoji_nacionalidad
-        # FIXME: Esto podria ser solo 1 query y luego separar con py y realmente necesitamos todas las columnas?
-        context["familiares_fk1"] = LegajoGrupoFamiliar.objects.filter(fk_legajo_1=pk)
-        context["familiares_fk2"] = LegajoGrupoFamiliar.objects.filter(fk_legajo_2=pk)
-        # ----
-        # FIXME: Estos count() podrian ser len() porque asi lo hace python y no lo agrega a la query (Esto para todos los count)
-        context["count_familia"] = context["familiares_fk1"].count() + context["familiares_fk2"].count() 
-        # FIXME: Esto podria ser solo 1 query y luego separar con py y realmente necesitamos todas las columnas?
-        context["hogar_familiares_fk1"] = LegajoGrupoHogar.objects.filter(fk_legajo_1Hogar=pk)
-        context["hogar_familiares_fk2"] = LegajoGrupoHogar.objects.filter(fk_legajo_2Hogar=pk)
-        # ---
-        context["hogar_count_familia"] = context["hogar_familiares_fk1"].count() + context["hogar_familiares_fk2"].count()
-        # FIXME: Esto podria ser solo 1 query y luego separar con py y realmente necesitamos todas las columnas?
-        context['files_img'] = LegajosArchivos.objects.filter(fk_legajo=pk, tipo="Imagen")
-        context['files_docs'] = LegajosArchivos.objects.filter(fk_legajo=pk, tipo="Documento")
-        # ---
-        context["nombres_categorias"] = nombres_categorias
-        context["resto_alertas"] = resto_alertas
-        # FIXME: Aca tenemos 7 queries que podria ser solo 1 con algo como: legajo_alertas.values('fk_alerta__gravedad').annotate(count=Count('id')) 
-        context["count_alertas"] = legajo_alertas.count()
-        context["alertas_alta"] = LegajoAlertas.objects.filter(fk_legajo=pk, fk_alerta__gravedad="Critica")
-        context["alertas_media"] = LegajoAlertas.objects.filter(fk_legajo=pk, fk_alerta__gravedad="Importante")
-        context["alertas_baja"] = LegajoAlertas.objects.filter(fk_legajo=pk, fk_alerta__gravedad="Precaución")
-        context["count_alta"] = LegajoAlertas.objects.filter(fk_legajo=pk, fk_alerta__gravedad="Critica").count()
-        context["count_media"] = LegajoAlertas.objects.filter(fk_legajo=pk, fk_alerta__gravedad="Importante").count()
-        context["count_baja"] = LegajoAlertas.objects.filter(fk_legajo=pk, fk_alerta__gravedad="Precaución").count()
-        # ----
-        context["historial_alertas"] = True if HistorialLegajoAlertas.objects.filter(fk_legajo=pk).exists() else False # FIXME: Esta query ya se hizo antes
-        context["datos_json"] = datos_json
-        context['count_intervenciones'] = count_intervenciones
-        context['derivaciones'] = derivaciones
-        return context
+        return datos_json
 
 
 class LegajosDeleteView(PermisosMixin, DeleteView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = admin_role
     model = Legajos
     success_url = reverse_lazy("legajos_listar")
 
@@ -324,7 +295,7 @@ class LegajosDeleteView(PermisosMixin, DeleteView):
 
 
 class LegajosCreateView(PermisosMixin, CreateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = admin_role
     model = Legajos
     form_class = LegajosForm
 
@@ -358,16 +329,14 @@ class LegajosCreateView(PermisosMixin, CreateView):
                 return redirect("legajosdimensiones_editar", pk=ref.id)
 
         except Exception as e:
-            # Si ocurre un error durante la creación de dimensiones, borra el objeto Legajos previamente guardado
             legajo.delete()
 
-            # Muestra un mensaje de error al usuario
             messages.error(self.request, "Se produjo un error al crear las dimensiones. Por favor, inténtalo de nuevo.")
-            return redirect("legajos_crear")  # Reemplaza esto con la URL de la vista de creación
+            return redirect("legajos_crear")
 
 
 class LegajosUpdateView(PermisosMixin, UpdateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = admin_role
     model = Legajos
     form_class = LegajosUpdateForm
 
@@ -405,7 +374,7 @@ class LegajosUpdateView(PermisosMixin, UpdateView):
 
 
 class LegajosGrupoFamiliarCreateView(CreateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = admin_role
     model = LegajoGrupoFamiliar
     form_class = NuevoLegajoFamiliarForm
 
@@ -612,7 +581,7 @@ class DeleteGrupoFamiliar(View):
 
 
 class LegajosDerivacionesBuscar(PermisosMixin, TemplateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = admin_role
     template_name = "Legajos/legajosderivaciones_buscar.html"
 
     def get(self, request, *args, **kwargs):
@@ -655,7 +624,7 @@ class LegajosDerivacionesBuscar(PermisosMixin, TemplateView):
 
 
 class LegajosDerivacionesListView(PermisosMixin, ListView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = admin_role
     model = LegajosDerivaciones
     paginate_by = 25
 
@@ -688,7 +657,7 @@ class LegajosDerivacionesListView(PermisosMixin, ListView):
 
 
 class LegajosDerivacionesCreateView(PermisosMixin, CreateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = admin_role
     model = LegajosDerivaciones
     form_class = LegajosDerivacionesForm
     success_message = "Derivación registrada con éxito"
@@ -717,7 +686,7 @@ class LegajosDerivacionesCreateView(PermisosMixin, CreateView):
 
 
 class LegajosDerivacionesUpdateView(PermisosMixin, UpdateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = admin_role
     model = LegajosDerivaciones
     form_class = LegajosDerivacionesForm
     success_message = "Derivación editada con éxito"
@@ -735,7 +704,7 @@ class LegajosDerivacionesUpdateView(PermisosMixin, UpdateView):
         return context
 
 class LegajosDerivacionesHistorial(PermisosMixin, ListView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = admin_role
     model = LegajosDerivaciones
     template_name="Legajos/legajosderivaciones_historial.html"
 
@@ -755,7 +724,7 @@ class LegajosDerivacionesHistorial(PermisosMixin, ListView):
 
 
 class LegajosDerivacionesDeleteView(PermisosMixin, DeleteView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = admin_role
     model = LegajosDerivaciones
     #success_url = reverse_lazy("legajosderivaciones_listar")
 
@@ -784,7 +753,7 @@ class LegajosDerivacionesDeleteView(PermisosMixin, DeleteView):
 
 
 class LegajosDerivacionesDetailView(PermisosMixin, DetailView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = admin_role
     model = LegajosDerivaciones
 
 
@@ -795,7 +764,7 @@ class LegajosDerivacionesDetailView(PermisosMixin, DetailView):
 
 
 class LegajosAlertasListView(PermisosMixin, ListView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = admin_role
     model = HistorialLegajoAlertas
     template_name="Legajos/legajoalertas_list.html"
 
@@ -808,7 +777,7 @@ class LegajosAlertasListView(PermisosMixin, ListView):
 
 
 class LegajosAlertasCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = admin_role
     model = LegajoAlertas
     form_class = LegajosAlertasForm
     success_message = "Alerta asignada correctamente."
@@ -836,7 +805,7 @@ class LegajosAlertasCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
 
 
 class DeleteAlerta(PermisosMixin, View):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = admin_role
 
     def get(self, request):
         data = {"deleted": False,   
@@ -903,7 +872,7 @@ class AlertasSelectView(View):
 
 
 class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = admin_role
     template_name = "Legajos/legajosdimensiones_form.html"
     model = DimensionFamilia
     form_class = DimensionFamiliaForm
@@ -1151,7 +1120,7 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
 
 
 class DimensionesDetailView(PermisosMixin, DetailView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = admin_role
     model = Legajos
     template_name = "Legajos/legajosdimensiones_detail.html"
 
@@ -1161,7 +1130,7 @@ class DimensionesDetailView(PermisosMixin, DetailView):
 
 #region ################################################################ ARCHIVOS
 class LegajosArchivosListView(PermisosMixin, ListView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = admin_role
     model = LegajosArchivos
     template_name="Legajos/legajosarchivos_list.html"
 
@@ -1173,7 +1142,7 @@ class LegajosArchivosListView(PermisosMixin, ListView):
         return context
 
 class LegajosArchivosCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = admin_role
     model = LegajosArchivos
     form_class = LegajosArchivosForm
     success_message = "Archivo actualizado correctamente."
@@ -1225,7 +1194,7 @@ class CreateArchivo(TemplateView):
 
 
 class DeleteArchivo(PermisosMixin, View):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = admin_role
 
     def get(self, request):
         try:
@@ -1321,7 +1290,7 @@ class indicesDetalleView(TemplateView):
 
 
 class LegajosGrupoHogarCreateView(CreateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = admin_role
     model = LegajoGrupoHogar
     form_class = LegajoGrupoHogarForm
     

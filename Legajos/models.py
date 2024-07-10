@@ -16,13 +16,13 @@ class Legajos(models.Model):
     Guardado de los perfiles de las personas con las que interviene el Municipio.
     '''
 
-    apellido = models.CharField(max_length=250, db_index=True)
+    apellido = models.CharField(max_length=250)
     nombre = models.CharField(max_length=250)
-    fecha_nacimiento = models.DateField(db_index=True)
+    fecha_nacimiento = models.DateField()
     tipo_doc = models.CharField(max_length=50, choices=CHOICE_TIPO_DOC,
                                 verbose_name="Tipo documento", null=True, blank=True)
     documento = models.PositiveIntegerField(validators=[MinValueValidator(
-        3000000), MaxValueValidator(100000000)], null=True, blank=True, db_index=True)
+        3000000), MaxValueValidator(100000000)], null=True, blank=True)
     sexo = models.CharField(max_length=50, choices=CHOICE_SEXO)
     nacionalidad = models.CharField(
         max_length=50, choices=CHOICE_NACIONALIDAD, null=True, blank=True)
@@ -54,12 +54,12 @@ class Legajos(models.Model):
     email = models.EmailField(null=True, blank=True)
     foto = models.ImageField(upload_to='legajos', blank=True, null=True)
     m2m_alertas = models.ManyToManyField(
-        Alertas, through='LegajoAlertas', blank=True, db_index=True)
+        Alertas, through='LegajoAlertas', blank=True)
     m2m_familiares = models.ManyToManyField(
         'self', through='LegajoGrupoFamiliar', symmetrical=True, blank=True)
     observaciones = models.CharField(
         max_length=300, blank=True, null=True, verbose_name='Observaciones (optativo)')
-    estado = models.BooleanField(default=True, db_index=True)
+    estado = models.BooleanField(default=True)
     creado_por = models.ForeignKey(
         Usuarios, related_name='creado_por', on_delete=models.CASCADE, blank=True, null=True)
     modificado_por = models.ForeignKey(
@@ -121,6 +121,12 @@ class Legajos(models.Model):
         ordering = ['apellido']
         verbose_name = 'Legajo'
         verbose_name_plural = 'Legajos'
+        indexes = [
+            models.Index(fields=['apellido']),
+            models.Index(fields=['fecha_nacimiento']),
+            models.Index(fields=['documento']),
+            models.Index(fields=['observaciones']),
+        ]
 
     def get_absolute_url(self):
         return reverse('legajos_ver', kwargs={'pk': self.pk})
@@ -157,6 +163,10 @@ class LegajoGrupoFamiliar(models.Model):
         unique_together = ['fk_legajo_1', 'fk_legajo_2']
         verbose_name = 'LegajoGrupoFamiliar'
         verbose_name_plural = 'LegajosGrupoFamiliar'
+        indexes = [
+            models.Index(fields=['fk_legajo_1_id']),
+            models.Index(fields=['fk_legajo_2_id']),
+        ]
 
     def get_absolute_url(self):
         return reverse('legajogrupofamiliar_ver', kwargs={'pk': self.pk})
@@ -456,9 +466,9 @@ class LegajoAlertas(models.Model):
     '''
 
     fk_alerta = models.ForeignKey(
-        Alertas, related_name='alerta', on_delete=models.CASCADE, db_index=True)
+        Alertas, related_name='alerta', on_delete=models.CASCADE)
     fk_legajo = models.ForeignKey(
-        Legajos, related_name='legajo_alerta', on_delete=models.CASCADE, db_index=True)
+        Legajos, related_name='legajo_alerta', on_delete=models.CASCADE)
     fecha_inicio = models.DateField(auto_now=True)
     creada_por = models.ForeignKey(
         Usuarios, related_name='creada_por', on_delete=models.CASCADE, blank=True, null=True)
@@ -472,6 +482,10 @@ class LegajoAlertas(models.Model):
         unique_together = ['fk_legajo', 'fk_alerta']
         verbose_name = 'LegajoAlertas'
         verbose_name_plural = 'LegajosAlertas'
+        indexes = [
+            models.Index(fields=['fk_alerta']),
+            models.Index(fields=['fk_legajo']),
+        ]
 
     def get_absolute_url(self):
         return reverse('legajoalertas_ver', kwargs={'pk': self.pk})
@@ -508,6 +522,9 @@ class HistorialLegajoAlertas(models.Model):
         ordering = ['-fecha_inicio']
         verbose_name = 'HistorialLegajoAlertas'
         verbose_name_plural = 'HistorialesLegajoAlertas'
+        indexes = [
+            models.Index(fields=['fk_legajo'])
+        ]
 
 
 # endregion---------FIN LEGAJO ALERTAS---------------------------------------------------------------------------------------------
@@ -604,7 +621,7 @@ class LegajosDerivaciones(models.Model):
     importancia = models.CharField(
         max_length=15, choices=CHOICE_IMPORTANCIA, default="Alta")
     estado = models.CharField(
-        max_length=15, choices=CHOICE_ESTADO_DERIVACION, default="Pendiente", db_index=True)
+        max_length=15, choices=CHOICE_ESTADO_DERIVACION, default="Pendiente")
     m2m_alertas = models.ManyToManyField(CategoriaAlertas, blank=True)
     archivos = models.FileField(
         upload_to='legajos/archivos', null=True, blank=True)
@@ -621,6 +638,10 @@ class LegajosDerivaciones(models.Model):
         ordering = ['-fecha_creado']
         verbose_name = 'LegajoDerivacion'
         verbose_name_plural = 'LegajosDerivaciones'
+        indexes = [
+            models.Index(fields=['fk_legajo']),
+            models.Index(fields=['estado'])
+        ]
 
     def get_absolute_url(self):
         return reverse('legajosderivaciones_ver', kwargs={'pk': self.pk})
@@ -641,6 +662,11 @@ class LegajosArchivos(models.Model):
     archivo = models.FileField(upload_to='legajos/archivos/')
     fecha = models.DateTimeField(auto_now_add=True)
     tipo = models.CharField(max_length=12)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['fk_legajo'])
+        ]
 
     def __str__(self):
         return f"Archivo {self.id} del legajo {self.fk_legajo}"
@@ -668,6 +694,10 @@ class LegajoGrupoHogar(models.Model):
         ordering = ['fk_legajo_2Hogar']
         verbose_name = 'LegajoGrupoHogarForm'
         verbose_name_plural = 'LegajoGrupoHogarForm'
+        indexes = [
+            models.Index(fields=['fk_legajo_1Hogar']),
+            models.Index(fields=['fk_legajo_2Hogar'])
+        ]
 
     def get_absolute_url(self):
         return reverse('LegajoGrupoHogarForm_ver', kwargs={'pk': self.pk})
