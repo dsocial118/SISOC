@@ -273,6 +273,9 @@ class DimensionVivienda(models.Model):
         ordering = ['fk_legajo']
         verbose_name = 'DimensionVivienda'
         verbose_name_plural = 'DimensionesVivienda'
+        indexes = [
+            models.Index(fields=['fk_legajo'])
+        ]
 
     def get_absolute_url(self):
         return reverse('legajos_ver', kwargs={'pk': self.fk_legajo.id})
@@ -309,6 +312,9 @@ class DimensionSalud(models.Model):
         ordering = ['fk_legajo']
         verbose_name = 'DimensionSalud'
         verbose_name_plural = 'DimensionesSalud'
+        indexes = [
+            models.Index(fields=['fk_legajo'])
+        ]
 
     def get_absolute_url(self):
         return reverse('legajos_ver', kwargs={'pk': self.fk_legajo.id})
@@ -378,6 +384,9 @@ class DimensionEducacion(models.Model):
         ordering = ['fk_legajo']
         verbose_name = 'DimensionEducacion'
         verbose_name_plural = 'DimensionesEducacion'
+        indexes = [
+            models.Index(fields=['fk_legajo'])
+        ]
 
     def get_absolute_url(self):
         return reverse('legajos_ver', kwargs={'pk': self.fk_legajo.id})
@@ -445,6 +454,9 @@ class DimensionTrabajo(models.Model):
         ordering = ['fk_legajo']
         verbose_name = 'DimensionLaboral'
         verbose_name_plural = 'DimensionesLaborales'
+        indexes = [
+            models.Index(fields=['fk_legajo'])
+        ]
 
     def get_absolute_url(self):
         return reverse('dimensionlaboral_ver', kwargs={'pk': self.pk})

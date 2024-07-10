@@ -169,23 +169,30 @@ class LegajosDetailView(DetailView):
         context["count_media"] = legajo_alertas_organizadas.aggregate(count=Count('es_importante')).get('count', 0)
         context["count_baja"] = legajo_alertas_organizadas.aggregate(count=Count('es_precaucion')).get('count', 0)
 
-        # Context data for categorized alerts
         context["alertas_alta"] = legajo_alertas_organizadas.filter(es_critica=True)
         context["alertas_media"] = legajo_alertas_organizadas.filter(es_importante=True)
         context["alertas_baja"] = legajo_alertas_organizadas.filter(es_precaucion=True)
 
-        # Check if there's alert history
         context["historial_alertas"] = alertas.exists()
 
-        # Count interventions
         count_intervenciones = LegajosDerivaciones.objects.filter(fk_legajo=pk).count()
         context['count_intervenciones'] = count_intervenciones
 
-        # Generate JSON data for risk evolution chart
+        dimensionfamilia = DimensionFamilia.objects.filter(fk_legajo=pk).values('estado_civil','cant_hijos','otro_responsable','hay_embarazadas','hay_priv_libertad','hay_prbl_smental','hay_enf_cronica','obs_familia')
+        context['dimensionfamilia'] = dimensionfamilia
+
+        dimensionvivienda = DimensionVivienda.objects.filter(fk_legajo=pk).values('posesion', 'tipo', 'material', 'pisos', 'cant_ambientes', 'cant_camas', 'cant_hogares', 'cant_convivientes', 'cant_menores', 'hay_banio', 'hay_agua_caliente', 'hay_desmoronamiento', 'ContextoCasa', 'PoseenPC', 'Poseeninternet', 'PoseenCeludar', 'obs_vivienda')
+        context['dimensionvivienda'] = dimensionvivienda
+
+        dimensionsalud = DimensionSalud.objects.filter(fk_legajo=pk).values('lugares_atencion', 'frec_controles', 'hay_enfermedad', 'hay_obra_social', 'hay_discapacidad', 'hay_cud', 'obs_salud')
+        context['dimensionsalud'] = dimensionsalud
+
+        dimensiontrabajo = DimensionTrabajo.objects.filter(fk_legajo=pk).values('tiene_trabajo', 'ocupacion', 'modo_contratacion', 'conviviente_trabaja', 'obs_trabajo')
+        context['dimensiontrabajo'] = dimensiontrabajo
+
         datos_json = self.grafico_evolucion_de_riesgo(fecha_actual, alertas)
         context["datos_json"] = datos_json
 
-        # Add emoji for nationality
         context['emoji_nacionalidad'] = EMOJIS_BANDERAS.get(legajo.nacionalidad, '')
 
         return context
@@ -201,39 +208,31 @@ class LegajosDetailView(DetailView):
                 Q(fecha_fin__isnull=True)
             ).distinct()
 
-            # Initialize data matrix for the chart
             todas_dimensiones = [dimension for dimension, _ in CHOICE_DIMENSIONES[1:]]
             datos_por_dimension = {dimension: [0] * 12 for dimension in todas_dimensiones}
 
-            # Populate data matrix with alert counts by month
             for alerta in alertas_ultimo_anio:
                 dimension = alerta.fk_alerta.fk_categoria.dimension
                 fecha_inicio = alerta.fecha_inicio
                 fecha_fin = alerta.fecha_fin or fecha_actual
 
-                # Calculate active months
                 meses_activos = []
                 while fecha_inicio <= fecha_fin:
                     meses_activos.append(fecha_inicio.month)
                     fecha_inicio = fecha_inicio.replace(day=1) + timedelta(days=32)
                     fecha_inicio = fecha_inicio.replace(day=1)
 
-                # Increment counts for active months
                 for mes in meses_activos:
                     datos_por_dimension[dimension][mes - 1] += 1
 
-            # Adjust month order for the chart
             mes_actual = fecha_actual.month
             datos_por_dimension = {dimension: datos_por_dimension[dimension][mes_actual:] + datos_por_dimension[dimension][:mes_actual] for dimension in todas_dimensiones}
 
-            # Convert month numbers to Spanish month names in ascending order
             nombres_meses = [calendar.month_name[mes].capitalize() for mes in range(1, 13)]
             nombres_meses_ordenados = nombres_meses[mes_actual:] + nombres_meses[:mes_actual]
 
-            # Add month names to the data dictionary
             datos_por_dimension['meses'] = nombres_meses_ordenados
 
-            # Convert data to JSON
             datos_json = json.dumps(datos_por_dimension)
         else:
             datos_json = {}
