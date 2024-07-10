@@ -41,7 +41,6 @@
 </form>
 
 
-{% if mostrar_resultados%}
 <div class="row mt-3">
     <div class="col-12 text-center">
         {%if perms.Usuarios.rol_admin%}
@@ -51,21 +50,18 @@
     </div>
 </div>
 
-
+{% if mostrar_resultados%}
 <div class="row mt-5">
     <div class="col-12">
         <div class="card">
             <!-- /.card-header -->
             <div class="card-body">
                 <table class="table table-bordered table-striped projects {%if perms.Usuarios.rol_admin or perms.Usuarios.rol_consultante%} tabladt {%endif%}">
-                    <!-- <table class="table table-striped projects"> -->
                     <thead>
                         <tr>
                             <th>Nombre</th>
                             <th>Documento</th>
                             <th>Sexo</th>
-                            <!--<th>Fecha de nacimiento</th>-->
-                            <th>Edad</th>
                             <th>Localidad</th>
                             <th>Estado</th>
                             <th style="width: 15%" class="notexport"> </th>
@@ -74,12 +70,9 @@
                     <tbody>
                         {% for o in object_list %}
                         <tr>
-                            <td><a href="{% url 'legajos_ver' o.id %}" class="font-weight-bold" title="Ver detalles">
-                                {{o}}</a></td>
+                            <td><a href="{% url 'legajos_ver' o.id %}" class="font-weight-bold" title="Ver detalles">{{o.apellido}} {{o.nombre}}</a></td>
                             <td>{{o.tipo_doc}} {{o.documento}}</td>
                             <td>{{o.sexo}}</td>
-                             <!--<td>{{o.fecha_nacimiento|date:'d/m/Y'}}</td>-->
-                            <td>{{o.edad}} </td>
                             <td>{{o.localidad}} </td>
                             <td > 
                                 {% if o.estado  %}

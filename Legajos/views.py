@@ -96,35 +96,35 @@ class LegajosReportesListView(ListView):
 class LegajosListView(TemplateView):
     template_name = "Legajos/legajos_list.html"
 
-    # FIXME: Eliminaria bucles redundantes y variables no usadas. El contexto base deberia estar separado (con el get_context_data). Si la data buscada no se pagina, la query tarda siglos antes de renderizar cualquier cosa
+    # FIXME: En esta view si o si hay que implementar paginacion
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
-        object_list = Legajos.objects.none()
-        mostrar_resultados = False
-        mostrar_btn_resetear = False
         query = self.request.GET.get("busqueda")
+        object_list = Legajos.objects.all()
+        mostrar_resultados = False
+
         if query:
-            # FIXME: Aca si seria bastante util agregar un indice compartido entre apellido y documento para que la busqueda sea lo mas rapida posible
-            # FIXME: Podriamos separar la query dependiendo si viene numerico o no numerico, para no buscar por documento innecesariamente, ademas en dni podriamos usar el contains no casesensitive que es mas performante
-            object_list = Legajos.objects.filter(Q(apellido__icontains=query) | Q(documento__icontains=query)).distinct() # FIXME: Aca estoy seguro de que no se necesita todo el legajo
-            if object_list and object_list.count() == 1:
-                id = None
-                for o in object_list: 
-                    pk = o.id
-                return redirect("legajos_ver", pk)
+            object_list = object_list.filter(
+                Q(documento__contains=query) | Q(apellido__icontains=query)
+            )
 
-            if not object_list:
-                messages.warning(self.request, ("La búsqueda no arrojó resultados."))
+            if object_list.exists():
+                if object_list.count() == 1:
+                    pk = object_list.first().id
+                    return redirect("legajos_ver", pk=pk)
+            else:
+                messages.warning(self.request, "La búsqueda no arrojó resultados.")
 
-            mostrar_btn_resetear = True
             mostrar_resultados = True
 
-        
-        context["mostrar_resultados"] = mostrar_resultados
-        context["mostrar_btn_resetear"] = mostrar_btn_resetear
-        context["object_list"] = object_list
+        context.update({
+            "mostrar_resultados": mostrar_resultados,
+            "object_list": object_list,
+        })
 
         return self.render_to_response(context)
+
+
 
 
 class LegajosDetailView(DetailView):
