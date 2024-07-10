@@ -47,8 +47,8 @@ class LegajosReportesListView(ListView):
     
     
     def get_context_data(self, **kwargs):
-        organismos = Organismos.objects.all()
-        programas = Programas.objects.all()
+        organismos = Organismos.objects.all().values('id', 'nombre')
+        programas = Programas.objects.all().values('id', 'nombre')
         context = super().get_context_data(**kwargs)
         context['organismos'] = organismos
         context['programas'] = programas
@@ -56,34 +56,40 @@ class LegajosReportesListView(ListView):
         return context   
     
     # Funcion de busqueda
-    def get_queryset(self): 
+    def get_queryset(self):
         nombre_completo_legajo = self.request.GET.get("busqueda")
         data_organismo = self.request.GET.get("data_organismo")
         data_programa = self.request.GET.get("data_programa")
         data_estado = self.request.GET.get("data_estado")
         data_fecha_desde = self.request.GET.get("data_fecha_derivacion")
+
+        # Initial queryset
         object_list = LegajosDerivaciones.objects.all()
         
-        if data_programa and data_organismo : object_list = object_list.filter(
-                fk_programa=data_programa,
-                fk_organismo=data_organismo
-            )
+        # Combining filters to minimize query chains
+        filters = Q()
         
-        elif data_programa : object_list = object_list.filter(fk_programa=data_programa)
-        elif data_organismo: object_list = object_list.filter(fk_organismo=data_organismo)
-        
-        if nombre_completo_legajo or nombre_completo_legajo == '':
-            object_list = object_list.filter(
+        if data_programa:
+            filters &= Q(fk_programa=data_programa)
+        if data_organismo:
+            filters &= Q(fk_organismo=data_organismo)
+        if nombre_completo_legajo:
+            filters &= (
                 Q(fk_legajo__nombre__icontains=nombre_completo_legajo) | 
                 Q(fk_legajo__apellido__icontains=nombre_completo_legajo) | 
                 Q(fk_legajo__documento__icontains=nombre_completo_legajo)
             )
+        if data_estado:
+            filters &= Q(estado=data_estado)
+        if data_fecha_desde:
+            filters &= Q(fecha_creado__gte=data_fecha_desde)
         
-        if data_estado : object_list = object_list.filter(estado=data_estado)
-        if data_fecha_desde : object_list = object_list.filter(fecha_creado__gte=data_fecha_desde)
+        # Apply combined filters
+        object_list = object_list.filter(filters)
+        
+        # Check if the queryset is empty and show a warning
         if not object_list.exists():
-                messages.warning(self.request, "La búsqueda no arrojó resultados.")
-                return object_list
+            messages.warning(self.request, "La búsqueda no arrojó resultados.")
         
         return object_list.distinct()
 
