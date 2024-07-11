@@ -21,12 +21,15 @@ $(function () {
 
 });
 
+// Esto lo comentamos para poder manejar de manera diferente la paginación del aplicativo.
+/*
 $(function () {
 	$(".tabladt")
 		.DataTable({
 			responsive: true,
 			lengthChange: false,
 			autoWidth: false,
+			pageLength: 20,
 
 			language: {
 				"decimal": "",
@@ -111,7 +114,7 @@ $(function () {
 		.container()
 		.appendTo(".dataTables_wrapper .col-md-6:eq(0)");
 });
-
+*/
 
 $(function () {
 	$(".tabladt2")
