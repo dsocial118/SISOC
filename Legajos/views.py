@@ -30,6 +30,9 @@ from .forms import *
 from .choices import *
 from django.conf import settings
 import json
+#Paginacion
+from django.views.generic import ListView
+from django.core.paginator import Paginator
 
 # Configurar el locale para usar el idioma español
 import locale
@@ -94,36 +97,39 @@ class LegajosReportesListView(ListView):
         
         return object_list.distinct()
 
-class LegajosListView(TemplateView):
+class LegajosListView(ListView):
+    model = Legajos
     template_name = "Legajos/legajos_list.html"
+    context_object_name = "object_list"
+    paginate_by = 10  # Número de objetos por página
 
-    # FIXME: En esta view si o si hay que implementar paginacion
-    def get(self, request, *args, **kwargs):
-        context = self.get_context_data(**kwargs)
+    def get_queryset(self):
+        queryset = super().get_queryset()
         query = self.request.GET.get("busqueda")
-        object_list = Legajos.objects.all()
-        mostrar_resultados = False
 
         if query:
-            object_list = object_list.filter(
+            queryset = queryset.filter(
                 Q(documento__contains=query) | Q(apellido__icontains=query)
             )
 
-            if object_list.exists():
-                if object_list.count() == 1:
-                    pk = object_list.first().id
-                    return redirect("legajos_ver", pk=pk)
-            else:
+            if queryset.count() == 1:
+                pk = queryset.first().id
+                return redirect("legajos_ver", pk=pk)
+            elif not queryset.exists():
                 messages.warning(self.request, "La búsqueda no arrojó resultados.")
 
-            mostrar_resultados = True
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        query = self.request.GET.get("busqueda")
+        mostrar_resultados = bool(query)
 
         context.update({
             "mostrar_resultados": mostrar_resultados,
-            "object_list": object_list,
         })
-
-        return self.render_to_response(context)
+        
+        return context
 
 
 
