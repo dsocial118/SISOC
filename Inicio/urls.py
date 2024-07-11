@@ -3,7 +3,6 @@ from django.contrib.auth import views as auth_views
 from django.views.generic import TemplateView
 from django.contrib.auth.decorators import login_required
 from .views import *
-from debug_toolbar.toolbar import debug_toolbar_urls
 
 urlpatterns = [
     path('dashboard/', login_required(DashboardView.as_view()), name='dashboard'),
@@ -88,4 +87,6 @@ urlpatterns = [
     path('plantilla/programas/intervenciones_salud_HC', login_required(TemplateView.as_view(template_name='Ejemplos/intervenciones_salud_HC.html')), name='intervenciones_salud_HC'),
     # CDIF reportes
     path('plantilla/programas/cdif_reportes', login_required(TemplateView.as_view(template_name='Ejemplos/cdif_reportes.html')), name='cdif_reportes'),
-] + debug_toolbar_urls()
+    # Django Debug Toolbar
+    path('__debug__/', include('debug_toolbar.urls')),
+]
