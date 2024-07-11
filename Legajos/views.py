@@ -1301,6 +1301,7 @@ class LegajosGrupoHogarCreateView(CreateView):
              
 
         context = super().get_context_data(**kwargs)
+        # FIXME: Estas 2 podrian ser solo 1 query
         context["hogar_1"] = LegajoGrupoHogar.objects.filter(fk_legajo_1Hogar=pk)
         context["hogar_2"] = LegajoGrupoHogar.objects.filter(fk_legajo_2Hogar=pk)
         context["count_hogar"] = context["hogar_1"].count() + context["hogar_2"].count()
