@@ -75,6 +75,7 @@ INSTALLED_APPS = [
     'Usuarios',
     'Configuraciones',
     'Inicio',
+    'Dashboard',
     'Legajos',
     # Programas
     'SIF_CDIF',
