@@ -144,9 +144,9 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'hsudev',
+        'NAME': 'sisoc',
         'USER': 'root',
-        'PASSWORD': 'REDACTED_PASSWORD',
+        'PASSWORD': '1234',
         'HOST': 'localhost',
         'PORT': '3306',
         'OPTIONS': {
