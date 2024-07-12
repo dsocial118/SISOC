@@ -127,6 +127,7 @@ class LegajosListView(ListView):
 
         context.update({
             "mostrar_resultados": mostrar_resultados,
+            "busqueda": query,
         })
         
         return context
