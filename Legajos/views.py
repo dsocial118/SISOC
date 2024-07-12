@@ -101,7 +101,7 @@ class LegajosListView(ListView):
     model = Legajos
     template_name = "Legajos/legajos_list.html"
     context_object_name = "object_list"
-    paginate_by = 20  # Número de objetos por página
+    paginate_by = 10  # Número de objetos por página
 
     def get_queryset(self):
         queryset = super().get_queryset()
