@@ -124,10 +124,16 @@ class LegajosListView(ListView):
         context = super().get_context_data(**kwargs)
         query = self.request.GET.get("busqueda")
         mostrar_resultados = bool(query)
+        page_obj = context.get('page_obj')
+
+        if page_obj:
+            context.update({
+                "page_range": page_obj.paginator.get_elided_page_range(number=page_obj.number)
+            })
 
         context.update({
             "mostrar_resultados": mostrar_resultados,
-            "busqueda": query,
+            "query": query,
         })
         
         return context

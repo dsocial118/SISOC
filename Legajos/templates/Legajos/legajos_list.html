@@ -99,7 +99,7 @@
 
                             {% if page_obj.has_previous %}
                                 <li class="page-item">
-                                    <a href="?{% if busqueda %}busqueda={{busqueda}}&{% endif %}page={{page_obj.previous_page_number }}" class="page-link">Volver</a>
+                                    <a href="?{% if query %}busqueda={{query}}&{% endif %}page={{page_obj.previous_page_number }}" class="page-link">Volver</a>
                                 </li>
                             {% else %}
                                 <li class="page-item disabled">
@@ -107,16 +107,21 @@
                                 </li>
                             {% endif %}
 
-                            {% for i in paginator.page_range %}
-                                <li class="page-item {% if page_obj.previous_page_number == i %} active {% endif %}">
-                                    <a href="?{% if busqueda %}busqueda={{busqueda}}&{% endif %}page={{ i }}" class="page-link">{{ i }}</a>
-                                </li>
+                            {% for i in page_range %}
+                                {% if i == '…' %}
+                                     <li class="page-item disabled"><a href="#" class="page-link">…</a></li>
+                                {% else %}
+                                    <li class="page-item {% if page_obj.number == i %} active {% endif %}">
+                                        <a href="?{% if query %}busqueda={{query}}&{% endif %}page={{ i }}" class="page-link">{{ i }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
                             
-                                {% endfor %}
 
                             {% if page_obj.has_next %}
                                 <li class="page-item">
-                                    <a href="?{% if busqueda %}busqueda={{busqueda}}&{% endif %}page={{page_obj.next_page_number }}" class="page-link">Continuar</a>
+                                    <a href="?{% if query %}busqueda={{query}}&{% endif %}page={{page_obj.next_page_number }}" class="page-link">Continuar</a>
                                 </li>
                             {% else %}
                             <li class="page-item disabled">
