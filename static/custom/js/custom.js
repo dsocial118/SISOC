@@ -22,7 +22,7 @@ $(function () {
 });
 
 // Esto lo comentamos para poder manejar de manera diferente la paginación del aplicativo.
-/*
+
 $(function () {
 	$(".tabladt")
 		.DataTable({
@@ -114,7 +114,7 @@ $(function () {
 		.container()
 		.appendTo(".dataTables_wrapper .col-md-6:eq(0)");
 });
-*/
+
 
 $(function () {
 	$(".tabladt2")
