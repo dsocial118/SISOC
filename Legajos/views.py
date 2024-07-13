@@ -30,6 +30,7 @@ from .forms import *
 from .choices import *
 from django.conf import settings
 import json
+from django.core.cache import cache
 
 # Configurar el locale para usar el idioma español
 import locale
@@ -48,8 +49,14 @@ class LegajosReportesListView(ListView):
     
     
     def get_context_data(self, **kwargs):
-        organismos = Organismos.objects.all().values('id', 'nombre')
-        programas = Programas.objects.all().values('id', 'nombre')
+        organismos = cache.get('organismos')
+        programas = cache.get('programas')
+        if not organismos:
+            organismos = Organismos.objects.all().values('id', 'nombre')
+            cache.set('organismos', organismos, 60)
+        if not programas:
+            programas = Programas.objects.all().values('id', 'nombre')
+            cache.set('programas', programas, 60)
         context = super().get_context_data(**kwargs)
         context['organismos'] = organismos
         context['programas'] = programas
@@ -65,7 +72,10 @@ class LegajosReportesListView(ListView):
         data_fecha_desde = self.request.GET.get("data_fecha_derivacion")
 
         # Initial queryset
-        object_list = LegajosDerivaciones.objects.all()
+        object_list = cache.get('object_list')
+        if not object_list:
+            object_list = LegajosDerivaciones.objects.all()
+            cache.set('object_list', object_list, 60)
         
         # Combining filters to minimize query chains
         filters = Q()
@@ -101,7 +111,10 @@ class LegajosListView(TemplateView):
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
         query = self.request.GET.get("busqueda")
-        object_list = Legajos.objects.all()
+        object_list = cache.get('object_list')
+        if not object_list:
+            object_list = Legajos.objects.all()
+            cache.set('object_list', object_list, 60)
         mostrar_resultados = False
 
         if query:
@@ -140,60 +153,131 @@ class LegajosDetailView(DetailView):
         
         fecha_actual = datetime.now().date()
 
-        legajo_alertas = LegajoAlertas.objects.filter(fk_legajo=pk).select_related('fk_alerta__fk_categoria')
+        legajo_alertas = cache.get('legajo_alertas')
+        alertas = cache.get('alertas')
+        familiares = cache.get('familiares')
+        hogar_familiares = cache.get('hogar_familiares')
+        files = cache.get('files')
+        legajo_alertas_organizadas = cache.get('legajo_alertas_organizadas')
+        count_alertas = cache.get('count_alertas')
+        count_alta = cache.get('count_alta')
+        count_media = cache.get('count_media')
+        count_baja = cache.get('count_baja')
+        alertas_alta = cache.get('alertas_alta')
+        alertas_media = cache.get('alertas_media')
+        alertas_baja = cache.get('alertas_baja')
+        historial_alertas = cache.get('historial_alertas')
+        count_intervenciones = cache.get('count_intervenciones')
+        dimensionfamilia = cache.get('dimensionfamilia')
+        dimensionvivienda = cache.get('dimensionvivienda')
+        dimensionsalud = cache.get('dimensionsalud')
+        dimensiontrabajo = cache.get('dimensiontrabajo')
+        datos_json = cache.get('datos_json')
+        emoji_nacionalidad = cache.get('emoji_nacionalidad')
 
-        alertas = HistorialLegajoAlertas.objects.filter(fk_legajo=pk).values('fecha_inicio', 'fecha_fin', 'fk_alerta')
-
-        familiares = LegajoGrupoFamiliar.objects.filter(Q(fk_legajo_1=pk) | Q(fk_legajo_2=pk)).values('fk_legajo_1', 'fk_legajo_1_id', 'fk_legajo_2_id', 'fk_legajo_2', 'vinculo', 'vinculo_inverso')
+        if not legajo_alertas:
+            legajo_alertas = LegajoAlertas.objects.filter(fk_legajo=pk).select_related('fk_alerta__fk_categoria')
+            cache.set('legajo_alertas', legajo_alertas, 60)
+        if not alertas:
+            alertas = HistorialLegajoAlertas.objects.filter(fk_legajo=pk).values('fecha_inicio', 'fecha_fin', 'fk_alerta')
+            cache.set('alertas', alertas, 60)
+        if not familiares:
+            familiares = LegajoGrupoFamiliar.objects.filter(Q(fk_legajo_1=pk) | Q(fk_legajo_2=pk)).values('fk_legajo_1', 'fk_legajo_1_id', 'fk_legajo_2_id', 'fk_legajo_2', 'vinculo', 'vinculo_inverso')
+            cache.set('familiares', familiares, 60)
+        if not hogar_familiares:
+            hogar_familiares = LegajoGrupoHogar.objects.filter(Q(fk_legajo_1Hogar=pk) | Q(fk_legajo_2Hogar=pk)).values('fk_legajo_2Hogar_id', 'fk_legajo_2Hogar', 'estado_relacion')
+            cache.set('hogar_familiares', hogar_familiares, 60)
+        if not files:
+            files = LegajosArchivos.objects.filter(Q(tipo="Imagen") | Q(tipo="Documento"), fk_legajo=pk)
+            cache.set('files', files, 60)
+        if not legajo_alertas_organizadas:
+            legajo_alertas_organizadas = legajo_alertas.annotate(
+                es_critica=Case(When(fk_alerta__gravedad="Critica", then=Value(1)), default=Value(0), output_field=IntegerField()),
+                es_importante=Case(When(fk_alerta__gravedad="Importante", then=Value(1)), default=Value(0), output_field=IntegerField()),
+                es_precaucion=Case(When(fk_alerta__gravedad="Precaución", then=Value(1)), default=Value(0), output_field=IntegerField()),
+            )
+            cache.set('legajo_alertas_organizadas', legajo_alertas_organizadas, 60)
+        if not count_alertas:
+            count_alertas = legajo_alertas.count()
+            cache.set('count_alertas', count_alertas, 60)
+        if not count_alta:
+            count_alta = legajo_alertas_organizadas.aggregate(count=Count('es_critica')).get('count', 0)
+            cache.set('count_alta', count_alta, 60)
+        if not count_media:
+            count_media = legajo_alertas_organizadas.aggregate(count=Count('es_importante')).get('count', 0)
+            cache.set('count_media', count_media, 60)
+        if not count_baja:
+            count_baja = legajo_alertas_organizadas.aggregate(count=Count('es_precaucion')).get('count', 0)
+            cache.set('count_baja', count_baja, 60)
+        if not alertas_alta:
+            alertas_alta = legajo_alertas_organizadas.filter(es_critica=True)
+            cache.set('alertas_alta', alertas_alta, 60)
+        if not alertas_media:
+            alertas_media = legajo_alertas_organizadas.filter(es_importante=True)
+            cache.set('alertas_media', alertas_media, 60)
+        if not alertas_baja:
+            alertas_baja = legajo_alertas_organizadas.filter(es_precaucion=True)
+            cache.set('alertas_baja', alertas_baja, 60)
+        if not historial_alertas:
+            historial_alertas = alertas.exists()
+            cache.set('historial_alertas', historial_alertas, 60)
+        if not count_intervenciones:
+            count_intervenciones = LegajosDerivaciones.objects.filter(fk_legajo=pk).count()
+            cache.set('count_intervenciones', count_intervenciones, 60)
+        if not dimensionfamilia:
+            dimensionfamilia = DimensionFamilia.objects.filter(fk_legajo=pk).values('estado_civil','cant_hijos','otro_responsable','hay_embarazadas','hay_priv_libertad','hay_prbl_smental','hay_enf_cronica','obs_familia')
+            cache.set('dimensionfamilia', dimensionfamilia, 60)
+        if not dimensionvivienda:
+            dimensionvivienda = DimensionVivienda.objects.filter(fk_legajo=pk).values('posesion', 'tipo', 'material', 'pisos', 'cant_ambientes', 'cant_camas', 'cant_hogares', 'cant_convivientes', 'cant_menores', 'hay_banio', 'hay_agua_caliente', 'hay_desmoronamiento', 'ContextoCasa', 'PoseenPC', 'Poseeninternet', 'PoseenCeludar', 'obs_vivienda')
+            cache.set('dimensionvivienda', dimensionvivienda, 60)
+        if not dimensionsalud:
+            dimensionsalud = DimensionSalud.objects.filter(fk_legajo=pk).values('lugares_atencion', 'frec_controles', 'hay_enfermedad', 'hay_obra_social', 'hay_discapacidad', 'hay_cud', 'obs_salud')
+            cache.set('dimensionsalud', dimensionsalud, 60)
+        if not dimensiontrabajo:
+            dimensiontrabajo = DimensionTrabajo.objects.filter(fk_legajo=pk).values('tiene_trabajo', 'ocupacion', 'modo_contratacion', 'conviviente_trabaja', 'obs_trabajo')
+            cache.set('dimensiontrabajo', dimensiontrabajo, 60)
+        if not datos_json:
+            datos_json = self.grafico_evolucion_de_riesgo(fecha_actual, alertas)
+            cache.set('datos_json', datos_json, 60)
+        if not emoji_nacionalidad:
+            emoji_nacionalidad = EMOJIS_BANDERAS.get(legajo.nacionalidad, '')
+            cache.set('emoji_nacionalidad', emoji_nacionalidad, 60)
+        
         context["familiares_fk1"] = [familiar for familiar in familiares if familiar['fk_legajo_1'] == int(pk)]
         context["familiares_fk2"] = [familiar for familiar in familiares if familiar['fk_legajo_2'] == int(pk)]
         context["count_familia"] = len(familiares)
 
-        hogar_familiares = LegajoGrupoHogar.objects.filter(Q(fk_legajo_1Hogar=pk) | Q(fk_legajo_2Hogar=pk)).values('fk_legajo_2Hogar_id', 'fk_legajo_2Hogar', 'estado_relacion')
         context["hogar_familiares_fk1"] = [familiar for familiar in hogar_familiares if familiar['fk_legajo_1Hogar'] == int(pk)]
         context["hogar_familiares_fk2"] = [familiar for familiar in hogar_familiares if familiar['fk_legajo_2Hogar'] == int(pk)]
         context["hogar_count_familia"] = len(hogar_familiares)
 
-        files = LegajosArchivos.objects.filter(Q(tipo="Imagen") | Q(tipo="Documento"), fk_legajo=pk)
         context['files_img'] = files.filter(tipo="Imagen")
         context['files_docs'] = files.filter(tipo="Documento")
 
-        legajo_alertas_organizadas = legajo_alertas.annotate(
-            es_critica=Case(When(fk_alerta__gravedad="Critica", then=Value(1)), default=Value(0), output_field=IntegerField()),
-            es_importante=Case(When(fk_alerta__gravedad="Importante", then=Value(1)), default=Value(0), output_field=IntegerField()),
-            es_precaucion=Case(When(fk_alerta__gravedad="Precaución", then=Value(1)), default=Value(0), output_field=IntegerField()),
-        )
+        context["count_alertas"] = count_alertas
+        context["count_alta"] = count_alta
+        context["count_media"] = count_media
+        context["count_baja"] = count_baja
 
-        context["count_alertas"] = legajo_alertas.count()
-        context["count_alta"] = legajo_alertas_organizadas.aggregate(count=Count('es_critica')).get('count', 0)
-        context["count_media"] = legajo_alertas_organizadas.aggregate(count=Count('es_importante')).get('count', 0)
-        context["count_baja"] = legajo_alertas_organizadas.aggregate(count=Count('es_precaucion')).get('count', 0)
+        context["alertas_alta"] = alertas_alta
+        context["alertas_media"] = alertas_media
+        context["alertas_baja"] = alertas_baja
 
-        context["alertas_alta"] = legajo_alertas_organizadas.filter(es_critica=True)
-        context["alertas_media"] = legajo_alertas_organizadas.filter(es_importante=True)
-        context["alertas_baja"] = legajo_alertas_organizadas.filter(es_precaucion=True)
+        context["historial_alertas"] = historial_alertas
 
-        context["historial_alertas"] = alertas.exists()
-
-        count_intervenciones = LegajosDerivaciones.objects.filter(fk_legajo=pk).count()
         context['count_intervenciones'] = count_intervenciones
 
-        dimensionfamilia = DimensionFamilia.objects.filter(fk_legajo=pk).values('estado_civil','cant_hijos','otro_responsable','hay_embarazadas','hay_priv_libertad','hay_prbl_smental','hay_enf_cronica','obs_familia')
         context['dimensionfamilia'] = dimensionfamilia
 
-        dimensionvivienda = DimensionVivienda.objects.filter(fk_legajo=pk).values('posesion', 'tipo', 'material', 'pisos', 'cant_ambientes', 'cant_camas', 'cant_hogares', 'cant_convivientes', 'cant_menores', 'hay_banio', 'hay_agua_caliente', 'hay_desmoronamiento', 'ContextoCasa', 'PoseenPC', 'Poseeninternet', 'PoseenCeludar', 'obs_vivienda')
         context['dimensionvivienda'] = dimensionvivienda
 
-        dimensionsalud = DimensionSalud.objects.filter(fk_legajo=pk).values('lugares_atencion', 'frec_controles', 'hay_enfermedad', 'hay_obra_social', 'hay_discapacidad', 'hay_cud', 'obs_salud')
         context['dimensionsalud'] = dimensionsalud
 
-        dimensiontrabajo = DimensionTrabajo.objects.filter(fk_legajo=pk).values('tiene_trabajo', 'ocupacion', 'modo_contratacion', 'conviviente_trabaja', 'obs_trabajo')
         context['dimensiontrabajo'] = dimensiontrabajo
 
-        datos_json = self.grafico_evolucion_de_riesgo(fecha_actual, alertas)
         context["datos_json"] = datos_json
 
-        context['emoji_nacionalidad'] = EMOJIS_BANDERAS.get(legajo.nacionalidad, '')
+        context['emoji_nacionalidad'] = emoji_nacionalidad
 
         return context
 
