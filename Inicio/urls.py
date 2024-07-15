@@ -1,11 +1,10 @@
-from django.urls import path
+from django.urls import include, path
 from django.contrib.auth import views as auth_views
 from django.views.generic import TemplateView
 from django.contrib.auth.decorators import login_required
 from .views import *
 
 urlpatterns = [
-    path('dashboard/', login_required(DashboardView.as_view()), name='dashboard'),
     path('metricas/', login_required(TemplateView.as_view(template_name='metricas.html')), name='metricas'),
     path('busqueda/menu', login_required(BusquedaMenu.as_view()), name='busqueda_menu'),
     # Plantilla Ejemplos
