@@ -114,11 +114,10 @@ class LegajosListView(ListView):
     paginate_by = 10  # Número de objetos por página
 
     def get_queryset(self):
-        queryset = cache.get('legajos_queryset')
-        
-        if not queryset:
-            queryset = super().get_queryset()
-            cache.set('legajos_queryset', queryset, 60)
+        # queryset = cache.get('legajos_queryset')
+        # if not queryset:
+        queryset = super().get_queryset()
+            # cache.set('legajos_queryset', queryset, 60)
 
         query = self.request.GET.get("busqueda")
         if query:
