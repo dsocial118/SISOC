@@ -685,10 +685,25 @@ class LegajosDerivacionesBuscar(PermisosMixin, TemplateView):
 
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
-        legajos = Legajos.objects.all()
-        derivaciones = LegajosDerivaciones.objects.all()
-        con_derivaciones = LegajosDerivaciones.objects.none()
-        sin_derivaciones = Legajos.objects.none()
+        legajos = cache.get('legajos')
+        derivaciones = cache.get('derivaciones')
+        con_derivaciones = cache.get('con_derivaciones')
+        sin_derivaciones = cache.get('sin_derivaciones')
+
+
+        if not legajos:
+            legajos = Legajos.objects.all()
+            cache.set('legajos', legajos, 60)
+        if not derivaciones:
+            derivaciones = LegajosDerivaciones.objects.all()
+            cache.set('derivaciones', derivaciones, 60)
+        if not con_derivaciones:
+            con_derivaciones = LegajosDerivaciones.objects.none()
+            cache.set('con_derivaciones', con_derivaciones, 60)
+        if not sin_derivaciones:
+            sin_derivaciones = Legajos.objects.none()
+            cache.set('sin_derivaciones', sin_derivaciones, 60)
+
         barrios = legajos.values_list("barrio")
         circuitos = CHOICE_CIRCUITOS
         localidad = CHOICE_NACIONALIDAD
@@ -730,8 +745,11 @@ class LegajosDerivacionesListView(PermisosMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super(LegajosDerivacionesListView, self).get_context_data(**kwargs)
 
-        model = LegajosDerivaciones.objects.all()  # TODO filtrar por programa
-
+        model = cache.get('model')
+        if not model:
+            model = LegajosDerivaciones.objects.all()
+            cache.set('model', model, 60)
+        
         context["pendientes"] = model.filter(estado="Pendiente")
         context["aceptadas"] = model.filter(estado="Aceptada")
         context["analisis"] = model.filter(estado="En análisis")
@@ -742,7 +760,11 @@ class LegajosDerivacionesListView(PermisosMixin, ListView):
     # Funcion de busqueda
 
     def get_queryset(self):
-        model = LegajosDerivaciones.objects.all()
+        model = cache.get('model')
+        if model is None:
+            model = LegajosDerivaciones.objects.all()
+            cache.set('model', model, 60)
+        
         query = self.request.GET.get("busqueda")
 
         if query:
