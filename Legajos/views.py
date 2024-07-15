@@ -112,10 +112,11 @@ class LegajosListView(ListView):
                 Q(documento__contains=query) | Q(apellido__icontains=query)
             )
 
-            if queryset.count() == 1:
+            size_queryset = len(list(queryset))
+            if size_queryset ==  1:
                 pk = queryset.first().id
                 return redirect("legajos_ver", pk=pk)
-            elif not queryset.exists():
+            elif size_queryset == 0:
                 messages.warning(self.request, "La búsqueda no arrojó resultados.")
 
         return queryset
