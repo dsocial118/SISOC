@@ -107,32 +107,35 @@ class LegajosReportesListView(ListView):
         
         return object_list.distinct()
 
+
 class LegajosListView(ListView):
     model = Legajos
     template_name = "Legajos/legajos_list.html"
-    context_object_name = "object_list"
+    context_object_name = "legajos"
     paginate_by = 10  # Número de objetos por página
 
     def get_queryset(self):
-        # queryset = cache.get('legajos_queryset')
-        # if not queryset:
         queryset = super().get_queryset()
-            # cache.set('legajos_queryset', queryset, 60)
 
         query = self.request.GET.get("busqueda")
         if query:
             queryset = queryset.filter(
                 Q(documento__startswith=query) | Q(apellido__icontains=query)
             )
+        
+        return queryset
 
-            size_queryset = len(list(queryset))
-            if size_queryset ==  1:
-                pk = queryset.first().id
+    def get(self, request, *args, **kwargs):
+        self.object_list = self.get_queryset()
+        if self.request.GET.get("busqueda"):
+            size_queryset = self.object_list.count()
+            if size_queryset == 1:
+                pk = self.object_list.first().id
                 return redirect("legajos_ver", pk=pk)
             elif size_queryset == 0:
                 messages.warning(self.request, "La búsqueda no arrojó resultados.")
-
-        return queryset
+        
+        return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -141,9 +144,7 @@ class LegajosListView(ListView):
         page_obj = context.get('page_obj')
 
         if page_obj:
-            context.update({
-                "page_range": page_obj.paginator.get_elided_page_range(number=page_obj.number)
-            })
+            context["page_range"] = page_obj.paginator.get_elided_page_range(number=page_obj.number)
 
         context.update({
             "mostrar_resultados": mostrar_resultados,
@@ -151,7 +152,6 @@ class LegajosListView(ListView):
         })
         
         return context
-
 
 
 
