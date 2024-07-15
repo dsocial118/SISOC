@@ -118,12 +118,9 @@ class LegajosListView(ListView):
         query = self.request.GET.get("busqueda")
 
         if query:
-            queryset = cache.get(f'legajos?{query}')
-            if not queryset:
-                queryset = queryset.filter(
-                    Q(documento__contains=query) | Q(apellido__icontains=query)
-                )
-                cache.set(f'legajos?{query}', queryset, 60)
+            queryset = queryset.filter(
+                Q(documento__contains=query) | Q(apellido__icontains=query)
+            )
 
             size_queryset = len(list(queryset))
             if size_queryset ==  1:
