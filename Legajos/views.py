@@ -101,28 +101,24 @@ class LegajosListView(ListView):
     model = Legajos
     template_name = "Legajos/legajos_list.html"
     context_object_name = "object_list"
-    paginate_by = 1  # Número de objetos por página
+    paginate_by = 10  # Número de objetos por página
 
     def get_queryset(self):
         queryset = super().get_queryset()
         query = self.request.GET.get("busqueda")
 
         if query:
-            filtered_queryset = queryset.filter(
+            queryset = queryset.filter(
                 Q(documento__contains=query) | Q(apellido__icontains=query)
             )
-            
-            # Chequea si hay solo un resultado sin ejecutar una query
-            filtered_list = list(filtered_queryset[:2])
 
-            if len(filtered_list) == 1:
-                pk = filtered_list[0].id
+            if queryset.count() == 1:
+                pk = queryset.first().id
                 return redirect("legajos_ver", pk=pk)
-            elif not filtered_list:
+            elif not queryset.exists():
                 messages.warning(self.request, "La búsqueda no arrojó resultados.")
-                return queryset.none()
 
-        return queryset 
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
