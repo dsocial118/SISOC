@@ -471,6 +471,7 @@ class LegajosGrupoFamiliarCreateView(CreateView):
     permission_required = admin_role
     model = LegajoGrupoFamiliar
     form_class = NuevoLegajoFamiliarForm
+    paginate_by = 2 # Número de elementos por página
 
     def get_context_data(self, **kwargs):
         pk = self.kwargs["pk"]
@@ -486,23 +487,36 @@ class LegajosGrupoFamiliarCreateView(CreateView):
         else:
             es_menor_de_18 = True
 
-         # Verificar si tiene un cuidador principal asignado utilizando el método que agregaste al modelo
+        # Verificar si tiene un cuidador principal asignado utilizando el método que agregaste al modelo
         tiene_cuidador_ppal = LegajoGrupoFamiliar.objects.filter(
             fk_legajo_1=legajo_principal,
             cuidador_principal=True
         ).exists()
 
         context = super().get_context_data(**kwargs)
-        # FIXME: Estas 2 queries podrian ser 1
-        context["familiares_fk1"] = LegajoGrupoFamiliar.objects.filter(fk_legajo_1=pk)
-        context["familiares_fk2"] = LegajoGrupoFamiliar.objects.filter(fk_legajo_2=pk)
-        # ---
-        context["count_familia"] = context["familiares_fk1"].count() + context["familiares_fk2"].count()
+        
+        familiares_fk1 = LegajoGrupoFamiliar.objects.filter(fk_legajo_1=pk)
+        familiares_fk2 = LegajoGrupoFamiliar.objects.filter(fk_legajo_2=pk)
+        
+        # Paginación
+        paginator_fk1 = Paginator(familiares_fk1, self.paginate_by)
+        paginator_fk2 = Paginator(familiares_fk2, self.paginate_by)
+        
+        page_number_fk1 = self.request.GET.get('page_fk1')
+        page_number_fk2 = self.request.GET.get('page_fk2')
+        
+        page_obj_fk1 = paginator_fk1.get_page(page_number_fk1)
+        page_obj_fk2 = paginator_fk2.get_page(page_number_fk2)
+        
+        context["familiares_fk1"] = page_obj_fk1
+        context["familiares_fk2"] = page_obj_fk2
+        context["count_familia"] = familiares_fk1.count() + familiares_fk2.count()
         context["legajo_principal"] = legajo_principal
         context["es_menor_de_18"] = es_menor_de_18
         context["tiene_cuidador_ppal"] = tiene_cuidador_ppal
         context["pk"] = pk
         context["id_dimensionfamiliar"] = DimensionFamilia.objects.get(fk_legajo=pk).id
+        
         return context
 
     def form_valid(self, form):

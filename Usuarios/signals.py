@@ -19,7 +19,9 @@ def guardar_usuario(sender, instance, **kwargs):
     '''
     Si se actualiza un user, se actualiza el usuario correspondiente
     '''
-    instance.usuarios.save()
+    #instance.usuarios.save()
+    return
+
     
 
 
