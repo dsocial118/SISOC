@@ -281,13 +281,10 @@
     }
 
     // Activa la búsqueda ajax cuando se ingresa texto
-    searchInput.addEventListener('keyup', e => {
-        $('#formulario-nuevo')[0].reset(); // Resetear el formulario
-        formNuevo.addClass('d-none'); // Ocultar el formulario
-        $('.is-invalid').removeClass('is-invalid'); // Quitar la clase 'is-invalid' de los campos inválidos
-        $('.invalid-feedback').remove(); // Eliminar los mensajes de validación
-        if (e.target.value.length > 1) {
-            sendSearchData(e.target.value, "busqueda")
+    searchInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+            sendSearchData(e.target.value)
+            e.preventDefault();
         } else {
             resultsBox.innerHTML = '<td colspan="8" class="text-center text-muted h4">Realice una búsqueda.</td>'
         }
