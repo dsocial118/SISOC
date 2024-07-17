@@ -12,7 +12,7 @@
 {% block breadcrumb %}
 <ol class="breadcrumb float-sm-right ">
   <li class="breadcrumb-item">Índices</li>
-  <li class="breadcrumb-item"><a href="{% url 'legajos_ver' legajo.id %}" title="Ver legajo">{{legajo}} </a></li>
+  <li class="breadcrumb-item"><a href="{% url 'legajos_ver' legajo.id %}" title="Ver legajo">{{ legajo.apellido }} {{ legajo.nombre }} </a></li>
   <li class="breadcrumb-item active">
     Detalle
   </li>
@@ -33,9 +33,8 @@
   </div>
 </div>
 <!-- ./botones -->
-
+{% comment %} #FIXME: Esto esta todo hardcodeado {% endcomment %}
 <div class="row p-0 m-0 " id="seleccion">
-
   <!-- Datos de indice -->
   <div class="col-sm-8">
     <div class="card card-outline card-primary ">
@@ -74,7 +73,7 @@
       <div class="card-body">
         <dl class="row mb-0">
           <dd class="col-sm-5 mb-2">Nombre</dd>
-          <dt class="col-sm-7 mb-2"><a href="{% url 'legajos_ver' legajo.id %}" title="Ver legajo">{{legajo}}  </a></dt>
+          <dt class="col-sm-7 mb-2"><a href="{% url 'legajos_ver' legajo.id %}" title="Ver legajo">{{ legajo.apellido }} {{ legajo.nombre }}  </a></dt>
           <dd class="col-sm-5 mb-2">DNI</dd>
           <dt class="col-sm-7 mb-2">{{legajo.documento}}</dt>
           <dd class="col-sm-5 mb-2">Fecha de nacimiento</dd>
