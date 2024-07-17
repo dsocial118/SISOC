@@ -1003,22 +1003,23 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
     success_message = "Editado correctamente"
 
     def get_context_data(self, **kwargs):
-        context = super(DimensionesUpdateView, self).get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
 
         pk = self.get_object().fk_legajo.id
-        legajo = Legajos.objects.filter(id=pk).first()
-        dimension_vivienda = DimensionVivienda.objects.filter(fk_legajo__id=pk).first()
-        dimension_salud = DimensionSalud.objects.filter(fk_legajo__id=pk).first()
-        dimension_educacion = DimensionEducacion.objects.filter(fk_legajo__id=pk).first()
-        dimension_economia = DimensionEconomia.objects.filter(fk_legajo__id=pk).first()
-        dimension_trabajo = DimensionTrabajo.objects.filter(fk_legajo__id=pk).first()
+        legajo = Legajos.objects.filter(id=pk).select_related(
+        'dimensionvivienda',
+        'dimensionsalud',
+        'dimensioneducacion',
+        'dimensioneconomia',
+        'dimensiontrabajo'
+        ).first()
 
         context["legajo"] = legajo
-        context["form_vivienda"] = self.form_vivienda(instance=dimension_vivienda)
-        context["form_salud"] = self.form_salud(instance=dimension_salud)
-        context["form_educacion"] = self.form_educacion(instance=dimension_educacion)
-        context["form_economia"] = self.form_economia(instance=dimension_economia)
-        context["form_trabajo"] = self.form_trabajo(instance=dimension_trabajo)
+        context["form_vivienda"] = self.form_vivienda(instance=legajo.dimensionvivienda)
+        context["form_salud"] = self.form_salud(instance=legajo.dimensionsalud)
+        context["form_educacion"] = self.form_educacion(instance=legajo.dimensioneducacion)
+        context["form_economia"] = self.form_economia(instance=legajo.dimensioneconomia)
+        context["form_trabajo"] = self.form_trabajo(instance=legajo.dimensiontrabajo)
 
         return context
 
