@@ -1353,8 +1353,9 @@ class accionesSocialesView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        legajo_id = self.kwargs["pk"]
         
-        legajo = Legajos.objects.filter(pk=self.kwargs["pk"]).first()
+        legajo = Legajos.objects.only('apellido', 'nombre', 'id', 'tipo_doc', 'documento', 'fecha_nacimiento', 'sexo').get(pk=legajo_id)
 
         context["legajo"] = legajo
         
