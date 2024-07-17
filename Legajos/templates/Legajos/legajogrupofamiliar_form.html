@@ -86,7 +86,7 @@
                                     </h3>
                                 </div>
                                 <div class="card-body bg-light">
-                                    <div class="row text-center d-flex justify-content-center justify-content-sm-start px-2">
+                                    <div id="tablaResultado" class="row text-center d-flex justify-content-center justify-content-sm-start px-2">
                                         {% if familiares_fk1 or familiares_fk2 %}
                                             {% for f in familiares_fk1 %}
                                             <div id="familiar-{{f.id}}" class="px-2">
@@ -300,7 +300,7 @@
                 'id': '{{ pk }}',
             },
             success: (res) => {
-                const data = res.data
+                const data = res.data.familiares
                 if (Array.isArray(data)) {
 
                     resultsBox.empty(); // Vaciar contenido anterior
