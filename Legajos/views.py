@@ -32,7 +32,7 @@ from django.conf import settings
 import json
 #Paginacion
 from django.views.generic import ListView
-from django.core.paginator import Paginator
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.core.cache import cache
 
 # Configurar el locale para usar el idioma español
@@ -579,8 +579,10 @@ def busqueda_familiares(request):
         res = None
         busqueda = request.POST.get("busqueda")
         legajo_principal_id = request.POST.get("id")
+        page_number = request.POST.get("page", 1)
         legajos_asociadosfk1 = LegajoGrupoFamiliar.objects.filter(fk_legajo_1_id=legajo_principal_id).values_list('fk_legajo_2_id', flat=True)
         legajos_asociadosfk2 = LegajoGrupoFamiliar.objects.filter(fk_legajo_2_id=legajo_principal_id).values_list('fk_legajo_1_id', flat=True)
+        paginate_by = 10
         familiares = (
             Legajos.objects.filter(~Q(id=legajo_principal_id) & (Q(apellido__icontains=busqueda) | Q(documento__icontains=busqueda)))
             .exclude(id__in=legajos_asociadosfk1)
@@ -588,6 +590,14 @@ def busqueda_familiares(request):
         )
 
         if len(familiares) > 0 and busqueda:
+            paginator = Paginator(familiares, paginate_by)
+            try:
+                page_obj = paginator.page(page_number)
+            except PageNotAnInteger:
+                page_obj = paginator.page(1)
+            except EmptyPage:
+                page_obj = paginator.page(paginator.num_pages)
+
             data = [
                 {
                     'pk': familiar.pk,
@@ -599,9 +609,15 @@ def busqueda_familiares(request):
                     'sexo': familiar.sexo,
                     # Otros campos que deseas incluir
                 }
-                for familiar in familiares
+                for familiar in page_obj
             ]
-            res = data
+            res = {
+                'familiares': data,
+                'page': page_number,
+                'num_pages': paginator.num_pages,
+                'has_next': page_obj.has_next(),
+                'has_previous': page_obj.has_previous(),
+            }
 
         else:
             res = ""
