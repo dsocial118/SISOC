@@ -74,13 +74,11 @@ class LegajosReportesListView(ListView):
         data_estado = self.request.GET.get("data_estado")
         data_fecha_desde = self.request.GET.get("data_fecha_derivacion")
 
-        # Initial queryset
         object_list = cache.get('object_list')
         if not object_list:
             object_list = LegajosDerivaciones.objects.all()
             cache.set('object_list', object_list, 60)
         
-        # Combining filters to minimize query chains
         filters = Q()
         
         if data_programa:
@@ -98,38 +96,43 @@ class LegajosReportesListView(ListView):
         if data_fecha_desde:
             filters &= Q(fecha_creado__gte=data_fecha_desde)
         
-        # Apply combined filters
+        # Aplica los filtros combinados
         object_list = object_list.filter(filters)
         
-        # Check if the queryset is empty and show a warning
         if not object_list.exists():
             messages.warning(self.request, "La búsqueda no arrojó resultados.")
         
         return object_list.distinct()
 
+
 class LegajosListView(ListView):
     model = Legajos
     template_name = "Legajos/legajos_list.html"
-    context_object_name = "object_list"
+    context_object_name = "legajos"
     paginate_by = 10  # Número de objetos por página
 
     def get_queryset(self):
-        queryset = super().get_queryset()
-        query = self.request.GET.get("busqueda")
+        if not hasattr(self, '_cached_queryset'):
+            queryset = super().get_queryset()
+            query = self.request.GET.get("busqueda")
+            if query:
+                queryset = queryset.filter(
+                    Q(documento__startswith=query) | Q(apellido__icontains=query)
+                ).values('id', 'apellido', 'nombre', 'documento', 'tipo_doc', 'sexo', 'localidad', 'estado')
+            self._cached_queryset = queryset
+        return self._cached_queryset
 
-        if query:
-            queryset = queryset.filter(
-                Q(documento__contains=query) | Q(apellido__icontains=query)
-            )
-
-            size_queryset = len(list(queryset))
-            if size_queryset ==  1:
-                pk = queryset.first().id
+    def get(self, request, *args, **kwargs):
+        self.object_list = self.get_queryset()
+        if self.request.GET.get("busqueda"):
+            size_queryset = len(self.object_list)
+            if size_queryset == 1:
+                pk = self.object_list.first().id
                 return redirect("legajos_ver", pk=pk)
             elif size_queryset == 0:
                 messages.warning(self.request, "La búsqueda no arrojó resultados.")
-
-        return queryset
+        
+        return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -138,9 +141,7 @@ class LegajosListView(ListView):
         page_obj = context.get('page_obj')
 
         if page_obj:
-            context.update({
-                "page_range": page_obj.paginator.get_elided_page_range(number=page_obj.number)
-            })
+            context["page_range"] = page_obj.paginator.get_elided_page_range(number=page_obj.number)
 
         context.update({
             "mostrar_resultados": mostrar_resultados,
@@ -148,8 +149,6 @@ class LegajosListView(ListView):
         })
         
         return context
-
-
 
 
 class LegajosDetailView(DetailView):
@@ -190,7 +189,7 @@ class LegajosDetailView(DetailView):
             legajo_alertas = LegajoAlertas.objects.filter(fk_legajo=pk).select_related('fk_alerta__fk_categoria')
             cache.set('legajo_alertas', legajo_alertas, 60)
         if not alertas:
-            alertas = HistorialLegajoAlertas.objects.filter(fk_legajo=pk).values('fecha_inicio', 'fecha_fin', 'fk_alerta')
+            alertas = HistorialLegajoAlertas.objects.filter(fk_legajo=pk).values('fecha_inicio', 'fecha_fin', 'fk_alerta__fk_categoria__dimension')
             cache.set('alertas', alertas, 60)
         if not familiares:
             familiares = LegajoGrupoFamiliar.objects.filter(Q(fk_legajo_1=pk) | Q(fk_legajo_2=pk)).values('fk_legajo_1', 'fk_legajo_1_id', 'fk_legajo_2_id', 'fk_legajo_2', 'vinculo', 'vinculo_inverso')
@@ -307,9 +306,9 @@ class LegajosDetailView(DetailView):
             datos_por_dimension = {dimension: [0] * 12 for dimension in todas_dimensiones}
 
             for alerta in alertas_ultimo_anio:
-                dimension = alerta.fk_alerta.fk_categoria.dimension
-                fecha_inicio = alerta.fecha_inicio
-                fecha_fin = alerta.fecha_fin or fecha_actual
+                dimension = alerta['fk_alerta__fk_categoria__dimension']
+                fecha_inicio = alerta['fecha_inicio']
+                fecha_fin = alerta['fecha_fin'] or fecha_actual
 
                 meses_activos = []
                 while fecha_inicio <= fecha_fin:
@@ -710,10 +709,25 @@ class LegajosDerivacionesBuscar(PermisosMixin, TemplateView):
 
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
-        legajos = Legajos.objects.all()
-        derivaciones = LegajosDerivaciones.objects.all()
-        con_derivaciones = LegajosDerivaciones.objects.none()
-        sin_derivaciones = Legajos.objects.none()
+        legajos = cache.get('legajos')
+        derivaciones = cache.get('derivaciones')
+        con_derivaciones = cache.get('con_derivaciones')
+        sin_derivaciones = cache.get('sin_derivaciones')
+
+
+        if not legajos:
+            legajos = Legajos.objects.all()
+            cache.set('legajos', legajos, 60)
+        if not derivaciones:
+            derivaciones = LegajosDerivaciones.objects.all()
+            cache.set('derivaciones', derivaciones, 60)
+        if not con_derivaciones:
+            con_derivaciones = LegajosDerivaciones.objects.none()
+            cache.set('con_derivaciones', con_derivaciones, 60)
+        if not sin_derivaciones:
+            sin_derivaciones = Legajos.objects.none()
+            cache.set('sin_derivaciones', sin_derivaciones, 60)
+
         barrios = legajos.values_list("barrio")
         circuitos = CHOICE_CIRCUITOS
         localidad = CHOICE_NACIONALIDAD
@@ -755,8 +769,11 @@ class LegajosDerivacionesListView(PermisosMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super(LegajosDerivacionesListView, self).get_context_data(**kwargs)
 
-        model = LegajosDerivaciones.objects.all()  # TODO filtrar por programa
-
+        model = cache.get('model')
+        if not model:
+            model = LegajosDerivaciones.objects.all()
+            cache.set('model', model, 60)
+        
         context["pendientes"] = model.filter(estado="Pendiente")
         context["aceptadas"] = model.filter(estado="Aceptada")
         context["analisis"] = model.filter(estado="En análisis")
@@ -767,7 +784,11 @@ class LegajosDerivacionesListView(PermisosMixin, ListView):
     # Funcion de busqueda
 
     def get_queryset(self):
-        model = LegajosDerivaciones.objects.all()
+        model = cache.get('model')
+        if model is None:
+            model = LegajosDerivaciones.objects.all()
+            cache.set('model', model, 60)
+        
         query = self.request.GET.get("busqueda")
 
         if query:
@@ -909,8 +930,11 @@ class LegajosAlertasCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
     def get_context_data(self, **kwargs):
         pk = self.kwargs["pk"]
         context = super().get_context_data(**kwargs)
+        
         alertas = LegajoAlertas.objects.filter(fk_legajo=pk)
-        legajo = Legajos.objects.filter(pk=pk).first()
+        
+        legajo = Legajos.objects.values('pk', 'dimensionfamilia__id').get(pk=pk)
+        
         context["alertas"] = alertas
         context["legajo"] = legajo
         return context
@@ -926,6 +950,7 @@ class LegajosAlertasCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
     def get_success_url(self):
         # Redirige a la misma página después de agregar la alerta
         return self.request.path
+
 
 
 class DeleteAlerta(PermisosMixin, View):
@@ -1358,8 +1383,9 @@ class accionesSocialesView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        legajo_id = self.kwargs["pk"]
         
-        legajo = Legajos.objects.filter(pk=self.kwargs["pk"]).first()
+        legajo = Legajos.objects.only('apellido', 'nombre', 'id', 'tipo_doc', 'documento', 'fecha_nacimiento', 'sexo').get(pk=legajo_id)
 
         context["legajo"] = legajo
         

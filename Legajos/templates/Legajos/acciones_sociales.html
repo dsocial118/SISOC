@@ -32,10 +32,10 @@ Acciones sociales
       <div class="card-body">
         <dl class="row mb-0">
           <dd class="col-sm-2 mb-2">Nombre</dd>
-          <dt class="col-sm-10 mb-2"><a href="{% url 'legajos_ver' legajo.id %}" title="Ver legajo">{{legajo}}
+          <dt class="col-sm-10 mb-2"><a href="{% url 'legajos_ver' legajo.id %}" title="Ver legajo">{{ legajo.apellido }} {{ legajo.nombre }}
             </a>
           </dt>
-          <dd class="col-sm-2 mb-2">DNI</dd>
+          <dd class="col-sm-2 mb-2">{{legajo.tipo_doc}}</dd>
           <dt class="col-sm-10 mb-2">{{legajo.documento}}</dt>
           <dd class="col-sm-2 mb-2">Fecha de nacimiento</dd>
           <dt class="col-sm-10 mb-2">{{legajo.fecha_nacimiento|date:'d/m/Y'}}</dt>
@@ -71,7 +71,8 @@ Acciones sociales
             </tr>
           </thead>
           <tbody>
-            <tr>
+            {% comment %} #FIXME: Esto esta todo hardcodeado D: {% endcomment %}
+            <tr>  
               <td> 09/07/2019 </td>
               <td>Asistencia habitacional</td>
               <td>3</td>
