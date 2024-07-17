@@ -192,7 +192,7 @@ class LegajosDetailView(DetailView):
             alertas = HistorialLegajoAlertas.objects.filter(fk_legajo=pk).values('fecha_inicio', 'fecha_fin', 'fk_alerta__fk_categoria__dimension')
             cache.set('alertas', alertas, 60)
         if not familiares:
-            familiares = LegajoGrupoFamiliar.objects.filter(Q(fk_legajo_1=pk) | Q(fk_legajo_2=pk)).values('fk_legajo_1', 'fk_legajo_1_id', 'fk_legajo_2_id', 'fk_legajo_2', 'vinculo', 'vinculo_inverso')
+            familiares = LegajoGrupoFamiliar.objects.filter(Q(fk_legajo_1=pk) | Q(fk_legajo_2=pk)).values('fk_legajo_1__nombre', 'fk_legajo_1__apellido', 'fk_legajo_1__id', 'fk_legajo_1__foto', 'fk_legajo_2__nombre', 'fk_legajo_2__apellido', 'fk_legajo_2__id', 'fk_legajo_2__foto', 'vinculo', 'vinculo_inverso')
             cache.set('familiares', familiares, 60)
         if not hogar_familiares:
             hogar_familiares = LegajoGrupoHogar.objects.filter(Q(fk_legajo_1Hogar=pk) | Q(fk_legajo_2Hogar=pk)).values('fk_legajo_2Hogar_id', 'fk_legajo_2Hogar', 'estado_relacion')
@@ -253,8 +253,8 @@ class LegajosDetailView(DetailView):
             emoji_nacionalidad = EMOJIS_BANDERAS.get(legajo.nacionalidad, '')
             cache.set('emoji_nacionalidad', emoji_nacionalidad, 60)
         
-        context["familiares_fk1"] = [familiar for familiar in familiares if familiar['fk_legajo_1'] == int(pk)]
-        context["familiares_fk2"] = [familiar for familiar in familiares if familiar['fk_legajo_2'] == int(pk)]
+        context["familiares_fk1"] = [familiar for familiar in familiares if familiar['fk_legajo_1__id'] == int(pk)]
+        context["familiares_fk2"] = [familiar for familiar in familiares if familiar['fk_legajo_2__id'] == int(pk)]
         context["count_familia"] = len(familiares)
 
         context["hogar_familiares_fk1"] = [familiar for familiar in hogar_familiares if familiar['fk_legajo_1Hogar'] == int(pk)]
