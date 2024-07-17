@@ -74,13 +74,11 @@ class LegajosReportesListView(ListView):
         data_estado = self.request.GET.get("data_estado")
         data_fecha_desde = self.request.GET.get("data_fecha_derivacion")
 
-        # Initial queryset
         object_list = cache.get('object_list')
         if not object_list:
             object_list = LegajosDerivaciones.objects.all()
             cache.set('object_list', object_list, 60)
         
-        # Combining filters to minimize query chains
         filters = Q()
         
         if data_programa:
@@ -98,10 +96,9 @@ class LegajosReportesListView(ListView):
         if data_fecha_desde:
             filters &= Q(fecha_creado__gte=data_fecha_desde)
         
-        # Apply combined filters
+        # Aplica los filtros combinados
         object_list = object_list.filter(filters)
         
-        # Check if the queryset is empty and show a warning
         if not object_list.exists():
             messages.warning(self.request, "La búsqueda no arrojó resultados.")
         
@@ -193,7 +190,7 @@ class LegajosDetailView(DetailView):
             legajo_alertas = LegajoAlertas.objects.filter(fk_legajo=pk).select_related('fk_alerta__fk_categoria')
             cache.set('legajo_alertas', legajo_alertas, 60)
         if not alertas:
-            alertas = HistorialLegajoAlertas.objects.filter(fk_legajo=pk).values('fecha_inicio', 'fecha_fin', 'fk_alerta')
+            alertas = HistorialLegajoAlertas.objects.filter(fk_legajo=pk).values('fecha_inicio', 'fecha_fin', 'fk_alerta__fk_categoria__dimension')
             cache.set('alertas', alertas, 60)
         if not familiares:
             familiares = LegajoGrupoFamiliar.objects.filter(Q(fk_legajo_1=pk) | Q(fk_legajo_2=pk)).values('fk_legajo_1', 'fk_legajo_1_id', 'fk_legajo_2_id', 'fk_legajo_2', 'vinculo', 'vinculo_inverso')
@@ -310,9 +307,9 @@ class LegajosDetailView(DetailView):
             datos_por_dimension = {dimension: [0] * 12 for dimension in todas_dimensiones}
 
             for alerta in alertas_ultimo_anio:
-                dimension = alerta.fk_alerta.fk_categoria.dimension
-                fecha_inicio = alerta.fecha_inicio
-                fecha_fin = alerta.fecha_fin or fecha_actual
+                dimension = alerta['fk_alerta__fk_categoria__dimension']
+                fecha_inicio = alerta['fecha_inicio']
+                fecha_fin = alerta['fecha_fin'] or fecha_actual
 
                 meses_activos = []
                 while fecha_inicio <= fecha_fin:
@@ -904,8 +901,11 @@ class LegajosAlertasCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
     def get_context_data(self, **kwargs):
         pk = self.kwargs["pk"]
         context = super().get_context_data(**kwargs)
+        
         alertas = LegajoAlertas.objects.filter(fk_legajo=pk)
-        legajo = Legajos.objects.filter(pk=pk).first()
+        
+        legajo = Legajos.objects.values('pk', 'dimensionfamilia__id').get(pk=pk)
+        
         context["alertas"] = alertas
         context["legajo"] = legajo
         return context
@@ -921,6 +921,7 @@ class LegajosAlertasCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
     def get_success_url(self):
         # Redirige a la misma página después de agregar la alerta
         return self.request.path
+
 
 
 class DeleteAlerta(PermisosMixin, View):
