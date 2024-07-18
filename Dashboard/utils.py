@@ -2,6 +2,7 @@ from datetime import date, timedelta
 
 from Configuraciones.models import Alertas
 from Legajos.models import LegajoAlertas, Legajos, LegajosDerivaciones
+from django.db.models import Count, Q
 
 #FIXME: Este modulo puede ser optimizado mas aun
 
@@ -9,57 +10,69 @@ today = date.today()
 fecha_hace_18_anios = today - timedelta(days=18 * 365)
 fecha_hace_40_dias = today - timedelta(days=40)
 
-total_legajos = Legajos.objects.select_related('dimensioneconomia').prefetch_related('m2m_alertas').values(
+legajos_total = Legajos.objects.select_related('dimensioneconomia').prefetch_related('m2m_alertas').values(
     'estado',
     'fecha_nacimiento',
     'dimensioneconomia__m2m_planes'
 )
 
-alertas_embarazo_ids = Alertas.objects.filter(fk_categoria__nombre__istartswith='embarazo').values_list('id', flat=True)
-legajos_con_alerta_embarazo = total_legajos.filter(m2m_alertas__id__in=alertas_embarazo_ids)
 alarmas_activas = Alertas.objects.filter(gravedad='Critica').values_list('id')
 
-legajos_mayores_de_edad = total_legajos.filter(fecha_nacimiento__gte=fecha_hace_18_anios)
+legajos_counts = Legajos.objects.select_related('dimensioneconomia').prefetch_related('m2m_alertas').aggregate(
+    total_legajos=Count('id'),
+    legajos_activos=Count('id', filter=Q(estado=True)),
+    legajos_mayores_de_edad=Count('id', filter=Q(fecha_nacimiento__gte=fecha_hace_18_anios)),
+    total_40_dias=Count('id', distinct=True),
+    con_alertas_activas=Count('id', filter=Q(m2m_alertas__in=alarmas_activas), distinct=True),
+    sin_aceptadas=Count('id', filter=~Q(legajosderivaciones__estado='Aceptada'), distinct=True),
+    adolescente_riesgo=Count('id', filter=Q(m2m_alertas__in=alarmas_activas), distinct=True),
+    adolescente_sin_derivacion_aceptada=Count('id', filter=~Q(legajosderivaciones__estado='Aceptada'), distinct=True)
+    
+)
 
-legajos_40_dias = total_legajos.filter(fecha_nacimiento__gte=fecha_hace_40_dias)        
+alertas_embarazo_ids = Alertas.objects.filter(fk_categoria__nombre__istartswith='embarazo').values_list('id', flat=True)
+legajos_con_alerta_embarazo = legajos_total.filter(m2m_alertas__id__in=alertas_embarazo_ids)
 
-def contar_legajos():
-    cantidad_total_legajos = total_legajos.count()
-    legajos_activos = total_legajos.filter(estado=True)    
-    cantidad_legajos_activos = legajos_activos.count()
+legajos_mayores_de_edad = legajos_total.filter(fecha_nacimiento__gte=fecha_hace_18_anios)
+
+legajos_40_dias = legajos_total.filter(fecha_nacimiento__gte=fecha_hace_40_dias)        
+
+def contar_legajos():    
+    cantidad_total_legajos = legajos_counts['total_legajos']
+    cantidad_legajos_activos = legajos_counts['legajos_activos']
     
     return  cantidad_total_legajos, cantidad_legajos_activos
 
 def contar_legajos_entre_0_y_18_anios():
     # Realiza una consulta para contar los legajos que tienen entre 0 y 18 años
-    return legajos_mayores_de_edad.count()
+    return legajos_counts['legajos_mayores_de_edad']
 
 def contar_adolescente_riesgo():
     # FIXME: Los adolescentes son todos los mayores de edad?
-    return legajos_mayores_de_edad.filter(m2m_alertas__in=alarmas_activas).distinct().count()
+    return legajos_counts['adolescente_riesgo']
 
 def contar_adolescente_sin_derivacion_aceptada():
     # calculo de adolescente con estado de derivación diferente a "Aceptada"
-    return legajos_mayores_de_edad.exclude(legajosderivaciones__estado='Aceptada').distinct().count()
+    return legajos_counts['adolescente_sin_derivacion_aceptada']
 
 def contar_legajos_entre_0_y_40_dias():
     # Realiza una consulta para contar los legajos que tienen entre 0 y 40 días
-    return legajos_40_dias.distinct().count()
+    return legajos_counts['total_40_dias']
 
 def contar_bb_riesgo():
     # Realiza la consulta para contar los bebés con alarmas activas
-    return legajos_40_dias.filter(m2m_alertas__in=alarmas_activas).distinct().count()
+    return legajos_counts['con_alertas_activas']
 
 def contar_bb_sin_derivacion_aceptada():
     # calculo de legajos con estado de derivación diferente a "Aceptada"
-    return legajos_40_dias.exclude(legajosderivaciones__estado='Aceptada').distinct().count()
+    return legajos_counts['sin_aceptadas']
 
 def contar_legajos_con_alarmas_activas():
     return LegajoAlertas.objects.filter(fk_alerta__gravedad='Critica').values_list('fk_legajo_id', flat=True).distinct().count()
 
 def contar_legajos_con_planes_sociales():
     # Utiliza una subconsulta para contar los Legajos con planes sociales a través de DimensionEconomia
-    return total_legajos.filter(dimensioneconomia__m2m_planes__isnull=False).distinct().count()
+    return legajos_total.filter(dimensioneconomia__m2m_planes__isnull=False).distinct().count()
 
 def calcular_porcentaje_respecto_a_poblacion(cantidad_legajos):
     # Calcula el porcentaje de legajos en comparación con la población total
