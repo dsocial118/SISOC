@@ -150,13 +150,13 @@
             <div class="card-body bg-light p-0">
                 <ul class="users-list">
                     {% for f in familiares_fk1 %}
-                    <li><a class="users-list-name" href="{% url 'legajos_ver' f.fk_legajo_2_id %}" title="{{f.fk_legajo_2}} - {{f.vinculo}}">
-                        {% if f.fk_legajo_2.foto %}
-                        <img src="{{f.fk_legajo_2.foto.url}}" alt="User Image" width="60px">
+                    <li><a class="users-list-name" href="{% url 'legajos_ver' f.fk_legajo_2__id %}" title="{{f.fk_legajo_2__apellido}} {{f.fk_legajo_2__nombre}} - {{f.vinculo}}">
+                        {% if f.fk_legajo_2__foto %}
+                        <img src="{{f.fk_legajo_2__foto.url}}" alt="User Image" width="60px">
                         {%else%}
                         <img src="{% static 'custom/img/default.png'  %}" alt="User Image" width="60px">
                         {%endif%}                        
-                        <span class="users-list-date">{{f.fk_legajo_2}}</span>
+                        <span class="users-list-date">{{f.fk_legajo_2__apellido}} {{f.fk_legajo_2__nombre}}</span>
                         <span class="users-list-date">{{f.vinculo}}</span>
                     </a>
                     </li>
@@ -164,13 +164,13 @@
                     {% endfor %}
                     {% for f in familiares_fk2 %}
                     <li>
-                        <a class="users-list-name" href="{% url 'legajos_ver' f.fk_legajo_1_id %}" title="{{f.fk_legajo_1}} - {{f.vinculo_inverso}}">
-                            {% if f.fk_legajo_1.foto %}
-                            <img src="{{f.fk_legajo_1.foto.url}}" alt="User Image" width="60px">
+                        <a class="users-list-name" href="{% url 'legajos_ver' f.fk_legajo_1__id %}" title="{{f.fk_legajo_2__apellido}} {{f.fk_legajo_2__nombre}} - {{f.vinculo_inverso}}">
+                            {% if f.fk_legajo_1__foto %}
+                            <img src="{{f.fk_legajo_1__foto.url}}" alt="User Image" width="60px">
                             {%else%}
                             <img src="{% static 'custom/img/default.png'  %}" alt="User Image" width="60px">
                             {%endif%}                            
-                            <span class="users-list-date">{{f.fk_legajo_1}}</span>
+                            <span class="users-list-date">{{f.fk_legajo_2__apellido}} {{f.fk_legajo_2__nombre}}</span>
                             <span class="users-list-date">{{f.vinculo_inverso}}</span>
                         </a>
                     </li>

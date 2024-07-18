@@ -234,6 +234,9 @@ class LegajosDerivacionesForm(forms.ModelForm):
 
 # Dimensiones
 class DimensionFamiliaForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['fk_legajo'].widget = forms.HiddenInput()
     class Meta:
         model = DimensionFamilia
         fields = '__all__'
@@ -255,6 +258,9 @@ class DimensionFamiliaForm(forms.ModelForm):
 
 
 class DimensionViviendaForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['fk_legajo'].widget = forms.HiddenInput()
     class Meta:
         model = DimensionVivienda
         fields = '__all__'
@@ -275,6 +281,9 @@ class DimensionViviendaForm(forms.ModelForm):
     #<!-- ./Nuevos campos vivienda Form Editar o cargar -->
 
 class DimensionSaludForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['fk_legajo'].widget = forms.HiddenInput()
     class Meta:
         model = DimensionSalud
         fields = '__all__'
@@ -293,6 +302,9 @@ class DimensionSaludForm(forms.ModelForm):
 
 
 class DimensionEducacionForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['fk_legajo'].widget = forms.HiddenInput()
     class Meta:
         model = DimensionEducacion
         fields = '__all__'
@@ -320,6 +332,9 @@ class DimensionEducacionForm(forms.ModelForm):
     #fin de prueba
 
 class DimensionEconomiaForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['fk_legajo'].widget = forms.HiddenInput()
     class Meta:
         model = DimensionEconomia
         fields = '__all__'
@@ -337,6 +352,9 @@ class DimensionEconomiaForm(forms.ModelForm):
 
 
 class DimensionTrabajoForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['fk_legajo'].widget = forms.HiddenInput()
     class Meta:
         model = DimensionTrabajo
         fields = '__all__'

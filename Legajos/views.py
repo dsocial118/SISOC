@@ -192,7 +192,7 @@ class LegajosDetailView(DetailView):
             alertas = HistorialLegajoAlertas.objects.filter(fk_legajo=pk).values('fecha_inicio', 'fecha_fin', 'fk_alerta__fk_categoria__dimension')
             cache.set('alertas', alertas, 60)
         if not familiares:
-            familiares = LegajoGrupoFamiliar.objects.filter(Q(fk_legajo_1=pk) | Q(fk_legajo_2=pk)).values('fk_legajo_1', 'fk_legajo_1_id', 'fk_legajo_2_id', 'fk_legajo_2', 'vinculo', 'vinculo_inverso')
+            familiares = LegajoGrupoFamiliar.objects.filter(Q(fk_legajo_1=pk) | Q(fk_legajo_2=pk)).values('fk_legajo_1__nombre', 'fk_legajo_1__apellido', 'fk_legajo_1__id', 'fk_legajo_1__foto', 'fk_legajo_2__nombre', 'fk_legajo_2__apellido', 'fk_legajo_2__id', 'fk_legajo_2__foto', 'vinculo', 'vinculo_inverso')
             cache.set('familiares', familiares, 60)
         if not hogar_familiares:
             hogar_familiares = LegajoGrupoHogar.objects.filter(Q(fk_legajo_1Hogar=pk) | Q(fk_legajo_2Hogar=pk)).values('fk_legajo_2Hogar_id', 'fk_legajo_2Hogar', 'estado_relacion')
@@ -253,8 +253,8 @@ class LegajosDetailView(DetailView):
             emoji_nacionalidad = EMOJIS_BANDERAS.get(legajo.nacionalidad, '')
             cache.set('emoji_nacionalidad', emoji_nacionalidad, 60)
         
-        context["familiares_fk1"] = [familiar for familiar in familiares if familiar['fk_legajo_1'] == int(pk)]
-        context["familiares_fk2"] = [familiar for familiar in familiares if familiar['fk_legajo_2'] == int(pk)]
+        context["familiares_fk1"] = [familiar for familiar in familiares if familiar['fk_legajo_1__id'] == int(pk)]
+        context["familiares_fk2"] = [familiar for familiar in familiares if familiar['fk_legajo_2__id'] == int(pk)]
         context["count_familia"] = len(familiares)
 
         context["hogar_familiares_fk1"] = [familiar for familiar in hogar_familiares if familiar['fk_legajo_1Hogar'] == int(pk)]
@@ -1033,22 +1033,23 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
     success_message = "Editado correctamente"
 
     def get_context_data(self, **kwargs):
-        context = super(DimensionesUpdateView, self).get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
 
         pk = self.get_object().fk_legajo.id
-        legajo = Legajos.objects.filter(id=pk).first()
-        dimension_vivienda = DimensionVivienda.objects.filter(fk_legajo__id=pk).first()
-        dimension_salud = DimensionSalud.objects.filter(fk_legajo__id=pk).first()
-        dimension_educacion = DimensionEducacion.objects.filter(fk_legajo__id=pk).first()
-        dimension_economia = DimensionEconomia.objects.filter(fk_legajo__id=pk).first()
-        dimension_trabajo = DimensionTrabajo.objects.filter(fk_legajo__id=pk).first()
+        legajo = Legajos.objects.filter(id=pk).select_related(
+        'dimensionvivienda',
+        'dimensionsalud',
+        'dimensioneducacion',
+        'dimensioneconomia',
+        'dimensiontrabajo'
+        ).first()
 
         context["legajo"] = legajo
-        context["form_vivienda"] = self.form_vivienda(instance=dimension_vivienda)
-        context["form_salud"] = self.form_salud(instance=dimension_salud)
-        context["form_educacion"] = self.form_educacion(instance=dimension_educacion)
-        context["form_economia"] = self.form_economia(instance=dimension_economia)
-        context["form_trabajo"] = self.form_trabajo(instance=dimension_trabajo)
+        context["form_vivienda"] = self.form_vivienda(instance=legajo.dimensionvivienda)
+        context["form_salud"] = self.form_salud(instance=legajo.dimensionsalud)
+        context["form_educacion"] = self.form_educacion(instance=legajo.dimensioneducacion)
+        context["form_economia"] = self.form_economia(instance=legajo.dimensioneconomia)
+        context["form_trabajo"] = self.form_trabajo(instance=legajo.dimensiontrabajo)
 
         return context
 
