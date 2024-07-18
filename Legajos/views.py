@@ -115,13 +115,23 @@ class LegajosListView(ListView):
     def get_queryset(self):
         if not hasattr(self, '_cached_queryset'):
             queryset = super().get_queryset()
-            query = self.request.GET.get("busqueda")
+            query = self.request.GET.get("busqueda", "")
+
             if query:
-                queryset = queryset.filter(
-                    Q(documento__startswith=query) | Q(apellido__icontains=query)
-                ).values('id', 'apellido', 'nombre', 'documento', 'tipo_doc', 'sexo', 'localidad', 'estado')
+                if query.isnumeric():
+                    queryset = queryset.filter(
+                        Q(documento__icontains=query)
+                    )
+                else:
+                    queryset = queryset.filter(
+                        Q(apellido__icontains=query)
+                    )
+            
+            queryset = queryset.values('id', 'apellido', 'nombre', 'documento', 'tipo_doc', 'sexo', 'localidad', 'estado')
             self._cached_queryset = queryset
+
         return self._cached_queryset
+
 
     def get(self, request, *args, **kwargs):
         if self.request.GET.get("busqueda"):
