@@ -11,6 +11,7 @@ from django.views.generic import (
     FormView,
 )
 from django.db.models import Q, Count, F, Case, When, Value, BooleanField,IntegerField
+from django.db import transaction
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.shortcuts import render, redirect
@@ -123,8 +124,8 @@ class LegajosListView(ListView):
         return self._cached_queryset
 
     def get(self, request, *args, **kwargs):
-        self.object_list = self.get_queryset()
         if self.request.GET.get("busqueda"):
+            self.object_list = self.get_queryset()
             size_queryset = len(self.object_list)
             if size_queryset == 1:
                 pk = self.object_list.first().id
@@ -393,7 +394,7 @@ class LegajosCreateView(PermisosMixin, CreateView):
     form_class = LegajosForm
 
     def form_valid(self, form):
-        legajo = form.save(commit=False)  # Guardamos sin persistir en la base de datos
+        legajo = form.save(commit=False)
 
         if legajo.foto:
             imagen = Image.open(legajo.foto)
@@ -405,27 +406,28 @@ class LegajosCreateView(PermisosMixin, CreateView):
             imagen_recortada.save(buffer, format='PNG')
             legajo.foto.save(legajo.foto.name, ContentFile(buffer.getvalue()))
 
-        self.object = form.save()  # Guardamos el objeto Legajos con la imagen recortada (si corresponde)
-
         try:
-            ref = DimensionFamilia.objects.create(fk_legajo_id=self.object.id)
-            DimensionVivienda.objects.create(fk_legajo_id=self.object.id)
-            DimensionSalud.objects.create(fk_legajo_id=self.object.id)
-            DimensionEconomia.objects.create(fk_legajo_id=self.object.id)
-            DimensionEducacion.objects.create(fk_legajo_id=self.object.id)
-            DimensionTrabajo.objects.create(fk_legajo_id=self.object.id)
-            
-            if "form_legajos" in self.request.POST:
-                return redirect("legajos_ver", pk=int(self.object.id))
+            with transaction.atomic():
+                legajo.save() 
 
-            if "form_step2" in self.request.POST:
-                return redirect("legajosdimensiones_editar", pk=ref.id)
+                # Crear las dimensiones
+                DimensionFamilia.objects.create(fk_legajo_id=legajo.id)
+                DimensionVivienda.objects.create(fk_legajo_id=legajo.id)
+                DimensionSalud.objects.create(fk_legajo_id=legajo.id)
+                DimensionEconomia.objects.create(fk_legajo_id=legajo.id)
+                DimensionEducacion.objects.create(fk_legajo_id=legajo.id)
+                DimensionTrabajo.objects.create(fk_legajo_id=legajo.id)
+
+            # Redireccionar según el botón presionado
+            if "form_legajos" in self.request.POST:
+                return redirect("legajos_ver", pk=int(legajo.id))
+            elif "form_step2" in self.request.POST:
+                return redirect("legajosdimensiones_editar", pk=legajo.id)
 
         except Exception as e:
-            legajo.delete()
-
             messages.error(self.request, "Se produjo un error al crear las dimensiones. Por favor, inténtalo de nuevo.")
             return redirect("legajos_crear")
+
 
 
 class LegajosUpdateView(PermisosMixin, UpdateView):
@@ -435,20 +437,21 @@ class LegajosUpdateView(PermisosMixin, UpdateView):
 
     def form_valid(self, form):
         legajo = form.save(commit=False)  # Guardamos sin persistir en la base de datos
+        current_legajo = self.get_object()
 
-        # Comprobamos si se ha cargado una nueva foto y si es diferente de la foto actual
-        if legajo.foto and legajo.foto != self.get_object().foto:
-            imagen = Image.open(legajo.foto)
-            tamano_minimo = min(imagen.width, imagen.height)
-            area = (0, 0, tamano_minimo, tamano_minimo)
-            imagen_recortada = imagen.crop(area)
+        with transaction.atomic():
+            # Comprobamos si se ha cargado una nueva foto y si es diferente de la foto actual
+            if legajo.foto and legajo.foto != current_legajo.foto:
+                imagen = Image.open(legajo.foto)
+                tamano_minimo = min(imagen.width, imagen.height)
+                area = (0, 0, tamano_minimo, tamano_minimo)
+                imagen_recortada = imagen.crop(area)
 
-            buffer = BytesIO()
-            imagen_recortada.save(buffer, format='PNG')
-            legajo.foto.save(legajo.foto.name, ContentFile(buffer.getvalue()))
+                buffer = BytesIO()
+                imagen_recortada.save(buffer, format='PNG')
+                legajo.foto.save(legajo.foto.name, ContentFile(buffer.getvalue()))
 
-        self.object = form.save()  # Guardamos el objeto Legajos con la imagen recortada (si corresponde)
-                     
+            self.object = form.save()  # Guardamos el objeto Legajos con la imagen recortada (si corresponde)
 
         if "form_legajos" in self.request.POST:
             return redirect("legajos_ver", pk=self.object.id)
@@ -456,7 +459,7 @@ class LegajosUpdateView(PermisosMixin, UpdateView):
         if "form_step2" in self.request.POST:
             return redirect("legajosdimensiones_editar", pk=self.object.dimensionfamilia.id)
 
-        self.object.save()
+        return super().form_valid(form)
         
 
 
