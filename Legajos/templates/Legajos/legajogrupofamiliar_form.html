@@ -202,6 +202,21 @@
                                         <tbody id="results-box">
                                         </tbody>
                                     </table>
+
+                                    <nav aria-label="Page navigation">
+                                        <ul class="pagination justify-content-center">
+                                          <li class="page-item"><a class="page-link" href="#" id="prevPage">Anterior</a></li>
+                                          <li class="page-item disabled"><span class="page-link" id="currentPage"></span></li>
+                                          <li class="page-item"><a class="page-link" href="#" id="nextPage">Siguiente</a></li>
+                                        </ul>
+                                      </nav>
+
+                                      <div class="text-center" id="loadingIndicator" style="display: none;">
+                                        <div class="spinner-border" role="status">
+                                          <span class="sr-only">Cargando...</span>
+                                        </div>
+                                      </div>
+
                                 </div>
                                 <div class="row d-none" id="nuevo_legajo_familiar">
                                     <form autocomplete="off" method="POST" novalidate id="formulario-nuevo">
@@ -301,7 +316,8 @@
     resultsBox.append('<td colspan="8" class="text-center text-muted h4">Realice una busqueda.</td>')
     const csrf = document.getElementsByName('csrfmiddlewaretoken')[0].value
 
-    const sendSearchData = (busqueda) => {
+    const sendSearchData = (busqueda, pageNumber=1) => {
+        $('#loadingIndicator').show();
         $.ajax({
             type: 'POST',
             url: "{% url 'familiares_buscar' %}",
@@ -309,6 +325,7 @@
                 'csrfmiddlewaretoken': csrf,
                 'busqueda': busqueda,
                 'id': '{{ pk }}',
+                'page': pageNumber,
             },
             success: (res) => {
                 const data = res.data.familiares
@@ -337,12 +354,39 @@
                         formNuevo.removeClass('d-none')
                     }
                 }
+                updatePaginationControls(res.data);
+                $('#loadingIndicator').hide();
             },
             error: (err) => {
                 console.log("Error: ", err)
             }
         })
     }
+
+    function updatePaginationControls(data) {
+    // Ejemplo básico, ajusta según sea necesario
+    if (data.has_previous) {
+        $('#prevPage').show();
+    } else {
+        $('#prevPage').hide();
+    }
+    if (data.has_next) {
+        $('#nextPage').show();
+    } else {
+        $('#nextPage').hide();
+    }
+
+    $('#currentPage').text(`Página ${data.page} de ${data.num_pages}`);
+    // Manejar clics en los botones de paginación
+    $('#prevPage').off('click').on('click', function(e) {
+        e.preventDefault();
+        sendSearchData(searchInput.value, parseInt(data.page) - 1);
+    });
+    $('#nextPage').off('click').on('click', function(e) {
+        e.preventDefault();
+        sendSearchData(searchInput.value, parseInt(data.page) + 1);
+    });
+}
 
     searchInput.addEventListener('keydown', e => {
         if (e.key === 'Enter') {
