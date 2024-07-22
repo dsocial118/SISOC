@@ -378,17 +378,6 @@ class LegajosDeleteView(PermisosMixin, DeleteView):
         return context
     
     def form_valid(self, form):
-        # Obtener el usuario que realiza la eliminación
-        legajo = self.get_object()
-        # Eliminar las instancias relacionadas protegidas (LegajosDerivaciones en este caso)
-        LegajosDerivaciones.objects.filter(fk_legajo=legajo).delete()
-        LegajoAlertas.objects.filter(fk_legajo=legajo).delete()
-        HistorialLegajoAlertas.objects.filter(fk_legajo=legajo).delete()
-
-        #Preguntar por cual hay que buscar para eliminar o si es por ambos
-        LegajoGrupoFamiliar.objects.filter(fk_legajo_1=legajo).delete()
-        LegajoGrupoFamiliar.objects.filter(fk_legajo_2=legajo).delete()
-
         usuario_eliminacion = self.request.user
         legajo = self.get_object()        
 
