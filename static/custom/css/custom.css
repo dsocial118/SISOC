@@ -123,3 +123,9 @@ border-left-color: #fb4733 !important;
 .dark-mode .content-wrapper {
   background-color: rgb(42 59 82) !important;
 }
+
+
+/* Custom para legajogrupofamiliar_form */
+.table-responsive #tabla th{
+  max-width: 120px !important;
+}
