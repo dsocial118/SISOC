@@ -1019,20 +1019,33 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
         context = super().get_context_data(**kwargs)
 
         pk = self.kwargs["pk"]
-        legajo = Legajos.objects.filter(id=pk).select_related(
+        legajo = Legajos.objects.select_related(
             'dimensionvivienda',
             'dimensionsalud',
             'dimensioneducacion',
             'dimensioneconomia',
             'dimensiontrabajo'
-        ).first()
+        ).only(
+            'id', 'apellido', 'nombre', 
+            'dimensionvivienda__fk_legajo', 'dimensionvivienda__obs_vivienda', 
+            'dimensionsalud__fk_legajo', 'dimensionsalud__obs_salud', 
+            'dimensionsalud__hay_obra_social', 'dimensionsalud__hay_enfermedad', 
+            'dimensionsalud__hay_discapacidad', 'dimensionsalud__hay_cud', 
+            'dimensioneducacion__fk_legajo', 'dimensioneducacion__obs_educacion', 
+            'dimensioneducacion__areaCurso', 'dimensioneducacion__areaOficio', 
+            'dimensioneconomia__fk_legajo', 'dimensioneconomia__obs_economia', 
+            'dimensioneconomia__m2m_planes', 'dimensiontrabajo__fk_legajo', 
+            'dimensiontrabajo__obs_trabajo'
+        ).get(id=pk)
 
-        context["legajo"] = legajo
-        context["form_vivienda"] = self.form_vivienda(instance=legajo.dimensionvivienda)
-        context["form_salud"] = self.form_salud(instance=legajo.dimensionsalud)
-        context["form_educacion"] = self.form_educacion(instance=legajo.dimensioneducacion)
-        context["form_economia"] = self.form_economia(instance=legajo.dimensioneconomia)
-        context["form_trabajo"] = self.form_trabajo(instance=legajo.dimensiontrabajo)
+        context.update({
+            "legajo": legajo,
+            "form_vivienda": self.form_vivienda(instance=legajo.dimensionvivienda),
+            "form_salud": self.form_salud(instance=legajo.dimensionsalud),
+            "form_educacion": self.form_educacion(instance=legajo.dimensioneducacion),
+            "form_economia": self.form_economia(instance=legajo.dimensioneconomia),
+            "form_trabajo": self.form_trabajo(instance=legajo.dimensiontrabajo),
+        })
 
         return context
 
