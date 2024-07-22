@@ -421,7 +421,7 @@ class LegajosCreateView(PermisosMixin, CreateView):
                 legajo.save() 
 
                 # Crear las dimensiones
-                dimension_familia = DimensionFamilia.objects.create(fk_legajo_id=legajo.id)
+                DimensionFamilia.objects.create(fk_legajo_id=legajo.id)
                 DimensionVivienda.objects.create(fk_legajo_id=legajo.id)
                 DimensionSalud.objects.create(fk_legajo_id=legajo.id)
                 DimensionEconomia.objects.create(fk_legajo_id=legajo.id)
@@ -432,7 +432,7 @@ class LegajosCreateView(PermisosMixin, CreateView):
             if "form_legajos" in self.request.POST:
                 return redirect("legajos_ver", pk=int(legajo.id))
             elif "form_step2" in self.request.POST:
-                return redirect("legajosdimensiones_editar", pk=int(dimension_familia.id))
+                return redirect("legajosdimensiones_editar", pk=int(legajo.id))
 
         except Exception as e:
             messages.error(self.request, "Se produjo un error al crear las dimensiones. Por favor, inténtalo de nuevo.")
@@ -467,7 +467,7 @@ class LegajosUpdateView(PermisosMixin, UpdateView):
             return redirect("legajos_ver", pk=self.object.id)
 
         if "form_step2" in self.request.POST:
-            return redirect("legajosdimensiones_editar", pk=self.object.dimensionfamilia.id)
+            return redirect("legajosdimensiones_editar", pk=legajo.id)
 
         return super().form_valid(form)
         
@@ -486,7 +486,7 @@ class LegajosGrupoFamiliarCreateView(CreateView):
 
     def get_context_data(self, **kwargs):
         pk = self.kwargs["pk"]
-        legajo_principal = Legajos.objects.filter(pk=pk).first()
+        legajo_principal = Legajos.objects.get(pk=pk)
         # Calcula la edad utilizando la función 'edad' del modelo
         edad_calculada = legajo_principal.edad()
 
@@ -1018,13 +1018,13 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        pk = self.get_object().fk_legajo.id
+        pk = self.kwargs["pk"]
         legajo = Legajos.objects.filter(id=pk).select_related(
-        'dimensionvivienda',
-        'dimensionsalud',
-        'dimensioneducacion',
-        'dimensioneconomia',
-        'dimensiontrabajo'
+            'dimensionvivienda',
+            'dimensionsalud',
+            'dimensioneducacion',
+            'dimensioneconomia',
+            'dimensiontrabajo'
         ).first()
 
         context["legajo"] = legajo
@@ -1039,7 +1039,7 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
     def form_valid(self, form):
         self.object = form.save(commit=False)
 
-        pk = self.get_object().fk_legajo.id
+        pk = self.kwargs["pk"]
 
         legajo_dim_vivienda = DimensionVivienda.objects.get(fk_legajo__id=pk)
         legajo_dim_salud = DimensionSalud.objects.get(fk_legajo__id=pk)
