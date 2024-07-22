@@ -162,7 +162,7 @@
                     </div>
 
                     <!-- Fin paginación -->
-
+                    <!-- Paginacion agregar familiar-->
                     <div class="col-sm-12 mt-3">
                         <div class="card">
                             <div class="card-header">
@@ -259,14 +259,25 @@
 
                     <!-- botones del pie -->
                     <div class="row">
-                        <div class="col-md-12">
+                        <div class="col-md-2">
                             <div class="form-group mb-0 mt-3 d-flex justify-content-between">
                                 <a href="{% url 'legajosdimensiones_editar' id_dimensionfamiliar %}"
                                     class="btn btn-secondary mb-3 float-right">Volver</a>
-                                <a href="{% url 'legajos_ver' pk %}" class="btn btn-primary mb-3">Guardar</a>
-                                <a href="{% url 'legajosgrupohogar_crear' pk %}"
-                                    class="btn btn-secondary mb-3 float-right">Continuar</a>
                             </div>
+                        </div>
+                        <div class="col-md-7">
+                            paginación
+                        </div>
+                        <div class="col-md-3">
+                            <div class="row mt-3">
+                                <div class="col-md-5">
+                                    <a href="{% url 'legajos_ver' pk %}" class="btn btn-primary">Guardar</a>
+                                </div>
+                                <div class="col-md-5">
+                                    <a href="{% url 'legajosgrupohogar_crear' pk %}"
+                                    class="btn btn-secondary">Continuar</a>
+                                </div>
+                            </div> 
                         </div>
                     </div>
                     <!-- /botones del pie -->
