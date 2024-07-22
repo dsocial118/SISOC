@@ -421,7 +421,7 @@ class LegajosCreateView(PermisosMixin, CreateView):
                 legajo.save() 
 
                 # Crear las dimensiones
-                DimensionFamilia.objects.create(fk_legajo_id=legajo.id)
+                dimension_familia = DimensionFamilia.objects.create(fk_legajo_id=legajo.id)
                 DimensionVivienda.objects.create(fk_legajo_id=legajo.id)
                 DimensionSalud.objects.create(fk_legajo_id=legajo.id)
                 DimensionEconomia.objects.create(fk_legajo_id=legajo.id)
@@ -432,7 +432,7 @@ class LegajosCreateView(PermisosMixin, CreateView):
             if "form_legajos" in self.request.POST:
                 return redirect("legajos_ver", pk=int(legajo.id))
             elif "form_step2" in self.request.POST:
-                return redirect("legajosdimensiones_editar", pk=legajo.id)
+                return redirect("legajosdimensiones_editar", pk=int(dimension_familia.id))
 
         except Exception as e:
             messages.error(self.request, "Se produjo un error al crear las dimensiones. Por favor, inténtalo de nuevo.")
