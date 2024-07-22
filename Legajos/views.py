@@ -1444,6 +1444,8 @@ class LegajosGrupoHogarCreateView(CreateView):
     permission_required = admin_role
     model = LegajoGrupoHogar
     form_class = LegajoGrupoHogarForm
+    paginate_by = 2
+
     
 
     def get_context_data(self, **kwargs):
@@ -1505,21 +1507,29 @@ class LegajosGrupoHogarCreateView(CreateView):
         return HttpResponseRedirect(self.request.path_info)
     
 def busqueda_hogar(request):
-    # FIXME: por que usamos function view y no class? 
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         res = None
         busqueda = request.POST.get("busqueda")
         legajo_principal_id = request.POST.get("id")
-        # FIXME: Estas 2 queries podrian ser 1
+        page_number = request.POST.get("page", 1)
         legajos_asociadosfk1 = LegajoGrupoHogar.objects.filter(fk_legajo_1Hogar_id=legajo_principal_id).values_list('fk_legajo_2Hogar_id', flat=True)
         legajos_asociadosfk2 = LegajoGrupoHogar.objects.filter(fk_legajo_2Hogar_id=legajo_principal_id).values_list('fk_legajo_1Hogar_id', flat=True)
+        paginate_by = 10
         hogares = (
             Legajos.objects.filter(~Q(id=legajo_principal_id) & (Q(apellido__icontains=busqueda) | Q(documento__icontains=busqueda)))
             .exclude(id__in=legajos_asociadosfk1)
-            .exclude(id__in=legajos_asociadosfk2) # FIXME: Estos 2 excludes podrian ser 1
+            .exclude(id__in=legajos_asociadosfk2)
         )
 
         if len(hogares) > 0 and busqueda:
+            paginator = Paginator(hogares, paginate_by)
+            try:
+                page_obj = paginator.page(page_number)
+            except PageNotAnInteger:
+                page_obj = paginator.page(1)
+            except EmptyPage:
+                page_obj = paginator.page(paginator.num_pages)
+
             data = [
                 {
                     'pk': hogar.pk,
@@ -1531,9 +1541,15 @@ def busqueda_hogar(request):
                     'sexo': hogar.sexo,
                     # Otros campos que deseas incluir
                 }
-                for hogar in hogares
+                for hogar in page_obj
             ]
-            res = data
+            res = {
+                'hogares': data,
+                'page': page_number,
+                'num_pages': paginator.num_pages,
+                'has_next': page_obj.has_next(),
+                'has_previous': page_obj.has_previous(),
+            }
         else:
             res = ""
 
