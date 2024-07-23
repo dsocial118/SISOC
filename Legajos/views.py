@@ -194,8 +194,8 @@ class LegajosDetailView(DetailView):
         if not familiares:
             familiares = LegajoGrupoFamiliar.objects.filter(Q(fk_legajo_1=pk) | Q(fk_legajo_2=pk)).values('fk_legajo_1__nombre', 'fk_legajo_1__apellido', 'fk_legajo_1__id', 'fk_legajo_1__foto', 'fk_legajo_2__nombre', 'fk_legajo_2__apellido', 'fk_legajo_2__id', 'fk_legajo_2__foto', 'vinculo', 'vinculo_inverso')
             cache.set('familiares', familiares, 60)
-        if not hogar_familiares:
-            hogar_familiares = LegajoGrupoHogar.objects.filter(Q(fk_legajo_1Hogar=pk) | Q(fk_legajo_2Hogar=pk)).values('fk_legajo_2Hogar_id', 'fk_legajo_2Hogar', 'estado_relacion')
+        if not hogar_familiares: 
+            hogar_familiares = LegajoGrupoHogar.objects.filter(Q(fk_legajo_1Hogar=pk) | Q(fk_legajo_2Hogar=pk)).values('fk_legajo_2Hogar_id', 'fk_legajo_2Hogar', 'fk_legajo_1Hogar_id', 'fk_legajo_1Hogar', 'estado_relacion')
             cache.set('hogar_familiares', hogar_familiares, 60)
         if not files:
             files = LegajosArchivos.objects.filter(Q(tipo="Imagen") | Q(tipo="Documento"), fk_legajo=pk)
@@ -1451,9 +1451,7 @@ class LegajosGrupoHogarCreateView(CreateView):
     def get_context_data(self, **kwargs):
         pk = self.kwargs["pk"]
         legajo_principal = Legajos.objects.filter(pk=pk).first()
-        # Calcula la edad utilizando la función 'edad' del modelo
-             
-
+    
         context = super().get_context_data(**kwargs)
         # FIXME: Estas 2 podrian ser solo 1 query
         hogares_1 = LegajoGrupoHogar.objects.filter(fk_legajo_1Hogar=pk)
