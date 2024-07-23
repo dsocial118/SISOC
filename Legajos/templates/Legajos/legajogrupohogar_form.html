@@ -134,6 +134,33 @@
                                         </div>
                                         {%endif%}
                                     </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <nav>
+                                                <ul class="pagination justify-content-center">
+                                                    {% if hogar_1.has_previous %}
+                                                    <li class="page-item">
+                                                        <a class="page-link" href="?page_fk1={{ hogar_1.previous_page_number }}" aria-label="Previous">
+                                                            <span aria-hidden="true">&laquo;</span>
+                                                        </a>
+                                                    </li>
+                                                    {%endif%}
+                                                    {% for num in hogar_1.paginator.page_range %}
+                                                    <li class="page-item {% if hogar_1.number == num %}active{% endif %}">
+                                                        <a class="page-link" href="?page_fk1={{ num }}">{{num}}</a>
+                                                    </li>
+                                                    {% endfor %}
+                                                    {% if hogar_1.has_next %}
+                                                    <li class="page-item">
+                                                        <a class="page-link" href="?page_fk1={{ hogar_1.next_page_number }}" aria-label="Next">
+                                                            <span aria-hidden="true">&raquo;</span>
+                                                        </a>
+                                                    </li>
+                                                    {%endif%}
+                                            </nav>
+                                    </div>
+
                                 </div>
                             </div>
                         </div>
