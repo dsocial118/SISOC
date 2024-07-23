@@ -1456,9 +1456,24 @@ class LegajosGrupoHogarCreateView(CreateView):
 
         context = super().get_context_data(**kwargs)
         # FIXME: Estas 2 podrian ser solo 1 query
-        context["hogar_1"] = LegajoGrupoHogar.objects.filter(fk_legajo_1Hogar=pk)
-        context["hogar_2"] = LegajoGrupoHogar.objects.filter(fk_legajo_2Hogar=pk)
-        context["count_hogar"] = context["hogar_1"].count() + context["hogar_2"].count()
+        hogares_1 = LegajoGrupoHogar.objects.filter(fk_legajo_1Hogar=pk)
+        hogares_2 = LegajoGrupoHogar.objects.filter(fk_legajo_2Hogar=pk)
+
+        #Paginacion
+
+        paginator_fk1 = Paginator(hogares_1, self.paginate_by)
+        paginator_fk2 = Paginator(hogares_2, self.paginate_by)
+
+        page_number_fk1 = self.request.GET.get('page_fk1')
+        page_number_fk2 = self.request.GET.get('page_fk2')
+
+        page_obj_fk1 = paginator_fk1.get_page(page_number_fk1)
+        page_obj_fk2 = paginator_fk2.get_page(page_number_fk2)
+
+        context["hogar_1"] = page_obj_fk1
+        context["hogar_2"] = page_obj_fk2
+
+        context["count_hogar"] = hogares_1.count() + hogares_2.count()
         context["legajo_principal"] = legajo_principal
         context["pk"] = pk
         #context["hogar_fk"] = LegajoGrupoHogar.objects.get(fk_legajo=pk).id
