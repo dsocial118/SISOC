@@ -209,7 +209,7 @@
                                           <li class="page-item disabled"><span class="page-link" id="currentPage"></span></li>
                                           <li class="page-item"><a class="page-link" href="#" id="nextPage">Siguiente</a></li>
                                         </ul>
-                                      </nav>
+                                    </nav>
 
                                       <div class="text-center" id="loadingIndicator" style="display: none;">
                                         <div class="spinner-border" role="status">
@@ -281,7 +281,6 @@
                             </div>
                         </div>
                         <div class="col-md-7">
-                            paginación
                         </div>
                         <div class="col-md-3">
                             <div class="row mt-3">
@@ -364,7 +363,6 @@
     }
 
     function updatePaginationControls(data) {
-    // Ejemplo básico, ajusta según sea necesario
     if (data.has_previous) {
         $('#prevPage').show();
     } else {
