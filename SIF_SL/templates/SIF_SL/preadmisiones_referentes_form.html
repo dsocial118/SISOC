@@ -38,7 +38,7 @@
                         </div>
                         <div class="line d-none d-sm-inline"></div>
                         <div class="step d-none d-sm-inline">
-                            <a href="{% url 'legajosdimensiones_editar' legajo_principal.dimensionfamilia.id  %}"
+                            <a href="{% url 'legajosdimensiones_editar' pk  %}"
                                 class="step-trigger" role="tab">
                                 <span class="bs-stepper-circle">2</span>
                                 <span class="bs-stepper-label">Dimensiones</span>
@@ -227,7 +227,7 @@
                     <div class="row">
                         <div class="col-md-12">
                             <div class="form-group mb-0 mt-3 d-flex justify-content-between">
-                                <a href="{% url 'legajosdimensiones_editar' id_dimensionfamiliar %}"
+                                <a href="{% url 'legajosdimensiones_editar' pk %}"
                                     class="btn btn-secondary mb-3 float-right">Volver</a>
                                 <a href="{% url 'legajos_ver' pk %}" class="btn btn-primary mb-3">Guardar</a>
                                 <a href="{% url 'legajoalertas_crear' pk %}"
