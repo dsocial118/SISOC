@@ -11,6 +11,7 @@ from django.views.generic import (
     FormView,
 )
 from django.db.models import Q, Count, F, Case, When, Value, BooleanField,IntegerField
+from django.db import transaction
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.shortcuts import render, redirect
@@ -114,17 +115,27 @@ class LegajosListView(ListView):
     def get_queryset(self):
         if not hasattr(self, '_cached_queryset'):
             queryset = super().get_queryset()
-            query = self.request.GET.get("busqueda")
+            query = self.request.GET.get("busqueda", "")
+
             if query:
-                queryset = queryset.filter(
-                    Q(documento__startswith=query) | Q(apellido__icontains=query)
-                ).values('id', 'apellido', 'nombre', 'documento', 'tipo_doc', 'sexo', 'localidad', 'estado')
+                if query.isnumeric():
+                    queryset = queryset.filter(
+                        Q(documento__icontains=query)
+                    )
+                else:
+                    queryset = queryset.filter(
+                        Q(apellido__icontains=query)
+                    )
+            
+            queryset = queryset.values('id', 'apellido', 'nombre', 'documento', 'tipo_doc', 'sexo', 'localidad', 'estado')
             self._cached_queryset = queryset
+
         return self._cached_queryset
 
+
     def get(self, request, *args, **kwargs):
-        self.object_list = self.get_queryset()
         if self.request.GET.get("busqueda"):
+            self.object_list = self.get_queryset()
             size_queryset = len(self.object_list)
             if size_queryset == 1:
                 pk = self.object_list.first().id
@@ -367,17 +378,6 @@ class LegajosDeleteView(PermisosMixin, DeleteView):
         return context
     
     def form_valid(self, form):
-        # Obtener el usuario que realiza la eliminación
-        legajo = self.get_object()
-        # Eliminar las instancias relacionadas protegidas (LegajosDerivaciones en este caso)
-        LegajosDerivaciones.objects.filter(fk_legajo=legajo).delete()
-        LegajoAlertas.objects.filter(fk_legajo=legajo).delete()
-        HistorialLegajoAlertas.objects.filter(fk_legajo=legajo).delete()
-
-        #Preguntar por cual hay que buscar para eliminar o si es por ambos
-        LegajoGrupoFamiliar.objects.filter(fk_legajo_1=legajo).delete()
-        LegajoGrupoFamiliar.objects.filter(fk_legajo_2=legajo).delete()
-
         usuario_eliminacion = self.request.user
         legajo = self.get_object()        
 
@@ -393,7 +393,7 @@ class LegajosCreateView(PermisosMixin, CreateView):
     form_class = LegajosForm
 
     def form_valid(self, form):
-        legajo = form.save(commit=False)  # Guardamos sin persistir en la base de datos
+        legajo = form.save(commit=False)
 
         if legajo.foto:
             imagen = Image.open(legajo.foto)
@@ -405,27 +405,28 @@ class LegajosCreateView(PermisosMixin, CreateView):
             imagen_recortada.save(buffer, format='PNG')
             legajo.foto.save(legajo.foto.name, ContentFile(buffer.getvalue()))
 
-        self.object = form.save()  # Guardamos el objeto Legajos con la imagen recortada (si corresponde)
-
         try:
-            ref = DimensionFamilia.objects.create(fk_legajo_id=self.object.id)
-            DimensionVivienda.objects.create(fk_legajo_id=self.object.id)
-            DimensionSalud.objects.create(fk_legajo_id=self.object.id)
-            DimensionEconomia.objects.create(fk_legajo_id=self.object.id)
-            DimensionEducacion.objects.create(fk_legajo_id=self.object.id)
-            DimensionTrabajo.objects.create(fk_legajo_id=self.object.id)
-            
-            if "form_legajos" in self.request.POST:
-                return redirect("legajos_ver", pk=int(self.object.id))
+            with transaction.atomic():
+                legajo.save() 
 
-            if "form_step2" in self.request.POST:
-                return redirect("legajosdimensiones_editar", pk=ref.id)
+                # Crear las dimensiones
+                DimensionFamilia.objects.create(fk_legajo_id=legajo.id)
+                DimensionVivienda.objects.create(fk_legajo_id=legajo.id)
+                DimensionSalud.objects.create(fk_legajo_id=legajo.id)
+                DimensionEconomia.objects.create(fk_legajo_id=legajo.id)
+                DimensionEducacion.objects.create(fk_legajo_id=legajo.id)
+                DimensionTrabajo.objects.create(fk_legajo_id=legajo.id)
+
+            # Redireccionar según el botón presionado
+            if "form_legajos" in self.request.POST:
+                return redirect("legajos_ver", pk=int(legajo.id))
+            elif "form_step2" in self.request.POST:
+                return redirect("legajosdimensiones_editar", pk=int(legajo.id))
 
         except Exception as e:
-            legajo.delete()
-
             messages.error(self.request, "Se produjo un error al crear las dimensiones. Por favor, inténtalo de nuevo.")
             return redirect("legajos_crear")
+
 
 
 class LegajosUpdateView(PermisosMixin, UpdateView):
@@ -435,28 +436,29 @@ class LegajosUpdateView(PermisosMixin, UpdateView):
 
     def form_valid(self, form):
         legajo = form.save(commit=False)  # Guardamos sin persistir en la base de datos
+        current_legajo = self.get_object()
 
-        # Comprobamos si se ha cargado una nueva foto y si es diferente de la foto actual
-        if legajo.foto and legajo.foto != self.get_object().foto:
-            imagen = Image.open(legajo.foto)
-            tamano_minimo = min(imagen.width, imagen.height)
-            area = (0, 0, tamano_minimo, tamano_minimo)
-            imagen_recortada = imagen.crop(area)
+        with transaction.atomic():
+            # Comprobamos si se ha cargado una nueva foto y si es diferente de la foto actual
+            if legajo.foto and legajo.foto != current_legajo.foto:
+                imagen = Image.open(legajo.foto)
+                tamano_minimo = min(imagen.width, imagen.height)
+                area = (0, 0, tamano_minimo, tamano_minimo)
+                imagen_recortada = imagen.crop(area)
 
-            buffer = BytesIO()
-            imagen_recortada.save(buffer, format='PNG')
-            legajo.foto.save(legajo.foto.name, ContentFile(buffer.getvalue()))
+                buffer = BytesIO()
+                imagen_recortada.save(buffer, format='PNG')
+                legajo.foto.save(legajo.foto.name, ContentFile(buffer.getvalue()))
 
-        self.object = form.save()  # Guardamos el objeto Legajos con la imagen recortada (si corresponde)
-                     
+            self.object = form.save()  # Guardamos el objeto Legajos con la imagen recortada (si corresponde)
 
         if "form_legajos" in self.request.POST:
             return redirect("legajos_ver", pk=self.object.id)
 
         if "form_step2" in self.request.POST:
-            return redirect("legajosdimensiones_editar", pk=self.object.dimensionfamilia.id)
+            return redirect("legajosdimensiones_editar", pk=legajo.id)
 
-        self.object.save()
+        return super().form_valid(form)
         
 
 
@@ -474,7 +476,7 @@ class LegajosGrupoFamiliarCreateView(CreateView):
 
     def get_context_data(self, **kwargs):
         pk = self.kwargs["pk"]
-        legajo_principal = Legajos.objects.filter(pk=pk).first()
+        legajo_principal = Legajos.objects.get(pk=pk)
         # Calcula la edad utilizando la función 'edad' del modelo
         edad_calculada = legajo_principal.edad()
 
@@ -1035,28 +1037,41 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        pk = self.get_object().fk_legajo.id
-        legajo = Legajos.objects.filter(id=pk).select_related(
-        'dimensionvivienda',
-        'dimensionsalud',
-        'dimensioneducacion',
-        'dimensioneconomia',
-        'dimensiontrabajo'
-        ).first()
+        pk = self.kwargs["pk"]
+        legajo = Legajos.objects.select_related(
+            'dimensionvivienda',
+            'dimensionsalud',
+            'dimensioneducacion',
+            'dimensioneconomia',
+            'dimensiontrabajo'
+        ).only(
+            'id', 'apellido', 'nombre', 
+            'dimensionvivienda__fk_legajo', 'dimensionvivienda__obs_vivienda', 
+            'dimensionsalud__fk_legajo', 'dimensionsalud__obs_salud', 
+            'dimensionsalud__hay_obra_social', 'dimensionsalud__hay_enfermedad', 
+            'dimensionsalud__hay_discapacidad', 'dimensionsalud__hay_cud', 
+            'dimensioneducacion__fk_legajo', 'dimensioneducacion__obs_educacion', 
+            'dimensioneducacion__areaCurso', 'dimensioneducacion__areaOficio', 
+            'dimensioneconomia__fk_legajo', 'dimensioneconomia__obs_economia', 
+            'dimensioneconomia__m2m_planes', 'dimensiontrabajo__fk_legajo', 
+            'dimensiontrabajo__obs_trabajo'
+        ).get(id=pk)
 
-        context["legajo"] = legajo
-        context["form_vivienda"] = self.form_vivienda(instance=legajo.dimensionvivienda)
-        context["form_salud"] = self.form_salud(instance=legajo.dimensionsalud)
-        context["form_educacion"] = self.form_educacion(instance=legajo.dimensioneducacion)
-        context["form_economia"] = self.form_economia(instance=legajo.dimensioneconomia)
-        context["form_trabajo"] = self.form_trabajo(instance=legajo.dimensiontrabajo)
+        context.update({
+            "legajo": legajo,
+            "form_vivienda": self.form_vivienda(instance=legajo.dimensionvivienda),
+            "form_salud": self.form_salud(instance=legajo.dimensionsalud),
+            "form_educacion": self.form_educacion(instance=legajo.dimensioneducacion),
+            "form_economia": self.form_economia(instance=legajo.dimensioneconomia),
+            "form_trabajo": self.form_trabajo(instance=legajo.dimensiontrabajo),
+        })
 
         return context
 
     def form_valid(self, form):
         self.object = form.save(commit=False)
 
-        pk = self.get_object().fk_legajo.id
+        pk = self.kwargs["pk"]
 
         legajo_dim_vivienda = DimensionVivienda.objects.get(fk_legajo__id=pk)
         legajo_dim_salud = DimensionSalud.objects.get(fk_legajo__id=pk)
