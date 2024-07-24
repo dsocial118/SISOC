@@ -127,7 +127,7 @@ class LegajosListView(ListView):
                         Q(apellido__icontains=query)
                     )
             
-            queryset = queryset.values('id', 'apellido', 'nombre', 'documento', 'tipo_doc', 'sexo', 'localidad', 'estado')
+            queryset = queryset.only('id', 'apellido', 'nombre', 'documento', 'tipo_doc', 'sexo', 'localidad', 'estado')
             self._cached_queryset = queryset
 
         return self._cached_queryset
@@ -472,9 +472,12 @@ class LegajosGrupoFamiliarCreateView(CreateView):
     permission_required = admin_role
     model = LegajoGrupoFamiliar
     form_class = NuevoLegajoFamiliarForm
-    paginate_by = 2 # Número de elementos por página
+    paginate_by = 1 # Número de elementos por página
 
     def get_context_data(self, **kwargs):
+        # Paginación
+    
+        context = super().get_context_data(**kwargs)
         pk = self.kwargs["pk"]
         legajo_principal = Legajos.objects.get(pk=pk)
         # Calcula la edad utilizando la función 'edad' del modelo
@@ -494,9 +497,32 @@ class LegajosGrupoFamiliarCreateView(CreateView):
             cuidador_principal=True
         ).exists()
 
-        context = super().get_context_data(**kwargs)
+        """familiares = LegajoGrupoFamiliar.objects.filter(Q(fk_legajo_1=pk) | Q(fk_legajo_2=pk)).select_related('fk_legajo_1', 'fk_legajo_2').only(
+            'fk_legajo_1__nombre', 'fk_legajo_1__apellido', 'fk_legajo_2__nombre', 'fk_legajo_2__apellido',
+            'vinculo', 'conviven', 'estado_relacion', 'cuidador_principal')"""
         
-        familiares_fk1 = LegajoGrupoFamiliar.objects.filter(fk_legajo_1=pk)
+        familiares = LegajoGrupoFamiliar.objects.filter(Q(fk_legajo_1=pk) | Q(fk_legajo_2=pk)).values('fk_legajo_1__nombre', 'fk_legajo_1__apellido', 'fk_legajo_1__id', 'fk_legajo_1__foto', 'fk_legajo_2__nombre', 'fk_legajo_2__apellido', 'fk_legajo_2__id', 'vinculo', 'vinculo_inverso')
+
+
+        paginator = Paginator(familiares, self.paginate_by)
+        page_number = self.request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+
+        context["familiares_fk1"] = [familiar for familiar in page_obj if familiar['fk_legajo_1__id'] == int(pk)]
+        context["familiares_fk2"] = [familiar for familiar in page_obj if familiar['fk_legajo_2__id'] == int(pk)]
+        
+        context["familiares"] = page_obj
+        context["count_familia"] = familiares.count()
+        context["legajo_principal"] = legajo_principal
+        context.update({
+        "es_menor_de_18": es_menor_de_18,
+        "tiene_cuidador_ppal": tiene_cuidador_ppal,
+        "pk": pk,
+        "id_dimensionfamiliar": DimensionFamilia.objects.get(fk_legajo=pk).id
+        })
+        return context
+        
+        """familiares_fk1 = LegajoGrupoFamiliar.objects.filter(fk_legajo_1=pk)
         familiares_fk2 = LegajoGrupoFamiliar.objects.filter(fk_legajo_2=pk)
         
         # Paginación
@@ -518,7 +544,7 @@ class LegajosGrupoFamiliarCreateView(CreateView):
         context["pk"] = pk
         context["id_dimensionfamiliar"] = DimensionFamilia.objects.get(fk_legajo=pk).id
         
-        return context
+        return context"""
 
     def form_valid(self, form):
         pk = self.kwargs["pk"]
@@ -547,7 +573,7 @@ class LegajosGrupoFamiliarCreateView(CreateView):
         # crea la relacion de grupo familiar
         legajo_principal = Legajos.objects.get(id=pk)
         try:
-            legajo_grupo_familiar = LegajoGrupoFamiliar.objects.create(
+            LegajoGrupoFamiliar.objects.create(
                 fk_legajo_1=legajo_principal,
                 fk_legajo_2=nuevo_legajo,
                 vinculo=vinculo_data["vinculo"],
@@ -557,7 +583,7 @@ class LegajosGrupoFamiliarCreateView(CreateView):
                 cuidador_principal=cuidador_principal,
             )
 
-            familiar = {
+            """familiar = {
                 "id": legajo_grupo_familiar.id,
                 "fk_legajo_1": legajo_grupo_familiar.fk_legajo_1.id,
                 "fk_legajo_2": legajo_grupo_familiar.fk_legajo_2.id,
@@ -566,7 +592,7 @@ class LegajosGrupoFamiliarCreateView(CreateView):
                 "apellido": legajo_grupo_familiar.fk_legajo_2.apellido,
                 "foto": legajo_grupo_familiar.fk_legajo_2.foto.url if legajo_grupo_familiar.fk_legajo_2.foto else None,
                 "cuidador_principal": legajo_grupo_familiar.cuidador_principal,
-            }
+            }"""
         except:
             return messages.error(self.request, "Verifique que no exista un legajo con ese DNI y NÚMERO.")
 
