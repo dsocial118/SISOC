@@ -497,10 +497,7 @@ class LegajosGrupoFamiliarCreateView(CreateView):
             cuidador_principal=True
         ).exists()
 
-        """familiares = LegajoGrupoFamiliar.objects.filter(Q(fk_legajo_1=pk) | Q(fk_legajo_2=pk)).select_related('fk_legajo_1', 'fk_legajo_2').only(
-            'fk_legajo_1__nombre', 'fk_legajo_1__apellido', 'fk_legajo_2__nombre', 'fk_legajo_2__apellido',
-            'vinculo', 'conviven', 'estado_relacion', 'cuidador_principal')"""
-        
+        # Obtiene los familiares asociados al legajo principal
         familiares = LegajoGrupoFamiliar.objects.filter(Q(fk_legajo_1=pk) | Q(fk_legajo_2=pk)).values('fk_legajo_1__nombre', 'fk_legajo_1__apellido', 'fk_legajo_1__id', 'fk_legajo_1__foto', 'fk_legajo_2__nombre', 'fk_legajo_2__apellido', 'fk_legajo_2__id', 'vinculo', 'vinculo_inverso')
 
 
@@ -521,30 +518,6 @@ class LegajosGrupoFamiliarCreateView(CreateView):
         "id_dimensionfamiliar": DimensionFamilia.objects.get(fk_legajo=pk).id
         })
         return context
-        
-        """familiares_fk1 = LegajoGrupoFamiliar.objects.filter(fk_legajo_1=pk)
-        familiares_fk2 = LegajoGrupoFamiliar.objects.filter(fk_legajo_2=pk)
-        
-        # Paginación
-        paginator_fk1 = Paginator(familiares_fk1, self.paginate_by)
-        paginator_fk2 = Paginator(familiares_fk2, self.paginate_by)
-        
-        page_number_fk1 = self.request.GET.get('page_fk1')
-        page_number_fk2 = self.request.GET.get('page_fk2')
-        
-        page_obj_fk1 = paginator_fk1.get_page(page_number_fk1)
-        page_obj_fk2 = paginator_fk2.get_page(page_number_fk2)
-        
-        context["familiares_fk1"] = page_obj_fk1
-        context["familiares_fk2"] = page_obj_fk2
-        context["count_familia"] = familiares_fk1.count() + familiares_fk2.count()
-        context["legajo_principal"] = legajo_principal
-        context["es_menor_de_18"] = es_menor_de_18
-        context["tiene_cuidador_ppal"] = tiene_cuidador_ppal
-        context["pk"] = pk
-        context["id_dimensionfamiliar"] = DimensionFamilia.objects.get(fk_legajo=pk).id
-        
-        return context"""
 
     def form_valid(self, form):
         pk = self.kwargs["pk"]
@@ -583,16 +556,6 @@ class LegajosGrupoFamiliarCreateView(CreateView):
                 cuidador_principal=cuidador_principal,
             )
 
-            """familiar = {
-                "id": legajo_grupo_familiar.id,
-                "fk_legajo_1": legajo_grupo_familiar.fk_legajo_1.id,
-                "fk_legajo_2": legajo_grupo_familiar.fk_legajo_2.id,
-                "vinculo": legajo_grupo_familiar.vinculo,
-                "nombre": legajo_grupo_familiar.fk_legajo_2.nombre,
-                "apellido": legajo_grupo_familiar.fk_legajo_2.apellido,
-                "foto": legajo_grupo_familiar.fk_legajo_2.foto.url if legajo_grupo_familiar.fk_legajo_2.foto else None,
-                "cuidador_principal": legajo_grupo_familiar.cuidador_principal,
-            }"""
         except:
             return messages.error(self.request, "Verifique que no exista un legajo con ese DNI y NÚMERO.")
 
@@ -607,13 +570,22 @@ def busqueda_familiares(request):
         busqueda = request.POST.get("busqueda")
         legajo_principal_id = request.POST.get("id")
         page_number = request.POST.get("page", 1)
-        legajos_asociadosfk1 = LegajoGrupoFamiliar.objects.filter(fk_legajo_1_id=legajo_principal_id).values_list('fk_legajo_2_id', flat=True)
-        legajos_asociadosfk2 = LegajoGrupoFamiliar.objects.filter(fk_legajo_2_id=legajo_principal_id).values_list('fk_legajo_1_id', flat=True)
+
+        legajos_asociados = LegajoGrupoFamiliar.objects.filter(Q(fk_legajo_1_id=legajo_principal_id) | Q(fk_legajo_2_id=legajo_principal_id)).values_list('fk_legajo_1_id', 'fk_legajo_2_id')
+        #legajos_asociadosfk1 = LegajoGrupoFamiliar.objects.filter(fk_legajo_1_id=legajo_principal_id).values_list('fk_legajo_2_id', flat=True)
+        #legajos_asociadosfk2 = LegajoGrupoFamiliar.objects.filter(fk_legajo_2_id=legajo_principal_id).values_list('fk_legajo_1_id', flat=True)
+
+        legajos_asociados_ids = set()
+        for fk_legajo_1_id, fk_legajo_2_id in legajos_asociados:
+            if fk_legajo_1_id != legajo_principal_id:
+                legajos_asociados_ids.add(fk_legajo_1_id)
+            if fk_legajo_2_id != legajo_principal_id:
+                legajos_asociados_ids.add(fk_legajo_2_id)
+
         paginate_by = 10
         familiares = (
             Legajos.objects.filter(~Q(id=legajo_principal_id) & (Q(apellido__icontains=busqueda) | Q(documento__icontains=busqueda)))
-            .exclude(id__in=legajos_asociadosfk1)
-            .exclude(id__in=legajos_asociadosfk2)
+            .exclude(id__in=legajos_asociados_ids)
         )
 
         if len(familiares) > 0 and busqueda:
