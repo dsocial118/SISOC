@@ -50,12 +50,12 @@ LOGGING = {
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-nkd=f=s!(abn(-tan&ceplfpumy5#j$6v$hl_=5d@q)dni4477'
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = bool(os.environ.get("DEBUG", default="False"))
 
-ALLOWED_HOSTS = ['127.0.0.1','localhost']
+ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS").split(" ")
 
 # Application definition
 
@@ -163,17 +163,18 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('DATABASE_NAME', 'default_db_name'),
-        'USER': os.getenv('DATABASE_USER', 'default_user'),
-        'PASSWORD': os.getenv('DATABASE_PASSWORD', ''),
-        'HOST': os.getenv('DATABASE_HOST', 'localhost'),
-        'PORT': os.getenv('DATABASE_PORT', '3306'),
+        "ENGINE": os.getenv("SQL_ENGINE", "django.db.backends.mysql"),
+        'NAME': os.getenv('SQL_NAME', 'sisoc-local'),
+        'USER': os.getenv('SQL_USER', 'root'),
+        'PASSWORD': os.getenv('SQL_PASSWORD', ''),
+        'HOST': os.getenv('SQL_HOST', 'localhost'),
+        'PORT': os.getenv('SQL_PORT', '3306'),
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
             'charset': 'utf8mb4',
+            'connect_timeout': 10,
         },
-        'CONN_MAX_AGE': 300,
+        'CONN_MAX_AGE': 0 if DEBUG else 600,
     }
 }
 
@@ -305,3 +306,7 @@ INTERNAL_IPS = [
     '127.0.0.1',
     '::1',
 ]
+
+DEBUG_TOOLBAR_CONFIG = {
+    'SHOW_TOOLBAR_CALLBACK': lambda request: True if DEBUG else False
+}
