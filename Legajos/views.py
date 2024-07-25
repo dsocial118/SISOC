@@ -792,7 +792,6 @@ class LegajosDerivacionesListView(PermisosMixin, ListView):
         query = self.request.GET.get("busqueda")
 
         if query:
-            # FIXME: Podriamos separar la query dependiendo si viene numerico o no numerico, para no buscar por documento innecesariamente, ademas en dni podriamos usar el contains no casesensitive que es mas performante
             object_list = model.filter(Q(fk_legajo__apellido__icontains=query) | Q(fk_legajo__documento__icontains=query)).distinct()
 
         else:
@@ -857,7 +856,7 @@ class LegajosDerivacionesHistorial(PermisosMixin, ListView):
         context = super(LegajosDerivacionesHistorial, self).get_context_data(**kwargs)
         pk = self.kwargs.get("pk")
 
-        legajo = Legajos.objects.filter(id=pk).first() # FIXME: Esto podria traerse en la query del historial con un select_related
+        legajo = Legajos.objects.filter(id=pk).first()
         historial = LegajosDerivaciones.objects.filter(fk_legajo_id=pk)
 
         context["historial"] = historial
@@ -917,7 +916,7 @@ class LegajosAlertasListView(PermisosMixin, ListView):
         pk = self.kwargs["pk"]
         context = super().get_context_data(**kwargs)
         context["legajo_alertas"] = HistorialLegajoAlertas.objects.filter(fk_legajo=pk)
-        context["legajo"] = Legajos.objects.filter(id=pk).first() # FIXME: Cuando se manda el modelo asi entero, realmente usamos todas las columnas? (Esto va para todas las veces que se hace esto, se pueden usar DTOs para delimitar la informacion que requerimos)
+        context["legajo"] = Legajos.objects.filter(id=pk).values('apellido', 'nombre', 'id').first()
         return context
 
 
@@ -1594,11 +1593,12 @@ class LegajoGrupoHogarList(ListView):
     def get_context_data(self, **kwargs):
         pk = self.kwargs["pk"]
         context = super().get_context_data(**kwargs)
-        # FIXME: Estas 2 queries podrian ser 1
+
+        familiares = LegajoGrupoFamiliar.objects.filter(Q(fk_legajo_1 = pk) | Q(fk_legajo_2 = pk)).values('fk_legajo2__id', 'fk_legajo1__id', 'fk_legajo_2__nombre', 'fk_legajo_2__apellido', 'fk_legajo_2__calle', 'fk_legajo_2__telefono', 'estado_relacion', 'conviven', 'cuidado_principal', 'fk_legajo_2__foto', 'fk_legajo_1__nombre', 'fk_legajo_1__apellido', 'fk_legajo_1__calle', 'fk_legajo_1__telefono', 'estado_relacion', 'conviven', 'cuidado_principal', 'fk_legajo_1__foto', 'vinculo')
         context["familiares_fk1"] = LegajoGrupoFamiliar.objects.filter(fk_legajo_1=pk)
         context["familiares_fk2"] = LegajoGrupoFamiliar.objects.filter(fk_legajo_2=pk)
         context["count_familia"] = context["familiares_fk1"].count() + context["familiares_fk1"].count()
-        context["nombre"] = Legajos.objects.filter(pk=pk).first() # FIXME: Necesitamos todos los campos? 
+        context["nombre"] = Legajos.objects.filter(pk=pk).values('nombre').first()
         context["pk"] = pk
         return context
 
