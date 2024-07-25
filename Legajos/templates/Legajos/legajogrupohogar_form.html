@@ -88,20 +88,20 @@
                                         class="row text-center d-flex justify-content-center justify-content-sm-start px-2">
                                         {% if hogar_1 or hogar_2 %}
                                             {% for f in hogar_1 %}
-                                            <div id="familiar-{{f.id}}" class="px-2">
+                                            <div id="familiar-{{f.fk_legajo_2Hogar__id}}" class="px-2">
                                                 <ul class="users-list">
                                                     <li style="width:auto">
-                                                        {% if f.fk_legajo_2Hogar.foto %}
+                                                        {% if f.fk_legajo_2Hogar__foto %}
                                                         
-                                                        <img src="{{MEDIA_URL}}{{f.fk_legajo_2Hogar.foto.url}}" alt="User Image"
+                                                        <img src="{{MEDIA_URL}}{{f.fk_legajo_2Hogar__foto.url}}" alt="User Image"
                                                             width="60px">
                                                         {%else%}
                                                         <img src="{% static 'custom/img/default.png'  %}" alt="User Image" width="60px">
                                                         {%endif%}
-                                                        <span class="users-list-name">{{f.fk_legajo_2Hogar}}</span>
+                                                        <span class="users-list-name">{{f.fk_legajo_2Hogar__apellido}}, {{f.fk_legajo_2Hogar__nombre}} </span>
                                                         <span class="users-list-date">{{f.vinculo}}</span>
                                                         <span class="users-list-date"><button class="btn btn-danger btn-sm"
-                                                                onclick='deleteHogar("{{f.id}}")'
+                                                                onclick='deleteHogar("{{f.fk_legajo_2Hogar__id}}")'
                                                                 type="submit">Eliminar</button></span>
                                                     </li>
                                                 </ul>
@@ -112,16 +112,16 @@
                                         <div id="familiar-{{f.id}}" class="px-2">
                                             <ul class="users-list">
                                                 <li style="width:auto">
-                                                    {% if f.fk_legajo_1.foto %}
-                                                    <img src="{{MEDIA_URL}}{{f.fk_legajo_1.foto.url}}" alt="User Image"
+                                                    {% if f.fk_legajo_1__foto %}
+                                                    <img src="{{MEDIA_URL}}{{f.fk_legajo_1__foto.url}}" alt="User Image"
                                                         width="60px">
                                                     {%else%}
                                                     <img src="{% static 'custom/img/default.png'  %}" alt="User Image" width="60px">
                                                     {%endif%}
-                                                    <span class="users-list-name">{{f.fk_legajo_2__nombre}}, {{f.fk_legajo_2__apellido}}</span>
+                                                    <span class="users-list-name">{{f.fk_legajo_2Hogar__nombre}}, {{f.fk_legajo_2Hogar__apellido}}</span>
                                                     <span class="users-list-date">{{f.vinculo_inverso}}</span>
                                                     <span class="users-list-date"><button class="btn btn-danger btn-sm"
-                                                            onclick='deleteHogar("{{f.id}}")'
+                                                            onclick='deleteHogar("{{f.fk_legajo_1Hogar__id}}")'
                                                             type="submit">Eliminar</button></span>
                                                 </li>
                                             </ul>
