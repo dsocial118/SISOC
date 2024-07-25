@@ -118,7 +118,7 @@
                                                     {%else%}
                                                     <img src="{% static 'custom/img/default.png'  %}" alt="User Image" width="60px">
                                                     {%endif%}
-                                                    <span class="users-list-name">{{f.fk_legajo_1}}</span>
+                                                    <span class="users-list-name">{{f.fk_legajo_2__nombre}}, {{f.fk_legajo_2__apellido}}</span>
                                                     <span class="users-list-date">{{f.vinculo_inverso}}</span>
                                                     <span class="users-list-date"><button class="btn btn-danger btn-sm"
                                                             onclick='deleteHogar("{{f.id}}")'
@@ -139,21 +139,21 @@
                                         <div class="col-12">
                                             <nav>
                                                 <ul class="pagination justify-content-center">
-                                                    {% if hogar_1.has_previous %}
+                                                    {% if hogares.has_previous %}
                                                     <li class="page-item">
-                                                        <a class="page-link" href="?page_fk1={{ hogar_1.previous_page_number }}" aria-label="Previous">
+                                                        <a class="page-link" href="?page={{ hogares.previous_page_number }}" aria-label="Previous">
                                                             <span aria-hidden="true">&laquo;</span>
                                                         </a>
                                                     </li>
                                                     {%endif%}
-                                                    {% for num in hogar_1.paginator.page_range %}
-                                                    <li class="page-item {% if hogar_1.number == num %}active{% endif %}">
-                                                        <a class="page-link" href="?page_fk1={{ num }}">{{num}}</a>
+                                                    {% for num in hogares.paginator.page_range %}
+                                                    <li class="page-item {% if hogares.number == num %}active{% endif %}">
+                                                        <a class="page-link" href="?page={{ num }}">{{num}}</a>
                                                     </li>
                                                     {% endfor %}
-                                                    {% if hogar_1.has_next %}
+                                                    {% if hogares.has_next %}
                                                     <li class="page-item">
-                                                        <a class="page-link" href="?page_fk1={{ hogar_1.next_page_number }}" aria-label="Next">
+                                                        <a class="page-link" href="?page={{ hogares.next_page_number }}" aria-label="Next">
                                                             <span aria-hidden="true">&raquo;</span>
                                                         </a>
                                                     </li>
