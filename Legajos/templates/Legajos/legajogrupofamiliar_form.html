@@ -92,8 +92,8 @@
                                             <div id="familiar-{{f.id}}" class="px-2">
                                                 <ul class="users-list">
                                                     <li style="width:auto">
-                                                        {% if f.fk_legajo_2.foto %}
-                                                        <img src="{{MEDIA_URL}}{{f.fk_legajo_2.foto.url}}" alt="User Image" width="60px">
+                                                        {% if f.fk_legajo_2__foto %}
+                                                        <img src="{{MEDIA_URL}}{{f.fk_legajo_2__foto.url}}" alt="User Image" width="60px">
                                                         {% else %}
                                                         <img src="{% static 'custom/img/default.png' %}" alt="User Image" width="60px">
                                                         {% endif %}
@@ -109,8 +109,8 @@
                                         <div id="familiar-{{f.id}}" class="px-2">
                                             <ul class="users-list">
                                                 <li style="width:auto">
-                                                    {% if f.fk_legajo_1.foto %}
-                                                    <img src="{{MEDIA_URL}}{{f.fk_legajo_1.foto.url}}" alt="User Image" width="60px">
+                                                    {% if f.fk_legajo_1__foto %}
+                                                    <img src="{{MEDIA_URL}}{{f.fk_legajo_1__foto.url}}" alt="User Image" width="60px">
                                                     {% else %}
                                                     <img src="{% static 'custom/img/default.png' %}" alt="User Image" width="60px">
                                                     {% endif %}

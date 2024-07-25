@@ -472,7 +472,7 @@ class LegajosGrupoFamiliarCreateView(CreateView):
     permission_required = admin_role
     model = LegajoGrupoFamiliar
     form_class = NuevoLegajoFamiliarForm
-    paginate_by = 1 # Número de elementos por página
+    paginate_by = 8 # Número de elementos por página
 
     def get_context_data(self, **kwargs):
         # Paginación
@@ -1457,7 +1457,7 @@ class LegajosGrupoHogarCreateView(CreateView):
     permission_required = admin_role
     model = LegajoGrupoHogar
     form_class = LegajoGrupoHogarForm
-    paginate_by = 2
+    paginate_by = 8
 
     
 
@@ -1467,7 +1467,8 @@ class LegajosGrupoHogarCreateView(CreateView):
     
         context = super().get_context_data(**kwargs)
 
-        hogares = LegajoGrupoHogar.objects.filter(Q(fk_legajo_1Hogar=pk) | Q(fk_legajo_2Hogar=pk)).values('fk_legajo_1Hogar', 'fk_legajo_2Hogar')
+        hogares = LegajoGrupoHogar.objects.filter(Q(fk_legajo_1Hogar=pk) | Q(fk_legajo_2Hogar=pk)).values('fk_legajo_1Hogar__nombre', 'fk_legajo_2Hogar__nombre', 'fk_legajo_1Hogar__apellido',
+        'fk_legajo_2Hogar__apellido', 'fk_legajo_1Hogar__foto', 'fk_legajo_2Hogar__foto','fk_legajo_1Hogar__id', 'fk_legajo_2Hogar__id')
 
         #Paginacion
 
@@ -1475,8 +1476,9 @@ class LegajosGrupoHogarCreateView(CreateView):
         page_number = self.request.GET.get('page')
         page_obj = paginator.get_page(page_number)
 
-        context["hogar_1"] = [familiar for familiar in page_obj if familiar['fk_legajo_1Hogar'] == int(pk)]
-        context["hogar_2"] = [familiar for familiar in page_obj if familiar['fk_legajo_2Hogar'] == int(pk)]
+        context["hogar_1"] = [familiar for familiar in page_obj if familiar['fk_legajo_1Hogar__id'] == int(pk)]
+        context["hogar_2"] = [familiar for familiar in page_obj if familiar['fk_legajo_2Hogar__id'] == int(pk)]
+        print(context["hogar_1"])
 
         context["hogares"] = page_obj
         context["count_hogar"] = hogares.count()
