@@ -34,17 +34,17 @@ Grupo familiar de {{nombre}}
     <div class="col-12 col-sm-6 col-md-4 d-flex align-items-stretch flex-column">
         <div class="card bg-solid d-flex flex-fill">
             <div class="card-header border-bottom-0">
-                <h1 class="card-title"><b class="pr-2">{{f.fk_legajo_2}} </b>| {{f.vinculo}}</h1>
+                <h1 class="card-title"><b class="pr-2">{{f.fk_legajo_2__nombre}} {{f.fk_legajo_2__apellido}}</b>| {{f.vinculo}}</h1>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-sm-7">
                         <dl class="row mb-0">
                             <dt class="col-lg-5 font-weight-normal">Dirección</dt>
-                            <dd class="col-lg-7 font-weight-bold">{{ f.fk_legajo_2.calle|default_if_none:"-" }}
-                                {{f.fk_legajo_2.altura|default_if_none:"" }}</dd>
+                            <dd class="col-lg-7 font-weight-bold">{{ f.fk_legajo_2__calle|default_if_none:"-" }}
+                                {{f.fk_legajo_2__altura|default_if_none:"" }}</dd>
                             <dt class="col-lg-5 font-weight-normal">Teléfono</dt>
-                            <dd class="col-lg-7 font-weight-bold">{{ f.fk_legajo_2.telefono|default_if_none:"-" }}</dd>
+                            <dd class="col-lg-7 font-weight-bold">{{ f.fk_legajo_2__telefono|default_if_none:"-" }}</dd>
                             <dt class="col-lg-5 font-weight-normal">Relación</dt>
                             <dd class="col-lg-7 font-weight-bold ">
                                 {% if f.estado_relacion == "Buena" %}
@@ -71,7 +71,7 @@ Grupo familiar de {{nombre}}
                     </div>
                     <div class="col-5 text-center">
                         {% if f.fk_legajo_2.foto %}
-                        <img src="{{f.fk_legajo_2.foto.url}}" alt="user-avatar"
+                        <img src="{{f.fk_legajo_2__foto.url}}" alt="user-avatar"
                             class="img-circle img-fluid  justify-content-center" />
                             {%else%}
                             <img src="{% static 'custom/img/default.png'  %}"  alt="user-avatar"
@@ -83,7 +83,7 @@ Grupo familiar de {{nombre}}
             <div class="card-footer">
                 <div class="text-right">
 
-                    <a href="{% url 'legajos_ver' f.fk_legajo_2_id %}" class="btn btn-sm btn-primary d-print-none">
+                    <a href="{% url 'legajos_ver' f.fk_legajo_2__id %}" class="btn btn-sm btn-primary d-print-none">
                         Ver legajo</a>
                 </div>
             </div>
@@ -95,17 +95,17 @@ Grupo familiar de {{nombre}}
     <div class="col-12 col-sm-6 col-md-4 d-flex align-items-stretch flex-column">
         <div class="card bg-solid d-flex flex-fill">
             <div class="card-header border-bottom-0">
-                <h1 class="card-title"><b class="pr-2">{{f.fk_legajo_1}} </b>| {{f.vinculo_inverso}}</h1>
+                <h1 class="card-title"><b class="pr-2">{{f.fk_legajo_1__nombre}} {{f.fk_legajo_1__apellido}}</b>| {{f.vinculo_inverso}}</h1>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-sm-7">
                         <dl class="row mb-0">
                             <dt class="col-lg-5 font-weight-normal">Dirección</dt>
-                            <dd class="col-lg-7 font-weight-bold">{{ f.fk_legajo_1.calle|default_if_none:"-" }}
+                            <dd class="col-lg-7 font-weight-bold">{{ f.fk_legajo_1__calle|default_if_none:"-" }}
                                 {{f.fk_legajo_2.altura|default_if_none:"" }}</dd>
                             <dt class="col-lg-5 font-weight-normal">Teléfono</dt>
-                            <dd class="col-lg-7 font-weight-bold">{{ f.fk_legajo_1.telefono|default_if_none:"-" }}</dd>
+                            <dd class="col-lg-7 font-weight-bold">{{ f.fk_legajo_1__telefono|default_if_none:"-" }}</dd>
                             <dt class="col-lg-5 font-weight-normal">Relación</dt>
                             <dd class="col-lg-7 font-weight-bold ">
                                 {% if f.estado_relacion == "Buena" %}
@@ -131,8 +131,8 @@ Grupo familiar de {{nombre}}
                         </dl>
                     </div>
                     <div class="col-5 text-center">
-                        {% if f.fk_legajo_1.foto %}
-                        <img src="{{f.fk_legajo_1.foto.url}}" alt="user-avatar"
+                        {% if f.fk_legajo_1__foto %}
+                        <img src="{{f.fk_legajo_1__foto.url}}" alt="user-avatar"
                             class="img-circle img-fluid  justify-content-center" />
                             {%else%}
                             <img src="{% static 'custom/img/default.png'  %}"  alt="user-avatar"
