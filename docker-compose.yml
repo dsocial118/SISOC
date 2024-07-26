@@ -25,6 +25,8 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+    volumes:
+      - .:/sisoc/
     restart: always
 
 volumes:

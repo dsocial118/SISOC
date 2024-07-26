@@ -1,6 +1,6 @@
 FROM python:3.9.19-alpine
 
-WORKDIR /usr/src/app
+WORKDIR /sisoc
 
 # Envs
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -21,10 +21,7 @@ COPY ./requirements.txt .
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
 # Add and make entrypoint script executable
-COPY ./docker/django/entrypoint.sh /usr/src/app/entrypoint.sh
-RUN chmod +x /usr/src/app/entrypoint.sh
+COPY ./docker/django/entrypoint.sh /sisoc/entrypoint.sh
+RUN chmod +x /sisoc/entrypoint.sh
 
-# Copy the project files to the container
-COPY . .
-
-CMD ["/usr/src/app/entrypoint.sh"]
+CMD ["/sisoc/docker/django/entrypoint.sh"]
