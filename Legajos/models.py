@@ -121,6 +121,12 @@ class Legajos(models.Model):
         ordering = ['apellido']
         verbose_name = 'Legajo'
         verbose_name_plural = 'Legajos'
+        indexes = [
+            models.Index(fields=['apellido']),
+            models.Index(fields=['fecha_nacimiento']),
+            models.Index(fields=['documento']),
+            models.Index(fields=['observaciones']),
+        ]
 
     def get_absolute_url(self):
         return reverse('legajos_ver', kwargs={'pk': self.pk})
@@ -157,6 +163,10 @@ class LegajoGrupoFamiliar(models.Model):
         unique_together = ['fk_legajo_1', 'fk_legajo_2']
         verbose_name = 'LegajoGrupoFamiliar'
         verbose_name_plural = 'LegajosGrupoFamiliar'
+        indexes = [
+            models.Index(fields=['fk_legajo_1_id']),
+            models.Index(fields=['fk_legajo_2_id']),
+        ]
 
     def get_absolute_url(self):
         return reverse('legajogrupofamiliar_ver', kwargs={'pk': self.pk})
@@ -263,6 +273,9 @@ class DimensionVivienda(models.Model):
         ordering = ['fk_legajo']
         verbose_name = 'DimensionVivienda'
         verbose_name_plural = 'DimensionesVivienda'
+        indexes = [
+            models.Index(fields=['fk_legajo'])
+        ]
 
     def get_absolute_url(self):
         return reverse('legajos_ver', kwargs={'pk': self.fk_legajo.id})
@@ -299,6 +312,9 @@ class DimensionSalud(models.Model):
         ordering = ['fk_legajo']
         verbose_name = 'DimensionSalud'
         verbose_name_plural = 'DimensionesSalud'
+        indexes = [
+            models.Index(fields=['fk_legajo'])
+        ]
 
     def get_absolute_url(self):
         return reverse('legajos_ver', kwargs={'pk': self.fk_legajo.id})
@@ -368,6 +384,9 @@ class DimensionEducacion(models.Model):
         ordering = ['fk_legajo']
         verbose_name = 'DimensionEducacion'
         verbose_name_plural = 'DimensionesEducacion'
+        indexes = [
+            models.Index(fields=['fk_legajo'])
+        ]
 
     def get_absolute_url(self):
         return reverse('legajos_ver', kwargs={'pk': self.fk_legajo.id})
@@ -435,6 +454,9 @@ class DimensionTrabajo(models.Model):
         ordering = ['fk_legajo']
         verbose_name = 'DimensionLaboral'
         verbose_name_plural = 'DimensionesLaborales'
+        indexes = [
+            models.Index(fields=['fk_legajo'])
+        ]
 
     def get_absolute_url(self):
         return reverse('dimensionlaboral_ver', kwargs={'pk': self.pk})
@@ -472,6 +494,10 @@ class LegajoAlertas(models.Model):
         unique_together = ['fk_legajo', 'fk_alerta']
         verbose_name = 'LegajoAlertas'
         verbose_name_plural = 'LegajosAlertas'
+        indexes = [
+            models.Index(fields=['fk_alerta']),
+            models.Index(fields=['fk_legajo']),
+        ]
 
     def get_absolute_url(self):
         return reverse('legajoalertas_ver', kwargs={'pk': self.pk})
@@ -508,6 +534,9 @@ class HistorialLegajoAlertas(models.Model):
         ordering = ['-fecha_inicio']
         verbose_name = 'HistorialLegajoAlertas'
         verbose_name_plural = 'HistorialesLegajoAlertas'
+        indexes = [
+            models.Index(fields=['fk_legajo'])
+        ]
 
 
 # endregion---------FIN LEGAJO ALERTAS---------------------------------------------------------------------------------------------
@@ -621,6 +650,10 @@ class LegajosDerivaciones(models.Model):
         ordering = ['-fecha_creado']
         verbose_name = 'LegajoDerivacion'
         verbose_name_plural = 'LegajosDerivaciones'
+        indexes = [
+            models.Index(fields=['fk_legajo']),
+            models.Index(fields=['estado'])
+        ]
 
     def get_absolute_url(self):
         return reverse('legajosderivaciones_ver', kwargs={'pk': self.pk})
@@ -641,6 +674,11 @@ class LegajosArchivos(models.Model):
     archivo = models.FileField(upload_to='legajos/archivos/')
     fecha = models.DateTimeField(auto_now_add=True)
     tipo = models.CharField(max_length=12)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['fk_legajo'])
+        ]
 
     def __str__(self):
         return f"Archivo {self.id} del legajo {self.fk_legajo}"
@@ -668,6 +706,10 @@ class LegajoGrupoHogar(models.Model):
         ordering = ['fk_legajo_2Hogar']
         verbose_name = 'LegajoGrupoHogarForm'
         verbose_name_plural = 'LegajoGrupoHogarForm'
+        indexes = [
+            models.Index(fields=['fk_legajo_1Hogar']),
+            models.Index(fields=['fk_legajo_2Hogar'])
+        ]
 
     def get_absolute_url(self):
         return reverse('LegajoGrupoHogarForm_ver', kwargs={'pk': self.pk})

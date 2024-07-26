@@ -3,8 +3,6 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
-from django.contrib.auth import views as auth_views
-from django.views.generic import TemplateView
 
 
 urlpatterns = [
@@ -16,6 +14,7 @@ urlpatterns = [
     path('', include('Usuarios.urls')),
     path('', include('Configuraciones.urls')),
     path('', include('Inicio.urls')),
+    path('', include('Dashboard.urls')),
     path('', include('Legajos.urls')),
     path('', include('SIF_CDIF.urls')),
     path('', include('SIF_CDLE.urls')),
@@ -23,7 +22,6 @@ urlpatterns = [
     path('', include('SIF_PDV.urls')),
     path('', include('SIF_SL.urls')),
     path('', include('SIF_MA.urls')),
-
 ]
 
 urlpatterns += staticfiles_urlpatterns()

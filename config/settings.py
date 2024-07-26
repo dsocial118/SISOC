@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from django.contrib.messages import constants as messages
 from .validators import UppercaseValidator, LowercaseValidator
-
+from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -25,6 +25,9 @@ logging.basicConfig(
     handlers=[TimedRotatingFileHandler(log_file, when='MIDNIGHT', backupCount=12, encoding='utf-8'),
               logging.StreamHandler()],
 )
+
+load_dotenv() # Carga las variables de entorno desde el archivo .env
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -52,7 +55,7 @@ SECRET_KEY = 'django-insecure-nkd=f=s!(abn(-tan&ceplfpumy5#j$6v$hl_=5d@q)dni4477
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost']
+ALLOWED_HOSTS = ['127.0.0.1','localhost']
 
 # Application definition
 
@@ -75,6 +78,7 @@ INSTALLED_APPS = [
     'Usuarios',
     'Configuraciones',
     'Inicio',
+    'Dashboard',
     'Legajos',
     # Programas
     'SIF_CDIF',
@@ -85,6 +89,8 @@ INSTALLED_APPS = [
     'SIF_MA',
     # silk
     'silk',
+    # Django debug toolbar
+    'debug_toolbar'
 ]
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
@@ -100,6 +106,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.contrib.admindocs.middleware.XViewMiddleware',
     'silk.middleware.SilkyMiddleware',
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -157,11 +164,11 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'sisoc',
-        'USER': 'root',
-        'PASSWORD': 'root',
-        'HOST': '127.0.0.1',
-        'PORT': '3306',
+        'NAME': os.getenv('DATABASE_NAME', 'default_db_name'),
+        'USER': os.getenv('DATABASE_USER', 'default_user'),
+        'PASSWORD': os.getenv('DATABASE_PASSWORD', ''),
+        'HOST': os.getenv('DATABASE_HOST', 'localhost'),
+        'PORT': os.getenv('DATABASE_PORT', '3306'),
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
             'charset': 'utf8mb4',
@@ -293,3 +300,8 @@ PROG_MA = 30
 PROG_SL = 21
 
 SILKY_PYTHON_PROFILER = True
+
+INTERNAL_IPS = [
+    '127.0.0.1',
+    '::1',
+]
