@@ -38,7 +38,7 @@
                         </div>
                         <div class="line d-none d-sm-inline"></div>
                         <div class="step d-none d-sm-inline">
-                            <a href="{% url 'legajosdimensiones_editar' legajo_principal.dimensionfamilia.id  %}"
+                            <a href="{% url 'legajosdimensiones_editar' pk  %}"
                                 class="step-trigger" role="tab">
                                 <span class="bs-stepper-circle">2</span>
                                 <span class="bs-stepper-label">Dimensiones</span>
@@ -46,7 +46,7 @@
                         </div>
                         <div class="line d-none d-sm-inline"></div>
                         <div class="step d-none d-sm-inline">
-                            <a type="button" class="step-trigger " role="tab" href="{% url 'grupofamiliar_crear' legajo_principal.dimensionfamilia.id  %}">
+                            <a type="button" class="step-trigger " role="tab" href="{% url 'grupofamiliar_crear' pk  %}">
                                 <span class="bs-stepper-circle">3</span>
                                 <span class="bs-stepper-label">Grupo Familiar</span>
                             </a>
@@ -88,20 +88,20 @@
                                         class="row text-center d-flex justify-content-center justify-content-sm-start px-2">
                                         {% if hogar_1 or hogar_2 %}
                                             {% for f in hogar_1 %}
-                                            <div id="familiar-{{f.id}}" class="px-2">
+                                            <div id="familiar-{{f.fk_legajo_2Hogar__id}}" class="px-2">
                                                 <ul class="users-list">
                                                     <li style="width:auto">
-                                                        {% if f.fk_legajo_2Hogar.foto %}
+                                                        {% if f.fk_legajo_2Hogar__foto %}
                                                         
-                                                        <img src="{{MEDIA_URL}}{{f.fk_legajo_2Hogar.foto.url}}" alt="User Image"
+                                                        <img src="{{MEDIA_URL}}{{f.fk_legajo_2Hogar__foto.url}}" alt="User Image"
                                                             width="60px">
                                                         {%else%}
                                                         <img src="{% static 'custom/img/default.png'  %}" alt="User Image" width="60px">
                                                         {%endif%}
-                                                        <span class="users-list-name">{{f.fk_legajo_2Hogar}}</span>
+                                                        <span class="users-list-name">{{f.fk_legajo_2Hogar__apellido}}, {{f.fk_legajo_2Hogar__nombre}} </span>
                                                         <span class="users-list-date">{{f.vinculo}}</span>
                                                         <span class="users-list-date"><button class="btn btn-danger btn-sm"
-                                                                onclick='deleteHogar("{{f.id}}")'
+                                                                onclick='deleteHogar("{{f.fk_legajo_2Hogar__id}}")'
                                                                 type="submit">Eliminar</button></span>
                                                     </li>
                                                 </ul>
@@ -112,16 +112,16 @@
                                         <div id="familiar-{{f.id}}" class="px-2">
                                             <ul class="users-list">
                                                 <li style="width:auto">
-                                                    {% if f.fk_legajo_1.foto %}
-                                                    <img src="{{MEDIA_URL}}{{f.fk_legajo_1.foto.url}}" alt="User Image"
+                                                    {% if f.fk_legajo_1__foto %}
+                                                    <img src="{{MEDIA_URL}}{{f.fk_legajo_1__foto.url}}" alt="User Image"
                                                         width="60px">
                                                     {%else%}
                                                     <img src="{% static 'custom/img/default.png'  %}" alt="User Image" width="60px">
                                                     {%endif%}
-                                                    <span class="users-list-name">{{f.fk_legajo_1}}</span>
+                                                    <span class="users-list-name">{{f.fk_legajo_2Hogar__nombre}}, {{f.fk_legajo_2Hogar__apellido}}</span>
                                                     <span class="users-list-date">{{f.vinculo_inverso}}</span>
                                                     <span class="users-list-date"><button class="btn btn-danger btn-sm"
-                                                            onclick='deleteHogar("{{f.id}}")'
+                                                            onclick='deleteHogar("{{f.fk_legajo_1Hogar__id}}")'
                                                             type="submit">Eliminar</button></span>
                                                 </li>
                                             </ul>
@@ -134,6 +134,33 @@
                                         </div>
                                         {%endif%}
                                     </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <nav>
+                                                <ul class="pagination justify-content-center">
+                                                    {% if hogares.has_previous %}
+                                                    <li class="page-item">
+                                                        <a class="page-link" href="?page={{ hogares.previous_page_number }}" aria-label="Previous">
+                                                            <span aria-hidden="true">&laquo;</span>
+                                                        </a>
+                                                    </li>
+                                                    {%endif%}
+                                                    {% for num in hogares.paginator.page_range %}
+                                                    <li class="page-item {% if hogares.number == num %}active{% endif %}">
+                                                        <a class="page-link" href="?page={{ num }}">{{num}}</a>
+                                                    </li>
+                                                    {% endfor %}
+                                                    {% if hogares.has_next %}
+                                                    <li class="page-item">
+                                                        <a class="page-link" href="?page={{ hogares.next_page_number }}" aria-label="Next">
+                                                            <span aria-hidden="true">&raquo;</span>
+                                                        </a>
+                                                    </li>
+                                                    {%endif%}
+                                            </nav>
+                                    </div>
+
                                 </div>
                             </div>
                         </div>
@@ -173,6 +200,21 @@
                                             <tbody id="results-box">
                                             </tbody>
                                         </table>
+
+                                        <nav aria-label="Page navigation">
+                                            <ul class="pagination justify-content-center">
+                                              <li class="page-item"><a class="page-link" href="#" id="prevPage">Anterior</a></li>
+                                              <li class="page-item disabled"><span class="page-link" id="currentPage"></span></li>
+                                              <li class="page-item"><a class="page-link" href="#" id="nextPage">Siguiente</a></li>
+                                            </ul>
+                                        </nav>
+    
+                                          <div class="text-center" id="loadingIndicator" style="display: none;">
+                                            <div class="spinner-border" role="status">
+                                              <span class="sr-only">Cargando...</span>
+                                            </div>
+                                          </div> 
+
                                     </div>
                                     <div class="row d-none" id="nuevo_legajo_familiar">
                                         <form autocomplete="off" method="POST" novalidate id="formulario-nuevo">
@@ -240,7 +282,8 @@
     resultsBox.append('<td colspan="8" class="text-center text-muted h4">Realice una busqueda.</td>')
     const csrf = document.getElementsByName('csrfmiddlewaretoken')[0].value
 
-    const sendSearchData = (busqueda) => {
+    const sendSearchData = (busqueda, pageNumber=1) => {
+        $('#loadingIndicator').show();
         $.ajax({
             type: 'POST',
             url: "{% url 'hogar_buscar' %}",
@@ -248,9 +291,10 @@
                 'csrfmiddlewaretoken': csrf,
                 'busqueda': busqueda,
                 'id': '{{ pk }}',
+                'page': pageNumber,
             },
             success: (res) => {
-                const data = res.data
+                const data = res.data.hogares;
                 if (Array.isArray(data)) {
 
                     resultsBox.empty(); // Vaciar contenido anterior
@@ -273,6 +317,8 @@
                         formNuevo.removeClass('d-none')
                     }
                 }
+                updatePaginationControls(res.data);
+                $('#loadingIndicator').hide();
             },
             error: (err) => {
                 console.log("Error: ", err)
@@ -280,14 +326,35 @@
         })
     }
 
+    function updatePaginationControls(data){
+        if (data.has_previous){
+            $('#prevPage').show();
+        } else {
+            $('#prevPage').hide();
+        }
+        if (data.has_next){
+            $('#nextPage').show();
+        } else {
+            $('#nextPage').hide();
+        }
+
+        $('#currentPage').text(`Página ${data.page} de ${data.num_pages}`);
+        // Manejar clics en los botones de paginación
+        $('#prevPage').off('click').on('click', function(e) {
+            e.preventDefault();
+            sendSearchData(searchInput.value, parseInt(data.page) - 1);
+        });
+        $('#nextPage').off('click').on('click', function(e) {
+            e.preventDefault();
+            sendSearchData(searchInput.value, parseInt(data.page) + 1);
+        });
+    }
+
     // Activa la búsqueda ajax cuando se ingresa texto
-    searchInput.addEventListener('keyup', e => {
-        $('#formulario-nuevo')[0].reset(); // Resetear el formulario
-        formNuevo.addClass('d-none'); // Ocultar el formulario
-        $('.is-invalid').removeClass('is-invalid'); // Quitar la clase 'is-invalid' de los campos inválidos
-        $('.invalid-feedback').remove(); // Eliminar los mensajes de validación
-        if (e.target.value.length > 1) {
-            sendSearchData(e.target.value, "busqueda")
+    searchInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+            sendSearchData(e.target.value)
+            e.preventDefault();
         } else {
             resultsBox.innerHTML = '<td colspan="8" class="text-center text-muted h4">Realice una búsqueda.</td>'
         }
