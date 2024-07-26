@@ -13,7 +13,7 @@ from multiselectfield import MultiSelectField
 class Legajos(models.Model):
     '''
 
-    Guardado de los perfiles de las personas con las que interviene el Municipio.
+    Guardao de los perfiles de las personas con las que interviene el Municipio.
     '''
 
     apellido = models.CharField(max_length=250)
