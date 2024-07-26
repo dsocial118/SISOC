@@ -50,24 +50,25 @@ admin_role = "Usuarios.rol_admin"
 class LegajosReportesListView(ListView):
     template_name = "Legajos/legajos_reportes.html"
     model = LegajosDerivaciones
-    
-    
+
     def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
         organismos = cache.get('organismos')
-        programas = cache.get('programas')
         if not organismos:
             organismos = Organismos.objects.all().values('id', 'nombre')
             cache.set('organismos', organismos, 60)
+        
+        programas = cache.get('programas')
         if not programas:
             programas = Programas.objects.all().values('id', 'nombre')
             cache.set('programas', programas, 60)
-        context = super().get_context_data(**kwargs)
+        
         context['organismos'] = organismos
         context['programas'] = programas
         context['estados'] = CHOICE_ESTADO_DERIVACION
-        return context   
-    
-    # Funcion de busqueda
+        return context
+
     def get_queryset(self):
         nombre_completo_legajo = self.request.GET.get("busqueda")
         data_organismo = self.request.GET.get("data_organismo")
@@ -75,11 +76,6 @@ class LegajosReportesListView(ListView):
         data_estado = self.request.GET.get("data_estado")
         data_fecha_desde = self.request.GET.get("data_fecha_derivacion")
 
-        object_list = cache.get('object_list')
-        if not object_list:
-            object_list = LegajosDerivaciones.objects.all()
-            cache.set('object_list', object_list, 60)
-        
         filters = Q()
         
         if data_programa:
@@ -97,13 +93,12 @@ class LegajosReportesListView(ListView):
         if data_fecha_desde:
             filters &= Q(fecha_creado__gte=data_fecha_desde)
         
-        # Aplica los filtros combinados
-        object_list = object_list.filter(filters)
+        object_list = LegajosDerivaciones.objects.filter(filters).select_related('fk_programa', 'fk_organismo', 'fk_legajo').distinct()
         
         if not object_list.exists():
             messages.warning(self.request, "La búsqueda no arrojó resultados.")
         
-        return object_list.distinct()
+        return object_list
 
 
 class LegajosListView(ListView):
@@ -114,29 +109,26 @@ class LegajosListView(ListView):
 
     def get_queryset(self):
         if not hasattr(self, '_cached_queryset'):
-            queryset = super().get_queryset()
+            queryset = super().get_queryset().only(
+                'id', 'apellido', 'nombre', 'documento', 'tipo_doc', 'sexo', 'localidad', 'estado'
+            )
             query = self.request.GET.get("busqueda", "")
 
             if query:
+                filter_condition = Q(apellido__icontains=query)
                 if query.isnumeric():
-                    queryset = queryset.filter(
-                        Q(documento__icontains=query)
-                    )
-                else:
-                    queryset = queryset.filter(
-                        Q(apellido__icontains=query)
-                    )
+                    filter_condition |= Q(documento__contains=query)
+                queryset = queryset.filter(filter_condition)
             
-            queryset = queryset.only('id', 'apellido', 'nombre', 'documento', 'tipo_doc', 'sexo', 'localidad', 'estado')
             self._cached_queryset = queryset
 
         return self._cached_queryset
 
-
     def get(self, request, *args, **kwargs):
-        if self.request.GET.get("busqueda"):
+        query = self.request.GET.get("busqueda")
+        if query:
             self.object_list = self.get_queryset()
-            size_queryset = len(self.object_list)
+            size_queryset = self.object_list.count()
             if size_queryset == 1:
                 pk = self.object_list.first().id
                 return redirect("legajos_ver", pk=pk)
