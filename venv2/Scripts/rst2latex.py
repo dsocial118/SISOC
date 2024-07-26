@@ -1,4 +1,4 @@
-#!C:\Users\MDS\SISOC\venv2\Scripts\python.exe
+#!C:\Users\MDS\Desktop\SISOC\venv2\Scripts\python.exe
 
 # $Id: rst2latex.py 8956 2022-01-20 10:11:44Z milde $
 # Author: David Goodger <goodger@python.org>
