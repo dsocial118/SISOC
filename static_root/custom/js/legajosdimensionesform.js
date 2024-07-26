@@ -5,12 +5,11 @@ document.addEventListener("DOMContentLoaded", function() {
     var maxSelections = 3;
     //Variables dimensión Educación
 
-    const ID_INCOMPLETO_FORM ="#container_incompleto";
-    const ID_SIN_EDU_FORMAL = "#container_sin_edu";
-    const ID_AREA_CURSO = "#container_area_curso";
-    const ID_MAX_NIVEL = "#container_max_nivel";
-    const ID_ESTADO_NIVEL = "#container_nivel";
-    const ID_DATOS_INSTITUCION = "#container_institucion";
+    const ID_INCOMPLETO_FORM ="#div_id_nivelIncompleto";
+    const ID_SIN_EDU_FORMAL = "#div_id_sinEduFormal";
+    const ID_AREA_CURSO = "#div_id_areaCurso";
+    const ID_MAX_NIVEL = "#div_id_max_nivel";
+    const ID_ESTADO_NIVEL = "#div_id_estado_nivel";
     // Fin var educación
 
     selects.forEach(function(select) {
@@ -29,7 +28,7 @@ document.addEventListener("DOMContentLoaded", function() {
     let asisteEscuelaForm = document.querySelector('#id_asiste_escuela');
 
     function mostrar (id, mostrar = true){
-      elemento = document.querySelector(id)
+      elemento = document.querySelector(id).parentNode.parentNode
       if (mostrar == true){
         elemento.classList.remove("hide")
       }
@@ -51,21 +50,18 @@ document.addEventListener("DOMContentLoaded", function() {
         mostrar(ID_ESTADO_NIVEL);
         mostrar(ID_INCOMPLETO_FORM, false);
         mostrar(ID_SIN_EDU_FORMAL, false);
-        mostrar(ID_DATOS_INSTITUCION);
       }
       else if(value == "b"){
         mostrar(ID_MAX_NIVEL);
         mostrar(ID_ESTADO_NIVEL);
         mostrar(ID_INCOMPLETO_FORM);
         mostrar(ID_SIN_EDU_FORMAL, false);
-        mostrar(ID_DATOS_INSTITUCION);
       }
       else if(value == "c"){
         mostrar(ID_MAX_NIVEL, false);
         mostrar(ID_ESTADO_NIVEL, false);
         mostrar(ID_SIN_EDU_FORMAL);
         mostrar(ID_INCOMPLETO_FORM, false);
-        mostrar(ID_DATOS_INSTITUCION, false);
 
       }
     }
@@ -112,7 +108,7 @@ document.addEventListener("DOMContentLoaded", function() {
     //id="div_id_hay_banio" id_hay_banio si contesta c ("No tiene inodoro") saltea la pregunta 17) id="div_id_desague" id_desague
 
     let hayBanioForm = document.querySelector("#div_id_hay_banio");
-    const ID_DESAGUE_BANIO = "#container_desague";
+    const ID_DESAGUE_BANIO = "#id_desague";
 
     hayBanioForm.addEventListener('change',function(event){
       if ( event.target.value == 'No tiene inodoro' || event.target.value == 'No tiene baño')
@@ -126,16 +122,16 @@ document.addEventListener("DOMContentLoaded", function() {
 
     let tieneTrabajoForm = document.querySelector("#div_id_tiene_trabajo");
     let busquedaLaboralForm = document.querySelector("#id_busquedaLaboral");
-    const ID_CONVIVIENTE = "#container_conviviente";
-    const ID_HS_SEMANALES ="#container_horas_semanales";
-    const ID_ACT_REALIZADA_COMO = "#container_actividad_realizada";
-    const ID_DURACION_TRABAJO = "#container_duracion_trabajo";
-    const ID_APORTE_JUBILACION = "#container_jubilacion";
-    const ID_MODO_CONTRATACION = "#container_contratacion";
-    const ID_BUSQUEDA_LABORAL = "#container_busquedaLaboral";
-    const ID_TIEMPO_BUSQUEDA = "#container_tiempo_busqueda";
-    const ID_NO_BUSQUEDA = "#container_no_busqueda";
-    const ID_OCUPACION = "#container_ocupacion";
+    const ID_CONVIVIENTE = "#id_conviviente_trabaja";
+    const ID_HS_SEMANALES ="#id_horasSemanales";
+    const ID_ACT_REALIZADA_COMO = "#id_actividadRealizadaComo";
+    const ID_DURACION_TRABAJO = "#id_duracionTrabajo";
+    const ID_APORTE_JUBILACION = "#id_aportesJubilacion";
+    const ID_MODO_CONTRATACION = "#id_modo_contratacion";
+    const ID_BUSQUEDA_LABORAL = "#id_busquedaLaboral";
+    const ID_TIEMPO_BUSQUEDA = "#id_TiempoBusquedaLaboral";
+    const ID_NO_BUSQUEDA = "#id_noBusquedaLaboral";
+    const ID_OCUPACION = "#id_ocupacion";
 
     tieneTrabajoForm.addEventListener('change',function(event){
       if ( event.target.value == "True"){
@@ -176,20 +172,5 @@ document.addEventListener("DOMContentLoaded", function() {
         
       }
     });
-      //fin dimension trabajo
-
-     //Dimension economia
-    
-    let planSocialForm = document.querySelector("#id_recibe_plan");
-    const ID_PLAN_SOCIAL = "#container_plan_social"
-    planSocialForm.addEventListener('change',function(event){
-      if ( event.target.value == "True"){
-        mostrar(ID_PLAN_SOCIAL);
-      }
-      else{
-        mostrar(ID_PLAN_SOCIAL, false);
-      }
-    });
-    
 });
 
