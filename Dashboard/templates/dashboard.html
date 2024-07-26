@@ -25,7 +25,7 @@
             <span class="info-box-icon bg-info elevation-1"><i class="fas fa-address-card"></i></span>
             <div class="info-box-content">
                 <span class="info-box-text text-center h6">Legajos Activos</span>
-                <span class="info-box-number text-center h4">{{ cantidad_legajos_activos }}</span>
+                <span class="info-box-number text-center h4">{{ cantidad_legajos_activos|default_if_none:'No implementado' }}</span>
             </div>
 
         </div>
@@ -37,7 +37,7 @@
             <span class="info-box-icon bg-danger elevation-1"><i class="fas fa-bell"></i></span>
             <div class="info-box-content">
                 <span class="info-box-text text-center h6">Alarmas Activas</span>
-                <span class="info-box-number text-center h4">{{ cantidad_legajos_con_alarmas_activas }}</span>
+                <span class="info-box-number text-center h4">{{ cantidad_legajos_con_alarmas_activas|default_if_none:'No implementado' }}</span>
             </div>
 
         </div>
@@ -52,7 +52,7 @@
             <span class="info-box-icon bg-success elevation-1"><i class="fas fa-share-square"></i></span>
             <div class="info-box-content">
                 <span class="info-box-text text-center h6">Derivaciones Pendientes</span>
-                <span class="info-box-number text-center h4">{{ cantidad_dv_Pendientes }}</span>
+                <span class="info-box-number text-center h4">{{ cantidad_dv_pendientes|default_if_none:'No implementado' }}</span>
             </div>
 
         </div>
@@ -64,7 +64,7 @@
             <span class="info-box-icon bg-warning elevation-1"><i class="fas fa-handshake"></i></span>
             <div class="info-box-content">
                 <span class="info-box-text text-center h6 text-nowrap">Benef. de Acciones Sociales</span>
-                <span class="info-box-number text-center h4">{{ cantidad_legajos_con_planes_sociales }}</span>
+                <span class="info-box-number text-center h4">{{ cantidad_legajos_con_planes_sociales|default_if_none:'No implementado' }}</span>
             </div>
 
         </div>
@@ -116,7 +116,7 @@
             <span class="info-box-icon bg-success elevation-1"><i class="fas fa-users"></i></span>
             <div class="info-box-content">
                 <span class="info-box-text text-left h6 text-nowrap">Población total beneficiarios PAS</span>
-                <span class="info-box-number text-center h4">1016126</span>
+                <span class="info-box-number text-center h4">No implementado</span>
             </div>
 
         </div>
@@ -124,7 +124,7 @@
             <span class="info-box-icon bg-success elevation-1"><i class="fas fa-child"></i></span>
             <div class="info-box-content">
                 <span class="info-box-text text-left h6 text-nowrap">Población total </span>
-                <span class="info-box-number text-center h4">1.700.000</span>
+                <span class="info-box-number text-center h4">No implementado</span>
             </div>
 
         </div>
@@ -132,7 +132,7 @@
             <span class="info-box-icon bg-success elevation-1"><i class="fas fa-user-check"></i></span>
             <div class="info-box-content">
                 <span class="info-box-text text-left h6 text-nowrap">Poblacion total con NBI (censo)</span>
-                <span class="info-box-number text-center h4">128.000 (39%)</span>
+                <span class="info-box-number text-center h4">No implementado</span>
             </div>
 
         </div>
@@ -140,7 +140,7 @@
             <span class="info-box-icon bg-success elevation-1"><i class="fas fa-child"></i></span>
             <div class="info-box-content">
                 <span class="info-box-text text-left h6 text-nowrap">Poblacion 018 con NBI (censo)</span>
-                <span class="info-box-number text-center h4">35.640 (11%)</span>
+                <span class="info-box-number text-center h4">No implementado</span>
             </div>
         </div>
 
@@ -148,14 +148,14 @@
             <span class="info-box-icon bg-success elevation-1"><i class="fas fa-address-card"></i></span>
             <div class="info-box-content">
                 <span class="info-box-text text-left h6 text-nowrap">Poblacion total registrada en HSU</span>
-                <span class="info-box-number text-center h4">{{ cantidad_total_legajos }} ({{ porcentaje_legajos|floatformat:2 }}%)</span>
+                <span class="info-box-number text-center h4">{{ cantidad_total_legajos }}</span>
             </div>
         </div>
         <div class="info-box mb-2 bg-dark">
             <span class="info-box-icon bg-success elevation-1"><i class="fas fa-address-card"></i></span>
             <div class="info-box-content">
                 <span class="info-box-text text-left h6 text-nowrap">Poblacion 018 en HSU</span>
-                <span class="info-box-number text-center h4">{{ cantidad_legajos }} (37%)</span>
+                <span class="info-box-number text-center h4">No implementado</span>
             </div>
         </div>
       
@@ -172,7 +172,7 @@
             <div class="card-body">
                 <div class="small-box bg-green mb-2">
                     <div class="inner">
-                        <h3>{{ cantidad_legajos_40_dias }}</h3>
+                        <h3>{{ cantidad_legajos_40_dias|default_if_none:'No implementado' }}</h3>
                         <p>Nuevos</p>
                     </div>
                     <div class="icon">
@@ -181,7 +181,7 @@
                 </div>
                 <div class="small-box bg-green mb-2">
                     <div class="inner">
-                        <h3>{{ cantidad_bb_riesgo }}</h3>
+                        <h3>{{ cantidad_bb_riesgo|default_if_none:'No implementado' }}</h3>
                         <p>En Riesgo</p>
                     </div>
                     <div class="icon">
@@ -190,7 +190,7 @@
                 </div>
                 <div class="small-box bg-green mb-2">
                     <div class="inner">
-                        <h3>{{ cantidad_bb_sin_derivacion_aceptada }}</h3>
+                        <h3>{{ cantidad_bb_sin_derivacion_aceptada|default_if_none:'No implementado' }}</h3>
                         <p>Sin Derivación</p>
                     </div>
                     <div class="icon">
@@ -214,7 +214,7 @@
             <div class="card-body">
                 <div class="small-box bg-primary mb-2">
                     <div class="inner">
-                        <h3>{{ cantidad_legajos }}</h3>
+                        <h3>No implementado</h3>
                         <p>Total</p>
                     </div>
                     <div class="icon">
@@ -223,7 +223,7 @@
                 </div>
                 <div class="small-box bg-primary mb-2">
                     <div class="inner">
-                        <h3>{{ cantidad_adolescente_riesgo }}</h3>
+                        <h3>{{ cantidad_adolescente_riesgo|default_if_none:'No implementado' }}</h3>
                         <p>En Riesgo</p>
                     </div>
                     <div class="icon">
@@ -232,7 +232,7 @@
                 </div>
                 <div class="small-box bg-primary mb-2">
                     <div class="inner">
-                        <h3>{{ cantidad_adolescente_sin_derivacion_aceptada }}</h3>
+                        <h3>{{ cantidad_adolescente_sin_derivacion_aceptada|default_if_none:'No implementado' }}</h3>
                         <p>Sin Derivación</p>
                     </div>
                     <div class="icon">
@@ -256,7 +256,7 @@
             <div class="card-body">
                 <div class="small-box bg-danger mb-2">
                     <div class="inner">
-                        <h3>{{ cantidad_legajos_embarazados }}</h3>
+                        <h3>{{ cantidad_legajos_embarazados|default_if_none:'No implementado' }}</h3>
                         <p>Total</p>
                     </div>
                     <div class="icon">
@@ -265,7 +265,7 @@
                 </div>
                 <div class="small-box bg-danger mb-2">
                     <div class="inner">
-                        <h3>{{ cantidad_embarazos_en_riesgo }}</h3>
+                        <h3>{{ cantidad_embarazos_en_riesgo|default_if_none:'No implementado' }}</h3>
                         <p>En Riesgo / Sin Control </p>
                     </div>
                     <div class="icon">
@@ -274,7 +274,7 @@
                 </div>
                 <div class="small-box bg-danger mb-2">
                     <div class="inner">
-                        <h3>{{ embarazos_sin_derivacion_aceptada }}</h3>
+                        <h3>{{ embarazos_sin_derivacion_aceptada|default_if_none:'No implementado' }}</h3>
                         <p>Sin adherencia</p>
                     </div>
                     <div class="icon">
