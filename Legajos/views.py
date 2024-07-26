@@ -1023,6 +1023,11 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
     form_trabajo = DimensionTrabajoForm
     success_message = "Editado correctamente"
 
+    def get_object(self, queryset=None):
+        pk = self.kwargs["pk"]
+        legajo = Legajos.objects.only("id").get(id=pk)
+        return DimensionFamilia.objects.get(fk_legajo=legajo.id)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
@@ -1586,6 +1591,7 @@ class LegajoGrupoHogarList(ListView):
         pk = self.kwargs["pk"]
         context = super().get_context_data(**kwargs)
 
+        #FIXME: Esta query optimizada de "familiares" no se termino de implementar
         familiares = LegajoGrupoFamiliar.objects.filter(Q(fk_legajo_1 = pk) | Q(fk_legajo_2 = pk)).values('fk_legajo2__id', 'fk_legajo1__id', 'fk_legajo_2__nombre', 'fk_legajo_2__apellido', 'fk_legajo_2__calle', 'fk_legajo_2__telefono', 'estado_relacion', 'conviven', 'cuidado_principal', 'fk_legajo_2__foto', 'fk_legajo_1__nombre', 'fk_legajo_1__apellido', 'fk_legajo_1__calle', 'fk_legajo_1__telefono', 'estado_relacion', 'conviven', 'cuidado_principal', 'fk_legajo_1__foto', 'vinculo')
         context["familiares_fk1"] = LegajoGrupoFamiliar.objects.filter(fk_legajo_1=pk)
         context["familiares_fk2"] = LegajoGrupoFamiliar.objects.filter(fk_legajo_2=pk)
