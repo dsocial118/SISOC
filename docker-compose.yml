@@ -22,6 +22,7 @@ services:
       dockerfile: ./docker/django/Dockerfile
     ports:
       - "8000:8000"
+      - "3000:3000" # Debugger
     depends_on:
       mysql:
         condition: service_healthy
