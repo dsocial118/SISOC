@@ -55,7 +55,7 @@ SECRET_KEY = 'django-insecure-nkd=f=s!(abn(-tan&ceplfpumy5#j$6v$hl_=5d@q)dni4477
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1','localhost']
+ALLOWED_HOSTS = ['127.0.0.1','localhost', 'http://sisoc.dev-test.secretarianaf.gob.ar']
 
 # Application definition
 
@@ -305,3 +305,5 @@ INTERNAL_IPS = [
     '127.0.0.1',
     '::1',
 ]
+
+CSRF_TRUSTED_ORIGINS = ['http://sisoc.dev-test.secretarianaf.gob.ar']
