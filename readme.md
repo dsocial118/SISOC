@@ -15,6 +15,11 @@ App web que permite visualizar y gestionar información de personas en situació
 3. Colocar dump en `./docker/mysql/local-dump.sql`
 4. Correr nuevamente `docker-compose up`
 
+### Debug en docker-compose
+1. Ejecutar nuestra app con `docker-compose up` y esperar al output: `Starting development server at http://0.0.0.0:8000/`
+2. En la pestaña del debugger de VSCode, seleccionar la opcoin `Djangp in Docker` e iniciar debugging
+3. Utilizarlo como cualquier otro debugger, recordando que depende del proceso principal de docker-compose
+
 ## API
 
 TODO: Agregar documentacion para la API
