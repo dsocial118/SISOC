@@ -20,11 +20,11 @@ fecha_hace_40_dias = today - timedelta(days=40)
 def obtener_legajos_total():
     legajos_total = cache.get('legajos_total')
     if legajos_total is None:
-        legajos_total = list(Legajos.objects.select_related('dimensioneconomia').prefetch_related('m2m_alertas').values(
+        legajos_total = Legajos.objects.select_related('dimensioneconomia').prefetch_related('m2m_alertas').values(
             'estado',
             'fecha_nacimiento',
             'dimensioneconomia__m2m_planes'
-        ))
+        )
         cache.set('legajos_total', legajos_total, 60 * 15)  # Almacenar en caché por 15 minutos
     return legajos_total
 
