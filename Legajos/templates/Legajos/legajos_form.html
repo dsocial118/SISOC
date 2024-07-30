@@ -193,10 +193,6 @@
                                                 </div>
                                                 <div class="form-group col-sm-3">
                                                     {{form.nacionalidad| as_crispy_field}}
-                                                    <div class="list-container" id="nacionalidadesContainer">
-                                                        <ul id="nacionalidadesList">
-                                                        </ul>
-                                                    </div>
                                                 </div>
                                                 <div class="form-group col-sm-3">
                                                     {{form.estado_civil| as_crispy_field}}
@@ -296,8 +292,12 @@
 
 
 {% block customJS %}
-<script src="{% static 'js/legajosForm.js' %}"></script>
+
 <script>
+    $(document).ready(function() {
+        $('#id_nacionalidad').select2();
+    });
+
     id_foto.onchange = (evt) => {
         const [file] = id_foto.files;
         if (file) {
