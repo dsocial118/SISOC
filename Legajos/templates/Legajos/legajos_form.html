@@ -1,13 +1,14 @@
-{% extends "includes/base.html" %};
+{% extends "includes/base.html" %}
 {% load crispy_forms_tags %}
 {% load static %};
 
 {% block head %}
+
 {% endblock %}
 
-{% block title %}Legajos{% endblock %};
+{% block title %}Legajos{% endblock %}
 
-{% block titulo-pagina %} Legajos{% endblock %};
+{% block titulo-pagina %} Legajos{% endblock %}
 
 {% block breadcrumb %}
 <ol class="breadcrumb float-sm-right px-3">
@@ -192,6 +193,10 @@
                                                 </div>
                                                 <div class="form-group col-sm-3">
                                                     {{form.nacionalidad| as_crispy_field}}
+                                                    <div class="list-container" id="nacionalidadesContainer">
+                                                        <ul id="nacionalidadesList">
+                                                        </ul>
+                                                    </div>
                                                 </div>
                                                 <div class="form-group col-sm-3">
                                                     {{form.estado_civil| as_crispy_field}}
@@ -286,9 +291,12 @@
         </div>
     </div>
 </div>
-{% endblock %};
+{% endblock %}
+
+
 
 {% block customJS %}
+<script src="{% static 'js/legajosForm.js' %}"></script>
 <script>
     id_foto.onchange = (evt) => {
         const [file] = id_foto.files;
