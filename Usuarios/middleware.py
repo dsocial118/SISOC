@@ -4,6 +4,7 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
 from django.shortcuts import redirect
 
+# FIXME: Reveer si necesitamos este middleware, en caso de que si, corregir el dns al que se le pega
 class CustomLoginMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
