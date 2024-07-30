@@ -56,6 +56,9 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 DEBUG = bool(os.environ.get("DEBUG", default="False"))
 
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS").split(" ")
+#ALLOWED_HOSTS = ['127.0.0.1','localhost', 'http://sisoc.dev-test.secretarianaf.gob.ar']
+
+CSRF_TRUSTED_ORIGINS = ['http://sisoc.dev-test.secretarianaf.gob.ar'
 
 # Application definition
 
