@@ -6,6 +6,11 @@ from pathlib import Path
 from django.contrib.messages import constants as messages
 from .validators import UppercaseValidator, LowercaseValidator
 from dotenv import load_dotenv
+
+load_dotenv() 
+
+DEBUG = os.environ.get("DEBUG", default=False)
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -26,36 +31,56 @@ logging.basicConfig(
               logging.StreamHandler()],
 )
 
-load_dotenv() # Carga las variables de entorno desde el archivo .env
 
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
+if DEBUG:
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'handlers': {
+            'console': {
+                'level': 'DEBUG',
+                'class': 'logging.StreamHandler',
+            },
+        }
+    }
+    
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
+else:
+    # Logging en AWS CloudWatch
+    import boto3
+    AWS_REGION_NAME = 'ca-central-1'
+    boto3_logs_client = boto3.client("logs", region_name=AWS_REGION_NAME)
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'root': {
+            'level': 'INFO',
+            'handlers': ['watchtower', 'console'],
         },
-    },
-    'loggers': {
-        'Usuarios.middleware': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
-            'propagate': True,
+        'handlers': {
+            'console': {
+                'class': 'logging.StreamHandler',
+            },
+            'watchtower': {
+                'class': 'watchtower.CloudWatchLogHandler',
+                'boto3_client': boto3_logs_client,
+                'log_group_name': 'SISOC',
+                'level': 'INFO'
+            }
         },
-    },
-}
+    }
+
+    # Media en producción (Apunta al disco compartido de AWS)
+    MEDIA_ROOT = '/mnt/efs/media_root'
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-nkd=f=s!(abn(-tan&ceplfpumy5#j$6v$hl_=5d@q)dni4477'
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = ['127.0.0.1','localhost', 'http://sisoc.dev-test.secretarianaf.gob.ar']
+CSRF_TRUSTED_ORIGINS = ['http://sisoc.dev-test.secretarianaf.gob.ar']
 
 # Application definition
 
@@ -235,8 +260,6 @@ STATIC_ROOT = BASE_DIR / 'static_root'
 
 # donde vamos a ir guardar los archivos medias debug/local
 MEDIA_URL = 'media/'
-# media para produccion
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
 
 
 # Default primary key field type
