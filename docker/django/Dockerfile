@@ -5,13 +5,13 @@ WORKDIR /sisoc
 # Envs
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
-ENV DEBUG=True
+ENV DEBUG=False
 ENV DJANGO_SECRET_KEY="Y8OaXQMLNTdcdH43PbS4ZAMa0AKZUp9aJJKd0ELGViNBEJ8TPfZlOwx6tI"
 ENV DJANGO_ALLOWED_HOSTS="localhost 127.0.0.1 [::1]"
-ENV SQL_HOST="mysql"
-ENV SQL_USER="root"
-ENV SQL_PASSWORD="root1-password2"
-ENV SQL_NAME="sisoc-local"
+ENV DATABASE_HOST="mysql"
+ENV DATABASE_USER="root"
+ENV DATABASE_PASSWORD="root1-password2"
+ENV DATABASE_NAME="sisoc-local"
 
 # System dependencies
 RUN apk update && apk add --no-cache mariadb-connector-c-dev gcc musl-dev bash mariadb-client

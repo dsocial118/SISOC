@@ -166,12 +166,12 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 DATABASES = {
     'default': {
-        "ENGINE": os.getenv("SQL_ENGINE", "django.db.backends.mysql"),
-        'NAME': os.getenv('SQL_NAME', 'sisoc-local'),
-        'USER': os.getenv('SQL_USER', 'root'),
-        'PASSWORD': os.getenv('SQL_PASSWORD', ''),
-        'HOST': os.getenv('SQL_HOST', 'localhost'),
-        'PORT': os.getenv('SQL_PORT', '3306'),
+        "ENGINE": os.getenv("DATABASE_ENGINE", "django.db.backends.mysql"),
+        'NAME': os.getenv('DATABASE_NAME', 'sisoc-local'),
+        'USER': os.getenv('DATABASE_USER', 'root'),
+        'PASSWORD': os.getenv('DATABASE_PASSWORD', ''),
+        'HOST': os.getenv('DATABASE_HOST', 'localhost'),
+        'PORT': os.getenv('DATABASE_PORT', '3306'),
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
             'charset': 'utf8mb4',
