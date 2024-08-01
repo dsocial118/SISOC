@@ -12,6 +12,7 @@ from django.core.files.storage import FileSystemStorage
 from django.core.files.base import ContentFile
 from PIL import Image
 from io import BytesIO  # Import BytesIO
+from django.shortcuts import get_object_or_404
 
 from .mixins import PermisosMixin
 from .models import *
@@ -104,20 +105,26 @@ class UsuariosListView(PermisosMixin, ListView ):
         return object_list
    
    
-class UsuariosDetailView(UserPassesTestMixin,DetailView):
-    permission_required = ['Usuarios.rol_admin','Usuarios.rol_observador','Usuarios.rol_consultante'] 
+class UsuariosDetailView(UserPassesTestMixin, DetailView):
+    permission_required = ['Usuarios.rol_admin', 'Usuarios.rol_observador', 'Usuarios.rol_consultante']
     model = Usuarios
     template_name = 'Usuarios/usuarios_detail.html'
 
     def test_func(self):
-    # accede a la vista de detalle si es admin o si es el mismo usuario
-       if self.request.user.is_authenticated:
+        # Accede a la vista de detalle si es admin o si es el mismo usuario
+        if self.request.user.is_authenticated:
             usuario_actual = self.request.user.id
-            usuario_solicitado= int(self.kwargs['pk'])
+            usuario_solicitado = int(self.kwargs['pk'])
             if (usuario_actual == usuario_solicitado) or self.request.user.has_perm('Usuarios.rol_admin') or self.request.user.has_perm('auth_user.view_user'):
                 return True
-       else:
-           return False 
+        else:
+            return False
+
+    def get_object(self, queryset=None):
+        # Obtener el objeto de usuario solicitado
+        usuario_id = self.kwargs.get('pk')
+        usuario = get_object_or_404(Usuarios, id=usuario_id)
+        return usuario
 
 
 class UsuariosDeleteView(PermisosMixin,SuccessMessageMixin,DeleteView):   
