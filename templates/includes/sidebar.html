@@ -215,8 +215,36 @@
 		</li>
 		{%endif%}
 	</ul>
+	<ul class="nav nav-treeview">
+		{%if perms.Usuarios.programa_Legajo%}
+		<li class="nav-item">
+			<a href="{% url 'legajos_listar' %}" class="nav-link {% if 'legajos/listar' in pagina_actual %}active{% endif %}">
+				<i class="nav-icon fas fa-user"></i>
+				<p>Centros de familia</p>
+			</a>
+		</li>
+		{%endif%}
+	</ul>
+	<ul class="nav nav-treeview">
+		{%if perms.Usuarios.programa_Legajo%}
+		<li class="nav-item">
+			<a href="{% url 'legajos_listar' %}" class="nav-link {% if 'legajos/listar' in pagina_actual %}active{% endif %}">
+				<i class="nav-icon fas fa-user"></i>
+				<p>Centros de primera infancia</p>
+			</a>
+		</li>
+		{%endif%}
+	</ul>
 </li>
-
+{%if perms.Usuarios.programa_Legajo%}
+<li class="nav-item">
+	<a href="{% url 'legajos_listar' %}" class="nav-link  {% if 'legajos/reportes' in pagina_actual %}active{% endif %}">
+		<i class="nav-icon fas fa-globe"></i>
+		<p>Legajos Provincias</p>
+	</a>
+</li>
+{%endif%}
+{% comment %}
 <li class="nav-item {% if 'programas' in pagina_actual %}menu-open{% endif %}">
     <a href="#" class="nav-link {% if 'programas' in pagina_actual %}active{% endif %}">
         <i class="nav-icon fa fa-briefcase"></i>
@@ -386,5 +414,5 @@
 
         </li>
 </li>
-
+{% endcomment %}
 {% endwith %}
