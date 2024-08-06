@@ -280,7 +280,7 @@ class LegajosDetailView(DetailView):
 
         context['count_intervenciones'] = count_intervenciones
 
-        context['dimensionfamilia'] = dimensionfamilia
+        context['dimensionfamilia'] = dimensionfamilia[0] #FIXME: Este fix es temporal para la presentacion del 6-8
 
         context['dimensionvivienda'] = dimensionvivienda
 
