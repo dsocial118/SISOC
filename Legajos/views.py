@@ -282,11 +282,11 @@ class LegajosDetailView(DetailView):
 
         context['dimensionfamilia'] = dimensionfamilia[0] #FIXME: Este fix es temporal para la presentacion del 6-8
 
-        context['dimensionvivienda'] = dimensionvivienda
+        context['dimensionvivienda'] = dimensionvivienda[0] #FIXME: Este fix es temporal para la presentacion del 6-8
 
-        context['dimensionsalud'] = dimensionsalud
+        context['dimensionsalud'] = dimensionsalud[0] #FIXME: Este fix es temporal para la presentacion del 6-8
 
-        context['dimensiontrabajo'] = dimensiontrabajo
+        context['dimensiontrabajo'] = dimensiontrabajo[0] #FIXME: Este fix es temporal para la presentacion del 6-8
 
         context["datos_json"] = datos_json
 
