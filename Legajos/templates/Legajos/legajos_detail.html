@@ -42,7 +42,7 @@
     <div class="col-sm-3">
         <div class="card bg-dark p-4">
             {% if object.foto %}
-            <img class="card-img-top rounded" src="{{ MEDIA_URL }}{{object.foto.url}}" alt="Foto de perfil" />
+            <img class="card-img-top rounded" src="{{object.foto.url}}" alt="Foto de perfil" />
             {%else%}
             <img class="card-img-top rounded" src="{% static 'custom/img/default.png'  %}" alt="Foto de perfil" />
             {%endif%}
@@ -152,7 +152,7 @@
                     {% for f in familiares_fk1 %}
                     <li><a class="users-list-name" href="{% url 'legajos_ver' f.fk_legajo_2__id %}" title="{{f.fk_legajo_2__apellido}} {{f.fk_legajo_2__nombre}} - {{f.vinculo}}">
                         {% if f.fk_legajo_2__foto %}
-                        <img src="{{f.fk_legajo_2__foto.url}}" alt="User Image" width="60px">
+                        <img src="/media/{{f.fk_legajo_2__foto}}" alt="User Image" width="60px">
                         {%else%}
                         <img src="{% static 'custom/img/default.png'  %}" alt="User Image" width="60px">
                         {%endif%}                        
@@ -166,7 +166,7 @@
                     <li>
                         <a class="users-list-name" href="{% url 'legajos_ver' f.fk_legajo_1__id %}" title="{{f.fk_legajo_2__apellido}} {{f.fk_legajo_2__nombre}} - {{f.vinculo_inverso}}">
                             {% if f.fk_legajo_1__foto %}
-                            <img src="{{f.fk_legajo_1__foto.url}}" alt="User Image" width="60px">
+                            <img src="/media/{{f.fk_legajo_1__foto.url}}" alt="User Image" width="60px">
                             {%else%}
                             <img src="{% static 'custom/img/default.png'  %}" alt="User Image" width="60px">
                             {%endif%}                            
@@ -212,12 +212,12 @@
             <ul class="users-list">
                 {% for f in hogar_familiares_fk1 %}
                 <li><a class="users-list-name" href="{% url 'legajos_ver' f.fk_legajo_2Hogar_id %}" title="{{f.fk_legajo_2Hogar}} - {{f.estado_relacion}}">
-                    {% if f.fk_legajo_2Hogar.foto %}
-                    <img src="{{f.fk_legajo_2Hogar.foto.url}}" alt="User Image" width="60px">
+                    {% if f.fk_legajo_2Hogar__foto %}
+                    <img src="/media/{{f.fk_legajo_2Hogar__foto}}" alt="User Image" width="60px">
                     {%else%}
                     <img src="{% static 'custom/img/default.png'  %}" alt="User Image" width="60px">
                     {%endif%}                        
-                    <span class="users-list-date">{{f.fk_legajo_2Hogar}}</span>
+                    <span class="users-list-date">{{f.fk_legajo_2Hogar__nombre}}</span>
                     <span class="users-list-date">{{f.estado_relacion}}</span>
                 </a>
                 </li>
@@ -226,8 +226,8 @@
                 {% for f in hogar_familiares_fk2 %}
                 <li>
                     <a class="users-list-name" href="{% url 'legajos_ver' f.fk_legajo_1Hogar_id %}" title="{{f.fk_legajo_1Hogar}} - {{f.estado_relacion}}">
-                        {% if f.fk_legajo_1Hogar.foto %}
-                        <img src="{{f.fk_legajo_1Hogar.foto.url}}" alt="User Image" width="60px">
+                        {% if f.fk_legajo_1Hogar__foto %}
+                        <img src="{{f.fk_legajo_1Hogar__foto}}" alt="User Image" width="60px">
                         {%else%}
                         <img src="{% static 'custom/img/default.png'  %}" alt="User Image" width="60px">
                         {%endif%}                            
@@ -324,7 +324,7 @@
                 {% for f in files_docs %}
                 <ul class="list-unstyled">
                     <li class="py-1">
-                        <a href="{{ MEDIA_URL }}{{f.archivo.url}}" class="" target="_blank"
+                        <a href="{{f.archivo.url}}" class="" target="_blank"
                             title="{{f.archivo|cut:'legajos/archivos/'}}"><i class="fas fa-file pr-1"></i>
                             {{f.archivo|cut:"legajos/archivos/"|truncatechars:35 }}
                         </a>
