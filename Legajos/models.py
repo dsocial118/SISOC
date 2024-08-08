@@ -417,6 +417,9 @@ class DimensionEconomia(models.Model):
         ordering = ['fk_legajo']
         verbose_name = 'DimensionEconomica'
         verbose_name_plural = 'DimensionesEconomicas'
+        indexes = [
+            models.Index(fields=['fk_legajo'])
+        ]
 
     def get_absolute_url(self):
         return reverse('legajos_ver', kwargs={'pk': self.fk_legajo.id})
