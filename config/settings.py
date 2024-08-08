@@ -1,4 +1,5 @@
 import os
+import locale
 from pathlib import Path
 from django.contrib.messages import constants as messages
 from dotenv import load_dotenv
@@ -83,6 +84,8 @@ LANGUAGE_CODE = 'es-ar'
 TIME_ZONE = 'America/Argentina/Buenos_Aires'
 USE_I18N = True
 USE_TZ = True
+locale.setlocale(locale.LC_ALL, 'es_AR.UTF-8')
+
 
 # Configuración de campo auto por defecto
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
