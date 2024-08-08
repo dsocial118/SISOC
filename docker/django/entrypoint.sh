@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -e
-
 echo "Waiting for MySQL to be ready..."
 while ! mysqladmin ping -h"$DATABASE_HOST" --silent; do
     sleep 5
