@@ -935,7 +935,7 @@ class LegajosAlertasCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
         pk = self.kwargs.get("pk")
         if pk:
             form.fields["fk_legajo"].initial = pk
-            form.fields["creada_por"].initial = self.request.user.usuarios.id
+            form.fields["creada_por"].initial = self.request.user.usuarios
         return form
 
     def get_success_url(self):
