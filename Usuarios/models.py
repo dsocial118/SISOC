@@ -15,7 +15,7 @@ class Usuarios(models.Model):
     Extensión del modelo USER
     '''
     
-    usuario = models.OneToOneField(User, primary_key=True, on_delete=models.CASCADE, db_column='id')
+    usuario = models.OneToOneField(User, on_delete=models.CASCADE)
     imagen = models.ImageField(
         upload_to="usuarios/", null=True, blank=True)
     dni = models.PositiveIntegerField(null=True, blank=True, unique=True)
@@ -25,6 +25,13 @@ class Usuarios(models.Model):
         blank=True,
     )
     darkmode = models.BooleanField(default=True, null=True, blank=True)
+
+
+    def save(self, *args, **kwargs):
+        self.id = self.usuario.id
+        super(Usuarios, self).save(*args, **kwargs)
+
+
 
     def __str__(self):
         if(self.usuario.first_name or self.usuario.last_name):
