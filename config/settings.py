@@ -147,6 +147,7 @@ TIME_ZONE = 'America/Argentina/Buenos_Aires'
 USE_I18N = True
 USE_TZ = True
 
+
 # Configuración de campo auto por defecto
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
