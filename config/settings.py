@@ -84,7 +84,6 @@ LANGUAGE_CODE = 'es-ar'
 TIME_ZONE = 'America/Argentina/Buenos_Aires'
 USE_I18N = True
 USE_TZ = True
-locale.setlocale(locale.LC_ALL, 'es_AR.UTF-8')
 
 
 # Configuración de campo auto por defecto
