@@ -12,5 +12,6 @@ sleep 10
 echo "MySQL is up and ready"
 
 # Migrate and start the Django server
+python manage.py makemigrations
 python manage.py migrate --noinput
 python manage.py runserver 0.0.0.0:8000
