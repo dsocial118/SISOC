@@ -1,79 +1,16 @@
 import os
-import logging
-from logging.handlers import TimedRotatingFileHandler
-from datetime import datetime
 from pathlib import Path
 from django.contrib.messages import constants as messages
-from .validators import UppercaseValidator, LowercaseValidator
 from dotenv import load_dotenv
-import boto3
-
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
-AWS_REGION_NAME = 'ca-central-1'
-
-# session = boto3.Session(region_name='ca-central-1')
-# boto3_logs_client = session.client("logs")
-
-boto3_logs_client = boto3.client("logs", region_name=AWS_REGION_NAME)
-
-# LOGS DEL SISTEMA:
-# Define la ruta al directorio de logs
-log_dir = os.path.join(BASE_DIR, 'logs')
-os.makedirs(log_dir, exist_ok=True)
-
-# Nombre del archivo de registro basado en el mes actual
-current_month = datetime.now().strftime('%Y-%m')
-log_file = os.path.join(log_dir, f'app_{current_month}.log')
-
-# Configuración de logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(message)s',
-    handlers=[TimedRotatingFileHandler(log_file, when='MIDNIGHT', backupCount=12, encoding='utf-8'),
-              logging.StreamHandler()],
-)
 
 # Cargar variables de entorno desde el archivo .env
 load_dotenv() 
 
-# Configuracion de logging
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'root': {
-        'level': 'DEBUG',
-        # Adding the watchtower handler here causes all loggers in the project that
-        # have propagate=True (the default) to send messages to watchtower. If you
-        # wish to send only from specific loggers instead, remove "watchtower" here
-        # and configure individual loggers below.
-        'handlers': ['watchtower', 'console'],
-    },
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-        },
-        'watchtower': {
-            'class': 'watchtower.CloudWatchLogHandler',
-            'boto3_client': boto3_logs_client,
-            'log_group_name': 'SISOC',
-            # Decrease the verbosity level here to send only those logs to watchtower,
-            # but still see more verbose logs in the console. See the watchtower
-            # documentation for other parameters that can be set here.
-            'level': 'DEBUG'
-        }
-    },
-    'loggers': {
-        'Usuarios.middleware': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-    },
-}
-
 # Definición de entorno
 DEBUG = os.environ.get("DJANGO_DEBUG", default=False)
+
+# Definición del directorio base del proyecto
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Configuración de rutas de estaticos y  media
 STATIC_URL = 'static/'
@@ -81,7 +18,7 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'static_root'
 
 MEDIA_URL = 'media/'
-MEDIA_ROOT = '/mnt/efs/media_root'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
 
 
 # Configuración de URLs para autenticación
@@ -248,6 +185,18 @@ DATABASES = {
     }
 }
 
+# Configuracion de logging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+        },
+    }
+}
+
 # Configuración de validadores de contraseñas
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -273,7 +222,14 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# Configuración de Django debug toolbar
+# Configuración de Django Debug Toolbar
 DEBUG_TOOLBAR_CONFIG = {
     'SHOW_TOOLBAR_CALLBACK': lambda request: True if DEBUG else False
 }
+
+# Configuración del HSTS para evitar conflictos en AWS previamente configurados
+SECURE_HSTS_SECONDS = None
+SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+SECURE_SSL_REDIRECT = False
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
