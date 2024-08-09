@@ -13,6 +13,8 @@ from django.core.files.base import ContentFile
 from PIL import Image
 from io import BytesIO  # Import BytesIO
 from django.shortcuts import get_object_or_404
+from django.views import View
+
 
 from .mixins import PermisosMixin
 from .models import *
@@ -73,9 +75,9 @@ def set_dark_mode(request):
         return next_page
 
 class UsuariosLoginView(LoginView):
-    template_name='login.html'
+    template_name = 'login.html'
 
-
+# FIXME: paginar la lista de usuarios
 class UsuariosListView(PermisosMixin, ListView ):    
     permission_required = ['Usuarios.rol_admin','Usuarios.rol_observador','Usuarios.rol_consultante']   
     model = Usuarios
@@ -98,7 +100,7 @@ class UsuariosListView(PermisosMixin, ListView ):
                 Q(telefono__icontains=query)
             ).distinct()
         else:
-            object_list = self.model.objects.all().exclude(usuario_id__is_superuser =True)
+            object_list = self.model.objects.all().exclude(usuario__is_superuser =True)
         return object_list
    
    
@@ -108,7 +110,7 @@ class UsuariosDetailView(UserPassesTestMixin, DetailView):
     template_name = 'Usuarios/usuarios_detail.html'
 
     def test_func(self):
-        # Accede a la vista de detalle si es admin o si es el mismo usuario
+    # Accede a la vista de detalle si es admin o si es el mismo usuario
         if self.request.user.is_authenticated:
             usuario_actual = self.request.user.id
             usuario_solicitado = int(self.kwargs['pk'])
@@ -117,10 +119,11 @@ class UsuariosDetailView(UserPassesTestMixin, DetailView):
         else:
             return False
 
+
     def get_object(self, queryset=None):
         # Obtener el objeto de usuario solicitado
         usuario_id = self.kwargs.get('pk')
-        usuario = get_object_or_404(Usuarios, id=usuario_id)
+        usuario = get_object_or_404(Usuarios, usuario_id=usuario_id)
         return usuario
 
 
@@ -131,7 +134,7 @@ class UsuariosDeleteView(PermisosMixin,SuccessMessageMixin,DeleteView):
     success_url= reverse_lazy("usuarios_listar")
     success_message = "El registro fue eliminado correctamente"   
 
-    
+   
 class UsuariosCreateView(PermisosMixin,SuccessMessageMixin,CreateView):    
     permission_required = ('Usuarios.rol_admin')  
     template_name = 'Usuarios/usuarios_create_form.html'
@@ -164,7 +167,7 @@ class UsuariosCreateView(PermisosMixin,SuccessMessageMixin,CreateView):
 
                 usuario.save() 
                 messages.success(self.request, ('Usuario creado con éxito.'))
-                return redirect('usuarios_ver',user.usuarios.id)           
+                return redirect('usuarios_ver',user.usuarios)           
 
             except Exception as e: 
                 messages.error(self.request, ('No fue posible crear el usuario.'))
@@ -173,7 +176,7 @@ class UsuariosCreateView(PermisosMixin,SuccessMessageMixin,CreateView):
 
 
 class UsuariosUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
-    permission_required = ('Usuarios.rol_admin')
+    permission_required = 'Usuarios.rol_admin'
     model = User
     form_class = UsuariosUpdateForm
     template_name = 'Usuarios/usuarios_update_form.html'
@@ -205,7 +208,7 @@ class UsuariosUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
 
             usuario.save()
             messages.success(self.request, ('Usuario modificado con éxito.'))
-            return redirect('usuarios_ver', user.usuarios.id)
+            return redirect('usuarios_ver', user.usuarios.usuario.id)
 
 
 
@@ -312,7 +315,7 @@ class PerfilChangePassView(LoginRequiredMixin,SuccessMessageMixin,PasswordChange
 
 
 #region---------------------------------------------------------------------------------------GRUPOS DE USUARIOS
-
+# FIXME: paginar la lista de grupos
 class GruposListView(PermisosMixin, ListView ):    
     permission_required = ['Usuarios.rol_admin','Usuarios.rol_observador','Usuarios.rol_consultante']    
     model = Group
@@ -335,6 +338,11 @@ class GruposDetailView(PermisosMixin,DetailView):
     permission_required = ['auth_user.view_group','Usuarios.rol_admin','Usuarios.rol_observador','Usuarios.rol_consultante'] 
     model = Group
     template_name = 'Grupos/grupos_detail.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['object'] = self.object
+        return context
 
     # def get_context_data(self, *args, **kwargs):
     #      context = super(GruposDetailView, self).get_context_data(**kwargs)
