@@ -34,12 +34,5 @@ MEDIA_ROOT = '/mnt/efs/media_root'
 ADMINS = [('Camilo Maidana', 'cmaidanabernardi.desarrollo@gmail.com')]
 MANAGERS = [('Camilo Maidana', 'cmaidanabernardi.desarrollo@gmail.com')]
 
-# Configuración del protocolo HSTS para forzar el uso de HTTPS
-SECURE_HSTS_SECONDS = 7884000  # 3 meses
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_SSL_REDIRECT = True 
-SESSION_COOKIE_SECURE = True 
-CSRF_COOKIE_SECURE = True 
-
 # configuracion de CSRF
 CSRF_TRUSTED_ORIGINS = ['http://sisoc.dev-test.secretarianaf.gob.ar']
