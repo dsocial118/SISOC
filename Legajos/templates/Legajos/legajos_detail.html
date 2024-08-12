@@ -166,7 +166,7 @@
                     <li>
                         <a class="users-list-name" href="{% url 'legajos_ver' f.fk_legajo_1__id %}" title="{{f.fk_legajo_2__apellido}} {{f.fk_legajo_2__nombre}} - {{f.vinculo_inverso}}">
                             {% if f.fk_legajo_1__foto %}
-                            <img src="/media/{{f.fk_legajo_1__foto.url}}" alt="User Image" width="60px">
+                            <img src="/media/{{f.fk_legajo_1__foto}}" alt="User Image" width="60px">
                             {%else%}
                             <img src="{% static 'custom/img/default.png'  %}" alt="User Image" width="60px">
                             {%endif%}                            

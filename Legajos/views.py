@@ -490,7 +490,7 @@ class LegajosGrupoFamiliarCreateView(CreateView):
         ).exists()
 
         # Obtiene los familiares asociados al legajo principal
-        familiares = LegajoGrupoFamiliar.objects.filter(Q(fk_legajo_1=pk) | Q(fk_legajo_2=pk)).values('fk_legajo_1__nombre', 'fk_legajo_1__apellido', 'fk_legajo_1__id', 'fk_legajo_1__foto', 'fk_legajo_2__nombre', 'fk_legajo_2__apellido', 'fk_legajo_2__id', 'vinculo', 'vinculo_inverso')
+        familiares = LegajoGrupoFamiliar.objects.filter(Q(fk_legajo_1=pk) | Q(fk_legajo_2=pk)).values('fk_legajo_1__nombre', 'fk_legajo_1__apellido', 'fk_legajo_1__id', 'fk_legajo_1__foto', 'fk_legajo_2__nombre', 'fk_legajo_2__apellido', 'fk_legajo_2__id','fk_legajo_2__foto', 'vinculo', 'vinculo_inverso')
 
 
         paginator = Paginator(familiares, self.paginate_by)

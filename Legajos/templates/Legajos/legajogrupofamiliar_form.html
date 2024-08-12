@@ -93,7 +93,7 @@
                                                 <ul class="users-list">
                                                     <li style="width:auto">
                                                         {% if f.fk_legajo_2__foto %}
-                                                        <img src="{{MEDIA_URL}}{{f.fk_legajo_2__foto.url}}" alt="User Image" width="60px">
+                                                        <img src="/media/{{f.fk_legajo_2__foto}}" alt="User Image" width="60px">
                                                         {% else %}
                                                         <img src="{% static 'custom/img/default.png' %}" alt="User Image" width="60px">
                                                         {% endif %}
@@ -110,7 +110,7 @@
                                             <ul class="users-list">
                                                 <li style="width:auto">
                                                     {% if f.fk_legajo_1__foto %}
-                                                    <img src="{{MEDIA_URL}}{{f.fk_legajo_1__foto.url}}" alt="User Image" width="60px">
+                                                    <img src="/media/{{f.fk_legajo_1__foto}}" alt="User Image" width="60px">
                                                     {% else %}
                                                     <img src="{% static 'custom/img/default.png' %}" alt="User Image" width="60px">
                                                     {% endif %}
