@@ -198,7 +198,7 @@ class LegajosDetailView(DetailView):
             familiares = LegajoGrupoFamiliar.objects.filter(Q(fk_legajo_1=pk) | Q(fk_legajo_2=pk)).values('fk_legajo_1__nombre', 'fk_legajo_1__apellido', 'fk_legajo_1__id', 'fk_legajo_1__foto', 'fk_legajo_2__nombre', 'fk_legajo_2__apellido', 'fk_legajo_2__id', 'fk_legajo_2__foto', 'vinculo', 'vinculo_inverso')
             cache.set('familiares', familiares, 60)
         if not hogar_familiares: 
-            hogar_familiares = LegajoGrupoHogar.objects.filter(Q(fk_legajo_1Hogar=pk) | Q(fk_legajo_2Hogar=pk)).values('fk_legajo_2Hogar_id', 'fk_legajo_2Hogar', 'fk_legajo_1Hogar_id', 'fk_legajo_1Hogar', 'estado_relacion')
+            hogar_familiares = LegajoGrupoHogar.objects.filter(Q(fk_legajo_1Hogar=pk) | Q(fk_legajo_2Hogar=pk)).values('fk_legajo_2Hogar_id', 'fk_legajo_2Hogar', 'fk_legajo_1Hogar_id', 'fk_legajo_1Hogar', 'fk_legajo_1Hogar__nombre', 'fk_legajo_2Hogar__nombre', 'fk_legajo_1Hogar__foto', 'fk_legajo_2Hogar__foto', 'estado_relacion')
             cache.set('hogar_familiares', hogar_familiares, 60)
         if not files:
             files = LegajosArchivos.objects.filter(Q(tipo="Imagen") | Q(tipo="Documento"), fk_legajo=pk)
@@ -238,7 +238,7 @@ class LegajosDetailView(DetailView):
             count_intervenciones = LegajosDerivaciones.objects.filter(fk_legajo=pk).count()
             cache.set('count_intervenciones', count_intervenciones, 60)
         if not dimensionfamilia:
-            dimensionfamilia = DimensionFamilia.objects.filter(fk_legajo=pk).values('estado_civil','cant_hijos','otro_responsable','hay_embarazadas','hay_priv_libertad','hay_prbl_smental','hay_enf_cronica','obs_familia')
+            dimensionfamilia = DimensionFamilia.objects.filter(fk_legajo=pk).values('estado_civil','cant_hijos','otro_responsable','hay_embarazadas','hay_priv_libertad','hay_prbl_smental','hay_enf_cronica','obs_familia').first()
             cache.set('dimensionfamilia', dimensionfamilia, 60)
         if not dimensionvivienda:
             dimensionvivienda = DimensionVivienda.objects.filter(fk_legajo=pk).values('posesion', 'tipo', 'material', 'pisos', 'cant_ambientes', 'cant_camas', 'cant_hogares', 'cant_convivientes', 'cant_menores', 'hay_banio', 'hay_agua_caliente', 'hay_desmoronamiento', 'ContextoCasa', 'PoseenPC', 'Poseeninternet', 'PoseenCeludar', 'obs_vivienda')
@@ -490,7 +490,7 @@ class LegajosGrupoFamiliarCreateView(CreateView):
         ).exists()
 
         # Obtiene los familiares asociados al legajo principal
-        familiares = LegajoGrupoFamiliar.objects.filter(Q(fk_legajo_1=pk) | Q(fk_legajo_2=pk)).values('fk_legajo_1__nombre', 'fk_legajo_1__apellido', 'fk_legajo_1__id', 'fk_legajo_1__foto', 'fk_legajo_2__nombre', 'fk_legajo_2__apellido', 'fk_legajo_2__id', 'vinculo', 'vinculo_inverso')
+        familiares = LegajoGrupoFamiliar.objects.filter(Q(fk_legajo_1=pk) | Q(fk_legajo_2=pk)).values('fk_legajo_1__nombre', 'fk_legajo_1__apellido', 'fk_legajo_1__id', 'fk_legajo_1__foto', 'fk_legajo_2__nombre', 'fk_legajo_2__apellido', 'fk_legajo_2__id','fk_legajo_2__foto', 'vinculo', 'vinculo_inverso')
 
 
         paginator = Paginator(familiares, self.paginate_by)
