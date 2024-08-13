@@ -7,7 +7,7 @@ from django.contrib import messages
 urlpatterns = [
     path('', UsuariosLoginView.as_view(),name='login'),
     # path('', auth_views.LoginView.as_view(template_name='login.html',authentication_form = CustomAuthenticationForm),name='login'),
-    path('logout',login_required(UsuariosLogoutView.as_view()),name='logout'),
+    path('logout',login_required(LogoutView.as_view()),name='logout'),
     
     # Usuarios
     path('administracion/usuarios/crear', login_required(UsuariosCreateView.as_view()),name='usuarios_crear'), 

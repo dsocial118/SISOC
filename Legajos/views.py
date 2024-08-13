@@ -1047,18 +1047,20 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
             'dimensioneducacion__fk_legajo', 'dimensioneducacion__obs_educacion', 
             'dimensioneducacion__areaCurso', 'dimensioneducacion__areaOficio', 
             'dimensioneconomia__fk_legajo', 'dimensioneconomia__obs_economia', 
-            'dimensioneconomia__m2m_planes', 'dimensiontrabajo__fk_legajo', 
-            'dimensiontrabajo__obs_trabajo'
+            'dimensioneconomia__m2m_planes', 'dimensiontrabajo__fk_legajo',
+            'dimensiontrabajo__obs_trabajo',
         ).get(id=pk)
 
+        # TODO: Modificar logica para no utilizar los siguientes "None' y crear la dimension segun haga falta
         context.update({
-            "legajo": legajo,
-            "form_vivienda": self.form_vivienda(instance=legajo.dimensionvivienda),
-            "form_salud": self.form_salud(instance=legajo.dimensionsalud),
-            "form_educacion": self.form_educacion(instance=legajo.dimensioneducacion),
-            "form_economia": self.form_economia(instance=legajo.dimensioneconomia),
-            "form_trabajo": self.form_trabajo(instance=legajo.dimensiontrabajo),
-        })
+        "legajo": legajo,
+        "form_vivienda": self.form_vivienda(instance=getattr(legajo, 'dimensionvivienda', None)),
+        "form_salud": self.form_salud(instance=getattr(legajo, 'dimensionsalud', None)),
+        "form_educacion": self.form_educacion(instance=getattr(legajo, 'dimensioneducacion', None)),
+        "form_economia": self.form_economia(instance=getattr(legajo, 'dimensioneconomia', None)),
+        "form_trabajo": self.form_trabajo(instance=getattr(legajo, 'dimensiontrabajo', None)),
+    })
+
 
         return context
 
