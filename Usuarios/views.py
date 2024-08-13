@@ -35,9 +35,6 @@ def set_dark_mode(request):
         user.usuarios.save()
         return JsonResponse({'status': 'ok'})
     
-class UsuariosLogoutView(LogoutView):
-    template_name='login.html'
-
     def get_next_page(self):
         next_page = super().get_next_page()
 
