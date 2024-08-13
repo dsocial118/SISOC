@@ -9,7 +9,7 @@ urlpatterns = [
 
     # path('hsu_admin/', admin.site.urls),    # TODO crear un honey_pot para controlar intrusiones
     path('admin/doc/', include('django.contrib.admindocs.urls')),
-    path('admin/', admin.site.urls),    
+    path('admin/', admin.site.urls),
     path('', include('django.contrib.auth.urls')),
     path('', include('Usuarios.urls')),
     path('', include('Configuraciones.urls')),
@@ -22,6 +22,7 @@ urlpatterns = [
     path('', include('SIF_PDV.urls')),
     path('', include('SIF_SL.urls')),
     path('', include('SIF_MA.urls')),
+    path('', include('Healthcheck.urls')),
 ]
 
 urlpatterns += staticfiles_urlpatterns()

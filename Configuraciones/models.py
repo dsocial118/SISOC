@@ -118,6 +118,7 @@ class PlanesSociales(models.Model):
         verbose_name = 'PlanSocial'
         verbose_name_plural = "PlanesSociales"
 
+
     def get_absolute_url(self):
         return reverse('planes_sociales_ver', kwargs={'pk': self.pk})
 
