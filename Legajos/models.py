@@ -243,23 +243,13 @@ class DimensionVivienda(models.Model):
         verbose_name='¿Cuántas camas/ colchones posee?', null=True, blank=True)
     cant_hogares = models.SmallIntegerField(
         verbose_name='¿Cuantos hogares hay en la vivienda?', null=True, blank=True)
-    hay_agua_caliente = models.CharField(
-        verbose_name='¿Posee Agua caliente?',max_length=50, choices=CHOICE_SINO, null=True, blank=True)
-    hay_banio = models.CharField(verbose_name='El baño tiene… ',
-                           max_length=50, choices=CHOICE_INODORO, null=True, blank=True)
-    hay_desmoronamiento = models.CharField(
-        verbose_name='Existe riesgo de desmoronamiento?',max_length=50, choices=CHOICE_SINO, null=True, blank=True)
+    
     obs_vivienda = models.CharField(
         verbose_name='Observaciones', max_length=300, null=True, blank=True)
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
     # Nuevos campos
-    PoseenCeludar = models.CharField(
-        verbose_name='¿En tu hogar cuentan con Teléfonos celulares?', max_length=255, choices=CHOICE_SINO, null=True, blank=True)
-    PoseenPC = models.CharField(
-        verbose_name='¿En tu hogar cuentan con Computadoras? (de escritorio / laptop / tablet) ', max_length=255, choices=CHOICE_SINO, null=True, blank=True)
-    Poseeninternet = models.CharField(
-        verbose_name='En tu hogar cuentan con Internet (a través del celular o por conexión en la vivienda - wifi)', max_length=255,choices=CHOICE_SINO, null=True, blank=True)
+    
     ContextoCasa = models.CharField(verbose_name='La vivienda está ubicada...',
                                     max_length=255, choices=CHOICE_ContextoCasa, null=True, blank=True)
     gas = models.CharField(verbose_name='¿Qué utilizan principalmente para cocinar?',
