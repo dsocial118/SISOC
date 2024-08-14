@@ -244,7 +244,7 @@ class LegajosDetailView(DetailView):
             dimensionvivienda = DimensionVivienda.objects.filter(fk_legajo=pk).values('posesion', 'tipo', 'material', 'pisos', 'cant_ambientes', 'cant_camas', 'cant_hogares', 'cant_convivientes', 'cant_menores', 'hay_banio', 'hay_agua_caliente', 'hay_desmoronamiento', 'ContextoCasa', 'PoseenPC', 'Poseeninternet', 'PoseenCeludar', 'obs_vivienda')
             cache.set('dimensionvivienda', dimensionvivienda, 60)
         if not dimensionsalud:
-            dimensionsalud = DimensionSalud.objects.filter(fk_legajo=pk).values('lugares_atencion', 'frec_controles', 'hay_enfermedad', 'hay_obra_social', 'hay_discapacidad', 'hay_cud', 'obs_salud')
+            dimensionsalud = DimensionSalud.objects.filter(fk_legajo=pk).values('lugares_atencion', 'frec_controles', 'hay_enfermedad', 'hay_obra_social', 'hay_discapacidad', 'hay_cud', 'obs_salud').first()
             cache.set('dimensionsalud', dimensionsalud, 60)
         if not dimensiontrabajo:
             dimensiontrabajo = DimensionTrabajo.objects.filter(fk_legajo=pk).values('tiene_trabajo', 'ocupacion', 'modo_contratacion', 'conviviente_trabaja', 'obs_trabajo')
