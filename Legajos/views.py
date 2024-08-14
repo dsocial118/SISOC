@@ -1013,6 +1013,7 @@ class AlertasSelectView(View):
 
 
 class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
+    # FIXME: Crear updateView por cada formulario
     permission_required = admin_role
     template_name = "Legajos/legajosdimensiones_form.html"
     model = DimensionFamilia
@@ -1112,21 +1113,7 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
 
         for field in fields_mapping_vivienda:
             value = form_multiple.get(field)
-            if field == "cant_menores":
-                if int(value) < 0 :
-                    value = int(value) * -1
-            if field == "cant_convivientes":
-                if int(value) < 0 :
-                    value = int(value) * -1
-            if field == "cant_camas":
-                if int(value) < 0 :
-                    value = int(value) * -1
-            if field == "cant_hogares":
-                if int(value) < 0 :
-                    value = int(value) * -1
             
-                
-
             if value:
                 setattr(
                     legajo_dim_vivienda,
