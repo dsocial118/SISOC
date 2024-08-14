@@ -244,11 +244,13 @@ class DimensionVivienda(models.Model):
     cant_hogares = models.SmallIntegerField(
         verbose_name='¿Cuantos hogares hay en la vivienda?', null=True, blank=True)
     
+    
     obs_vivienda = models.CharField(
         verbose_name='Observaciones', max_length=300, null=True, blank=True)
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
     # Nuevos campos
+    
     
     ContextoCasa = models.CharField(verbose_name='La vivienda está ubicada...',
                                     max_length=255, choices=CHOICE_ContextoCasa, null=True, blank=True)
