@@ -243,6 +243,7 @@ class DimensionVivienda(models.Model):
         verbose_name='¿Cuántos ambientes tiene la vivienda? (Sin contar baño ni cocina)',choices=CHOICE_CantidadAmbientes, null=True, blank=True)
     cant_convivientes = models.SmallIntegerField(
         verbose_name='¿Cuántas personas viven en la vivienda?', null=True, blank=True, default=0)
+        verbose_name='¿Cuántas personas viven en la vivienda?', null=True, blank=True, default=0)
     cant_menores = models.SmallIntegerField(
         verbose_name='¿Cuántos de ellos son menores de 18 años?', null=True, blank=True)
     cant_camas = models.SmallIntegerField(
@@ -251,11 +252,13 @@ class DimensionVivienda(models.Model):
         verbose_name='¿Cuantos hogares hay en la vivienda?', null=True, blank=True)
     
     
+    
     obs_vivienda = models.CharField(
         verbose_name='Observaciones', max_length=300, null=True, blank=True)
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
     # Nuevos campos
+    
     
     
     ContextoCasa = models.CharField(verbose_name='La vivienda está ubicada...',
@@ -312,6 +315,10 @@ class DimensionVivienda(models.Model):
 
 
 
+
+
+
+
 class DimensionSalud(models.Model):
     '''
 
@@ -335,6 +342,8 @@ class DimensionSalud(models.Model):
         verbose_name='Observaciones', max_length=300, null=True, blank=True)
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
+
+    
 
     
 
@@ -364,6 +373,7 @@ class DimensionEducacion(models.Model):
     estado_nivel = models.CharField(verbose_name='Estado del nivel', max_length=50,
                                     choices=CHOICE_ESTADO_NIVEL_EDUCATIVO, null=True, blank=True)
     asiste_escuela = models.CharField(verbose_name='¿Asistís o asististe alguna vez a algún establecimiento educativo?', max_length=100, choices= CHOICE_ASISTE_ESCUELA, null=True, blank=True)
+    
     
     institucion = models.CharField(verbose_name='Escuela', max_length=200,
                                    choices=CHOICE_INSTITUCIONES_EDUCATIVAS, null=True, blank=True)
@@ -414,6 +424,13 @@ class DimensionEducacion(models.Model):
         verbose_name='¿le interesa algun curso?', max_length=100, choices=CHOICE_SINO, null=True, blank=True)
 
 
+    # Migraciones para fix de DAD-118
+    interesEstudio = models.CharField(
+        verbose_name='¿Le interesa estudiar?',max_length=100, choices=CHOICE_SINO, null=True, blank=True)
+    interesCurso = models.CharField(
+        verbose_name='¿le interesa algun curso?', max_length=100, choices=CHOICE_SINO, null=True, blank=True)
+
+
     def __str__(self):
         return f"{self.fk_legajo}"
 
@@ -436,6 +453,8 @@ class DimensionEconomia(models.Model):
     '''
 
     fk_legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
+    
+    
     
     
     m2m_planes = models.ManyToManyField(PlanesSociales, blank=True)
@@ -475,9 +494,11 @@ class DimensionEconomia(models.Model):
 class DimensionTrabajo(models.Model):
     fk_legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
     
+    
     modo_contratacion = models.CharField(
         max_length=50, choices=CHOICE_MODO_CONTRATACION, null=True, blank=True)
     ocupacion = models.CharField(max_length=50, null=True, blank=True)
+    
     
     obs_trabajo = models.CharField(
         max_length=300, verbose_name='Observaciones', null=True, blank=True)
@@ -493,6 +514,13 @@ class DimensionTrabajo(models.Model):
     TiempoBusquedaLaboral = models.CharField(verbose_name='¿Cuánto hace que buscás trabajo?', max_length=79, choices=CHOICE_TIEMPO_BUSQUEDA_LABORAL, null=True, blank=True)
     busquedaLaboral =models.CharField(verbose_name='¿Buscaste trabajo en los últimos 30 días?', max_length=20, choices=CHOICE_SINO, null=True, blank=True)
     noBusquedaLaboral = models.CharField(verbose_name='¿Por qué motivo no buscaste trabajo? (Indicá el motivo principal)', max_length=79, choices=CHOICE_NO_BUSQUEDA_LABORAL, null=True, blank=True)
+
+    # Migraciones para fix de DAD-128
+    conviviente_trabaja = models.CharField(
+        verbose_name='¿Conviviente trabaja?',max_length=100, choices=CHOICE_SINO, null=True, blank=True)
+    tiene_trabajo = models.CharField(
+        verbose_name='¿Actualmente realizás alguna actividad laboral, productiva o comunitaria?', max_length=100, choices=CHOICE_SINO, null=True, blank=True)
+
 
     # Migraciones para fix de DAD-128
     conviviente_trabaja = models.CharField(
