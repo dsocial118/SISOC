@@ -758,7 +758,7 @@
                                     <dt class="col-sm-4">{{object.dimensioneconomia.ingresos|default_if_none:"-"}}
                                     </dt>
                                     <dd class="col-sm-8">¿Recibe Plan Social?</dd>
-                                    <dt class="col-sm-4">{{object.dimensioneconomia.recibe_plan|yesno:'Sí,No'}}</dt>
+                                    <dt class="col-sm-4">{{object.dimensioneconomia.recibe_plan|default_if_none:"-"}}</dt>
                                     <dd class="col-sm-8">Planes sociales que recibe</dd>
                                     <dt class="col-sm-4">
                                         {% if object.dimensioneconomia.m2m_planes.all.count > 0 %}
