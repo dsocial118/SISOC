@@ -2,7 +2,7 @@
 
 
 echo "Waiting for MySQL to be ready..."
-while ! mysqladmin ping -h"$DATABASE_HOST" --silent; do
+while ! mysqladmin ping -h"$DATABASE_HOST" -P 3307 --silent; do
     sleep 5
 done
 
