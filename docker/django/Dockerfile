@@ -24,7 +24,6 @@ RUN apt-get update && \
     libc-dev \
     bash \
     mariadb-client \
-    dos2unix \
     locales && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -38,12 +37,11 @@ RUN echo "es_AR.UTF-8 UTF-8" >> /etc/locale.gen && \
 
 # App dependencies
 COPY ./requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
+RUN pip install --upgrade pip && pip install -r requirements.txt && \
+    pip install pymysql
 
 # Add and make entrypoint script executable
-COPY ./docker/django/entrypoint.sh /sisoc/docker/django/entrypoint.sh
-RUN chmod +x ./docker/django/entrypoint.sh && \
-    dos2unix ./docker/django/entrypoint.sh
+COPY ./docker/django/entrypoint.py ./docker/django/entrypoint.py
 
 # CMD to start the application
-CMD ["./docker/django/entrypoint.sh"]
+CMD ["python", "./docker/django/entrypoint.py"]
