@@ -784,7 +784,7 @@
                                 <!-- dimension trabajo -->
                                 <dl class="row mb-0">
                                     <dd class="col-sm-8">¿Actualmente realizás alguna actividad laboral, productiva o comunitaria?</dd>
-                                    <dt class="col-sm-4">{{dimensiontrabajo.tiene_trabajo|yesno:'Sí,No'}}
+                                    <dt class="col-sm-4">{{dimensiontrabajo.tiene_trabajo|default_if_none:"-"}}
                                     </dt>
                                     <dd class="col-sm-8">Ocupación</dd>
                                     <dt class="col-sm-4">{{dimensiontrabajo.ocupacion|default_if_none:"-"}}
@@ -794,7 +794,7 @@
                                         {{dimensiontrabajo.modo_contratacion|default_if_none:"-"}}</dt>
                                     <dd class="col-sm-8">¿Conviviente trabaja?</dd>
                                     <dt class="col-sm-4">
-                                        {{dimensiontrabajo.conviviente_trabaja|yesno:'Sí,No'}}
+                                        {{dimensiontrabajo.conviviente_trabaja|default_if_none:"-"}}
                                     </dt>
                                     <dd class="col-12 mt-3">Observaciones</dd>
                                     <dt class="col-12">
