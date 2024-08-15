@@ -209,6 +209,11 @@ class DimensionFamilia(models.Model):
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
 
+    def clean(self):
+        super().clean()
+        if self.cant_hijos is not None and self.cant_hijos < 0:
+            raise ValidationError({'cant_hijos': 'La cantidad de hijos debe ser un número positivo.'})
+
     def __str__(self):
         return f"{self.fk_legajo}"
 
@@ -459,6 +464,9 @@ class DimensionEconomia(models.Model):
         ordering = ['fk_legajo']
         verbose_name = 'DimensionEconomica'
         verbose_name_plural = 'DimensionesEconomicas'
+        indexes = [
+            models.Index(fields=['fk_legajo'])
+        ]
 
     def get_absolute_url(self):
         return reverse('legajos_ver', kwargs={'pk': self.fk_legajo.id})
