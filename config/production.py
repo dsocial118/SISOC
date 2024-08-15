@@ -1,6 +1,5 @@
 from .settings import *
 import os
-import boto3
 
 DEBUG = False
 
