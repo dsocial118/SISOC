@@ -3,7 +3,7 @@
 from django.db import migrations, models
 
 
-class Migration(migrations.Migration)
+class Migration(migrations.Migration):
 
     dependencies = [
         ('Legajos', '0010_dimensiontrabajo_legajos_dim_fk_lega_bd11d0_idx'),
