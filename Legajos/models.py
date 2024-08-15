@@ -180,10 +180,7 @@ def convertir_positivo(value):
     if int(value) < 0: 
         return int(value) * -1
     return int(value)
-def convertir_positivo(value):
-    if int(value) < 0: 
-        return int(value) * -1
-    return int(value)
+
 class DimensionFamilia(models.Model):
     '''
 
@@ -291,26 +288,6 @@ class DimensionVivienda(models.Model):
         self.cant_hogares = convertir_positivo(self.cant_hogares)
         super().save(*args, **kwargs)
        
-
-    
-    
-    def save(self, *args, **kwargs):
-        self.cant_convivientes = convertir_positivo(self.cant_convivientes)
-        super().save(*args, **kwargs)
-
-    def save(self, *args, **kwargs):
-        self.cant_menores = convertir_positivo(self.cant_menores)
-        super().save(*args, **kwargs)
-
-    def save(self, *args, **kwargs):
-        self.cant_camas = convertir_positivo(self.cant_camas)
-        super().save(*args, **kwargs)
-
-    def save(self, *args, **kwargs):
-        self.cant_hogares = convertir_positivo(self.cant_hogares)
-        super().save(*args, **kwargs)
-    
-
     def __str__(self):
         return f"{self.fk_legajo}"
 
@@ -470,6 +447,10 @@ class DimensionEconomia(models.Model):
     recibe_plan = models.CharField(
         verbose_name='¿Recibe planes sociales?', max_length=100, choices=CHOICE_SINO, null=True, blank=True)
 
+    def save(self, *args, **kwargs):
+        self.ingresos = convertir_positivo(self.ingresos)
+        self.cant_aportantes = convertir_positivo(self.cant_aportantes)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.fk_legajo}"
