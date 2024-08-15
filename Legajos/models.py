@@ -174,7 +174,12 @@ class LegajoGrupoFamiliar(models.Model):
 
 # region------------- DIMENSIONES--------------------------------------------------------------------------------------------------
 
-
+def convertir_positivo(value):
+    if value is None:
+        return 0
+    if int(value) < 0: 
+        return int(value) * -1
+    return int(value)
 class DimensionFamilia(models.Model):
     '''
 
@@ -231,7 +236,7 @@ class DimensionVivienda(models.Model):
     cant_ambientes = models.SmallIntegerField(
         verbose_name='¿Cuántos ambientes tiene la vivienda? (Sin contar baño ni cocina)',choices=CHOICE_CantidadAmbientes, null=True, blank=True)
     cant_convivientes = models.SmallIntegerField(
-        verbose_name='¿Cuántas personas viven en la vivienda?', null=True, blank=True)
+        verbose_name='¿Cuántas personas viven en la vivienda?', null=True, blank=True, default=0)
     cant_menores = models.SmallIntegerField(
         verbose_name='¿Cuántos de ellos son menores de 18 años?', null=True, blank=True)
     cant_camas = models.SmallIntegerField(
@@ -265,6 +270,31 @@ class DimensionVivienda(models.Model):
                            max_length=50, choices=CHOICE_AGUA, null=True, blank=True)
     desague = models.CharField(verbose_name='El desagüe del inodoro es…',
                            max_length=50, choices=CHOICE_DESAGUE, null=True, blank=True)
+    
+    # Migraciones para fix de DAD-106
+
+    hay_banio = models.CharField(verbose_name='El baño tiene…',
+                           max_length=50, choices=CHOICE_INODORO, null=True, blank=True)
+    hay_desmoronamiento = models.CharField(
+        verbose_name='Existe riesgo de desmoronamiento?',max_length=50, choices=CHOICE_SINO, null=True, blank=True)
+    PoseenCeludar = models.CharField(
+        verbose_name='¿En tu hogar cuentan con Teléfonos celulares?', max_length=255, choices=CHOICE_SINO, null=True, blank=True)
+    PoseenPC = models.CharField(
+        verbose_name='¿En tu hogar cuentan con Computadoras? (de escritorio / laptop / tablet) ', max_length=255, choices=CHOICE_SINO, null=True, blank=True)
+    Poseeninternet = models.CharField(
+        verbose_name='En tu hogar cuentan con Internet (a través del celular o por conexión en la vivienda - wifi)', max_length=255,choices=CHOICE_SINO, null=True, blank=True)
+    hay_agua_caliente = models.CharField(
+        verbose_name='¿Posee Agua caliente?',max_length=50, choices=CHOICE_SINO, null=True, blank=True)
+
+    
+    
+    def save(self, *args, **kwargs):
+        self.cant_convivientes = convertir_positivo(self.cant_convivientes)
+        self.cant_menores = convertir_positivo(self.cant_menores)
+        self.cant_camas = convertir_positivo(self.cant_camas)
+        self.cant_hogares = convertir_positivo(self.cant_hogares)
+        super().save(*args, **kwargs)
+       
 
     def __str__(self):
         return f"{self.fk_legajo}"
