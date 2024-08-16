@@ -245,7 +245,7 @@ class LegajosDetailView(DetailView):
             cache.set('dimensionvivienda', dimensionvivienda, 60)
         
         if not dimensionsalud:
-            dimensionsalud = DimensionSalud.objects.filter(fk_legajo=pk).values('lugares_atencion', 'frec_controles', 'hay_enfermedad', 'hay_obra_social', 'hay_discapacidad', 'hay_cud', 'obs_salud')
+            dimensionsalud = DimensionSalud.objects.filter(fk_legajo=pk).values('lugares_atencion', 'frec_controles', 'hay_enfermedad', 'hay_obra_social', 'hay_discapacidad', 'hay_cud', 'obs_salud').first()
             cache.set('dimensionsalud', dimensionsalud, 60)
         if not dimensiontrabajo:
             dimensiontrabajo = DimensionTrabajo.objects.filter(fk_legajo=pk).values('tiene_trabajo', 'ocupacion', 'modo_contratacion', 'conviviente_trabaja', 'obs_trabajo')
