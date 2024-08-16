@@ -196,6 +196,45 @@
         </dl>
         <!-- /dimension vivienda -->
 
+
+
+        <hr class="mt-4 mb-3 border-secondary" />
+
+        <!-- dimension Salud -->
+        <div class="h3 mb-3">Salud</div>
+        <dl class="row mb-0">
+          <dd class="col-sm-8">Centro de Salud en donde se atiende</dd>
+          <dt class="col-sm-4">
+            {{object.dimensionsalud.lugares_atencion|default_if_none:"-"}}
+          </dt>
+          <dd class="col-sm-8">Frecuencia de controles médicos</dd>
+          <dt class="col-sm-4">
+            {{object.dimensionsalud.frec_controles|default_if_none:"-"}}
+          </dt>
+          <dd class="col-sm-8">Posee alguna enfermedad recurrente o algún diagnóstico de enfermedad crónico?</dd>
+          <dt class="col-sm-4">
+            {{object.dimensionsalud.hay_enfermedad|default_if_none:"-"}}
+          </dt>
+          <dd class="col-sm-8">Posee cobertura de salud</dd>
+          <dt class="col-sm-4">
+            {{object.dimensionsalud.hay_obra_social|default_if_none:"-"}}
+          </dt>
+          <dd class="col-sm-8">
+            Posee alguna discapacidad
+          </dd>
+          <dt class="col-sm-4">
+            {{object.dimensionsalud.hay_discapacidad|default_if_none:"-"}}
+          </dt>
+          <dd class="col-sm-8">Posee certificado de discapacidad</dd>
+          <dt class="col-sm-4">
+            {{object.dimensionsalud.hay_cud|default_if_none:"-"}}
+          </dt>
+          <dd class="col-sm-8">Observaciones</dd>
+          <dt class="col-sm-4">
+            {{object.dimensionsalud.obs_salud|default_if_none:"-"}}
+          </dt>
+        </dl>
+        <!-- /dimension Salud -->
         <hr class="mt-4 mb-3 border-secondary" />
 
         <!-- dimension Educación -->

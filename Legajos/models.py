@@ -175,6 +175,8 @@ class LegajoGrupoFamiliar(models.Model):
 # region------------- DIMENSIONES--------------------------------------------------------------------------------------------------
 
 def convertir_positivo(value):
+    if value is None:
+        return 0
     if int(value) < 0: 
         return int(value) * -1
     return int(value)
@@ -239,7 +241,7 @@ class DimensionVivienda(models.Model):
     cant_ambientes = models.SmallIntegerField(
         verbose_name='¿Cuántos ambientes tiene la vivienda? (Sin contar baño ni cocina)',choices=CHOICE_CantidadAmbientes, null=True, blank=True)
     cant_convivientes = models.SmallIntegerField(
-        verbose_name='¿Cuántas personas viven en la vivienda?', null=True, blank=True)
+        verbose_name='¿Cuántas personas viven en la vivienda?', null=True, blank=True, default=0)
     cant_menores = models.SmallIntegerField(
         verbose_name='¿Cuántos de ellos son menores de 18 años?', null=True, blank=True)
     cant_camas = models.SmallIntegerField(
@@ -283,20 +285,11 @@ class DimensionVivienda(models.Model):
     
     def save(self, *args, **kwargs):
         self.cant_convivientes = convertir_positivo(self.cant_convivientes)
-        super().save(*args, **kwargs)
-
-    def save(self, *args, **kwargs):
         self.cant_menores = convertir_positivo(self.cant_menores)
-        super().save(*args, **kwargs)
-
-    def save(self, *args, **kwargs):
         self.cant_camas = convertir_positivo(self.cant_camas)
-        super().save(*args, **kwargs)
-
-    def save(self, *args, **kwargs):
         self.cant_hogares = convertir_positivo(self.cant_hogares)
         super().save(*args, **kwargs)
-    
+       
 
     def __str__(self):
         return f"{self.fk_legajo}"
