@@ -243,24 +243,18 @@ class DimensionVivienda(models.Model):
         verbose_name='¿Cuántos ambientes tiene la vivienda? (Sin contar baño ni cocina)',choices=CHOICE_CantidadAmbientes, null=True, blank=True)
     cant_convivientes = models.SmallIntegerField(
         verbose_name='¿Cuántas personas viven en la vivienda?', null=True, blank=True, default=0)
-        verbose_name='¿Cuántas personas viven en la vivienda?', null=True, blank=True, default=0)
     cant_menores = models.SmallIntegerField(
         verbose_name='¿Cuántos de ellos son menores de 18 años?', null=True, blank=True)
     cant_camas = models.SmallIntegerField(
         verbose_name='¿Cuántas camas/ colchones posee?', null=True, blank=True)
     cant_hogares = models.SmallIntegerField(
         verbose_name='¿Cuantos hogares hay en la vivienda?', null=True, blank=True)
-    
-    
-    
     obs_vivienda = models.CharField(
         verbose_name='Observaciones', max_length=300, null=True, blank=True)
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
     # Nuevos campos
-    
-    
-    
+
     ContextoCasa = models.CharField(verbose_name='La vivienda está ubicada...',
                                     max_length=255, choices=CHOICE_ContextoCasa, null=True, blank=True)
     gas = models.CharField(verbose_name='¿Qué utilizan principalmente para cocinar?',
@@ -273,7 +267,6 @@ class DimensionVivienda(models.Model):
                            max_length=50, choices=CHOICE_DESAGUE, null=True, blank=True)
     
     # Migraciones para fix de DAD-106
-
     hay_banio = models.CharField(verbose_name='El baño tiene…',
                            max_length=50, choices=CHOICE_INODORO, null=True, blank=True)
     hay_desmoronamiento = models.CharField(
@@ -311,14 +304,6 @@ class DimensionVivienda(models.Model):
         return reverse('legajos_ver', kwargs={'pk': self.fk_legajo.id})
 
 
-
-
-
-
-
-
-
-
 class DimensionSalud(models.Model):
     '''
 
@@ -343,9 +328,6 @@ class DimensionSalud(models.Model):
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
 
-    
-
-    
 
     def __str__(self):
         return f"{self.fk_legajo}"
@@ -373,7 +355,6 @@ class DimensionEducacion(models.Model):
     estado_nivel = models.CharField(verbose_name='Estado del nivel', max_length=50,
                                     choices=CHOICE_ESTADO_NIVEL_EDUCATIVO, null=True, blank=True)
     asiste_escuela = models.CharField(verbose_name='¿Asistís o asististe alguna vez a algún establecimiento educativo?', max_length=100, choices= CHOICE_ASISTE_ESCUELA, null=True, blank=True)
-    
     
     institucion = models.CharField(verbose_name='Escuela', max_length=200,
                                    choices=CHOICE_INSTITUCIONES_EDUCATIVAS, null=True, blank=True)
@@ -423,14 +404,6 @@ class DimensionEducacion(models.Model):
     interesCurso = models.CharField(
         verbose_name='¿le interesa algun curso?', max_length=100, choices=CHOICE_SINO, null=True, blank=True)
 
-
-    # Migraciones para fix de DAD-118
-    interesEstudio = models.CharField(
-        verbose_name='¿Le interesa estudiar?',max_length=100, choices=CHOICE_SINO, null=True, blank=True)
-    interesCurso = models.CharField(
-        verbose_name='¿le interesa algun curso?', max_length=100, choices=CHOICE_SINO, null=True, blank=True)
-
-
     def __str__(self):
         return f"{self.fk_legajo}"
 
@@ -453,10 +426,6 @@ class DimensionEconomia(models.Model):
     '''
 
     fk_legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
-    
-    
-    
-    
     m2m_planes = models.ManyToManyField(PlanesSociales, blank=True)
     cant_aportantes = models.SmallIntegerField(
         verbose_name='¿Cuántos miembros reciben ingresos por plan social o aportan al grupo familiar?', null=True, blank=True)
@@ -493,13 +462,9 @@ class DimensionEconomia(models.Model):
 
 class DimensionTrabajo(models.Model):
     fk_legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
-    
-    
     modo_contratacion = models.CharField(
         max_length=50, choices=CHOICE_MODO_CONTRATACION, null=True, blank=True)
     ocupacion = models.CharField(max_length=50, null=True, blank=True)
-    
-    
     obs_trabajo = models.CharField(
         max_length=300, verbose_name='Observaciones', null=True, blank=True)
     creado = models.DateField(auto_now_add=True)
@@ -520,15 +485,6 @@ class DimensionTrabajo(models.Model):
         verbose_name='¿Conviviente trabaja?',max_length=100, choices=CHOICE_SINO, null=True, blank=True)
     tiene_trabajo = models.CharField(
         verbose_name='¿Actualmente realizás alguna actividad laboral, productiva o comunitaria?', max_length=100, choices=CHOICE_SINO, null=True, blank=True)
-
-
-    # Migraciones para fix de DAD-128
-    conviviente_trabaja = models.CharField(
-        verbose_name='¿Conviviente trabaja?',max_length=100, choices=CHOICE_SINO, null=True, blank=True)
-    tiene_trabajo = models.CharField(
-        verbose_name='¿Actualmente realizás alguna actividad laboral, productiva o comunitaria?', max_length=100, choices=CHOICE_SINO, null=True, blank=True)
-
-
 
     def __str__(self):
         return f"{self.fk_legajo}"
