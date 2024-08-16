@@ -248,7 +248,7 @@ class LegajosDetailView(DetailView):
             dimensionsalud = DimensionSalud.objects.filter(fk_legajo=pk).values('lugares_atencion', 'frec_controles', 'hay_enfermedad', 'hay_obra_social', 'hay_discapacidad', 'hay_cud', 'obs_salud').first()
             cache.set('dimensionsalud', dimensionsalud, 60)
         if not dimensiontrabajo:
-            dimensiontrabajo = DimensionTrabajo.objects.filter(fk_legajo=pk).values('tiene_trabajo', 'ocupacion', 'modo_contratacion', 'conviviente_trabaja', 'obs_trabajo')
+            dimensiontrabajo = DimensionTrabajo.objects.filter(fk_legajo=pk).values('tiene_trabajo', 'ocupacion', 'modo_contratacion', 'conviviente_trabaja', 'obs_trabajo').first()
             cache.set('dimensiontrabajo', dimensiontrabajo, 60)
         if not datos_json:
             datos_json = self.grafico_evolucion_de_riesgo(fecha_actual, alertas)
