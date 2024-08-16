@@ -180,6 +180,7 @@ def convertir_positivo(value):
     if int(value) < 0: 
         return int(value) * -1
     return int(value)
+
 class DimensionFamilia(models.Model):
     '''
 
@@ -248,13 +249,12 @@ class DimensionVivienda(models.Model):
         verbose_name='¿Cuántas camas/ colchones posee?', null=True, blank=True)
     cant_hogares = models.SmallIntegerField(
         verbose_name='¿Cuantos hogares hay en la vivienda?', null=True, blank=True)
-    
     obs_vivienda = models.CharField(
         verbose_name='Observaciones', max_length=300, null=True, blank=True)
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
     # Nuevos campos
-    
+
     ContextoCasa = models.CharField(verbose_name='La vivienda está ubicada...',
                                     max_length=255, choices=CHOICE_ContextoCasa, null=True, blank=True)
     gas = models.CharField(verbose_name='¿Qué utilizan principalmente para cocinar?',
@@ -267,7 +267,6 @@ class DimensionVivienda(models.Model):
                            max_length=50, choices=CHOICE_DESAGUE, null=True, blank=True)
     
     # Migraciones para fix de DAD-106
-
     hay_banio = models.CharField(verbose_name='El baño tiene…',
                            max_length=50, choices=CHOICE_INODORO, null=True, blank=True)
     hay_desmoronamiento = models.CharField(
@@ -290,7 +289,6 @@ class DimensionVivienda(models.Model):
         self.cant_hogares = convertir_positivo(self.cant_hogares)
         super().save(*args, **kwargs)
        
-
     def __str__(self):
         return f"{self.fk_legajo}"
 
@@ -304,10 +302,6 @@ class DimensionVivienda(models.Model):
 
     def get_absolute_url(self):
         return reverse('legajos_ver', kwargs={'pk': self.fk_legajo.id})
-
-
-
-
 
 
 class DimensionSalud(models.Model):
@@ -334,7 +328,6 @@ class DimensionSalud(models.Model):
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
 
-    
 
     def __str__(self):
         return f"{self.fk_legajo}"
@@ -411,7 +404,6 @@ class DimensionEducacion(models.Model):
     interesCurso = models.CharField(
         verbose_name='¿le interesa algun curso?', max_length=100, choices=CHOICE_SINO, null=True, blank=True)
 
-
     def __str__(self):
         return f"{self.fk_legajo}"
 
@@ -434,8 +426,6 @@ class DimensionEconomia(models.Model):
     '''
 
     fk_legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
-    
-    
     m2m_planes = models.ManyToManyField(PlanesSociales, blank=True)
     cant_aportantes = models.SmallIntegerField(
         verbose_name='¿Cuántos miembros reciben ingresos por plan social o aportan al grupo familiar?', null=True, blank=True)
@@ -450,6 +440,10 @@ class DimensionEconomia(models.Model):
     recibe_plan = models.CharField(
         verbose_name='¿Recibe planes sociales?', max_length=100, choices=CHOICE_SINO, null=True, blank=True)
 
+    def save(self, *args, **kwargs):
+        self.ingresos = convertir_positivo(self.ingresos)
+        self.cant_aportantes = convertir_positivo(self.cant_aportantes)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.fk_legajo}"
@@ -468,11 +462,9 @@ class DimensionEconomia(models.Model):
 
 class DimensionTrabajo(models.Model):
     fk_legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
-    
     modo_contratacion = models.CharField(
         max_length=50, choices=CHOICE_MODO_CONTRATACION, null=True, blank=True)
     ocupacion = models.CharField(max_length=50, null=True, blank=True)
-    
     obs_trabajo = models.CharField(
         max_length=300, verbose_name='Observaciones', null=True, blank=True)
     creado = models.DateField(auto_now_add=True)
@@ -493,8 +485,6 @@ class DimensionTrabajo(models.Model):
         verbose_name='¿Conviviente trabaja?',max_length=100, choices=CHOICE_SINO, null=True, blank=True)
     tiene_trabajo = models.CharField(
         verbose_name='¿Actualmente realizás alguna actividad laboral, productiva o comunitaria?', max_length=100, choices=CHOICE_SINO, null=True, blank=True)
-
-
 
     def __str__(self):
         return f"{self.fk_legajo}"
