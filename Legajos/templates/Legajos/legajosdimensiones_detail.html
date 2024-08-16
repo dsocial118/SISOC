@@ -173,9 +173,25 @@
           <dt class="col-sm-4">
             {{object.dimensionvivienda.hay_desmoronamiento|yesno:'Sí,No,-'}}
           </dt>
+          <dd class="col-sm-8">La vivienda está ubicada...</dd>
+          <dt class="col-sm-4">
+            {{object.dimensionvivienda.ContextoCasa|default_if_none:"-"}}
+          </dt>
           <dd class="col-sm-8">Posee Celular</dd>
           <dt class="col-sm-4">
             {{object.dimensionvivienda.PoseenCeludar|yesno:'Sí,No,-'}}
+          </dt>
+          <dd class="col-sm-8">Posee PC</dd>
+          <dt class="col-sm-4">
+            {{object.dimensionvivienda.PoseenPC|yesno:'Sí,No,-'}}
+          </dt>
+          <dd class="col-sm-8">Posee Internet</dd>
+          <dt class="col-sm-4">
+            {{object.dimensionvivienda.Poseeninternet|yesno:'Sí,No,-'}}
+          </dt>
+          <dd class="col-sm-8">Observaciones</dd>
+          <dt class="col-sm-4">
+            {{object.dimensionvivienda.obs_vivienda|default_if_none:"-"}}
           </dt>
         </dl>
         <!-- /dimension vivienda -->
