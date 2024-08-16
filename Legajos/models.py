@@ -243,7 +243,6 @@ class DimensionVivienda(models.Model):
         verbose_name='¿Cuántos ambientes tiene la vivienda? (Sin contar baño ni cocina)',choices=CHOICE_CantidadAmbientes, null=True, blank=True)
     cant_convivientes = models.SmallIntegerField(
         verbose_name='¿Cuántas personas viven en la vivienda?', null=True, blank=True, default=0)
-        verbose_name='¿Cuántas personas viven en la vivienda?', null=True, blank=True, default=0)
     cant_menores = models.SmallIntegerField(
         verbose_name='¿Cuántos de ellos son menores de 18 años?', null=True, blank=True)
     cant_camas = models.SmallIntegerField(
