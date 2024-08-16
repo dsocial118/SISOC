@@ -1,13 +1,14 @@
-{% extends "includes/base.html" %};
+{% extends "includes/base.html" %}
 {% load crispy_forms_tags %}
 {% load static %};
 
 {% block head %}
+
 {% endblock %}
 
-{% block title %}Legajos{% endblock %};
+{% block title %}Legajos{% endblock %}
 
-{% block titulo-pagina %} Legajos{% endblock %};
+{% block titulo-pagina %} Legajos{% endblock %}
 
 {% block breadcrumb %}
 <ol class="breadcrumb float-sm-right px-3">
@@ -286,10 +287,17 @@
         </div>
     </div>
 </div>
-{% endblock %};
+{% endblock %}
+
+
 
 {% block customJS %}
+
 <script>
+    $(document).ready(function() {
+        $('#id_nacionalidad').select2();
+    });
+
     id_foto.onchange = (evt) => {
         const [file] = id_foto.files;
         if (file) {

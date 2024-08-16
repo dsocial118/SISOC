@@ -225,7 +225,14 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# Configuración de Django debug toolbar
+# Configuración de Django Debug Toolbar
 DEBUG_TOOLBAR_CONFIG = {
     'SHOW_TOOLBAR_CALLBACK': lambda request: True if DEBUG else False
 }
+
+# Configuración del HSTS para evitar conflictos en AWS previamente configurados
+SECURE_HSTS_SECONDS = None
+SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+SECURE_SSL_REDIRECT = False
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
