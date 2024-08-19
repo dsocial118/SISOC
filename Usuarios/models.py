@@ -26,6 +26,10 @@ class Usuarios(models.Model):
     )
     darkmode = models.BooleanField(default=True, null=True, blank=True)
 
+    def save(self, *args, **kwargs):
+        self.id = self.usuario.id
+        super(Usuarios, self).save(*args, **kwargs)
+
     def __str__(self):
         if(self.usuario.first_name or self.usuario.last_name):
             nombre= self.usuario.first_name + ' ' + self.usuario.last_name
