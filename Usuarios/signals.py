@@ -6,23 +6,14 @@ from .models import *
 import logging
 
 @receiver(post_save, sender=User)
-def crear_usuario(sender, instance, created, **kwargs):
+def guardar_usuario(sender, instance, created, **kwargs):
     '''
     Si se crea un user, se crea el usuario correspondiente
+    Si se modifica un user, se modifica su usuario.
     '''
     if created:
-        Usuarios.objects.create(usuario=instance)
-
-
-@receiver(post_save, sender=User)
-def guardar_usuario(sender, instance, **kwargs):
-    '''
-    Si se actualiza un user, se actualiza el usuario correspondiente
-    '''
-    #instance.usuarios.save()
-    return
-
-    
+        return Usuarios.objects.create(usuario=instance)
+    return instance.usuarios.save()
 
 
 @receiver(post_delete, sender=Usuarios)
@@ -30,7 +21,7 @@ def delete_auth_user_model_handler(sender, instance, *args, **kwargs):
     '''
     Si se borra un user, se borra el usuario correspondiente
     '''
-    user = User.objects.get(id=instance.usuario_id)
+    user = User.objects.get(usuario=instance)
     user.delete()
 
 
