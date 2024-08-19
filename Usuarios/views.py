@@ -77,7 +77,7 @@ class UsuariosLogoutView(LogoutView):
 class UsuariosLoginView(LoginView):
     template_name='login.html'
 
-
+# FIXME: Paginar la lista de usuarios
 class UsuariosListView(PermisosMixin, ListView ):    
     permission_required = ['Usuarios.rol_admin','Usuarios.rol_observador','Usuarios.rol_consultante']   
     model = Usuarios
