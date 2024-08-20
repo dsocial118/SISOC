@@ -1108,6 +1108,9 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
             "CondicionDe":"CondicionDe",
             "CantidadAmbientes":"CantidadAmbientes",
             "gas":"gas",
+            "desague":"desague",
+            "agua":"agua",
+            "techos":"techos",
             "obs_vivienda": "obs_vivienda",
         }
 
