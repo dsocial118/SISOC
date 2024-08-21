@@ -76,13 +76,6 @@ class LegajoLocalidad(models.Model):
     cod_depto = models.IntegerField()
     def __str__(self):
         return self.nombre
-    class Meta:
-        ordering = ['id']
-        verbose_name = 'LegajoLocalidad'
-        verbose_name_plural = 'LegajosLocalidad'
-        indexes = [
-            models.Index(fields=['id']),
-        ]
 
 class Legajos(models.Model):
     '''
