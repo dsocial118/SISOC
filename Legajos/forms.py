@@ -89,7 +89,9 @@ class LegajosUpdateForm(forms.ModelForm):
     )
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['fk_provincia'].queryset = LegajoProvincias.objects.all().order_by('nombre')
+        self.fields['fk_provincia'].queryset = LegajoProvincias.objects.all()
+        self.fields['fk_municipio'].queryset = LegajoMunicipio.objects.all()
+        self.fields['fk_localidad'].queryset = LegajoLocalidad.objects.all()
 
     def clean(self):
         cleaned_data = super().clean()
@@ -116,9 +118,9 @@ class LegajosUpdateForm(forms.ModelForm):
         widgets = {
             'estado': forms.Select(choices=[(True, 'Activo'), (False, 'Inactivo')]),
             'fecha_nacimiento': forms.DateInput(attrs={'type': 'date'}, format="%Y-%m-%d"),
-            'fk_municipio': forms.Select(attrs={'class': 'select2'}),
-            'fk_localidad': forms.Select(attrs={'class': 'select2'}),
-            'fk_provincia': forms.Select(attrs={'class': 'select2'}),
+            'fk_municipio': forms.Select(attrs={'class': 'select2 municipio-select'}),
+            'fk_localidad': forms.Select(attrs={'class': 'select2 localidad-select'}),
+            'fk_provincia': forms.Select(attrs={'class': 'select2 provincia-select'}),
         }
         labels = {
             'nombre': 'Nombre',
