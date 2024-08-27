@@ -5,7 +5,7 @@
 
 {% block head %}
 <!-- Dropzone plugin -->
-<link rel="stylesheet" href="{% static 'plugins/dropzone/min/dropzone.min.css' %}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.css">
 {% endblock %}
 
 {% block title %}
@@ -258,7 +258,7 @@ Legajos
 
 {% block customJS %}
 <!-- Dropzone plugin -->
-<script src="{% static 'plugins/dropzone/min/dropzone.min.js' %}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/min/dropzone.min.js"></script>
 <script>
     const csrf = document.getElementsByName('csrfmiddlewaretoken')[0].value
     const pk = '{{legajo.pk}}'
