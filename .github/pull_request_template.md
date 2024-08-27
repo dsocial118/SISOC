@@ -1,6 +1,7 @@
 # Información de la Tarea
 
-- **Tarea:** [Enlace a Notion](URL_AQUI)
+- **Tarea:** 
+  - Breve descripcion de la tarea.
 - **Resumen de la Solución:** 
   - Breve descripción de la solución implementada.
 
