@@ -40,7 +40,7 @@ from legajos.views import (
     DeleteGrupoHogar,
     busqueda_hogar,
     busqueda_familiares,
-    load_localidad,
+    load_localidades,
     load_municipios,
 )
 
@@ -271,5 +271,5 @@ urlpatterns = [
         name="legajosgrupohogar_crear",
     ),
     path("ajax/load-municipios/", load_municipios, name="ajax_load_municipios"),
-    path("ajax/load-localidades/", load_localidad, name="ajax_load_localidades"),
+    path("ajax/load-localidades/", load_localidades, name="ajax_load_localidades"),
 ]

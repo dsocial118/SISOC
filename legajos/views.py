@@ -1,9 +1,8 @@
-import calendar  # pylint: disable=too-many-lines
+import calendar
 import json
-import logging
 
-# Configurar el locale para usar el idioma español
 import locale
+import logging
 from datetime import date, datetime, timedelta
 
 from django.contrib import messages
@@ -17,7 +16,6 @@ from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 
-# Paginacion
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -28,8 +26,9 @@ from django.views.generic import (
     View,
 )
 
-from configuraciones.models import Alertas, CategoriaAlertas, Organismos, Programas
+from config.settings import CACHE_TIMEOUT
 from configuraciones.choices import CHOICE_CIRCUITOS, CHOICE_DIMENSIONES
+from configuraciones.models import Alertas, CategoriaAlertas, Organismos, Programas
 from legajos.choices import (
     CHOICE_ESTADO_DERIVACION,
     CHOICE_NACIONALIDAD,
@@ -37,41 +36,39 @@ from legajos.choices import (
     VINCULO_MAP,
 )
 from legajos.forms import (
+    DimensionEconomiaForm,
     DimensionEducacionForm,
+    DimensionFamiliaForm,
     DimensionSaludForm,
+    DimensionTrabajoForm,
     DimensionViviendaForm,
     LegajoGrupoHogarForm,
     LegajosAlertasForm,
     LegajosArchivosForm,
     LegajosDerivacionesForm,
-    DimensionFamiliaForm,
-    DimensionEconomiaForm,
-    DimensionTrabajoForm,
     LegajosForm,
     LegajosUpdateForm,
     NuevoLegajoFamiliarForm,
 )
 from legajos.models import (
-    DimensionFamilia,
-    DimensionVivienda,
-    DimensionSalud,
     DimensionEconomia,
     DimensionEducacion,
+    DimensionFamilia,
+    DimensionSalud,
     DimensionTrabajo,
+    DimensionVivienda,
     HistorialLegajoAlertas,
-    LegajosDerivaciones,
-    Legajos,
-    LegajoGrupoFamiliar,
     LegajoAlertas,
+    LegajoGrupoFamiliar,
     LegajoGrupoHogar,
+    Legajos,
     LegajosArchivos,
-    LegajoProvincias,
-    LegajoLocalidad,
-    LegajoMunicipio,
+    LegajosDerivaciones,
 )
+from legajos.services.legajos_service import LegajosService
+
 from usuarios.mixins import PermisosMixin
 from usuarios.utils import recortar_imagen
-
 
 locale.setlocale(locale.LC_ALL, "es_AR.UTF-8")
 
@@ -79,27 +76,17 @@ logger = logging.getLogger("django")
 
 ROL_ADMIN = "Usuarios.rol_admin"
 
-# region ############################################################### LEGAJOS
-
 
 def load_municipios(request):
-    provincia_id = request.GET.get("provincia_id")
-    provincia_search = LegajoProvincias.objects.get(id=provincia_id)
-    municipios = LegajoMunicipio.objects.filter(
-        codigo_ifam__startswith=provincia_search.abreviatura
-    )
-    return JsonResponse(
-        list(municipios.values("id", "departamento_id", "nombre_region")), safe=False
-    )
+    municipios = LegajosService.obtener_municipios(request.GET.get("provincia_id"))
+
+    return JsonResponse(municipios, safe=False)
 
 
-def load_localidad(request):
-    municipio_id = request.GET.get("municipio_id")
-    localidad_search = LegajoMunicipio.objects.get(id=municipio_id)
-    localidades = LegajoLocalidad.objects.filter(
-        departamento_id=localidad_search.departamento_id
-    )
-    return JsonResponse(list(localidades.values("id", "nombre")), safe=False)
+def load_localidades(request):
+    localidades = LegajosService.obtener_localidades(request.GET.get("municipio_id"))
+
+    return JsonResponse(localidades, safe=False)
 
 
 class LegajosReportesListView(ListView):
@@ -109,55 +96,32 @@ class LegajosReportesListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        organismos = cache.get("organismos")
-        if not organismos:
-            organismos = Organismos.objects.all().values("id", "nombre")
-            cache.set("organismos", organismos, 60)
-
-        programas = cache.get("programas")
-        if not programas:
-            programas = Programas.objects.all().values("id", "nombre")
-            cache.set("programas", programas, 60)
-
-        context["organismos"] = organismos
-        context["programas"] = programas
-        context["estados"] = CHOICE_ESTADO_DERIVACION
-        return context
-
-    def get_queryset(self):
-        nombre_completo_legajo = self.request.GET.get("busqueda")
-        data_organismo = self.request.GET.get("data_organismo")
-        data_programa = self.request.GET.get("data_programa")
-        data_estado = self.request.GET.get("data_estado")
-        data_fecha_desde = self.request.GET.get("data_fecha_derivacion")
-
-        filters = Q()
-
-        if data_programa:
-            filters &= Q(fk_programa=data_programa)
-        if data_organismo:
-            filters &= Q(fk_organismo=data_organismo)
-        if nombre_completo_legajo:
-            filters &= (
-                Q(fk_legajo__nombre__icontains=nombre_completo_legajo)
-                | Q(fk_legajo__apellido__icontains=nombre_completo_legajo)
-                | Q(fk_legajo__documento__icontains=nombre_completo_legajo)
-            )
-        if data_estado:
-            filters &= Q(estado=data_estado)
-        if data_fecha_desde:
-            filters &= Q(fecha_creado__gte=data_fecha_desde)
-
-        object_list = (
-            LegajosDerivaciones.objects.filter(filters)
-            .select_related("fk_programa", "fk_organismo", "fk_legajo")
-            .distinct()
+        derivaciones = LegajosService.obtener_derivaciones(
+            self.request.GET.get("data_programa"),
+            self.request.GET.get("data_organismo"),
+            self.request.GET.get("busqueda"),
+            self.request.GET.get("data_estado"),
+            self.request.GET.get("data_fecha_derivacion"),
         )
-
-        if not object_list.exists():
+        if not derivaciones.exists():
             messages.warning(self.request, "La búsqueda no arrojó resultados.")
 
-        return object_list
+        organismos = cache.get_or_set(
+            "organismos", Organismos.objects.all().values("id", "nombre"), CACHE_TIMEOUT
+        )
+        programas = cache.get_or_set(
+            "programas", Programas.objects.all().values("id", "nombre"), CACHE_TIMEOUT
+        )
+
+        context.update(
+            {
+                "derivaciones": derivaciones,
+                "organismos": organismos,
+                "programas": programas,
+                "estados": CHOICE_ESTADO_DERIVACION,
+            }
+        )
+        return context
 
 
 class LegajosListView(ListView):
@@ -167,42 +131,24 @@ class LegajosListView(ListView):
     paginate_by = 10  # Número de objetos por página
 
     def get_queryset(self):
-        if not hasattr(self, "_cached_queryset"):
-            queryset = (
-                super()
-                .get_queryset()
-                .only(
-                    "id",
-                    "apellido",
-                    "nombre",
-                    "documento",
-                    "tipo_doc",
-                    "sexo",
-                    "localidad",
-                    "estado",
-                )
-            )
-            query = self.request.GET.get("busqueda", "")
+        query = self.request.GET.get("busqueda")
 
-            if query:
-                filter_condition = Q(apellido__icontains=query)
-                if query.isnumeric():
-                    filter_condition |= Q(documento__contains=query)
-                queryset = queryset.filter(filter_condition)
+        cached_queryset_name = f"cached_queryset_{query}"
+        cached_queryset = cache.get_or_set(
+            cached_queryset_name,
+            LegajosService.obtener_queryset_filtrado(query),
+            CACHE_TIMEOUT,
+        )
 
-            self._cached_queryset = (  # pylint: disable=attribute-defined-outside-init
-                queryset
-            )
-
-        return self._cached_queryset
+        return cached_queryset
 
     def get(self, request, *args, **kwargs):
         query = self.request.GET.get("busqueda")
+
         if query:
-            self.object_list = (  # pylint: disable=attribute-defined-outside-init
-                self.get_queryset()
-            )
+            self.object_list = self.get_queryset()
             size_queryset = self.object_list.count()
+
             if size_queryset == 1:
                 pk = self.object_list.first().id
                 return redirect("legajos_ver", pk=pk)
@@ -236,9 +182,7 @@ class LegajosDetailView(DetailView):
     model = Legajos
     template_name = "legajos/legajos_detail.html"
 
-    def get_context_data(  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
-        self, **kwargs
-    ):
+    def get_context_data(self, **kwargs):
         pk = self.kwargs["pk"]
         context = super().get_context_data(**kwargs)
 

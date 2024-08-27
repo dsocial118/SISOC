@@ -59,10 +59,6 @@
                     <div class="col-sm-3">
                         <div class="form-group">
                             <label>Desde</label>
-                            {% comment %} <select class="select2 w-100">
-                            <option disabled selected></option>
-                            {% for derivacion in derivaciones %}<option>{{derivacion.fecha_creado}}</option>{% endfor %}
-                            </select> {% endcomment %}
                             <input selected
                                    type="date"
                                    name="data_fecha_derivacion"
@@ -110,26 +106,26 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for o in object_list %}
+                            {% for o in derivaciones %}
                                 <tr>
                                     <td>
-                                        <a href="{% url 'legajos_ver' o.fk_legajo.id %}"
+                                        <a href="{% url 'legajos_ver' o.fk_legajo__id %}"
                                            class="font-weight-bold"
-                                           title="Ver detalles">{{ o.fk_legajo }}</a>
+                                           title="Ver detalles">{{ o.fk_legajo__nombre }}</a>
                                     </td>
-                                    <td>{{ o.tipo_doc }} {{ o.fk_legajo.documento }}</td>
-                                    <td>{{ o.fk_legajo.sexo }}</td>
+                                    <td>{{ o.fk_legajo__tipo_doc }} {{ o.fk_legajo__documento }}</td>
+                                    <td>{{ o.fk_legajo__sexo }}</td>
                                     <td>{{ o.fk_programa }}</td>
                                     <td>{{ o.fk_organismo }}</td>
                                     <td>{{ o.estado }}</td>
                                     <td class="project-actions text-right">
                                         {% if perms.Usuarios.rol_admin %}
                                             <div class="btn-group" role="group">
-                                                <a href="{% url 'legajos_ver' o.fk_legajo.id %}"
+                                                <a href="{% url 'legajos_ver' o.fk_legajo__id %}"
                                                    class="btn btn-primary btn-sm ver">Ver</a>
-                                                <a href="{% url 'legajos_editar' o.fk_legajo.id %}"
+                                                <a href="{% url 'legajos_editar' o.fk_legajo__id %}"
                                                    class="btn btn-primary btn-sm editar">Editar</a>
-                                                <a href="{% url 'legajos_eliminar' o.fk_legajo.id %}"
+                                                <a href="{% url 'legajos_eliminar' o.fk_legajo__id %}"
                                                    class="btn btn-danger btn-sm eliminar">Eliminar</a>
                                             </div>
                                         {% endif %}
