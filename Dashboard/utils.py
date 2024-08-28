@@ -1,10 +1,11 @@
 from datetime import date, timedelta
 
+from django.core.cache import cache
+from django.db import connection
+from django.db.models import Count, Q
+
 from Configuraciones.models import Alertas
 from Legajos.models import LegajoAlertas, Legajos, LegajosDerivaciones
-from django.db.models import Count, Q
-from django.db import connection
-from django.core.cache import cache
 
 # FIXME: Este modulo puede ser optimizado mas aun
 

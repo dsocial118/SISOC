@@ -1,7 +1,9 @@
-from django.db.models.signals import post_save, post_delete, pre_delete
+import logging
+
+from django.db.models.signals import post_delete, post_save, pre_delete
 from django.dispatch import receiver
 from django.utils.timezone import now
-import logging
+
 from .models import *
 
 # guardado de log de usuarios

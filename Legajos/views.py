@@ -1,44 +1,44 @@
-import os
-from django.http import HttpResponseRedirect
-from django.views.generic import (
-    CreateView,
-    ListView,
-    DetailView,
-    UpdateView,
-    DeleteView,
-    TemplateView,
-    View,
-    FormView,
-)
-from django.db.models import Q, Count, F, Case, When, Value, BooleanField, IntegerField
-from django.db import transaction
-from django.urls import reverse_lazy
-from django.contrib import messages
-from django.shortcuts import render, redirect
-from django.core.files.base import ContentFile
-from PIL import Image
-from io import BytesIO  # Import BytesIO
-from django.http import JsonResponse, HttpResponse
-from datetime import datetime, timedelta, date, time
-from collections import defaultdict
 import calendar
-from django.db.models.functions import ExtractYear, ExtractMonth
-from Usuarios.mixins import PermisosMixin
-from django.contrib.messages.views import SuccessMessageMixin
-from django.shortcuts import get_object_or_404
-from .models import *
-from .forms import *
-from .choices import *
-from django.conf import settings
 import json
-
-# Paginacion
-from django.views.generic import ListView
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from django.core.cache import cache
 
 # Configurar el locale para usar el idioma español
 import locale
+import os
+from collections import defaultdict
+from datetime import date, datetime, time, timedelta
+from io import BytesIO  # Import BytesIO
+
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.messages.views import SuccessMessageMixin
+from django.core.cache import cache
+from django.core.files.base import ContentFile
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.db import transaction
+from django.db.models import BooleanField, Case, Count, F, IntegerField, Q, Value, When
+from django.db.models.functions import ExtractMonth, ExtractYear
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse_lazy
+
+# Paginacion
+from django.views.generic import (
+    CreateView,
+    DeleteView,
+    DetailView,
+    FormView,
+    ListView,
+    TemplateView,
+    UpdateView,
+    View,
+)
+from PIL import Image
+
+from Usuarios.mixins import PermisosMixin
+
+from .choices import *
+from .forms import *
+from .models import *
 
 locale.setlocale(locale.LC_ALL, "es_AR.UTF-8")
 # guardado de log de usuarios

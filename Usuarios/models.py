@@ -1,10 +1,9 @@
+from django.contrib.auth.models import Permission, User
 from django.db import models
-from django.urls import *
-from django.contrib.auth.models import User, Permission
 from django.db.models import Q
+from django.urls import *
 
 from .choices import *
-
 
 # region------- EXTENSION DEL MODELO USER---------------------------------------------------------------------
 

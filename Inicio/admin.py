@@ -1,10 +1,10 @@
 from django.contrib import admin
-from .models import *
-
-from django.contrib.admin.models import LogEntry, DELETION
-from django.utils.html import escape
+from django.contrib.admin.models import DELETION, LogEntry
 from django.urls import reverse
+from django.utils.html import escape
 from django.utils.safestring import mark_safe
+
+from .models import *
 
 # region------------LOGENTRY--------------------------------------------------------------------------
 

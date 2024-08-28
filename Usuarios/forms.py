@@ -1,19 +1,17 @@
 from django import forms
-from django.contrib.auth.models import User, Group
 from django.contrib.auth.forms import (
-    UserCreationForm,
-    UserChangeForm,
     PasswordChangeForm,
-    SetPasswordForm,
     PasswordResetForm,
+    SetPasswordForm,
+    UserChangeForm,
+    UserCreationForm,
 )
-from .validators import MaxSizeFileValidator
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.contrib.auth.models import Group, User
+from django.core.validators import MaxValueValidator, MinValueValidator
 
-
-from .models import *
 from .choices import *
-
+from .models import *
+from .validators import MaxSizeFileValidator
 
 usuarios = Usuarios.objects.all()
 

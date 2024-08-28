@@ -1,6 +1,7 @@
 import re
-from django.core.exceptions import ValidationError
+
 import django
+from django.core.exceptions import ValidationError
 from django.utils.translation import gettext
 
 django.utils.translation.ugettext = gettext

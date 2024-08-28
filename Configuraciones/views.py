@@ -1,18 +1,20 @@
 from django.contrib import messages
+from django.contrib.messages.views import SuccessMessageMixin
+from django.db.models import Q
 from django.shortcuts import redirect
+from django.urls import reverse_lazy
 from django.views.generic import (
     CreateView,
-    ListView,
-    DetailView,
-    UpdateView,
     DeleteView,
+    DetailView,
+    ListView,
+    UpdateView,
 )
+
 from Usuarios.mixins import PermisosMixin
-from django.contrib.messages.views import SuccessMessageMixin
-from .models import *
+
 from .forms import *
-from django.db.models import Q
-from django.urls import reverse_lazy
+from .models import *
 from .utils import insertar_programas
 
 # region ############################################################### Secretarías

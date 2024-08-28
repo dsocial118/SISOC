@@ -1,9 +1,11 @@
-from django import forms
 from datetime import date
+
+from django import forms
+from django.core.validators import MaxValueValidator, MinValueValidator
+
 from .models import *
-from .validators import MaxSizeFileValidator
-from django.core.validators import MinValueValidator, MaxValueValidator
 from .models import DimensionEducacion
+from .validators import MaxSizeFileValidator
 
 
 class LegajosForm(forms.ModelForm):

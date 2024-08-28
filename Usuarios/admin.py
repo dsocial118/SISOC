@@ -1,10 +1,10 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from django.contrib.auth.models import Permission, Group
+from django.contrib.auth.models import Group, Permission
 from import_export.admin import ImportExportModelAdmin
-from .models import *
 
+from .models import *
 
 # region-----------USUARIOS---------------------------------------------------------------------------------------
 
