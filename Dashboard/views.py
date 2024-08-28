@@ -1,5 +1,5 @@
-from django.views.generic import TemplateView
 from django.core.cache import cache
+from django.views.generic import TemplateView
 
 from Dashboard.models import Dashboard
 

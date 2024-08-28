@@ -1,39 +1,38 @@
-from django.conf import settings
-from django.contrib import messages
-from django.contrib.messages.views import SuccessMessageMixin
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.contrib.auth.views import (
-    PasswordChangeView,
-    PasswordResetView,
-    LoginView,
-    LogoutView,
-)
-from django.contrib.auth import login as auth_login
-from django.views.generic import (
-    CreateView,
-    ListView,
-    DetailView,
-    UpdateView,
-    DeleteView,
-    FormView,
-)
-from django.shortcuts import redirect, render
-from django.db.models import Q
-from django.urls import reverse_lazy
-from django.core.files.storage import FileSystemStorage
-from django.core.files.base import ContentFile
-from PIL import Image
 from io import BytesIO  # Import BytesIO
 
-from .mixins import PermisosMixin
-from .models import *
-from .forms import *
-
 import requests
-
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth import login as auth_login
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.views import (
+    LoginView,
+    LogoutView,
+    PasswordChangeView,
+    PasswordResetView,
+)
+from django.contrib.messages.views import SuccessMessageMixin
+from django.core.files.base import ContentFile
+from django.core.files.storage import FileSystemStorage
+from django.db.models import Q
 
 # region---------------------------------------------------------------------------------------USUARIOS
 from django.http import JsonResponse
+from django.shortcuts import redirect, render
+from django.urls import reverse_lazy
+from django.views.generic import (
+    CreateView,
+    DeleteView,
+    DetailView,
+    FormView,
+    ListView,
+    UpdateView,
+)
+from PIL import Image
+
+from .forms import *
+from .mixins import PermisosMixin
+from .models import *
 
 
 def set_dark_mode(request):

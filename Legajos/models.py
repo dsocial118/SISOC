@@ -1,13 +1,14 @@
-from datetime import date
-from datetime import timedelta
-from django.db import models
+from datetime import date, timedelta
+
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
 from django.urls import reverse
-from django.core.validators import MinValueValidator, MaxValueValidator
+from multiselectfield import MultiSelectField
+
+from Configuraciones.models import *
 from Legajos.choices import *
 from Usuarios.models import Usuarios
-from Configuraciones.models import *
-from multiselectfield import MultiSelectField
 
 
 class Legajos(models.Model):

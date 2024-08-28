@@ -1,9 +1,9 @@
 from django.contrib.auth.mixins import (
-    PermissionRequiredMixin,
     LoginRequiredMixin,
+    PermissionRequiredMixin,
     UserPassesTestMixin,
 )
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import Group, User
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 

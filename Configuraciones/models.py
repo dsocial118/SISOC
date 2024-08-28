@@ -1,8 +1,10 @@
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from .choices import *
 from django.urls import *
+
 from Usuarios.models import User, Usuarios
-from django.core.validators import MinValueValidator, MaxValueValidator
+
+from .choices import *
 
 # -------------------------------CONFIGURACIONES GENERALES (se usan en todo el proyecto)--------------------------------------
 
