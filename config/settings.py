@@ -126,6 +126,13 @@ INSTALLED_APPS = [
     "Inicio",
     "Dashboard",
     "Legajos",
+    # Programas
+    "SIF_CDIF",
+    "SIF_CDLE",
+    "SIF_MILD",
+    "SIF_PDV",
+    "SIF_SL",
+    "SIF_MA",
 ]
 
 # Definición del middleware utilizado por el proyecto
