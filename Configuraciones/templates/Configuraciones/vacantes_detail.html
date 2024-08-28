@@ -1,84 +1,102 @@
 {% extends "includes/base.html" %}
 {% load static %}
 {% block title %}Vacantes{% endblock %}
-{% block titulo-pagina %}Vacantes{% endblock %};
+{% block titulo-pagina %}Vacantes{% endblock %}
+;
 {% block breadcrumb %}
-<ol class="breadcrumb float-sm-right ">
-    <li class="breadcrumb-item">Configuraciones </li>
-    <li class="breadcrumb-item"><a href="{% url 'vacantes_listar' %}">Vacantes</a></li>
-    <li class="breadcrumb-item active"> {{ object.nombre}}</li>
-</ol>
-{% endblock %};
+    <ol class="breadcrumb float-sm-right ">
+        <li class="breadcrumb-item">Configuraciones</li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'vacantes_listar' %}">Vacantes</a>
+        </li>
+        <li class="breadcrumb-item active">{{ object.nombre }}</li>
+    </ol>
+{% endblock %}
+;
 {% load crispy_forms_tags %}
-
 {% block content %}
-
-<div class="row">
-    <!-- botones -->
-    <div class="col-12 my-3 mx-2 d-print-none">
-        {%if perms.Usuarios.rol_admin%}
-        <a href="{% url 'vacantes_editar' object.id %}" class="btn btn-primary mr-1">Editar</a>
-        {%endif%}
-        <a href="" class="btn btn-secondary mr-1 print">Imprimir</a>
-        {%if perms.Usuarios.rol_admin%}
-        <a href="{% url 'vacantes_eliminar' object.id %}" class="btn btn-danger mr-1">Eliminar</a>
-        {%endif%}
-    </div>
-    <!-- ./botones -->
-    
-    <div class="col-12">
-        <div class="card card-outline card-primary h-100">
-            <div class="card-header">
-                <h3 class="card-title">Detalle de vacante</h3>
-            </div>
-            <div class="card-body">
-                <dl class="row mb-0">
-                    <dt class="col-sm-3 font-weight-normal">Nombre</dt>
-                    <dd class="col-sm-9 font-weight-bold">{{ object.nombre}} </dd>
-                    <dt class="col-sm-3 font-weight-normal">Programa</dt>
-                    <dd class="col-sm-9 font-weight-bold">{{object.fk_programa|default_if_none:"-"}} cupos</dd>
-                    <dt class="col-sm-3 font-weight-normal">Bebe turno mañana</dt>
-                    <dd class="col-sm-9 font-weight-bold">{{ object.manianabb|default_if_none:"-" }} cupos</dd>
-                    <dt class="col-sm-3 font-weight-normal">Bebe turno tarde</dt>
-                    <dd class="col-sm-9 font-weight-bold">{{ object.tardebb|default_if_none:"-" }} cupos</dd>
-                    <dt class="col-sm-3 font-weight-normal">2 años turno mañana</dt>
-                    <dd class="col-sm-9 font-weight-bold">{{ object.maniana2|default_if_none:"-" }} cupos</dd>
-                    <dt class="col-sm-3 font-weight-normal">2 años turno tarde</dt>
-                    <dd class="col-sm-9 font-weight-bold">{{ object.tarde2|default_if_none:"-" }} cupos</dd>
-                    <dt class="col-sm-3 font-weight-normal">3 años turno mañana</dt>
-                    <dd class="col-sm-9 font-weight-bold">{{ object.maniana3|default_if_none:"-" }} cupos</dd>
-                    <dt class="col-sm-3 font-weight-normal">3 años turno tarde</dt>
-                    <dd class="col-sm-9 font-weight-bold">{{ object.tarde3|default_if_none:"-" }} cupos</dd>
-                    <dt class="col-sm-3 font-weight-normal">General turno mañana</dt>
-                    <dd class="col-sm-9 font-weight-bold">{{ object.maniana4|default_if_none:"-" }} cupos</dd>
-                    <dt class="col-sm-3 font-weight-normal">General turno tarde</dt>
-                    <dd class="col-sm-9 font-weight-bold">{{ object.tarde4|default_if_none:"-" }} cupos</dd>
-                    <dt class="col-sm-3 font-weight-normal">Estado</dt>
-                    <dd class="col-sm-9 font-weight-bold">  
-                        {% if object.estado %}
-                        <span class="text-success font-weight-bold">Activo</span>
-                        {% else %}
-                        <span class="text-danger font-weight-bold">Inactivo</span>
-                        {% endif %} </dd>
+    <div class="row">
+        <!-- botones -->
+        <div class="col-12 my-3 mx-2 d-print-none">
+            {% if perms.Usuarios.rol_admin %}
+                <a href="{% url 'vacantes_editar' object.id %}"
+                   class="btn btn-primary mr-1">Editar</a>
+            {% endif %}
+            <a href="" class="btn btn-secondary mr-1 print">Imprimir</a>
+            {% if perms.Usuarios.rol_admin %}
+                <a href="{% url 'vacantes_eliminar' object.id %}"
+                   class="btn btn-danger mr-1">Eliminar</a>
+            {% endif %}
+        </div>
+        <!-- ./botones -->
+        <div class="col-12">
+            <div class="card card-outline card-primary h-100">
+                <div class="card-header">
+                    <h3 class="card-title">Detalle de vacante</h3>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-3 font-weight-normal">Nombre</dt>
+                        <dd class="col-sm-9 font-weight-bold">
+                            {{ object.nombre }}
+                        </dd>
+                        <dt class="col-sm-3 font-weight-normal">Programa</dt>
+                        <dd class="col-sm-9 font-weight-bold">
+                            {{ object.fk_programa|default_if_none:"-" }} cupos
+                        </dd>
+                        <dt class="col-sm-3 font-weight-normal">Bebe turno mañana</dt>
+                        <dd class="col-sm-9 font-weight-bold">
+                            {{ object.manianabb|default_if_none:"-" }} cupos
+                        </dd>
+                        <dt class="col-sm-3 font-weight-normal">Bebe turno tarde</dt>
+                        <dd class="col-sm-9 font-weight-bold">
+                            {{ object.tardebb|default_if_none:"-" }} cupos
+                        </dd>
+                        <dt class="col-sm-3 font-weight-normal">2 años turno mañana</dt>
+                        <dd class="col-sm-9 font-weight-bold">
+                            {{ object.maniana2|default_if_none:"-" }} cupos
+                        </dd>
+                        <dt class="col-sm-3 font-weight-normal">2 años turno tarde</dt>
+                        <dd class="col-sm-9 font-weight-bold">
+                            {{ object.tarde2|default_if_none:"-" }} cupos
+                        </dd>
+                        <dt class="col-sm-3 font-weight-normal">3 años turno mañana</dt>
+                        <dd class="col-sm-9 font-weight-bold">
+                            {{ object.maniana3|default_if_none:"-" }} cupos
+                        </dd>
+                        <dt class="col-sm-3 font-weight-normal">3 años turno tarde</dt>
+                        <dd class="col-sm-9 font-weight-bold">
+                            {{ object.tarde3|default_if_none:"-" }} cupos
+                        </dd>
+                        <dt class="col-sm-3 font-weight-normal">General turno mañana</dt>
+                        <dd class="col-sm-9 font-weight-bold">
+                            {{ object.maniana4|default_if_none:"-" }} cupos
+                        </dd>
+                        <dt class="col-sm-3 font-weight-normal">General turno tarde</dt>
+                        <dd class="col-sm-9 font-weight-bold">
+                            {{ object.tarde4|default_if_none:"-" }} cupos
+                        </dd>
+                        <dt class="col-sm-3 font-weight-normal">Estado</dt>
+                        <dd class="col-sm-9 font-weight-bold">
+                            {% if object.estado %}
+                                <span class="text-success font-weight-bold">Activo</span>
+                            {% else %}
+                                <span class="text-danger font-weight-bold">Inactivo</span>
+                            {% endif %}
+                        </dd>
                         <dt class="col-sm-3 font-weight-normal">Observaciones</dt>
-                        <dd class="col-sm-9 font-weight-bold">{{ object.observaciones|default_if_none:"-" }} cupos</dd>
-                </dl>
+                        <dd class="col-sm-9 font-weight-bold">
+                            {{ object.observaciones|default_if_none:"-" }} cupos
+                        </dd>
+                    </dl>
+                </div>
             </div>
         </div>
     </div>
-</div>
-<div class="row mt-4 d-print-none">
-    <div class="col-12 mx-2">
-        <a href="{% url 'vacantes_listar' %}" class="btn btn-secondary">Volver</a>
+    <div class="row mt-4 d-print-none">
+        <div class="col-12 mx-2">
+            <a href="{% url 'vacantes_listar' %}" class="btn btn-secondary">Volver</a>
+        </div>
     </div>
-</div>
-
-
- 
-
 {% endblock content %}
-
-
-{% block customJS %}
-
-{% endblock %}
+{% block customJS %}{% endblock %}
