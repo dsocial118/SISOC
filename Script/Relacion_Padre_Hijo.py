@@ -1,10 +1,15 @@
 from sqlalchemy import create_engine, MetaData
 import pandas as pd
 
+
 def main():
     # Configura los motores de base de datos
-    engine_pas_padron_01_05_2024 = create_engine('mysql://root:admin@localhost:3306/pas_padron_01_05_2024')  # Cambia con tu URL de base de datos
-    engine_hsu_dev = create_engine('mysql://root:admin@localhost:3306/hsu-dev')  # Cambia con tu URL de base de datos
+    engine_pas_padron_01_05_2024 = create_engine(
+        "mysql://root:admin@localhost:3306/pas_padron_01_05_2024"
+    )  # Cambia con tu URL de base de datos
+    engine_hsu_dev = create_engine(
+        "mysql://root:admin@localhost:3306/hsu-dev"
+    )  # Cambia con tu URL de base de datos
 
     # Vincula una conexión
     connection_hsu_dev = engine_hsu_dev.connect()
@@ -59,62 +64,79 @@ def main():
     df_adherentes = pd.read_sql(query_adherentes, connection_pas_padron_01_05_2024)
 
     # Insertar datos en la tabla Legajos_legajos
-    df_beneficiario_padron.to_sql('Legajos_legajos', con=connection_hsu_dev, if_exists='append', index=False)
-    df_adherentes.to_sql('Legajos_legajos', con=connection_hsu_dev, if_exists='append', index=False)
+    df_beneficiario_padron.to_sql(
+        "Legajos_legajos", con=connection_hsu_dev, if_exists="append", index=False
+    )
+    df_adherentes.to_sql(
+        "Legajos_legajos", con=connection_hsu_dev, if_exists="append", index=False
+    )
 
     # Leer los datos insertados para realizar operaciones adicionales
-    df_legajos_legajos = pd.read_sql('SELECT * FROM Legajos_legajos', connection_hsu_dev)
+    df_legajos_legajos = pd.read_sql(
+        "SELECT * FROM Legajos_legajos", connection_hsu_dev
+    )
 
     # Generar grupos familiares
-    df_grupos_familiares = df_legajos_legajos.groupby('CUIL').agg({
-        '_id': 'first',
-        'APELLIDO': 'first',
-        'NOMBRE': 'first',
-        'FECHA_NACIMIENTO': 'first',
-        'TIPO_DOC': 'first',
-        'DOCUMENTO': 'first',
-        'SEXO': 'first',
-        'nacionalidad': 'first',
-        'ESTADO_CIVIL': 'first',
-        'calle': 'first',
-        'ALTURA': 'first',
-        'piso': 'first',
-        'CIRCUITO': 'first',
-        'barrio': 'first',
-        'localidad': 'first',
-        'telefono': 'first',
-        'email': 'first',
-        'FOTO': 'first',
-        'OBSERVACIONES': 'first',
-        'ESTADO': 'first',
-        'CREADO': 'first',
-        'MODIFICADO': 'first',
-        'CREADO_POR_ID': 'first',
-        'MODIFICADO_POR_ID': 'first',
-        'CUIT': 'first',
-        'CUIL': 'first',
-        'IDENTIDAD': 'first',
-        'PROVINCIA': 'first',
-        'PAIS': 'first',
-        'MUNICIPIO': 'first',
-        'CP': 'first',
-        'MANZANA': 'first',
-        'PREFIJO_TEL2': 'first',
-        'TELEFONO2': 'first',
-        'PREFIJO_TEL_ALT': 'first',
-        'TELEFONO_ALT': 'first',
-        'OBSERVACIONES_BENEF': 'first',
-        'TIENE_HIJOS': 'first',
-        'TIENE_CUD': 'first',
-        'CANTIDAD_HIJOS': 'first',
-        'PRESENTA_DISCAPACIDAD': 'first',
-        'CANTIDAD_PRESENTA_DISCAPACIDAD': 'first',
-        'MODALIDAD_COBRO': 'first',
-        'OTRA_MODALIDAD_COBRO': 'first'
-    }).reset_index()
+    df_grupos_familiares = (
+        df_legajos_legajos.groupby("CUIL")
+        .agg(
+            {
+                "_id": "first",
+                "APELLIDO": "first",
+                "NOMBRE": "first",
+                "FECHA_NACIMIENTO": "first",
+                "TIPO_DOC": "first",
+                "DOCUMENTO": "first",
+                "SEXO": "first",
+                "nacionalidad": "first",
+                "ESTADO_CIVIL": "first",
+                "calle": "first",
+                "ALTURA": "first",
+                "piso": "first",
+                "CIRCUITO": "first",
+                "barrio": "first",
+                "localidad": "first",
+                "telefono": "first",
+                "email": "first",
+                "FOTO": "first",
+                "OBSERVACIONES": "first",
+                "ESTADO": "first",
+                "CREADO": "first",
+                "MODIFICADO": "first",
+                "CREADO_POR_ID": "first",
+                "MODIFICADO_POR_ID": "first",
+                "CUIT": "first",
+                "CUIL": "first",
+                "IDENTIDAD": "first",
+                "PROVINCIA": "first",
+                "PAIS": "first",
+                "MUNICIPIO": "first",
+                "CP": "first",
+                "MANZANA": "first",
+                "PREFIJO_TEL2": "first",
+                "TELEFONO2": "first",
+                "PREFIJO_TEL_ALT": "first",
+                "TELEFONO_ALT": "first",
+                "OBSERVACIONES_BENEF": "first",
+                "TIENE_HIJOS": "first",
+                "TIENE_CUD": "first",
+                "CANTIDAD_HIJOS": "first",
+                "PRESENTA_DISCAPACIDAD": "first",
+                "CANTIDAD_PRESENTA_DISCAPACIDAD": "first",
+                "MODALIDAD_COBRO": "first",
+                "OTRA_MODALIDAD_COBRO": "first",
+            }
+        )
+        .reset_index()
+    )
 
     # Insertar los grupos familiares en la tabla correspondiente
-    df_grupos_familiares.to_sql('Legajos_legajogrupofamiliar', con=connection_hsu_dev, if_exists='append', index=False)
+    df_grupos_familiares.to_sql(
+        "Legajos_legajogrupofamiliar",
+        con=connection_hsu_dev,
+        if_exists="append",
+        index=False,
+    )
 
     print("Data inserted successfully in all tables!")
     print("Updated dataset successfully!")
@@ -123,5 +145,6 @@ def main():
     connection_pas_padron_01_05_2024.close()
     connection_hsu_dev.close()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

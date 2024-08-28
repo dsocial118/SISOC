@@ -9,7 +9,6 @@ from .models import *
 # region-----------USUARIOS---------------------------------------------------------------------------------------
 
 
-
 class UsuariosInline(admin.StackedInline):
     model = Usuarios
     can_delete = False
