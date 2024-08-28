@@ -1,0 +1,164 @@
+{% extends "includes/base.html" %}
+{% load static %}
+{% block title %}Índices{% endblock %}
+{% block titulo-pagina %}Índices{% endblock %};
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right ">
+    <li class="breadcrumb-item">Índices</li>
+    <li class="breadcrumb-item"><a href="{% url 'legajos_ver' object.fk_legajo.id %}" title="Ver legajo">{{object.fk_legajo}}</a></li>
+        {%if request.resolver_match.url_name == "SL_indiceivi_editar" %}
+        <li class="breadcrumb-item active">Editar</li>
+        {% else %}
+        <li class="breadcrumb-item active">Agregar</li>
+        {% endif %}
+</ol>
+{% endblock %};
+{% load crispy_forms_tags %}
+
+{% block content %}
+<!-- Datos de legajo -->
+
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card card-outline card-primary ">
+            <div class="card-header">
+                <h3 class="card-title">Detalle Legajo</h3>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dd class="col-sm-2 mb-2">Nombre</dd>
+                    <dt class="col-sm-10 mb-2"><a href="{% url 'legajos_ver' object.fk_legajo.id %}" title="Ver legajo">{{object.fk_legajo}}</a></dt>
+                    <dd class="col-sm-2 mb-2">DNI</dd>
+                    <dt class="col-sm-10 mb-2">{{object.fk_legajo.documento}}</dt>
+                    <dd class="col-sm-2 mb-2">Fecha de nacimiento</dd>
+                    <dt class="col-sm-10 mb-2">{{object.fk_legajo.fecha_nacimiento|date:'d/m/Y'}}</dt>
+                    <dd class="col-sm-2 mb-2">Sexo</dd>
+                    <dt class="col-sm-10 mb-2">{{object.fk_legajo.sexo}}</dt>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- /  -->
+
+<div class="row">
+    <div class="col">
+        <form class="needs-validation" novalidate method="POST" enctype="multipart/form-data">
+            <!-- Security token -->
+            {% csrf_token %}
+            <div class="card card-primary card-outline">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        Índice de vulnerabilidad infantil (IVI)
+                    </h3>
+                </div>
+
+                <div class="card-body table-responsive p-2">
+                    <table class="table table-head-fixed table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Criterio</th>
+                                <th class="text-center px-1" width="7%">Puntaje</th>
+                                <th class="text-center px-1" width="7%">Modificable</th>
+                                <th class="text-center px-1" width="7%">Presencia</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <tr>
+                                <td colspan="4" class="text-center bg-secondary py-1">Madre o Cuidador principal
+                                </td>
+                            </tr>
+                            {% for c in criterio %}
+                            {% if c.tipo == 'Madre o Cuidador principal' %}
+                            <tr>
+                                <td>{{c.criterio}}</td>
+                                <td class="text-center">{{c.puntaje}}</td>
+                                <td class="text-center"><span class=" badge badge-primary px-2">{{c.modificable}}</span></td>
+                                <td class="text-center px-0">
+                                    <div class="icheck-primary d-inline">
+                                        <input type="checkbox" id="{{c.id}}" name="{{c.id}}">
+                                        <label for="{{c.id}}"></label>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                            <tr>
+                                <td colspan="4" class="text-center bg-secondary py-1">Bebé, niño o niña</td>
+                            </tr>
+                            {% for c in criterio %}
+                            {% if c.tipo == 'Bebé, niño o niña' %}
+                            <tr>
+                                <td>{{c.criterio}}</td>
+                                <td class="text-center">{{c.puntaje}}</td>
+                                <td class="text-center"><span class=" badge badge-primary px-2">{{c.modificable}}</span></td>
+                                <td class="text-center px-0">
+                                    <div class="icheck-primary d-inline">
+                                        <input type="checkbox" id="{{c.id}}" name="{{c.id}}">
+                                        <label for="{{c.id}}"></label>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                            <tr>
+                                <td colspan="4" class="text-center bg-secondary py-1">Familia</td>
+                            </tr>
+                            {% for c in criterio %}
+                            {% if c.tipo == 'Familia' %}
+                            <tr>
+                                <td>{{c.criterio}}</td>
+                                <td class="text-center">{{c.puntaje}}</td>
+                                <td class="text-center"><span class=" badge badge-primary px-2">{{c.modificable}}</span></td>
+                                <td class="text-center px-0">
+                                    <div class="icheck-primary d-inline">
+                                        <input type="checkbox" id="{{c.id}}" name="{{c.id}}">
+                                        <label for="{{c.id}}"></label>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                            <tr>
+                                <td colspan="4" class="text-center bg-secondary py-1">Ajustes</td>
+                            </tr>
+                            {% for c in criterio %}
+                            {% if c.tipo == 'Ajustes' %}
+                            <tr>
+                                <td>{{c.criterio}}</td>
+                                <td class="text-center">{{c.puntaje}}</td>
+                                <td class="text-center"><span class=" badge badge-primary px-2">{{c.modificable}}</span></td>
+                                <td class="text-center px-0">
+                                    <div class="icheck-primary d-inline">
+                                        <input type="checkbox" id="{{c.id}}" name="{{c.id}}">
+                                        <label for="{{c.id}}"></label>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="col-12 mt-5 mb-3">
+                    <div class="form-group">
+                        <label>Observaciones</label>
+                        <textarea class="form-control" rows="3" placeholder="" id="observaciones_id" name="observaciones"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 mx-2">
+                <button class="btn btn-primary mr-1" type="submit">Confirmar</button>
+                <a href="{% url 'SL_preadmisiones_ver' object.id%}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block customJS %}
+{% endblock %};
