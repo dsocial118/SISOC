@@ -1,0 +1,290 @@
+{% extends "includes/base.html" %};
+{% load static %};
+
+{% block title %}
+1000 Dias Pre-admisiones detalle
+{%endblock %};
+
+{% block titulo-pagina %}
+1000 Dias Pre-admisiones
+{% endblock %};
+
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right">
+  <li class="breadcrumb-item"><a href="{% url 'MILD_preadmisiones_listar'%}"
+      title="Ver historial de Pre-admisiones">1000 Dias Pre-admisiones</a></li>
+  <li class="breadcrumb-item "><a href="{% url 'legajos_ver' object.fk_derivacion.fk_legajo_id %}" title="Ver legajo">{{object.fk_derivacion}}</a></li>
+  <li class="breadcrumb-item active">Detalle</li>
+</ol>
+{% endblock %};
+
+{% block menu-adicional %}
+{% endblock %};
+
+{% block content %}
+<!-- card-info -->
+<div class="row">
+  <!-- botones -->
+  <div class="col-12 my-3 d-print-none">
+    <div class="btn-toolbar" role="toolbar">
+    {% if object.estado == 'En proceso' %}
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" name="finalizar_preadm" class="btn btn-primary mr-1" >Finalizar</button>
+    </form>
+    <a href="{% url 'MILD_preadmisiones_editar' object.pk %}" class="btn btn-secondary mr-1">Editar</a>
+    <a href="" class="btn btn-secondary mr-1 print">Imprimir</a>
+    <a href="{% url 'MILD_preadmisiones_eliminar' object.pk %}" class="btn btn-danger mr-1 mt-2 mt-sm-0">Eliminar</a>
+    {% endif %}
+    {% if object.estado == 'Finalizada' %}
+    {% if object.indice_ingreso == 'NO' %}
+    <a href="{% url 'MILD_indiceingreso_crear' object.pk %}" class="btn btn-primary mr-1">Generar índice ingreso</a>
+    {% endif %}
+    {% if object.ivi == 'NO' and object.indice_ingreso == 'SI' %}
+    <a href="{% url 'MILD_indiceivi_crear' object.pk %}" class="btn btn-primary mr-1">Generar IVI</a>
+    {% endif %}
+    <a href="" class="btn btn-secondary mr-1 print">Imprimir</a>
+    {% endif %}
+    </div>
+  </div>
+  <!-- ./botones -->
+
+  <div class="row p-0 m-0 " id="seleccion">
+
+
+    <!-- Datos de Admisión -->
+    <div class="col-sm-3 pb-3">
+      <div class="card card-outline card-primary h-100 mb-0">
+        <div class="card-header">
+          <h3 class="card-title">Detalle pre-admisión</h3>
+          <div class="card-tools">
+            <button type="button" class="btn btn-tool d-md-none" data-card-widget="collapse">
+              <i class="fas fa-minus"></i>
+            </button>
+          </div>
+        </div>
+        <div class="card-body pb-1">
+          <dl class="row mb-0">
+            <dd class="col-sm-5 mb-2">Estado</dd>
+            <dt class="col-sm-7 mb-2"><span class="badge {% if object.estado == 'Finalizada' %}badge-success{% else %}badge-warning{% endif %}">{{ object.estado }}</span></dt>
+            <dd class="col-sm-5 mb-2">Fecha de solicitud</dd>
+            <dt class="col-sm-7 mb-2">{{object.creado|date:'d/m/Y'}}</dt>
+            <dd class="col-sm-5 mb-2">Solicitud creada por</dd>
+            <dt class="col-sm-7 mb-2">{{object.creado_por}}</dt>
+            <dd class="col-sm-5 mb-2">Acompañante</dd>
+            <dt class="col-sm-7 mb-2">{{object.acompaniante}}</dt>
+            {% if object.modificado_por %}
+            <dd class="col-sm-12 mb-0 mt-4 pb-0 text-muted text-sm font-italic text-right">Modificado por {{object.modificado_por}} - {{object.modificado|date:'d/m/Y'}}</dd>
+            {% endif %}
+          </dl>
+        </div>
+      </div>
+    </div>
+    <!-- /  -->
+
+    <!-- Datos de legajo -->
+    <div class="col-sm-3 pb-3">
+      <div class="card card-outline card-primary h-100 mb-0">
+        <div class="card-header">
+          <h3 class="card-title">Detalle Legajo</h3>
+          <div class="card-tools">
+            <button type="button" class="btn btn-tool d-md-none" data-card-widget="collapse">
+              <i class="fas fa-minus"></i>
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          <dl class="row mb-0">
+            <dd class="col-sm-5 mb-2">Nombre</dd>
+            <dt class="col-sm-7 mb-2"><a href="{% url 'legajos_ver' legajo.fk_legajo.id %}" title="Ver legajo"> {{legajo}}</a> </dt>
+            <dd class="col-sm-5 mb-2">DNI</dd>
+            <dt class="col-sm-7 mb-2">{{legajo.fk_legajo.documento}}</dt>
+            <dd class="col-sm-5 mb-2">Fecha de nacimiento</dd>
+            <dt class="col-sm-7 mb-2">{{legajo.fk_legajo.fecha_nacimiento|date:'d/m/Y'}}</dt>
+            <dd class="col-sm-5 mb-2">Sexo</dd>
+            <dt class="col-sm-7 mb-2">{{legajo.fk_legajo.sexo}}</dt>
+          </dl>
+        </div>
+      </div>
+    </div>
+    <!-- /  -->
+
+    <!-- Detalle de Ingreso -->
+    <div class="col-sm-3 pb-3">
+      <div class="card card-outline card-primary h-100 mb-0">
+        <div class="card-header">
+          <h3 class="card-title">Detalle índice de ingreso</h3>
+          <div class="card-tools">
+            <button type="button" class="btn btn-tool d-md-none" data-card-widget="collapse">
+              <i class="fas fa-minus"></i>
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          {% if resultado_ingreso %}
+          <dl class="row mb-0">
+            <dd class="col-sm-8 mb-2">Aplica</dd>
+            <dt class="col-sm-4 mb-2">{% if cant_sanitarios >= 1 or cant_sociales >= 5 %}<span class="badge bg-success"> SI {% else %} <span class="badge bg-danger"> NO {% endif %}</span></dt>
+            <dd class="col-sm-8 mb-2">Fecha del índice</dd>
+            <dt class="col-sm-4 mb-2">{{ resultado_ingreso.creado|date:'d/m/Y'}}</dt>
+            <dd class="col-sm-8 mb-2">Criterios sociales presentes</dd>
+            <dt class="col-sm-4 mb-2">{{ cant_sociales }}</dt>
+            <dd class="col-sm-8 mb-2">Criterios sanitarios presentes</dd>
+            <dt class="col-sm-4 mb-2">{{ cant_sanitarios }}</dt>
+          </dl>
+          {% else %}
+          <h6>Sin índices.</h6>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <!-- /  -->
+
+    <div class="col-sm-3 pb-3">
+      <div class="card card-outline card-primary h-100 mb-0">
+        <div class="card-header">
+          <h3 class="card-title">Detalle IVI de ingreso</h3>
+          <div class="card-tools d-inline">
+            <button type="button" class="btn btn-tool d-md-none" data-card-widget="collapse">
+              <i class="fas fa-minus"></i>
+            </button>
+          </div>
+        </div>
+        <div class="card-body p-2">
+          <ul class="products-list product-list-in-card pl-2 pr-2">
+            {% if resultado %}
+            {% for r in resultado %}
+            <li class="item p-1">
+              <a href="javascript:void(0)">
+                <div class="product-img h4 p-0">
+                  <span class="badge badge-success float-center p-3">{{r.total}}</span>
+                </div>
+                <div class="product-info">
+                  <span class="product-title">IVI</span>
+                  <span class="product-description">
+                    {{r.programa}} | {{ r.creado|date:"d/m/Y" }}
+                  </span>
+                </div>
+              </a>
+            </li>
+            {% endfor %}
+            {% else %}
+            <h6>Sin índices.</h6>
+            {% endif %}
+          </ul>          
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <!-- /  -->
+
+  <!-- Datos grupo familiar -->
+  <div class="col-12">
+    <div class="card card-outline card-primary">
+      <div class="card-header">
+        <h3 class="card-title">Detalle grupo familiar conviviente</h3>
+        <div class="card-tools">
+          <button type="button" class="btn btn-tool" data-card-widget="collapse">
+            <i class="fas fa-minus"></i>
+          </button>
+        </div>
+      </div>
+      <div class="card-body">
+        {% if object.fk_legajo_1 %}
+        <div class="row bg-secondary pl-2 my-2 font-weight-bold"> Madre o cuidador principal</div>
+        <dl class="row mb-0">
+          <dd class="col-sm-3 mb-2">Nombre</dd>
+          <dt class="col-sm-9 mb-2"><a href="{% url 'legajos_ver' object.fk_legajo_1_id %}" title="Ver legajo">{{object.fk_legajo_1}}</a> </dt>
+          <dd class="col-sm-3 mb-2">Vínculo</dd>
+          <dt class="col-sm-9 mb-2">{{object.vinculo1}}</dt>
+          <dd class="col-sm-3 mb-2">Documento</dd>
+          <dt class="col-sm-9 mb-2">{{object.fk_legajo_1.tipo_doc}}  {{object.fk_legajo_1.documento}}</dt>
+          <dd class="col-sm-3 mb-2">Fecha de nacimiento</dd>
+          <dt class="col-sm-9 mb-2">{{object.fk_legajo_1.fecha_nacimiento|date:'d/m/Y'}}</dt>
+          <dd class="col-sm-3 mb-2">Sexo</dd>
+          <dt class="col-sm-9 mb-2">{{object.fk_legajo_1.sexo}}</dt>
+        </dl>
+{% endif %}
+{% if object.fk_legajo_2 %}
+        <!-- Padre o cuidador secundario -->
+        <div class="row bg-secondary pl-2 my-2 font-weight-bold"> Padre o cuidador secundario</div>
+        <dl class="row mb-0">
+          <dd class="col-sm-3 mb-2">Nombre</dd>
+          <dt class="col-sm-9 mb-2"><a href="{% url 'legajos_ver' object.fk_legajo_2_id %}" title="Ver legajo">{{object.fk_legajo_2}}</a> </dt>
+          <dd class="col-sm-3 mb-2">Vínculo</dd>
+          <dt class="col-sm-9 mb-2">{{object.vinculo2}}</dt>
+          <dd class="col-sm-3 mb-2">Documento</dd>
+          <dt class="col-sm-9 mb-2">{{object.fk_legajo_2.tipo_doc}}  {{object.fk_legajo_2.documento}}</dt>
+          <dd class="col-sm-3 mb-2">Fecha de nacimiento</dd>
+          <dt class="col-sm-9 mb-2">{{object.fk_legajo_2.fecha_nacimiento|date:'d/m/Y'}}</dt>
+          <dd class="col-sm-3 mb-2">Sexo</dd>
+          <dt class="col-sm-9 mb-2">{{object.fk_legajo_2.sexo}}</dt>
+        </dl>
+{% endif %}
+
+        <!-- Otros convivientes -->
+        {% if object.fk_legajo_3 == None and object.fk_legajo_4 == None and object.fk_legajo_5 == None %}
+        {% else %}
+        <div class="row bg-secondary pl-2 my-2 font-weight-bold"> Otros convivientes</div>
+        {% if object.fk_legajo_3 %}
+        <dl class="row mb-0">
+          <dd class="col-sm-3 mb-2">Nombre</dd>
+          <dt class="col-sm-9 mb-2"><a href="{% url 'legajos_ver' object.fk_legajo_3_id %}" title="Ver legajo">{{object.fk_legajo_3}}</a> </dt>
+          <dd class="col-sm-3 mb-2">Vínculo</dd>
+          <dt class="col-sm-9 mb-2">{{object.vinculo3}}</dt>
+          <dd class="col-sm-3 mb-2">Documento</dd>
+          <dt class="col-sm-9 mb-2">{{object.fk_legajo_3.tipo_doc}}  {{object.fk_legajo_3.documento}}</dt>
+          <dd class="col-sm-3 mb-2">Fecha de nacimiento</dd>
+          <dt class="col-sm-9 mb-2">{{object.fk_legajo_3.fecha_nacimiento|date:'d/m/Y'}}</dt>
+          <dd class="col-sm-3 mb-2">Sexo</dd>
+          <dt class="col-sm-9 mb-2">{{object.fk_legajo_3.sexo}}</dt>
+        </dl>
+        {% endif %}
+        {% if object.fk_legajo_4 %}
+        <dl class="row mb-0">
+            <dd class="col-sm-3 mb-2">Nombre</dd>
+            <dt class="col-sm-9 mb-2"><a href="{% url 'legajos_ver' object.fk_legajo_4_id %}" title="Ver legajo">{{object.fk_legajo_4}}</a> </dt>
+            <dd class="col-sm-3 mb-2">Vínculo</dd>
+            <dt class="col-sm-9 mb-2">{{object.vinculo4}}</dt>
+            <dd class="col-sm-3 mb-2">Documento</dd>
+            <dt class="col-sm-9 mb-2">{{object.fk_legajo_4.tipo_doc}}  {{object.fk_legajo_4.documento}}</dt>
+            <dd class="col-sm-3 mb-2">Fecha de nacimiento</dd>
+            <dt class="col-sm-9 mb-2">{{object.fk_legajo_4.fecha_nacimiento|date:'d/m/Y'}}</dt>
+            <dd class="col-sm-3 mb-2">Sexo</dd>
+            <dt class="col-sm-9 mb-2">{{object.fk_legajo_4.sexo}}</dt>
+          </dl>
+          {% endif %}
+          {% if object.fk_legajo_5 %}
+          <dl class="row mb-0">
+            <dd class="col-sm-3 mb-2">Nombre</dd>
+            <dt class="col-sm-9 mb-2"><a href="{% url 'legajos_ver' object.fk_legajo_5_id %}" title="Ver legajo">{{object.fk_legajo_5}}</a> </dt>
+            <dd class="col-sm-3 mb-2">Vínculo</dd>
+            <dt class="col-sm-9 mb-2">{{object.vinculo5}}</dt>
+            <dd class="col-sm-3 mb-2">Documento</dd>
+            <dt class="col-sm-9 mb-2">{{object.fk_legajo_5.tipo_doc}}  {{object.fk_legajo_5.documento}}</dt>
+            <dd class="col-sm-3 mb-2">Fecha de nacimiento</dd>
+            <dt class="col-sm-9 mb-2">{{object.fk_legajo_5.fecha_nacimiento|date:'d/m/Y'}}</dt>
+            <dd class="col-sm-3 mb-2">Sexo</dd>
+            <dt class="col-sm-9 mb-2">{{object.fk_legajo_5.sexo}}</dt>
+          </dl>
+          {% endif %}
+          {% endif %}
+
+      </div>
+    </div>
+  </div>
+  <!-- ./ -->
+
+</div>
+</div>
+
+<div class="row mt-4 d-print-none">
+  <div class="col-12 mx-2">
+    <div class="form-group  d-flex justify-content-between">
+      <a href="{% url 'MILD_preadmisiones_listar' %}" class="btn btn-secondary">Volver</a>
+    </div>
+  </div>
+</div>
+
+{% endblock %};

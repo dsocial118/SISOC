@@ -1,0 +1,138 @@
+{% extends "includes/base.html" %};
+{% load static %};
+
+{% block title %}
+Intervenciones detalle
+{%endblock %};
+
+{% block titulo-pagina %}
+Intervenciones
+{% endblock %};
+
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right">
+  <li class="breadcrumb-item">Intervenciones</li>
+  <li class="breadcrumb-item "><a href="{% url 'legajos_ver' object.fk_admision.fk_preadmi.fk_legajo.id %}" title="Ver legajo">{{object.fk_admision.fk_preadmi.fk_legajo}}</a></li>
+  <li class="breadcrumb-item active">Detalle</li>
+</ol>
+{% endblock %};
+
+{% block menu-adicional %}
+{% endblock %};
+
+{% block content %}
+
+<!-- card-info -->
+<div class="row">
+  <!-- botones -->
+  <div class="col-12 my-3 mx-2 d-print-none">
+    {% if object.fk_admision.estado == "Activa" %}
+    <a href="{% url 'SL_intervencion_editar' object.id %}" class="btn btn-primary mr-1">Editar</a>
+    {% endif %}
+    <a href="" class="btn btn-secondary mr-1 print">Imprimir</a>
+    {% if object.fk_admision.estado == "Activa" %}
+    <a href="{% url 'SL_intervencion_borrar' object.id %}" class="btn btn-danger mr-1">Eliminar</a>
+    {% endif %}
+  </div>
+  <!-- ./botones -->
+
+</div>
+<div class="row" id="seleccion">
+  <!-- Detalle de intervencion -->
+  <div class="col-sm-8 pb-3">
+    <div class="card card-primary card-outline h-100">
+      <div class="card-header">
+        <h3 class="card-title">Detalle Intervención</h3>
+        <div class="card-tools">
+          <button type="button" class="btn btn-tool d-md-none" data-card-widget="collapse">
+            <i class="fas fa-minus"></i>
+          </button>
+        </div>
+      </div>
+      <div class="card-body mb-0">
+        <dl class="row mb-0">
+          <dd class="col-sm-3 mb-2">Afecta IVI</dd>
+          <dt class="col-sm-9 mb-2"><span class=" badge badge-primary px-2">-</span></dt>
+          <dd class="col-sm-3 mb-2">Fecha</dd>
+          <dt class="col-sm-9 mb-2">{{object.creado}}</dt>
+          <dd class="col-sm-3 mb-2">Usuarios intervinientes</dd>
+          <dt class="col-sm-9 mb-2">{{object.creado_por}}</dt>
+          <dd class="col-sm-3 mb-2">Criterio</dd>
+          <dt class="col-sm-9 mb-2">{{object.criterio_modificable}}</dt>
+          <dd class="col-sm-3 mb-2">Gestión sobre el criterio</dd>
+          <dt class="col-sm-9 mb-2">{{object.impacto}}</dt>
+          <dd class="col-sm-3 mb-2">Responsables</dd>
+          <dt class="col-sm-9 mb-2"><ul class="ml-2 pl-0">{% for r in object.responsable.all %} <li>{{r}}</li> {% endfor%}</ul></dt>
+          <dd class="col-sm-3 mb-2">Acción realizada</dd>
+          <dt class="col-sm-9 mb-2">{{object.accion}}</dt>
+          <dd class="col-sm-3 mb-2">Detalles</dd>
+          <dt class="col-sm-9 mb-2">{{object.detalle}}</dt>
+        </dl>
+      </div>
+    </div>
+  </div>
+  <!-- ./ -->
+  <div class="col-sm-4 ">
+    <!-- Datos de legajo -->
+    <div class="card card-primary card-outline">
+      <div class="card-header">
+        <h3 class="card-title">Detalle Legajo</h3>
+        <div class="card-tools">
+          <a href="{% url 'legajos_ver' object.fk_admision.fk_preadmi.fk_legajo.id %}" class="ml-3 mr-2" title="Ver legajo">Ver legajo</a>
+          <button type="button" class="btn btn-tool d-md-none" data-card-widget="collapse">
+            <i class="fas fa-minus"></i>
+          </button>
+        </div>
+      </div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dd class="col-sm-5 mb-2">Nombre</dd>
+          <dt class="col-sm-7 mb-2">{{object.fk_admision.fk_preadmi.fk_legajo}}</dt>
+          <dd class="col-sm-5 mb-2">{{object.fk_admision.fk_preadmi.fk_legajo.tipo_doc}}</dd>
+          <dt class="col-sm-7 mb-2">{{object.fk_admision.fk_preadmi.fk_legajo.documento}}</dt>
+          <dd class="col-sm-5 mb-2">Fecha de nacimiento</dd>
+          <dt class="col-sm-7 mb-2">{{object.fk_admision.fk_preadmi.fk_legajo.fecha_nacimiento|date:'d/m/Y'}}</dt>
+          <dd class="col-sm-5 mb-2">Sexo</dd>
+          <dt class="col-sm-7 mb-2">{{object.fk_admision.fk_preadmi.fk_legajo.sexo}}</dt>
+        </dl>
+      </div>
+    </div>
+    <!-- /  -->
+
+    <!-- Datos de admisión -->
+    <div class="card card-outline card-primary">
+      <div class="card-header">
+        <h3 class="card-title">Detalle Admisión</h3>
+        <div class="card-tools d-inline">
+          <a href="{% url 'SL_asignado_admisiones_ver' object.fk_admision.id %}" class="ml-3 mr-2">Ver admisión</a>
+          <button type="button" class="btn btn-tool  d-md-none" data-card-widget="collapse">
+            <i class="fas fa-minus"></i>
+          </button>
+        </div>
+      </div>
+      <div class="card-body pb-2">
+        <dl class="row mb-0">
+          <dd class="col-sm-5 mb-2">Estado</dd>
+          <dt class="col-sm-7 mb-2"><span class="text-success font-weight-bold">{{object.fk_admision.estado}}</span></dt>
+          <dd class="col-sm-5 mb-2">Fecha de admisión</dd>
+          <dt class="col-sm-7 mb-2">{{object.fk_admision.creado|date:'d/m/Y'}}</dt>
+          <dd class="col-sm-5 mb-2">Acompañante</dd>
+          <dt class="col-sm-7 mb-2">{{object.fk_admision.fk_preadmi.acompaniante}}</dt>
+          <dd class="col-sm-5 mb-2">Madrina</dd>
+          <dt class="col-sm-7 mb-2">{{object.fk_admision.fk_preadmi.madrina}}</dt>
+        </dl>
+      </div>
+    </div>
+    <!-- /  -->
+  </div>
+</div>
+<div class="col-12 d-print-none">
+  <div class="form-group  d-flex justify-content-between">
+    <a href="{% url 'SL_intervenciones_legajos_listar' object.fk_admision.id %}" class="btn btn-secondary">Volver</a>
+  </div>
+</div>
+
+{% endblock %};
+
+{% block customJS %}
+{% endblock %}
