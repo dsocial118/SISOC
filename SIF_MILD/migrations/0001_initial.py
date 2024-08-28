@@ -9,282 +9,1741 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('SIF_CDIF', '0001_initial'),
-        ('Usuarios', '0001_initial'),
-        ('Legajos', '0001_initial'),
-        ('Configuraciones', '0001_initial'),
+        ("SIF_CDIF", "0001_initial"),
+        ("Usuarios", "0001_initial"),
+        ("Legajos", "0001_initial"),
+        ("Configuraciones", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Criterios_Ingreso',
+            name="Criterios_Ingreso",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('criterio', models.CharField(max_length=250)),
-                ('tipo', models.CharField(choices=[(None, ''), ('Criterios sanitarios para el ingreso', 'Criterios sanitarios para el ingreso'), ('Criterios sociales para el ingreso', 'Criterios sociales para el ingreso')], max_length=250)),
-                ('puntaje', models.SmallIntegerField()),
-                ('modificable', models.CharField(choices=[(None, ''), ('SI', 'SI'), ('NO', 'NO')], max_length=50)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("criterio", models.CharField(max_length=250)),
+                (
+                    "tipo",
+                    models.CharField(
+                        choices=[
+                            (None, ""),
+                            (
+                                "Criterios sanitarios para el ingreso",
+                                "Criterios sanitarios para el ingreso",
+                            ),
+                            (
+                                "Criterios sociales para el ingreso",
+                                "Criterios sociales para el ingreso",
+                            ),
+                        ],
+                        max_length=250,
+                    ),
+                ),
+                ("puntaje", models.SmallIntegerField()),
+                (
+                    "modificable",
+                    models.CharField(
+                        choices=[(None, ""), ("SI", "SI"), ("NO", "NO")], max_length=50
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='MILD_Admision',
+            name="MILD_Admision",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('estado', models.CharField(blank=True, default='Activa', max_length=150, null=True)),
-                ('creado', models.DateField(auto_now_add=True, null=True)),
-                ('modificado', models.DateField(auto_now=True, null=True)),
-                ('creado_por', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='MILD_Admision_creado_por', to='Usuarios.usuarios')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "estado",
+                    models.CharField(
+                        blank=True, default="Activa", max_length=150, null=True
+                    ),
+                ),
+                ("creado", models.DateField(auto_now_add=True, null=True)),
+                ("modificado", models.DateField(auto_now=True, null=True)),
+                (
+                    "creado_por",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="MILD_Admision_creado_por",
+                        to="Usuarios.usuarios",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='OpcionesResponsables',
+            name="OpcionesResponsables",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('nombre', models.CharField(max_length=250, unique=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("nombre", models.CharField(max_length=250, unique=True)),
             ],
         ),
         migrations.CreateModel(
-            name='MILD_PreAdmision',
+            name="MILD_PreAdmision",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('menores_a_cargo_1', models.CharField(blank=True, choices=[(None, ''), ('0', '0'), ('1', '1'), ('2', '2'), ('3', '3'), ('4', '4'), ('5', '5'), ('Más de 5', 'Más de 5')], max_length=50, null=True)),
-                ('control_gine_1', models.CharField(blank=True, choices=[(None, ''), ('SI', 'SI'), ('NO', 'NO')], max_length=50, null=True)),
-                ('hijos_1', models.CharField(blank=True, choices=[(None, ''), ('0', '0'), ('1', '1'), ('2', '2'), ('3', '3'), ('4', '4'), ('5', '5'), ('Más de 5', 'Más de 5')], max_length=50, null=True)),
-                ('embarazos_1', models.CharField(blank=True, choices=[(None, ''), ('0', '0'), ('1', '1'), ('2', '2'), ('3', '3'), ('4', '4'), ('5', '5'), ('Más de 5', 'Más de 5')], max_length=50, null=True)),
-                ('abortos_esp_1', models.CharField(blank=True, choices=[(None, ''), ('0', '0'), ('1', '1'), ('2', '2'), ('3', '3'), ('4', '4'), ('5', '5'), ('Más de 5', 'Más de 5')], max_length=50, null=True)),
-                ('abortos_prov_1', models.CharField(blank=True, choices=[(None, ''), ('0', '0'), ('1', '1'), ('2', '2'), ('3', '3'), ('4', '4'), ('5', '5'), ('Más de 5', 'Más de 5')], max_length=50, null=True)),
-                ('emb_no_control_1', models.BooleanField(blank=True, null=True, verbose_name='Embarazo NO controlado')),
-                ('emb_adolescente_1', models.BooleanField(blank=True, null=True, verbose_name='Embarazo adolescente')),
-                ('emb_riesgo_1', models.BooleanField(blank=True, null=True, verbose_name='Embarazo de riesgo')),
-                ('cesareas_multip_1', models.BooleanField(blank=True, null=True, verbose_name='Cesáreas múltiples')),
-                ('partos_multip_1', models.BooleanField(blank=True, null=True, verbose_name='Partos múltiples')),
-                ('partos_premat_1', models.BooleanField(blank=True, null=True, verbose_name='Partos prematuros')),
-                ('partos_menos18meses_1', models.BooleanField(blank=True, null=True, verbose_name='Partos con menos de 18 meses de intervalo')),
-                ('emb_actualmente_1', models.CharField(blank=True, choices=[(None, ''), ('SI', 'SI'), ('NO', 'NO')], max_length=50, null=True)),
-                ('controles_1', models.CharField(blank=True, choices=[(None, ''), ('SI', 'SI'), ('NO', 'NO')], max_length=50, null=True)),
-                ('emb_actual_1', models.CharField(blank=True, choices=[(None, ''), ('Normal', 'Normal'), ('Adolescente', 'Adolescente'), ('De riesgo (Diabetes, Hipertension, Sífilis, etc.)', 'De riesgo (Diabetes, Hipertension, Sífilis, etc.)')], max_length=150, null=True)),
-                ('educ_maximo_1', models.CharField(blank=True, choices=[(None, ''), ('Primario', 'Primario'), ('Secundario', 'Secundario'), ('Terciario', 'Terciario'), ('Universitario', 'Universitario')], max_length=150, null=True)),
-                ('educ_estado_1', models.CharField(blank=True, choices=[(None, ''), ('Completo', 'Completo'), ('Incompleto', 'Incompleto'), ('En curso', 'En curso'), ('No aplica', 'No aplica')], max_length=150, null=True)),
-                ('leer_1', models.BooleanField(blank=True, null=True, verbose_name='Sabe leer')),
-                ('escribir_1', models.BooleanField(blank=True, null=True, verbose_name='Sabe escribir')),
-                ('retomar_estudios_1', models.BooleanField(blank=True, null=True, verbose_name='Quiere retomar estudios')),
-                ('aprender_oficio_1', models.BooleanField(blank=True, null=True, verbose_name='Quiere aprender un oficio')),
-                ('trabajo_actual_1', models.CharField(blank=True, choices=[(None, ''), ('SI', 'SI'), ('NO', 'NO')], max_length=50, null=True)),
-                ('ocupacion_1', models.CharField(blank=True, max_length=100, null=True, verbose_name='Ocupación')),
-                ('modo_contrat_1', models.CharField(blank=True, choices=[(None, ''), ('Relación de dependencia', 'Relación de dependencia'), ('Monotributista / Contratado', 'Monotributista / Contratado'), ('Informal con cobro mensual', 'Informal con cobro mensual'), ('Jornal', 'Jornal'), ('Changarín', 'Changarín'), ('Otro', 'Otro')], max_length=150, null=True)),
-                ('educ_maximo_2', models.CharField(blank=True, choices=[(None, ''), ('Primario', 'Primario'), ('Secundario', 'Secundario'), ('Terciario', 'Terciario'), ('Universitario', 'Universitario')], max_length=150, null=True)),
-                ('educ_estado_2', models.CharField(blank=True, choices=[(None, ''), ('Completo', 'Completo'), ('Incompleto', 'Incompleto'), ('En curso', 'En curso'), ('No aplica', 'No aplica')], max_length=150, null=True)),
-                ('leer_2', models.BooleanField(blank=True, null=True, verbose_name='Sabe leer')),
-                ('escribir_2', models.BooleanField(blank=True, null=True, verbose_name='Sabe escribir')),
-                ('retomar_estudios_2', models.BooleanField(blank=True, null=True, verbose_name='Quiere retomar estudios')),
-                ('aprender_oficio_2', models.BooleanField(blank=True, null=True, verbose_name='Quiere aprender un oficio')),
-                ('programa_Pilares_2', models.BooleanField(blank=True, null=True, verbose_name='Quiere participar del Programa Pilares')),
-                ('trabajo_actual_2', models.CharField(blank=True, choices=[(None, ''), ('SI', 'SI'), ('NO', 'NO')], max_length=50, null=True)),
-                ('ocupacion_2', models.CharField(blank=True, max_length=100, null=True, verbose_name='Ocupación')),
-                ('modo_contrat_2', models.CharField(blank=True, choices=[(None, ''), ('Relación de dependencia', 'Relación de dependencia'), ('Monotributista / Contratado', 'Monotributista / Contratado'), ('Informal con cobro mensual', 'Informal con cobro mensual'), ('Jornal', 'Jornal'), ('Changarín', 'Changarín'), ('Otro', 'Otro')], max_length=150, null=True)),
-                ('educ_maximo_3', models.CharField(blank=True, choices=[(None, ''), ('Primario', 'Primario'), ('Secundario', 'Secundario'), ('Terciario', 'Terciario'), ('Universitario', 'Universitario')], max_length=150, null=True)),
-                ('educ_estado_3', models.CharField(blank=True, choices=[(None, ''), ('Completo', 'Completo'), ('Incompleto', 'Incompleto'), ('En curso', 'En curso'), ('No aplica', 'No aplica')], max_length=150, null=True)),
-                ('leer_3', models.BooleanField(blank=True, null=True, verbose_name='Sabe leer')),
-                ('escribir_3', models.BooleanField(blank=True, null=True, verbose_name='Sabe escribir')),
-                ('retomar_estudios_3', models.BooleanField(blank=True, null=True, verbose_name='Quiere retomar estudios')),
-                ('aprender_oficio_3', models.BooleanField(blank=True, null=True, verbose_name='Quiere aprender un oficio')),
-                ('programa_Pilares_3', models.BooleanField(blank=True, null=True, verbose_name='Quiere participar del Programa Pilares')),
-                ('educ_maximo_4', models.CharField(blank=True, choices=[(None, ''), ('Primario', 'Primario'), ('Secundario', 'Secundario'), ('Terciario', 'Terciario'), ('Universitario', 'Universitario')], max_length=150, null=True)),
-                ('educ_estado_4', models.CharField(blank=True, choices=[(None, ''), ('Completo', 'Completo'), ('Incompleto', 'Incompleto'), ('En curso', 'En curso'), ('No aplica', 'No aplica')], max_length=150, null=True)),
-                ('leer_4', models.BooleanField(blank=True, null=True, verbose_name='Sabe leer')),
-                ('escribir_4', models.BooleanField(blank=True, null=True, verbose_name='Sabe escribir')),
-                ('retomar_estudios_4', models.BooleanField(blank=True, null=True, verbose_name='Quiere retomar estudios')),
-                ('aprender_oficio_4', models.BooleanField(blank=True, null=True, verbose_name='Quiere aprender un oficio')),
-                ('programa_Pilares_4', models.BooleanField(blank=True, null=True, verbose_name='Quiere participar del Programa Pilares')),
-                ('educ_maximo_5', models.CharField(blank=True, choices=[(None, ''), ('Primario', 'Primario'), ('Secundario', 'Secundario'), ('Terciario', 'Terciario'), ('Universitario', 'Universitario')], max_length=150, null=True)),
-                ('educ_estado_5', models.CharField(blank=True, choices=[(None, ''), ('Completo', 'Completo'), ('Incompleto', 'Incompleto'), ('En curso', 'En curso'), ('No aplica', 'No aplica')], max_length=150, null=True)),
-                ('leer_5', models.BooleanField(blank=True, null=True, verbose_name='Sabe leer')),
-                ('escribir_5', models.BooleanField(blank=True, null=True, verbose_name='Sabe escribir')),
-                ('retomar_estudios_5', models.BooleanField(blank=True, null=True, verbose_name='Quiere retomar estudios')),
-                ('aprender_oficio_5', models.BooleanField(blank=True, null=True, verbose_name='Quiere aprender un oficio')),
-                ('programa_Pilares_5', models.BooleanField(blank=True, null=True, verbose_name='Quiere participar del Programa Pilares')),
-                ('cri_sanitarios', models.CharField(blank=True, choices=[('', ''), ('Madre SIN controles de salud o controles insuficientes durante el embarazo', 'Madre SIN controles de salud o controles insuficientes durante el embarazo'), ('Niño menor de 2 afios SIN controles de salud y/o vacunación incompleta', 'Niño menor de 2 afios SIN controles de salud y/o vacunación incompleta'), ('Niño prematuro con necesidad de seguimiento', 'Niño prematuro con necesidad de seguimiento'), ('Niño menor de 2 años desnutrido', 'Niño menor de 2 años desnutrido')], max_length=250, null=True, verbose_name='Criterios sanitarios')),
-                ('cri_sociales', models.CharField(blank=True, choices=[('', ''), ('Ingreso por debajo de la canasta básica', 'Ingreso por debajo de la canasta básica'), ('Sin obra social', 'Sin obra social'), ('Situación habitacional crítica: Hacinamiento, con vivienda de madera y chapa', 'Situación habitacional crítica: Hacinamiento, con vivienda de madera y chapa'), ('Madre sin red de contención', 'Madre sin red de contención'), ('Familia numerosa (4 menores 0 más a cargo)', 'Familia numerosa (4 menores 0 más a cargo)'), ('Cuidador principal con consumo problemático', 'Cuidador principal con consumo problemático'), ('Violencia hacia la madre y/o el no', 'Violencia hacia la madre y/o el no'), ('Cuidador principal analfabeto', 'Cuidador principal analfabeto'), ('Falta de DNI de la madre y/o de! niño.', 'Falta de DNI de la madre y/o de! niño.'), ('Cuidador principal con problemas de salud mental diagnosticado y/o capacidades reducidas', 'Cuidador principal con problemas de salud mental diagnosticado y/o capacidades reducidas'), ('Intervención del servicio local', 'Intervención del servicio local')], max_length=250, null=True, verbose_name='Criterios sociales')),
-                ('busca_embarazo', models.BooleanField(blank=True, null=True, verbose_name='¿Está buscando quedarse embarazada?')),
-                ('conoce_metodos_anticon', models.BooleanField(blank=True, null=True, verbose_name='¿Conoces qué son los métodos anticonceptivos?')),
-                ('metodos_anticon', models.CharField(blank=True, choices=[('', ''), ('Preservativo', 'Preservativo'), ('Inyectable', 'Inyectable'), ('Implante_Anticonceptivo', 'Implante Anticonceptivo'), ('DIU', 'DIU'), ('Parche_Anticonceptivo', 'Parche Anticonceptivo'), ('Anticonceptivo_Oral', 'Anticonceptivo Oral'), ('Ligadura_Tubaria', 'Ligadura Tubaria'), ('Ninguno', 'Ninguno')], max_length=250, null=True, verbose_name='¿Cuáles conoces?')),
-                ('utilizo_alguno', models.BooleanField(blank=True, null=True, verbose_name='¿Utilizás alguno actualmente?')),
-                ('cual_utilizo', models.CharField(blank=True, choices=[('', ''), ('Preservativo', 'Preservativo'), ('Inyectable', 'Inyectable'), ('Implante_Anticonceptivo', 'Implante Anticonceptivo'), ('DIU', 'DIU'), ('Parche_Anticonceptivo', 'Parche Anticonceptivo'), ('Anticonceptivo_Oral', 'Anticonceptivo Oral'), ('Ligadura_Tubaria', 'Ligadura Tubaria'), ('Ninguno', 'Ninguno')], max_length=250, null=True, verbose_name='¿Cuáles utilizó?')),
-                ('amigos_cercanos', models.BooleanField(blank=True, null=True, verbose_name='¿Tenés amigos, personas cercanas o alguien con quien hablar problema?')),
-                ('apellido_ninio', models.CharField(blank=True, max_length=250, null=True, verbose_name='Apellido')),
-                ('nombre_ninio', models.CharField(blank=True, max_length=250, null=True, verbose_name='Nombre')),
-                ('dni_num_ninio', models.IntegerField(blank=True, null=True, verbose_name='Número DNI')),
-                ('dni_ninio', models.CharField(blank=True, choices=[('', ''), ('Tiene DNI', 'Tiene DNI'), ('Sólo tiene partida de nacimiento', 'Sólo tiene partida de nacimiento'), ('Sólo tiene constancia de parto', 'Sólo tiene constancia de parto'), ('Le falta el DNI plástico', 'Le falta el DNI plástico'), ('DNI en trámite', 'DNI en trámite'), ('No tiene ninguno (no hay registro de ese nacimiento)', 'No tiene ninguno (no hay registro de ese nacimiento)')], max_length=250, null=True, verbose_name='DNI')),
-                ('edad_ninio', models.IntegerField(blank=True, null=True, verbose_name='Edad')),
-                ('fecha_nacimiento', models.DateField(blank=True, null=True, verbose_name='Fecha de nacimiento')),
-                ('lugar_nacimiento', models.CharField(blank=True, max_length=250, null=True, verbose_name='Lugar de nacimiento')),
-                ('peso_ninio', models.IntegerField(blank=True, null=True, verbose_name='Peso al nacer')),
-                ('mismo_domicilio', models.BooleanField(blank=True, null=True, verbose_name='Mismo domicilio y teléfono que el cuidador entrevistado?')),
-                ('domicilio_no', models.CharField(blank=True, max_length=250, null=True, verbose_name='En caso de contestar no, especificar')),
-                ('hermanos', models.IntegerField(blank=True, null=True, verbose_name='¿Cuántos hermanos tiene el niño? (él NO cuenta)?')),
-                ('obra_social', models.BooleanField(blank=True, null=True, verbose_name='Tiene Obra Social')),
-                ('libreta_sanitaria', models.BooleanField(blank=True, null=True, verbose_name='Tiene Libreta Sanitaria')),
-                ('sexo_ninio', models.CharField(blank=True, choices=[('', ''), ('Hospital Larcade', 'Hospital Larcade'), ('Parto Domiciliario', 'Parto Domiciliario'), ('Parto Extrapartidario', 'Parto Extrapartidario'), ('Parto en institución privada', 'Parto en institución privada')], max_length=250, null=True, verbose_name='¿Dónde se atiende?')),
-                ('ultimo_control', models.DateField(blank=True, null=True, verbose_name='¿Cuándo fue su último control pediátrico?')),
-                ('enf_recu_con_trata', models.BooleanField(blank=True, null=True, verbose_name='Padece enfermedad recurrente EN tratamiento')),
-                ('enf_recu_sin_trata', models.BooleanField(blank=True, null=True, verbose_name='Padece enfermedad recurrente SIN tratamiento')),
-                ('enf_conta_con_trata', models.BooleanField(blank=True, null=True, verbose_name='Padece enfermedad infecto-contagiosa EN tratamiento')),
-                ('enf_conta_sin_trata', models.BooleanField(blank=True, null=True, verbose_name='Padece enfermedad infecto-contagiosa SIN tratamiento')),
-                ('enf_mental_con_trata', models.BooleanField(blank=True, null=True, verbose_name='Padece problemas de salud mental EN tratamiento')),
-                ('enf_mental_sin_trata', models.BooleanField(blank=True, null=True, verbose_name='Padece problemas de salud mental SIN tratamiento')),
-                ('capa_reducidas', models.BooleanField(blank=True, null=True, verbose_name='Capacidades reducidas o afectadas')),
-                ('certif_discap', models.BooleanField(blank=True, null=True, verbose_name='Tiene certificado único de discapacidad')),
-                ('medicamento', models.BooleanField(blank=True, null=True, verbose_name='Toma medicamento')),
-                ('bajo_peso', models.BooleanField(blank=True, null=True, verbose_name='Niño con bajo peso')),
-                ('sobrepeso', models.BooleanField(blank=True, null=True, verbose_name='Niño con sobrepeso')),
-                ('prematuro', models.BooleanField(blank=True, null=True, verbose_name='Prematuro que requiere seguimiento')),
-                ('interv_quirurgicas', models.BooleanField(blank=True, null=True, verbose_name='Intervenciones quirúrgicas')),
-                ('accidentes_domesticos', models.BooleanField(blank=True, null=True, verbose_name='Accidentes domésticos (lastimadura, quemadura, corte, golpe fuerte)')),
-                ('colecho', models.BooleanField(blank=True, null=True, verbose_name='Colecho')),
-                ('enfermedad', models.CharField(blank=True, max_length=250, null=True, verbose_name='Si padece enfermedad ¿cuál? ¿Dónde se trata?')),
-                ('auditiva', models.BooleanField(blank=True, null=True, verbose_name='Dificultad auditiva')),
-                ('respiratoria', models.BooleanField(blank=True, null=True, verbose_name='Dificultad respiratoria')),
-                ('visual', models.BooleanField(blank=True, null=True, verbose_name='Dificultad visual')),
-                ('traumatologica', models.BooleanField(blank=True, null=True, verbose_name='Dificultad traumatologica')),
-                ('emocional', models.BooleanField(blank=True, null=True, verbose_name='Dificultad emocional')),
-                ('psiquica', models.BooleanField(blank=True, null=True, verbose_name='Dificultad psiquica o psicologica')),
-                ('digestiva', models.BooleanField(blank=True, null=True, verbose_name='Dificultad digestiva')),
-                ('alergias', models.BooleanField(blank=True, null=True, verbose_name='Alergias')),
-                ('observaciones_salud', models.CharField(blank=True, max_length=250, null=True, verbose_name='Observaciones/detalles de salud')),
-                ('vacunas', models.BooleanField(blank=True, null=True, verbose_name='¿Recibió todas las vacunas correspondientes a su edad?')),
-                ('observaciones_gral', models.CharField(blank=True, max_length=350, null=True, verbose_name='Aquí puede detallar información adicional de la familia, o temas que es importante resaltar acerca de la misma.')),
-                ('vinculo1', models.CharField(blank=True, max_length=150, null=True)),
-                ('vinculo2', models.CharField(blank=True, max_length=150, null=True)),
-                ('vinculo3', models.CharField(blank=True, max_length=150, null=True)),
-                ('vinculo4', models.CharField(blank=True, max_length=150, null=True)),
-                ('vinculo5', models.CharField(blank=True, max_length=150, null=True)),
-                ('ivi', models.CharField(blank=True, max_length=150, null=True)),
-                ('indice_ingreso', models.CharField(blank=True, max_length=150, null=True)),
-                ('admitido', models.CharField(blank=True, max_length=150, null=True)),
-                ('creado', models.DateField(auto_now_add=True, null=True)),
-                ('modificado', models.DateField(auto_now=True, null=True)),
-                ('estado', models.CharField(blank=True, max_length=100, null=True)),
-                ('tipo', models.CharField(blank=True, max_length=100, null=True)),
-                ('acompaniante_asignado', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='MILD_Acompaniante_asignado', to='Usuarios.usuarios', verbose_name='Acompañante asignado')),
-                ('acompaniante_entrevista', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='MILD_Acompaniante_entrevista', to='Usuarios.usuarios', verbose_name='Acompañante que realizo la entrevista')),
-                ('creado_por', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='MILD_PreAdm_creado_por', to='Usuarios.usuarios')),
-                ('fk_derivacion', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='Legajos.legajosderivaciones')),
-                ('fk_legajo', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='MILD_fk_legajo', to='Legajos.legajos')),
-                ('fk_legajo_1', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='MILD_fk_legajo_1', to='Legajos.legajos')),
-                ('fk_legajo_2', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='MILD_fk_legajo_2', to='Legajos.legajos')),
-                ('fk_legajo_3', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='MILD_fk_legajo_3', to='Legajos.legajos')),
-                ('fk_legajo_4', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='MILD_fk_legajo_4', to='Legajos.legajos')),
-                ('fk_legajo_5', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='MILD_fk_legajo_5', to='Legajos.legajos')),
-                ('modificado_por', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='MILD_PreAdm_modificado_por', to='Usuarios.usuarios')),
-                ('planes_sociales_1', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='MILD_planes_sociales_1', to='Configuraciones.planessociales')),
-                ('planes_sociales_2', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='MILD_planes_sociales_2', to='Configuraciones.planessociales')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "menores_a_cargo_1",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (None, ""),
+                            ("0", "0"),
+                            ("1", "1"),
+                            ("2", "2"),
+                            ("3", "3"),
+                            ("4", "4"),
+                            ("5", "5"),
+                            ("Más de 5", "Más de 5"),
+                        ],
+                        max_length=50,
+                        null=True,
+                    ),
+                ),
+                (
+                    "control_gine_1",
+                    models.CharField(
+                        blank=True,
+                        choices=[(None, ""), ("SI", "SI"), ("NO", "NO")],
+                        max_length=50,
+                        null=True,
+                    ),
+                ),
+                (
+                    "hijos_1",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (None, ""),
+                            ("0", "0"),
+                            ("1", "1"),
+                            ("2", "2"),
+                            ("3", "3"),
+                            ("4", "4"),
+                            ("5", "5"),
+                            ("Más de 5", "Más de 5"),
+                        ],
+                        max_length=50,
+                        null=True,
+                    ),
+                ),
+                (
+                    "embarazos_1",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (None, ""),
+                            ("0", "0"),
+                            ("1", "1"),
+                            ("2", "2"),
+                            ("3", "3"),
+                            ("4", "4"),
+                            ("5", "5"),
+                            ("Más de 5", "Más de 5"),
+                        ],
+                        max_length=50,
+                        null=True,
+                    ),
+                ),
+                (
+                    "abortos_esp_1",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (None, ""),
+                            ("0", "0"),
+                            ("1", "1"),
+                            ("2", "2"),
+                            ("3", "3"),
+                            ("4", "4"),
+                            ("5", "5"),
+                            ("Más de 5", "Más de 5"),
+                        ],
+                        max_length=50,
+                        null=True,
+                    ),
+                ),
+                (
+                    "abortos_prov_1",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (None, ""),
+                            ("0", "0"),
+                            ("1", "1"),
+                            ("2", "2"),
+                            ("3", "3"),
+                            ("4", "4"),
+                            ("5", "5"),
+                            ("Más de 5", "Más de 5"),
+                        ],
+                        max_length=50,
+                        null=True,
+                    ),
+                ),
+                (
+                    "emb_no_control_1",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Embarazo NO controlado"
+                    ),
+                ),
+                (
+                    "emb_adolescente_1",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Embarazo adolescente"
+                    ),
+                ),
+                (
+                    "emb_riesgo_1",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Embarazo de riesgo"
+                    ),
+                ),
+                (
+                    "cesareas_multip_1",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Cesáreas múltiples"
+                    ),
+                ),
+                (
+                    "partos_multip_1",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Partos múltiples"
+                    ),
+                ),
+                (
+                    "partos_premat_1",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Partos prematuros"
+                    ),
+                ),
+                (
+                    "partos_menos18meses_1",
+                    models.BooleanField(
+                        blank=True,
+                        null=True,
+                        verbose_name="Partos con menos de 18 meses de intervalo",
+                    ),
+                ),
+                (
+                    "emb_actualmente_1",
+                    models.CharField(
+                        blank=True,
+                        choices=[(None, ""), ("SI", "SI"), ("NO", "NO")],
+                        max_length=50,
+                        null=True,
+                    ),
+                ),
+                (
+                    "controles_1",
+                    models.CharField(
+                        blank=True,
+                        choices=[(None, ""), ("SI", "SI"), ("NO", "NO")],
+                        max_length=50,
+                        null=True,
+                    ),
+                ),
+                (
+                    "emb_actual_1",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (None, ""),
+                            ("Normal", "Normal"),
+                            ("Adolescente", "Adolescente"),
+                            (
+                                "De riesgo (Diabetes, Hipertension, Sífilis, etc.)",
+                                "De riesgo (Diabetes, Hipertension, Sífilis, etc.)",
+                            ),
+                        ],
+                        max_length=150,
+                        null=True,
+                    ),
+                ),
+                (
+                    "educ_maximo_1",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (None, ""),
+                            ("Primario", "Primario"),
+                            ("Secundario", "Secundario"),
+                            ("Terciario", "Terciario"),
+                            ("Universitario", "Universitario"),
+                        ],
+                        max_length=150,
+                        null=True,
+                    ),
+                ),
+                (
+                    "educ_estado_1",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (None, ""),
+                            ("Completo", "Completo"),
+                            ("Incompleto", "Incompleto"),
+                            ("En curso", "En curso"),
+                            ("No aplica", "No aplica"),
+                        ],
+                        max_length=150,
+                        null=True,
+                    ),
+                ),
+                (
+                    "leer_1",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Sabe leer"
+                    ),
+                ),
+                (
+                    "escribir_1",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Sabe escribir"
+                    ),
+                ),
+                (
+                    "retomar_estudios_1",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Quiere retomar estudios"
+                    ),
+                ),
+                (
+                    "aprender_oficio_1",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Quiere aprender un oficio"
+                    ),
+                ),
+                (
+                    "trabajo_actual_1",
+                    models.CharField(
+                        blank=True,
+                        choices=[(None, ""), ("SI", "SI"), ("NO", "NO")],
+                        max_length=50,
+                        null=True,
+                    ),
+                ),
+                (
+                    "ocupacion_1",
+                    models.CharField(
+                        blank=True, max_length=100, null=True, verbose_name="Ocupación"
+                    ),
+                ),
+                (
+                    "modo_contrat_1",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (None, ""),
+                            ("Relación de dependencia", "Relación de dependencia"),
+                            (
+                                "Monotributista / Contratado",
+                                "Monotributista / Contratado",
+                            ),
+                            (
+                                "Informal con cobro mensual",
+                                "Informal con cobro mensual",
+                            ),
+                            ("Jornal", "Jornal"),
+                            ("Changarín", "Changarín"),
+                            ("Otro", "Otro"),
+                        ],
+                        max_length=150,
+                        null=True,
+                    ),
+                ),
+                (
+                    "educ_maximo_2",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (None, ""),
+                            ("Primario", "Primario"),
+                            ("Secundario", "Secundario"),
+                            ("Terciario", "Terciario"),
+                            ("Universitario", "Universitario"),
+                        ],
+                        max_length=150,
+                        null=True,
+                    ),
+                ),
+                (
+                    "educ_estado_2",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (None, ""),
+                            ("Completo", "Completo"),
+                            ("Incompleto", "Incompleto"),
+                            ("En curso", "En curso"),
+                            ("No aplica", "No aplica"),
+                        ],
+                        max_length=150,
+                        null=True,
+                    ),
+                ),
+                (
+                    "leer_2",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Sabe leer"
+                    ),
+                ),
+                (
+                    "escribir_2",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Sabe escribir"
+                    ),
+                ),
+                (
+                    "retomar_estudios_2",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Quiere retomar estudios"
+                    ),
+                ),
+                (
+                    "aprender_oficio_2",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Quiere aprender un oficio"
+                    ),
+                ),
+                (
+                    "programa_Pilares_2",
+                    models.BooleanField(
+                        blank=True,
+                        null=True,
+                        verbose_name="Quiere participar del Programa Pilares",
+                    ),
+                ),
+                (
+                    "trabajo_actual_2",
+                    models.CharField(
+                        blank=True,
+                        choices=[(None, ""), ("SI", "SI"), ("NO", "NO")],
+                        max_length=50,
+                        null=True,
+                    ),
+                ),
+                (
+                    "ocupacion_2",
+                    models.CharField(
+                        blank=True, max_length=100, null=True, verbose_name="Ocupación"
+                    ),
+                ),
+                (
+                    "modo_contrat_2",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (None, ""),
+                            ("Relación de dependencia", "Relación de dependencia"),
+                            (
+                                "Monotributista / Contratado",
+                                "Monotributista / Contratado",
+                            ),
+                            (
+                                "Informal con cobro mensual",
+                                "Informal con cobro mensual",
+                            ),
+                            ("Jornal", "Jornal"),
+                            ("Changarín", "Changarín"),
+                            ("Otro", "Otro"),
+                        ],
+                        max_length=150,
+                        null=True,
+                    ),
+                ),
+                (
+                    "educ_maximo_3",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (None, ""),
+                            ("Primario", "Primario"),
+                            ("Secundario", "Secundario"),
+                            ("Terciario", "Terciario"),
+                            ("Universitario", "Universitario"),
+                        ],
+                        max_length=150,
+                        null=True,
+                    ),
+                ),
+                (
+                    "educ_estado_3",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (None, ""),
+                            ("Completo", "Completo"),
+                            ("Incompleto", "Incompleto"),
+                            ("En curso", "En curso"),
+                            ("No aplica", "No aplica"),
+                        ],
+                        max_length=150,
+                        null=True,
+                    ),
+                ),
+                (
+                    "leer_3",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Sabe leer"
+                    ),
+                ),
+                (
+                    "escribir_3",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Sabe escribir"
+                    ),
+                ),
+                (
+                    "retomar_estudios_3",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Quiere retomar estudios"
+                    ),
+                ),
+                (
+                    "aprender_oficio_3",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Quiere aprender un oficio"
+                    ),
+                ),
+                (
+                    "programa_Pilares_3",
+                    models.BooleanField(
+                        blank=True,
+                        null=True,
+                        verbose_name="Quiere participar del Programa Pilares",
+                    ),
+                ),
+                (
+                    "educ_maximo_4",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (None, ""),
+                            ("Primario", "Primario"),
+                            ("Secundario", "Secundario"),
+                            ("Terciario", "Terciario"),
+                            ("Universitario", "Universitario"),
+                        ],
+                        max_length=150,
+                        null=True,
+                    ),
+                ),
+                (
+                    "educ_estado_4",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (None, ""),
+                            ("Completo", "Completo"),
+                            ("Incompleto", "Incompleto"),
+                            ("En curso", "En curso"),
+                            ("No aplica", "No aplica"),
+                        ],
+                        max_length=150,
+                        null=True,
+                    ),
+                ),
+                (
+                    "leer_4",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Sabe leer"
+                    ),
+                ),
+                (
+                    "escribir_4",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Sabe escribir"
+                    ),
+                ),
+                (
+                    "retomar_estudios_4",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Quiere retomar estudios"
+                    ),
+                ),
+                (
+                    "aprender_oficio_4",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Quiere aprender un oficio"
+                    ),
+                ),
+                (
+                    "programa_Pilares_4",
+                    models.BooleanField(
+                        blank=True,
+                        null=True,
+                        verbose_name="Quiere participar del Programa Pilares",
+                    ),
+                ),
+                (
+                    "educ_maximo_5",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (None, ""),
+                            ("Primario", "Primario"),
+                            ("Secundario", "Secundario"),
+                            ("Terciario", "Terciario"),
+                            ("Universitario", "Universitario"),
+                        ],
+                        max_length=150,
+                        null=True,
+                    ),
+                ),
+                (
+                    "educ_estado_5",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (None, ""),
+                            ("Completo", "Completo"),
+                            ("Incompleto", "Incompleto"),
+                            ("En curso", "En curso"),
+                            ("No aplica", "No aplica"),
+                        ],
+                        max_length=150,
+                        null=True,
+                    ),
+                ),
+                (
+                    "leer_5",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Sabe leer"
+                    ),
+                ),
+                (
+                    "escribir_5",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Sabe escribir"
+                    ),
+                ),
+                (
+                    "retomar_estudios_5",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Quiere retomar estudios"
+                    ),
+                ),
+                (
+                    "aprender_oficio_5",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Quiere aprender un oficio"
+                    ),
+                ),
+                (
+                    "programa_Pilares_5",
+                    models.BooleanField(
+                        blank=True,
+                        null=True,
+                        verbose_name="Quiere participar del Programa Pilares",
+                    ),
+                ),
+                (
+                    "cri_sanitarios",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("", ""),
+                            (
+                                "Madre SIN controles de salud o controles insuficientes durante el embarazo",
+                                "Madre SIN controles de salud o controles insuficientes durante el embarazo",
+                            ),
+                            (
+                                "Niño menor de 2 afios SIN controles de salud y/o vacunación incompleta",
+                                "Niño menor de 2 afios SIN controles de salud y/o vacunación incompleta",
+                            ),
+                            (
+                                "Niño prematuro con necesidad de seguimiento",
+                                "Niño prematuro con necesidad de seguimiento",
+                            ),
+                            (
+                                "Niño menor de 2 años desnutrido",
+                                "Niño menor de 2 años desnutrido",
+                            ),
+                        ],
+                        max_length=250,
+                        null=True,
+                        verbose_name="Criterios sanitarios",
+                    ),
+                ),
+                (
+                    "cri_sociales",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("", ""),
+                            (
+                                "Ingreso por debajo de la canasta básica",
+                                "Ingreso por debajo de la canasta básica",
+                            ),
+                            ("Sin obra social", "Sin obra social"),
+                            (
+                                "Situación habitacional crítica: Hacinamiento, con vivienda de madera y chapa",
+                                "Situación habitacional crítica: Hacinamiento, con vivienda de madera y chapa",
+                            ),
+                            (
+                                "Madre sin red de contención",
+                                "Madre sin red de contención",
+                            ),
+                            (
+                                "Familia numerosa (4 menores 0 más a cargo)",
+                                "Familia numerosa (4 menores 0 más a cargo)",
+                            ),
+                            (
+                                "Cuidador principal con consumo problemático",
+                                "Cuidador principal con consumo problemático",
+                            ),
+                            (
+                                "Violencia hacia la madre y/o el no",
+                                "Violencia hacia la madre y/o el no",
+                            ),
+                            (
+                                "Cuidador principal analfabeto",
+                                "Cuidador principal analfabeto",
+                            ),
+                            (
+                                "Falta de DNI de la madre y/o de! niño.",
+                                "Falta de DNI de la madre y/o de! niño.",
+                            ),
+                            (
+                                "Cuidador principal con problemas de salud mental diagnosticado y/o capacidades reducidas",
+                                "Cuidador principal con problemas de salud mental diagnosticado y/o capacidades reducidas",
+                            ),
+                            (
+                                "Intervención del servicio local",
+                                "Intervención del servicio local",
+                            ),
+                        ],
+                        max_length=250,
+                        null=True,
+                        verbose_name="Criterios sociales",
+                    ),
+                ),
+                (
+                    "busca_embarazo",
+                    models.BooleanField(
+                        blank=True,
+                        null=True,
+                        verbose_name="¿Está buscando quedarse embarazada?",
+                    ),
+                ),
+                (
+                    "conoce_metodos_anticon",
+                    models.BooleanField(
+                        blank=True,
+                        null=True,
+                        verbose_name="¿Conoces qué son los métodos anticonceptivos?",
+                    ),
+                ),
+                (
+                    "metodos_anticon",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("", ""),
+                            ("Preservativo", "Preservativo"),
+                            ("Inyectable", "Inyectable"),
+                            ("Implante_Anticonceptivo", "Implante Anticonceptivo"),
+                            ("DIU", "DIU"),
+                            ("Parche_Anticonceptivo", "Parche Anticonceptivo"),
+                            ("Anticonceptivo_Oral", "Anticonceptivo Oral"),
+                            ("Ligadura_Tubaria", "Ligadura Tubaria"),
+                            ("Ninguno", "Ninguno"),
+                        ],
+                        max_length=250,
+                        null=True,
+                        verbose_name="¿Cuáles conoces?",
+                    ),
+                ),
+                (
+                    "utilizo_alguno",
+                    models.BooleanField(
+                        blank=True,
+                        null=True,
+                        verbose_name="¿Utilizás alguno actualmente?",
+                    ),
+                ),
+                (
+                    "cual_utilizo",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("", ""),
+                            ("Preservativo", "Preservativo"),
+                            ("Inyectable", "Inyectable"),
+                            ("Implante_Anticonceptivo", "Implante Anticonceptivo"),
+                            ("DIU", "DIU"),
+                            ("Parche_Anticonceptivo", "Parche Anticonceptivo"),
+                            ("Anticonceptivo_Oral", "Anticonceptivo Oral"),
+                            ("Ligadura_Tubaria", "Ligadura Tubaria"),
+                            ("Ninguno", "Ninguno"),
+                        ],
+                        max_length=250,
+                        null=True,
+                        verbose_name="¿Cuáles utilizó?",
+                    ),
+                ),
+                (
+                    "amigos_cercanos",
+                    models.BooleanField(
+                        blank=True,
+                        null=True,
+                        verbose_name="¿Tenés amigos, personas cercanas o alguien con quien hablar problema?",
+                    ),
+                ),
+                (
+                    "apellido_ninio",
+                    models.CharField(
+                        blank=True, max_length=250, null=True, verbose_name="Apellido"
+                    ),
+                ),
+                (
+                    "nombre_ninio",
+                    models.CharField(
+                        blank=True, max_length=250, null=True, verbose_name="Nombre"
+                    ),
+                ),
+                (
+                    "dni_num_ninio",
+                    models.IntegerField(
+                        blank=True, null=True, verbose_name="Número DNI"
+                    ),
+                ),
+                (
+                    "dni_ninio",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("", ""),
+                            ("Tiene DNI", "Tiene DNI"),
+                            (
+                                "Sólo tiene partida de nacimiento",
+                                "Sólo tiene partida de nacimiento",
+                            ),
+                            (
+                                "Sólo tiene constancia de parto",
+                                "Sólo tiene constancia de parto",
+                            ),
+                            ("Le falta el DNI plástico", "Le falta el DNI plástico"),
+                            ("DNI en trámite", "DNI en trámite"),
+                            (
+                                "No tiene ninguno (no hay registro de ese nacimiento)",
+                                "No tiene ninguno (no hay registro de ese nacimiento)",
+                            ),
+                        ],
+                        max_length=250,
+                        null=True,
+                        verbose_name="DNI",
+                    ),
+                ),
+                (
+                    "edad_ninio",
+                    models.IntegerField(blank=True, null=True, verbose_name="Edad"),
+                ),
+                (
+                    "fecha_nacimiento",
+                    models.DateField(
+                        blank=True, null=True, verbose_name="Fecha de nacimiento"
+                    ),
+                ),
+                (
+                    "lugar_nacimiento",
+                    models.CharField(
+                        blank=True,
+                        max_length=250,
+                        null=True,
+                        verbose_name="Lugar de nacimiento",
+                    ),
+                ),
+                (
+                    "peso_ninio",
+                    models.IntegerField(
+                        blank=True, null=True, verbose_name="Peso al nacer"
+                    ),
+                ),
+                (
+                    "mismo_domicilio",
+                    models.BooleanField(
+                        blank=True,
+                        null=True,
+                        verbose_name="Mismo domicilio y teléfono que el cuidador entrevistado?",
+                    ),
+                ),
+                (
+                    "domicilio_no",
+                    models.CharField(
+                        blank=True,
+                        max_length=250,
+                        null=True,
+                        verbose_name="En caso de contestar no, especificar",
+                    ),
+                ),
+                (
+                    "hermanos",
+                    models.IntegerField(
+                        blank=True,
+                        null=True,
+                        verbose_name="¿Cuántos hermanos tiene el niño? (él NO cuenta)?",
+                    ),
+                ),
+                (
+                    "obra_social",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Tiene Obra Social"
+                    ),
+                ),
+                (
+                    "libreta_sanitaria",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Tiene Libreta Sanitaria"
+                    ),
+                ),
+                (
+                    "sexo_ninio",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("", ""),
+                            ("Hospital Larcade", "Hospital Larcade"),
+                            ("Parto Domiciliario", "Parto Domiciliario"),
+                            ("Parto Extrapartidario", "Parto Extrapartidario"),
+                            (
+                                "Parto en institución privada",
+                                "Parto en institución privada",
+                            ),
+                        ],
+                        max_length=250,
+                        null=True,
+                        verbose_name="¿Dónde se atiende?",
+                    ),
+                ),
+                (
+                    "ultimo_control",
+                    models.DateField(
+                        blank=True,
+                        null=True,
+                        verbose_name="¿Cuándo fue su último control pediátrico?",
+                    ),
+                ),
+                (
+                    "enf_recu_con_trata",
+                    models.BooleanField(
+                        blank=True,
+                        null=True,
+                        verbose_name="Padece enfermedad recurrente EN tratamiento",
+                    ),
+                ),
+                (
+                    "enf_recu_sin_trata",
+                    models.BooleanField(
+                        blank=True,
+                        null=True,
+                        verbose_name="Padece enfermedad recurrente SIN tratamiento",
+                    ),
+                ),
+                (
+                    "enf_conta_con_trata",
+                    models.BooleanField(
+                        blank=True,
+                        null=True,
+                        verbose_name="Padece enfermedad infecto-contagiosa EN tratamiento",
+                    ),
+                ),
+                (
+                    "enf_conta_sin_trata",
+                    models.BooleanField(
+                        blank=True,
+                        null=True,
+                        verbose_name="Padece enfermedad infecto-contagiosa SIN tratamiento",
+                    ),
+                ),
+                (
+                    "enf_mental_con_trata",
+                    models.BooleanField(
+                        blank=True,
+                        null=True,
+                        verbose_name="Padece problemas de salud mental EN tratamiento",
+                    ),
+                ),
+                (
+                    "enf_mental_sin_trata",
+                    models.BooleanField(
+                        blank=True,
+                        null=True,
+                        verbose_name="Padece problemas de salud mental SIN tratamiento",
+                    ),
+                ),
+                (
+                    "capa_reducidas",
+                    models.BooleanField(
+                        blank=True,
+                        null=True,
+                        verbose_name="Capacidades reducidas o afectadas",
+                    ),
+                ),
+                (
+                    "certif_discap",
+                    models.BooleanField(
+                        blank=True,
+                        null=True,
+                        verbose_name="Tiene certificado único de discapacidad",
+                    ),
+                ),
+                (
+                    "medicamento",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Toma medicamento"
+                    ),
+                ),
+                (
+                    "bajo_peso",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Niño con bajo peso"
+                    ),
+                ),
+                (
+                    "sobrepeso",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Niño con sobrepeso"
+                    ),
+                ),
+                (
+                    "prematuro",
+                    models.BooleanField(
+                        blank=True,
+                        null=True,
+                        verbose_name="Prematuro que requiere seguimiento",
+                    ),
+                ),
+                (
+                    "interv_quirurgicas",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Intervenciones quirúrgicas"
+                    ),
+                ),
+                (
+                    "accidentes_domesticos",
+                    models.BooleanField(
+                        blank=True,
+                        null=True,
+                        verbose_name="Accidentes domésticos (lastimadura, quemadura, corte, golpe fuerte)",
+                    ),
+                ),
+                (
+                    "colecho",
+                    models.BooleanField(blank=True, null=True, verbose_name="Colecho"),
+                ),
+                (
+                    "enfermedad",
+                    models.CharField(
+                        blank=True,
+                        max_length=250,
+                        null=True,
+                        verbose_name="Si padece enfermedad ¿cuál? ¿Dónde se trata?",
+                    ),
+                ),
+                (
+                    "auditiva",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Dificultad auditiva"
+                    ),
+                ),
+                (
+                    "respiratoria",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Dificultad respiratoria"
+                    ),
+                ),
+                (
+                    "visual",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Dificultad visual"
+                    ),
+                ),
+                (
+                    "traumatologica",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Dificultad traumatologica"
+                    ),
+                ),
+                (
+                    "emocional",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Dificultad emocional"
+                    ),
+                ),
+                (
+                    "psiquica",
+                    models.BooleanField(
+                        blank=True,
+                        null=True,
+                        verbose_name="Dificultad psiquica o psicologica",
+                    ),
+                ),
+                (
+                    "digestiva",
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="Dificultad digestiva"
+                    ),
+                ),
+                (
+                    "alergias",
+                    models.BooleanField(blank=True, null=True, verbose_name="Alergias"),
+                ),
+                (
+                    "observaciones_salud",
+                    models.CharField(
+                        blank=True,
+                        max_length=250,
+                        null=True,
+                        verbose_name="Observaciones/detalles de salud",
+                    ),
+                ),
+                (
+                    "vacunas",
+                    models.BooleanField(
+                        blank=True,
+                        null=True,
+                        verbose_name="¿Recibió todas las vacunas correspondientes a su edad?",
+                    ),
+                ),
+                (
+                    "observaciones_gral",
+                    models.CharField(
+                        blank=True,
+                        max_length=350,
+                        null=True,
+                        verbose_name="Aquí puede detallar información adicional de la familia, o temas que es importante resaltar acerca de la misma.",
+                    ),
+                ),
+                ("vinculo1", models.CharField(blank=True, max_length=150, null=True)),
+                ("vinculo2", models.CharField(blank=True, max_length=150, null=True)),
+                ("vinculo3", models.CharField(blank=True, max_length=150, null=True)),
+                ("vinculo4", models.CharField(blank=True, max_length=150, null=True)),
+                ("vinculo5", models.CharField(blank=True, max_length=150, null=True)),
+                ("ivi", models.CharField(blank=True, max_length=150, null=True)),
+                (
+                    "indice_ingreso",
+                    models.CharField(blank=True, max_length=150, null=True),
+                ),
+                ("admitido", models.CharField(blank=True, max_length=150, null=True)),
+                ("creado", models.DateField(auto_now_add=True, null=True)),
+                ("modificado", models.DateField(auto_now=True, null=True)),
+                ("estado", models.CharField(blank=True, max_length=100, null=True)),
+                ("tipo", models.CharField(blank=True, max_length=100, null=True)),
+                (
+                    "acompaniante_asignado",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="MILD_Acompaniante_asignado",
+                        to="Usuarios.usuarios",
+                        verbose_name="Acompañante asignado",
+                    ),
+                ),
+                (
+                    "acompaniante_entrevista",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="MILD_Acompaniante_entrevista",
+                        to="Usuarios.usuarios",
+                        verbose_name="Acompañante que realizo la entrevista",
+                    ),
+                ),
+                (
+                    "creado_por",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="MILD_PreAdm_creado_por",
+                        to="Usuarios.usuarios",
+                    ),
+                ),
+                (
+                    "fk_derivacion",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="Legajos.legajosderivaciones",
+                    ),
+                ),
+                (
+                    "fk_legajo",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="MILD_fk_legajo",
+                        to="Legajos.legajos",
+                    ),
+                ),
+                (
+                    "fk_legajo_1",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="MILD_fk_legajo_1",
+                        to="Legajos.legajos",
+                    ),
+                ),
+                (
+                    "fk_legajo_2",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="MILD_fk_legajo_2",
+                        to="Legajos.legajos",
+                    ),
+                ),
+                (
+                    "fk_legajo_3",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="MILD_fk_legajo_3",
+                        to="Legajos.legajos",
+                    ),
+                ),
+                (
+                    "fk_legajo_4",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="MILD_fk_legajo_4",
+                        to="Legajos.legajos",
+                    ),
+                ),
+                (
+                    "fk_legajo_5",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="MILD_fk_legajo_5",
+                        to="Legajos.legajos",
+                    ),
+                ),
+                (
+                    "modificado_por",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="MILD_PreAdm_modificado_por",
+                        to="Usuarios.usuarios",
+                    ),
+                ),
+                (
+                    "planes_sociales_1",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="MILD_planes_sociales_1",
+                        to="Configuraciones.planessociales",
+                    ),
+                ),
+                (
+                    "planes_sociales_2",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="MILD_planes_sociales_2",
+                        to="Configuraciones.planessociales",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='MILD_Intervenciones',
+            name="MILD_Intervenciones",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('accion', models.CharField(choices=[('Se realizan entrevistas de acompañamiento/ seguimiento', 'Se realizan entrevistas de acompañamiento/ seguimiento'), ('Se la acompaño a realizar el tramite', 'Se la acompaño a realizar el tramite'), ('Se articulo con CDLE', 'Se articulo con CDLE'), ('Se articulo con 1000 dias', 'Se articulo con 1000 dias'), ('Se articulo con PDV', 'Se articulo con PDV'), ('Se articulo con asistencia critica/ Desarrollo social', 'Se articulo con asistencia critica/ Desarrollo social'), ('Se articulo con Salud por un turno', 'Se articulo con Salud por un turno'), ('Se articula con salud', 'Se articula con salud'), ('Se articulo con Salud Mental', 'Se articulo con Salud Mental'), ('Se artiulo con Servicio Local', 'Se artiulo con Servicio Local'), ('Se articulo con Politicas de genero', 'Se articulo con Politicas de genero'), ('Se realizo denuncia por violencia', 'Se realizo denuncia por violencia'), ('Se oriento para realizar la denuncia', 'Se oriento para realizar la denuncia'), ('Se articulo con educación/ FINES', 'Se articulo con educación/ FINES'), ('Se articulo con Potenciar trabajo', 'Se articulo con Potenciar trabajo'), ('Se brindo información', 'Se brindo información'), ('Se realizo un control del niño sano', 'Se realizo un control del niño sano'), ('Se articulo con una institución no municipal', 'Se articulo con una institución no municipal')], max_length=250)),
-                ('impacto', models.CharField(choices=[('Trabajado', 'Trabajado'), ('Revertido', 'Revertido')], max_length=250)),
-                ('detalle', models.CharField(blank=True, max_length=350, null=True)),
-                ('creado', models.DateField(auto_now_add=True, null=True)),
-                ('modificado', models.DateField(auto_now=True, null=True)),
-                ('creado_por', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='MILD_Intervenciones_creado_por', to='Usuarios.usuarios')),
-                ('criterio_modificable', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='SIF_CDIF.criterios_ivi')),
-                ('fk_admision', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='SIF_MILD.mild_admision')),
-                ('modificado_por', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='MILD_Intervenciones_modificada_por', to='Usuarios.usuarios')),
-                ('responsable', models.ManyToManyField(to='SIF_MILD.OpcionesResponsables')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "accion",
+                    models.CharField(
+                        choices=[
+                            (
+                                "Se realizan entrevistas de acompañamiento/ seguimiento",
+                                "Se realizan entrevistas de acompañamiento/ seguimiento",
+                            ),
+                            (
+                                "Se la acompaño a realizar el tramite",
+                                "Se la acompaño a realizar el tramite",
+                            ),
+                            ("Se articulo con CDLE", "Se articulo con CDLE"),
+                            ("Se articulo con 1000 dias", "Se articulo con 1000 dias"),
+                            ("Se articulo con PDV", "Se articulo con PDV"),
+                            (
+                                "Se articulo con asistencia critica/ Desarrollo social",
+                                "Se articulo con asistencia critica/ Desarrollo social",
+                            ),
+                            (
+                                "Se articulo con Salud por un turno",
+                                "Se articulo con Salud por un turno",
+                            ),
+                            ("Se articula con salud", "Se articula con salud"),
+                            (
+                                "Se articulo con Salud Mental",
+                                "Se articulo con Salud Mental",
+                            ),
+                            (
+                                "Se artiulo con Servicio Local",
+                                "Se artiulo con Servicio Local",
+                            ),
+                            (
+                                "Se articulo con Politicas de genero",
+                                "Se articulo con Politicas de genero",
+                            ),
+                            (
+                                "Se realizo denuncia por violencia",
+                                "Se realizo denuncia por violencia",
+                            ),
+                            (
+                                "Se oriento para realizar la denuncia",
+                                "Se oriento para realizar la denuncia",
+                            ),
+                            (
+                                "Se articulo con educación/ FINES",
+                                "Se articulo con educación/ FINES",
+                            ),
+                            (
+                                "Se articulo con Potenciar trabajo",
+                                "Se articulo con Potenciar trabajo",
+                            ),
+                            ("Se brindo información", "Se brindo información"),
+                            (
+                                "Se realizo un control del niño sano",
+                                "Se realizo un control del niño sano",
+                            ),
+                            (
+                                "Se articulo con una institución no municipal",
+                                "Se articulo con una institución no municipal",
+                            ),
+                        ],
+                        max_length=250,
+                    ),
+                ),
+                (
+                    "impacto",
+                    models.CharField(
+                        choices=[
+                            ("Trabajado", "Trabajado"),
+                            ("Revertido", "Revertido"),
+                        ],
+                        max_length=250,
+                    ),
+                ),
+                ("detalle", models.CharField(blank=True, max_length=350, null=True)),
+                ("creado", models.DateField(auto_now_add=True, null=True)),
+                ("modificado", models.DateField(auto_now=True, null=True)),
+                (
+                    "creado_por",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="MILD_Intervenciones_creado_por",
+                        to="Usuarios.usuarios",
+                    ),
+                ),
+                (
+                    "criterio_modificable",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="SIF_CDIF.criterios_ivi",
+                    ),
+                ),
+                (
+                    "fk_admision",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="SIF_MILD.mild_admision",
+                    ),
+                ),
+                (
+                    "modificado_por",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="MILD_Intervenciones_modificada_por",
+                        to="Usuarios.usuarios",
+                    ),
+                ),
+                (
+                    "responsable",
+                    models.ManyToManyField(to="SIF_MILD.OpcionesResponsables"),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='MILD_IndiceIVI',
+            name="MILD_IndiceIVI",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('presencia', models.BooleanField(blank=True, default=False, null=True)),
-                ('tipo', models.CharField(blank=True, max_length=350, null=True)),
-                ('programa', models.CharField(blank=True, choices=[(None, ''), ('SI', 'SI'), ('NO', 'NO')], max_length=150, null=True)),
-                ('clave', models.CharField(blank=True, max_length=350, null=True)),
-                ('creado', models.DateField(auto_now_add=True, null=True)),
-                ('modificado', models.DateField(auto_now=True, null=True)),
-                ('fk_criterios_ivi', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='SIF_CDIF.criterios_ivi')),
-                ('fk_legajo', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='Legajos.legajos')),
-                ('fk_preadmi', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='SIF_MILD.mild_preadmision')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "presencia",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                ("tipo", models.CharField(blank=True, max_length=350, null=True)),
+                (
+                    "programa",
+                    models.CharField(
+                        blank=True,
+                        choices=[(None, ""), ("SI", "SI"), ("NO", "NO")],
+                        max_length=150,
+                        null=True,
+                    ),
+                ),
+                ("clave", models.CharField(blank=True, max_length=350, null=True)),
+                ("creado", models.DateField(auto_now_add=True, null=True)),
+                ("modificado", models.DateField(auto_now=True, null=True)),
+                (
+                    "fk_criterios_ivi",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="SIF_CDIF.criterios_ivi",
+                    ),
+                ),
+                (
+                    "fk_legajo",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="Legajos.legajos",
+                    ),
+                ),
+                (
+                    "fk_preadmi",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="SIF_MILD.mild_preadmision",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='MILD_IndiceIngreso',
+            name="MILD_IndiceIngreso",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('presencia', models.BooleanField(blank=True, default=False, null=True)),
-                ('tipo', models.CharField(blank=True, max_length=350, null=True)),
-                ('programa', models.CharField(blank=True, choices=[(None, ''), ('SI', 'SI'), ('NO', 'NO')], max_length=150, null=True)),
-                ('clave', models.CharField(blank=True, max_length=350, null=True)),
-                ('creado', models.DateField(auto_now_add=True, null=True)),
-                ('modificado', models.DateField(auto_now=True, null=True)),
-                ('fk_criterios_ingreso', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='SIF_MILD.criterios_ingreso')),
-                ('fk_legajo', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='Legajos.legajos')),
-                ('fk_preadmi', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='SIF_MILD.mild_preadmision')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "presencia",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                ("tipo", models.CharField(blank=True, max_length=350, null=True)),
+                (
+                    "programa",
+                    models.CharField(
+                        blank=True,
+                        choices=[(None, ""), ("SI", "SI"), ("NO", "NO")],
+                        max_length=150,
+                        null=True,
+                    ),
+                ),
+                ("clave", models.CharField(blank=True, max_length=350, null=True)),
+                ("creado", models.DateField(auto_now_add=True, null=True)),
+                ("modificado", models.DateField(auto_now=True, null=True)),
+                (
+                    "fk_criterios_ingreso",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="SIF_MILD.criterios_ingreso",
+                    ),
+                ),
+                (
+                    "fk_legajo",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="Legajos.legajos",
+                    ),
+                ),
+                (
+                    "fk_preadmi",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="SIF_MILD.mild_preadmision",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='MILD_Historial',
+            name="MILD_Historial",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('movimiento', models.CharField(blank=True, max_length=150, null=True)),
-                ('creado', models.DateField(auto_now_add=True, null=True)),
-                ('creado_por', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='Usuarios.usuarios')),
-                ('fk_admision', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='SIF_MILD.mild_admision')),
-                ('fk_legajo', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='Legajos.legajos')),
-                ('fk_legajo_derivacion', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='Legajos.legajosderivaciones')),
-                ('fk_preadmi', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='SIF_MILD.mild_preadmision')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("movimiento", models.CharField(blank=True, max_length=150, null=True)),
+                ("creado", models.DateField(auto_now_add=True, null=True)),
+                (
+                    "creado_por",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="Usuarios.usuarios",
+                    ),
+                ),
+                (
+                    "fk_admision",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="SIF_MILD.mild_admision",
+                    ),
+                ),
+                (
+                    "fk_legajo",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="Legajos.legajos",
+                    ),
+                ),
+                (
+                    "fk_legajo_derivacion",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="Legajos.legajosderivaciones",
+                    ),
+                ),
+                (
+                    "fk_preadmi",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="SIF_MILD.mild_preadmision",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='MILD_Foto_IVI',
+            name="MILD_Foto_IVI",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('puntaje', models.SmallIntegerField(blank=True, null=True)),
-                ('puntaje_max', models.SmallIntegerField(blank=True, null=True)),
-                ('crit_modificables', models.SmallIntegerField(blank=True, null=True)),
-                ('crit_presentes', models.SmallIntegerField(blank=True, null=True)),
-                ('observaciones', models.CharField(blank=True, max_length=350, null=True)),
-                ('tipo', models.CharField(blank=True, max_length=350, null=True)),
-                ('clave', models.CharField(blank=True, max_length=350, null=True)),
-                ('creado', models.DateField(auto_now_add=True, null=True)),
-                ('modificado', models.DateField(auto_now=True, null=True)),
-                ('creado_por', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='MILD_IVI_creado_por', to='Usuarios.usuarios')),
-                ('fk_legajo', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='Legajos.legajos')),
-                ('fk_preadmi', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='SIF_MILD.mild_preadmision')),
-                ('modificado_por', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='MILD_IVI_modificado_por', to='Usuarios.usuarios')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("puntaje", models.SmallIntegerField(blank=True, null=True)),
+                ("puntaje_max", models.SmallIntegerField(blank=True, null=True)),
+                ("crit_modificables", models.SmallIntegerField(blank=True, null=True)),
+                ("crit_presentes", models.SmallIntegerField(blank=True, null=True)),
+                (
+                    "observaciones",
+                    models.CharField(blank=True, max_length=350, null=True),
+                ),
+                ("tipo", models.CharField(blank=True, max_length=350, null=True)),
+                ("clave", models.CharField(blank=True, max_length=350, null=True)),
+                ("creado", models.DateField(auto_now_add=True, null=True)),
+                ("modificado", models.DateField(auto_now=True, null=True)),
+                (
+                    "creado_por",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="MILD_IVI_creado_por",
+                        to="Usuarios.usuarios",
+                    ),
+                ),
+                (
+                    "fk_legajo",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="Legajos.legajos",
+                    ),
+                ),
+                (
+                    "fk_preadmi",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="SIF_MILD.mild_preadmision",
+                    ),
+                ),
+                (
+                    "modificado_por",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="MILD_IVI_modificado_por",
+                        to="Usuarios.usuarios",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='MILD_Foto_Ingreso',
+            name="MILD_Foto_Ingreso",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('puntaje', models.SmallIntegerField(blank=True, null=True)),
-                ('puntaje_max', models.SmallIntegerField(blank=True, null=True)),
-                ('crit_modificables', models.SmallIntegerField(blank=True, null=True)),
-                ('crit_presentes', models.SmallIntegerField(blank=True, null=True)),
-                ('observaciones', models.CharField(blank=True, max_length=350, null=True)),
-                ('tipo', models.CharField(blank=True, max_length=350, null=True)),
-                ('clave', models.CharField(blank=True, max_length=350, null=True)),
-                ('creado', models.DateField(auto_now_add=True, null=True)),
-                ('modificado', models.DateField(auto_now=True, null=True)),
-                ('creado_por', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='MILD_Ingreso_creado_por', to='Usuarios.usuarios')),
-                ('fk_legajo', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='Legajos.legajos')),
-                ('fk_preadmi', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='SIF_MILD.mild_preadmision')),
-                ('modificado_por', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='MILD_Ingreso_modificado_por', to='Usuarios.usuarios')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("puntaje", models.SmallIntegerField(blank=True, null=True)),
+                ("puntaje_max", models.SmallIntegerField(blank=True, null=True)),
+                ("crit_modificables", models.SmallIntegerField(blank=True, null=True)),
+                ("crit_presentes", models.SmallIntegerField(blank=True, null=True)),
+                (
+                    "observaciones",
+                    models.CharField(blank=True, max_length=350, null=True),
+                ),
+                ("tipo", models.CharField(blank=True, max_length=350, null=True)),
+                ("clave", models.CharField(blank=True, max_length=350, null=True)),
+                ("creado", models.DateField(auto_now_add=True, null=True)),
+                ("modificado", models.DateField(auto_now=True, null=True)),
+                (
+                    "creado_por",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="MILD_Ingreso_creado_por",
+                        to="Usuarios.usuarios",
+                    ),
+                ),
+                (
+                    "fk_legajo",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="Legajos.legajos",
+                    ),
+                ),
+                (
+                    "fk_preadmi",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="SIF_MILD.mild_preadmision",
+                    ),
+                ),
+                (
+                    "modificado_por",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="MILD_Ingreso_modificado_por",
+                        to="Usuarios.usuarios",
+                    ),
+                ),
             ],
         ),
         migrations.AddField(
-            model_name='mild_admision',
-            name='fk_preadmi',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='SIF_MILD.mild_preadmision'),
+            model_name="mild_admision",
+            name="fk_preadmi",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                to="SIF_MILD.mild_preadmision",
+            ),
         ),
         migrations.AddField(
-            model_name='mild_admision',
-            name='modificado_por',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='MILD_Admision_modificada_por', to='Usuarios.usuarios'),
+            model_name="mild_admision",
+            name="modificado_por",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="MILD_Admision_modificada_por",
+                to="Usuarios.usuarios",
+            ),
         ),
     ]

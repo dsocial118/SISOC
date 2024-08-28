@@ -1,4 +1,12 @@
-from django.views.generic import CreateView,ListView,DetailView,UpdateView,DeleteView,TemplateView, FormView
+from django.views.generic import (
+    CreateView,
+    ListView,
+    DetailView,
+    UpdateView,
+    DeleteView,
+    TemplateView,
+    FormView,
+)
 from Legajos.models import LegajosDerivaciones
 from Legajos.forms import DerivacionesRechazoForm, LegajosDerivacionesForm
 from django.db.models import Q
@@ -16,8 +24,9 @@ from django.conf import settings
 
 
 # # Create your views here.
-#derivaciones = LegajosDerivaciones.objects.filter(m2m_programas__nombr__iexact="CDLE")
-#print(derivaciones)
+# derivaciones = LegajosDerivaciones.objects.filter(m2m_programas__nombr__iexact="CDLE")
+# print(derivaciones)
+
 
 class CDLEDerivacionesBuscarListView(TemplateView, PermisosMixin):
     permission_required = "Usuarios.programa_CDLE"
@@ -31,11 +40,13 @@ class CDLEDerivacionesBuscarListView(TemplateView, PermisosMixin):
         query = self.request.GET.get("busqueda")
 
         if query:
-            object_list = Legajos.objects.filter(Q(apellido__iexact=query) | Q(documento__iexact=query)).distinct()
+            object_list = Legajos.objects.filter(
+                Q(apellido__iexact=query) | Q(documento__iexact=query)
+            ).distinct()
             if object_list and object_list.count() == 1:
                 id = None
                 for o in object_list:
-                    pk = Legajos.objects.filter(id = o.id).first()
+                    pk = Legajos.objects.filter(id=o.id).first()
                 return redirect("legajosderivaciones_historial", pk.id)
 
             if not object_list:
@@ -63,7 +74,13 @@ class CDLEDerivacionesListView(PermisosMixin, ListView):
         query = self.request.GET.get("busqueda")
 
         if query:
-            object_list = LegajosDerivaciones.objects.filter((Q(fk_legajo__apellido__iexact=query) | Q(fk_legajo__nombre__iexact=query)) & Q(fk_programa=settings.PROG_CDLE)).distinct()
+            object_list = LegajosDerivaciones.objects.filter(
+                (
+                    Q(fk_legajo__apellido__iexact=query)
+                    | Q(fk_legajo__nombre__iexact=query)
+                )
+                & Q(fk_programa=settings.PROG_CDLE)
+            ).distinct()
             context["object_list"] = object_list
             model = object_list
             if not object_list:
@@ -76,6 +93,7 @@ class CDLEDerivacionesListView(PermisosMixin, ListView):
         context["enviadas"] = model.filter(fk_usuario=self.request.user)
         return context
 
+
 class CDLEDerivacionesDetailView(PermisosMixin, DetailView):
     permission_required = "Usuarios.rol_admin"
     template_name = "SIF_CDLE/derivaciones_detail.html"
@@ -84,13 +102,20 @@ class CDLEDerivacionesDetailView(PermisosMixin, DetailView):
     def get_context_data(self, **kwargs):
         pk = self.kwargs["pk"]
         context = super().get_context_data(**kwargs)
-        legajo = LegajosDerivaciones.objects.filter(pk=pk, fk_programa=settings.PROG_CDLE).first()
+        legajo = LegajosDerivaciones.objects.filter(
+            pk=pk, fk_programa=settings.PROG_CDLE
+        ).first()
         ivi = CDLE_IndiceIVI.objects.filter(fk_legajo_id=legajo.fk_legajo_id)
-        resultado = ivi.values('clave', 'creado', 'programa').annotate(total=Sum('fk_criterios_ivi__puntaje')).order_by('-creado')
+        resultado = (
+            ivi.values("clave", "creado", "programa")
+            .annotate(total=Sum("fk_criterios_ivi__puntaje"))
+            .order_by("-creado")
+        )
         context["pk"] = pk
         context["ivi"] = ivi
         context["resultado"] = resultado
         return context
+
 
 class CDLEDerivacionesRechazo(PermisosMixin, CreateView):
     permission_required = "Usuarios.rol_admin"
@@ -100,26 +125,29 @@ class CDLEDerivacionesRechazo(PermisosMixin, CreateView):
     def get_context_data(self, **kwargs):
         pk = self.kwargs["pk"]
         context = super().get_context_data(**kwargs)
-        legajo = LegajosDerivaciones.objects.filter(pk=pk, fk_programa=settings.PROG_CDLE).first()
+        legajo = LegajosDerivaciones.objects.filter(
+            pk=pk, fk_programa=settings.PROG_CDLE
+        ).first()
         context["object"] = legajo
         return context
-    
+
     def form_valid(self, form):
         pk = self.kwargs["pk"]
         base = LegajosDerivaciones.objects.get(pk=pk)
-        base.motivo_rechazo = form.cleaned_data['motivo_rechazo']
-        base.obs_rechazo = form.cleaned_data['obs_rechazo']
+        base.motivo_rechazo = form.cleaned_data["motivo_rechazo"]
+        base.obs_rechazo = form.cleaned_data["obs_rechazo"]
         base.estado = "Rechazada"
         base.fecha_rechazo = date.today()
-        base.save() 
-        return HttpResponseRedirect(reverse('CDLE_derivaciones_listar'))
-    
+        base.save()
+        return HttpResponseRedirect(reverse("CDLE_derivaciones_listar"))
+
     def form_invalid(self, form):
-        return super().form_invalid(form)   
-    
+        return super().form_invalid(form)
+
     def get_success_url(self):
-        return reverse('CDLE_derivaciones_listar')
-    
+        return reverse("CDLE_derivaciones_listar")
+
+
 class CDLEDerivacionesUpdateView(PermisosMixin, UpdateView):
     permission_required = "Usuarios.rol_admin"
     model = LegajosDerivaciones
@@ -131,22 +159,23 @@ class CDLEDerivacionesUpdateView(PermisosMixin, UpdateView):
         initial = super().get_initial()
         initial["fk_usuario"] = self.request.user
         return initial
-        
+
     def get_context_data(self, **kwargs):
         pk = self.kwargs["pk"]
         context = super().get_context_data(**kwargs)
         legajo = LegajosDerivaciones.objects.filter(id=pk).first()
         context["legajo"] = Legajos.objects.filter(id=legajo.fk_legajo.id).first()
         return context
-    
-    def form_invalid(self, form):
-        return super().form_invalid(form)   
-    
-    def get_success_url(self):
-        pk = self.kwargs['pk']
-        return reverse('CDLE_derivaciones_ver', kwargs={'pk': pk})
 
-class CDLEPreAdmisionesCreateView(PermisosMixin,CreateView, SuccessMessageMixin):
+    def form_invalid(self, form):
+        return super().form_invalid(form)
+
+    def get_success_url(self):
+        pk = self.kwargs["pk"]
+        return reverse("CDLE_derivaciones_ver", kwargs={"pk": pk})
+
+
+class CDLEPreAdmisionesCreateView(PermisosMixin, CreateView, SuccessMessageMixin):
     permission_required = "Usuarios.rol_admin"
     template_name = "SIF_CDLE/preadmisiones_form.html"
     model = CDLE_PreAdmision
@@ -158,7 +187,9 @@ class CDLEPreAdmisionesCreateView(PermisosMixin,CreateView, SuccessMessageMixin)
         context = super().get_context_data(**kwargs)
         legajo = LegajosDerivaciones.objects.filter(pk=pk).first()
         familia = LegajoGrupoFamiliar.objects.filter(fk_legajo_2_id=legajo.fk_legajo_id)
-        familia_inversa = LegajoGrupoFamiliar.objects.filter(fk_legajo_1_id=legajo.fk_legajo_id)
+        familia_inversa = LegajoGrupoFamiliar.objects.filter(
+            fk_legajo_1_id=legajo.fk_legajo_id
+        )
         context["pk"] = pk
         context["legajo"] = legajo
         context["familia"] = familia
@@ -167,21 +198,21 @@ class CDLEPreAdmisionesCreateView(PermisosMixin,CreateView, SuccessMessageMixin)
 
     def form_valid(self, form):
         pk = self.kwargs["pk"]
-        form.instance.estado = 'En proceso'
-        form.instance.vinculo1 = form.cleaned_data['vinculo1']
-        form.instance.vinculo2 = form.cleaned_data['vinculo2']
-        form.instance.vinculo3 = form.cleaned_data['vinculo3']
-        form.instance.vinculo4 = form.cleaned_data['vinculo4']
-        form.instance.vinculo5 = form.cleaned_data['vinculo5']
+        form.instance.estado = "En proceso"
+        form.instance.vinculo1 = form.cleaned_data["vinculo1"]
+        form.instance.vinculo2 = form.cleaned_data["vinculo2"]
+        form.instance.vinculo3 = form.cleaned_data["vinculo3"]
+        form.instance.vinculo4 = form.cleaned_data["vinculo4"]
+        form.instance.vinculo5 = form.cleaned_data["vinculo5"]
         form.instance.creado_por_id = self.request.user.id
 
         self.object = form.save()
 
         base = LegajosDerivaciones.objects.get(pk=pk)
         base.estado = "Aceptada"
-        base.save() 
-        
-        #---- Historial--------------
+        base.save()
+
+        # ---- Historial--------------
         legajo = LegajosDerivaciones.objects.filter(pk=pk).first()
         base = CDLE_Historial()
         base.fk_legajo_id = legajo.fk_legajo.id
@@ -191,9 +222,12 @@ class CDLEPreAdmisionesCreateView(PermisosMixin,CreateView, SuccessMessageMixin)
         base.creado_por_id = self.request.user.id
         base.save()
 
-        return HttpResponseRedirect(reverse('CDLE_preadmisiones_ver', args=[self.object.pk]))
+        return HttpResponseRedirect(
+            reverse("CDLE_preadmisiones_ver", args=[self.object.pk])
+        )
 
-class CDLEPreAdmisionesUpdateView(PermisosMixin,UpdateView, SuccessMessageMixin):
+
+class CDLEPreAdmisionesUpdateView(PermisosMixin, UpdateView, SuccessMessageMixin):
     permission_required = "Usuarios.rol_admin"
     template_name = "SIF_CDLE/preadmisiones_form.html"
     model = CDLE_PreAdmision
@@ -205,7 +239,9 @@ class CDLEPreAdmisionesUpdateView(PermisosMixin,UpdateView, SuccessMessageMixin)
         context = super().get_context_data(**kwargs)
         legajo = LegajosDerivaciones.objects.filter(pk=pk.fk_derivacion_id).first()
         familia = LegajoGrupoFamiliar.objects.filter(fk_legajo_2_id=legajo.fk_legajo_id)
-        familia_inversa = LegajoGrupoFamiliar.objects.filter(fk_legajo_1_id=legajo.fk_legajo_id)
+        familia_inversa = LegajoGrupoFamiliar.objects.filter(
+            fk_legajo_1_id=legajo.fk_legajo_id
+        )
 
         context["pk"] = pk.fk_derivacion_id
         context["legajo"] = legajo
@@ -216,16 +252,19 @@ class CDLEPreAdmisionesUpdateView(PermisosMixin,UpdateView, SuccessMessageMixin)
     def form_valid(self, form):
         pk = CDLE_PreAdmision.objects.filter(pk=self.kwargs["pk"]).first()
         form.instance.creado_por_id = pk.creado_por_id
-        form.instance.vinculo1 = form.cleaned_data['vinculo1']
-        form.instance.vinculo2 = form.cleaned_data['vinculo2']
-        form.instance.vinculo3 = form.cleaned_data['vinculo3']
-        form.instance.vinculo4 = form.cleaned_data['vinculo4']
-        form.instance.vinculo5 = form.cleaned_data['vinculo5']
+        form.instance.vinculo1 = form.cleaned_data["vinculo1"]
+        form.instance.vinculo2 = form.cleaned_data["vinculo2"]
+        form.instance.vinculo3 = form.cleaned_data["vinculo3"]
+        form.instance.vinculo4 = form.cleaned_data["vinculo4"]
+        form.instance.vinculo5 = form.cleaned_data["vinculo5"]
         form.instance.estado = pk.estado
         form.instance.modificado_por_id = self.request.user.id
         self.object = form.save()
 
-        return HttpResponseRedirect(reverse('CDLE_preadmisiones_ver', args=[self.object.pk]))
+        return HttpResponseRedirect(
+            reverse("CDLE_preadmisiones_ver", args=[self.object.pk])
+        )
+
 
 class CDLEPreAdmisionesDetailView(PermisosMixin, DetailView):
     permission_required = "Usuarios.rol_admin"
@@ -239,32 +278,48 @@ class CDLEPreAdmisionesDetailView(PermisosMixin, DetailView):
         familia = LegajoGrupoFamiliar.objects.filter(fk_legajo_2_id=legajo.fk_legajo_id)
         ivi = CDLE_IndiceIVI.objects.filter(fk_legajo_id=legajo.fk_legajo_id)
         ingreso = CDLE_IndiceIngreso.objects.filter(fk_legajo_id=legajo.fk_legajo_id)
-        resultado = ivi.filter(tipo='Ingreso').values('clave', 'creado', 'programa').annotate(total=Sum('fk_criterios_ivi__puntaje')).order_by('-creado')
-        resultado_ingreso = ingreso.filter(tipo='Ingreso').values('clave', 'creado', 'programa').annotate(total=Sum('fk_criterios_ingreso__puntaje')).order_by('-creado')
+        resultado = (
+            ivi.filter(tipo="Ingreso")
+            .values("clave", "creado", "programa")
+            .annotate(total=Sum("fk_criterios_ivi__puntaje"))
+            .order_by("-creado")
+        )
+        resultado_ingreso = (
+            ingreso.filter(tipo="Ingreso")
+            .values("clave", "creado", "programa")
+            .annotate(total=Sum("fk_criterios_ingreso__puntaje"))
+            .order_by("-creado")
+        )
         context["ivi"] = ivi
         context["ingreso"] = ingreso
-        context['criterios_total'] = ingreso.count()
-        context["cant_combinables"] = ingreso.filter(fk_criterios_ingreso__tipo='Criterios combinables para el ingreso').count()
-        context["cant_sociales"] = ingreso.filter(fk_criterios_ingreso__tipo='Criterios sociales para el ingreso').count() 
-        context["autonomos"] = ingreso.filter(fk_criterios_ingreso__tipo='Criteros autónomos de ingreso').all()
+        context["criterios_total"] = ingreso.count()
+        context["cant_combinables"] = ingreso.filter(
+            fk_criterios_ingreso__tipo="Criterios combinables para el ingreso"
+        ).count()
+        context["cant_sociales"] = ingreso.filter(
+            fk_criterios_ingreso__tipo="Criterios sociales para el ingreso"
+        ).count()
+        context["autonomos"] = ingreso.filter(
+            fk_criterios_ingreso__tipo="Criteros autónomos de ingreso"
+        ).all()
         context["resultado"] = resultado
         context["resultado_ingreso"] = resultado_ingreso
         context["legajo"] = legajo
         context["familia"] = familia
         return context
-    
+
     def post(self, request, *args, **kwargs):
-        if 'finalizar_preadm' in request.POST:
+        if "finalizar_preadm" in request.POST:
             # Realiza la actualización del campo aquí
             objeto = self.get_object()
-            objeto.estado = 'Finalizada'
+            objeto.estado = "Finalizada"
             objeto.ivi = "NO"
             objeto.indice_ingreso = "NO"
             objeto.admitido = "NO"
             objeto.save()
 
-            #---------HISTORIAL---------------------------------
-            pk=self.kwargs["pk"]
+            # ---------HISTORIAL---------------------------------
+            pk = self.kwargs["pk"]
             legajo = CDLE_PreAdmision.objects.filter(pk=pk).first()
             base = CDLE_Historial()
             base.fk_legajo_id = legajo.fk_legajo.id
@@ -275,6 +330,7 @@ class CDLEPreAdmisionesDetailView(PermisosMixin, DetailView):
             base.save()
             # Redirige de nuevo a la vista de detalle actualizada
             return HttpResponseRedirect(self.request.path_info)
+
 
 class CDLEPreAdmisionesListView(PermisosMixin, ListView):
     permission_required = "Usuarios.rol_admin"
@@ -287,6 +343,7 @@ class CDLEPreAdmisionesListView(PermisosMixin, ListView):
         context["object"] = pre_admi
         return context
 
+
 class CDLEPreAdmisionesBuscarListView(PermisosMixin, TemplateView):
     permission_required = "Usuarios.rol_admin"
     template_name = "SIF_CDLE/preadmisiones_buscar.html"
@@ -298,8 +355,16 @@ class CDLEPreAdmisionesBuscarListView(PermisosMixin, TemplateView):
         mostrar_btn_resetear = False
         query = self.request.GET.get("busqueda")
         if query:
-            object_list = CDLE_PreAdmision.objects.filter(Q(fk_legajo__apellido__iexact=query) | Q(fk_legajo__documento__iexact=query), fk_derivacion__fk_programa_id=settings.PROG_CDLE).exclude(estado__in=['Rechazada','Aceptada']).distinct()
-            #object_list = Legajos.objects.filter(Q(apellido__iexact=query) | Q(documento__iexact=query))
+            object_list = (
+                CDLE_PreAdmision.objects.filter(
+                    Q(fk_legajo__apellido__iexact=query)
+                    | Q(fk_legajo__documento__iexact=query),
+                    fk_derivacion__fk_programa_id=settings.PROG_CDLE,
+                )
+                .exclude(estado__in=["Rechazada", "Aceptada"])
+                .distinct()
+            )
+            # object_list = Legajos.objects.filter(Q(apellido__iexact=query) | Q(documento__iexact=query))
             if not object_list:
                 messages.warning(self.request, ("La búsqueda no arrojó resultados."))
 
@@ -311,6 +376,7 @@ class CDLEPreAdmisionesBuscarListView(PermisosMixin, TemplateView):
         context["object_list"] = object_list
 
         return self.render_to_response(context)
+
 
 class CDLEPreAdmisionesDeleteView(PermisosMixin, DeleteView):
     permission_required = "Usuarios.rol_admin"
@@ -341,6 +407,7 @@ class CDLEPreAdmisionesDeleteView(PermisosMixin, DeleteView):
             self.object.delete()
             return redirect(self.success_url)
 
+
 class CDLECriteriosIngresoCreateView(PermisosMixin, CreateView):
     permission_required = "Usuarios.rol_admin"
     template_name = "SIF_CDLE/criterios_ingreso_form.html"
@@ -349,32 +416,35 @@ class CDLECriteriosIngresoCreateView(PermisosMixin, CreateView):
 
     def form_valid(self, form):
         self.object = form.save()
-        return HttpResponseRedirect(reverse('CDLE_criterios_ingreso_crear'))
-    
-class CDLEIndiceIngresoCreateView (PermisosMixin, CreateView):
+        return HttpResponseRedirect(reverse("CDLE_criterios_ingreso_crear"))
+
+
+class CDLEIndiceIngresoCreateView(PermisosMixin, CreateView):
     permission_required = "Usuarios.rol_admin"
     model = Criterios_Ingreso
     template_name = "SIF_CDLE/indiceingreso_form.html"
-    form_class = CDLE_IndiceIngresoForm    
-    
+    form_class = CDLE_IndiceIngresoForm
+
     def get_context_data(self, **kwargs):
-        pk=self.kwargs["pk"]
+        pk = self.kwargs["pk"]
         context = super().get_context_data(**kwargs)
         object = CDLE_PreAdmision.objects.filter(pk=pk).first()
-        #object = Legajos.objects.filter(pk=pk).first()
+        # object = Legajos.objects.filter(pk=pk).first()
         criterio = Criterios_Ingreso.objects.all()
         context["object"] = object
         context["criterio"] = criterio
-        context['form2'] = CDLE_IndiceIngresoHistorialForm()
+        context["form2"] = CDLE_IndiceIngresoHistorialForm()
         return context
-    
+
     def post(self, request, *args, **kwargs):
-        pk=self.kwargs["pk"]
+        pk = self.kwargs["pk"]
         # Genera una clave única utilizando uuid4 (versión aleatoria)
         preadmi = CDLE_PreAdmision.objects.filter(pk=pk).first()
         clave = str(uuid.uuid4())
         nombres_campos = request.POST.keys()
-        puntaje_maximo = Criterios_Ingreso.objects.aggregate(total=Sum('puntaje'))['total']
+        puntaje_maximo = Criterios_Ingreso.objects.aggregate(total=Sum("puntaje"))[
+            "total"
+        ]
         total_puntaje = 0
         for f in nombres_campos:
             if f.isdigit():
@@ -390,16 +460,16 @@ class CDLEIndiceIngresoCreateView (PermisosMixin, CreateView):
                 base.programa = "CDLE"
                 base.clave = clave
                 base.save()
-        
+
         # total_puntaje contiene la suma de los valores de F
         foto = CDLE_Foto_Ingreso()
-        foto.observaciones = request.POST.get('observaciones', '')
+        foto.observaciones = request.POST.get("observaciones", "")
         foto.fk_preadmi_id = pk
         foto.fk_legajo_id = preadmi.fk_legajo_id
         foto.puntaje = total_puntaje
         foto.puntaje_max = puntaje_maximo
-        #foto.crit_modificables = crit_modificables
-        #foto.crit_presentes = crit_presentes
+        # foto.crit_modificables = crit_modificables
+        # foto.crit_presentes = crit_presentes
         foto.tipo = "Ingreso"
         foto.clave = clave
         foto.creado_por_id = self.request.user.id
@@ -408,8 +478,8 @@ class CDLEIndiceIngresoCreateView (PermisosMixin, CreateView):
         preadmi.indice_ingreso = "SI"
         preadmi.save()
 
-        #---------HISTORIAL---------------------------------
-        pk=self.kwargs["pk"]
+        # ---------HISTORIAL---------------------------------
+        pk = self.kwargs["pk"]
         base = CDLE_Historial()
         base.fk_legajo_id = preadmi.fk_legajo.id
         base.fk_legajo_derivacion_id = preadmi.fk_derivacion_id
@@ -418,9 +488,10 @@ class CDLEIndiceIngresoCreateView (PermisosMixin, CreateView):
         base.creado_por_id = self.request.user.id
         base.save()
 
-        return redirect('CDLE_indiceingreso_ver', preadmi.id)
+        return redirect("CDLE_indiceingreso_ver", preadmi.id)
 
-class CDLEIndiceIngresoUpdateView (PermisosMixin, UpdateView):
+
+class CDLEIndiceIngresoUpdateView(PermisosMixin, UpdateView):
     permission_required = "Usuarios.rol_admin"
     template_name = "SIF_CDLE/indiceingreso_edit.html"
     model = CDLE_PreAdmision
@@ -437,19 +508,21 @@ class CDLEIndiceIngresoUpdateView (PermisosMixin, UpdateView):
         context["clave"] = observaciones.clave
         context["observaciones"] = observaciones.observaciones
         context["criterio"] = Criterios_Ingreso.objects.all()
-        context['form2'] = CDLE_IndiceIngresoHistorialForm()
+        context["form2"] = CDLE_IndiceIngresoHistorialForm()
         return context
-    
+
     def post(self, request, *args, **kwargs):
-        pk=self.kwargs["pk"]
+        pk = self.kwargs["pk"]
         preadmi = CDLE_PreAdmision.objects.filter(pk=pk).first()
         CDLE_foto = CDLE_Foto_Ingreso.objects.filter(fk_preadmi_id=pk).first()
         clave = CDLE_foto.clave
         indices_ingreso = CDLE_IndiceIngreso.objects.filter(clave=clave)
-        #CDLE_foto.delete()
+        # CDLE_foto.delete()
         indices_ingreso.delete()
         nombres_campos = request.POST.keys()
-        puntaje_maximo = Criterios_Ingreso.objects.aggregate(total=Sum('puntaje'))['total']
+        puntaje_maximo = Criterios_Ingreso.objects.aggregate(total=Sum("puntaje"))[
+            "total"
+        ]
         total_puntaje = 0
         for f in nombres_campos:
             if f.isdigit():
@@ -465,23 +538,23 @@ class CDLEIndiceIngresoUpdateView (PermisosMixin, UpdateView):
                 base.programa = "CDLE"
                 base.clave = clave
                 base.save()
-        
+
         # total_puntaje contiene la suma de los valores de F
         foto = CDLE_Foto_Ingreso.objects.filter(clave=clave).first()
-        foto.observaciones = request.POST.get('observaciones', '')
+        foto.observaciones = request.POST.get("observaciones", "")
         foto.fk_preadmi_id = pk
         foto.fk_legajo_id = preadmi.fk_legajo_id
         foto.puntaje = total_puntaje
         foto.puntaje_max = puntaje_maximo
-        #foto.crit_modificables = crit_modificables
-        #foto.crit_presentes = crit_presentes
+        # foto.crit_modificables = crit_modificables
+        # foto.crit_presentes = crit_presentes
         foto.tipo = "Ingreso"
         foto.clave = clave
         foto.modificado_por_id = self.request.user.id
         foto.save()
 
-        #---------HISTORIAL---------------------------------
-        pk=self.kwargs["pk"]
+        # ---------HISTORIAL---------------------------------
+        pk = self.kwargs["pk"]
         preadmi = CDLE_PreAdmision.objects.filter(pk=pk).first()
         base = CDLE_Historial()
         base.fk_legajo_id = preadmi.fk_legajo.id
@@ -491,35 +564,49 @@ class CDLEIndiceIngresoUpdateView (PermisosMixin, UpdateView):
         base.creado_por_id = self.request.user.id
         base.save()
 
-        return redirect('CDLE_indiceingreso_ver', preadmi.id)
-    
+        return redirect("CDLE_indiceingreso_ver", preadmi.id)
+
+
 class CDLEIndiceIngresoDetailView(PermisosMixin, DetailView):
     permission_required = "Usuarios.rol_admin"
     template_name = "SIF_CDLE/indiceingreso_detail.html"
     model = CDLE_PreAdmision
 
     def get_context_data(self, **kwargs):
-        pk=self.kwargs["pk"]
+        pk = self.kwargs["pk"]
         context = super().get_context_data(**kwargs)
         criterio = CDLE_IndiceIngreso.objects.filter(fk_preadmi_id=pk, tipo="Ingreso")
         object = CDLE_PreAdmision.objects.filter(pk=pk).first()
-        foto_ingreso = CDLE_Foto_Ingreso.objects.filter(fk_preadmi_id=pk, tipo="Ingreso").first()
-        
+        foto_ingreso = CDLE_Foto_Ingreso.objects.filter(
+            fk_preadmi_id=pk, tipo="Ingreso"
+        ).first()
 
         context["object"] = object
         context["foto_ingreso"] = foto_ingreso
         context["criterio"] = criterio
-        context["puntaje"] = criterio.aggregate(total=Sum('fk_criterios_ingreso__puntaje'))
+        context["puntaje"] = criterio.aggregate(
+            total=Sum("fk_criterios_ingreso__puntaje")
+        )
         context["cantidad"] = criterio.count()
-        context["cant_combinables"] = criterio.filter(fk_criterios_ingreso__tipo='Criterios combinables para el ingreso').count()
-        context["cant_sociales"] = criterio.filter(fk_criterios_ingreso__tipo='Criterios sociales para el ingreso').count()
-        context["mod_puntaje"] = criterio.filter(fk_criterios_ingreso__modificable__icontains='si').aggregate(total=Sum('fk_criterios_ingreso__puntaje'))
-        context["ajustes"] = criterio.filter(fk_criterios_ingreso__tipo='Ajustes').count()
-        #context['maximo'] = foto_ingreso.puntaje_max
-       
+        context["cant_combinables"] = criterio.filter(
+            fk_criterios_ingreso__tipo="Criterios combinables para el ingreso"
+        ).count()
+        context["cant_sociales"] = criterio.filter(
+            fk_criterios_ingreso__tipo="Criterios sociales para el ingreso"
+        ).count()
+        context["mod_puntaje"] = criterio.filter(
+            fk_criterios_ingreso__modificable__icontains="si"
+        ).aggregate(total=Sum("fk_criterios_ingreso__puntaje"))
+        context["ajustes"] = criterio.filter(
+            fk_criterios_ingreso__tipo="Ajustes"
+        ).count()
+        # context['maximo'] = foto_ingreso.puntaje_max
+
         return context
-    
-#--------- CREAR IVI -------------------------------------
+
+
+# --------- CREAR IVI -------------------------------------
+
 
 class CDLECriteriosIVICreateView(PermisosMixin, CreateView):
     permission_required = "Usuarios.rol_admin"
@@ -529,33 +616,33 @@ class CDLECriteriosIVICreateView(PermisosMixin, CreateView):
 
     def form_valid(self, form):
         self.object = form.save()
-        return HttpResponseRedirect(reverse('CDLE_criterios_ivi_crear'))
+        return HttpResponseRedirect(reverse("CDLE_criterios_ivi_crear"))
 
- 
-class CDLEIndiceIviCreateView (PermisosMixin, CreateView):
+
+class CDLEIndiceIviCreateView(PermisosMixin, CreateView):
     permission_required = "Usuarios.rol_admin"
     model = Criterios_IVI
     template_name = "SIF_CDLE/indiceivi_form.html"
-    form_class = CDLE_IndiceIviForm    
-    
+    form_class = CDLE_IndiceIviForm
+
     def get_context_data(self, **kwargs):
-        pk=self.kwargs["pk"]
+        pk = self.kwargs["pk"]
         context = super().get_context_data(**kwargs)
         object = CDLE_PreAdmision.objects.filter(pk=pk).first()
-        #object = Legajos.objects.filter(pk=pk).first()
+        # object = Legajos.objects.filter(pk=pk).first()
         criterio = Criterios_IVI.objects.all()
         context["object"] = object
         context["criterio"] = criterio
-        context['form2'] = CDLE_IndiceIviHistorialForm()
+        context["form2"] = CDLE_IndiceIviHistorialForm()
         return context
-    
+
     def post(self, request, *args, **kwargs):
-        pk=self.kwargs["pk"]
+        pk = self.kwargs["pk"]
         # Genera una clave única utilizando uuid4 (versión aleatoria)
         preadmi = CDLE_PreAdmision.objects.filter(pk=pk).first()
         clave = str(uuid.uuid4())
         nombres_campos = request.POST.keys()
-        puntaje_maximo = Criterios_IVI.objects.aggregate(total=Sum('puntaje'))['total']
+        puntaje_maximo = Criterios_IVI.objects.aggregate(total=Sum("puntaje"))["total"]
         total_puntaje = 0
         for f in nombres_campos:
             if f.isdigit():
@@ -571,16 +658,16 @@ class CDLEIndiceIviCreateView (PermisosMixin, CreateView):
                 base.programa = "CDLE"
                 base.clave = clave
                 base.save()
-        
+
         # total_puntaje contiene la suma de los valores de F
         foto = CDLE_Foto_IVI()
-        foto.observaciones = request.POST.get('observaciones', '')
+        foto.observaciones = request.POST.get("observaciones", "")
         foto.fk_preadmi_id = pk
         foto.fk_legajo_id = preadmi.fk_legajo_id
         foto.puntaje = total_puntaje
         foto.puntaje_max = puntaje_maximo
-        #foto.crit_modificables = crit_modificables
-        #foto.crit_presentes = crit_presentes
+        # foto.crit_modificables = crit_modificables
+        # foto.crit_presentes = crit_presentes
         foto.tipo = "Ingreso"
         foto.clave = clave
         foto.creado_por_id = self.request.user.id
@@ -589,8 +676,8 @@ class CDLEIndiceIviCreateView (PermisosMixin, CreateView):
         preadmi.ivi = "SI"
         preadmi.save()
 
-        #---------HISTORIAL---------------------------------
-        pk=self.kwargs["pk"]
+        # ---------HISTORIAL---------------------------------
+        pk = self.kwargs["pk"]
         base = CDLE_Historial()
         base.fk_legajo_id = preadmi.fk_legajo.id
         base.fk_legajo_derivacion_id = preadmi.fk_derivacion_id
@@ -599,10 +686,10 @@ class CDLEIndiceIviCreateView (PermisosMixin, CreateView):
         base.creado_por_id = self.request.user.id
         base.save()
 
-        return redirect('CDLE_indiceivi_ver', preadmi.id)
+        return redirect("CDLE_indiceivi_ver", preadmi.id)
 
 
-class CDLEIndiceIviUpdateView (PermisosMixin, UpdateView):
+class CDLEIndiceIviUpdateView(PermisosMixin, UpdateView):
     permission_required = "Usuarios.rol_admin"
     template_name = "SIF_CDLE/indiceivi_edit.html"
     model = CDLE_PreAdmision
@@ -619,19 +706,19 @@ class CDLEIndiceIviUpdateView (PermisosMixin, UpdateView):
         context["clave"] = observaciones.clave
         context["observaciones"] = observaciones.observaciones
         context["criterio"] = Criterios_IVI.objects.all()
-        context['form2'] = CDLE_IndiceIviHistorialForm()
+        context["form2"] = CDLE_IndiceIviHistorialForm()
         return context
-    
+
     def post(self, request, *args, **kwargs):
-        pk=self.kwargs["pk"]
+        pk = self.kwargs["pk"]
         preadmi = CDLE_PreAdmision.objects.filter(pk=pk).first()
         CDLE_foto = CDLE_Foto_IVI.objects.filter(fk_preadmi_id=pk).first()
         clave = CDLE_foto.clave
         indices_ivi = CDLE_IndiceIVI.objects.filter(clave=clave)
-        #CDLE_foto.delete()
+        # CDLE_foto.delete()
         indices_ivi.delete()
         nombres_campos = request.POST.keys()
-        puntaje_maximo = Criterios_IVI.objects.aggregate(total=Sum('puntaje'))['total']
+        puntaje_maximo = Criterios_IVI.objects.aggregate(total=Sum("puntaje"))["total"]
         total_puntaje = 0
         for f in nombres_campos:
             if f.isdigit():
@@ -647,23 +734,23 @@ class CDLEIndiceIviUpdateView (PermisosMixin, UpdateView):
                 base.tipo = "Ingreso"
                 base.clave = clave
                 base.save()
-        
+
         # total_puntaje contiene la suma de los valores de F
         foto = CDLE_Foto_IVI.objects.filter(clave=clave).first()
-        foto.observaciones = request.POST.get('observaciones', '')
+        foto.observaciones = request.POST.get("observaciones", "")
         foto.fk_preadmi_id = pk
         foto.fk_legajo_id = preadmi.fk_legajo_id
         foto.puntaje = total_puntaje
         foto.puntaje_max = puntaje_maximo
-        #foto.crit_modificables = crit_modificables
-        #foto.crit_presentes = crit_presentes
-        #foto.tipo = "Ingreso"
-        #foto.clave = clave
+        # foto.crit_modificables = crit_modificables
+        # foto.crit_presentes = crit_presentes
+        # foto.tipo = "Ingreso"
+        # foto.clave = clave
         foto.modificado_por_id = self.request.user.id
         foto.save()
 
-        #---------HISTORIAL---------------------------------
-        pk=self.kwargs["pk"]
+        # ---------HISTORIAL---------------------------------
+        pk = self.kwargs["pk"]
         preadmi = CDLE_PreAdmision.objects.filter(pk=pk).first()
         base = CDLE_Historial()
         base.fk_legajo_id = preadmi.fk_legajo.id
@@ -673,37 +760,45 @@ class CDLEIndiceIviUpdateView (PermisosMixin, UpdateView):
         base.creado_por_id = self.request.user.id
         base.save()
 
-        return redirect('CDLE_indiceivi_ver', preadmi.id)
-    
-    
+        return redirect("CDLE_indiceivi_ver", preadmi.id)
+
+
 class CDLEIndiceIviDetailView(PermisosMixin, DetailView):
     permission_required = "Usuarios.rol_admin"
     template_name = "SIF_CDLE/indiceivi_detail.html"
     model = CDLE_PreAdmision
 
     def get_context_data(self, **kwargs):
-        pk=self.kwargs["pk"]
+        pk = self.kwargs["pk"]
         context = super().get_context_data(**kwargs)
         criterio = CDLE_IndiceIVI.objects.filter(fk_preadmi_id=pk, tipo="Ingreso")
         object = CDLE_PreAdmision.objects.filter(pk=pk).first()
-        foto_ivi = CDLE_Foto_IVI.objects.filter(fk_preadmi_id=pk, tipo="Ingreso").first()
+        foto_ivi = CDLE_Foto_IVI.objects.filter(
+            fk_preadmi_id=pk, tipo="Ingreso"
+        ).first()
 
         context["object"] = object
         context["foto_ivi"] = foto_ivi
         context["criterio"] = criterio
-        context["puntaje"] = criterio.aggregate(total=Sum('fk_criterios_ivi__puntaje'))
+        context["puntaje"] = criterio.aggregate(total=Sum("fk_criterios_ivi__puntaje"))
         context["cantidad"] = criterio.count()
-        context["modificables"] = criterio.filter(fk_criterios_ivi__modificable__icontains='si').count()
-        context["mod_puntaje"] = criterio.filter(fk_criterios_ivi__modificable__icontains='si').aggregate(total=Sum('fk_criterios_ivi__puntaje'))
-        context["ajustes"] = criterio.filter(fk_criterios_ivi__tipo='Ajustes').count()
-        #context['maximo'] = foto_ivi.puntaje_max
+        context["modificables"] = criterio.filter(
+            fk_criterios_ivi__modificable__icontains="si"
+        ).count()
+        context["mod_puntaje"] = criterio.filter(
+            fk_criterios_ivi__modificable__icontains="si"
+        ).aggregate(total=Sum("fk_criterios_ivi__puntaje"))
+        context["ajustes"] = criterio.filter(fk_criterios_ivi__tipo="Ajustes").count()
+        # context['maximo'] = foto_ivi.puntaje_max
         return context
-    
+
+
 class CDLEPreAdmisiones2DetailView(PermisosMixin, DetailView):
     permission_required = "Usuarios.rol_admin"
     template_name = "SIF_CDLE/preadmisiones_detail2.html"
-    model = CDLE_PreAdmision  
-    
+    model = CDLE_PreAdmision
+
+
 class CDLEPreAdmisiones3DetailView(PermisosMixin, DetailView):
     permission_required = "Usuarios.rol_admin"
     template_name = "SIF_CDLE/preadmisiones_detail3.html"
@@ -715,9 +810,15 @@ class CDLEPreAdmisiones3DetailView(PermisosMixin, DetailView):
         legajo = LegajosDerivaciones.objects.filter(pk=pk.fk_derivacion_id).first()
         familia = LegajoGrupoFamiliar.objects.filter(fk_legajo_2_id=legajo.fk_legajo_id)
         criterio = CDLE_IndiceIVI.objects.filter(fk_preadmi_id=pk, tipo="Ingreso")
-        criterio_ingreso = CDLE_IndiceIngreso.objects.filter(fk_preadmi_id=pk, tipo="Ingreso")
-        foto_ivi = CDLE_Foto_IVI.objects.filter(fk_preadmi_id= pk, tipo="Ingreso").first()
-        foto_ingreso = CDLE_Foto_Ingreso.objects.filter(fk_preadmi_id= pk, tipo="Ingreso").first()
+        criterio_ingreso = CDLE_IndiceIngreso.objects.filter(
+            fk_preadmi_id=pk, tipo="Ingreso"
+        )
+        foto_ivi = CDLE_Foto_IVI.objects.filter(
+            fk_preadmi_id=pk, tipo="Ingreso"
+        ).first()
+        foto_ingreso = CDLE_Foto_Ingreso.objects.filter(
+            fk_preadmi_id=pk, tipo="Ingreso"
+        ).first()
 
         context["legajo"] = legajo
         context["familia"] = familia
@@ -727,19 +828,29 @@ class CDLEPreAdmisiones3DetailView(PermisosMixin, DetailView):
         context["puntaje_ingreso"] = foto_ingreso.puntaje
         context["cantidad"] = criterio.count()
         context["cantidad_ingreso"] = criterio_ingreso.count()
-        context["modificables"] = criterio.filter(fk_criterios_ivi__modificable__icontains='si').count()
-        context["mod_puntaje"] = criterio.filter(fk_criterios_ivi__modificable__icontains='si').aggregate(total=Sum('fk_criterios_ivi__puntaje'))
-        context["ajustes"] = criterio.filter(fk_criterios_ivi__tipo='Ajustes').count()
-        context['maximo'] = foto_ivi.puntaje_max
-        context['maximo_ingreso'] = foto_ingreso.puntaje_max
-        context['criterios_total'] = criterio_ingreso.count()
-        context["cant_combinables"] = criterio_ingreso.filter(fk_criterios_ingreso__tipo='Criterios combinables para el ingreso').count()
-        context["cant_sociales"] = criterio_ingreso.filter(fk_criterios_ingreso__tipo='Criterios sociales para el ingreso').count() 
-        context["autonomos"] = criterio_ingreso.filter(fk_criterios_ingreso__tipo='Criteros autónomos de ingreso').all()
+        context["modificables"] = criterio.filter(
+            fk_criterios_ivi__modificable__icontains="si"
+        ).count()
+        context["mod_puntaje"] = criterio.filter(
+            fk_criterios_ivi__modificable__icontains="si"
+        ).aggregate(total=Sum("fk_criterios_ivi__puntaje"))
+        context["ajustes"] = criterio.filter(fk_criterios_ivi__tipo="Ajustes").count()
+        context["maximo"] = foto_ivi.puntaje_max
+        context["maximo_ingreso"] = foto_ingreso.puntaje_max
+        context["criterios_total"] = criterio_ingreso.count()
+        context["cant_combinables"] = criterio_ingreso.filter(
+            fk_criterios_ingreso__tipo="Criterios combinables para el ingreso"
+        ).count()
+        context["cant_sociales"] = criterio_ingreso.filter(
+            fk_criterios_ingreso__tipo="Criterios sociales para el ingreso"
+        ).count()
+        context["autonomos"] = criterio_ingreso.filter(
+            fk_criterios_ingreso__tipo="Criteros autónomos de ingreso"
+        ).all()
         return context
-    
+
     def post(self, request, *args, **kwargs):
-        if 'admitir' in request.POST:
+        if "admitir" in request.POST:
             preadmi = CDLE_PreAdmision.objects.filter(pk=self.kwargs["pk"]).first()
             preadmi.admitido = "SI"
             preadmi.save()
@@ -750,8 +861,8 @@ class CDLEPreAdmisiones3DetailView(PermisosMixin, DetailView):
             base1.save()
             redirigir = base1.pk
 
-            #---------HISTORIAL---------------------------------
-            pk=self.kwargs["pk"]
+            # ---------HISTORIAL---------------------------------
+            pk = self.kwargs["pk"]
             legajo = CDLE_PreAdmision.objects.filter(pk=pk).first()
             base = CDLE_Historial()
             base.fk_legajo_id = legajo.fk_legajo.id
@@ -763,7 +874,8 @@ class CDLEPreAdmisiones3DetailView(PermisosMixin, DetailView):
             base.save()
 
             # Redirige de nuevo a la vista de detalle actualizada
-            return redirect('CDLE_asignado_admisiones_ver', redirigir)
+            return redirect("CDLE_asignado_admisiones_ver", redirigir)
+
 
 class CDLEAdmisionesListView(PermisosMixin, ListView):
     permission_required = "Usuarios.rol_admin"
@@ -777,36 +889,49 @@ class CDLEAdmisionesListView(PermisosMixin, ListView):
         admi = CDLE_Admision.objects.all()
         foto = CDLE_Foto_IVI.objects.all()
         foto_ingreso = CDLE_Foto_Ingreso.objects.all()
-        conteo = CDLE_IndiceIngreso.objects.values('fk_preadmi_id').annotate(total=Count('fk_preadmi_id'))
+        conteo = CDLE_IndiceIngreso.objects.values("fk_preadmi_id").annotate(
+            total=Count("fk_preadmi_id")
+        )
 
-        context ["conteo"] = conteo
+        context["conteo"] = conteo
         context["admi"] = admi
         context["foto"] = foto
-        context["foto_ingreso"] = criterio_ingreso.aggregate(total=Count('fk_criterios_ingreso'))
-        context["puntaje"] = criterio.aggregate(total=Sum('fk_criterios_ivi__puntaje'))
-        context["puntaje_ingreso"] = criterio_ingreso.aggregate(total=Sum('fk_criterios_ingreso__puntaje'))
+        context["foto_ingreso"] = criterio_ingreso.aggregate(
+            total=Count("fk_criterios_ingreso")
+        )
+        context["puntaje"] = criterio.aggregate(total=Sum("fk_criterios_ivi__puntaje"))
+        context["puntaje_ingreso"] = criterio_ingreso.aggregate(
+            total=Sum("fk_criterios_ingreso__puntaje")
+        )
         return context
+
 
 class CDLEAdmisionesDetailView(PermisosMixin, DetailView):
     permission_required = "Usuarios.rol_admin"
     model = CDLE_Admision
-    template_name = 'SIF_CDLE/admisiones_detail.html'
+    template_name = "SIF_CDLE/admisiones_detail.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         pk = CDLE_Admision.objects.filter(pk=self.kwargs["pk"]).first()
         preadmi = CDLE_PreAdmision.objects.filter(pk=pk.fk_preadmi_id).first()
         criterio = CDLE_IndiceIVI.objects.filter(fk_preadmi_id=preadmi, tipo="Ingreso")
-        foto_ivi = CDLE_Foto_IVI.objects.filter(fk_preadmi_id=preadmi, tipo="Ingreso").first()
+        foto_ivi = CDLE_Foto_IVI.objects.filter(
+            fk_preadmi_id=preadmi, tipo="Ingreso"
+        ).first()
 
         context["foto_ivi"] = foto_ivi
         context["puntaje"] = foto_ivi.puntaje
         context["cantidad"] = criterio.count()
-        context["modificables"] = criterio.filter(fk_criterios_ivi__modificable__icontains='si').count()
-        context["mod_puntaje"] = criterio.filter(fk_criterios_ivi__modificable__icontains='si').aggregate(total=Sum('fk_criterios_ivi__puntaje'))
-        context["ajustes"] = criterio.filter(fk_criterios_ivi__tipo='Ajustes').count()
-        context['maximo'] = foto_ivi.puntaje_max
-        
+        context["modificables"] = criterio.filter(
+            fk_criterios_ivi__modificable__icontains="si"
+        ).count()
+        context["mod_puntaje"] = criterio.filter(
+            fk_criterios_ivi__modificable__icontains="si"
+        ).aggregate(total=Sum("fk_criterios_ivi__puntaje"))
+        context["ajustes"] = criterio.filter(fk_criterios_ivi__tipo="Ajustes").count()
+        context["maximo"] = foto_ivi.puntaje_max
+
         return context
 
 
@@ -821,15 +946,31 @@ class CDLEAsignadoAdmisionDetail(PermisosMixin, DetailView):
 
         preadmi = CDLE_PreAdmision.objects.filter(pk=admi.fk_preadmi_id).first()
         criterio = CDLE_IndiceIVI.objects.filter(fk_preadmi_id=preadmi, tipo="Ingreso")
-        criterio_ingreso = CDLE_IndiceIngreso.objects.filter(fk_preadmi_id=preadmi, tipo="Ingreso")
+        criterio_ingreso = CDLE_IndiceIngreso.objects.filter(
+            fk_preadmi_id=preadmi, tipo="Ingreso"
+        )
         criterio2 = CDLE_IndiceIVI.objects.filter(fk_preadmi_id=preadmi, tipo="Ingreso")
-        observaciones = CDLE_Foto_IVI.objects.filter(fk_preadmi_id=preadmi, tipo="Ingreso").first()
-        observaciones_ingreso = CDLE_Foto_Ingreso.objects.filter(fk_preadmi_id=preadmi, tipo="Ingreso").first()
-        observaciones2 = CDLE_Foto_IVI.objects.filter(fk_preadmi_id=preadmi, tipo="Ingreso").first()
-        intervenciones = CDLE_Intervenciones.objects.filter(fk_admision_id=admi.id).all()
-        intervenciones_last = CDLE_Intervenciones.objects.filter(fk_admision_id=admi.id).last()
-        foto_ivi_fin = CDLE_Foto_IVI.objects.filter(fk_preadmi_id=admi.fk_preadmi_id, tipo="Ingreso").last()
-        foto_ivi_inicio = CDLE_Foto_IVI.objects.filter(fk_preadmi_id=admi.fk_preadmi_id, tipo="Ingreso").first()
+        observaciones = CDLE_Foto_IVI.objects.filter(
+            fk_preadmi_id=preadmi, tipo="Ingreso"
+        ).first()
+        observaciones_ingreso = CDLE_Foto_Ingreso.objects.filter(
+            fk_preadmi_id=preadmi, tipo="Ingreso"
+        ).first()
+        observaciones2 = CDLE_Foto_IVI.objects.filter(
+            fk_preadmi_id=preadmi, tipo="Ingreso"
+        ).first()
+        intervenciones = CDLE_Intervenciones.objects.filter(
+            fk_admision_id=admi.id
+        ).all()
+        intervenciones_last = CDLE_Intervenciones.objects.filter(
+            fk_admision_id=admi.id
+        ).last()
+        foto_ivi_fin = CDLE_Foto_IVI.objects.filter(
+            fk_preadmi_id=admi.fk_preadmi_id, tipo="Ingreso"
+        ).last()
+        foto_ivi_inicio = CDLE_Foto_IVI.objects.filter(
+            fk_preadmi_id=admi.fk_preadmi_id, tipo="Ingreso"
+        ).first()
 
         context["foto_ivi_fin"] = foto_ivi_fin
         context["foto_ivi_inicio"] = foto_ivi_inicio
@@ -837,15 +978,18 @@ class CDLEAsignadoAdmisionDetail(PermisosMixin, DetailView):
         context["observaciones_ingreso"] = observaciones_ingreso
         context["observaciones2"] = observaciones2
         context["criterio"] = criterio
-        context["puntaje"] = criterio.aggregate(total=Sum('fk_criterios_ivi__puntaje'))
+        context["puntaje"] = criterio.aggregate(total=Sum("fk_criterios_ivi__puntaje"))
         context["cant_ingreso"] = criterio_ingreso.count()
-        context["puntaje2"] = criterio2.aggregate(total=Sum('fk_criterios_ivi__puntaje'))
+        context["puntaje2"] = criterio2.aggregate(
+            total=Sum("fk_criterios_ivi__puntaje")
+        )
         context["object"] = admi
         context["vo"] = self.object
         context["intervenciones_count"] = intervenciones.count()
         context["intervenciones_last"] = intervenciones_last
-        
+
         return context
+
 
 class CDLEInactivaAdmisionDetail(PermisosMixin, DetailView):
     permission_required = "Usuarios.rol_admin"
@@ -858,12 +1002,19 @@ class CDLEInactivaAdmisionDetail(PermisosMixin, DetailView):
 
         preadmi = CDLE_PreAdmision.objects.filter(pk=admi.fk_preadmi_id).first()
         criterio = CDLE_IndiceIVI.objects.filter(fk_preadmi_id=preadmi, tipo="Egreso")
-        intervenciones = CDLE_Intervenciones.objects.filter(fk_admision_id=admi.id).all()
-        intervenciones_last = CDLE_Intervenciones.objects.filter(fk_admision_id=admi.id).last()
-        foto_ivi_fin = CDLE_Foto_IVI.objects.filter(fk_preadmi_id=admi.fk_preadmi_id, tipo="Egreso").first()
-        foto_ivi_inicio = CDLE_Foto_IVI.objects.filter(fk_preadmi_id=admi.fk_preadmi_id, tipo="Ingreso").first()
+        intervenciones = CDLE_Intervenciones.objects.filter(
+            fk_admision_id=admi.id
+        ).all()
+        intervenciones_last = CDLE_Intervenciones.objects.filter(
+            fk_admision_id=admi.id
+        ).last()
+        foto_ivi_fin = CDLE_Foto_IVI.objects.filter(
+            fk_preadmi_id=admi.fk_preadmi_id, tipo="Egreso"
+        ).first()
+        foto_ivi_inicio = CDLE_Foto_IVI.objects.filter(
+            fk_preadmi_id=admi.fk_preadmi_id, tipo="Ingreso"
+        ).first()
 
-        
         context["foto_ivi_fin"] = foto_ivi_fin
         context["foto_ivi_inicio"] = foto_ivi_inicio
         context["criterio"] = criterio
@@ -871,9 +1022,8 @@ class CDLEInactivaAdmisionDetail(PermisosMixin, DetailView):
         context["vo"] = self.object
         context["intervenciones_count"] = intervenciones.count()
         context["intervenciones_last"] = intervenciones_last
-        
-        return context
 
+        return context
 
 
 class CDLEIntervencionesCreateView(PermisosMixin, CreateView):
@@ -886,7 +1036,7 @@ class CDLEIntervencionesCreateView(PermisosMixin, CreateView):
         form.instance.fk_admision_id = self.kwargs["pk"]
         form.instance.creado_por_id = self.request.user.id
         self.object = form.save()
-        
+
         # --------- HISTORIAL ---------------------------------
         pk = self.kwargs["pk"]
         legajo = CDLE_Admision.objects.filter(pk=pk).first()
@@ -899,15 +1049,18 @@ class CDLEIntervencionesCreateView(PermisosMixin, CreateView):
         base.creado_por_id = self.request.user.id
         base.save()
 
-        return redirect('CDLE_intervencion_ver', pk=self.object.id)
+        return redirect("CDLE_intervencion_ver", pk=self.object.id)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["object"] = CDLE_Admision.objects.get(pk=self.kwargs["pk"])  # Obtén el objeto directamente
+        context["object"] = CDLE_Admision.objects.get(
+            pk=self.kwargs["pk"]
+        )  # Obtén el objeto directamente
         context["form"] = self.get_form()  # Obtiene una instancia del formulario
 
         return context
-    
+
+
 class CDLEIntervencionesUpdateView(PermisosMixin, UpdateView):
     permission_required = "Usuarios.rol_admin"
     model = CDLE_Intervenciones
@@ -915,26 +1068,26 @@ class CDLEIntervencionesUpdateView(PermisosMixin, UpdateView):
     form_class = CDLE_IntervencionesForm
 
     def form_valid(self, form):
-            pk = CDLE_Intervenciones.objects.filter(pk=self.kwargs["pk"]).first()
-            admi = CDLE_Admision.objects.filter(id=pk.fk_admision.id).first()
-            form.instance.fk_admision_id = admi.id
-            form.instance.modificado_por_id = self.request.user.id
-            self.object = form.save()
-        
-            # --------- HISTORIAL ---------------------------------
-            pk = self.kwargs["pk"]
-            pk = CDLE_Intervenciones.objects.filter(pk=pk).first()
-            legajo = CDLE_Admision.objects.filter(pk=pk.fk_admision_id).first()
-            base = CDLE_Historial()
-            base.fk_legajo_id = legajo.fk_preadmi.fk_legajo.id
-            base.fk_legajo_derivacion_id = legajo.fk_preadmi.fk_derivacion_id
-            base.fk_preadmi_id = legajo.fk_preadmi.pk
-            base.fk_admision_id = legajo.pk
-            base.movimiento = "INTERVENCION MODIFICADA"
-            base.creado_por_id = self.request.user.id
-            base.save()
+        pk = CDLE_Intervenciones.objects.filter(pk=self.kwargs["pk"]).first()
+        admi = CDLE_Admision.objects.filter(id=pk.fk_admision.id).first()
+        form.instance.fk_admision_id = admi.id
+        form.instance.modificado_por_id = self.request.user.id
+        self.object = form.save()
 
-            return redirect('CDLE_intervencion_ver', self.object.id)
+        # --------- HISTORIAL ---------------------------------
+        pk = self.kwargs["pk"]
+        pk = CDLE_Intervenciones.objects.filter(pk=pk).first()
+        legajo = CDLE_Admision.objects.filter(pk=pk.fk_admision_id).first()
+        base = CDLE_Historial()
+        base.fk_legajo_id = legajo.fk_preadmi.fk_legajo.id
+        base.fk_legajo_derivacion_id = legajo.fk_preadmi.fk_derivacion_id
+        base.fk_preadmi_id = legajo.fk_preadmi.pk
+        base.fk_admision_id = legajo.pk
+        base.movimiento = "INTERVENCION MODIFICADA"
+        base.creado_por_id = self.request.user.id
+        base.save()
+
+        return redirect("CDLE_intervencion_ver", self.object.id)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -945,6 +1098,7 @@ class CDLEIntervencionesUpdateView(PermisosMixin, UpdateView):
 
         return context
 
+
 class CDLEIntervencionesLegajosListView(PermisosMixin, DetailView):
     permission_required = "Usuarios.rol_admin"
     template_name = "SIF_CDLE/intervenciones_legajo_list.html"
@@ -953,26 +1107,37 @@ class CDLEIntervencionesLegajosListView(PermisosMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         admi = CDLE_Admision.objects.filter(pk=self.kwargs["pk"]).first()
-        intervenciones = CDLE_Intervenciones.objects.filter(fk_admision_id=admi.id).all()
-        intervenciones_last = CDLE_Intervenciones.objects.filter(fk_admision_id=admi.id).last()
+        intervenciones = CDLE_Intervenciones.objects.filter(
+            fk_admision_id=admi.id
+        ).all()
+        intervenciones_last = CDLE_Intervenciones.objects.filter(
+            fk_admision_id=admi.id
+        ).last()
         preadmi = CDLE_PreAdmision.objects.filter(pk=admi.fk_preadmi_id).first()
         criterio = CDLE_IndiceIVI.objects.filter(fk_preadmi_id=preadmi, tipo="Ingreso")
-        observaciones = CDLE_Foto_IVI.objects.filter(clave=criterio.first().clave, tipo="Ingreso").first()
+        observaciones = CDLE_Foto_IVI.objects.filter(
+            clave=criterio.first().clave, tipo="Ingreso"
+        ).first()
         criterio2 = CDLE_IndiceIVI.objects.filter(fk_preadmi_id=preadmi, tipo="Ingreso")
-        observaciones2 = CDLE_Foto_IVI.objects.filter(clave=criterio2.last().clave, tipo="Ingreso").first()
+        observaciones2 = CDLE_Foto_IVI.objects.filter(
+            clave=criterio2.last().clave, tipo="Ingreso"
+        ).first()
 
         context["object"] = admi
         context["intervenciones"] = intervenciones
         context["intervenciones_count"] = intervenciones.count()
         context["intervenciones_last"] = intervenciones_last
 
-        context["puntaje"] = criterio.aggregate(total=Sum('fk_criterios_ivi__puntaje'))
+        context["puntaje"] = criterio.aggregate(total=Sum("fk_criterios_ivi__puntaje"))
         context["observaciones"] = observaciones
         context["observaciones2"] = observaciones2
-        context["puntaje2"] = criterio2.aggregate(total=Sum('fk_criterios_ivi__puntaje'))
+        context["puntaje2"] = criterio2.aggregate(
+            total=Sum("fk_criterios_ivi__puntaje")
+        )
 
         return context
-    
+
+
 class CDLEIntervencionesListView(PermisosMixin, ListView):
     permission_required = "Usuarios.rol_admin"
     template_name = "SIF_CDLE/intervenciones_list.html"
@@ -984,10 +1149,12 @@ class CDLEIntervencionesListView(PermisosMixin, ListView):
         context["intervenciones"] = intervenciones
         return context
 
-class CDLEIntervencionesDetail (PermisosMixin, DetailView):
+
+class CDLEIntervencionesDetail(PermisosMixin, DetailView):
     permission_required = "Usuarios.rol_admin"
     template_name = "SIF_CDLE/intervencion_detail.html"
     model = CDLE_Intervenciones
+
 
 class CDLEOpcionesResponsablesCreateView(PermisosMixin, CreateView):
     permission_required = "Usuarios.rol_admin"
@@ -997,7 +1164,8 @@ class CDLEOpcionesResponsablesCreateView(PermisosMixin, CreateView):
 
     def form_valid(self, form):
         self.object = form.save()
-        return HttpResponseRedirect(reverse('CDLE_OpcionesResponsables'))
+        return HttpResponseRedirect(reverse("CDLE_OpcionesResponsables"))
+
 
 class CDLEIntervencionesDeleteView(PermisosMixin, DeleteView):
     permission_required = "Usuarios.rol_admin"
@@ -1020,7 +1188,7 @@ class CDLEIntervencionesDeleteView(PermisosMixin, DeleteView):
         else:
             self.object.delete()
             return redirect(self.success_url)
-        
+
 
 class CDLEAdmisionesBuscarListView(PermisosMixin, TemplateView):
     permission_required = "Usuarios.rol_admin"
@@ -1033,7 +1201,15 @@ class CDLEAdmisionesBuscarListView(PermisosMixin, TemplateView):
         mostrar_btn_resetear = False
         query = self.request.GET.get("busqueda")
         if query:
-            object_list = CDLE_Admision.objects.filter(Q(fk_preadmi__fk_legajo__apellido__iexact=query) | Q(fk_preadmi__fk_legajo__documento__iexact=query), fk_preadmi__fk_derivacion__fk_programa_id=settings.PROG_CDLE).exclude(estado__in=['Rechazada','Aceptada']).distinct()
+            object_list = (
+                CDLE_Admision.objects.filter(
+                    Q(fk_preadmi__fk_legajo__apellido__iexact=query)
+                    | Q(fk_preadmi__fk_legajo__documento__iexact=query),
+                    fk_preadmi__fk_derivacion__fk_programa_id=settings.PROG_CDLE,
+                )
+                .exclude(estado__in=["Rechazada", "Aceptada"])
+                .distinct()
+            )
             if not object_list:
                 messages.warning(self.request, ("La búsqueda no arrojó resultados."))
 
@@ -1045,36 +1221,38 @@ class CDLEAdmisionesBuscarListView(PermisosMixin, TemplateView):
         context["object_list"] = object_list
 
         return self.render_to_response(context)
-    
-class CDLEIndiceIviEgresoCreateView (PermisosMixin, CreateView):
+
+
+class CDLEIndiceIviEgresoCreateView(PermisosMixin, CreateView):
     permission_required = "Usuarios.rol_admin"
     model = Legajos
     template_name = "SIF_CDLE/indiceivi_form_egreso.html"
     form_class = CDLE_IndiceIviForm
     success_url = reverse_lazy("legajos_listar")
-    
-    
+
     def get_context_data(self, **kwargs):
-        pk=self.kwargs["pk"]
+        pk = self.kwargs["pk"]
         context = super().get_context_data(**kwargs)
         admi = CDLE_Admision.objects.filter(pk=pk).first()
         object = Legajos.objects.filter(pk=admi.fk_preadmi.fk_legajo.id).first()
         criterio = Criterios_IVI.objects.all()
         context["object"] = object
         context["criterio"] = criterio
-        context['form2'] = CDLE_IndiceIviHistorialForm()
-        context['admi'] = admi
+        context["form2"] = CDLE_IndiceIviHistorialForm()
+        context["admi"] = admi
         return context
-    
+
     def post(self, request, *args, **kwargs):
-        pk=self.kwargs["pk"]
+        pk = self.kwargs["pk"]
         admi = CDLE_Admision.objects.filter(pk=pk).first()
         # Genera una clave única utilizando uuid4 (versión aleatoria)
-        preadmi = CDLE_PreAdmision.objects.filter(fk_legajo_id=admi.fk_preadmi.fk_legajo.id).first()
+        preadmi = CDLE_PreAdmision.objects.filter(
+            fk_legajo_id=admi.fk_preadmi.fk_legajo.id
+        ).first()
         foto_ivi = CDLE_Foto_IVI.objects.filter(fk_preadmi_id=preadmi.id).first()
         clave = foto_ivi.clave
         nombres_campos = request.POST.keys()
-        puntaje_maximo = Criterios_IVI.objects.aggregate(total=Sum('puntaje'))['total']
+        puntaje_maximo = Criterios_IVI.objects.aggregate(total=Sum("puntaje"))["total"]
         total_puntaje = 0
         for f in nombres_campos:
             if f.isdigit():
@@ -1093,13 +1271,13 @@ class CDLEIndiceIviEgresoCreateView (PermisosMixin, CreateView):
 
         # total_puntaje contiene la suma de los valores de F
         foto = CDLE_Foto_IVI()
-        foto.observaciones = request.POST.get('observaciones', '')
+        foto.observaciones = request.POST.get("observaciones", "")
         foto.fk_preadmi_id = preadmi.id
         foto.fk_legajo_id = preadmi.fk_legajo_id
         foto.puntaje = total_puntaje
         foto.puntaje_max = puntaje_maximo
-        #foto.crit_modificables = crit_modificables
-        #foto.crit_presentes = crit_presentes
+        # foto.crit_modificables = crit_modificables
+        # foto.crit_presentes = crit_presentes
         foto.tipo = "Egreso"
         foto.clave = clave
         foto.creado_por_id = self.request.user.id
@@ -1109,8 +1287,8 @@ class CDLEIndiceIviEgresoCreateView (PermisosMixin, CreateView):
         admi.modificado_por_id = self.request.user.id
         admi.save()
 
-        #---------HISTORIAL---------------------------------
-        pk=self.kwargs["pk"]
+        # ---------HISTORIAL---------------------------------
+        pk = self.kwargs["pk"]
         legajo = admi.fk_preadmi
         base = CDLE_Historial()
         base.fk_legajo_id = legajo.fk_legajo.id
@@ -1120,4 +1298,4 @@ class CDLEIndiceIviEgresoCreateView (PermisosMixin, CreateView):
         base.creado_por_id = self.request.user.id
         base.save()
 
-        return redirect('CDLE_admisiones_listar')
+        return redirect("CDLE_admisiones_listar")

@@ -7,15 +7,29 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Dashboard',
+            name="Dashboard",
             fields=[
-                ('llave', models.CharField(help_text='Llave única para identificar el registro en el dashboard.', max_length=250, primary_key=True, serialize=False, unique=True)),
-                ('cantidad', models.BigIntegerField(default=0, help_text='Cantidad asociada al registro en el dashboard.')),
+                (
+                    "llave",
+                    models.CharField(
+                        help_text="Llave única para identificar el registro en el dashboard.",
+                        max_length=250,
+                        primary_key=True,
+                        serialize=False,
+                        unique=True,
+                    ),
+                ),
+                (
+                    "cantidad",
+                    models.BigIntegerField(
+                        default=0,
+                        help_text="Cantidad asociada al registro en el dashboard.",
+                    ),
+                ),
             ],
         ),
     ]

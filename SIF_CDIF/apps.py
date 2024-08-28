@@ -2,5 +2,5 @@ from django.apps import AppConfig
 
 
 class SifCdifConfig(AppConfig):
-    default_auto_field = 'django.db.models.BigAutoField'
-    name = 'SIF_CDIF'
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "SIF_CDIF"

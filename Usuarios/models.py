@@ -11,13 +11,12 @@ from .choices import *
 
 # Agrego extrafields telefono y programa
 class Usuarios(models.Model):
-    '''
+    """
     Extensión del modelo USER
-    '''
+    """
 
     usuario = models.OneToOneField(User, on_delete=models.CASCADE)
-    imagen = models.ImageField(
-        upload_to="usuarios/", null=True, blank=True)
+    imagen = models.ImageField(upload_to="usuarios/", null=True, blank=True)
     dni = models.PositiveIntegerField(null=True, blank=True, unique=True)
     telefono = models.CharField(
         max_length=30,
@@ -27,15 +26,15 @@ class Usuarios(models.Model):
     darkmode = models.BooleanField(default=True, null=True, blank=True)
 
     def __str__(self):
-        if(self.usuario.first_name or self.usuario.last_name):
-            nombre= self.usuario.first_name + ' ' + self.usuario.last_name
-        else: nombre = self.usuario.username
-        
+        if self.usuario.first_name or self.usuario.last_name:
+            nombre = self.usuario.first_name + " " + self.usuario.last_name
+        else:
+            nombre = self.usuario.username
+
         return nombre
-        
 
     class Meta:
-        verbose_name = 'Usuario'
+        verbose_name = "Usuario"
         verbose_name_plural = "Usuarios"
         permissions = [
             ("rol_directivo", "Directivo"),
@@ -65,7 +64,7 @@ class Usuarios(models.Model):
         ).distinct()
 
     def get_absolute_url(self):
-        return reverse('usuarios_ver', kwargs={'pk': self.pk})
+        return reverse("usuarios_ver", kwargs={"pk": self.pk})
 
 
 def users_con_permiso(perm_name):

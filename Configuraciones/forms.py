@@ -8,70 +8,70 @@ class SecretariasForm(forms.ModelForm):
         model = Secretarias
         exclude = ()
         widgets = {
-            'observaciones': forms.Textarea(
+            "observaciones": forms.Textarea(
                 attrs={
-                    'class': 'form-control',
-                    'rows': 3,
+                    "class": "form-control",
+                    "rows": 3,
                 }
             ),
-            'estado': forms.Select(choices=[(True, 'Activo'), (False, 'Inactivo')]),
+            "estado": forms.Select(choices=[(True, "Activo"), (False, "Inactivo")]),
         }
 
 
 class SubsecretariasForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['fk_secretaria'].label = "Secretaría"
+        self.fields["fk_secretaria"].label = "Secretaría"
 
     class Meta:
         model = Subsecretarias
         exclude = ()
         widgets = {
-            'observaciones': forms.Textarea(
+            "observaciones": forms.Textarea(
                 attrs={
-                    'class': 'form-control',
-                    'rows': 3,
+                    "class": "form-control",
+                    "rows": 3,
                 }
             ),
-            'estado': forms.Select(choices=[(True, 'Activo'), (False, 'Inactivo')]),
+            "estado": forms.Select(choices=[(True, "Activo"), (False, "Inactivo")]),
         }
 
 
 class ProgramasForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['fk_subsecretaria'].label = "Subsecretaría"
+        self.fields["fk_subsecretaria"].label = "Subsecretaría"
 
     class Meta:
         model = Programas
         exclude = ()
         widgets = {
-            'observaciones': forms.Textarea(
+            "observaciones": forms.Textarea(
                 attrs={
-                    'class': 'form-control',
-                    'rows': 3,
+                    "class": "form-control",
+                    "rows": 3,
                 }
             ),
-            'estado': forms.Select(choices=[(True, 'Activo'), (False, 'Inactivo')]),
+            "estado": forms.Select(choices=[(True, "Activo"), (False, "Inactivo")]),
         }
 
 
 class OrganismosForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['estado'].initial = True
+        self.fields["estado"].initial = True
 
     class Meta:
         model = Organismos
         exclude = ()
         widgets = {
-            'observaciones': forms.Textarea(
+            "observaciones": forms.Textarea(
                 attrs={
-                    'class': 'form-control',
-                    'rows': 3,
+                    "class": "form-control",
+                    "rows": 3,
                 }
             ),
-            'estado': forms.Select(choices=[(True, 'Activo'), (False, 'Inactivo')]),
+            "estado": forms.Select(choices=[(True, "Activo"), (False, "Inactivo")]),
         }
 
 
@@ -80,13 +80,13 @@ class PlanesSocialesForm(forms.ModelForm):
         model = PlanesSociales
         exclude = ()
         widgets = {
-            'observaciones': forms.Textarea(
+            "observaciones": forms.Textarea(
                 attrs={
-                    'class': 'form-control',
-                    'rows': 3,
+                    "class": "form-control",
+                    "rows": 3,
                 }
             ),
-            'estado': forms.Select(choices=[(True, 'Activo'), (False, 'Inactivo')]),
+            "estado": forms.Select(choices=[(True, "Activo"), (False, "Inactivo")]),
         }
 
 
@@ -95,11 +95,13 @@ class AgentesExternosForm(forms.ModelForm):
         model = AgentesExternos
         exclude = ()
         labels = {
-            'fk_organismo': 'Organismo',
-            'telefono': 'Teléfono',
+            "fk_organismo": "Organismo",
+            "telefono": "Teléfono",
         }
 
-        widgets = {'estado': forms.Select(choices=[(True, 'Activo'), (False, 'Inactivo')])}
+        widgets = {
+            "estado": forms.Select(choices=[(True, "Activo"), (False, "Inactivo")])
+        }
 
 
 class GruposDestinatariosForm(forms.ModelForm):
@@ -107,26 +109,29 @@ class GruposDestinatariosForm(forms.ModelForm):
         model = GruposDestinatarios
         exclude = ()
         widgets = {
-            'm2m_usuarios': forms.SelectMultiple(
+            "m2m_usuarios": forms.SelectMultiple(
                 attrs={
-                    'class': 'select2 w-100',
+                    "class": "select2 w-100",
                 },
             ),
-            'm2m_agentes_externos': forms.SelectMultiple(
+            "m2m_agentes_externos": forms.SelectMultiple(
                 attrs={
-                    'class': 'select2 w-100',
+                    "class": "select2 w-100",
                 },
             ),
-            'observaciones': forms.Textarea(
+            "observaciones": forms.Textarea(
                 attrs={
-                    'class': 'form-control',
-                    'rows': 3,
+                    "class": "form-control",
+                    "rows": 3,
                 }
             ),
-            'estado': forms.Select(choices=[(True, 'Activo'), (False, 'Inactivo')]),
+            "estado": forms.Select(choices=[(True, "Activo"), (False, "Inactivo")]),
         }
 
-        labels = {'m2m_usuarios': 'Usuarios', 'm2m_agentes_externos': 'Agentes externos'}
+        labels = {
+            "m2m_usuarios": "Usuarios",
+            "m2m_agentes_externos": "Agentes externos",
+        }
 
 
 class CategoriaAlertasForm(forms.ModelForm):
@@ -140,9 +145,9 @@ class CategoriaAlertasForm(forms.ModelForm):
             #         'rows': 3,
             #     }
             # ),
-            'estado': forms.Select(choices=[(True, 'Activo'), (False, 'Inactivo')]),
+            "estado": forms.Select(choices=[(True, "Activo"), (False, "Inactivo")]),
         }
-        labels = {'dimension': 'Dimensión'}
+        labels = {"dimension": "Dimensión"}
 
 
 class AlertasForm(forms.ModelForm):
@@ -150,19 +155,19 @@ class AlertasForm(forms.ModelForm):
         model = Alertas
         exclude = ()
         widgets = {
-            'estado': forms.Select(choices=[(True, 'Activo'), (False, 'Inactivo')]),
-            'gravedad': forms.Select(choices=CHOICE_CRITERIO_ALERTA),
+            "estado": forms.Select(choices=[(True, "Activo"), (False, "Inactivo")]),
+            "gravedad": forms.Select(choices=CHOICE_CRITERIO_ALERTA),
         }
-        labels = {'fk_categoria': 'Categoría'}
+        labels = {"fk_categoria": "Categoría"}
 
 
 class EquiposForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # users = users_con_permiso('programa_CDIF')
-        self.fields['fk_programa'].label = "Programa"
-        self.fields['m2m_usuarios'].label = "Integrantes"
-        self.fields['fk_coordinador'].label = "Coordinador"
+        self.fields["fk_programa"].label = "Programa"
+        self.fields["m2m_usuarios"].label = "Integrantes"
+        self.fields["fk_coordinador"].label = "Coordinador"
         # self.fields['m2m_usuarios'].queryset = users
         # self.fields['fk_coordinador'].initial = users
 
@@ -170,13 +175,13 @@ class EquiposForm(forms.ModelForm):
         model = Equipos
         exclude = ()
         widgets = {
-            'observaciones': forms.Textarea(
+            "observaciones": forms.Textarea(
                 attrs={
-                    'class': 'form-control',
-                    'rows': 3,
+                    "class": "form-control",
+                    "rows": 3,
                 }
             ),
-            'estado': forms.Select(choices=[(True, 'Activo'), (False, 'Inactivo')]),
+            "estado": forms.Select(choices=[(True, "Activo"), (False, "Inactivo")]),
         }
 
 
@@ -185,10 +190,10 @@ class AccionesForm(forms.ModelForm):
         model = Acciones
         exclude = ()
         widgets = {
-            'observaciones': forms.Textarea(
+            "observaciones": forms.Textarea(
                 attrs={
-                    'class': 'form-control',
-                    'rows': 3,
+                    "class": "form-control",
+                    "rows": 3,
                 }
             ),
         }
@@ -198,28 +203,28 @@ class CriteriosForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.fields['m2m_acciones'].label = ""
-        self.fields['m2m_alertas'].label = ""
-        self.fields['fk_sujeto'].label = "Sujeto de aplicación"
+        self.fields["m2m_acciones"].label = ""
+        self.fields["m2m_alertas"].label = ""
+        self.fields["fk_sujeto"].label = "Sujeto de aplicación"
 
     class Meta:
         model = Criterios
-        exclude = ('m2m_criterios',)
+        exclude = ("m2m_criterios",)
         widgets = {
-            'm2m_acciones': forms.SelectMultiple(
+            "m2m_acciones": forms.SelectMultiple(
                 attrs={
-                    'class': 'select2 w-100',
+                    "class": "select2 w-100",
                 },
             ),
-            'm2m_alertas': forms.SelectMultiple(
+            "m2m_alertas": forms.SelectMultiple(
                 attrs={
-                    'class': 'select2 w-100',
+                    "class": "select2 w-100",
                 },
             ),
-            'observaciones': forms.Textarea(
+            "observaciones": forms.Textarea(
                 attrs={
-                    'class': 'form-control',
-                    'rows': 3,
+                    "class": "form-control",
+                    "rows": 3,
                 }
             ),
         }
@@ -228,42 +233,43 @@ class CriteriosForm(forms.ModelForm):
 class VacantesForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['fk_programa'].label = "Programa"
-        self.fields['fk_organismo'].label = "Organismo"
+        self.fields["fk_programa"].label = "Programa"
+        self.fields["fk_organismo"].label = "Organismo"
+
     class Meta:
         model = Vacantes
         exclude = ()
         widgets = {
-            'observaciones': forms.Textarea(
+            "observaciones": forms.Textarea(
                 attrs={
-                    'class': 'form-control',
-                    'rows': 3,
+                    "class": "form-control",
+                    "rows": 3,
                 }
             ),
-            'estado': forms.Select(choices=[(True, 'Activo'), (False, 'Inactivo')]),
+            "estado": forms.Select(choices=[(True, "Activo"), (False, "Inactivo")]),
         }
 
-        
+
 class IndicesForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.fields['m2m_programas'].label = ""
-        self.fields['nombre'].label = "Nombre del Índice"
+        self.fields["m2m_programas"].label = ""
+        self.fields["nombre"].label = "Nombre del Índice"
 
     class Meta:
         model = Indices
-        exclude = ('m2m_criterios',)
+        exclude = ("m2m_criterios",)
         widgets = {
-            'm2m_programas': forms.SelectMultiple(
+            "m2m_programas": forms.SelectMultiple(
                 attrs={
-                    'class': 'select2 w-100',
+                    "class": "select2 w-100",
                 },
             ),
-            'observaciones': forms.Textarea(
+            "observaciones": forms.Textarea(
                 attrs={
-                    'class': 'form-control',
-                    'rows': 3,
+                    "class": "form-control",
+                    "rows": 3,
                 }
             ),
         }
@@ -272,14 +278,16 @@ class IndicesForm(forms.ModelForm):
 class IndiceCriteriosForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['fk_criterio'].label = ""
-        self.fields['puntaje_base'].label = ""
+        self.fields["fk_criterio"].label = ""
+        self.fields["puntaje_base"].label = ""
 
     class Meta:
         model = IndiceCriterios
-        exclude = ('fk_indice',)
+        exclude = ("fk_indice",)
 
 
 from django.forms.models import inlineformset_factory
 
-IndicesFormset = inlineformset_factory(Indices, IndiceCriterios, form=IndiceCriteriosForm, extra=1, can_delete=True)
+IndicesFormset = inlineformset_factory(
+    Indices, IndiceCriterios, form=IndiceCriteriosForm, extra=1, can_delete=True
+)
