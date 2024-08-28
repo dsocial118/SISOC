@@ -1,82 +1,90 @@
 {% extends "includes/base.html" %};
-{% load static %};
-
-{% block head %}
-{% endblock %}
-
-{% block title %}Criterios de vulneravilidad{% endblock %};
-{% block titulo-pagina %}Criterios de vulneravilidad{% endblock %};
-
-{% block menu-adicional %}
-{% endblock %};
-
+{% load static %}
+;
+{% block head %}{% endblock %}
+{% block title %}Criterios de vulneravilidad{% endblock %}
+;
+{% block titulo-pagina %}Criterios de vulneravilidad{% endblock %}
+;
+{% block menu-adicional %}{% endblock %}
+;
 {% block content %}
-
-<div class="card card-primary card-outline">
-  <div class="card-header">
-    <div class="row align-items-center">
-      <div class="col-sm-3">
-        <a href="{% url 'criterios_crear'%}" class=" btn btn-primary">Agregar</a>
-      </div>
-      <div class="col-sm-9 ">
-        <form method='GET'>
-          <div class="form-row justify-content-sm-end">
-            <div class="form-group col-sm-3 mb-0 mb-0 pb-0">
-              <input type="text" class="form-control form-control-border border-width-2" ptype='text' name='busqueda'
-                value='{{ request.GET.busqueda }}' placeholder="Búsqueda..." aria-label="Search">
+    <div class="card card-primary card-outline">
+        <div class="card-header">
+            <div class="row align-items-center">
+                <div class="col-sm-3">
+                    <a href="{% url 'criterios_crear' %}" class=" btn btn-primary">Agregar</a>
+                </div>
+                <div class="col-sm-9 ">
+                    <form method='GET'>
+                        <div class="form-row justify-content-sm-end">
+                            <div class="form-group col-sm-3 mb-0 mb-0 pb-0">
+                                <input type="text"
+                                       class="form-control form-control-border border-width-2"
+                                       ptype='text'
+                                       name='busqueda'
+                                       value='{{ request.GET.busqueda }}'
+                                       placeholder="Búsqueda..."
+                                       aria-label="Search" />
+                            </div>
+                            <div class="form-group col-sm-1 mb-0 pb-0">
+                                <button type="submit" class="btn btn-primary btn-block">
+                                    <i class='fas fa-search'></i>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
             </div>
-            <div class="form-group col-sm-1 mb-0 pb-0">
-              <button type="submit" class="btn btn-primary btn-block"><i class='fas fa-search'></i></button>
+        </div>
+    </div>
+    <!-- /Opcion Onepage-->
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive text-nowrap">
+                <table class="table table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Dimensión</th>
+                            <th>Sujeto</th>
+                            <th>Acciones</th>
+                            <th>Alertas</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for o in object_list %}
+                            <tr class="clickable-row "
+                                role="button"
+                                data-href="{% url 'criterios_ver' o.id %}"
+                                title="ver detalle">
+                                <td class="font-weight-bold {% if o.estado %} text-success{% else %} text-danger {% endif %} ">
+                                    {{ o.nombre |truncatechars:30 }}
+                                </td>
+                                <td class="">{{ o.dimension }}</td>
+                                <td class="">{{ o.fk_sujeto }}</td>
+                                <td class=" d-none d-sm-table-cell ">
+                                    <span class="badge bg-light">{{ o.m2m_acciones.all|length }}</span>
+                                </td>
+                                <td class=" d-none d-sm-table-cell ">
+                                    <span class="badge bg-light">{{ o.m2m_alertas.all|length }}</span>
+                                </td>
+                                <td>
+                                    {% if o.estado %}
+                                        <span class="text-success font-weight-bold">Activo</span>
+                                    {% else %}
+                                        <span class="text-danger font-weight-bold">Inactivo</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <td class="text-center text-muted" colspan="6">-Sin Criterios de vulneravilidad-</td>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
-          </div>
-        </form>
-      </div>
+        </div>
     </div>
-  </div>
-</div>
-<!-- /Opcion Onepage-->
-
-<div class="card">
-  <div class="card-body p-0">
-    <div class="table-responsive text-nowrap">
-      <table class="table table-bordered table-hover">
-        <thead>
-          <tr>
-            <th>Nombre</th>
-            <th>Dimensión</th>
-            <th>Sujeto</th>
-            <th >Acciones</th>
-            <th >Alertas</th>
-            <th >Estado</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for o in object_list %}
-          <tr class="clickable-row " role="button" data-href="{% url 'criterios_ver' o.id %}" title="ver detalle">
-            <td class="font-weight-bold
-            {% if o.estado  %} text-success{% else %} text-danger {% endif %}
-            ">{{o.nombre |truncatechars:30 }}</span></td>
-            <td class="">{{o.dimension}}</span></td>
-            <td class="">{{o.fk_sujeto}}</span></td>
-            <td class=" d-none d-sm-table-cell "><span class="badge bg-light">{{o.m2m_acciones.all|length }}</span></td>
-            <td class=" d-none d-sm-table-cell "><span class="badge bg-light">{{o.m2m_alertas.all|length }}</span></td>
-            <td >
-              {% if o.estado  %}
-              <span class="text-success font-weight-bold">Activo</span>
-              {% else %}
-              <span class="text-danger font-weight-bold">Inactivo</span>
-              {% endif %}
-            </td>
-          </tr>
-          {% empty %}
-          <td class="text-center text-muted" colspan="6">-Sin Criterios de vulneravilidad-</tr>
-            {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
 {% endblock content %}
-
-{% block customJS %}
-{% endblock %}
+{% block customJS %}{% endblock %}

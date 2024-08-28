@@ -1,57 +1,59 @@
 {% extends "includes/base.html" %}
 {% load static %}
 {% block title %}Acciones{% endblock %}
-{% block titulo-pagina %}Acciones{% endblock %};
+{% block titulo-pagina %}Acciones{% endblock %}
+;
 {% block breadcrumb %}
-<ol class="breadcrumb float-sm-right ">
-    <li class="breadcrumb-item">Configuraciones </li>
-    <li class="breadcrumb-item"><a href="{% url 'acciones_listar' %}">Acciones</a></li>
-    <li class="breadcrumb-item active"> {{ object.nombre}}</li>
-</ol>
-{% endblock %};
+    <ol class="breadcrumb float-sm-right ">
+        <li class="breadcrumb-item">Configuraciones</li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'acciones_listar' %}">Acciones</a>
+        </li>
+        <li class="breadcrumb-item active">{{ object.nombre }}</li>
+    </ol>
+{% endblock %}
+;
 {% load crispy_forms_tags %}
-
 {% block content %}
-
-<div class="row">
-    <!-- botones -->
-    <div class="col-12 my-3 mx-2 d-print-none">
-        {%if perms.Usuarios.rol_admin%}
-        <a href="{% url 'acciones_editar' object.id %}" class="{% if not perms.Inicio.change_Secretaria %}  disabled {% endif %}" class="btn btn-primary mr-1">Editar</a>
-        {%endif%}
-        <a href="" class="btn btn-secondary mr-1 print">Imprimir</a>
-        {%if perms.Usuarios.rol_admin%}
-        <a href="{% url 'acciones_eliminar' object.id %}" class="btn btn-danger mr-1">Eliminar</a>
-        {%endif%}
-    </div>
-    <!-- ./botones -->
-    
-    <div class="col-12">
-        <div class="card card-outline card-primary h-100">
-            <div class="card-header">
-                <h3 class="card-title">{{ object.nombre}}</h3>
-            </div>
-            <div class="card-body">
-                <dl class="row mb-0">
-                    <dt class="col-sm-3 font-weight-normal">Dimensión</dt>
-                    <dd class="col-sm-9 font-weight-bold">{{ object.dimension}}</dd>
-                    <dt class="col-sm-3 font-weight-normal">Observaciones</dt>
-                    <dd class="col-sm-9 font-weight-bold">{{ object.observaciones|default_if_none:"-" }} </dd>
-                </dl>
+    <div class="row">
+        <!-- botones -->
+        <div class="col-12 my-3 mx-2 d-print-none">
+            {% if perms.Usuarios.rol_admin %}
+                <a href="{% url 'acciones_editar' object.id %}"
+                   class="{% if not perms.Inicio.change_Secretaria %}  disabled {% endif %}"
+                   class="btn btn-primary mr-1">Editar</a>
+            {% endif %}
+            <a href="" class="btn btn-secondary mr-1 print">Imprimir</a>
+            {% if perms.Usuarios.rol_admin %}
+                <a href="{% url 'acciones_eliminar' object.id %}"
+                   class="btn btn-danger mr-1">Eliminar</a>
+            {% endif %}
+        </div>
+        <!-- ./botones -->
+        <div class="col-12">
+            <div class="card card-outline card-primary h-100">
+                <div class="card-header">
+                    <h3 class="card-title">{{ object.nombre }}</h3>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-3 font-weight-normal">Dimensión</dt>
+                        <dd class="col-sm-9 font-weight-bold">
+                            {{ object.dimension }}
+                        </dd>
+                        <dt class="col-sm-3 font-weight-normal">Observaciones</dt>
+                        <dd class="col-sm-9 font-weight-bold">
+                            {{ object.observaciones|default_if_none:"-" }}
+                        </dd>
+                    </dl>
+                </div>
             </div>
         </div>
     </div>
-</div>
-<div class="row mt-4 d-print-none">
-    <div class="col-12 mx-2">
-        <a href="{% url 'acciones_listar' %}" class="btn btn-secondary">Volver</a>
+    <div class="row mt-4 d-print-none">
+        <div class="col-12 mx-2">
+            <a href="{% url 'acciones_listar' %}" class="btn btn-secondary">Volver</a>
+        </div>
     </div>
-</div>
-
-
 {% endblock content %}
-
-
-{% block customJS %}
-
-{% endblock %}
+{% block customJS %}{% endblock %}

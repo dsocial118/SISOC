@@ -1,29 +1,25 @@
 {% extends "includes/base.html" %};
-{% load static %};
-
-{% block head %}
-{% endblock %}
-
-{% block title %}Agentes Externos{% endblock %};
-{% block titulo-pagina %}Agentes Externos{% endblock %};
-
-{% block menu-adicional %}
-{% endblock %};
-
+{% load static %}
+;
+{% block head %}{% endblock %}
+{% block title %}Agentes Externos{% endblock %}
+;
+{% block titulo-pagina %}Agentes Externos{% endblock %}
+;
+{% block menu-adicional %}{% endblock %}
+;
 {% block content %}
-
-
-<div class="row d-flex justify-content-between my-3 mx-sm-2">
-  <div class="col-12 col-sm-3 ">
-    {%if perms.Usuarios.rol_admin%}
-    <a class="btn btn-primary mb-2 mb-sm-0 d-block d-sm-inline" href="{% url 'agentesexternos_crear'%}">Agregar</a>
-    {%endif%}
-  </div>
-  {% comment %} <div class="col-12 col-sm-3 ">
+    <div class="row d-flex justify-content-between my-3 mx-sm-2">
+        <div class="col-12 col-sm-3 ">
+            {% if perms.Usuarios.rol_admin %}
+                <a class="btn btn-primary mb-2 mb-sm-0 d-block d-sm-inline"
+                   href="{% url 'agentesexternos_crear' %}">Agregar</a>
+            {% endif %}
+        </div>
+        {% comment %} <div class="col-12 col-sm-3 ">
     <form action="" method="GET">
       <div class="input-group">
-        <input type="search" class="form-control form-control-md" placeholder="Buscar"
-        value='{{ request.GET.busqueda }}' name='busqueda'>
+        <input type="search" class="form-control form-control-md" placeholder="Buscar" value='{{ request.GET.busqueda }}' name='busqueda' />
         <div class="input-group-append">
           <button type="submit" class="btn btn-md btn-default ">
             <i class="fa fa-search"></i>
@@ -31,67 +27,63 @@
         </div>
       </div>
     </form>
-  </div> {% endcomment %}
-</div>
-
-<div class="row ">
-  <div class="col-12">
-    <div class="card">
-      <div class="card-body">
-        <table class="table table-bordered table-striped projects {%if perms.Usuarios.rol_admin or perms.Usuarios.rol_consultante %} tabladt {%endif%}">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-            <th>Email</th>
-            <th >Teléfono</th>
-            <th >Organismo</th>
-            <th >Rol</th>
-            <th >Estado</th>
-              <th style="width: 15%" class="notexport">
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for o in object_list %}
-            <tr>
-              <td><span class="font-weight-bold "><a href="{% url 'agentesexternos_ver' o.id %}">{{o}}</a></span></td>
-              <td> {{o.email |default_if_none:"-" }}</td>
-              <td > {{o.telefono |default_if_none:"-" }}</td>
-              <td > {{o.fk_organismo |default_if_none:"-" }}</td>
-              <td > {{o.rol |default_if_none:"-" }}</td>
-              <td > 
-                {% if o.estado  %}
-                <span class="text-success font-weight-bold">Activo</span>
-                {% else %}
-                <span class="text-danger font-weight-bold">Inactivo</span>
-                {% endif %}
-              </td>
-              </td>
-              <td class="project-actions text-right">
-                 {%if perms.Usuarios.rol_admin%} 
-                <div class="btn-group" role="group">
-                  <a href="{% url 'agentesexternos_ver' o.id %}" class="btn btn-primary btn-sm ver">Ver</a> 
-                  <a href="{% url 'agentesexternos_editar' o.id %}" class="btn btn-primary btn-sm editar">Editar</a>
-                  <a href="{% url 'agentesexternos_eliminar' o.id %}" class="btn btn-danger btn-sm eliminar">Eliminar</a>
-                  </div>
-                  {%endif%}
-              </td>
-            </tr>
-              {% endfor %}
-          </tbody>
-        </table>
-      
-      </div>
-      
-      <!-- /.card-body -->
+        </div> {% endcomment %}
     </div>
-    <!-- /.card -->
-  </div>
-  <!-- /.col -->
-</div>
-
-
+    <div class="row ">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <table class="table table-bordered table-striped projects {% if perms.Usuarios.rol_admin or perms.Usuarios.rol_consultante %}tabladt{% endif %}">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Email</th>
+                                <th>Teléfono</th>
+                                <th>Organismo</th>
+                                <th>Rol</th>
+                                <th>Estado</th>
+                                <th style="width: 15%" class="notexport"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for o in object_list %}
+                                <tr>
+                                    <td>
+                                        <span class="font-weight-bold "><a href="{% url 'agentesexternos_ver' o.id %}">{{ o }}</a></span>
+                                    </td>
+                                    <td>{{ o.email |default_if_none:"-" }}</td>
+                                    <td>{{ o.telefono |default_if_none:"-" }}</td>
+                                    <td>{{ o.fk_organismo |default_if_none:"-" }}</td>
+                                    <td>{{ o.rol |default_if_none:"-" }}</td>
+                                    <td>
+                                        {% if o.estado %}
+                                            <span class="text-success font-weight-bold">Activo</span>
+                                        {% else %}
+                                            <span class="text-danger font-weight-bold">Inactivo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="project-actions text-right">
+                                        {% if perms.Usuarios.rol_admin %}
+                                            <div class="btn-group" role="group">
+                                                <a href="{% url 'agentesexternos_ver' o.id %}"
+                                                   class="btn btn-primary btn-sm ver">Ver</a>
+                                                <a href="{% url 'agentesexternos_editar' o.id %}"
+                                                   class="btn btn-primary btn-sm editar">Editar</a>
+                                                <a href="{% url 'agentesexternos_eliminar' o.id %}"
+                                                   class="btn btn-danger btn-sm eliminar">Eliminar</a>
+                                            </div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <!-- /.card-body -->
+            </div>
+            <!-- /.card -->
+        </div>
+        <!-- /.col -->
+    </div>
 {% endblock content %}
-
-{% block customJS %}
-{% endblock %}
+{% block customJS %}{% endblock %}
