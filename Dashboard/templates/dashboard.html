@@ -3,7 +3,7 @@
 {% block head %}
 <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
 <!-- Chart -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/Chart.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/charts.css/dist/charts.min.css">
 {% endblock %}
 
 {% block title %}Dashboard{% endblock %};
@@ -301,7 +301,7 @@
 {% block customJS %}
 
 <!-- Chart -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 
 <script>
     $(function () {
@@ -359,7 +359,10 @@
         //-------------
         //- LINE CHART -
         //--------------
-        var lineChartCanvas = $('#lineChart').get(0).getContext('2d')
+
+        // TODO: Ver como reubicar el codigo de lineChart
+        
+        /*var lineChartCanvas = $('#lineChart').get(0).getContext('2d')
         var lineChartOptions = $.extend(true, {}, areaChartOptions)
         var lineChartData = $.extend(true, {}, areaChartData)
         lineChartData.datasets[0].fill = true;
@@ -371,6 +374,7 @@
             data: lineChartData,
             options: lineChartOptions
         })
-    })
+    })*/
+    });
 </script>
 {% endblock %}
