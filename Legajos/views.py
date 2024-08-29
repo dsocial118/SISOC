@@ -3,10 +3,8 @@ import json
 
 # Configurar el locale para usar el idioma español
 import locale
-import os
-from collections import defaultdict
-from datetime import date, datetime, time, timedelta
-from io import BytesIO  # Import BytesIO
+from datetime import date, datetime, timedelta
+from io import BytesIO
 
 from django.conf import settings
 from django.contrib import messages
@@ -35,10 +33,12 @@ from django.views.generic import (
 from PIL import Image
 
 from Usuarios.mixins import PermisosMixin
+from Usuarios.utils import recortar_imagen
 
 from .choices import *
 from .forms import *
 from .models import *
+from Configuraciones.choices import CHOICE_CIRCUITOS
 
 locale.setlocale(locale.LC_ALL, "es_AR.UTF-8")
 # guardado de log de usuarios
@@ -553,13 +553,7 @@ class LegajosCreateView(PermisosMixin, CreateView):
         legajo = form.save(commit=False)
 
         if legajo.foto:
-            imagen = Image.open(legajo.foto)
-            tamano_minimo = min(imagen.width, imagen.height)
-            area = (0, 0, tamano_minimo, tamano_minimo)
-            imagen_recortada = imagen.crop(area)
-
-            buffer = BytesIO()
-            imagen_recortada.save(buffer, format="PNG")
+            buffer = recortar_imagen(legajo.foto)
             legajo.foto.save(legajo.foto.name, ContentFile(buffer.getvalue()))
 
         try:
@@ -600,13 +594,7 @@ class LegajosUpdateView(PermisosMixin, UpdateView):
         with transaction.atomic():
             # Comprobamos si se ha cargado una nueva foto y si es diferente de la foto actual
             if legajo.foto and legajo.foto != current_legajo.foto:
-                imagen = Image.open(legajo.foto)
-                tamano_minimo = min(imagen.width, imagen.height)
-                area = (0, 0, tamano_minimo, tamano_minimo)
-                imagen_recortada = imagen.crop(area)
-
-                buffer = BytesIO()
-                imagen_recortada.save(buffer, format="PNG")
+                buffer = recortar_imagen(legajo.foto)
                 legajo.foto.save(legajo.foto.name, ContentFile(buffer.getvalue()))
 
             self.object = (

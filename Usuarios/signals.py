@@ -9,7 +9,7 @@ from django.contrib.auth.signals import (
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
-from .models import *
+from Usuarios.models import User, Usuarios
 
 
 @receiver(post_save, sender=User)
@@ -27,7 +27,7 @@ def guardar_usuario(sender, instance, **kwargs):
     Si se actualiza un user, se actualiza el usuario correspondiente
     """
     # instance.usuarios.save()
-    return
+    return None
 
 
 @receiver(post_delete, sender=Usuarios)

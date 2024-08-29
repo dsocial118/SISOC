@@ -1,13 +1,30 @@
-from django.contrib import messages
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import login_required
 from django.urls import path
+from django.contrib.auth.views import LogoutView
 
-from .views import *
+from Usuarios.forms import MySetPasswordFormm
+from Usuarios.views import (
+    UsuariosLoginView,
+    UsuariosCreateView,
+    UsuariosListView,
+    UsuariosDetailView,
+    UsuariosUpdateView,
+    UsuariosDeleteView,
+    UsuariosResetPassView,
+    PerfilUpdateView,
+    PerfilChangePassView,
+    GruposCreateView,
+    GruposListView,
+    GruposDetailView,
+    GruposUpdateView,
+    GruposDeleteView,
+    set_dark_mode,
+)
+
 
 urlpatterns = [
     path("", UsuariosLoginView.as_view(), name="login"),
-    # path('', auth_views.LoginView.as_view(template_name='login.html',authentication_form = CustomAuthenticationForm),name='login'),
     path("logout", login_required(LogoutView.as_view()), name="logout"),
     # Usuarios
     path(

@@ -1,10 +1,7 @@
 from django.contrib.auth.mixins import (
-    LoginRequiredMixin,
     PermissionRequiredMixin,
-    UserPassesTestMixin,
 )
 from django.contrib.auth.models import Group, User
-from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 
 
@@ -19,8 +16,6 @@ class PermisosMixin(PermissionRequiredMixin):
         acceso = False
         permisos_de_grupo = False
         user = self.request.user
-        if Group.objects.filter(user=user).exists():
-            group = Group.objects.filter(user=user)
 
         for group in Group.objects.all():
             permissions = group.permissions.all()
@@ -38,7 +33,7 @@ class PermisosMixin(PermissionRequiredMixin):
     def handle_no_permission(self):
         self.raise_exception = self.request.user.is_authenticated
         self.permission_denied_message = "No posee permisos para realizar la acción"
-        return super(PermisosMixin, self).handle_no_permission()
+        return super().handle_no_permission()
 
 
 def users_con_perm(perm_name):
