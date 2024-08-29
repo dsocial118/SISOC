@@ -3,8 +3,8 @@ from django.contrib.auth.decorators import login_required
 from django.urls import path
 from django.contrib.auth.views import LogoutView
 
-from Usuarios.forms import MySetPasswordFormm
-from Usuarios.views import (
+from usuarios.forms import MySetPasswordFormm
+from usuarios.views import (
     UsuariosLoginView,
     UsuariosCreateView,
     UsuariosListView,

@@ -1,10 +1,10 @@
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
-from Configuraciones.models import Alertas
-from Dashboard.models import Dashboard
-from Dashboard.utils import *
-from Legajos.models import LegajoAlertas, Legajos, LegajosDerivaciones
+from configuraciones.models import Alertas
+from dashboard.models import Dashboard
+from dashboard.utils import *
+from legajos.models import LegajoAlertas, Legajos, LegajosDerivaciones
 
 from .utils import table_exists
 

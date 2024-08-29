@@ -5,6 +5,6 @@ class DashboardConfig(AppConfig):
     name = "Dashboard"
 
     def ready(self):
-        from Dashboard import signals
+        from dashboard import signals
 
         signals.register_signals()

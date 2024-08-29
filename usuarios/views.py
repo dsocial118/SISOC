@@ -25,7 +25,7 @@ from django.views.generic import (
 )
 from PIL import Image
 
-from Usuarios.forms import (
+from usuarios.forms import (
     GruposUsuariosForm,
     MyPasswordChangeForm,
     MyResetPasswordForm,
@@ -33,8 +33,8 @@ from Usuarios.forms import (
     UsuariosCreateForm,
     UsuariosUpdateForm,
 )
-from Usuarios.models import Usuarios
-from Usuarios.utils import recortar_imagen
+from usuarios.models import Usuarios
+from usuarios.utils import recortar_imagen
 
 from .mixins import PermisosMixin
 
@@ -161,6 +161,7 @@ class UsuariosCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
                 return redirect("usuarios_listar")
         return None
 
+
 class UsuariosUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
     permission_required = ROL_ADMIN
     model = User
@@ -191,6 +192,7 @@ class UsuariosUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
             return redirect("usuarios_ver", user.usuarios.id)
 
         return None
+
 
 # endregion------------------------------------------------------------------------------------------
 

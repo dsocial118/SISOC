@@ -122,11 +122,11 @@ INSTALLED_APPS = [
     "debug_toolbar",
     "silk",
     # Aplicaciones propias
-    "Usuarios",
-    "Configuraciones",
-    "Inicio",
-    "Dashboard",
-    "Legajos",
+    "usuarios",
+    "configuraciones",
+    "inicio",
+    "dashboard",
+    "legajos",
 ]
 
 # Definición del middleware utilizado por el proyecto

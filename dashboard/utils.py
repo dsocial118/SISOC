@@ -4,8 +4,8 @@ from django.core.cache import cache
 from django.db import connection
 from django.db.models import Count, Q
 
-from Configuraciones.models import Alertas
-from Legajos.models import LegajoAlertas, Legajos, LegajosDerivaciones
+from configuraciones.models import Alertas
+from legajos.models import LegajoAlertas, Legajos, LegajosDerivaciones
 
 # FIXME: Este modulo puede ser optimizado mas aun
 

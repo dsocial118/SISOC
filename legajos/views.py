@@ -32,13 +32,13 @@ from django.views.generic import (
 )
 from PIL import Image
 
-from Usuarios.mixins import PermisosMixin
-from Usuarios.utils import recortar_imagen
+from usuarios.mixins import PermisosMixin
+from usuarios.utils import recortar_imagen
 
 from .choices import *
 from .forms import *
 from .models import *
-from Configuraciones.choices import CHOICE_CIRCUITOS
+from configuraciones.choices import CHOICE_CIRCUITOS
 
 locale.setlocale(locale.LC_ALL, "es_AR.UTF-8")
 # guardado de log de usuarios
