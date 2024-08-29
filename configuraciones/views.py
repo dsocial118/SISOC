@@ -11,7 +11,7 @@ from django.views.generic import (
     UpdateView,
 )
 
-from Usuarios.mixins import PermisosMixin
+from usuarios.mixins import PermisosMixin
 
 from .forms import *
 from .models import *

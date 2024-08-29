@@ -9,7 +9,7 @@ from django.contrib.auth.forms import (
 from django.contrib.auth.models import Group, User, Permission
 from django.core.validators import MaxValueValidator, MinValueValidator
 
-from Usuarios.models import Usuarios
+from usuarios.models import Usuarios
 
 
 from .validators import MaxSizeFileValidator

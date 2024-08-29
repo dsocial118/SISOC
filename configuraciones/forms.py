@@ -1,6 +1,6 @@
 from django import forms
 
-from Usuarios.models import *
+from usuarios.models import *
 
 from .models import *
 

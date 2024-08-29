@@ -6,10 +6,10 @@ from django.db import models
 from django.urls import reverse
 from multiselectfield import MultiSelectField
 
-from Configuraciones.models import *
-from Configuraciones.choices import CHOICE_LOCALIDAD, CHOICE_BARRIOS, CHOICE_CIRCUITOS
-from Legajos.choices import *
-from Usuarios.models import Usuarios
+from configuraciones.models import *
+from configuraciones.choices import CHOICE_LOCALIDAD, CHOICE_BARRIOS, CHOICE_CIRCUITOS
+from legajos.choices import *
+from usuarios.models import Usuarios
 
 
 class Legajos(models.Model):

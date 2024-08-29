@@ -6,4 +6,4 @@ class LegajoConfig(AppConfig):
     name = "Legajos"
 
     def ready(self):
-        import Legajos.signals
+        import legajos.signals
