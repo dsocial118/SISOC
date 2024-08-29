@@ -1,43 +1,51 @@
-from io import BytesIO  # Import BytesIO
+from io import BytesIO
 
-import requests
-from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import login as auth_login
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.views import (
     LoginView,
-    LogoutView,
     PasswordChangeView,
     PasswordResetView,
 )
 from django.contrib.messages.views import SuccessMessageMixin
 from django.core.files.base import ContentFile
-from django.core.files.storage import FileSystemStorage
 from django.db.models import Q
 
 # region---------------------------------------------------------------------------------------USUARIOS
 from django.http import JsonResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect
 from django.urls import reverse_lazy
+from django.contrib.auth.models import Group, User
 from django.views.generic import (
     CreateView,
     DeleteView,
     DetailView,
-    FormView,
     ListView,
     UpdateView,
 )
 from PIL import Image
 
-from .forms import *
+from Usuarios.forms import (
+    GruposUsuariosForm,
+    MyPasswordChangeForm,
+    MyResetPasswordForm,
+    PerfilUpdateForm,
+    UsuariosCreateForm,
+    UsuariosUpdateForm,
+)
+from Usuarios.models import Usuarios
+from Usuarios.utils import recortar_imagen
+
 from .mixins import PermisosMixin
-from .models import *
+
+
+ROL_ADMIN = "Usuarios.rol_admin"
+ROL_OBSERVADOR = "Usuarios.rol_observador"
+ROL_CONSULTANTE = "Usuarios.rol_consultante"
 
 
 def set_dark_mode(request):
     if request.method == "POST":
-        dark_mode = request.POST.get("dark_mode")
         user = request.user
         if user.usuarios.darkmode:
             user.usuarios.darkmode = False
@@ -45,42 +53,7 @@ def set_dark_mode(request):
             user.usuarios.darkmode = True
         user.usuarios.save()
         return JsonResponse({"status": "ok"})
-
-    def get_next_page(self):
-        next_page = super().get_next_page()
-
-        # Obtener el username del usuario desde la sesión
-        username = self.request.session.get("username")
-        print("Username:", username)
-
-        # Enviar una solicitud al endpoint de logout
-        logout_url = "https://auth-ad-srv.msm.gov.ar/api/logout"
-        logout_data = {"username": username}
-        logout_response = requests.post(logout_url, data=logout_data, verify=False)
-
-        if logout_response.status_code == 200:
-            # Si la solicitud de logout es exitosa, mostrar un mensaje al usuario
-            # messages.add_message(
-            #    self.request, messages.SUCCESS,
-            #    '¡Has cerrado sesión con éxito!'
-            # )
-            None
-        elif logout_response.status_code == 401:
-            # Manejar el caso en el que las credenciales sean inválidas
-            # messages.add_message(
-            #    self.request, messages.ERROR,
-            #    'Credenciales inválidas al intentar cerrar sesión. Por favor, inténtalo de nuevo.'
-            # )
-            None
-        else:
-            # Manejar otros códigos de estado de error
-            # messages.add_message(
-            #    self.request, messages.ERROR,
-            #    'Error al cerrar sesión. Por favor, inténtalo de nuevo.'
-            # )
-            None
-
-        return next_page
+    return None
 
 
 class UsuariosLoginView(LoginView):
@@ -89,9 +62,9 @@ class UsuariosLoginView(LoginView):
 
 class UsuariosListView(PermisosMixin, ListView):
     permission_required = [
-        "Usuarios.rol_admin",
-        "Usuarios.rol_observador",
-        "Usuarios.rol_consultante",
+        ROL_ADMIN,
+        ROL_OBSERVADOR,
+        ROL_CONSULTANTE,
     ]
     model = Usuarios
 
@@ -122,9 +95,9 @@ class UsuariosListView(PermisosMixin, ListView):
 
 class UsuariosDetailView(UserPassesTestMixin, DetailView):
     permission_required = [
-        "Usuarios.rol_admin",
-        "Usuarios.rol_observador",
-        "Usuarios.rol_consultante",
+        ROL_ADMIN,
+        ROL_OBSERVADOR,
+        ROL_CONSULTANTE,
     ]
     model = Usuarios
     template_name = "Usuarios/usuarios_detail.html"
@@ -136,16 +109,15 @@ class UsuariosDetailView(UserPassesTestMixin, DetailView):
             usuario_solicitado = int(self.kwargs["pk"])
             if (
                 (usuario_actual == usuario_solicitado)
-                or self.request.user.has_perm("Usuarios.rol_admin")
+                or self.request.user.has_perm(ROL_ADMIN)
                 or self.request.user.has_perm("auth_user.view_user")
             ):
                 return True
-        else:
-            return False
+        return False
 
 
 class UsuariosDeleteView(PermisosMixin, SuccessMessageMixin, DeleteView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = ROL_ADMIN
     model = Usuarios
     template_name = "Usuarios/usuarios_confirm_delete.html"
     success_url = reverse_lazy("usuarios_listar")
@@ -153,7 +125,7 @@ class UsuariosDeleteView(PermisosMixin, SuccessMessageMixin, DeleteView):
 
 
 class UsuariosCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = ROL_ADMIN
     template_name = "Usuarios/usuarios_create_form.html"
     form_class = UsuariosCreateForm
     model = User
@@ -176,12 +148,7 @@ class UsuariosCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
                 if telefono:
                     usuario.telefono = telefono
                 if img:
-                    imagen = Image.open(img)
-                    tamano_minimo = min(imagen.width, imagen.height)
-                    area = (0, 0, tamano_minimo, tamano_minimo)
-                    imagen_recortada = imagen.crop(area)
-                    buffer = BytesIO()
-                    imagen_recortada.save(buffer, format="PNG")
+                    buffer = recortar_imagen(img)
                     usuario.imagen.save(img.name, ContentFile(buffer.getvalue()))
 
                 usuario.save()
@@ -189,13 +156,13 @@ class UsuariosCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
                 return redirect("usuarios_ver", user.usuarios.id)
 
             except Exception as e:
-                messages.error(self.request, ("No fue posible crear el usuario."))
+                messages.error(self.request, (f"No fue posible crear el usuario: {e}"))
                 user.delete()
                 return redirect("usuarios_listar")
-
+        return None
 
 class UsuariosUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = ROL_ADMIN
     model = User
     form_class = UsuariosUpdateForm
     template_name = "Usuarios/usuarios_update_form.html"
@@ -216,19 +183,14 @@ class UsuariosUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
                 usuario.telefono = telefono
 
             if img:
-                imagen = Image.open(img)
-                tamano_minimo = min(imagen.width, imagen.height)
-                area = (0, 0, tamano_minimo, tamano_minimo)
-                imagen_recortada = imagen.crop(area)
-
-                buffer = BytesIO()
-                imagen_recortada.save(buffer, format="PNG")
+                buffer = recortar_imagen(img)
                 usuario.imagen.save(img.name, ContentFile(buffer.getvalue()))
 
             usuario.save()
             messages.success(self.request, ("Usuario modificado con éxito."))
             return redirect("usuarios_ver", user.usuarios.id)
 
+        return None
 
 # endregion------------------------------------------------------------------------------------------
 
@@ -249,17 +211,16 @@ class UsuariosResetPassView(PermisosMixin, SuccessMessageMixin, PasswordResetVie
         resetting their password.
     """
 
-    permission_required = "Usuarios.rol_admin"
+    permission_required = ROL_ADMIN
     template_name = "Passwords/password_reset.html"
     form_class = MyResetPasswordForm
     success_url = reverse_lazy("usuarios_listar")
     success_message = "Mail de reseteo de contraseña enviado con éxito."
 
     def get_context_data(self, *args, **kwargs):
-        context = super(UsuariosResetPassView, self).get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
         user_id = self.kwargs["pk"]
         user = User.objects.get(id=user_id)
-        usuario = Usuarios.objects.get(usuario_id=user_id)
         email = user.email
         context["email"] = email
         context["user"] = user
@@ -291,8 +252,7 @@ class PerfilUpdateView(UserPassesTestMixin, SuccessMessageMixin, UpdateView):
             usuario_solicitado = int(self.kwargs["pk"])
             if usuario_actual == usuario_solicitado:
                 return True
-        else:
-            return False
+        return False
 
     def form_valid(self, form):
         img = self.request.FILES.get("imagen")
@@ -307,12 +267,7 @@ class PerfilUpdateView(UserPassesTestMixin, SuccessMessageMixin, UpdateView):
                 usuario.telefono = telefono
             # Verificar si la imagen ha cambiado antes de recortarla y guardarla
             if img:
-                imagen = Image.open(img)
-                tamano_minimo = min(imagen.width, imagen.height)
-                area = (0, 0, tamano_minimo, tamano_minimo)
-                imagen_recortada = imagen.crop(area)
-                buffer = BytesIO()
-                imagen_recortada.save(buffer, format="PNG")
+                buffer = recortar_imagen(img)
                 usuario.imagen.save(img.name, ContentFile(buffer.getvalue()))
             usuario.save()
             messages.success(self.request, ("Perfil modificado con éxito."))
@@ -341,9 +296,9 @@ class PerfilChangePassView(LoginRequiredMixin, SuccessMessageMixin, PasswordChan
 
 class GruposListView(PermisosMixin, ListView):
     permission_required = [
-        "Usuarios.rol_admin",
-        "Usuarios.rol_observador",
-        "Usuarios.rol_consultante",
+        ROL_ADMIN,
+        ROL_OBSERVADOR,
+        ROL_CONSULTANTE,
     ]
     model = Group
     template_name = "Grupos/grupos_list.html"
@@ -363,25 +318,16 @@ class GruposListView(PermisosMixin, ListView):
 class GruposDetailView(PermisosMixin, DetailView):
     permission_required = [
         "auth_user.view_group",
-        "Usuarios.rol_admin",
-        "Usuarios.rol_observador",
-        "Usuarios.rol_consultante",
+        ROL_ADMIN,
+        ROL_OBSERVADOR,
+        ROL_CONSULTANTE,
     ]
     model = Group
     template_name = "Grupos/grupos_detail.html"
 
-    # def get_context_data(self, *args, **kwargs):
-    #      context = super(GruposDetailView, self).get_context_data(**kwargs)
-    #      print('*******************')
-    #      for a,k in self.object.all():
-    #         print(a)
-    #     #  context['programa'] = self.object.filter(codename__startswith='programa_')
-    #     #  context['permiso'] = self.object.filter(codename__startswith='rol_')
-    #      return context
-
 
 class GruposDeleteView(PermisosMixin, SuccessMessageMixin, DeleteView):
-    permission_required = ("auth_user.delete_group", "Usuarios.rol_admin")
+    permission_required = ("auth_user.delete_group", ROL_ADMIN)
     model = Group
     template_name = "Grupos/grupos_confirm_delete.html"
     success_url = reverse_lazy("grupos_listar")
@@ -389,7 +335,7 @@ class GruposDeleteView(PermisosMixin, SuccessMessageMixin, DeleteView):
 
 
 class GruposCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = ROL_ADMIN
     model = Group
     form_class = GruposUsuariosForm
     template_name = "Grupos/grupos_form.html"
@@ -406,6 +352,7 @@ class GruposCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
             grupo = form.save()
             grupo.permissions.set(creator_permissions)
             return redirect("grupos_ver", pk=grupo.id)
+        return None
 
     def form_invalid(self, form):
         print("selfie", form.cleaned_data)
@@ -418,7 +365,7 @@ class GruposCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
 
 
 class GruposUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = ROL_ADMIN
     model = Group
     form_class = GruposUsuariosForm
     template_name = "Grupos/grupos_form.html"
@@ -436,10 +383,14 @@ class GruposUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
             grupo.permissions.set(creator_permissions)
             return redirect("grupos_ver", pk=grupo.id)
 
+        return None
+
     def form_invalid(self, form):
         if "programa" not in form.cleaned_data or "permiso" not in form.cleaned_data:
             messages.error(self.request, "Complete los campos")
             return self.render_to_response(self.get_context_data(form=form))
+
+        return None
 
 
 # endregion------------------------------------------------------------------------------------------

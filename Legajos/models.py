@@ -7,6 +7,7 @@ from django.urls import reverse
 from multiselectfield import MultiSelectField
 
 from Configuraciones.models import *
+from Configuraciones.choices import CHOICE_LOCALIDAD, CHOICE_BARRIOS, CHOICE_CIRCUITOS
 from Legajos.choices import *
 from Usuarios.models import Usuarios
 

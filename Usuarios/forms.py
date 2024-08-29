@@ -6,59 +6,15 @@ from django.contrib.auth.forms import (
     UserChangeForm,
     UserCreationForm,
 )
-from django.contrib.auth.models import Group, User
+from django.contrib.auth.models import Group, User, Permission
 from django.core.validators import MaxValueValidator, MinValueValidator
 
-from .choices import *
-from .models import *
+from Usuarios.models import Usuarios
+
+
 from .validators import MaxSizeFileValidator
 
 usuarios = Usuarios.objects.all()
-
-
-# class UsuariosCreateForm(UserCreationForm):
-#    password1 = forms.CharField(widget=forms.PasswordInput(attrs={
-#                        'type':'password',
-#                        'name': 'password1',}),
-#                label=''
-#                )
-#
-#    password2 = forms.CharField(widget=forms.PasswordInput(attrs={
-#                        'type':'password',
-#                        'name': 'password2',}),
-#                label='')
-#
-#    imagen      = forms.ImageField(validators=[MaxSizeFileValidator(max_file_size=2)],required=False)
-#    telefono    = forms.IntegerField(required=False,widget=forms.NumberInput(attrs={'name': 'telefono',}))
-#    dni         = forms.IntegerField(required=True, validators=[MinValueValidator(3000000), MaxValueValidator(100000000)],widget=forms.NumberInput(attrs={'name': 'dni',}),)
-#
-#    def __init__(self, *args, **kwargs):
-#        super().__init__(*args, **kwargs)
-#        self.fields['password1'].label = "Contraseña"
-#        self.fields['password2'].label = "Confirmar contraseña"
-#        for fieldname in ['username', 'password1', 'password2','groups']:
-#            self.fields[fieldname].help_text = None
-#        self.fields['telefono'].label = "Teléfono"
-#        self.fields['dni'].label = "DNI"
-#
-#    def clean(self):
-#        cleaned_data = super(UsuariosCreateForm, self).clean()
-#        dni = cleaned_data.get('dni')
-#        # validacion de dni unico para la tabla
-#        if dni and Usuarios.objects.filter(dni=dni).exists():
-#            self.add_error('dni', 'ya existe un usuario con ese DNI.')
-#        return cleaned_data
-#
-#    class Meta:
-#        model = User
-#        fields = UserCreationForm.Meta.fields + ('first_name', 'last_name', 'email', 'groups')
-#        labels = {
-#            'first_name' : 'Nombres',
-#            'last_name'  : 'Apellidos',
-#            'username'  : 'Nombre de Usuario',
-#            'email'  : 'Email',
-#            'groups'  : 'Grupos de usuarios'
-#        }
 
 
 class UsuariosCreateForm(UserCreationForm):
@@ -164,8 +120,6 @@ class UsuariosUpdateForm(UserChangeForm):
         ),
     )
 
-    # groups = forms.ModelChoiceField(queryset=Group.objects.all(), required=True,label='Grupos', widget=forms.SelectMultiple(attrs={'class': 'select2 w-100','name': 'groups'},),)
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         usuario = usuarios.get(usuario_id=self.instance.pk)
@@ -183,14 +137,6 @@ class UsuariosUpdateForm(UserChangeForm):
             self.fields[fieldname].help_text = None
         self.fields["telefono"].label = "Teléfono"
         self.fields["dni"].label = "DNI"
-
-    def clean(self):
-        cleaned_data = super(UsuariosUpdateForm, self).clean()
-        dni = cleaned_data.get("dni")
-        # validacion de dni unico para la tabla
-        # if dni and Usuarios.objects.filter(dni=dni).exists():
-        #     self.add_error('dni', 'ya existe un usuario con ese DNI.')
-        return cleaned_data
 
     class Meta:
         model = User

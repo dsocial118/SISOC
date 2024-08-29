@@ -52,14 +52,5 @@ class CustomLoginMiddleware:
                             return redirect(
                                 "legajos_listar"
                             )  # Redirigir a la página deseada después del inicio de sesión
-                    elif endpoint_response.status_code == 401:
-                        # Código 401 significa No autorizado
-                        # Aquí puedes manejar la respuesta 401 según sea necesario
-                        # print("La solicitud al endpoint fue no autorizada.")
-                        None
-                    else:
-                        # Manejar otros códigos de estado si es necesario
-                        # print(f"La solicitud al endpoint devolvió un código de estado {endpoint_response.status_code}")
-                        None
 
         return None

@@ -1,9 +1,8 @@
-from django.contrib.auth.models import Permission, User
+from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import Q
-from django.urls import *
+from django.urls import reverse
 
-from .choices import *
 
 # region------- EXTENSION DEL MODELO USER---------------------------------------------------------------------
 
@@ -56,7 +55,7 @@ class Usuarios(models.Model):
             ("programa_Dashboard", "Dashboard"),
         ]
 
-    def users_con_perm(perm_name):
+    def users_con_perm(self, perm_name):
         return User.objects.filter(
             Q(user_permissions__codename=perm_name)
             | Q(groups__permissions__codename=perm_name)

@@ -5,7 +5,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 
 from .models import *
 from .models import DimensionEducacion
-from .validators import MaxSizeFileValidator
+from Usuarios.validators import MaxSizeFileValidator
 
 
 class LegajosForm(forms.ModelForm):
