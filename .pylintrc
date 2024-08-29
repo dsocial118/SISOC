@@ -443,9 +443,14 @@ disable=raw-checker-failed,
         C0116,  # Missing function or method docstring
         W0511,  # TODO comments
         R0903,  # Too few public methods (useful for Django models/forms)
-        E1131,
-        W0718,
-        E5142
+        E1131, # Emitted when a binary arithmetic operation between two operands is not supported
+        W0718, # Catching too general exception
+        E5142,
+        W0613, # Unused argument
+        W1203, # logging-fstring-interpolation
+        R0901,
+        W5104, # modelform-uses-exclude
+        W3101, # missing-timeout
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
