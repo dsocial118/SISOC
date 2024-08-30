@@ -1,10 +1,16 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.urls import *
+from django.urls import reverse
 
-from usuarios.models import User, Usuarios
+from usuarios.models import Usuarios
 
-from .choices import *
+from .choices import (
+    CHOICE_TIPO_ORGANISMO,
+    CHOICE_BARRIOS,
+    CHOICE_LOCALIDAD,
+    CHOICE_JURISDICCION,
+    CHOICE_DIMENSIONES,
+)
 
 # -------------------------------CONFIGURACIONES GENERALES (se usan en todo el proyecto)--------------------------------------
 
@@ -380,7 +386,7 @@ class Indices(models.Model):
     estado = models.BooleanField(default=True)
 
     def __str__(self):
-        return self.nombre
+        return str(self.nombre)
 
     class Meta:
         verbose_name = "Indice"
@@ -480,96 +486,3 @@ class Vacantes(models.Model):
 
     def get_absolute_url(self):
         return reverse("vacantes_ver", kwargs={"pk": self.pk})
-
-
-# endregion ---------------------FIN INDICES DE VULNERABILIDAD---------------------------------------------------
-
-
-# region ----------------------------- FORMULARIOS---------------------------------------------------------------
-# Esta funcionalidad de crear formularios para nuevos programas quedo postergada, dejo el codigo comentado, que estaba a medio desarrollar
-
-
-# class Opciones(models.Model):
-#     '''
-#     Permite conjunto de opciones persistidas para ser usadas en distintos modelos.
-#     '''
-
-#     opcion = models.CharField(max_length=50, unique=True)
-
-#     def __str__(self):
-#         return self.opcion
-
-#     class Meta:
-#         verbose_name = 'Opción'
-#         verbose_name_plural = "Opciones"
-
-#     def get_absolute_url(self):
-#         return reverse('opciones_ver', kwargs={'pk': self.pk})
-
-
-# class TipoOpciones(models.Model):
-#     '''
-#     Permite conjunto de opciones persistidas para ser usadas en distintos modelos.
-#     '''
-
-#     nombre = models.CharField(max_length=50, unique=True)
-#     opcion = models.ManyToManyField(Opciones)
-
-#     def __str__(self):
-#         return self.nombre
-
-#     class Meta:
-#         ordering = ['nombre']
-#         verbose_name = 'TipoOpciones'
-#         verbose_name_plural = "TipoOpciones"
-
-#     def get_absolute_url(self):
-#         return reverse('tipoopciones_ver', kwargs={'pk': self.pk})
-
-
-# class Items(models.Model):
-#     '''
-#     Preguntas persistidas para ser usadas en distintos formularios.
-#     '''
-
-#     descripcion = models.CharField(max_length=200)
-#     dimension = models.CharField(max_length=70, choices=CHOICE_DIMENSIONES)
-#     tipo_dato = models.CharField(max_length=50, choices=CHOICE_TIPO_DE_DATOS)
-#     visible_en_legajo = models.BooleanField(default=False)
-#     opciones = models.ForeignKey(TipoOpciones, on_delete=models.CASCADE, blank=True, null=True)
-#     fk_sujeto = models.ForeignKey(Sujetos, on_delete=models.CASCADE)
-
-#     def __str__(self):
-#         return self.descripcion
-
-#     class Meta:
-#         ordering = ['dimension']
-#         verbose_name = 'Item'
-#         verbose_name_plural = "Items"
-
-#     def get_absolute_url(self):
-#         return reverse('items_ver', kwargs={'pk': self.pk})
-
-
-# class Formularios(models.Model):
-#     '''
-#     Permite Formularios persistidos para ser usados en distintos instancias.
-#     '''
-
-#     programa = models.ForeignKey(Programas, on_delete=models.CASCADE)
-#     tipo = models.CharField(max_length=50, choices=CHOICE_TIPO_DE_FORMULARIO)
-#     m2m_items = models.ManyToManyField(Items)
-
-#     def __str__(self):
-#         return f'{self.programa} - {self.tipo}'
-
-#     class Meta:
-#         ordering = ['programa']
-#         verbose_name = 'Formulario'
-#         verbose_name_plural = "Formularios"
-
-#     def get_absolute_url(self):
-#         return reverse('formularios_ver', kwargs={'pk': self.pk})
-
-
-# # endregion ---------------------FIN INDICES DE VULNERABILIDAD---------------------------------------------------

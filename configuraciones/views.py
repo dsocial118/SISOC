@@ -13,9 +13,38 @@ from django.views.generic import (
 
 from usuarios.mixins import PermisosMixin
 
-from .forms import *
-from .models import *
-from .utils import insertar_programas
+from .forms import (
+    Secretarias,
+    SecretariasForm,
+    Subsecretarias,
+    SubsecretariasForm,
+    Organismos,
+    OrganismosForm,
+    Programas,
+    ProgramasForm,
+    PlanesSociales,
+    PlanesSocialesForm,
+    AgentesExternos,
+    AgentesExternosForm,
+    GruposDestinatarios,
+    GruposDestinatariosForm,
+    CategoriaAlertas,
+    CategoriaAlertasForm,
+    Alertas,
+    AlertasForm,
+    Equipos,
+    EquiposForm,
+    Acciones,
+    AccionesForm,
+    Criterios,
+    CriteriosForm,
+    Indices,
+    IndicesForm,
+    IndiceCriterios,
+    IndicesFormset,
+    Vacantes,
+    VacantesForm,
+)
 
 # region ############################################################### Secretarías
 
@@ -837,54 +866,6 @@ class IndiceInline:
     form_class = IndicesForm
     model = Indices
     template_name = "Configuraciones/indices_form.html"
-
-    def form_valid(self, form):
-        named_formsets = self.get_named_formsets()
-
-        if not all((x.is_valid() for x in named_formsets.values())):
-            return self.render_to_response(self.get_context_data(form=form))
-
-        self.object = form.save()
-
-        # for every formset, attempt to find a specific formset save function
-
-        # otherwise, just save.
-
-        for name, formset in named_formsets.items():
-            formset_save_func = getattr(self, "formset_{0}_valid".format(name), None)
-
-            if formset_save_func is not None:
-                formset_save_func(formset)
-
-            else:
-                formset.save()
-
-        messages.success(self.request, ("Índice guardado con éxito."))
-
-        return redirect("indices_listar")
-
-    def formset_variants_valid(self, formset):
-        """
-
-        Hook for custom formset saving.Useful if you have multiple formsets
-
-        """
-
-        variants = formset.save(commit=False)
-
-        # self.save_formset(formset, contact)
-
-        # add this 2 lines, if you have can_delete=True parameter
-
-        # set in inlineformset_factory func
-
-        for obj in formset.deleted_objects:
-            obj.delete()
-
-        for variant in variants:
-            variant.fk_indice = Indices.objects.get(id=self.object.id)
-
-            variant.save()
 
 
 def delete_variant(request, pk):

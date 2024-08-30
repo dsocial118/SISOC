@@ -127,6 +127,7 @@ INSTALLED_APPS = [
     "inicio",
     "dashboard",
     "legajos",
+    "healthckeck",
 ]
 
 # Definición del middleware utilizado por el proyecto
@@ -217,9 +218,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # Configuración de Django Debug Toolbar
-DEBUG_TOOLBAR_CONFIG = {
-    "SHOW_TOOLBAR_CALLBACK": lambda request: True if DEBUG else False
-}
+DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": bool(DEBUG)}
 
 # Configuración del HSTS para evitar conflictos en AWS previamente configurados
 SECURE_HSTS_SECONDS = None

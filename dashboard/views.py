@@ -1,4 +1,3 @@
-from django.core.cache import cache
 from django.views.generic import TemplateView
 
 from dashboard.models import Dashboard

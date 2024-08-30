@@ -18,7 +18,7 @@ CHOICE_ESTADO_NIVEL_EDUCATIVO = [
     ("Completo", "Completo"),
 ]
 
-CHOICE_ASISTE_ESCUELA = [
+CHOICE_MOTIVO_NIVEL_INCOMPLETOCHOICE_ASISTE_ESCUELA = [
     ("a", "Sí, asisto actualmente"),
     ("b", "Sí, asistí en algún momento"),
     ("c", "No, nunca asistí"),
@@ -111,14 +111,15 @@ CHOICE_TURNO = [
     ("Noche", "Noche"),
     ("Jornada Completa", "Jornada Completa"),
 ]
-CHOICE_CantidadAmbientes = [
+
+CHOICE_CANTIDADAMBIENTES = [
     ("1", "1"),
     ("2", "2"),
     ("3", "3"),
     ("4", "4"),
 ]
 
-CHOICE_CondicionDe = [
+CHOICE_CONDICIONDE = [
     (
         "Propietario del terreno y la vivienda",
         "Propietario del terreno y la vivienda",
@@ -146,7 +147,7 @@ CHOICE_CondicionDe = [
     ("Otro", "Otro"),
 ]
 
-CHOICE_ContextoCasa = [
+CHOICE_CONTEXTOCASA = [
     (
         "En una zona inundable (en el último año)",
         "En una zona inundable (en el último año)",

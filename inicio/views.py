@@ -7,72 +7,36 @@ from django.views.generic import FormView
 class BusquedaMenu(LoginRequiredMixin, FormView):
     def get(self, request, *args, **kwargs):
         menu = self.request.GET.get("punto_menu")
-        puntos = [
-            "dashboard",
-            "secretarías",
-            "secretarias",
-            "subsecretarías",
-            "subsecretarias",
-            "programas",
-            "organismos",
-            "planes sociales",
-            "agentes externos",
-            "grupos de destinatarios",
-            "tipos de alertas",
-            "equipos",
-            "acciones",
-            "criterios",
-            "índices",
-            "indices",
-            "usuarios",
-            "grupos de usuario",
-            "legajos",
-            "derivaciones",
-            "admisiones",
-            "intervenciones",
-        ]
-        if menu and (menu.lower() in puntos):
+        menu_mapping = {
+            "dashboard": "dashboard_listar",
+            "secretarías": "secretarias_listar",
+            "secretarias": "secretarias_listar",
+            "subsecretarías": "subsecretarias_listar",
+            "subsecretarias": "subsecretarias_listar",
+            "programas": "programas_listar",
+            "organismos": "organismos_listar",
+            "equipos": "equipos_listar",
+            "acciones": "acciones_listar",
+            "criterios": "criterios_listar",
+            "índices": "índices_listar",
+            "indices": "índices_listar",
+            "usuarios": "usuarios_listar",
+            "legajos": "legajos_listar",
+            "derivaciones": "legajosderivaciones_listar",
+            "admisiones": "preadmisiones_listar",
+            "intervenciones": "intervenciones_legajolistar",
+            "planes sociales": "planes_sociales_listar",
+            "agentes externos": "agentesexternos_listar",
+            "grupos de usuario": "grupos_listar",
+            "grupos de destinatarios": "gruposdestinatarios_listar",
+            "categorias de alertas": "categoriaalertas_listar",
+            "alertas": "alertas_listar",
+        }
+
+        if menu:
             menu = menu.lower()
-            if menu == "dashboard":
-                return redirect("dashboard_listar")
-            elif menu == "secretarías" or menu == "secretarias":
-                return redirect("secretarias_listar")
-            elif menu == "subsecretarías" or menu == "subsecretarias":
-                return redirect("subsecretarias_listar")
-            elif menu == "programas":
-                return redirect("programas_listar")
-            elif menu == "organismos":
-                return redirect("organismos_listar")
-            elif menu == "equipos":
-                return redirect("equipos_listar")
-            elif menu == "acciones":
-                return redirect("acciones_listar")
-            elif menu == "criterios":
-                return redirect("criterios_listar")
-            elif menu == "índices" or menu == "indices":
-                return redirect("índices_listar")
-            elif menu == "usuarios":
-                return redirect("usuarios_listar")
-            elif menu == "legajos":
-                return redirect("legajos_listar")
-            elif menu == "derivaciones":
-                return redirect("legajosderivaciones_listar")
-            elif menu == "admisiones":
-                return redirect("preadmisiones_listar")
-            elif menu == "intervenciones":
-                return redirect("intervenciones_legajolistar")
-            elif menu == "planes sociales":
-                return redirect("planes_sociales_listar")
-            elif menu == "agentes externos":
-                return redirect("agentesexternos_listar")
-            elif menu == "grupos de usuario":
-                return redirect("grupos_listar")
-            elif menu == "grupos de destinatarios":
-                return redirect("gruposdestinatarios_listar")
-            elif menu == "categorias de alertas":
-                return redirect("categoriaalertas_listar")
-            elif menu == "alertas":
-                return redirect("alertas_listar")
-        else:
-            messages.error(self.request, ("No existen resultados."))
-            return redirect("legajos_listar")
+            if menu in menu_mapping:
+                return redirect(menu_mapping[menu])
+
+        messages.error(self.request, "No existen resultados.")
+        return redirect("legajos_listar")

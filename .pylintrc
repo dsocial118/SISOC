@@ -438,11 +438,11 @@ disable=raw-checker-failed,
         use-implicit-booleaness-not-comparison-to-string,
         use-implicit-booleaness-not-comparison-to-zero,
         use-symbolic-message-instead,
-        C0114,  # Missing module docstring
-        C0115,  # Missing class docstring
-        C0116,  # Missing function or method docstring
-        W0511,  # TODO comments
-        R0903,  # Too few public methods (useful for Django models/forms)
+        C0114, # Missing module docstring
+        C0115, # Missing class docstring
+        C0116, # Missing function or method docstring
+        W0511, # TODO comments
+        R0903, # Too few public methods (useful for Django models/forms)
         E1131, # Emitted when a binary arithmetic operation between two operands is not supported
         W0718, # Catching too general exception
         E5142,
@@ -451,6 +451,11 @@ disable=raw-checker-failed,
         R0901,
         W5104, # modelform-uses-exclude
         W3101, # missing-timeout
+        W0702, # bare-except
+        R1705, # no-else-return
+        W0201, # attribute-defined-outside-init
+        R1725, # super-with-arguments
+        
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option

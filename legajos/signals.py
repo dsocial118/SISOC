@@ -1,10 +1,9 @@
 import logging
 
-from django.db.models.signals import post_delete, post_save, pre_delete
+from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.utils.timezone import now
 
-from .models import *
+from .models import LegajoAlertas, HistorialLegajoAlertas
 
 # guardado de log de usuarios
 logger = logging.getLogger("django")

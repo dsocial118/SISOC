@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date
 
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -6,9 +6,56 @@ from django.db import models
 from django.urls import reverse
 from multiselectfield import MultiSelectField
 
-from configuraciones.models import *
+from configuraciones.models import (
+    Alertas,
+    Organismos,
+    PlanesSociales,
+    Programas,
+    User,
+    CategoriaAlertas,
+)
 from configuraciones.choices import CHOICE_LOCALIDAD, CHOICE_BARRIOS, CHOICE_CIRCUITOS
-from legajos.choices import *
+from legajos.choices import (
+    CHOICE_MOTIVO_NIVEL_INCOMPLETOCHOICE_ASISTE_ESCUELA,
+    CHOICE_SEXO,
+    CHOICE_CONDICIONDE,
+    CHOICE_TIPO_DOC,
+    CHOICE_NACIONALIDAD,
+    CHOICE_ESTADO_CIVIL,
+    PROVINCE_CHOICES,
+    CHOICE_VINCULO_FAMILIAR,
+    CHOICE_ESTADO_RELACION,
+    CHOICE_SINO,
+    CHOICE_TIPO_VIVIENDA,
+    CHOICE_TIPO_CONSTRUCCION_VIVIENDA,
+    CHOICE_TIPO_PISOS_VIVIENDA,
+    CHOICE_CANTIDADAMBIENTES,
+    CHOICE_CONTEXTOCASA,
+    CHOICE_GAS,
+    CHOICE_TIPO_TECHO_VIVIENDA,
+    CHOICE_AGUA,
+    CHOICE_DESAGUE,
+    CHOICE_INODORO,
+    CHOICE_CENTROS_SALUD,
+    CHOICE_FRECUENCIA,
+    CHOICE_NIVEL_EDUCATIVO,
+    CHOICE_ESTADO_NIVEL_EDUCATIVO,
+    CHOICE_INSTITUCIONES_EDUCATIVAS,
+    CHOICE_TIPO_GESTION,
+    CHOICE_GRADO,
+    CHOICE_TURNO,
+    CHOICE_MOTIVO_NIVEL_INCOMPLETO,
+    CHOICE_AREA_CURSO,
+    CHOICE_MODO_CONTRATACION,
+    CHOICE_ACTIVIDAD_REALIZADA,
+    CHOICE_DURACION_TRABAJO,
+    CHOICE_APORTES_JUBILACION,
+    CHOICE_TIEMPO_BUSQUEDA_LABORAL,
+    CHOICE_NO_BUSQUEDA_LABORAL,
+    CHOICE_IMPORTANCIA,
+    CHOICE_ESTADO_DERIVACION,
+    CHOICE_RECHAZO,
+)
 from usuarios.models import Usuarios
 
 
@@ -183,9 +230,6 @@ class Legajos(models.Model):
         return reverse("legajos_ver", kwargs={"pk": self.pk})
 
 
-# TODO realizar en las vistas una validación cuando haya una relación importante de aclarar (ej. perimetral, violencia) obligatorio el campo obs para describirla
-
-
 class LegajoGrupoFamiliar(models.Model):
     """
 
@@ -329,13 +373,13 @@ class DimensionVivienda(models.Model):
     posesion = models.CharField(
         verbose_name="Tipo de posesión",
         max_length=50,
-        choices=CHOICE_CondicionDe,
+        choices=CHOICE_CONDICIONDE,
         null=True,
         blank=True,
     )
     cant_ambientes = models.SmallIntegerField(
         verbose_name="¿Cuántos ambientes tiene la vivienda? (Sin contar baño ni cocina)",
-        choices=CHOICE_CantidadAmbientes,
+        choices=CHOICE_CANTIDADAMBIENTES,
         null=True,
         blank=True,
     )
@@ -364,7 +408,7 @@ class DimensionVivienda(models.Model):
     ContextoCasa = models.CharField(
         verbose_name="La vivienda está ubicada...",
         max_length=255,
-        choices=CHOICE_ContextoCasa,
+        choices=CHOICE_CONTEXTOCASA,
         null=True,
         blank=True,
     )
@@ -535,7 +579,7 @@ class DimensionEducacion(models.Model):
     asiste_escuela = models.CharField(
         verbose_name="¿Asistís o asististe alguna vez a algún establecimiento educativo?",
         max_length=100,
-        choices=CHOICE_ASISTE_ESCUELA,
+        choices=CHOICE_MOTIVO_NIVEL_INCOMPLETOCHOICE_ASISTE_ESCUELA,
         null=True,
         blank=True,
     )
@@ -732,7 +776,11 @@ class DimensionTrabajo(models.Model):
     modificado = models.DateField(auto_now=True)
     # NUEVOS CAMPOS DIMENSION TRABAJO
     horasSemanales = models.CharField(
-        verbose_name="Considerando todas las actividades que realizás en una semana, por las que recibís algún pago, sea en dinero o en especie, ¿cuántas horas por semana trabajas habitualmente?",
+        verbose_name=(
+            "Considerando todas las actividades que realizás en una semana, "
+            "por las que recibís algún pago, sea en dinero o en especie, "
+            "¿cuántas horas por semana trabajas habitualmente?"
+        ),
         max_length=100,
         null=True,
         blank=True,
@@ -841,7 +889,10 @@ class LegajoAlertas(models.Model):
     observaciones = models.CharField(max_length=140, null=True, blank=True)
 
     def __str__(self):
-        return f"'fk_alerta': {self.fk_alerta}, 'fk_legajo': {self.fk_legajo},  'observaciones': {self.observaciones}, 'fecha_inicio': {self.fecha_inicio}, 'creada_por':{self.creada_por}"
+        return str(
+            f"'fk_alerta': {self.fk_alerta}, 'fk_legajo': {self.fk_legajo}"
+            f"'observaciones': {self.observaciones}, 'fecha_inicio': {self.fecha_inicio}, 'creada_por':{self.creada_por}",
+        )
 
     class Meta:
         ordering = ["-fecha_inicio"]
@@ -890,7 +941,7 @@ class HistorialLegajoAlertas(models.Model):
     meses_activa = models.JSONField(default=list, blank=True)
 
     def __str__(self):
-        return self.fk_alerta.fk_categoria.dimension
+        return str(self.fk_alerta.fk_categoria.dimension)
 
     # Método para calcular el estado (Activa o Inactiva) basado en la existencia de fecha_fin
     @property
@@ -902,78 +953,6 @@ class HistorialLegajoAlertas(models.Model):
         verbose_name = "HistorialLegajoAlertas"
         verbose_name_plural = "HistorialesLegajoAlertas"
         indexes = [models.Index(fields=["fk_legajo"])]
-
-    # endregion---------FIN LEGAJO ALERTAS---------------------------------------------------------------------------------------------
-
-    # region--------------LEGAJOS/INDICES DE VULNERABILIDAD-----------------------------------------------------------------------------
-
-    # TODO realizar la logica una funcion que ejecute la valoración en las vistas.
-
-    # Tiene que mostrar todos los criterios del indice, permitiendo al usuario marcar aquellos que estan presentes en ese caso
-
-    # y en aquellos que permiten la mejora del puntaje [permite_mejora=True] permitir agregar un valor.
-
-    # class HistorialLegajoIndices(models.Model):
-    """
-
-    Guardado de historial de cada instancia de ejecucion de un índices de vulnerabilidad asociado a un Legajo.
-
-    Con una función en las vistas se cargaran los campos:
-
-    - [puntos_mejora] en cada criterio que el índice lo permita .
-
-    - [observaciones]
-
-    Una vez ejecutada esa función, debe retornar un [puntaje_total] resultante del [puntaje base] +/- [total puntos mejora]
-
-    y una valoración automática del mismo que va en el campo [riesgo] (escala a definir).
-    """
-
-    # fecha = models.DateField(auto_now_add=True)
-    # fk_indice = models.ForeignKey(Indices, on_delete=models.CASCADE)
-    # fk_legajo = models.ForeignKey(Legajos, on_delete=models.CASCADE)
-    # criterios_presentes = models.ManyToManyField(IndiceCriterios, through='LegajoIndiceCriterio')
-    # puntaje_total = models.PositiveSmallIntegerField(null=True, blank=True)
-    # riesgo = models.CharField(max_length=10, choices=CHOICE_NIVEL, null=True)
-    # observaciones = models.CharField(max_length=300, null=True, blank=True)
-
-    # def __str__(self):
-    #     return self.fk_legajo
-
-    # class Meta:
-    #     verbose_name = 'HistorialLegajoIndice'
-    #     verbose_name_plural = 'HistorialesLegajoIndices'
-
-    # def get_absolute_url(self):
-    #     return reverse('historiallegajoindice_ver', kwargs={'pk': self.pk})
-
-
-# class LegajoIndiceCriterio(models.Model):
-#     '''
-
-#     Guardado de los valores cargados en cada instancia de ejecución de un índice para un legajo determinado.
-#     '''
-
-#     fk_HistLegIndice = models.ForeignKey(HistorialLegajoIndices, related_name='+', on_delete=models.CASCADE)
-#     fk_IndiceCriterio = models.ForeignKey(IndiceCriterios, related_name='+', on_delete=models.CASCADE)
-#     puntos_mejora = models.PositiveSmallIntegerField(null=True, blank=True)
-
-#     def __str__(self):
-#         return f"Historial: {self.fk_HistLegIndice} - Criterio: {self.fk_IndiceCriterio}"
-
-#     class Meta:
-#         ordering = ['fk_HistLegIndice']
-#         verbose_name = 'LegajoIndiceCriterio'
-#         verbose_name_plural = 'LegajoIndicesCriterios'
-
-#     def get_absolute_url(self):
-#         return reverse('legajoindicecriterio_ver', kwargs={'pk': self.pk})
-
-
-# endregion-----------FIN LEGAJOS/ INDICES DE VULNERABILIDAD-------------------------------------------------------------------------
-
-
-# region--------------LEGAJOS/DERIVACIONES---------------------------------------------------------------------------------------
 
 
 class LegajosDerivaciones(models.Model):
