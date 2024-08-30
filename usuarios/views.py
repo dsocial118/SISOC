@@ -1,5 +1,3 @@
-from io import BytesIO
-
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.views import (
@@ -23,7 +21,6 @@ from django.views.generic import (
     ListView,
     UpdateView,
 )
-from PIL import Image
 
 from usuarios.forms import (
     GruposUsuariosForm,

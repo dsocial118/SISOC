@@ -1,22 +1,20 @@
 import calendar
 import json
+import logging
 
 # Configurar el locale para usar el idioma español
 import locale
 from datetime import date, datetime, timedelta
-from io import BytesIO
 
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.messages.views import SuccessMessageMixin
 from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
-from django.db.models import BooleanField, Case, Count, F, IntegerField, Q, Value, When
-from django.db.models.functions import ExtractMonth, ExtractYear
-from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from django.db.models import Case, Count, IntegerField, Q, Value, When
+from django.http import HttpResponseRedirect, JsonResponse
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 
 # Paginacion
@@ -24,29 +22,32 @@ from django.views.generic import (
     CreateView,
     DeleteView,
     DetailView,
-    FormView,
     ListView,
     TemplateView,
     UpdateView,
     View,
 )
-from PIL import Image
 
+from configuraciones.models import Organismos, Programas
+from configuraciones.choices import CHOICE_CIRCUITOS
+from legajos.choices import CHOICE_ESTADO_DERIVACION
+from legajos.models import (
+    LegajosDerivaciones,
+    Legajos,
+    LegajoGrupoFamiliar,
+    LegajoAlertas,
+    LegajoGrupoHogar,
+    LegajosArchivos,
+)
 from usuarios.mixins import PermisosMixin
 from usuarios.utils import recortar_imagen
 
-from .choices import *
-from .forms import *
-from .models import *
-from configuraciones.choices import CHOICE_CIRCUITOS
 
 locale.setlocale(locale.LC_ALL, "es_AR.UTF-8")
-# guardado de log de usuarios
-import logging
 
 logger = logging.getLogger("django")
 
-admin_role = "Usuarios.rol_admin"
+ROL_ADMIN = "Usuarios.rol_admin"
 
 # region ############################################################### LEGAJOS
 
@@ -139,14 +140,18 @@ class LegajosListView(ListView):
                     filter_condition |= Q(documento__contains=query)
                 queryset = queryset.filter(filter_condition)
 
-            self._cached_queryset = queryset
+            self._cached_queryset = (  # pylint: disable=attribute-defined-outside-init
+                queryset
+            )
 
         return self._cached_queryset
 
     def get(self, request, *args, **kwargs):
         query = self.request.GET.get("busqueda")
         if query:
-            self.object_list = self.get_queryset()
+            self.object_list = (  # pylint: disable=attribute-defined-outside-init
+                self.get_queryset()
+            )
             size_queryset = self.object_list.count()
             if size_queryset == 1:
                 pk = self.object_list.first().id
@@ -500,7 +505,7 @@ class LegajosDetailView(DetailView):
 
 
 class LegajosDeleteView(PermisosMixin, DeleteView):
-    permission_required = admin_role
+    permission_required = ROL_ADMIN
     model = Legajos
     success_url = reverse_lazy("legajos_listar")
 
@@ -545,7 +550,7 @@ class LegajosDeleteView(PermisosMixin, DeleteView):
 
 
 class LegajosCreateView(PermisosMixin, CreateView):
-    permission_required = admin_role
+    permission_required = ROL_ADMIN
     model = Legajos
     form_class = LegajosForm
 
@@ -583,7 +588,7 @@ class LegajosCreateView(PermisosMixin, CreateView):
 
 
 class LegajosUpdateView(PermisosMixin, UpdateView):
-    permission_required = admin_role
+    permission_required = ROL_ADMIN
     model = Legajos
     form_class = LegajosUpdateForm
 
@@ -617,7 +622,7 @@ class LegajosUpdateView(PermisosMixin, UpdateView):
 
 
 class LegajosGrupoFamiliarCreateView(CreateView):
-    permission_required = admin_role
+    permission_required = ROL_ADMIN
     model = LegajoGrupoFamiliar
     form_class = NuevoLegajoFamiliarForm
     paginate_by = 8  # Número de elementos por página
@@ -884,7 +889,7 @@ class DeleteGrupoFamiliar(View):
 
 
 class LegajosDerivacionesBuscar(PermisosMixin, TemplateView):
-    permission_required = admin_role
+    permission_required = ROL_ADMIN
     template_name = "Legajos/legajosderivaciones_buscar.html"
 
     def get(self, request, *args, **kwargs):
@@ -952,7 +957,7 @@ class LegajosDerivacionesBuscar(PermisosMixin, TemplateView):
 
 
 class LegajosDerivacionesListView(PermisosMixin, ListView):
-    permission_required = admin_role
+    permission_required = ROL_ADMIN
     model = LegajosDerivaciones
     paginate_by = 25
 
@@ -994,7 +999,7 @@ class LegajosDerivacionesListView(PermisosMixin, ListView):
 
 
 class LegajosDerivacionesCreateView(PermisosMixin, CreateView):
-    permission_required = admin_role
+    permission_required = ROL_ADMIN
     model = LegajosDerivaciones
     form_class = LegajosDerivacionesForm
     success_message = "Derivación registrada con éxito"
@@ -1025,7 +1030,7 @@ class LegajosDerivacionesCreateView(PermisosMixin, CreateView):
 
 
 class LegajosDerivacionesUpdateView(PermisosMixin, UpdateView):
-    permission_required = admin_role
+    permission_required = ROL_ADMIN
     model = LegajosDerivaciones
     form_class = LegajosDerivacionesForm
     success_message = "Derivación editada con éxito"
@@ -1044,7 +1049,7 @@ class LegajosDerivacionesUpdateView(PermisosMixin, UpdateView):
 
 
 class LegajosDerivacionesHistorial(PermisosMixin, ListView):
-    permission_required = admin_role
+    permission_required = ROL_ADMIN
     model = LegajosDerivaciones
     template_name = "Legajos/legajosderivaciones_historial.html"
 
@@ -1064,7 +1069,7 @@ class LegajosDerivacionesHistorial(PermisosMixin, ListView):
 
 
 class LegajosDerivacionesDeleteView(PermisosMixin, DeleteView):
-    permission_required = admin_role
+    permission_required = ROL_ADMIN
     model = LegajosDerivaciones
     # success_url = reverse_lazy("legajosderivaciones_listar")
 
@@ -1093,7 +1098,7 @@ class LegajosDerivacionesDeleteView(PermisosMixin, DeleteView):
 
 
 class LegajosDerivacionesDetailView(PermisosMixin, DetailView):
-    permission_required = admin_role
+    permission_required = ROL_ADMIN
     model = LegajosDerivaciones
 
 
@@ -1104,7 +1109,7 @@ class LegajosDerivacionesDetailView(PermisosMixin, DetailView):
 
 
 class LegajosAlertasListView(PermisosMixin, ListView):
-    permission_required = admin_role
+    permission_required = ROL_ADMIN
     model = HistorialLegajoAlertas
     template_name = "Legajos/legajoalertas_list.html"
 
@@ -1119,7 +1124,7 @@ class LegajosAlertasListView(PermisosMixin, ListView):
 
 
 class LegajosAlertasCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
-    permission_required = admin_role
+    permission_required = ROL_ADMIN
     model = LegajoAlertas
     form_class = LegajosAlertasForm
     success_message = "Alerta asignada correctamente."
@@ -1150,7 +1155,7 @@ class LegajosAlertasCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
 
 
 class DeleteAlerta(PermisosMixin, View):
-    permission_required = admin_role
+    permission_required = ROL_ADMIN
 
     def get(self, request):
         data = {
@@ -1226,7 +1231,7 @@ class AlertasSelectView(View):
 
 class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
     # FIXME: Crear updateView por cada formulario
-    permission_required = admin_role
+    permission_required = ROL_ADMIN
     template_name = "Legajos/legajosdimensiones_form.html"
     model = DimensionFamilia
     form_class = DimensionFamiliaForm
@@ -1518,7 +1523,7 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
 
 
 class DimensionesDetailView(PermisosMixin, DetailView):
-    permission_required = admin_role
+    permission_required = ROL_ADMIN
     model = Legajos
     template_name = "Legajos/legajosdimensiones_detail.html"
 
@@ -1528,7 +1533,7 @@ class DimensionesDetailView(PermisosMixin, DetailView):
 
 # region ################################################################ ARCHIVOS
 class LegajosArchivosListView(PermisosMixin, ListView):
-    permission_required = admin_role
+    permission_required = ROL_ADMIN
     model = LegajosArchivos
     template_name = "Legajos/legajosarchivos_list.html"
 
@@ -1541,7 +1546,7 @@ class LegajosArchivosListView(PermisosMixin, ListView):
 
 
 class LegajosArchivosCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
-    permission_required = admin_role
+    permission_required = ROL_ADMIN
     model = LegajosArchivos
     form_class = LegajosArchivosForm
     success_message = "Archivo actualizado correctamente."
@@ -1597,7 +1602,7 @@ class CreateArchivo(TemplateView):
 
 
 class DeleteArchivo(PermisosMixin, View):
-    permission_required = admin_role
+    permission_required = ROL_ADMIN
 
     def get(self, request):
         try:
@@ -1705,7 +1710,7 @@ class indicesDetalleView(TemplateView):
 
 
 class LegajosGrupoHogarCreateView(CreateView):
-    permission_required = admin_role
+    permission_required = ROL_ADMIN
     model = LegajoGrupoHogar
     form_class = LegajoGrupoHogarForm
     paginate_by = 8
