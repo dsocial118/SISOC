@@ -1,5 +1,7 @@
-from django import forms
+from django import forms  # pylint: disable=too-many-lines
 from django.forms.models import inlineformset_factory
+
+from configuraciones.choices import CHOICE_CRITERIO_ALERTA
 
 from .models import (
     Secretarias,
