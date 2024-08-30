@@ -6,4 +6,4 @@ class UsuariosConfig(AppConfig):
     name = "Usuarios"
 
     def ready(self):
-        import usuarios.signals
+        import usuarios.signals  # pylint: disable=unused-import import-outside-toplevel
