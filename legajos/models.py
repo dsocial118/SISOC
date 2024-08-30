@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date # pylint: disable=too-many-lines
 
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -11,7 +11,6 @@ from configuraciones.models import (
     Organismos,
     PlanesSociales,
     Programas,
-    User,
     CategoriaAlertas,
 )
 from configuraciones.choices import CHOICE_LOCALIDAD, CHOICE_BARRIOS, CHOICE_CIRCUITOS
@@ -56,7 +55,7 @@ from legajos.choices import (
     CHOICE_ESTADO_DERIVACION,
     CHOICE_RECHAZO,
 )
-from usuarios.models import Usuarios
+from usuarios.models import Usuarios, User
 
 
 class Legajos(models.Model):

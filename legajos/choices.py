@@ -1,4 +1,4 @@
-# ---------- CHOICES---------------------
+# ---------- CHOICES--------------------- # pylint: disable=too-many-lines
 CHOICE_NIVEL_EDUCATIVO = [
     (None, ""),
     ("No aplica", "No aplica"),

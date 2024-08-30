@@ -1,4 +1,4 @@
-import calendar
+import calendar  # pylint: disable=too-many-lines
 import json
 import logging
 
@@ -213,7 +213,9 @@ class LegajosDetailView(DetailView):
     model = Legajos
     template_name = "Legajos/legajos_detail.html"
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+        self, **kwargs
+    ):
         pk = self.kwargs["pk"]
         context = super().get_context_data(**kwargs)
 
@@ -474,7 +476,9 @@ class LegajosDetailView(DetailView):
 
         return context
 
-    def grafico_evolucion_de_riesgo(self, fecha_actual, alertas):
+    def grafico_evolucion_de_riesgo(  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+        self, fecha_actual, alertas
+    ):
         if alertas.exists():
             primer_dia_siguiente_mes = datetime(
                 fecha_actual.year, fecha_actual.month % 12 + 1, 1
@@ -922,7 +926,7 @@ class LegajosDerivacionesBuscar(PermisosMixin, TemplateView):
     permission_required = ROL_ADMIN
     template_name = "Legajos/legajosderivaciones_buscar.html"
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):  # pylint: disable=too-many-locals
         context = self.get_context_data(**kwargs)
         legajos = cache.get("legajos")
         derivaciones = cache.get("derivaciones")
@@ -1336,7 +1340,10 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
 
         return context
 
-    def form_valid(self, form):
+    def form_valid(  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+        self, form
+    ):
+        # TODO: Esto sera refactorizado
         self.object = form.save(commit=False)
 
         pk = self.kwargs["pk"]
