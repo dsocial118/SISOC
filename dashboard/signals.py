@@ -3,7 +3,21 @@ from django.dispatch import receiver
 
 from configuraciones.models import Alertas
 from dashboard.models import Dashboard
-from dashboard.utils import *
+from dashboard.utils import (
+    contar_legajos_con_alarmas_activas,
+    contar_legajos_con_planes_sociales,
+    contar_legajos,
+    contar_legajos_entre_0_y_18_anios,
+    contar_legajos_entre_0_y_40_dias,
+    contar_legajos_embarazados,
+    contar_bb_riesgo,
+    contar_adolescente_riesgo,
+    contar_bb_sin_derivacion_aceptada,
+    contar_adolescente_sin_derivacion_aceptada,
+    contar_embarazos_sin_derivacion_aceptada,
+    contar_embarazos_en_riesgo,
+    deriv_pendientes,
+)
 from legajos.models import LegajoAlertas, Legajos, LegajosDerivaciones
 
 from .utils import table_exists

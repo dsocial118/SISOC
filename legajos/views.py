@@ -28,10 +28,37 @@ from django.views.generic import (
     View,
 )
 
-from configuraciones.models import Organismos, Programas
-from configuraciones.choices import CHOICE_CIRCUITOS
-from legajos.choices import CHOICE_ESTADO_DERIVACION
+from configuraciones.models import Alertas, CategoriaAlertas, Organismos, Programas
+from configuraciones.choices import CHOICE_CIRCUITOS, CHOICE_DIMENSIONES
+from legajos.choices import (
+    CHOICE_ESTADO_DERIVACION,
+    CHOICE_NACIONALIDAD,
+    EMOJIS_BANDERAS,
+    VINCULO_MAP,
+)
+from legajos.forms import (
+    DimensionEducacionForm,
+    DimensionSaludForm,
+    DimensionViviendaForm,
+    LegajoGrupoHogarForm,
+    LegajosAlertasForm,
+    LegajosArchivosForm,
+    LegajosDerivacionesForm,
+    DimensionFamiliaForm,
+    DimensionEconomiaForm,
+    DimensionTrabajoForm,
+    LegajosForm,
+    LegajosUpdateForm,
+    NuevoLegajoFamiliarForm,
+)
 from legajos.models import (
+    DimensionFamilia,
+    DimensionVivienda,
+    DimensionSalud,
+    DimensionEconomia,
+    DimensionEducacion,
+    DimensionTrabajo,
+    HistorialLegajoAlertas,
     LegajosDerivaciones,
     Legajos,
     LegajoGrupoFamiliar,
@@ -544,7 +571,10 @@ class LegajosDeleteView(PermisosMixin, DeleteView):
         legajo = self.get_object()
 
         # Graba la data del usuario que realiza la eliminacion en el LOG
-        mensaje = f"Legajo borrado - Nombre: {legajo.nombre}, Apellido: {legajo.apellido}, Tipo de documento: {legajo.tipo_doc}, Documento: {legajo.documento}"
+        mensaje = (
+            f"Legajo borrado - Nombre: {legajo.nombre}, Apellido: {legajo.apellido}, "
+            f"Tipo de documento: {legajo.tipo_doc}, Documento: {legajo.documento}"
+        )
         logger.info(f"Username: {usuario_eliminacion} - {mensaje}")
         return super().form_valid(form)
 
@@ -578,11 +608,12 @@ class LegajosCreateView(PermisosMixin, CreateView):
                 return redirect("legajos_ver", pk=int(legajo.id))
             elif "form_step2" in self.request.POST:
                 return redirect("legajosdimensiones_editar", pk=int(legajo.id))
+            return None
 
         except Exception as e:
             messages.error(
                 self.request,
-                "Se produjo un error al crear las dimensiones. Por favor, inténtalo de nuevo.",
+                f"Se produjo un error al crear las dimensiones. Por favor, inténtalo de nuevo. Error: {e}",
             )
             return redirect("legajos_crear")
 
@@ -637,12 +668,11 @@ class LegajosGrupoFamiliarCreateView(CreateView):
         edad_calculada = legajo_principal.edad()
 
         # Verifica si tiene más de 18 años
+        es_menor_de_18 = True
         if isinstance(edad_calculada, str) and "años" in edad_calculada:
             edad_num = int(edad_calculada.split()[0])
             if edad_num >= 18:
                 es_menor_de_18 = False
-        else:
-            es_menor_de_18 = True
 
         # Verificar si tiene un cuidador principal asignado utilizando el método que agregaste al modelo
         tiene_cuidador_ppal = LegajoGrupoFamiliar.objects.filter(
@@ -705,9 +735,10 @@ class LegajosGrupoFamiliarCreateView(CreateView):
             DimensionEconomia.objects.create(fk_legajo=nuevo_legajo)
             DimensionEducacion.objects.create(fk_legajo=nuevo_legajo)
             DimensionTrabajo.objects.create(fk_legajo=nuevo_legajo)
-        except:
+        except Exception as e:
             return messages.error(
-                self.request, "Verifique que no exista un legajo con ese DNI y NÚMERO."
+                self.request,
+                f"Verifique que no exista un legajo con ese DNI y NÚMERO. Error: {e}",
             )
 
         # Crea el objeto LegajoGrupoFamiliar con los valores del formulario
@@ -728,9 +759,10 @@ class LegajosGrupoFamiliarCreateView(CreateView):
                 cuidador_principal=cuidador_principal,
             )
 
-        except:
+        except Exception as e:
             return messages.error(
-                self.request, "Verifique que no exista un legajo con ese DNI y NÚMERO."
+                self.request,
+                f"Verifique que no exista un legajo con ese DNI y NÚMERO. Error: {e}",
             )
 
         messages.success(self.request, "Familair agregado correctamente.")
@@ -749,8 +781,6 @@ def busqueda_familiares(request):
             Q(fk_legajo_1_id=legajo_principal_id)
             | Q(fk_legajo_2_id=legajo_principal_id)
         ).values_list("fk_legajo_1_id", "fk_legajo_2_id")
-        # legajos_asociadosfk1 = LegajoGrupoFamiliar.objects.filter(fk_legajo_1_id=legajo_principal_id).values_list('fk_legajo_2_id', flat=True)
-        # legajos_asociadosfk2 = LegajoGrupoFamiliar.objects.filter(fk_legajo_2_id=legajo_principal_id).values_list('fk_legajo_1_id', flat=True)
 
         legajos_asociados_ids = set()
         for fk_legajo_1_id, fk_legajo_2_id in legajos_asociados:
@@ -872,11 +902,11 @@ class DeleteGrupoFamiliar(View):
                 "tipo_mensaje": "success",
                 "mensaje": "Vínculo familiar eliminado correctamente.",
             }
-        except:
+        except Exception as e:
             data = {
                 "deleted": False,
                 "tipo_mensaje": "error",
-                "mensaje": "No fue posible eliminar el archivo.",
+                "mensaje": f"No fue posible eliminar el archivo. Error: {e}",
             }
 
         return JsonResponse(data)
@@ -1071,7 +1101,6 @@ class LegajosDerivacionesHistorial(PermisosMixin, ListView):
 class LegajosDerivacionesDeleteView(PermisosMixin, DeleteView):
     permission_required = ROL_ADMIN
     model = LegajosDerivaciones
-    # success_url = reverse_lazy("legajosderivaciones_listar")
 
     def form_valid(self, form):
         if self.object.estado != "Pendiente":
@@ -1158,11 +1187,6 @@ class DeleteAlerta(PermisosMixin, View):
     permission_required = ROL_ADMIN
 
     def get(self, request):
-        data = {
-            "deleted": False,
-            "tipo_mensaje": "error",
-            "mensaje": "No fue posible eliminar el alerta.",
-        }
         try:
             pk = request.GET.get("id", None)
             legajo_alerta = get_object_or_404(LegajoAlertas, pk=pk)
@@ -1191,8 +1215,12 @@ class DeleteAlerta(PermisosMixin, View):
                     "tipo_mensaje": "warning",
                     "mensaje": "Alerta eliminada, con errores en el historial.",
                 }
-        except:
-            pass
+        except Exception as e:
+            data = {
+                "deleted": False,
+                "tipo_mensaje": "error",
+                "mensaje": f"No fue posible eliminar el alerta. Error: {e}",
+            }
 
         return JsonResponse(data)
 
@@ -1615,17 +1643,17 @@ class DeleteArchivo(PermisosMixin, View):
                 "tipo_mensaje": "success",
                 "mensaje": "Archivo eliminado correctamente.",
             }
-        except:
+        except Exception as e:
             data = {
                 "deleted": False,
                 "tipo_mensaje": "error",
-                "mensaje": "No fue posible eliminar el archivo.",
+                "mensaje": f"No fue posible eliminar el archivo. Error: {e}",
             }
 
         return JsonResponse(data)
 
 
-class programasIntervencionesView(TemplateView):
+class ProgramasIntervencionesView(TemplateView):
     template_name = "Legajos/programas_intervencion.html"
     model = Legajos
 
@@ -1639,7 +1667,7 @@ class programasIntervencionesView(TemplateView):
         return context
 
 
-class accionesSocialesView(TemplateView):
+class AccionesSocialesView(TemplateView):
     template_name = "Legajos/acciones_sociales.html"
     model = Legajos
 
@@ -1662,7 +1690,7 @@ class accionesSocialesView(TemplateView):
         return context
 
 
-class intervencionesSaludView(TemplateView):
+class IntervencionesSaludView(TemplateView):
     template_name = "Legajos/intervenciones_salud.html"
     model = Legajos
 
@@ -1676,7 +1704,7 @@ class intervencionesSaludView(TemplateView):
         return context
 
 
-class indicesView(TemplateView):
+class IndicesView(TemplateView):
     template_name = "Legajos/indices.html"
     model = Legajos
 
@@ -1690,7 +1718,7 @@ class indicesView(TemplateView):
         return context
 
 
-class indicesDetalleView(TemplateView):
+class IndicesDetalleView(TemplateView):
     template_name = "Legajos/indices_detalle.html"
     model = Legajos
 
@@ -1773,9 +1801,10 @@ class LegajosGrupoHogarCreateView(CreateView):
             DimensionEducacion.objects.create(fk_legajo=nuevo_legajo)
             DimensionTrabajo.objects.create(fk_legajo=nuevo_legajo)
             LegajoGrupoHogar.objects.create(fk_legajo=nuevo_legajo)
-        except:
+        except Exception as e:
             return messages.error(
-                self.request, "Verifique que no exista un legajo con ese DNI y NÚMERO."
+                self.request,
+                f"Verifique que no exista un legajo con ese DNI y NÚMERO. Error: {e}",
             )
 
         # Crea el objeto LegajoGrupoFamiliar con los valores del formulario
@@ -1793,9 +1822,10 @@ class LegajosGrupoHogarCreateView(CreateView):
                 # vinculo_inverso=vinculo_data["vinculo_inverso"],
                 estado_relacion=estado_relacion,
             )
-        except:
+        except Exception as e:
             return messages.error(
-                self.request, "Verifique que no exista un legajo con ese DNI y NÚMERO."
+                self.request,
+                f"Verifique que no exista un legajo con ese DNI y NÚMERO. {e}",
             )
 
         messages.success(self.request, "Familair agregado correctamente.")
@@ -1816,11 +1846,11 @@ def busqueda_hogar(request):
         ).values_list("fk_legajo_1Hogar_id", "fk_legajo_2Hogar_id")
 
         legajos_asociados_ids = set()
-        for fk_legajo_1Hogar_id, fk_legajo_2Hogar_id in legajos_asociados:
-            if fk_legajo_1Hogar_id != legajo_principal_id:
-                legajos_asociados_ids.add(fk_legajo_1Hogar_id)
-            if fk_legajo_2Hogar_id != legajo_principal_id:
-                legajos_asociados_ids.add(fk_legajo_2Hogar_id)
+        for fk_legajo_1hogar_id, fk_legajo_2hogar_id in legajos_asociados:
+            if fk_legajo_1hogar_id != legajo_principal_id:
+                legajos_asociados_ids.add(fk_legajo_1hogar_id)
+            if fk_legajo_2hogar_id != legajo_principal_id:
+                legajos_asociados_ids.add(fk_legajo_2hogar_id)
 
         paginate_by = 10
         hogares = Legajos.objects.filter(
@@ -1896,8 +1926,16 @@ class LegajoGrupoHogarList(ListView):
             "fk_legajo_1__foto",
             "vinculo",
         )
-        context["familiares_fk1"] = LegajoGrupoFamiliar.objects.filter(fk_legajo_1=pk)
-        context["familiares_fk2"] = LegajoGrupoFamiliar.objects.filter(fk_legajo_2=pk)
+        context["familiares_fk1"] = [
+            familiar
+            for familiar in familiares
+            if familiar["fk_legajo_1__id"] == int(pk)
+        ]
+        context["familiares_fk2"] = [
+            familiar
+            for familiar in familiares
+            if familiar["fk_legajo_1__id"] == int(pk)
+        ]
         context["count_familia"] = (
             context["familiares_fk1"].count() + context["familiares_fk1"].count()
         )
@@ -1948,11 +1986,11 @@ class DeleteGrupoHogar(View):
                 "tipo_mensaje": "success",
                 "mensaje": "Vínculo del hogar eliminado correctamente.",
             }
-        except:
+        except Exception as e:
             data = {
                 "deleted": False,
                 "tipo_mensaje": "error",
-                "mensaje": "No fue posible eliminar el vinculo.",
+                "mensaje": f"No fue posible eliminar el vinculo. Error: {e}",
             }
 
         return JsonResponse(data)

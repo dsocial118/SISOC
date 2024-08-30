@@ -6,4 +6,4 @@ class LegajoConfig(AppConfig):
     name = "Legajos"
 
     def ready(self):
-        import legajos.signals
+        import legajos.signals  # pylint: disable=unused-import, import-outside-toplevel

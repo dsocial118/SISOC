@@ -1,8 +1,47 @@
 from django.contrib.auth.decorators import login_required
 from django.urls import path
-from django.views.generic import TemplateView
 
-from .views import *
+from .views import (
+    LegajosReportesListView,
+    LegajosListView,
+    LegajosCreateView,
+    LegajosDetailView,
+    LegajosUpdateView,
+    LegajosDeleteView,
+    LegajoGrupoFamiliarList,
+    CreateGrupoFamiliar,
+    DeleteGrupoFamiliar,
+    LegajosGrupoFamiliarCreateView,
+    DimensionesDetailView,
+    DimensionesUpdateView,
+    LegajosAlertasListView,
+    LegajosAlertasCreateView,
+    DeleteAlerta,
+    AlertasSelectView,
+    CategoriasSelectView,
+    LegajosArchivosListView,
+    LegajosArchivosCreateView,
+    CreateArchivo,
+    DeleteArchivo,
+    LegajosDerivacionesBuscar,
+    LegajosDerivacionesCreateView,
+    LegajosDerivacionesListView,
+    LegajosDerivacionesDetailView,
+    LegajosDerivacionesUpdateView,
+    LegajosDerivacionesDeleteView,
+    LegajosDerivacionesHistorial,
+    ProgramasIntervencionesView,
+    AccionesSocialesView,
+    IntervencionesSaludView,
+    IndicesView,
+    IndicesDetalleView,
+    LegajoGrupoHogarList,
+    LegajosGrupoHogarCreateView,
+    CreateGrupoHogar,
+    DeleteGrupoHogar,
+    busqueda_familiares,
+    busqueda_hogar,
+)
 
 urlpatterns = [
     # Legajos
@@ -171,27 +210,27 @@ urlpatterns = [
     # Plantilla Programas de asistencia
     path(
         "legajos/programas_intervencion/<pk>",
-        login_required(programasIntervencionesView.as_view()),
+        login_required(ProgramasIntervencionesView.as_view()),
         name="programas_intervencion",
     ),
     # Plantilla Acciones Sociales
     path(
         "legajos/acciones_sociales/<pk>",
-        login_required(accionesSocialesView.as_view()),
+        login_required(AccionesSocialesView.as_view()),
         name="acciones_sociales",
     ),
     # Plantilla Interveciones de salud
     path(
         "legajos/intervenciones_salud/<pk>",
-        login_required(intervencionesSaludView.as_view()),
+        login_required(IntervencionesSaludView.as_view()),
         name="intervenciones_salud",
     ),
     # Plantilla Indices
-    path("legajos/indices/<pk>", login_required(indicesView.as_view()), name="indices"),
+    path("legajos/indices/<pk>", login_required(IndicesView.as_view()), name="indices"),
     # Plantilla Indice detalle
     path(
         "legajos/indices_detalle/<pk>",
-        login_required(indicesDetalleView.as_view()),
+        login_required(IndicesDetalleView.as_view()),
         name="indices_detalle",
     ),
     # Legajos Hogar

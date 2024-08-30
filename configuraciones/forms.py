@@ -1,8 +1,23 @@
 from django import forms
+from django.forms.models import inlineformset_factory
 
-from usuarios.models import *
-
-from .models import *
+from .models import (
+    Secretarias,
+    Subsecretarias,
+    Programas,
+    Organismos,
+    PlanesSociales,
+    AgentesExternos,
+    GruposDestinatarios,
+    CategoriaAlertas,
+    Alertas,
+    Equipos,
+    Acciones,
+    Criterios,
+    Vacantes,
+    IndiceCriterios,
+    Indices,
+)
 
 
 class SecretariasForm(forms.ModelForm):
@@ -166,12 +181,9 @@ class AlertasForm(forms.ModelForm):
 class EquiposForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # users = users_con_permiso('programa_CDIF')
         self.fields["fk_programa"].label = "Programa"
         self.fields["m2m_usuarios"].label = "Integrantes"
         self.fields["fk_coordinador"].label = "Coordinador"
-        # self.fields['m2m_usuarios'].queryset = users
-        # self.fields['fk_coordinador'].initial = users
 
     class Meta:
         model = Equipos
@@ -287,8 +299,6 @@ class IndiceCriteriosForm(forms.ModelForm):
         model = IndiceCriterios
         exclude = ("fk_indice",)
 
-
-from django.forms.models import inlineformset_factory
 
 IndicesFormset = inlineformset_factory(
     Indices, IndiceCriterios, form=IndiceCriteriosForm, extra=1, can_delete=True

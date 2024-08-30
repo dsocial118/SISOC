@@ -2,13 +2,12 @@ import re
 
 import django
 from django.core.exceptions import ValidationError
-from django.utils.translation import gettext
+from django.utils.translation import gettext, ugettext as _
 
 django.utils.translation.ugettext = gettext
-from django.utils.translation import ugettext as _
 
 
-class UppercaseValidator(object):
+class UppercaseValidator:
     """La contraseña debe tener por lo menos 1 letra mayuscula, A-Z."""
 
     #  The password must contain at least 1 uppercase letter, A-Z.
@@ -23,7 +22,7 @@ class UppercaseValidator(object):
         return _("La contraseña debe tener por lo menos 1 letra mayuscula, A-Z.")
 
 
-class LowercaseValidator(object):
+class LowercaseValidator:
     """La contraseña debe tener por lo menos 1 letra minuscula, a-z."""
 
     #  The password must contain at least 1 uppercase letter, A-Z.

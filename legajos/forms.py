@@ -3,9 +3,26 @@ from datetime import date
 from django import forms
 from django.core.validators import MaxValueValidator, MinValueValidator
 
-from .models import *
-from .models import DimensionEducacion
 from usuarios.validators import MaxSizeFileValidator
+
+from .models import (
+    Legajos,
+    LegajoGrupoFamiliar,
+    LegajoGrupoHogar,
+    CategoriaAlertas,
+    LegajoAlertas,
+    LegajosArchivos,
+    LegajosDerivaciones,
+    DimensionFamilia,
+    DimensionVivienda,
+    DimensionSalud,
+    DimensionEconomia,
+    DimensionTrabajo,
+    CHOICE_VINCULO_FAMILIAR,
+    CHOICE_ESTADO_RELACION,
+    CHOICE_SINO,
+)
+from .models import DimensionEducacion
 
 
 class LegajosForm(forms.ModelForm):
@@ -29,7 +46,7 @@ class LegajosForm(forms.ModelForm):
         fecha_nacimiento = cleaned_data.get("fecha_nacimiento")
 
         # Validación de campo unico, combinación de DNI + Tipo DNI
-        if (
+        existente = (
             tipo_doc
             and documento
             and fecha_nacimiento
@@ -42,7 +59,9 @@ class LegajosForm(forms.ModelForm):
                 nombre=nombre,
                 fecha_nacimiento=fecha_nacimiento,
             ).exists()
-        ):
+        )
+
+        if existente:
             self.add_error(
                 "documento", "Ya existe un legajo con ese TIPO y NÚMERO de documento."
             )
@@ -400,22 +419,15 @@ class DimensionEducacionForm(forms.ModelForm):
                     "rows": 3,
                 }
             ),
-            #'asiste_escuela': forms.CheckboxInput(),
-            #'interesEstudio': forms.CheckboxInput(),
-            #'interesCurso': forms.CheckboxInput(),
-            #'realizandoCurso': forms.CheckboxInput()
-            # pruebas para hacer funcionar la seleccion multiple
             "areaCurso": forms.SelectMultiple(attrs={"class": "form-control"}),
             "areaOficio": forms.SelectMultiple(attrs={"class": "form-control"}),
         }
 
-    def clean_areaCurso(self):
+    def clean_area_curso(self):
         data = self.cleaned_data["areaCurso"]
         if len(data) > 3:
             raise forms.ValidationError("Solo puedes seleccionar hasta 3 opciones.")
         return data
-
-    # fin de prueba
 
 
 class DimensionEconomiaForm(forms.ModelForm):
