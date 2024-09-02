@@ -252,13 +252,14 @@ class LegajosDetailView(DetailView):
             dimensionfamilia = DimensionFamilia.objects.filter(fk_legajo=pk).values('estado_civil','cant_hijos','otro_responsable','hay_embarazadas','hay_priv_libertad','hay_prbl_smental','hay_enf_cronica','obs_familia').first()
             cache.set('dimensionfamilia', dimensionfamilia, 60)
         if not dimensionvivienda:
-            dimensionvivienda = DimensionVivienda.objects.filter(fk_legajo=pk).values('posesion', 'tipo', 'material', 'pisos', 'cant_ambientes', 'cant_camas', 'cant_hogares', 'cant_convivientes', 'cant_menores', 'hay_banio', 'hay_agua_caliente', 'hay_desmoronamiento', 'ContextoCasa', 'PoseenPC', 'Poseeninternet', 'PoseenCeludar', 'obs_vivienda')
+            dimensionvivienda = DimensionVivienda.objects.filter(fk_legajo=pk).values('posesion', 'tipo', 'material', 'pisos', 'cant_ambientes', 'cant_camas', 'cant_hogares', 'cant_convivientes', 'cant_menores', 'hay_banio', 'hay_agua_caliente', 'hay_desmoronamiento', 'ContextoCasa', 'PoseenPC', 'Poseeninternet', 'PoseenCeludar', 'obs_vivienda').first()
             cache.set('dimensionvivienda', dimensionvivienda, 60)
+        
         if not dimensionsalud:
-            dimensionsalud = DimensionSalud.objects.filter(fk_legajo=pk).values('lugares_atencion', 'frec_controles', 'hay_enfermedad', 'hay_obra_social', 'hay_discapacidad', 'hay_cud', 'obs_salud')
+            dimensionsalud = DimensionSalud.objects.filter(fk_legajo=pk).values('lugares_atencion', 'frec_controles', 'hay_enfermedad', 'hay_obra_social', 'hay_discapacidad', 'hay_cud', 'obs_salud').first()
             cache.set('dimensionsalud', dimensionsalud, 60)
         if not dimensiontrabajo:
-            dimensiontrabajo = DimensionTrabajo.objects.filter(fk_legajo=pk).values('tiene_trabajo', 'ocupacion', 'modo_contratacion', 'conviviente_trabaja', 'obs_trabajo')
+            dimensiontrabajo = DimensionTrabajo.objects.filter(fk_legajo=pk).values('tiene_trabajo', 'ocupacion', 'modo_contratacion', 'conviviente_trabaja', 'obs_trabajo').first()
             cache.set('dimensiontrabajo', dimensiontrabajo, 60)
         if not datos_json:
             datos_json = self.grafico_evolucion_de_riesgo(fecha_actual, alertas)
@@ -1023,6 +1024,7 @@ class AlertasSelectView(View):
 
 
 class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
+    # FIXME: Crear updateView por cada formulario
     permission_required = admin_role
     template_name = "Legajos/legajosdimensiones_form.html"
     model = DimensionFamilia
@@ -1117,12 +1119,15 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
             "CondicionDe":"CondicionDe",
             "CantidadAmbientes":"CantidadAmbientes",
             "gas":"gas",
+            "desague":"desague",
+            "agua":"agua",
+            "techos":"techos",
             "obs_vivienda": "obs_vivienda",
         }
 
         for field in fields_mapping_vivienda:
             value = form_multiple.get(field)
-
+            
             if value:
                 setattr(
                     legajo_dim_vivienda,

@@ -163,23 +163,94 @@
           </dt>
           <dd class="col-sm-8">Baño dentro de la vivienda con descarga</dd>
           <dt class="col-sm-4">
-            {{object.dimensionvivienda.hay_banio|yesno:'Sí,No,-'}}
+            {{object.dimensionvivienda.hay_banio|default_if_none:"-"}}
           </dt>
           <dd class="col-sm-8">Posee Agua caliente</dd>
           <dt class="col-sm-4">
-            {{object.dimensionvivienda.hay_agua_caliente|yesno:'Sí,No,-'}}
+            {{object.dimensionvivienda.hay_agua_caliente|default_if_none:"-"}}
           </dt>
           <dd class="col-sm-8">Riesgo de desmoronamiento</dd>
           <dt class="col-sm-4">
-            {{object.dimensionvivienda.hay_desmoronamiento|yesno:'Sí,No,-'}}
+            {{object.dimensionvivienda.hay_desmoronamiento|default_if_none:"-"}}
+          </dt>
+          <dd class="col-sm-8">La vivienda está ubicada...</dd>
+          <dt class="col-sm-4">
+            {{object.dimensionvivienda.ContextoCasa|default_if_none:"-"}}
           </dt>
           <dd class="col-sm-8">Posee Celular</dd>
           <dt class="col-sm-4">
-            {{object.dimensionvivienda.PoseenCeludar|yesno:'Sí,No,-'}}
+            {{object.dimensionvivienda.PoseenCeludar|default_if_none:"-"}}
+          </dt>
+          <dd class="col-sm-8">Posee PC</dd>
+          <dt class="col-sm-4">
+            {{object.dimensionvivienda.PoseenPC|default_if_none:"-"}}
+          </dt>
+          <dd class="col-sm-8">Posee Internet</dd>
+          <dt class="col-sm-4">
+            {{object.dimensionvivienda.Poseeninternet|default_if_none:"-"}}
+          </dt>
+          <dd class="col-sm-8">¿Que utilizan principalmente para cocinar?</dd>
+          <dt class="col-sm-4">
+            {{object.dimensionvivienda.gas|default_if_none:"-"}}
+          </dt>
+          <dd class="col-sm-8">Material de la cubierta exterior de la vivienda</dd>
+          <dt class="col-sm-4">
+            {{object.dimensionvivienda.techos|default_if_none:"-"}}
+          </dt>
+          <dd class="col-sm-8">El agua que utilizan para cocinar proviene de...</dd>
+          <dt class="col-sm-4">
+            {{object.dimensionvivienda.agua|default_if_none:"-"}}
+          </dt>
+          <dd class="col-sm-8">El desagüe del inodoro es...</dd>
+          <dt class="col-sm-4">
+            {{object.dimensionvivienda.desague|default_if_none:"-"}}
+          </dt>
+          <dd class="col-sm-8">Observaciones</dd>
+          <dt class="col-sm-4">
+            {{object.dimensionvivienda.obs_vivienda|default_if_none:"-"}}
           </dt>
         </dl>
         <!-- /dimension vivienda -->
 
+
+
+        <hr class="mt-4 mb-3 border-secondary" />
+
+        <!-- dimension Salud -->
+        <div class="h3 mb-3">Salud</div>
+        <dl class="row mb-0">
+          <dd class="col-sm-8">Centro de Salud en donde se atiende</dd>
+          <dt class="col-sm-4">
+            {{object.dimensionsalud.lugares_atencion|default_if_none:"-"}}
+          </dt>
+          <dd class="col-sm-8">Frecuencia de controles médicos</dd>
+          <dt class="col-sm-4">
+            {{object.dimensionsalud.frec_controles|default_if_none:"-"}}
+          </dt>
+          <dd class="col-sm-8">Posee alguna enfermedad recurrente o algún diagnóstico de enfermedad crónico?</dd>
+          <dt class="col-sm-4">
+            {{object.dimensionsalud.hay_enfermedad|default_if_none:"-"}}
+          </dt>
+          <dd class="col-sm-8">Posee cobertura de salud</dd>
+          <dt class="col-sm-4">
+            {{object.dimensionsalud.hay_obra_social|default_if_none:"-"}}
+          </dt>
+          <dd class="col-sm-8">
+            Posee alguna discapacidad
+          </dd>
+          <dt class="col-sm-4">
+            {{object.dimensionsalud.hay_discapacidad|default_if_none:"-"}}
+          </dt>
+          <dd class="col-sm-8">Posee certificado de discapacidad</dd>
+          <dt class="col-sm-4">
+            {{object.dimensionsalud.hay_cud|default_if_none:"-"}}
+          </dt>
+          <dd class="col-sm-8">Observaciones</dd>
+          <dt class="col-sm-4">
+            {{object.dimensionsalud.obs_salud|default_if_none:"-"}}
+          </dt>
+        </dl>
+        <!-- /dimension Salud -->
         <hr class="mt-4 mb-3 border-secondary" />
 
         <!-- dimension Educación -->
@@ -209,26 +280,7 @@
           <dt class="col-sm-4">
             {{object.dimensioneducacion.estado_nivel|default_if_none:"-"}}
           </dt>
-          <dd class="col-sm-8">Institución</dd>
-          <dt class="col-sm-4">
-            {{object.dimensioneducacion.institucion|default_if_none:"-"}}
-          </dt>
-          <dd class="col-sm-8">Gestión</dd>
-          <dt class="col-sm-4">
-            {{object.dimensioneducacion.gestion|default_if_none:"-"}}
-          </dt>
-          <dd class="col-sm-8">Ciclo</dd>
-          <dt class="col-sm-4">
-            {{object.dimensioneducacion.ciclo|default_if_none:"-"}}
-          </dt>
-          <dd class="col-sm-8">Grado</dd>
-          <dt class="col-sm-4">
-            {{object.dimensioneducacion.grado|default_if_none:"-"}}
-          </dt>
-          <dd class="col-sm-8">Turno</dd>
-          <dt class="col-sm-4">
-            {{object.dimensioneducacion.turno|default_if_none:"-"}}
-          </dt>
+          
           <dd class="col-sm-8">provincia Institucion</dd>
           <dt class="col-sm-4">
             {{object.dimensioneducacion.provinciaInstitucion|default_if_none:"-"}}
@@ -252,6 +304,26 @@
           <dd class="col-sm-8">numero Institucion</dd>
           <dt class="col-sm-4">
             {{object.dimensioneducacion.numeroInstitucion|default_if_none:"-"}}
+          </dt>
+          <dd class="col-sm-8">Institución</dd>
+          <dt class="col-sm-4">
+            {{object.dimensioneducacion.institucion|default_if_none:"-"}}
+          </dt>
+          <dd class="col-sm-8">Gestión</dd>
+          <dt class="col-sm-4">
+            {{object.dimensioneducacion.gestion|default_if_none:"-"}}
+          </dt>
+          <dd class="col-sm-8">Ciclo</dd>
+          <dt class="col-sm-4">
+            {{object.dimensioneducacion.ciclo|default_if_none:"-"}}
+          </dt>
+          <dd class="col-sm-8">Grado</dd>
+          <dt class="col-sm-4">
+            {{object.dimensioneducacion.grado|default_if_none:"-"}}
+          </dt>
+          <dd class="col-sm-8">Turno</dd>
+          <dt class="col-sm-4">
+            {{object.dimensioneducacion.turno|default_if_none:"-"}}
           </dt>
           <dd class="col-sm-8">interes Estudio</dd>
           <dt class="col-sm-4">
@@ -305,7 +377,7 @@
           </dt>
           <dd class="col-sm-8">¿Recibe Plan Social?</dd>
           <dt class="col-sm-4">
-            {{object.dimensioneconomia.recibe_plan|yesno:'Sí,No,-'}}
+            {{object.dimensioneconomia.recibe_plan|default_if_none:"-"}}
           </dt>
           <dd class="col-sm-8">Planes sociales que recibe</dd>
           <dt class="col-sm-4">
