@@ -44,7 +44,7 @@ MESSAGE_TAGS = {
 
 # Configuración de visualización de modelos gráficos
 GRAPH_MODELS = {
-    "app_labels": ["Inicio", "Legajos"],
+    "app_labels": ["inicio", "legajos"],
 }
 
 # Configuración de clases CSS para formularios Crispy
@@ -127,7 +127,6 @@ INSTALLED_APPS = [
     "inicio",
     "dashboard",
     "legajos",
-    "healthckeck",
 ]
 
 # Definición del middleware utilizado por el proyecto
@@ -136,7 +135,7 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
-    "Usuarios.middleware.CustomLoginMiddleware",
+    "usuarios.middleware.CustomLoginMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -218,8 +217,11 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # Configuración de Django Debug Toolbar
-DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": bool(DEBUG)}
-
+DEBUG_TOOLBAR_CONFIG = {
+    "SHOW_TOOLBAR_CALLBACK": lambda request: (
+        True if DEBUG else False  # pylint: disable=simplifiable-if-expression
+    )
+}
 # Configuración del HSTS para evitar conflictos en AWS previamente configurados
 SECURE_HSTS_SECONDS = None
 SECURE_HSTS_INCLUDE_SUBDOMAINS = False
