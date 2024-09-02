@@ -20,7 +20,7 @@
         <div class="col-12 my-3 mx-2 d-print-none">
             {% if perms.Usuarios.rol_admin %}
                 <a href="{% url 'acciones_editar' object.id %}"
-                   class="{% if not perms.Inicio.change_Secretaria %}  disabled {% endif %}"
+                   class="{% if not perms.inicio.change_Secretaria %}  disabled {% endif %}"
                    class="btn btn-primary mr-1">Editar</a>
             {% endif %}
             <a href="" class="btn btn-secondary mr-1 print">Imprimir</a>

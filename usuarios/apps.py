@@ -3,7 +3,7 @@ from django.apps import AppConfig
 
 class UsuariosConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "Usuarios"
+    name = "usuarios"
 
     def ready(self):
         import usuarios.signals  # pylint: disable=unused-import import-outside-toplevel

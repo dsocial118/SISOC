@@ -80,7 +80,7 @@ ROL_ADMIN = "Usuarios.rol_admin"
 
 
 class LegajosReportesListView(ListView):
-    template_name = "Legajos/legajos_reportes.html"
+    template_name = "legajos/legajos_reportes.html"
     model = LegajosDerivaciones
 
     def get_context_data(self, **kwargs):
@@ -139,7 +139,7 @@ class LegajosReportesListView(ListView):
 
 class LegajosListView(ListView):
     model = Legajos
-    template_name = "Legajos/legajos_list.html"
+    template_name = "legajos/legajos_list.html"
     context_object_name = "legajos"
     paginate_by = 10  # Número de objetos por página
 
@@ -211,7 +211,7 @@ class LegajosListView(ListView):
 
 class LegajosDetailView(DetailView):
     model = Legajos
-    template_name = "Legajos/legajos_detail.html"
+    template_name = "legajos/legajos_detail.html"
 
     def get_context_data(  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         self, **kwargs
@@ -924,7 +924,7 @@ class DeleteGrupoFamiliar(View):
 
 class LegajosDerivacionesBuscar(PermisosMixin, TemplateView):
     permission_required = ROL_ADMIN
-    template_name = "Legajos/legajosderivaciones_buscar.html"
+    template_name = "legajos/legajosderivaciones_buscar.html"
 
     def get(self, request, *args, **kwargs):  # pylint: disable=too-many-locals
         context = self.get_context_data(**kwargs)
@@ -1085,7 +1085,7 @@ class LegajosDerivacionesUpdateView(PermisosMixin, UpdateView):
 class LegajosDerivacionesHistorial(PermisosMixin, ListView):
     permission_required = ROL_ADMIN
     model = LegajosDerivaciones
-    template_name = "Legajos/legajosderivaciones_historial.html"
+    template_name = "legajos/legajosderivaciones_historial.html"
 
     def get_context_data(self, **kwargs):
         context = super(LegajosDerivacionesHistorial, self).get_context_data(**kwargs)
@@ -1144,7 +1144,7 @@ class LegajosDerivacionesDetailView(PermisosMixin, DetailView):
 class LegajosAlertasListView(PermisosMixin, ListView):
     permission_required = ROL_ADMIN
     model = HistorialLegajoAlertas
-    template_name = "Legajos/legajoalertas_list.html"
+    template_name = "legajos/legajoalertas_list.html"
 
     def get_context_data(self, **kwargs):
         pk = self.kwargs["pk"]
@@ -1264,7 +1264,7 @@ class AlertasSelectView(View):
 class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
     # FIXME: Crear updateView por cada formulario
     permission_required = ROL_ADMIN
-    template_name = "Legajos/legajosdimensiones_form.html"
+    template_name = "legajos/legajosdimensiones_form.html"
     model = DimensionFamilia
     form_class = DimensionFamiliaForm
     form_vivienda = DimensionViviendaForm
@@ -1560,7 +1560,7 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
 class DimensionesDetailView(PermisosMixin, DetailView):
     permission_required = ROL_ADMIN
     model = Legajos
-    template_name = "Legajos/legajosdimensiones_detail.html"
+    template_name = "legajos/legajosdimensiones_detail.html"
 
 
 # endregion
@@ -1570,7 +1570,7 @@ class DimensionesDetailView(PermisosMixin, DetailView):
 class LegajosArchivosListView(PermisosMixin, ListView):
     permission_required = ROL_ADMIN
     model = LegajosArchivos
-    template_name = "Legajos/legajosarchivos_list.html"
+    template_name = "legajos/legajosarchivos_list.html"
 
     def get_context_data(self, **kwargs):
         pk = self.kwargs["pk"]
@@ -1661,7 +1661,7 @@ class DeleteArchivo(PermisosMixin, View):
 
 
 class ProgramasIntervencionesView(TemplateView):
-    template_name = "Legajos/programas_intervencion.html"
+    template_name = "legajos/programas_intervencion.html"
     model = Legajos
 
     def get_context_data(self, **kwargs):
@@ -1675,7 +1675,7 @@ class ProgramasIntervencionesView(TemplateView):
 
 
 class AccionesSocialesView(TemplateView):
-    template_name = "Legajos/acciones_sociales.html"
+    template_name = "legajos/acciones_sociales.html"
     model = Legajos
 
     def get_context_data(self, **kwargs):
@@ -1698,7 +1698,7 @@ class AccionesSocialesView(TemplateView):
 
 
 class IntervencionesSaludView(TemplateView):
-    template_name = "Legajos/intervenciones_salud.html"
+    template_name = "legajos/intervenciones_salud.html"
     model = Legajos
 
     def get_context_data(self, **kwargs):
@@ -1712,7 +1712,7 @@ class IntervencionesSaludView(TemplateView):
 
 
 class IndicesView(TemplateView):
-    template_name = "Legajos/indices.html"
+    template_name = "legajos/indices.html"
     model = Legajos
 
     def get_context_data(self, **kwargs):
@@ -1726,7 +1726,7 @@ class IndicesView(TemplateView):
 
 
 class IndicesDetalleView(TemplateView):
-    template_name = "Legajos/indices_detalle.html"
+    template_name = "legajos/indices_detalle.html"
     model = Legajos
 
     def get_context_data(self, **kwargs):

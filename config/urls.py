@@ -9,12 +9,12 @@ urlpatterns = [
     path("admin/doc/", include("django.contrib.admindocs.urls")),
     path("admin/", admin.site.urls),
     path("", include("django.contrib.auth.urls")),
-    path("", include("Usuarios.urls")),
-    path("", include("Configuraciones.urls")),
-    path("", include("Inicio.urls")),
-    path("", include("Dashboard.urls")),
-    path("", include("Legajos.urls")),
-    path("", include("Healthcheck.urls")),
+    path("", include("usuarios.urls")),
+    path("", include("configuraciones.urls")),
+    path("", include("inicio.urls")),
+    path("", include("dashboard.urls")),
+    path("", include("legajos.urls")),
+    path("", include("healthcheck.urls")),
 ]
 
 urlpatterns += staticfiles_urlpatterns()
