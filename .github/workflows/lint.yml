@@ -88,10 +88,6 @@ jobs:
               with:
                   python-version: ${{ needs.setup.outputs.python-version }}
 
-            - name: TEST
-              run: |
-                  cat .pylintrc
-
             - name: Install dependencies
               run: |
                   python -m pip install --upgrade pip
@@ -100,4 +96,5 @@ jobs:
 
             - name: Run pylint
               run: |
+                  cat .pylintrc
                   pylint **/*.py --rcfile=.pylintrc
