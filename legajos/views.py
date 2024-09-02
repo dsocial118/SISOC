@@ -65,6 +65,9 @@ from legajos.models import (
     LegajoAlertas,
     LegajoGrupoHogar,
     LegajosArchivos,
+    LegajoProvincias,
+    LegajoLocalidad,
+    LegajoMunicipio,
 )
 from usuarios.mixins import PermisosMixin
 from usuarios.utils import recortar_imagen
@@ -81,9 +84,9 @@ ROL_ADMIN = "Usuarios.rol_admin"
 
 def load_municipios(request):
     provincia_id = request.GET.get("provincia_id")
-    provinciaSearch = LegajoProvincias.objects.get(id=provincia_id)
+    provincia_search = LegajoProvincias.objects.get(id=provincia_id)
     municipios = LegajoMunicipio.objects.filter(
-        codigo_ifam__startswith=provinciaSearch.abreviatura
+        codigo_ifam__startswith=provincia_search.abreviatura
     )
     return JsonResponse(
         list(municipios.values("id", "departamento_id", "nombre_region")), safe=False
@@ -92,9 +95,9 @@ def load_municipios(request):
 
 def load_localidad(request):
     municipio_id = request.GET.get("municipio_id")
-    localidadSearch = LegajoMunicipio.objects.get(id=municipio_id)
+    localidad_search = LegajoMunicipio.objects.get(id=municipio_id)
     localidades = LegajoLocalidad.objects.filter(
-        departamento_id=localidadSearch.departamento_id
+        departamento_id=localidad_search.departamento_id
     )
     return JsonResponse(list(localidades.values("id", "nombre")), safe=False)
 

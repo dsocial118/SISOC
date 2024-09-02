@@ -223,6 +223,7 @@ class Legajos(models.Model):
     fk_localidad = models.ForeignKey(
         LegajoLocalidad, on_delete=models.CASCADE, null=True, blank=True
     )  # departamento_id es el campo que se relaciona con municipio
+
     def __str__(self):
         return f"{self.apellido}, {self.nombre}"
 
@@ -344,6 +345,7 @@ def convertir_positivo(value):
         return int(value) * -1
     return int(value)
 
+
 class DimensionFamilia(models.Model):
     """
     Guardado de la informacion de salud asociada a un Legajo.
@@ -411,6 +413,7 @@ class DimensionVivienda(models.Model):
     """
     Guardado de los datos de vivienda asociados a un Legajo.
     """
+
     fk_legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
     tipo = models.CharField(
         verbose_name="Dirías que tu vivienda es…  ",
@@ -963,6 +966,7 @@ class HistorialLegajoAlertas(models.Model):
     Guardado de historial de los distintos movimientos (CREACION/ELIMINACION)  de alertas de vulnerabilidad asociadas a un Legajo.
     Se graban a traves funciones detalladas en el archivo signals.py de esta app.
     """
+
     fk_alerta = models.ForeignKey(
         Alertas, related_name="hist_alerta", on_delete=models.CASCADE
     )
@@ -1049,7 +1053,6 @@ class LegajosDerivaciones(models.Model):
 
 
 class LegajosArchivos(models.Model):
-
     """
     Archivos asociados a un legajo. En la view se separaran los archivos de imagen de los documentos (para mostrar los primeros enun carousel)
     """
