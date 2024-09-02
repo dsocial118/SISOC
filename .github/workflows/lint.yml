@@ -90,7 +90,7 @@ jobs:
 
             - name: TEST
               run: |
-                  ls .pylintrc
+                  cat .pylintrc
 
             - name: Install dependencies
               run: |
