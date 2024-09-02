@@ -25,6 +25,7 @@ jobs:
               run: |
                   python -m pip install --upgrade pip
                   pip install black djlint pylint
+              id: install-dependencies
 
     black:
         runs-on: ubuntu-latest
@@ -37,6 +38,11 @@ jobs:
               uses: actions/setup-python@v3
               with:
                   python-version: ${{ needs.setup.outputs.python-version }}
+
+            - name: Install dependencies
+              run: |
+                  python -m pip install --upgrade pip
+                  pip install black
 
             - name: Run Black
               run: black --check .
@@ -61,6 +67,11 @@ jobs:
               with:
                   python-version: ${{ needs.setup.outputs.python-version }}
 
+            - name: Install dependencies
+              run: |
+                  python -m pip install --upgrade pip
+                  pip install djlint
+
             - name: Run DJLint
               run: |
                   djlint . --check
@@ -76,6 +87,11 @@ jobs:
               uses: actions/setup-python@v3
               with:
                   python-version: ${{ needs.setup.outputs.python-version }}
+
+            - name: Install dependencies
+              run: |
+                  python -m pip install --upgrade pip
+                  pip install pylint
 
             - name: Run pylint
               run: |
