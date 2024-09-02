@@ -21,7 +21,7 @@ class LegajosForm(forms.ModelForm):
     )
     fk_municipio = forms.ModelChoiceField(
         required=True,
-        label="Muinicipo",
+        label="Municipio",
         queryset=LegajoMunicipio.objects.all(),
         widget=forms.Select(attrs={'class': 'select2'}),
     )
@@ -74,12 +74,12 @@ class LegajosUpdateForm(forms.ModelForm):
     )
     fk_provincia = forms.ModelChoiceField(
         required=True,
-        label="Provicnia",
+        label="Provincia",
         queryset=LegajoProvincias.objects.all(),
     )
     fk_municipio = forms.ModelChoiceField(
         required=True,
-        label="Muicipio",
+        label="Municipio",
         queryset=LegajoMunicipio.objects.all(),
     )
     fk_localidad = forms.ModelChoiceField(
