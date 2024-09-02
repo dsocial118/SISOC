@@ -7,6 +7,9 @@ from usuarios.validators import MaxSizeFileValidator
 
 from .models import (
     Legajos,
+    LegajoProvincias,
+    LegajoMunicipio,
+    LegajoLocalidad,
     LegajoGrupoFamiliar,
     LegajoGrupoHogar,
     CategoriaAlertas,
@@ -36,7 +39,24 @@ class LegajosForm(forms.ModelForm):
         validators=[MinValueValidator(3000000), MaxValueValidator(100000000)],
         widget=forms.NumberInput(),
     )
-
+    fk_provincia = forms.ModelChoiceField(
+        required=True,
+        label="Provincia",
+        queryset=LegajoProvincias.objects.all(),
+        widget=forms.Select(attrs={"class": "select2"}),
+    )
+    fk_municipio = forms.ModelChoiceField(
+        required=True,
+        label="Municipio",
+        queryset=LegajoMunicipio.objects.all(),
+        widget=forms.Select(attrs={"class": "select2"}),
+    )
+    fk_localidad = forms.ModelChoiceField(
+        required=True,
+        label="Localidad",
+        queryset=LegajoLocalidad.objects.all(),
+        widget=forms.Select(attrs={"class": "select2"}),
+    )
     def clean(self):
         cleaned_data = super().clean()
         tipo_doc = cleaned_data.get("tipo_doc")
@@ -46,7 +66,7 @@ class LegajosForm(forms.ModelForm):
         fecha_nacimiento = cleaned_data.get("fecha_nacimiento")
 
         # Validación de campo unico, combinación de DNI + Tipo DNI
-        existente = (
+        if (
             tipo_doc
             and documento
             and fecha_nacimiento
@@ -59,9 +79,7 @@ class LegajosForm(forms.ModelForm):
                 nombre=nombre,
                 fecha_nacimiento=fecha_nacimiento,
             ).exists()
-        )
-
-        if existente:
+        ):
             self.add_error(
                 "documento", "Ya existe un legajo con ese TIPO y NÚMERO de documento."
             )
@@ -85,8 +103,14 @@ class LegajosForm(forms.ModelForm):
             ),
             "m2m_alertas": forms.Select(attrs={"class": "select2"}),
             "m2m_familiares": forms.Select(attrs={"class": "select2"}),
+            "fk_municipio": forms.Select(attrs={"class": "select2"}),
+            "fk_localidad": forms.Select(attrs={"class": "select2"}),
+            "fk_provincia": forms.Select(attrs={"class": "select2"}),
         }
         labels = {
+            "fk_provincia": "Provincia",
+            "fk_localidad": "Localidad",
+            "fk_municipio": "Municipio",
             "nombre": "Nombre",
             "apellido": "Apellidos",
             "foto": "",
@@ -107,6 +131,27 @@ class LegajosUpdateForm(forms.ModelForm):
         validators=[MinValueValidator(3000000), MaxValueValidator(100000000)],
         widget=forms.NumberInput(),
     )
+    fk_provincia = forms.ModelChoiceField(
+        required=True,
+        label="Provincia",
+        queryset=LegajoProvincias.objects.all(),
+    )
+    fk_municipio = forms.ModelChoiceField(
+        required=True,
+        label="Municipio",
+        queryset=LegajoMunicipio.objects.all(),
+    )
+    fk_localidad = forms.ModelChoiceField(
+        required=True,
+        label="Localidad",
+        queryset=LegajoLocalidad.objects.all(),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["fk_provincia"].queryset = LegajoProvincias.objects.all()
+        self.fields["fk_municipio"].queryset = LegajoMunicipio.objects.all()
+        self.fields["fk_localidad"].queryset = LegajoLocalidad.objects.all()
 
     def clean(self):
         cleaned_data = super().clean()
@@ -143,11 +188,17 @@ class LegajosUpdateForm(forms.ModelForm):
             "fecha_nacimiento": forms.DateInput(
                 attrs={"type": "date"}, format="%Y-%m-%d"
             ),
+            "fk_municipio": forms.Select(attrs={"class": "select2 municipio-select"}),
+            "fk_localidad": forms.Select(attrs={"class": "select2 localidad-select"}),
+            "fk_provincia": forms.Select(attrs={"class": "select2 provincia-select"}),
         }
         labels = {
             "nombre": "Nombre",
             "apellido": "Apellidos",
             "foto": "",
+            "fk_provincia": "Provincia",
+            "fk_localidad": "Localidad",
+            "fk_municipio": "Municipio",
         }
 
 
@@ -210,9 +261,7 @@ class NuevoLegajoFamiliarForm(forms.ModelForm):
 
         return cleaned_data
 
-
 #############HOGAR###########
-
 
 class LegajoGrupoHogarForm(forms.ModelForm):
     vinculo = forms.ChoiceField(choices=CHOICE_VINCULO_FAMILIAR, required=True)
@@ -335,7 +384,6 @@ class DimensionFamiliaForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["fk_legajo"].widget = forms.HiddenInput()
-
     class Meta:
         model = DimensionFamilia
         fields = "__all__"
@@ -360,7 +408,6 @@ class DimensionViviendaForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["fk_legajo"].widget = forms.HiddenInput()
-
     class Meta:
         model = DimensionVivienda
         fields = "__all__"
@@ -378,15 +425,12 @@ class DimensionViviendaForm(forms.ModelForm):
             #'PoseenPC': forms.CheckboxInput(),
             #'Poseeninternet': forms.CheckboxInput()
         }
-
     # <!-- ./Nuevos campos vivienda Form Editar o cargar -->
-
 
 class DimensionSaludForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["fk_legajo"].widget = forms.HiddenInput()
-
     class Meta:
         model = DimensionSalud
         fields = "__all__"
@@ -408,7 +452,6 @@ class DimensionEducacionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["fk_legajo"].widget = forms.HiddenInput()
-
     class Meta:
         model = DimensionEducacion
         fields = "__all__"
@@ -419,6 +462,11 @@ class DimensionEducacionForm(forms.ModelForm):
                     "rows": 3,
                 }
             ),
+            #'asiste_escuela': forms.CheckboxInput(),
+            #'interesEstudio': forms.CheckboxInput(),
+            #'interesCurso': forms.CheckboxInput(),
+            #'realizandoCurso': forms.CheckboxInput()
+            # pruebas para hacer funcionar la seleccion multiple
             "areaCurso": forms.SelectMultiple(attrs={"class": "form-control"}),
             "areaOficio": forms.SelectMultiple(attrs={"class": "form-control"}),
         }
@@ -429,12 +477,12 @@ class DimensionEducacionForm(forms.ModelForm):
             raise forms.ValidationError("Solo puedes seleccionar hasta 3 opciones.")
         return data
 
+    # fin de prueba
 
 class DimensionEconomiaForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["fk_legajo"].widget = forms.HiddenInput()
-
     class Meta:
         model = DimensionEconomia
         fields = "__all__"
@@ -457,7 +505,6 @@ class DimensionTrabajoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["fk_legajo"].widget = forms.HiddenInput()
-
     class Meta:
         model = DimensionTrabajo
         fields = "__all__"
@@ -471,7 +518,6 @@ class DimensionTrabajoForm(forms.ModelForm):
             #'tiene_trabajo': forms.CheckboxInput(),
             #'conviviente_trabaja': forms.CheckboxInput(),
         }
-
 
 class DerivacionesRechazoForm(forms.ModelForm):
     class Meta:

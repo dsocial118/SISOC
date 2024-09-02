@@ -13,11 +13,13 @@ from configuraciones.models import (
     Programas,
     CategoriaAlertas,
 )
-from configuraciones.choices import CHOICE_LOCALIDAD, CHOICE_BARRIOS, CHOICE_CIRCUITOS
+from configuraciones.choices import CHOICE_CIRCUITOS
 from legajos.choices import (
-    CHOICE_MOTIVO_NIVEL_INCOMPLETOCHOICE_ASISTE_ESCUELA,
-    CHOICE_SEXO,
+    CHOICE_CANTIDADAMBIENTES,
+    CHOICE_ASISTE_ESCUELA,
+    CHOICE_CONTEXTOCASA,
     CHOICE_CONDICIONDE,
+    CHOICE_SEXO,
     CHOICE_TIPO_DOC,
     CHOICE_NACIONALIDAD,
     CHOICE_ESTADO_CIVIL,
@@ -28,8 +30,6 @@ from legajos.choices import (
     CHOICE_TIPO_VIVIENDA,
     CHOICE_TIPO_CONSTRUCCION_VIVIENDA,
     CHOICE_TIPO_PISOS_VIVIENDA,
-    CHOICE_CANTIDADAMBIENTES,
-    CHOICE_CONTEXTOCASA,
     CHOICE_GAS,
     CHOICE_TIPO_TECHO_VIVIENDA,
     CHOICE_AGUA,
@@ -56,6 +56,81 @@ from legajos.choices import (
     CHOICE_RECHAZO,
 )
 from usuarios.models import Usuarios, User
+
+
+class LegajoProvincias(models.Model):
+    """
+    Guardado de las provincias de los vecinos y vecinas registrados.
+    """
+
+    iso_provincia = models.CharField(max_length=250)
+    abreviatura = models.CharField(max_length=250)
+    region_id = models.IntegerField()
+    number = models.IntegerField()
+    nombre = models.CharField(max_length=250)
+    region_id = models.IntegerField()
+    region_territorial_id = models.IntegerField()
+    uuid = models.CharField(max_length=200)
+    status = models.IntegerField()
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        ordering = ["id"]
+        verbose_name = "LegajoProvincia"
+        verbose_name_plural = "LegajosProvincia"
+        indexes = [
+            models.Index(fields=["id"]),
+        ]
+
+
+class LegajoMunicipio(models.Model):
+    """
+    Guardado de los municipios de los vecinos y vecinas registrados.
+    """
+
+    nombre_region = models.CharField(max_length=250)
+    codigo_ifam = models.CharField(max_length=250)
+    carta_organica = models.IntegerField()
+    categoria_id = models.IntegerField()
+    departamento_id = models.IntegerField()
+    iso_provincia = models.CharField(max_length=250)
+
+    def __str__(self):
+        return str(self.nombre_region)
+
+    class Meta:
+        ordering = ["id"]
+        verbose_name = "LegajoMunicipio"
+        verbose_name_plural = "LegajosMunicipio"
+        indexes = [
+            models.Index(fields=["id"]),
+        ]
+
+
+class LegajoLocalidad(models.Model):
+    """
+    Guardado de las localidades de los vecinos y vecinas registrados.
+    """
+
+    nombre = models.CharField(max_length=250)
+    cod_bahra = models.BigIntegerField()
+    bahra_gid = models.IntegerField()
+    cod_loc = models.IntegerField()
+    cod_sit = models.IntegerField()
+    cod_entidad = models.IntegerField()
+    lat_gd = models.FloatField()
+    long_gd = models.FloatField()
+    long_gms = models.CharField(max_length=250)
+    the_geom = models.CharField(max_length=250)
+    departamento_id = models.IntegerField()
+    fuente_ubicacion = models.IntegerField()
+    tipo_bahra = models.IntegerField()
+    cod_depto = models.IntegerField()
+
+    def __str__(self):
+        return str(self.nombre)
 
 
 class Legajos(models.Model):
@@ -86,13 +161,6 @@ class Legajos(models.Model):
     estado_civil = models.CharField(
         max_length=50, choices=CHOICE_ESTADO_CIVIL, null=True, blank=True
     )
-    Provincia = models.CharField(
-        verbose_name="Provincia",
-        max_length=200,
-        choices=PROVINCE_CHOICES,
-        null=True,
-        blank=True,
-    )
     calle = models.CharField(max_length=250, null=True, blank=True)
     altura = models.IntegerField(null=True, blank=True)
     latitud = models.CharField(max_length=250, null=True, blank=True)
@@ -103,9 +171,6 @@ class Legajos(models.Model):
     circuito = models.CharField(
         max_length=100, choices=CHOICE_CIRCUITOS, null=True, blank=True
     )
-    barrio = models.CharField(
-        max_length=100, choices=CHOICE_BARRIOS, null=True, blank=True
-    )
     torrepasillo = models.CharField(
         max_length=100, null=True, blank=True, verbose_name="Torre / Pasillo (optativo)"
     )
@@ -115,9 +180,7 @@ class Legajos(models.Model):
         blank=True,
         verbose_name="Escalera / Manzana (optativo)",
     )
-    localidad = models.CharField(
-        max_length=250, choices=CHOICE_LOCALIDAD, null=True, blank=True
-    )
+
     codigopostal = models.IntegerField(
         null=True, blank=True, verbose_name="Código Postal"
     )
@@ -151,7 +214,15 @@ class Legajos(models.Model):
     )
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
-
+    fk_provincia = models.ForeignKey(
+        LegajoProvincias, on_delete=models.CASCADE, null=True, blank=True
+    )  # abrebianura es el campo que relacion a municipio
+    fk_municipio = models.ForeignKey(
+        LegajoMunicipio, on_delete=models.CASCADE, null=True, blank=True
+    )  # codigo_ifam es el campo que se relaciona con provincia y departamento_id se relaciona con localidada
+    fk_localidad = models.ForeignKey(
+        LegajoLocalidad, on_delete=models.CASCADE, null=True, blank=True
+    )  # departamento_id es el campo que se relaciona con municipio
     def __str__(self):
         return f"{self.apellido}, {self.nombre}"
 
@@ -231,7 +302,6 @@ class Legajos(models.Model):
 
 class LegajoGrupoFamiliar(models.Model):
     """
-
     Guardado de las relaciones familiares de los vecinos y vecinas registrados, con una valoración que permita conocer el estado
 
     del vínculo desde la consideración de cada parte involucrada.
@@ -267,9 +337,6 @@ class LegajoGrupoFamiliar(models.Model):
         return reverse("legajogrupofamiliar_ver", kwargs={"pk": self.pk})
 
 
-# region------------- DIMENSIONES--------------------------------------------------------------------------------------------------
-
-
 def convertir_positivo(value):
     if value is None:
         return 0
@@ -277,10 +344,8 @@ def convertir_positivo(value):
         return int(value) * -1
     return int(value)
 
-
 class DimensionFamilia(models.Model):
     """
-
     Guardado de la informacion de salud asociada a un Legajo.
     """
 
@@ -346,7 +411,6 @@ class DimensionVivienda(models.Model):
     """
     Guardado de los datos de vivienda asociados a un Legajo.
     """
-
     fk_legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
     tipo = models.CharField(
         verbose_name="Dirías que tu vivienda es…  ",
@@ -506,7 +570,6 @@ class DimensionVivienda(models.Model):
 
 class DimensionSalud(models.Model):
     """
-
     Guardado de la informacion de salud asociada a un Legajo.
     """
 
@@ -558,7 +621,6 @@ class DimensionSalud(models.Model):
         return reverse("legajos_ver", kwargs={"pk": self.fk_legajo.id})
 
 
-# Assuming your model class name is DimensionEducacion
 class DimensionEducacion(models.Model):
     fk_legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
     max_nivel = models.CharField(
@@ -578,7 +640,7 @@ class DimensionEducacion(models.Model):
     asiste_escuela = models.CharField(
         verbose_name="¿Asistís o asististe alguna vez a algún establecimiento educativo?",
         max_length=100,
-        choices=CHOICE_MOTIVO_NIVEL_INCOMPLETOCHOICE_ASISTE_ESCUELA,
+        choices=CHOICE_ASISTE_ESCUELA,
         null=True,
         blank=True,
     )
@@ -714,7 +776,6 @@ class DimensionEducacion(models.Model):
 
 class DimensionEconomia(models.Model):
     """
-
     Guardado de los datos económicos asociados a un Legajo.
     """
 
@@ -856,18 +917,8 @@ class DimensionTrabajo(models.Model):
         return reverse("dimensionlaboral_ver", kwargs={"pk": self.pk})
 
 
-# endregion-------------FIN DIMENSIONES-------------------------------------------------------------------------------------------------
-
-
-# region--------------LEGAJO - ALERTAS-----------------------------------------------------------------------------------------
-
-
-# TODO impedir que se pueda cambiar el tipo de alerta una vez creada, para impedir errores de interpretacion en el historial
-
-
 class LegajoAlertas(models.Model):
     """
-
     Registro de Alertas de vulnerabilidad asociadas a un Legajo determinado Tanto el alta como la baja se guardan en un historial del alertas.
     """
 
@@ -912,7 +963,6 @@ class HistorialLegajoAlertas(models.Model):
     Guardado de historial de los distintos movimientos (CREACION/ELIMINACION)  de alertas de vulnerabilidad asociadas a un Legajo.
     Se graban a traves funciones detalladas en el archivo signals.py de esta app.
     """
-
     fk_alerta = models.ForeignKey(
         Alertas, related_name="hist_alerta", on_delete=models.CASCADE
     )
@@ -956,7 +1006,6 @@ class HistorialLegajoAlertas(models.Model):
 
 class LegajosDerivaciones(models.Model):
     """
-
     Registro de todas las derivaciones a programas que funcionen dentro del sistema.
     """
 
@@ -999,14 +1048,10 @@ class LegajosDerivaciones(models.Model):
         return reverse("legajosderivaciones_ver", kwargs={"pk": self.pk})
 
 
-# endregion
-
-
 class LegajosArchivos(models.Model):
+
     """
-
     Archivos asociados a un legajo. En la view se separaran los archivos de imagen de los documentos (para mostrar los primeros enun carousel)
-
     """
 
     fk_legajo = models.ForeignKey(Legajos, on_delete=models.CASCADE)
@@ -1021,7 +1066,6 @@ class LegajosArchivos(models.Model):
         return f"Archivo {self.id} del legajo {self.fk_legajo}"
 
 
-##################### HOGAR###############################
 class LegajoGrupoHogar(models.Model):
     """
     Guardado de las relaciones familiares de los vecinos y vecinas registrados,
@@ -1051,5 +1095,3 @@ class LegajoGrupoHogar(models.Model):
 
     def get_absolute_url(self):
         return reverse("LegajoGrupoHogarForm_ver", kwargs={"pk": self.pk})
-
-    ##########

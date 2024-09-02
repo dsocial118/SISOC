@@ -1,17 +1,16 @@
-from django.contrib.auth.decorators import login_required
 from django.urls import path
-
-from .views import (
-    LegajosReportesListView,
+from django.contrib.auth.decorators import login_required
+from legajos.views import (
     LegajosListView,
+    LegajosReportesListView,
     LegajosCreateView,
     LegajosDetailView,
     LegajosUpdateView,
     LegajosDeleteView,
     LegajoGrupoFamiliarList,
+    LegajosGrupoFamiliarCreateView,
     CreateGrupoFamiliar,
     DeleteGrupoFamiliar,
-    LegajosGrupoFamiliarCreateView,
     DimensionesDetailView,
     DimensionesUpdateView,
     LegajosAlertasListView,
@@ -39,8 +38,10 @@ from .views import (
     LegajosGrupoHogarCreateView,
     CreateGrupoHogar,
     DeleteGrupoHogar,
-    busqueda_familiares,
     busqueda_hogar,
+    busqueda_familiares,
+    load_localidad,
+    load_municipios,
 )
 
 urlpatterns = [
@@ -269,4 +270,6 @@ urlpatterns = [
         login_required(LegajosGrupoHogarCreateView.as_view()),
         name="legajosgrupohogar_crear",
     ),
+    path("ajax/load-municipios/", load_municipios, name="ajax_load_municipios"),
+    path("ajax/load-localidades/", load_localidad, name="ajax_load_localidades"),
 ]
