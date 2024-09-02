@@ -13,11 +13,11 @@ jobs:
             python-version: ${{ steps.python-version.outputs.python-version }}
         steps:
             - name: Checkout code
-              uses: actions/checkout@v3
+              uses: actions/checkout@v4
 
             - name: Set up Python
               id: python-version
-              uses: actions/setup-python@v3
+              uses: actions/setup-python@v4
               with:
                   python-version: '3.9.19'
 
@@ -96,4 +96,4 @@ jobs:
 
             - name: Run pylint
               run: |
-                  pylint --rcfile=.pylintrc **/*.py
+                  pylint --rcfile=./.pylintrc **/*.py
