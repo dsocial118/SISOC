@@ -18,7 +18,7 @@ CHOICE_ESTADO_NIVEL_EDUCATIVO = [
     ("Completo", "Completo"),
 ]
 
-CHOICE_MOTIVO_NIVEL_INCOMPLETOCHOICE_ASISTE_ESCUELA = [
+CHOICE_ASISTE_ESCUELA = [
     ("a", "Sí, asisto actualmente"),
     ("b", "Sí, asistí en algún momento"),
     ("c", "No, nunca asistí"),
