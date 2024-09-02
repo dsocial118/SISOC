@@ -455,7 +455,7 @@ disable=raw-checker-failed,
         R1705, # no-else-return
         W0201, # attribute-defined-outside-init
         R1725, # super-with-arguments
-        
+        E5110, 
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
