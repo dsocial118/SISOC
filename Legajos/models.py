@@ -128,9 +128,9 @@ class Legajos(models.Model):
         Usuarios, related_name='modificado_por', on_delete=models.CASCADE, blank=True, null=True)
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
-    fk_provincia = models.ForeignKey(LegajoProvincias, on_delete=models.CASCADE, null=True, blank=True) #abrebianura es el campo que relacion a municipio
-    fk_municipio = models.ForeignKey(LegajoMunicipio, on_delete=models.CASCADE, null=True, blank=True) #codigo_ifam es el campo que se relaciona con provincia y departamento_id se relaciona con localidada
-    fk_localidad = models.ForeignKey(LegajoLocalidad, on_delete=models.CASCADE, null=True, blank=True) #departamento_id es el campo que se relaciona con municipio
+    provincia = models.ForeignKey(Provincias, on_delete=models.CASCADE, null=True, blank=True) #abrebianura es el campo que relacion a municipio
+    municipio = models.ForeignKey(Municipio, on_delete=models.CASCADE, null=True, blank=True) #codigo_ifam es el campo que se relaciona con provincia y departamento_id se relaciona con localidada
+    localidad = models.ForeignKey(Localidad, on_delete=models.CASCADE, null=True, blank=True) #departamento_id es el campo que se relaciona con municipio
     def __str__(self):
         return f"{self.apellido}, {self.nombre}"
 
