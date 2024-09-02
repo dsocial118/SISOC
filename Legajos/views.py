@@ -46,6 +46,17 @@ logger = logging.getLogger('django')
 admin_role = "Usuarios.rol_admin"
 
 # region ############################################################### LEGAJOS
+def load_municipios(request):
+    provincia_id = request.GET.get('provincia_id')
+    provinciaSearch = LegajoProvincias.objects.get(id=provincia_id)
+    municipios = LegajoMunicipio.objects.filter(codigo_ifam__startswith=provinciaSearch.abreviatura)
+    return JsonResponse(list(municipios.values('id','departamento_id', 'nombre_region')), safe=False)
+
+def load_localidad(request):
+    municipio_id = request.GET.get('municipio_id')
+    localidadSearch = LegajoMunicipio.objects.get(id=municipio_id)
+    localidades = LegajoLocalidad.objects.filter(departamento_id=localidadSearch.departamento_id)
+    return JsonResponse(list(localidades.values('id','nombre')), safe=False)
 
 class LegajosReportesListView(ListView):
     template_name = "Legajos/legajos_reportes.html"
@@ -110,7 +121,7 @@ class LegajosListView(ListView):
     def get_queryset(self):
         if not hasattr(self, '_cached_queryset'):
             queryset = super().get_queryset().only(
-                'id', 'apellido', 'nombre', 'documento', 'tipo_doc', 'sexo', 'localidad', 'estado'
+                'id', 'apellido', 'nombre', 'documento', 'tipo_doc', 'sexo', 'estado'
             )
             query = self.request.GET.get("busqueda", "")
 
