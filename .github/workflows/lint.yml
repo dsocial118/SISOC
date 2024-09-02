@@ -100,4 +100,4 @@ jobs:
 
             - name: Run pylint
               run: |
-                  pylint --rcfile=./.pylintrc **/*.py
+                  pylint **/*.py --rcfile=./.pylintrc
