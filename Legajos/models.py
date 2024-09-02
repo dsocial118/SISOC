@@ -10,7 +10,7 @@ from Configuraciones.models import *
 from multiselectfield import MultiSelectField
 
 
-class LegajoProvincias(models.Model):
+class Provincias(models.Model):
     '''
     Guardado de las provincias de los vecinos y vecinas registrados.
 
@@ -34,7 +34,7 @@ class LegajoProvincias(models.Model):
             models.Index(fields=['id']),
         ]
 
-class LegajoMunicipio(models.Model):
+class Municipio(models.Model):
     '''
     Guardado de los municipios de los vecinos y vecinas registrados.
 
@@ -55,7 +55,7 @@ class LegajoMunicipio(models.Model):
             models.Index(fields=['id']),
         ]
 
-class LegajoLocalidad(models.Model):
+class Localidad(models.Model):
     '''
     Guardado de las localidades de los vecinos y vecinas registrados.
 
