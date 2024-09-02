@@ -96,5 +96,4 @@ jobs:
 
             - name: Run pylint
               run: |
-                  cat .pylintrc
                   pylint **/*.py --rcfile=.pylintrc
