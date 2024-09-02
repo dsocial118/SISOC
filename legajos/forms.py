@@ -57,6 +57,7 @@ class LegajosForm(forms.ModelForm):
         queryset=LegajoLocalidad.objects.all(),
         widget=forms.Select(attrs={"class": "select2"}),
     )
+
     def clean(self):
         cleaned_data = super().clean()
         tipo_doc = cleaned_data.get("tipo_doc")
@@ -66,7 +67,7 @@ class LegajosForm(forms.ModelForm):
         fecha_nacimiento = cleaned_data.get("fecha_nacimiento")
 
         # Validación de campo unico, combinación de DNI + Tipo DNI
-        if (
+        existente = (
             tipo_doc
             and documento
             and fecha_nacimiento
@@ -79,7 +80,9 @@ class LegajosForm(forms.ModelForm):
                 nombre=nombre,
                 fecha_nacimiento=fecha_nacimiento,
             ).exists()
-        ):
+        )
+
+        if existente:
             self.add_error(
                 "documento", "Ya existe un legajo con ese TIPO y NÚMERO de documento."
             )
@@ -261,7 +264,9 @@ class NuevoLegajoFamiliarForm(forms.ModelForm):
 
         return cleaned_data
 
+
 #############HOGAR###########
+
 
 class LegajoGrupoHogarForm(forms.ModelForm):
     vinculo = forms.ChoiceField(choices=CHOICE_VINCULO_FAMILIAR, required=True)
@@ -384,6 +389,7 @@ class DimensionFamiliaForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["fk_legajo"].widget = forms.HiddenInput()
+
     class Meta:
         model = DimensionFamilia
         fields = "__all__"
@@ -408,6 +414,7 @@ class DimensionViviendaForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["fk_legajo"].widget = forms.HiddenInput()
+
     class Meta:
         model = DimensionVivienda
         fields = "__all__"
@@ -425,12 +432,15 @@ class DimensionViviendaForm(forms.ModelForm):
             #'PoseenPC': forms.CheckboxInput(),
             #'Poseeninternet': forms.CheckboxInput()
         }
+
     # <!-- ./Nuevos campos vivienda Form Editar o cargar -->
+
 
 class DimensionSaludForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["fk_legajo"].widget = forms.HiddenInput()
+
     class Meta:
         model = DimensionSalud
         fields = "__all__"
@@ -452,6 +462,7 @@ class DimensionEducacionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["fk_legajo"].widget = forms.HiddenInput()
+
     class Meta:
         model = DimensionEducacion
         fields = "__all__"
@@ -479,10 +490,12 @@ class DimensionEducacionForm(forms.ModelForm):
 
     # fin de prueba
 
+
 class DimensionEconomiaForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["fk_legajo"].widget = forms.HiddenInput()
+
     class Meta:
         model = DimensionEconomia
         fields = "__all__"
@@ -505,6 +518,7 @@ class DimensionTrabajoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["fk_legajo"].widget = forms.HiddenInput()
+
     class Meta:
         model = DimensionTrabajo
         fields = "__all__"
@@ -518,6 +532,7 @@ class DimensionTrabajoForm(forms.ModelForm):
             #'tiene_trabajo': forms.CheckboxInput(),
             #'conviviente_trabaja': forms.CheckboxInput(),
         }
+
 
 class DerivacionesRechazoForm(forms.ModelForm):
     class Meta:
