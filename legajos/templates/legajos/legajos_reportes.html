@@ -115,8 +115,8 @@
                                     </td>
                                     <td>{{ o.fk_legajo__tipo_doc }} {{ o.fk_legajo__documento }}</td>
                                     <td>{{ o.fk_legajo__sexo }}</td>
-                                    <td>{{ o.fk_programa }}</td>
-                                    <td>{{ o.fk_organismo }}</td>
+                                    <td>{{ o.fk_programa__nombre }}</td>
+                                    <td>{{ o.fk_organismo__nombre }}</td>
                                     <td>{{ o.estado }}</td>
                                     <td class="project-actions text-right">
                                         {% if perms.Usuarios.rol_admin %}
