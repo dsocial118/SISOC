@@ -372,8 +372,8 @@ CHOICE_INSTITUCIONES_EDUCATIVAS = [
 
 CHOICE_SINO = [
     (None, ''),
-    ('True', 'SI'),
-    ('False', 'NO'),
+    ('SI', 'SI'),
+    ('NO', 'NO'),
 ]
 
 CHOICE_ESTADO_CIVIL = [
