@@ -5,6 +5,7 @@ from Configuraciones.models import Alertas
 from Dashboard.models import Dashboard
 from Dashboard.utils import *
 from Legajos.models import LegajoAlertas, Legajos, LegajosDerivaciones
+from .utils import table_exists
 
 
 def update_dashboard_key(llave, cantidad):
@@ -20,14 +21,6 @@ def update_dashboard_key(llave, cantidad):
     )
     return dashboard
 
-@receiver(post_save, sender=Legajos)
-@receiver(post_save, sender=LegajoAlertas)
-@receiver(post_save, sender=LegajosDerivaciones)
-@receiver(post_save, sender=Alertas)
-@receiver(post_delete, sender=Legajos)
-@receiver(post_delete, sender=LegajoAlertas)
-@receiver(post_delete, sender=LegajosDerivaciones)
-@receiver(post_delete, sender=Alertas)
 def update_dashboard_legajos(sender, instance, **kwargs):
     """
     Ejecuta todas las operaciones para que el Dashboard tenga informacion en tiempo real.
@@ -48,3 +41,40 @@ def update_dashboard_legajos(sender, instance, **kwargs):
     update_dashboard_key('embarazos_sin_derivacion_aceptada', contar_embarazos_sin_derivacion_aceptada())
     update_dashboard_key('cantidad_embarazos_en_riesgo', contar_embarazos_en_riesgo())
     update_dashboard_key('cantidad_dv_pendientes', deriv_pendientes())
+
+def register_signals():
+    if table_exists('Legajos_legajos') and table_exists('Legajos_legajoalertas') and table_exists('Legajos_legajosderivaciones') and table_exists('Configuraciones_alertas'):
+        @receiver(post_save, sender=Legajos)
+        def trigger_update_legajo(sender,instance,**kwargs):
+            return update_dashboard_legajos(sender, instance, **kwargs)
+            
+        @receiver(post_save, sender=LegajoAlertas)
+        def trigger_update_legajoalertas(sender,instance,**kwargs):
+            return update_dashboard_legajos(sender, instance, **kwargs)
+            
+        @receiver(post_save, sender=LegajosDerivaciones)
+        def trigger_update_legajoderivaciones(sender,instance,**kwargs):
+            return update_dashboard_legajos(sender, instance, **kwargs)
+            
+        @receiver(post_save, sender=Alertas)
+        def trigger_update_alertas(sender,instance,**kwargs):
+            return update_dashboard_legajos(sender, instance, **kwargs)
+            
+        @receiver(post_delete, sender=Legajos)
+        def trigger_update_delete_legajo(sender,instance,**kwargs):
+            return update_dashboard_legajos(sender, instance, **kwargs)
+            
+        @receiver(post_delete, sender=LegajoAlertas)
+        def trigger_update_delete_legajoalertas(sender,instance,**kwargs):
+            return update_dashboard_legajos(sender, instance, **kwargs)
+            
+        @receiver(post_delete, sender=LegajosDerivaciones)
+        def trigger_update_delete_legajoderivaciones(sender,instance,**kwargs):
+            return update_dashboard_legajos(sender, instance, **kwargs)
+            
+        @receiver(post_delete, sender=Alertas)
+        def trigger_update_delete_alertas(sender,instance,**kwargs):
+            return update_dashboard_legajos(sender, instance, **kwargs)
+        
+
+register_signals()

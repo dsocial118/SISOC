@@ -10,6 +10,73 @@ from Configuraciones.models import *
 from multiselectfield import MultiSelectField
 
 
+class LegajoProvincias(models.Model):
+    '''
+    Guardado de las provincias de los vecinos y vecinas registrados.
+
+    '''
+    iso_provincia = models.CharField(max_length=250)
+    abreviatura = models.CharField(max_length=250)
+    region_id = models.IntegerField()
+    number = models.IntegerField()
+    nombre = models.CharField(max_length=250)
+    region_id = models.IntegerField()
+    region_territorial_id = models.IntegerField()
+    uuid = models.CharField(max_length=200)
+    status = models.IntegerField()
+    def __str__(self):
+        return self.nombre
+    class Meta:
+        ordering = ['id']
+        verbose_name = 'LegajoProvincia'
+        verbose_name_plural = 'LegajosProvincia'
+        indexes = [
+            models.Index(fields=['id']),
+        ]
+
+class LegajoMunicipio(models.Model):
+    '''
+    Guardado de los municipios de los vecinos y vecinas registrados.
+
+    '''
+    nombre_region = models.CharField(max_length=250)
+    codigo_ifam = models.CharField(max_length=250)
+    carta_organica = models.IntegerField()
+    categoria_id = models.IntegerField()
+    departamento_id = models.IntegerField()
+    iso_provincia = models.CharField(max_length=250)
+    def __str__(self):
+        return self.nombre_region
+    class Meta:
+        ordering = ['id']
+        verbose_name = 'LegajoMunicipio'
+        verbose_name_plural = 'LegajosMunicipio'
+        indexes = [
+            models.Index(fields=['id']),
+        ]
+
+class LegajoLocalidad(models.Model):
+    '''
+    Guardado de las localidades de los vecinos y vecinas registrados.
+
+    '''
+    nombre = models.CharField(max_length=250)
+    cod_bahra = models.BigIntegerField()
+    bahra_gid =  models.IntegerField()
+    cod_loc =  models.IntegerField()
+    cod_sit =  models.IntegerField()
+    cod_entidad = models.IntegerField()
+    lat_gd = models.FloatField()
+    long_gd = models.FloatField()
+    long_gms = models.CharField(max_length=250)
+    the_geom = models.CharField(max_length=250)
+    departamento_id = models.IntegerField()
+    fuente_ubicacion = models.IntegerField()
+    tipo_bahra = models.IntegerField()
+    cod_depto = models.IntegerField()
+    def __str__(self):
+        return self.nombre
+
 class Legajos(models.Model):
     '''
 
@@ -28,8 +95,6 @@ class Legajos(models.Model):
         max_length=50, choices=CHOICE_NACIONALIDAD, null=True, blank=True)
     estado_civil = models.CharField(
         max_length=50, choices=CHOICE_ESTADO_CIVIL, null=True, blank=True)
-    Provincia = models.CharField(
-        verbose_name='Provincia', max_length=200, choices=PROVINCE_CHOICES, null=True, blank=True)
     calle = models.CharField(max_length=250, null=True, blank=True)
     altura = models.IntegerField(null=True, blank=True)
     latitud = models.CharField(max_length=250, null=True, blank=True)
@@ -38,14 +103,11 @@ class Legajos(models.Model):
         max_length=100, null=True, blank=True, verbose_name='Piso/Dpto (optativo)')
     circuito = models.CharField(
         max_length=100, choices=CHOICE_CIRCUITOS, null=True, blank=True)
-    barrio = models.CharField(
-        max_length=100, choices=CHOICE_BARRIOS, null=True, blank=True)
     torrepasillo = models.CharField(
         max_length=100, null=True, blank=True, verbose_name='Torre / Pasillo (optativo)')
     escaleramanzana = models.CharField(
         max_length=100, null=True, blank=True, verbose_name='Escalera / Manzana (optativo)')
-    localidad = models.CharField(
-        max_length=250, choices=CHOICE_LOCALIDAD, null=True, blank=True)
+    
     codigopostal = models.IntegerField(
         null=True, blank=True, verbose_name='Código Postal')
     telefono = models.IntegerField(null=True, blank=True)
@@ -66,7 +128,9 @@ class Legajos(models.Model):
         Usuarios, related_name='modificado_por', on_delete=models.CASCADE, blank=True, null=True)
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
-
+    fk_provincia = models.ForeignKey(LegajoProvincias, on_delete=models.CASCADE, null=True, blank=True) #abrebianura es el campo que relacion a municipio
+    fk_municipio = models.ForeignKey(LegajoMunicipio, on_delete=models.CASCADE, null=True, blank=True) #codigo_ifam es el campo que se relaciona con provincia y departamento_id se relaciona con localidada
+    fk_localidad = models.ForeignKey(LegajoLocalidad, on_delete=models.CASCADE, null=True, blank=True) #departamento_id es el campo que se relaciona con municipio
     def __str__(self):
         return f"{self.apellido}, {self.nombre}"
 
@@ -131,7 +195,6 @@ class Legajos(models.Model):
     def get_absolute_url(self):
         return reverse('legajos_ver', kwargs={'pk': self.pk})
 
-
 # TODO realizar en las vistas una validación cuando haya una relación importante de aclarar (ej. perimetral, violencia) obligatorio el campo obs para describirla
 
 
@@ -174,6 +237,12 @@ class LegajoGrupoFamiliar(models.Model):
 
 # region------------- DIMENSIONES--------------------------------------------------------------------------------------------------
 
+def convertir_positivo(value):
+    if value is None:
+        return 0
+    if int(value) < 0: 
+        return int(value) * -1
+    return int(value)
 
 class DimensionFamilia(models.Model):
     '''
@@ -236,30 +305,19 @@ class DimensionVivienda(models.Model):
     cant_ambientes = models.SmallIntegerField(
         verbose_name='¿Cuántos ambientes tiene la vivienda? (Sin contar baño ni cocina)',choices=CHOICE_CantidadAmbientes, null=True, blank=True)
     cant_convivientes = models.SmallIntegerField(
-        verbose_name='¿Cuántas personas viven en la vivienda?', null=True, blank=True)
+        verbose_name='¿Cuántas personas viven en la vivienda?', null=True, blank=True, default=0)
     cant_menores = models.SmallIntegerField(
         verbose_name='¿Cuántos de ellos son menores de 18 años?', null=True, blank=True)
     cant_camas = models.SmallIntegerField(
         verbose_name='¿Cuántas camas/ colchones posee?', null=True, blank=True)
     cant_hogares = models.SmallIntegerField(
         verbose_name='¿Cuantos hogares hay en la vivienda?', null=True, blank=True)
-    hay_agua_caliente = models.CharField(
-        verbose_name='¿Posee Agua caliente?',max_length=50, choices=CHOICE_SINO, null=True, blank=True)
-    hay_banio = models.CharField(verbose_name='El baño tiene… ',
-                           max_length=50, choices=CHOICE_INODORO, null=True, blank=True)
-    hay_desmoronamiento = models.CharField(
-        verbose_name='Existe riesgo de desmoronamiento?',max_length=50, choices=CHOICE_SINO, null=True, blank=True)
     obs_vivienda = models.CharField(
         verbose_name='Observaciones', max_length=300, null=True, blank=True)
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
     # Nuevos campos
-    PoseenCeludar = models.CharField(
-        verbose_name='¿En tu hogar cuentan con Teléfonos celulares?', max_length=255, choices=CHOICE_SINO, null=True, blank=True)
-    PoseenPC = models.CharField(
-        verbose_name='¿En tu hogar cuentan con Computadoras? (de escritorio / laptop / tablet) ', max_length=255, choices=CHOICE_SINO, null=True, blank=True)
-    Poseeninternet = models.CharField(
-        verbose_name='En tu hogar cuentan con Internet (a través del celular o por conexión en la vivienda - wifi)', max_length=255,choices=CHOICE_SINO, null=True, blank=True)
+
     ContextoCasa = models.CharField(verbose_name='La vivienda está ubicada...',
                                     max_length=255, choices=CHOICE_ContextoCasa, null=True, blank=True)
     gas = models.CharField(verbose_name='¿Qué utilizan principalmente para cocinar?',
@@ -270,7 +328,30 @@ class DimensionVivienda(models.Model):
                            max_length=50, choices=CHOICE_AGUA, null=True, blank=True)
     desague = models.CharField(verbose_name='El desagüe del inodoro es…',
                            max_length=50, choices=CHOICE_DESAGUE, null=True, blank=True)
+    
+    # Migraciones para fix de DAD-106
+    hay_banio = models.CharField(verbose_name='El baño tiene…',
+                           max_length=50, choices=CHOICE_INODORO, null=True, blank=True)
+    hay_desmoronamiento = models.CharField(
+        verbose_name='Existe riesgo de desmoronamiento?',max_length=50, choices=CHOICE_SINO, null=True, blank=True)
+    PoseenCeludar = models.CharField(
+        verbose_name='¿En tu hogar cuentan con Teléfonos celulares?', max_length=255, choices=CHOICE_SINO, null=True, blank=True)
+    PoseenPC = models.CharField(
+        verbose_name='¿En tu hogar cuentan con Computadoras? (de escritorio / laptop / tablet) ', max_length=255, choices=CHOICE_SINO, null=True, blank=True)
+    Poseeninternet = models.CharField(
+        verbose_name='En tu hogar cuentan con Internet (a través del celular o por conexión en la vivienda - wifi)', max_length=255,choices=CHOICE_SINO, null=True, blank=True)
+    hay_agua_caliente = models.CharField(
+        verbose_name='¿Posee Agua caliente?',max_length=50, choices=CHOICE_SINO, null=True, blank=True)
 
+    
+    
+    def save(self, *args, **kwargs):
+        self.cant_convivientes = convertir_positivo(self.cant_convivientes)
+        self.cant_menores = convertir_positivo(self.cant_menores)
+        self.cant_camas = convertir_positivo(self.cant_camas)
+        self.cant_hogares = convertir_positivo(self.cant_hogares)
+        super().save(*args, **kwargs)
+       
     def __str__(self):
         return f"{self.fk_legajo}"
 
@@ -310,6 +391,7 @@ class DimensionSalud(models.Model):
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
 
+
     def __str__(self):
         return f"{self.fk_legajo}"
 
@@ -336,10 +418,7 @@ class DimensionEducacion(models.Model):
     estado_nivel = models.CharField(verbose_name='Estado del nivel', max_length=50,
                                     choices=CHOICE_ESTADO_NIVEL_EDUCATIVO, null=True, blank=True)
     asiste_escuela = models.CharField(verbose_name='¿Asistís o asististe alguna vez a algún establecimiento educativo?', max_length=100, choices= CHOICE_ASISTE_ESCUELA, null=True, blank=True)
-    interesEstudio = models.CharField(
-        verbose_name='¿Le interesa estudiar?',max_length=100, choices=CHOICE_SINO, null=True, blank=True)
-    interesCurso = models.CharField(
-        verbose_name='¿le interesa algun curso?', max_length=100, choices=CHOICE_SINO, null=True, blank=True)
+    
     institucion = models.CharField(verbose_name='Escuela', max_length=200,
                                    choices=CHOICE_INSTITUCIONES_EDUCATIVAS, null=True, blank=True)
     gestion = models.CharField(verbose_name='Gestión', max_length=50,
@@ -382,6 +461,12 @@ class DimensionEducacion(models.Model):
                               max_length=20, choices=CHOICE_SINO, null=True, blank=True)
     areaOficio = MultiSelectField(choices=CHOICE_AREA_CURSO, verbose_name='¿En qué áreas?', max_length=200, null=True, blank=True)
 
+    # Migraciones para fix de DAD-118
+    interesEstudio = models.CharField(
+        verbose_name='¿Le interesa estudiar?',max_length=100, choices=CHOICE_SINO, null=True, blank=True)
+    interesCurso = models.CharField(
+        verbose_name='¿le interesa algun curso?', max_length=100, choices=CHOICE_SINO, null=True, blank=True)
+
     def __str__(self):
         return f"{self.fk_legajo}"
 
@@ -404,9 +489,6 @@ class DimensionEconomia(models.Model):
     '''
 
     fk_legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
-    ingresos = models.PositiveIntegerField(null=True, blank=True)
-    recibe_plan = models.CharField(
-        verbose_name='¿Recibe planes sociales?', max_length=100, choices=CHOICE_SINO, null=True, blank=True)
     m2m_planes = models.ManyToManyField(PlanesSociales, blank=True)
     cant_aportantes = models.SmallIntegerField(
         verbose_name='¿Cuántos miembros reciben ingresos por plan social o aportan al grupo familiar?', null=True, blank=True)
@@ -414,6 +496,17 @@ class DimensionEconomia(models.Model):
         max_length=300, verbose_name='Observaciones', null=True, blank=True)
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
+
+    # Migraciones para fix de DAD-123
+
+    ingresos = models.PositiveIntegerField(verbose_name="Ingresos Mensuales ",null=True, blank=True)
+    recibe_plan = models.CharField(
+        verbose_name='¿Recibe planes sociales?', max_length=100, choices=CHOICE_SINO, null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        self.ingresos = convertir_positivo(self.ingresos)
+        self.cant_aportantes = convertir_positivo(self.cant_aportantes)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.fk_legajo}"
@@ -432,13 +525,9 @@ class DimensionEconomia(models.Model):
 
 class DimensionTrabajo(models.Model):
     fk_legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
-    tiene_trabajo = models.CharField(
-        verbose_name='¿Actualmente realizás alguna actividad laboral, productiva o comunitaria?', max_length=100, choices=CHOICE_SINO, null=True, blank=True)
     modo_contratacion = models.CharField(
         max_length=50, choices=CHOICE_MODO_CONTRATACION, null=True, blank=True)
     ocupacion = models.CharField(max_length=50, null=True, blank=True)
-    conviviente_trabaja = models.CharField(
-        verbose_name='¿Conviviente trabaja?',max_length=100, choices=CHOICE_SINO, null=True, blank=True)
     obs_trabajo = models.CharField(
         max_length=300, verbose_name='Observaciones', null=True, blank=True)
     creado = models.DateField(auto_now_add=True)
@@ -454,6 +543,11 @@ class DimensionTrabajo(models.Model):
     busquedaLaboral =models.CharField(verbose_name='¿Buscaste trabajo en los últimos 30 días?', max_length=20, choices=CHOICE_SINO, null=True, blank=True)
     noBusquedaLaboral = models.CharField(verbose_name='¿Por qué motivo no buscaste trabajo? (Indicá el motivo principal)', max_length=79, choices=CHOICE_NO_BUSQUEDA_LABORAL, null=True, blank=True)
 
+    # Migraciones para fix de DAD-128
+    conviviente_trabaja = models.CharField(
+        verbose_name='¿Conviviente trabaja?',max_length=100, choices=CHOICE_SINO, null=True, blank=True)
+    tiene_trabajo = models.CharField(
+        verbose_name='¿Actualmente realizás alguna actividad laboral, productiva o comunitaria?', max_length=100, choices=CHOICE_SINO, null=True, blank=True)
 
     def __str__(self):
         return f"{self.fk_legajo}"
