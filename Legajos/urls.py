@@ -2,7 +2,7 @@ from django.urls import path
 from django.contrib.auth.decorators import login_required
 from django.views.generic import TemplateView
 from .views import *
-
+from . import views
 urlpatterns = [
     # Legajos
     path('legajos/reportes', login_required(LegajosReportesListView.as_view()), name='legajos_reportes'),
@@ -64,4 +64,6 @@ urlpatterns = [
     path('legajos/grupoHogar/nuevo/', login_required(LegajosGrupoHogarCreateView.as_view()), name='nuevoLegajoFamiliar_ajax'),
     path('legajos/hogar/crear/<pk>', login_required(LegajosGrupoHogarCreateView.as_view()), name='legajosgrupohogar_crear'),
 
+    path('ajax/load-municipios/', views.load_municipios, name='ajax_load_municipios'),
+    path('ajax/load-localidades/', views.load_localidad, name='ajax_load_localidades'),
 ]
