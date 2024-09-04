@@ -292,17 +292,5 @@
 
 
 {% block customJS %}
-
-<script>
-    $(document).ready(function() {
-        $('#id_nacionalidad').select2();
-    });
-
-    id_foto.onchange = (evt) => {
-        const [file] = id_foto.files;
-        if (file) {
-            blah.src = URL.createObjectURL(file);
-        }
-    };
-</script>
+<script src="{% static 'custom/js/legajosform.js' %}"></script>
 {% endblock %}
