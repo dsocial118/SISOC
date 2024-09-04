@@ -132,7 +132,7 @@
             {% endfor %}
             {% for formss in formset %}
             {{ formss.management_form }}
-            <tr id="variants-{{ forloop.counter0 }}" class=hide_all> <!-- id="inlineformsetname-counter" -->
+            <tr id="variants-{{ forloop.counter0 }}" class=hide_all> 
               {{ formss.id }}
               {% for field in formss.visible_fields %}
               {% if field.name != "DELETE"%}
@@ -164,7 +164,7 @@
           <span class="bg-light "><i class="fas fa-plus-circle text-primary px-2"></i>Agregar criterio al índice</span>
 
         </a>
-        <!-- id="add-inlineformsetname-button" -->
+        
       </div>
 
       {% endwith %}
