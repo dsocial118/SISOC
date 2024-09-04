@@ -163,15 +163,15 @@
           </dt>
           <dd class="col-sm-8">Baño dentro de la vivienda con descarga</dd>
           <dt class="col-sm-4">
-            {{object.dimensionvivienda.hay_banio|yesno:'Sí,No,-'}}
+            {{object.dimensionvivienda.hay_banio|default_if_none:"-"}}
           </dt>
           <dd class="col-sm-8">Posee Agua caliente</dd>
           <dt class="col-sm-4">
-            {{object.dimensionvivienda.hay_agua_caliente|yesno:'Sí,No,-'}}
+            {{object.dimensionvivienda.hay_agua_caliente|default_if_none:"-"}}
           </dt>
           <dd class="col-sm-8">Riesgo de desmoronamiento</dd>
           <dt class="col-sm-4">
-            {{object.dimensionvivienda.hay_desmoronamiento|yesno:'Sí,No,-'}}
+            {{object.dimensionvivienda.hay_desmoronamiento|default_if_none:"-"}}
           </dt>
           <dd class="col-sm-8">La vivienda está ubicada...</dd>
           <dt class="col-sm-4">
@@ -179,15 +179,31 @@
           </dt>
           <dd class="col-sm-8">Posee Celular</dd>
           <dt class="col-sm-4">
-            {{object.dimensionvivienda.PoseenCeludar|yesno:'Sí,No,-'}}
+            {{object.dimensionvivienda.PoseenCeludar|default_if_none:"-"}}
           </dt>
           <dd class="col-sm-8">Posee PC</dd>
           <dt class="col-sm-4">
-            {{object.dimensionvivienda.PoseenPC|yesno:'Sí,No,-'}}
+            {{object.dimensionvivienda.PoseenPC|default_if_none:"-"}}
           </dt>
           <dd class="col-sm-8">Posee Internet</dd>
           <dt class="col-sm-4">
-            {{object.dimensionvivienda.Poseeninternet|yesno:'Sí,No,-'}}
+            {{object.dimensionvivienda.Poseeninternet|default_if_none:"-"}}
+          </dt>
+          <dd class="col-sm-8">¿Que utilizan principalmente para cocinar?</dd>
+          <dt class="col-sm-4">
+            {{object.dimensionvivienda.gas|default_if_none:"-"}}
+          </dt>
+          <dd class="col-sm-8">Material de la cubierta exterior de la vivienda</dd>
+          <dt class="col-sm-4">
+            {{object.dimensionvivienda.techos|default_if_none:"-"}}
+          </dt>
+          <dd class="col-sm-8">El agua que utilizan para cocinar proviene de...</dd>
+          <dt class="col-sm-4">
+            {{object.dimensionvivienda.agua|default_if_none:"-"}}
+          </dt>
+          <dd class="col-sm-8">El desagüe del inodoro es...</dd>
+          <dt class="col-sm-4">
+            {{object.dimensionvivienda.desague|default_if_none:"-"}}
           </dt>
           <dd class="col-sm-8">Observaciones</dd>
           <dt class="col-sm-4">
