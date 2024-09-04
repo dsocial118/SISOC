@@ -262,8 +262,8 @@ Legajos
 <script> 
     const csrf = document.getElementsByName('csrfmiddlewaretoken')[0].value
     const pk = '{{legajo.pk}}';
-    const createUrl = "{% url 'grupofamiliar_ajax_crear' %}";
-    const deleteUrl = "{% url 'grupofamiliar_ajax_borrar' %}";
+    const createUrl = "{% url 'archivo_ajax_crear' %}";
+    const deleteUrl = '{% url "archivo_ajax_borrar" %}';
 </script>
 <script src="{% static 'custom/js/legajosarchivosform.js' %}"></script>
 
