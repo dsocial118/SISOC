@@ -98,7 +98,9 @@ $(function () {
 				exportOptions: {
 					columns: ":not(:last-child)"
 				}
-			}, { exportOptions: { columns: ':not(.notexport)' }, }],
+			},
+			
+			{ exportOptions: { columns: ':not(.notexport)' }, }],
 			"oTableTools": {
 				"sSwfPath": "/swf/copy_csv_xls_pdf.swf",
 				"aButtons": [
@@ -110,6 +112,14 @@ $(function () {
 			}
 
 		})
+		.on('column-visibility.dt', function (e, settings, column, state) {
+            var api = new $.fn.dataTable.Api(settings);
+            var visibleColumns = api.columns(':visible').count();
+            if (visibleColumns === 0) {
+                api.column(column).visible(true);
+                alert('Debe haber al menos una columna visible.');
+            }
+        })
 		.buttons()
 		.container()
 		.appendTo(".dataTables_wrapper .col-md-6:eq(0)");
