@@ -142,8 +142,5 @@
 {% endblock %}
 
 {% block customJS %}
-<script>
-    var a = $('#id_fk_legajo :selected').text()
-    $('#legajo').text(a)
-</script>
+<script src="{% static 'custom/js/legajosderivacionesform.js' %}"></script>
 {% endblock %};

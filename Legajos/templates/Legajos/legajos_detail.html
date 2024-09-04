@@ -29,8 +29,6 @@
     {%if perms.Usuarios.rol_admin%}
     <a href="{% url 'legajos_editar' object.id  %}" class="btn btn-primary mr-1">Editar</a>
     <a href="{% url 'legajosderivaciones_historial' object.id %}" class="btn btn-secondary mr-1">Derivar</a>
-    <!--<a href="{% url 'historial_admisiones'  %}" class="btn btn-secondary mr-1">Admitir</a>-->
-    <!--<a href="{% url 'intervenciones'  %}" class="btn btn-secondary mr-1">Agregar intervención</a>-->
     {%endif%}
     <a href="#" class="btn btn-secondary print mr-1 d-none d-sm-inline">Imprimir</a>
     {%if perms.Usuarios.rol_admin%}
