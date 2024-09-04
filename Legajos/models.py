@@ -10,6 +10,73 @@ from Configuraciones.models import *
 from multiselectfield import MultiSelectField
 
 
+class LegajoProvincias(models.Model):
+    '''
+    Guardado de las provincias de los vecinos y vecinas registrados.
+
+    '''
+    iso_provincia = models.CharField(max_length=250)
+    abreviatura = models.CharField(max_length=250)
+    region_id = models.IntegerField()
+    number = models.IntegerField()
+    nombre = models.CharField(max_length=250)
+    region_id = models.IntegerField()
+    region_territorial_id = models.IntegerField()
+    uuid = models.CharField(max_length=200)
+    status = models.IntegerField()
+    def __str__(self):
+        return self.nombre
+    class Meta:
+        ordering = ['id']
+        verbose_name = 'LegajoProvincia'
+        verbose_name_plural = 'LegajosProvincia'
+        indexes = [
+            models.Index(fields=['id']),
+        ]
+
+class LegajoMunicipio(models.Model):
+    '''
+    Guardado de los municipios de los vecinos y vecinas registrados.
+
+    '''
+    nombre_region = models.CharField(max_length=250)
+    codigo_ifam = models.CharField(max_length=250)
+    carta_organica = models.IntegerField()
+    categoria_id = models.IntegerField()
+    departamento_id = models.IntegerField()
+    iso_provincia = models.CharField(max_length=250)
+    def __str__(self):
+        return self.nombre_region
+    class Meta:
+        ordering = ['id']
+        verbose_name = 'LegajoMunicipio'
+        verbose_name_plural = 'LegajosMunicipio'
+        indexes = [
+            models.Index(fields=['id']),
+        ]
+
+class LegajoLocalidad(models.Model):
+    '''
+    Guardado de las localidades de los vecinos y vecinas registrados.
+
+    '''
+    nombre = models.CharField(max_length=250)
+    cod_bahra = models.BigIntegerField()
+    bahra_gid =  models.IntegerField()
+    cod_loc =  models.IntegerField()
+    cod_sit =  models.IntegerField()
+    cod_entidad = models.IntegerField()
+    lat_gd = models.FloatField()
+    long_gd = models.FloatField()
+    long_gms = models.CharField(max_length=250)
+    the_geom = models.CharField(max_length=250)
+    departamento_id = models.IntegerField()
+    fuente_ubicacion = models.IntegerField()
+    tipo_bahra = models.IntegerField()
+    cod_depto = models.IntegerField()
+    def __str__(self):
+        return self.nombre
+
 class Legajos(models.Model):
     '''
 
@@ -28,8 +95,6 @@ class Legajos(models.Model):
         max_length=50, choices=CHOICE_NACIONALIDAD, null=True, blank=True)
     estado_civil = models.CharField(
         max_length=50, choices=CHOICE_ESTADO_CIVIL, null=True, blank=True)
-    Provincia = models.CharField(
-        verbose_name='Provincia', max_length=200, choices=PROVINCE_CHOICES, null=True, blank=True)
     calle = models.CharField(max_length=250, null=True, blank=True)
     altura = models.IntegerField(null=True, blank=True)
     latitud = models.CharField(max_length=250, null=True, blank=True)
@@ -38,14 +103,11 @@ class Legajos(models.Model):
         max_length=100, null=True, blank=True, verbose_name='Piso/Dpto (optativo)')
     circuito = models.CharField(
         max_length=100, choices=CHOICE_CIRCUITOS, null=True, blank=True)
-    barrio = models.CharField(
-        max_length=100, choices=CHOICE_BARRIOS, null=True, blank=True)
     torrepasillo = models.CharField(
         max_length=100, null=True, blank=True, verbose_name='Torre / Pasillo (optativo)')
     escaleramanzana = models.CharField(
         max_length=100, null=True, blank=True, verbose_name='Escalera / Manzana (optativo)')
-    localidad = models.CharField(
-        max_length=250, choices=CHOICE_LOCALIDAD, null=True, blank=True)
+    
     codigopostal = models.IntegerField(
         null=True, blank=True, verbose_name='Código Postal')
     telefono = models.IntegerField(null=True, blank=True)
@@ -66,7 +128,9 @@ class Legajos(models.Model):
         Usuarios, related_name='modificado_por', on_delete=models.CASCADE, blank=True, null=True)
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
-
+    fk_provincia = models.ForeignKey(LegajoProvincias, on_delete=models.CASCADE, null=True, blank=True) #abrebianura es el campo que relacion a municipio
+    fk_municipio = models.ForeignKey(LegajoMunicipio, on_delete=models.CASCADE, null=True, blank=True) #codigo_ifam es el campo que se relaciona con provincia y departamento_id se relaciona con localidada
+    fk_localidad = models.ForeignKey(LegajoLocalidad, on_delete=models.CASCADE, null=True, blank=True) #departamento_id es el campo que se relaciona con municipio
     def __str__(self):
         return f"{self.apellido}, {self.nombre}"
 
@@ -130,7 +194,6 @@ class Legajos(models.Model):
 
     def get_absolute_url(self):
         return reverse('legajos_ver', kwargs={'pk': self.pk})
-
 
 # TODO realizar en las vistas una validación cuando haya una relación importante de aclarar (ej. perimetral, violencia) obligatorio el campo obs para describirla
 

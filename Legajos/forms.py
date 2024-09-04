@@ -3,7 +3,7 @@ from datetime import date
 from .models import *
 from .validators import MaxSizeFileValidator
 from django.core.validators import MinValueValidator, MaxValueValidator
-from .models import DimensionEducacion
+from .models import DimensionEducacion,LegajoMunicipio,LegajoProvincias,LegajoLocalidad
 
 
 class LegajosForm(forms.ModelForm):
@@ -13,7 +13,24 @@ class LegajosForm(forms.ModelForm):
         validators=[MinValueValidator(3000000), MaxValueValidator(100000000)],
         widget=forms.NumberInput(),
     )
-
+    fk_provincia = forms.ModelChoiceField(
+        required=True,
+        label="Provincia",
+        queryset=LegajoProvincias.objects.all(),
+        widget=forms.Select(attrs={'class': 'select2'}),
+    )
+    fk_municipio = forms.ModelChoiceField(
+        required=True,
+        label="Municipio",
+        queryset=LegajoMunicipio.objects.all(),
+        widget=forms.Select(attrs={'class': 'select2'}),
+    )
+    fk_localidad = forms.ModelChoiceField(
+        required=True,
+        label="Localidad",
+        queryset=LegajoLocalidad.objects.all(),
+        widget=forms.Select(attrs={'class': 'select2'}),
+    )
     def clean(self):
         cleaned_data = super().clean()
         tipo_doc = cleaned_data.get('tipo_doc')
@@ -41,8 +58,11 @@ class LegajosForm(forms.ModelForm):
             'fecha_nacimiento': forms.DateInput(attrs={'type': 'date', 'required': True}, format="%Y-%m-%d"),
             'm2m_alertas': forms.Select(attrs={'class': 'select2'}),
             'm2m_familiares': forms.Select(attrs={'class': 'select2'}),
+            'fk_municipio': forms.Select(attrs={'class': 'select2'}),
+            'fk_localidad': forms.Select(attrs={'class': 'select2'}),
+            'fk_provincia': forms.Select(attrs={'class': 'select2'}),
         }
-        labels = {'nombre': 'Nombre', 'apellido': 'Apellidos', 'foto': '', 'm2m_alertas': '','Longitud': 'Longitud','Latitud': 'Latitud'}
+        labels = {'fk_provincia':'Provincia','fk_localidad':'Localidad','fk_municipio':'Municipio','nombre': 'Nombre', 'apellido': 'Apellidos', 'foto': '', 'm2m_alertas': '','Longitud': 'Longitud','Latitud': 'Latitud'}
 
 
 class LegajosUpdateForm(forms.ModelForm):
@@ -52,6 +72,26 @@ class LegajosUpdateForm(forms.ModelForm):
         validators=[MinValueValidator(3000000), MaxValueValidator(100000000)],
         widget=forms.NumberInput(),
     )
+    fk_provincia = forms.ModelChoiceField(
+        required=True,
+        label="Provincia",
+        queryset=LegajoProvincias.objects.all(),
+    )
+    fk_municipio = forms.ModelChoiceField(
+        required=True,
+        label="Municipio",
+        queryset=LegajoMunicipio.objects.all(),
+    )
+    fk_localidad = forms.ModelChoiceField(
+        required=True,
+        label="Localidad",
+        queryset=LegajoLocalidad.objects.all(),
+    )
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['fk_provincia'].queryset = LegajoProvincias.objects.all()
+        self.fields['fk_municipio'].queryset = LegajoMunicipio.objects.all()
+        self.fields['fk_localidad'].queryset = LegajoLocalidad.objects.all()
 
     def clean(self):
         cleaned_data = super().clean()
@@ -78,11 +118,17 @@ class LegajosUpdateForm(forms.ModelForm):
         widgets = {
             'estado': forms.Select(choices=[(True, 'Activo'), (False, 'Inactivo')]),
             'fecha_nacimiento': forms.DateInput(attrs={'type': 'date'}, format="%Y-%m-%d"),
+            'fk_municipio': forms.Select(attrs={'class': 'select2 municipio-select'}),
+            'fk_localidad': forms.Select(attrs={'class': 'select2 localidad-select'}),
+            'fk_provincia': forms.Select(attrs={'class': 'select2 provincia-select'}),
         }
         labels = {
             'nombre': 'Nombre',
             'apellido': 'Apellidos',
             'foto': '',
+            'fk_provincia':'Provincia',
+            'fk_localidad':'Localidad',
+            'fk_municipio':'Municipio'
         }
 
 
