@@ -12,7 +12,7 @@
     })
 
     // Disable form submissions if there are invalid fields
-    (function () {
+    $(function () {
         'use strict';
         window.addEventListener('load', function () {
           // Get the forms we want to add validation styles to
@@ -28,7 +28,7 @@
             }, false);
           });
         }, false);
-      })();
+      });
       $(function () {
         //Initialize Select2 Elements
         $('.select2').select2()
