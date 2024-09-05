@@ -124,7 +124,7 @@
     </div>
     </div>
 
-
+{% block customJS %}
     <!-- Adicionales JS fin de pagina -->
     <!-- JQuery -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
@@ -134,22 +134,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Dist -->
     <script src="{% static 'dist/js/adminlte.js' %}"></script>
-
-    <script>
-        setTimeout(function () {
-            // desaparecer los Success messages
-            $(".alert").alert('close');
-        }, 3000);
-
-        //popovers
-        $(function () {
-            $('[data-toggle="popover"]').popover()
-        })
-        $('.popover-dismiss').popover({
-            trigger: 'focus'
-        });
-
-    </script>
-
+    <script src="{% static 'custom/js/login.js' %}"></script>
+{% endblock %}
 
 </html>
