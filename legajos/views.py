@@ -178,7 +178,6 @@ class LegajosListView(ListView):
                     "documento",
                     "tipo_doc",
                     "sexo",
-                    "localidad",
                     "estado",
                 )
             )
