@@ -143,6 +143,7 @@ MIDDLEWARE = [
     "silk.middleware.SilkyMiddleware",
     "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "legajos.middlewares.validation_middleware.NoSpecialCharactersMiddleware",
 ]
 
 # Configuración de plantillas
