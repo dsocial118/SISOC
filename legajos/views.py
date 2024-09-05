@@ -130,27 +130,27 @@ class LegajosListView(ListView):
     def get_queryset(self):
         query = self.request.GET.get("busqueda")
 
-        cached_queryset_name = f"cached_queryset_{query}"
-        queryset_filtrado = cache.get_or_set(
-            cached_queryset_name,
-            LegajosService.obtener_queryset_filtrado(query),
-            CACHE_TIMEOUT,
-        )
+        if query:
+            cached_queryset_name = f"cached_queryset_{query}"
+            queryset_filtrado = cache.get_or_set(
+                cached_queryset_name,
+                LegajosService.obtener_queryset_filtrado(query),
+                CACHE_TIMEOUT,
+            )
+            return queryset_filtrado
 
-        return queryset_filtrado
+        return Legajos.objects.none()
 
     def get(self, request, *args, **kwargs):
         query = self.request.GET.get("busqueda")
+        queryset = self.get_queryset()
+        size_queryset = queryset.count()
 
-        if query:
-            self.object_list = self.get_queryset()
-            size_queryset = self.object_list.count()
-
-            if size_queryset == 1:
-                pk = self.object_list.first().id
-                return redirect("legajos_ver", pk=pk)
-            elif size_queryset == 0:
-                messages.warning(self.request, "La búsqueda no arrojó resultados.")
+        if size_queryset == 1:
+            pk = queryset.first().id
+            return redirect("legajos_ver", pk=pk)
+        elif size_queryset == 0 and query:
+            messages.warning(self.request, "La búsqueda no arrojó resultados.")
 
         return super().get(request, *args, **kwargs)
 
