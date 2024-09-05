@@ -198,30 +198,11 @@ class LegajosDeleteView(PermisosMixin, DeleteView):
         context = super().get_context_data(**kwargs)
         legajo = self.get_object()
 
-        # Crear una lista para almacenar los nombres de las relaciones existentes
-        relaciones_existentes = []
+        # Lista de nombres de relaciones
+        context.update(
+            {"relaciones_existentes": LegajosService.obtener_relaciones(legajo)}
+        )
 
-        # Agregar los nombres de las relaciones existentes a la lista
-        if LegajosArchivos.objects.filter(fk_legajo=legajo).exists():
-            relaciones_existentes.append("Archivos")
-
-        if LegajosDerivaciones.objects.filter(fk_legajo=legajo).exists():
-            relaciones_existentes.append("Derivaciones")
-
-        if LegajoAlertas.objects.filter(fk_legajo=legajo).exists():
-            relaciones_existentes.append("Alertas")
-
-        if HistorialLegajoAlertas.objects.filter(fk_legajo=legajo).exists():
-            relaciones_existentes.append("Historial de Alertas")
-
-        if (
-            LegajoGrupoFamiliar.objects.filter(fk_legajo_1=legajo).exists()
-            or LegajoGrupoFamiliar.objects.filter(fk_legajo_2=legajo).exists()
-        ):
-            relaciones_existentes.append("Grupo Familiar")
-
-        # Agregar la lista de nombres de relaciones al contexto
-        context["relaciones_existentes"] = relaciones_existentes
         return context
 
     def form_valid(self, form):

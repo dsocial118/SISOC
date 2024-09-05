@@ -2,7 +2,17 @@ import calendar
 from datetime import datetime, timedelta
 import json
 from typing import Dict, List, Any, Union
-from django.db.models import Case, Count, IntegerField, Q, Value, When, QuerySet
+from django.db.models import (
+    Case,
+    Count,
+    IntegerField,
+    Q,
+    Value,
+    When,
+    QuerySet,
+    ForeignKey,
+    ManyToManyField,
+)
 from django.core.cache import cache
 
 from config.settings import CACHE_TIMEOUT
@@ -463,3 +473,19 @@ class LegajosService:
             return json.dumps(datos_por_dimension)
 
         return {}
+
+    @staticmethod
+    def obtener_relaciones(legajo: int) -> List[str]:
+        relaciones_existentes = []
+
+        for field in legajo._meta.get_fields():
+            if isinstance(field, (ForeignKey, ManyToManyField)):
+                related_model_class = field.related_model
+                related_model_name = related_model_class.__name__
+                related_model = getattr(legajo, field.name, None)
+                if related_model:
+                    relaciones_existentes.append(
+                        related_model_name,  # Guardar el nombre del modelo relacionado
+                    )
+
+        return relaciones_existentes
