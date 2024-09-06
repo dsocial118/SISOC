@@ -249,7 +249,7 @@ class LegajosDetailView(DetailView):
             count_intervenciones = LegajosDerivaciones.objects.filter(fk_legajo=pk).count()
             cache.set('count_intervenciones', count_intervenciones, 60)
         if not dimensionfamilia:
-            dimensionfamilia = DimensionFamilia.objects.filter(fk_legajo=pk).values('estado_civil','cant_hijos','otro_responsable','hay_embarazadas','hay_priv_libertad','hay_prbl_smental','hay_enf_cronica','obs_familia').first()
+            dimensionfamilia = DimensionFamilia.objects.filter(fk_legajo=pk).values('estado_civil','cant_hijos','otro_responsable','hay_embarazadas','hay_priv_libertad','hay_prbl_smental','hay_enf_cronica','obs_familia','hay_fam_discapacidad').first()
             cache.set('dimensionfamilia', dimensionfamilia, 60)
         if not dimensionvivienda:
             dimensionvivienda = DimensionVivienda.objects.filter(fk_legajo=pk).values('posesion', 'tipo', 'material', 'pisos', 'cant_ambientes', 'cant_camas', 'cant_hogares', 'cant_convivientes', 'cant_menores', 'hay_banio', 'hay_agua_caliente', 'hay_desmoronamiento', 'ContextoCasa', 'PoseenPC', 'Poseeninternet', 'PoseenCeludar', 'obs_vivienda').first()
@@ -569,65 +569,65 @@ class LegajosGrupoFamiliarCreateView(CreateView):
 
 
 def busqueda_familiares(request):
-    if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        res = None
-        busqueda = request.POST.get("busqueda")
-        legajo_principal_id = request.POST.get("id")
-        page_number = request.POST.get("page", 1)
+    
+    res = None
+    busqueda = request.POST.get("busqueda")
+    legajo_principal_id = request.POST.get("id")
+    page_number = request.POST.get("page", 1)
 
-        legajos_asociados = LegajoGrupoFamiliar.objects.filter(Q(fk_legajo_1_id=legajo_principal_id) | Q(fk_legajo_2_id=legajo_principal_id)).values_list('fk_legajo_1_id', 'fk_legajo_2_id')
-        #legajos_asociadosfk1 = LegajoGrupoFamiliar.objects.filter(fk_legajo_1_id=legajo_principal_id).values_list('fk_legajo_2_id', flat=True)
-        #legajos_asociadosfk2 = LegajoGrupoFamiliar.objects.filter(fk_legajo_2_id=legajo_principal_id).values_list('fk_legajo_1_id', flat=True)
+    legajos_asociados = LegajoGrupoFamiliar.objects.filter(Q(fk_legajo_1_id=legajo_principal_id) | Q(fk_legajo_2_id=legajo_principal_id)).values_list('fk_legajo_1_id', 'fk_legajo_2_id')
+    #legajos_asociadosfk1 = LegajoGrupoFamiliar.objects.filter(fk_legajo_1_id=legajo_principal_id).values_list('fk_legajo_2_id', flat=True)
+    #legajos_asociadosfk2 = LegajoGrupoFamiliar.objects.filter(fk_legajo_2_id=legajo_principal_id).values_list('fk_legajo_1_id', flat=True)
 
-        legajos_asociados_ids = set()
-        for fk_legajo_1_id, fk_legajo_2_id in legajos_asociados:
-            if fk_legajo_1_id != legajo_principal_id:
-                legajos_asociados_ids.add(fk_legajo_1_id)
-            if fk_legajo_2_id != legajo_principal_id:
-                legajos_asociados_ids.add(fk_legajo_2_id)
+    legajos_asociados_ids = set()
+    for fk_legajo_1_id, fk_legajo_2_id in legajos_asociados:
+        if fk_legajo_1_id != legajo_principal_id:
+            legajos_asociados_ids.add(fk_legajo_1_id)
+        if fk_legajo_2_id != legajo_principal_id:
+            legajos_asociados_ids.add(fk_legajo_2_id)
 
-        paginate_by = 10
-        familiares = (
-            Legajos.objects.filter(~Q(id=legajo_principal_id) & (Q(apellido__icontains=busqueda) | Q(documento__icontains=busqueda)))
-            .exclude(id__in=legajos_asociados_ids)
-        )
+    paginate_by = 10
+    familiares = (
+        Legajos.objects.filter(~Q(id=legajo_principal_id) & (Q(apellido__icontains=busqueda) | Q(documento__icontains=busqueda)))
+        .exclude(id__in=legajos_asociados_ids)
+    )
 
-        if len(familiares) > 0 and busqueda:
-            paginator = Paginator(familiares, paginate_by)
-            try:
-                page_obj = paginator.page(page_number)
-            except PageNotAnInteger:
-                page_obj = paginator.page(1)
-            except EmptyPage:
-                page_obj = paginator.page(paginator.num_pages)
+    if len(familiares) > 0 and busqueda:
+        paginator = Paginator(familiares, paginate_by)
+        try:
+            page_obj = paginator.page(page_number)
+        except PageNotAnInteger:
+            page_obj = paginator.page(1)
+        except EmptyPage:
+            page_obj = paginator.page(paginator.num_pages)
 
-            data = [
-                {
-                    'pk': familiar.pk,
-                    'nombre': familiar.nombre,
-                    'apellido': familiar.apellido,
-                    'documento': familiar.documento,
-                    'tipo_doc': familiar.tipo_doc,
-                    'fecha_nacimiento': familiar.fecha_nacimiento,
-                    'sexo': familiar.sexo,
-                    # Otros campos que deseas incluir
-                }
-                for familiar in page_obj
-            ]
-            res = {
-                'familiares': data,
-                'page': page_number,
-                'num_pages': paginator.num_pages,
-                'has_next': page_obj.has_next(),
-                'has_previous': page_obj.has_previous(),
+        data = [
+            {
+                'pk': familiar.pk,
+                'nombre': familiar.nombre,
+                'apellido': familiar.apellido,
+                'documento': familiar.documento,
+                'tipo_doc': familiar.tipo_doc,
+                'fecha_nacimiento': familiar.fecha_nacimiento,
+                'sexo': familiar.sexo,
+                # Otros campos que deseas incluir
             }
+            for familiar in page_obj
+        ]
+        res = {
+            'familiares': data,
+            'page': page_number,
+            'num_pages': paginator.num_pages,
+            'has_next': page_obj.has_next(),
+            'has_previous': page_obj.has_previous(),
+        }
 
-        else:
-            res = ""
+    else:
+        res = ""
 
-        return JsonResponse({"data": res})
+    return JsonResponse({"data": res})
 
-    return JsonResponse({"data": "this is data"})
+   
 
 
 class LegajoGrupoFamiliarList(ListView):
@@ -1543,63 +1543,63 @@ class LegajosGrupoHogarCreateView(CreateView):
         return HttpResponseRedirect(self.request.path_info)
     
 def busqueda_hogar(request):
-    if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        res = None
-        busqueda = request.POST.get("busqueda")
-        legajo_principal_id = request.POST.get("id")
-        page_number = request.POST.get("page", 1)
+    
+    res = None
+    busqueda = request.POST.get("busqueda")
+    legajo_principal_id = request.POST.get("id")
+    page_number = request.POST.get("page", 1)
 
-        legajos_asociados = LegajoGrupoHogar.objects.filter(Q(fk_legajo_1Hogar_id=legajo_principal_id) | Q(fk_legajo_2Hogar_id=legajo_principal_id)).values_list('fk_legajo_1Hogar_id', 'fk_legajo_2Hogar_id')
+    legajos_asociados = LegajoGrupoHogar.objects.filter(Q(fk_legajo_1Hogar_id=legajo_principal_id) | Q(fk_legajo_2Hogar_id=legajo_principal_id)).values_list('fk_legajo_1Hogar_id', 'fk_legajo_2Hogar_id')
 
-        legajos_asociados_ids = set()
-        for fk_legajo_1Hogar_id, fk_legajo_2Hogar_id in legajos_asociados:
-            if fk_legajo_1Hogar_id != legajo_principal_id:
-                legajos_asociados_ids.add(fk_legajo_1Hogar_id)
-            if fk_legajo_2Hogar_id != legajo_principal_id:
-                legajos_asociados_ids.add(fk_legajo_2Hogar_id)
+    legajos_asociados_ids = set()
+    for fk_legajo_1Hogar_id, fk_legajo_2Hogar_id in legajos_asociados:
+        if fk_legajo_1Hogar_id != legajo_principal_id:
+            legajos_asociados_ids.add(fk_legajo_1Hogar_id)
+        if fk_legajo_2Hogar_id != legajo_principal_id:
+            legajos_asociados_ids.add(fk_legajo_2Hogar_id)
+    
+    paginate_by = 10
+    hogares = (
+        Legajos.objects.filter(~Q(id=legajo_principal_id) & (Q(apellido__icontains=busqueda) | Q(documento__icontains=busqueda)))
+        .exclude(id__in=legajos_asociados_ids)
         
-        paginate_by = 10
-        hogares = (
-            Legajos.objects.filter(~Q(id=legajo_principal_id) & (Q(apellido__icontains=busqueda) | Q(documento__icontains=busqueda)))
-            .exclude(id__in=legajos_asociados_ids)
-            
-        )
+    )
 
-        if len(hogares) > 0 and busqueda:
-            paginator = Paginator(hogares, paginate_by)
-            try:
-                page_obj = paginator.page(page_number)
-            except PageNotAnInteger:
-                page_obj = paginator.page(1)
-            except EmptyPage:
-                page_obj = paginator.page(paginator.num_pages)
+    if len(hogares) > 0 and busqueda:
+        paginator = Paginator(hogares, paginate_by)
+        try:
+            page_obj = paginator.page(page_number)
+        except PageNotAnInteger:
+            page_obj = paginator.page(1)
+        except EmptyPage:
+            page_obj = paginator.page(paginator.num_pages)
 
-            data = [
-                {
-                    'pk': hogar.pk,
-                    'nombre': hogar.nombre,
-                    'apellido': hogar.apellido,
-                    'documento': hogar.documento,
-                    'tipo_doc': hogar.tipo_doc,
-                    'fecha_nacimiento': hogar.fecha_nacimiento,
-                    'sexo': hogar.sexo,
-                    # Otros campos que deseas incluir
-                }
-                for hogar in page_obj
-            ]
-            res = {
-                'hogares': data,
-                'page': page_number,
-                'num_pages': paginator.num_pages,
-                'has_next': page_obj.has_next(),
-                'has_previous': page_obj.has_previous(),
+        data = [
+            {
+                'pk': hogar.pk,
+                'nombre': hogar.nombre,
+                'apellido': hogar.apellido,
+                'documento': hogar.documento,
+                'tipo_doc': hogar.tipo_doc,
+                'fecha_nacimiento': hogar.fecha_nacimiento,
+                'sexo': hogar.sexo,
+                # Otros campos que deseas incluir
             }
-        else:
-            res = ""
+            for hogar in page_obj
+        ]
+        res = {
+            'hogares': data,
+            'page': page_number,
+            'num_pages': paginator.num_pages,
+            'has_next': page_obj.has_next(),
+            'has_previous': page_obj.has_previous(),
+        }
+    else:
+        res = ""
 
-        return JsonResponse({"data": res})
+    return JsonResponse({"data": res})
 
-    return JsonResponse({"data": "this is data"})
+   
 
 
 class LegajoGrupoHogarList(ListView):
