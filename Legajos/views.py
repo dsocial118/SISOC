@@ -249,7 +249,7 @@ class LegajosDetailView(DetailView):
             count_intervenciones = LegajosDerivaciones.objects.filter(fk_legajo=pk).count()
             cache.set('count_intervenciones', count_intervenciones, 60)
         if not dimensionfamilia:
-            dimensionfamilia = DimensionFamilia.objects.filter(fk_legajo=pk).values('estado_civil','cant_hijos','otro_responsable','hay_embarazadas','hay_priv_libertad','hay_prbl_smental','hay_enf_cronica','obs_familia').first()
+            dimensionfamilia = DimensionFamilia.objects.filter(fk_legajo=pk).values('estado_civil','cant_hijos','otro_responsable','hay_embarazadas','hay_priv_libertad','hay_prbl_smental','hay_enf_cronica','obs_familia','hay_fam_discapacidad').first()
             cache.set('dimensionfamilia', dimensionfamilia, 60)
         if not dimensionvivienda:
             dimensionvivienda = DimensionVivienda.objects.filter(fk_legajo=pk).values('posesion', 'tipo', 'material', 'pisos', 'cant_ambientes', 'cant_camas', 'cant_hogares', 'cant_convivientes', 'cant_menores', 'hay_banio', 'hay_agua_caliente', 'hay_desmoronamiento', 'ContextoCasa', 'PoseenPC', 'Poseeninternet', 'PoseenCeludar', 'obs_vivienda').first()

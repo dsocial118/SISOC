@@ -45,10 +45,13 @@
                             </tr>
                         `);
                     });
+                    formNuevo.addClass('d-none');
                 } else {
                     if (searchInput.value.length > 0) {
                         resultsBox.empty(); // Vaciar contenido anterior
                         formNuevo.removeClass('d-none');
+                    }else{
+                        formNuevo.addClass('d-none');
                     }
                 }
                 updatePaginationControls(res.data);
