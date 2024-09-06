@@ -1,97 +1,80 @@
 {% extends "includes/base.html" %}
 {% load static %}
 {% block title %}Planes sociales{% endblock %}
-{% block titulo-pagina %}Planes sociales{% endblock %}
-;
+{% block titulo-pagina %}Planes sociales{% endblock %};
 {% block breadcrumb %}
-    <ol class="breadcrumb float-sm-right ">
-        <li class="breadcrumb-item">Configuraciones</li>
-        <li class="breadcrumb-item">
-            <a href="{% url 'planes_sociales_listar' %}"
-               class="text-muted text-decoration-none">Planes sociales</a>
-        </li>
-        <li class="breadcrumb-item active">
-            {% if request.resolver_match.url_name == "planes_sociales_editar" %}
-                Editar
-            {% else %}
-                Agregar
-            {% endif %}
-        </li>
-    </ol>
-{% endblock %}
-;
+<ol class="breadcrumb float-sm-right ">
+  <li class="breadcrumb-item">Configuraciones </li>
+  <li class="breadcrumb-item"><a href="{% url 'planes_sociales_listar' %}"
+      class="text-muted text-decoration-none">Planes sociales</a></li>
+  <li class="breadcrumb-item active"> {%if request.resolver_match.url_name == "planes_sociales_editar" %} Editar
+    {% else%} Agregar {% endif %}</li>
+</ol>
+{% endblock %};
 {% load crispy_forms_tags %}
+
 {% block content %}
-    <div class="row">
-        <div class="col">
-            <form class="needs-validation" novalidate method="POST">
-                <!-- Security token -->
-                {% csrf_token %}
-                <div class="card card-primary card-outline">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            {% if request.resolver_match.url_name == "planes_sociales_editar" %}
-                                Editar
-                            {% else %}
-                                Agregar
-                            {% endif %}
-                            Plan social
-                        </h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-12">
-                                <div class="form-group">{{ form.nombre| as_crispy_field }}</div>
-                            </div>
-                            <div class="col-12">
-                                <div class="form-group">{{ form.jurisdiccion| as_crispy_field }}</div>
-                            </div>
-                            <div class="col-12">
-                                <div class="form-group">{{ form.observaciones| as_crispy_field }}</div>
-                            </div>
-                            <div class="col-12 {% if request.resolver_match.url_name != 'planes_sociales_editar' %}d-none{% endif %}">
-                                <div class="form-group">{{ form.estado| as_crispy_field }}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="mt-4 mx-2">
-                    <button type="submit" class="btn btn-primary mr-1">Confirmar</button>
-                    <a href="{% url 'planes_sociales_listar' %}" class="btn btn-secondary">Cancelar</a>
-                </div>
-            </form>
+
+<div class="row">
+  <div class="col">
+    <form class="needs-validation" novalidate method="POST">
+      <!-- Security token -->
+      {% csrf_token %}
+      <div class="card card-primary card-outline">
+        <div class="card-header">
+          <h3 class="card-title">
+            {%if request.resolver_match.url_name == "planes_sociales_editar" %} Editar
+            {% else %}
+            Agregar
+            {% endif %}
+            Plan social
+          </h3>
         </div>
-    </div>
-    <!-- CONSULTAR A MARIAN-->
-    <!--
-      <div class="form-row px-2 mb-5 {%if request.resolver_match.url_name != 'planes_sociales_editar' %} d-none {%endif%} ">
-        <div class="form-group  mt-3">
-          <div class="custom-control custom-switch custom-switch-off-danger custom-switch-on-success">
-            {{form.estado}}
-            <label class="custom-control-label" for="{{form.estado.id_for_label}}">Activo</label>
+        <div class="card-body">
+          <div class="row">
+
+            <div class="col-12">
+              <div class="form-group">
+                {{form.nombre| as_crispy_field}}
+              </div>
+            </div>
+
+            <div class="col-12">
+              <div class="form-group">
+                {{form.jurisdiccion| as_crispy_field}}
+              </div>
+            </div>
+
+            <div class="col-12">
+              <div class="form-group">
+                {{form.observaciones| as_crispy_field}}
+              </div>
+            </div>
+
+            
+            <div class="col-12
+            {%if request.resolver_match.url_name != 'planes_sociales_editar' %}
+            d-none
+            {%endif%}">
+							<div class="form-group">
+                {{form.estado| as_crispy_field}} 
+							</div>
+						</div>
+
           </div>
         </div>
-</div> -->
-{% endblock content %}
+      </div>
+
+      <div class="mt-4 mx-2">
+        <button type="submit" class="btn btn-primary mr-1">Confirmar</button>
+        <a href="{% url 'planes_sociales_listar' %}" class="btn btn-secondary">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>
+     
+{% endblock content%}
+
 {% block customJS %}
-    <script>
-  // Disable form submissions if there are invalid fields
-  (function () {
-    'use strict';
-    window.addEventListener('load', function () {
-      // Get the forms we want to add validation styles to
-      var forms = document.getElementsByClassName('needs-validation');
-      // Loop over them and prevent submission
-      var validation = Array.prototype.filter.call(forms, function (form) {
-        form.addEventListener('submit', function (event) {
-          if (form.checkValidity() === false) {
-            event.preventDefault();
-            event.stopPropagation();
-          }
-          form.classList.add('was-validated');
-        }, false);
-      });
-    }, false);
-  })();
-    </script>
-{% endblock customJS %}
+<script src="{% static 'custom/js/Configuraciones.js' %}"></script>
+{% endblock customJS%}
