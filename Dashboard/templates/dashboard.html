@@ -3,7 +3,7 @@
 {% block head %}
 <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
 <!-- Chart -->
-<link rel="stylesheet" href="{% static 'plugins/chart.js/Chart.min.css' %}" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/charts.css/dist/charts.min.css">
 {% endblock %}
 
 {% block title %}Dashboard{% endblock %};
@@ -96,19 +96,7 @@
 
         </div>
 
-
-
     </div>
-
-    <!--
-    <div class="col-lg-8">
-        <iframe src="https://www.google.com/maps/d/embed?mid=15CqmhYaH679MR6fWKTYTiKkuZjI&ehbc=2E312F" width="1000"
-            height="380"></iframe>
-
-    </div>
-    -->
-
-
 
     <div class="col-md-4 pt-5">
 
@@ -299,78 +287,8 @@
 
 {% endblock %}
 {% block customJS %}
-
+<!--Utiliza el custom js-->
 <!-- Chart -->
-<script src="{% static 'plugins/chart.js/Chart.min.js' %}"></script>
-
-<script>
-    $(function () {
-        /* ChartJS
-         * -------
-         * Here we will create a few charts using ChartJS
-         */
-
-        //--------------
-        //- AREA CHART -
-        //--------------
-
-        // Get context with jQuery - using jQuery's .get() method.
-
-        var areaChartData = {
-            labels: ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO'],
-            datasets: [
-                {
-                    label: 'Riesgo Hogar',
-                    backgroundColor: 'rgba(60,141,188,0.5)',
-                    fill: true,
-                    borderColor: '#14afe4 ',
-                    data: [28, 32, 36, 24, 31, 30, 25, 18]
-                },
-                {
-                    label: 'Riesgo Educacion',
-                    backgroundColor: 'rgba(210, 214, 222, 0.5)',
-                    fill: true,
-                    borderColor: '#5d5d5d ',
-                    data: [32, 28, 30, 29, 25, 22, 28, 12]
-                },
-            ]
-        }
-
-        var areaChartOptions = {
-            maintainAspectRatio: false,
-            responsive: true,
-            legend: {
-                display: false
-            },
-            scales: {
-                xAxes: [{
-                    gridLines: {
-                        display: true,
-                    }
-                }],
-                yAxes: [{
-                    gridLines: {
-                        display: true,
-                    }
-                }]
-            }
-        }
-
-        //-------------
-        //- LINE CHART -
-        //--------------
-        var lineChartCanvas = $('#lineChart').get(0).getContext('2d')
-        var lineChartOptions = $.extend(true, {}, areaChartOptions)
-        var lineChartData = $.extend(true, {}, areaChartData)
-        lineChartData.datasets[0].fill = true;
-        lineChartData.datasets[1].fill = true;
-        lineChartOptions.datasetFill = true
-
-        var lineChart = new Chart(lineChartCanvas, {
-            type: 'line',
-            data: lineChartData,
-            options: lineChartOptions
-        })
-    })
-</script>
+<!--script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script-->
+<!--script src="{% static 'custom/js/dashboard.js' %}"></script-->
 {% endblock %}

@@ -150,6 +150,7 @@ MIDDLEWARE = [
     'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'Legajos.middleware.XSSProtectionMiddleware',
+    'Legajos.validation_middleware.NoSpecialCharactersMiddleware',
 ]
 
 # Configuración de plantillas
