@@ -276,7 +276,7 @@
                         <div class="carousel-item {% if forloop.counter == 1 %}active{% endif %}">
                             <a href="{{ MEDIA_URL }}{{ f.archivo.url }}" target="_blank"
                                 title="{{f.archivo|cut:'legajos/archivos/'}}">
-                                <img class="d-block w-100 carousel-image" src="{{ MEDIA_URL }}{{ f.archivo.url }}">
+                                <img alt="Imagen del legajo" class="d-block w-100 carousel-image" src="{{ MEDIA_URL }}{{ f.archivo.url }}">
                             </a>
                         </div>
                         {% endfor %}
@@ -490,11 +490,9 @@
                     
                     <div class="card-body card-comments">
                         <div class="row my-sm-4 pb-sm-1">
-                            <!-- <div class="col embed-responsive embed-responsive-16by9"> -->
                             <iframe
                             src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3285.0070299761087!2d-58.727604824311015!3d-34.57868867296322!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95bcbded9b818d6f%3A0x4f92ab2cfce3c024!2sC.%20El%20Zonda%20115%2C%20B1663CQC%20San%20Miguel%2C%20Provincia%20de%20Buenos%20Aires!5e0!3m2!1sen!2sar!4v1694143900980!5m2!1sen!2sar"                                width="100%" height="350" style="border:0;" allowfullscreen="" loading="lazy"
                                 referrerpolicy="no-referrer-when-downgrade"></iframe>
-                            <!-- </div> -->
                         </div>
                     </div>
                 </div>
@@ -515,8 +513,6 @@
                 </div>
             </div>
         </div>
-
-
 
         <div class="row">
             <div class="col-12">
@@ -577,7 +573,6 @@
                                     </dt>
                                     <dd class="col-sm-8">Personas en el hogar con enfermedades crónicas</dd>
                                     <dt class="col-sm-4">{{dimensionfamilia.hay_enf_cronica|yesno:'Sí,No'}}
-                                    </dt>
                                     </dt>
                                     <dd class="col-12 mt-3">Observaciones</dd>
                                     <dt class="col-12">
@@ -752,7 +747,6 @@
                                 </dl>
                                 <!-- ./dimension economia  -->
                             </div>
-
 
                             <div class=" tab-pane" id="dimensiontrabajo">
                                 <!-- dimension trabajo -->

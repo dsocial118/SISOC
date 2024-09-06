@@ -119,7 +119,7 @@
 
       <div class="table-responsive  mt-4">
         <table class="table table-bordered ">
-          <thead class="text-secondary  text-center">
+          <thead class="text-secondary text-center">
             <th>Criterio </th>
             <th>Puntaje Base </th>
             <th></th>
@@ -132,7 +132,7 @@
             {% endfor %}
             {% for formss in formset %}
             {{ formss.management_form }}
-            <tr id="variants-{{ forloop.counter0 }}" class=hide_all> 
+            <tr id="variants-{{ forloop.counter0 }}" class="hide_all"> 
               {{ formss.id }}
               {% for field in formss.visible_fields %}
               {% if field.name != "DELETE"%}
@@ -171,6 +171,8 @@
       <div class="col-sm-12 text-center mt-5 mb-5 pt-5">
         <a href="{% url 'indices_listar' %}"><button type="button" class="btn btn-secondary">Cancelar</button></a>
         <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+      </div>
       </div>
 </form>
 
