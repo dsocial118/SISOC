@@ -75,19 +75,5 @@
 {% endblock content %}
 
 {% block customJS %}
-<script>
-  $(document).ready(function () {
-
-    // desaparecer los Success messages
-    setTimeout(function () {
-      $(".alert").alert('close');
-    }, 3000);
-
-    $('.popover-dismiss').popover({
-      trigger: 'focus'
-    })
-
-  });
-
-</script>
+<script src="{% static 'custom/js/Configuraciones.js' %}"></script>
 {% endblock %}

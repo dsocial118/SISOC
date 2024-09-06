@@ -238,7 +238,7 @@
 </li>
 {%if perms.Usuarios.programa_Legajo%}
 <li class="nav-item">
-	<a href="{% url 'legajos_listar' %}" class="nav-link  {% if 'legajos/reportes' in pagina_actual %}active{% endif %}">
+	<a href="{% url 'legajos_listar' %}" class="nav-link  {% if 'legajos/listar' in pagina_actual %}active{% endif %}">
 		<i class="nav-icon fas fa-globe"></i>
 		<p>Legajos Provincias</p>
 	</a>
