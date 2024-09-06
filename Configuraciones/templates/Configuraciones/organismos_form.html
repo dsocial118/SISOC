@@ -109,35 +109,6 @@
   </div>
 </div>
 
-
-<!-- CONSULTAR A MARIAN -->
-<!--
-      <div class="form-row px-2 mb-5
-      {%if request.resolver_match.url_name != 'organismos_editar' %}
-      text-decoration-none
-      {%endif%}
-      ">
-        <div class="form-group mt-3">
-          <div class="custom-control custom-switch custom-switch-off-danger custom-switch-on-success">
-            {{form.estado}}
-            <label class="custom-control-label" for="{{form.estado.id_for_label}}">Activo</label>
-          </div>
-        </div>
-      </div>-->
-       
-       <!-- <div class="col-sm-3 {%if request.resolver_match.url_name != 'organismos_editar' %}
-            d-none
-            {%endif%}">
-							<div class="form-group">
-								<label for="inputStatus">Select para activos</label>
-                <select id="inputStatus" class="form-control custom-select">
-									<option selected=" {{form.estado| as_crispy_field}}" disabled=""></option>
-									
-								</select>
-							</div>
-						</div>-->
-            
-
 {% endblock content%}
 
 {% block customJS %}

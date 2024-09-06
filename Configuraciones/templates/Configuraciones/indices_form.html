@@ -132,7 +132,7 @@
             {% endfor %}
             {% for formss in formset %}
             {{ formss.management_form }}
-            <tr id="variants-{{ forloop.counter0 }}" class=hide_all> <!-- id="inlineformsetname-counter" -->
+            <tr id="variants-{{ forloop.counter0 }}" class=hide_all> 
               {{ formss.id }}
               {% for field in formss.visible_fields %}
               {% if field.name != "DELETE"%}
@@ -164,7 +164,7 @@
           <span class="bg-light "><i class="fas fa-plus-circle text-primary px-2"></i>Agregar criterio al índice</span>
 
         </a>
-        <!-- id="add-inlineformsetname-button" -->
+        
       </div>
 
       {% endwith %}
@@ -177,56 +177,5 @@
 {% endblock content%}
 
 {% block customJS %}
-
-<script>
-
-  $(document).ready(function () {
-    // when user clicks add more btn of variants
-    $('.add-variants').click(function (ev) {
-      ev.preventDefault();
-      var count = $('#item-variants').children().length;
-      var tmplMarkup = $('#variants-template').html();
-      var compiledTmpl = tmplMarkup.replace(/__prefix__/g, count);
-      $('#item-variants').append(compiledTmpl);
-      // update form count
-      $('#id_variants-TOTAL_FORMS').attr('value', count + 1);
-    });
-
-    $('body').on('click', '.borrar_tr', function () {
-      $(this).parent().parent().remove();
-
-    });
-
-
-    // Disable form submissions if there are invalid fields
-    (function () {
-      'use strict';
-      window.addEventListener('load', function () {
-        // Get the forms we want to add validation styles to
-        var forms = document.getElementsByClassName('needs-validation');
-        // Loop over them and prevent submission
-        var validation = Array.prototype.filter.call(forms, function (form) {
-          form.addEventListener('submit', function (event) {
-            if (form.checkValidity() === false) {
-              event.preventDefault();
-              event.stopPropagation();
-            }
-            form.classList.add('was-validated');
-          }, false);
-        });
-      }, false);
-    })();
-
-    $(function () {
-      //Initialize Select2 Elements
-      $('.select2').select2()
-
-      //Initialize Select2 Elements
-      $('.select2bs4').select2({
-        theme: 'bootstrap4'
-      })
-    });
-
-  });
-</script>
+<script src="{% static 'custom/js/indicesform.js' %}"></script>
 {% endblock customJS%}

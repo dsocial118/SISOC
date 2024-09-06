@@ -11,7 +11,7 @@
 	<link rel="shortcut icon" type="image/png" href="{% static 'custom/img/hsu_logo.ico'%}"/>
 
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="{% static 'plugins/fontawesome-free/css/all.min.css' %}" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
     <!-- Estilos y JS principales -->
     <link rel="stylesheet" href="{% static 'dist/css/adminlte.min.css' %}" />
     <!-- Estilos custom -->
@@ -124,32 +124,17 @@
     </div>
     </div>
 
-
+{% block customJS %}
     <!-- Adicionales JS fin de pagina -->
     <!-- JQuery -->
-    <script src="{% static 'plugins/jquery/jquery.min.js' %}"></script>
-    <script src="{% static 'plugins/jquery-ui/jquery-ui.min.js' %}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
     <!-- Bootstrap -->
-    <script src="{% static 'plugins/bootstrap/js/bootstrap.min.js' %}"></script>
-    <script src="{% static 'plugins/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Dist -->
     <script src="{% static 'dist/js/adminlte.js' %}"></script>
-
-    <script>
-        setTimeout(function () {
-            // desaparecer los Success messages
-            $(".alert").alert('close');
-        }, 3000);
-
-        //popovers
-        $(function () {
-            $('[data-toggle="popover"]').popover()
-        })
-        $('.popover-dismiss').popover({
-            trigger: 'focus'
-        });
-
-    </script>
-
+    <script src="{% static 'custom/js/login.js' %}"></script>
+{% endblock %}
 
 </html>
