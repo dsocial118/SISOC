@@ -72,47 +72,9 @@
     </form>
   </div>
 </div>
-
-
-
-      <!-- CONSULTAR A MARIAN-->
-      <!-- 
-      <div class="form-row px-2 mb-5
-      {%if request.resolver_match.url_name != 'planes_sociales_editar' %}
-      d-none
-      {%endif%}
-      ">
-        <div class="form-group  mt-3">
-          <div class="custom-control custom-switch custom-switch-off-danger custom-switch-on-success">
-            {{form.estado}}
-            <label class="custom-control-label" for="{{form.estado.id_for_label}}">Activo</label>
-          </div>
-        </div>
-      </div> -->
-
-
-
+     
 {% endblock content%}
 
 {% block customJS %}
-<script>
-  // Disable form submissions if there are invalid fields
-  (function () {
-    'use strict';
-    window.addEventListener('load', function () {
-      // Get the forms we want to add validation styles to
-      var forms = document.getElementsByClassName('needs-validation');
-      // Loop over them and prevent submission
-      var validation = Array.prototype.filter.call(forms, function (form) {
-        form.addEventListener('submit', function (event) {
-          if (form.checkValidity() === false) {
-            event.preventDefault();
-            event.stopPropagation();
-          }
-          form.classList.add('was-validated');
-        }, false);
-      });
-    }, false);
-  })();
-</script>
+<script src="{% static 'custom/js/Configuraciones.js' %}"></script>
 {% endblock customJS%}
