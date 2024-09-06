@@ -17,4 +17,4 @@ class NoSpecialCharactersMiddleware:
 
     def is_valid(self, value):
         # Permitir solo letras, números y espacios
-         return re.match(r"^[\w\s'./@-]*$", value) is not None
+         return re.match(r"^[\w\s'.,()/@-]*$", value) is not None
