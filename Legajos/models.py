@@ -342,7 +342,6 @@ class DimensionVivienda(models.Model):
         verbose_name='En tu hogar cuentan con Internet (a través del celular o por conexión en la vivienda - wifi)', max_length=255,choices=CHOICE_SINO, null=True, blank=True)
     hay_agua_caliente = models.CharField(
         verbose_name='¿Posee Agua caliente?',max_length=50, choices=CHOICE_SINO, null=True, blank=True)
-
     
     
     def save(self, *args, **kwargs):
@@ -417,8 +416,6 @@ class DimensionEducacion(models.Model):
                                  max_length=50, choices=CHOICE_NIVEL_EDUCATIVO, null=True, blank=True)
     estado_nivel = models.CharField(verbose_name='Estado del nivel', max_length=50,
                                     choices=CHOICE_ESTADO_NIVEL_EDUCATIVO, null=True, blank=True)
-    asiste_escuela = models.CharField(verbose_name='¿Asistís o asististe alguna vez a algún establecimiento educativo?', max_length=100, choices= CHOICE_ASISTE_ESCUELA, null=True, blank=True)
-    
     institucion = models.CharField(verbose_name='Escuela', max_length=200,
                                    choices=CHOICE_INSTITUCIONES_EDUCATIVAS, null=True, blank=True)
     gestion = models.CharField(verbose_name='Gestión', max_length=50,
@@ -466,6 +463,7 @@ class DimensionEducacion(models.Model):
         verbose_name='¿Le interesa estudiar?',max_length=100, choices=CHOICE_SINO, null=True, blank=True)
     interesCurso = models.CharField(
         verbose_name='¿le interesa algun curso?', max_length=100, choices=CHOICE_SINO, null=True, blank=True)
+    asiste_escuela = models.CharField(verbose_name='¿Asistís o asististe alguna vez a algún establecimiento educativo?', max_length=100, choices= CHOICE_ASISTE_ESCUELA, null=True, blank=True)
 
     def __str__(self):
         return f"{self.fk_legajo}"
@@ -498,10 +496,10 @@ class DimensionEconomia(models.Model):
     modificado = models.DateField(auto_now=True)
 
     # Migraciones para fix de DAD-123
-
-    ingresos = models.PositiveIntegerField(verbose_name="Ingresos Mensuales ",null=True, blank=True)
     recibe_plan = models.CharField(
         verbose_name='¿Recibe planes sociales?', max_length=100, choices=CHOICE_SINO, null=True, blank=True)
+    ingresos = models.PositiveIntegerField(verbose_name="Ingresos Mensuales ",null=True, blank=True)
+    
 
     def save(self, *args, **kwargs):
         self.ingresos = convertir_positivo(self.ingresos)
