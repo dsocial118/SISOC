@@ -1,28 +1,20 @@
 # Información de la Tarea
+(Recordar vincular el issue)
 
-- **Tarea:** 
-  - Breve descripcion de la tarea.
-- **Resumen de la Solución:** 
+### **Resumen de la Solución:** 
   - Breve descripción de la solución implementada.
 
-- **Información Adicional:**
-  - Notas adicionales que puedan ser relevantes para entender el contexto o las decisiones tomadas u operaciones que se deban hacer post-merge.
-
+### **Información Adicional:**
+  - 
 
 # Descripción de los Cambios
 
-- **Cambios Principales:**
-  - Lista detallada de los cambios realizados en el código y el porque en caso de ser necesario.
-
+### **Cambios:**
+  - 
 
 # Cómo Testear los Cambios
 
-- **Pruebas Automáticas:**
-  - Lista de pruebas automatizadas que se deben ejecutar en caso de aplicar.
-
-- **Pruebas Manuales:**
-  - Instrucciones específicas sobre como testear el cambio y cual es el comportamiento esperado .
-
+### **Pruebas Automáticas:**
+  - 
 
 # Capturas de Pantalla
-- Cualquier captura de pantalla que ayude a la review.
