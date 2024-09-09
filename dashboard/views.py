@@ -1,6 +1,6 @@
 from django.views.generic import TemplateView
 
-from dashboard.models import Dashboard
+from dashboard.services import DashboardService
 
 
 class DashboardView(TemplateView):
@@ -8,10 +8,5 @@ class DashboardView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        dashboard_data = Dashboard.objects.all()
-        data = {item.llave: item.cantidad for item in dashboard_data}
-
-        context.update(data)
-
+        context.update(DashboardService.obtener_dashboard_data())
         return context
