@@ -2,6 +2,7 @@ import calendar
 from datetime import datetime, timedelta
 import json
 from typing import Dict, List, Any, Union
+
 from django.db.models import (
     Case,
     Count,
@@ -57,7 +58,7 @@ class LegajosService:
         return queryset
 
     @staticmethod
-    def obtener_municipios(provincia_id: int) -> List[Dict[str, Union[str, int]]]:
+    def obtener_municipios(provincia_id: Union[int, None]) -> List[Dict[str, Union[str, int]]]:
         provincias = cache.get_or_set(
             "provincias", LegajoProvincias.objects.all(), CACHE_TIMEOUT
         )
@@ -65,15 +66,18 @@ class LegajosService:
             "municipios", LegajoMunicipio.objects.all(), CACHE_TIMEOUT
         )
 
-        provincia = provincias.objects.get(id=provincia_id)
-        municipios = municipios.objects.filter(
-            codigo_ifam__startswith=provincia.abreviatura
-        ).values("id", "departamento_id", "nombre_region")
+        if provincia_id is None:
+            municipios = municipios.values("id", "departamento_id", "nombre_region")
+        else:
+            provincia = provincias.get(id=provincia_id)
+            municipios = municipios.filter(
+                codigo_ifam__startswith=provincia.abreviatura
+            ).values("id", "departamento_id", "nombre_region")
 
         return list(municipios)
 
     @staticmethod
-    def obtener_localidades(municipio_id: int) -> List[Dict[str, Union[str, int]]]:
+    def obtener_localidades(municipio_id: Union[int, None]) -> List[Dict[str, Union[str, int]]]:
         municipios = cache.get_or_set(
             "municipios", LegajoMunicipio.objects.all(), CACHE_TIMEOUT
         )
@@ -81,10 +85,13 @@ class LegajosService:
             "localidades", LegajoLocalidad.objects.all(), CACHE_TIMEOUT
         )
 
-        municipio = municipios.objects.get(id=municipio_id)
-        localidades = localidades.objects.filter(
-            departamento_id=municipio.departamento_id
-        ).values("id", "nombre")
+        if municipio_id is None:
+            localidades = localidades.values("id", "nombre")
+        else:
+            municipio = municipios.get(id=municipio_id)
+            localidades = localidades.filter(
+                departamento_id=municipio.departamento_id
+            ).values("id", "nombre")
 
         return list(localidades)
 

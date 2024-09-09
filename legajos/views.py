@@ -73,24 +73,19 @@ logger = logging.getLogger("django")
 
 ROL_ADMIN = "Usuarios.rol_admin"
 
-def load_municipios(request):
-    provincia_id = request.GET.get("provincia_id")
-    if not provincia_id:
-        return JsonResponse({"error": "Provincia no especificada."}, status=400)
-    
-    municipios = LegajosService.obtener_municipios(provincia_id)
+class MunicipiosView(View):
+    def get(self, request, *args, **kwargs):
+        provincia_id = request.GET.get("provincia_id")
+        municipios = LegajosService.obtener_municipios(provincia_id)
 
-    return JsonResponse(municipios, safe=False)
+        return JsonResponse(municipios, safe=False)
 
+class LocalidadesView(View):
+    def get(self, request, *args, **kwargs):
+        municipio_id = request.GET.get("municipio_id")
+        localidades = LegajosService.obtener_localidades(municipio_id)
 
-def load_localidades(request):
-    municipio_id = request.GET.get("municipio_id")
-    if not municipio_id:
-        return JsonResponse({"error": "Municipio no especificado."}, status=400)
-
-    localidades = LegajosService.obtener_localidades(municipio_id)
-
-    return JsonResponse(localidades, safe=False)
+        return JsonResponse(localidades, safe=False)
 
 
 class LegajosReportesListView(ListView):
