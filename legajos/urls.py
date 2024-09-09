@@ -270,6 +270,6 @@ urlpatterns = [
         login_required(LegajosGrupoHogarCreateView.as_view()),
         name="legajosgrupohogar_crear",
     ),
-    path("ajax/load-municipios/", load_municipios, name="ajax_load_municipios"),
-    path("ajax/load-localidades/", load_localidades, name="ajax_load_localidades"),
+    path("legajos/municipios/ajax/", load_municipios, name="ajax_load_municipios"),
+    path("legajos/localidades/ajax/", load_localidades, name="ajax_load_localidades"),
 ]
