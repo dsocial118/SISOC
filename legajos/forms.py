@@ -67,7 +67,7 @@ class LegajosForm(forms.ModelForm):
         fecha_nacimiento = cleaned_data.get("fecha_nacimiento")
 
         # Validación de campo unico, combinación de DNI + Tipo DNI
-        if (
+        existente = (
             tipo_doc
             and documento
             and fecha_nacimiento
@@ -80,7 +80,9 @@ class LegajosForm(forms.ModelForm):
                 nombre=nombre,
                 fecha_nacimiento=fecha_nacimiento,
             ).exists()
-        ):
+        )
+
+        if existente:
             self.add_error(
                 "documento", "Ya existe un legajo con ese TIPO y NÚMERO de documento."
             )
