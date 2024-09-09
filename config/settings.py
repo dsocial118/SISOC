@@ -135,7 +135,6 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
-    "usuarios.middleware.CustomLoginMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -143,6 +142,9 @@ MIDDLEWARE = [
     "silk.middleware.SilkyMiddleware",
     "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "usuarios.middleware.CustomLoginMiddleware",
+    "config.middlewares.xss_protection.XSSProtectionMiddleware",
+    "config.middlewares.no_special_characters.NoSpecialCharactersMiddleware",
 ]
 
 # Configuración de plantillas

@@ -1,6 +1,10 @@
-import locale
+import calendar  # pylint: disable=too-many-lines
+import json
 import logging
-from datetime import date
+
+# Configurar el locale para usar el idioma español
+import locale
+from datetime import date, datetime, timedelta
 
 from django.contrib import messages
 from django.contrib.messages.views import SuccessMessageMixin
@@ -8,11 +12,12 @@ from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Case, Count, IntegerField, Q, Value, When
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 
+# Paginacion
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -23,9 +28,8 @@ from django.views.generic import (
     View,
 )
 
-from config.settings import CACHE_TIMEOUT
-from configuraciones.choices import CHOICE_CIRCUITOS
 from configuraciones.models import Alertas, CategoriaAlertas, Organismos, Programas
+from configuraciones.choices import CHOICE_CIRCUITOS, CHOICE_DIMENSIONES
 from legajos.choices import (
     CHOICE_ESTADO_DERIVACION,
     CHOICE_NACIONALIDAD,
@@ -33,39 +37,41 @@ from legajos.choices import (
     VINCULO_MAP,
 )
 from legajos.forms import (
-    DimensionEconomiaForm,
     DimensionEducacionForm,
-    DimensionFamiliaForm,
     DimensionSaludForm,
-    DimensionTrabajoForm,
     DimensionViviendaForm,
     LegajoGrupoHogarForm,
     LegajosAlertasForm,
     LegajosArchivosForm,
     LegajosDerivacionesForm,
+    DimensionFamiliaForm,
+    DimensionEconomiaForm,
+    DimensionTrabajoForm,
     LegajosForm,
     LegajosUpdateForm,
     NuevoLegajoFamiliarForm,
 )
 from legajos.models import (
+    DimensionFamilia,
+    DimensionVivienda,
+    DimensionSalud,
     DimensionEconomia,
     DimensionEducacion,
-    DimensionFamilia,
-    DimensionSalud,
     DimensionTrabajo,
-    DimensionVivienda,
     HistorialLegajoAlertas,
-    LegajoAlertas,
-    LegajoGrupoFamiliar,
-    LegajoGrupoHogar,
-    Legajos,
-    LegajosArchivos,
     LegajosDerivaciones,
+    Legajos,
+    LegajoGrupoFamiliar,
+    LegajoAlertas,
+    LegajoGrupoHogar,
+    LegajosArchivos,
+    LegajoProvincias,
+    LegajoLocalidad,
+    LegajoMunicipio,
 )
-from legajos.services.legajos_service import LegajosService
-
 from usuarios.mixins import PermisosMixin
 from usuarios.utils import recortar_imagen
+
 
 locale.setlocale(locale.LC_ALL, "es_AR.UTF-8")
 
@@ -73,17 +79,27 @@ logger = logging.getLogger("django")
 
 ROL_ADMIN = "Usuarios.rol_admin"
 
+# region ############################################################### LEGAJOS
+
 
 def load_municipios(request):
-    municipios = LegajosService.obtener_municipios(request.GET.get("provincia_id"))
+    provincia_id = request.GET.get("provincia_id")
+    provincia_search = LegajoProvincias.objects.get(id=provincia_id)
+    municipios = LegajoMunicipio.objects.filter(
+        codigo_ifam__startswith=provincia_search.abreviatura
+    )
+    return JsonResponse(
+        list(municipios.values("id", "departamento_id", "nombre_region")), safe=False
+    )
 
-    return JsonResponse(municipios, safe=False)
 
-
-def load_localidades(request):
-    localidades = LegajosService.obtener_localidades(request.GET.get("municipio_id"))
-
-    return JsonResponse(localidades, safe=False)
+def load_localidad(request):
+    municipio_id = request.GET.get("municipio_id")
+    localidad_search = LegajoMunicipio.objects.get(id=municipio_id)
+    localidades = LegajoLocalidad.objects.filter(
+        departamento_id=localidad_search.departamento_id
+    )
+    return JsonResponse(list(localidades.values("id", "nombre")), safe=False)
 
 
 class LegajosReportesListView(ListView):
@@ -93,79 +109,125 @@ class LegajosReportesListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        derivaciones = LegajosService.obtener_derivaciones(
-            self.request.GET.get("data_programa"),
-            self.request.GET.get("data_organismo"),
-            self.request.GET.get("busqueda"),
-            self.request.GET.get("data_estado"),
-            self.request.GET.get("data_fecha_derivacion"),
+        organismos = cache.get("organismos")
+        if not organismos:
+            organismos = Organismos.objects.all().values("id", "nombre")
+            cache.set("organismos", organismos, 60)
+
+        programas = cache.get("programas")
+        if not programas:
+            programas = Programas.objects.all().values("id", "nombre")
+            cache.set("programas", programas, 60)
+
+        context["organismos"] = organismos
+        context["programas"] = programas
+        context["estados"] = CHOICE_ESTADO_DERIVACION
+        return context
+
+    def get_queryset(self):
+        nombre_completo_legajo = self.request.GET.get("busqueda")
+        data_organismo = self.request.GET.get("data_organismo")
+        data_programa = self.request.GET.get("data_programa")
+        data_estado = self.request.GET.get("data_estado")
+        data_fecha_desde = self.request.GET.get("data_fecha_derivacion")
+
+        filters = Q()
+
+        if data_programa:
+            filters &= Q(fk_programa=data_programa)
+        if data_organismo:
+            filters &= Q(fk_organismo=data_organismo)
+        if nombre_completo_legajo:
+            filters &= (
+                Q(fk_legajo__nombre__icontains=nombre_completo_legajo)
+                | Q(fk_legajo__apellido__icontains=nombre_completo_legajo)
+                | Q(fk_legajo__documento__icontains=nombre_completo_legajo)
+            )
+        if data_estado:
+            filters &= Q(estado=data_estado)
+        if data_fecha_desde:
+            filters &= Q(fecha_creado__gte=data_fecha_desde)
+
+        object_list = (
+            LegajosDerivaciones.objects.filter(filters)
+            .select_related("fk_programa", "fk_organismo", "fk_legajo")
+            .distinct()
         )
-        if not derivaciones.exists():
+
+        if not object_list.exists():
             messages.warning(self.request, "La búsqueda no arrojó resultados.")
 
-        organismos = cache.get_or_set(
-            "organismos", Organismos.objects.all().values("id", "nombre"), CACHE_TIMEOUT
-        )
-        programas = cache.get_or_set(
-            "programas", Programas.objects.all().values("id", "nombre"), CACHE_TIMEOUT
-        )
-
-        context.update(
-            {
-                "derivaciones": derivaciones,
-                "organismos": organismos,
-                "programas": programas,
-                "estados": CHOICE_ESTADO_DERIVACION,
-            }
-        )
-        return context
+        return object_list
 
 
 class LegajosListView(ListView):
     model = Legajos
     template_name = "legajos/legajos_list.html"
     context_object_name = "legajos"
-    paginate_by = 10
+    paginate_by = 10  # Número de objetos por página
 
     def get_queryset(self):
-        query = self.request.GET.get("busqueda")
-
-        if query:
-            cached_queryset_name = f"cached_queryset_{query}"
-            queryset_filtrado = cache.get_or_set(
-                cached_queryset_name,
-                LegajosService.obtener_queryset_filtrado(query),
-                CACHE_TIMEOUT,
+        if not hasattr(self, "_cached_queryset"):
+            queryset = (
+                super()
+                .get_queryset()
+                .only(
+                    "id",
+                    "apellido",
+                    "nombre",
+                    "documento",
+                    "tipo_doc",
+                    "sexo",
+                    "localidad",
+                    "estado",
+                )
             )
-            return queryset_filtrado
+            query = self.request.GET.get("busqueda", "")
 
-        return Legajos.objects.none()
+            if query:
+                filter_condition = Q(apellido__icontains=query)
+                if query.isnumeric():
+                    filter_condition |= Q(documento__contains=query)
+                queryset = queryset.filter(filter_condition)
+
+            self._cached_queryset = (  # pylint: disable=attribute-defined-outside-init
+                queryset
+            )
+
+        return self._cached_queryset
 
     def get(self, request, *args, **kwargs):
         query = self.request.GET.get("busqueda")
-        queryset = self.get_queryset()
-        size_queryset = queryset.count()
-
-        if size_queryset == 1:
-            pk = queryset.first().id
-            return redirect("legajos_ver", pk=pk)
-        elif size_queryset == 0 and query:
-            messages.warning(self.request, "La búsqueda no arrojó resultados.")
+        if query:
+            self.object_list = (  # pylint: disable=attribute-defined-outside-init
+                self.get_queryset()
+            )
+            size_queryset = self.object_list.count()
+            if size_queryset == 1:
+                pk = self.object_list.first().id
+                return redirect("legajos_ver", pk=pk)
+            elif size_queryset == 0:
+                messages.warning(self.request, "La búsqueda no arrojó resultados.")
 
         return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         query = self.request.GET.get("busqueda")
-
-        context["mostrar_resultados"] = bool(query)
-        context["query"] = query
-
+        mostrar_resultados = bool(query)
         page_obj = context.get("page_obj")
+
         if page_obj:
             context["page_range"] = page_obj.paginator.get_elided_page_range(
                 number=page_obj.number
             )
+
+        context.update(
+            {
+                "mostrar_resultados": mostrar_resultados,
+                "query": query,
+            }
+        )
 
         return context
 
@@ -174,19 +236,326 @@ class LegajosDetailView(DetailView):
     model = Legajos
     template_name = "legajos/legajos_detail.html"
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+        self, **kwargs
+    ):
+        pk = self.kwargs["pk"]
         context = super().get_context_data(**kwargs)
 
-        pk = self.kwargs["pk"]
+        legajo = context["object"]
 
-        extras = LegajosService.obtener_extras_legajo(pk)
+        fecha_actual = datetime.now().date()
 
-        context["emoji_nacionalidad"] = EMOJIS_BANDERAS.get(
-            context["object"].nacionalidad, ""
-        )
-        context.update(extras)
+        legajo_alertas = cache.get("legajo_alertas")
+        alertas = cache.get("alertas")
+        familiares = cache.get("familiares")
+        hogar_familiares = cache.get("hogar_familiares")
+        files = cache.get("files")
+        legajo_alertas_organizadas = cache.get("legajo_alertas_organizadas")
+        count_alertas = cache.get("count_alertas")
+        count_alta = cache.get("count_alta")
+        count_media = cache.get("count_media")
+        count_baja = cache.get("count_baja")
+        alertas_alta = cache.get("alertas_alta")
+        alertas_media = cache.get("alertas_media")
+        alertas_baja = cache.get("alertas_baja")
+        historial_alertas = cache.get("historial_alertas")
+        count_intervenciones = cache.get("count_intervenciones")
+        dimensionfamilia = cache.get("dimensionfamilia")
+        dimensionvivienda = cache.get("dimensionvivienda")
+        dimensionsalud = cache.get("dimensionsalud")
+        dimensiontrabajo = cache.get("dimensiontrabajo")
+        datos_json = cache.get("datos_json")
+        emoji_nacionalidad = cache.get("emoji_nacionalidad")
+
+        if not legajo_alertas:
+            legajo_alertas = LegajoAlertas.objects.filter(fk_legajo=pk).select_related(
+                "fk_alerta__fk_categoria"
+            )
+            cache.set("legajo_alertas", legajo_alertas, 60)
+        if not alertas:
+            alertas = HistorialLegajoAlertas.objects.filter(fk_legajo=pk).values(
+                "fecha_inicio", "fecha_fin", "fk_alerta__fk_categoria__dimension"
+            )
+            cache.set("alertas", alertas, 60)
+        if not familiares:
+            familiares = LegajoGrupoFamiliar.objects.filter(
+                Q(fk_legajo_1=pk) | Q(fk_legajo_2=pk)
+            ).values(
+                "fk_legajo_1__nombre",
+                "fk_legajo_1__apellido",
+                "fk_legajo_1__id",
+                "fk_legajo_1__foto",
+                "fk_legajo_2__nombre",
+                "fk_legajo_2__apellido",
+                "fk_legajo_2__id",
+                "fk_legajo_2__foto",
+                "vinculo",
+                "vinculo_inverso",
+            )
+            cache.set("familiares", familiares, 60)
+        if not hogar_familiares:
+            hogar_familiares = LegajoGrupoHogar.objects.filter(
+                Q(fk_legajo_1Hogar=pk) | Q(fk_legajo_2Hogar=pk)
+            ).values(
+                "fk_legajo_2Hogar_id",
+                "fk_legajo_2Hogar",
+                "fk_legajo_1Hogar_id",
+                "fk_legajo_1Hogar",
+                "fk_legajo_1Hogar__nombre",
+                "fk_legajo_2Hogar__nombre",
+                "fk_legajo_1Hogar__foto",
+                "fk_legajo_2Hogar__foto",
+                "estado_relacion",
+            )
+            cache.set("hogar_familiares", hogar_familiares, 60)
+        if not files:
+            files = LegajosArchivos.objects.filter(
+                Q(tipo="Imagen") | Q(tipo="Documento"), fk_legajo=pk
+            )
+            cache.set("files", files, 60)
+        if not legajo_alertas_organizadas:
+            legajo_alertas_organizadas = legajo_alertas.annotate(
+                es_critica=Case(
+                    When(fk_alerta__gravedad="Critica", then=Value(1)),
+                    default=Value(0),
+                    output_field=IntegerField(),
+                ),
+                es_importante=Case(
+                    When(fk_alerta__gravedad="Importante", then=Value(1)),
+                    default=Value(0),
+                    output_field=IntegerField(),
+                ),
+                es_precaucion=Case(
+                    When(fk_alerta__gravedad="Precaución", then=Value(1)),
+                    default=Value(0),
+                    output_field=IntegerField(),
+                ),
+            )
+            cache.set("legajo_alertas_organizadas", legajo_alertas_organizadas, 60)
+        if not count_alertas:
+            count_alertas = legajo_alertas.count()
+            cache.set("count_alertas", count_alertas, 60)
+        if not count_alta:
+            count_alta = legajo_alertas_organizadas.aggregate(
+                count=Count("es_critica")
+            ).get("count", 0)
+            cache.set("count_alta", count_alta, 60)
+        if not count_media:
+            count_media = legajo_alertas_organizadas.aggregate(
+                count=Count("es_importante")
+            ).get("count", 0)
+            cache.set("count_media", count_media, 60)
+        if not count_baja:
+            count_baja = legajo_alertas_organizadas.aggregate(
+                count=Count("es_precaucion")
+            ).get("count", 0)
+            cache.set("count_baja", count_baja, 60)
+        if not alertas_alta:
+            alertas_alta = legajo_alertas_organizadas.filter(es_critica=True)
+            cache.set("alertas_alta", alertas_alta, 60)
+        if not alertas_media:
+            alertas_media = legajo_alertas_organizadas.filter(es_importante=True)
+            cache.set("alertas_media", alertas_media, 60)
+        if not alertas_baja:
+            alertas_baja = legajo_alertas_organizadas.filter(es_precaucion=True)
+            cache.set("alertas_baja", alertas_baja, 60)
+        if not historial_alertas:
+            historial_alertas = alertas.exists()
+            cache.set("historial_alertas", historial_alertas, 60)
+        if not count_intervenciones:
+            count_intervenciones = LegajosDerivaciones.objects.filter(
+                fk_legajo=pk
+            ).count()
+            cache.set("count_intervenciones", count_intervenciones, 60)
+        if not dimensionfamilia:
+            dimensionfamilia = (
+                DimensionFamilia.objects.filter(fk_legajo=pk)
+                .values(
+                    "estado_civil",
+                    "cant_hijos",
+                    "otro_responsable",
+                    "hay_embarazadas",
+                    "hay_priv_libertad",
+                    "hay_prbl_smental",
+                    "hay_enf_cronica",
+                    "obs_familia",
+                )
+                .first()
+            )
+            cache.set("dimensionfamilia", dimensionfamilia, 60)
+        if not dimensionvivienda:
+            dimensionvivienda = (
+                DimensionVivienda.objects.filter(fk_legajo=pk)
+                .values(
+                    "posesion",
+                    "tipo",
+                    "material",
+                    "pisos",
+                    "cant_ambientes",
+                    "cant_camas",
+                    "cant_hogares",
+                    "cant_convivientes",
+                    "cant_menores",
+                    "hay_banio",
+                    "hay_agua_caliente",
+                    "hay_desmoronamiento",
+                    "ContextoCasa",
+                    "PoseenPC",
+                    "Poseeninternet",
+                    "PoseenCeludar",
+                    "obs_vivienda",
+                )
+                .first()
+            )
+            cache.set("dimensionvivienda", dimensionvivienda, 60)
+
+        if not dimensionsalud:
+            dimensionsalud = (
+                DimensionSalud.objects.filter(fk_legajo=pk)
+                .values(
+                    "lugares_atencion",
+                    "frec_controles",
+                    "hay_enfermedad",
+                    "hay_obra_social",
+                    "hay_discapacidad",
+                    "hay_cud",
+                    "obs_salud",
+                )
+                .first()
+            )
+            cache.set("dimensionsalud", dimensionsalud, 60)
+        if not dimensiontrabajo:
+            dimensiontrabajo = (
+                DimensionTrabajo.objects.filter(fk_legajo=pk)
+                .values(
+                    "tiene_trabajo",
+                    "ocupacion",
+                    "modo_contratacion",
+                    "conviviente_trabaja",
+                    "obs_trabajo",
+                )
+                .first()
+            )
+            cache.set("dimensiontrabajo", dimensiontrabajo, 60)
+        if not datos_json:
+            datos_json = self.grafico_evolucion_de_riesgo(fecha_actual, alertas)
+            cache.set("datos_json", datos_json, 60)
+        if not emoji_nacionalidad:
+            emoji_nacionalidad = EMOJIS_BANDERAS.get(legajo.nacionalidad, "")
+            cache.set("emoji_nacionalidad", emoji_nacionalidad, 60)
+
+        context["familiares_fk1"] = [
+            familiar
+            for familiar in familiares
+            if familiar["fk_legajo_1__id"] == int(pk)
+        ]
+        context["familiares_fk2"] = [
+            familiar
+            for familiar in familiares
+            if familiar["fk_legajo_2__id"] == int(pk)
+        ]
+        context["count_familia"] = len(familiares)
+
+        context["hogar_familiares_fk1"] = [
+            familiar
+            for familiar in hogar_familiares
+            if familiar["fk_legajo_1Hogar"] == int(pk)
+        ]
+        context["hogar_familiares_fk2"] = [
+            familiar
+            for familiar in hogar_familiares
+            if familiar["fk_legajo_2Hogar"] == int(pk)
+        ]
+        context["hogar_count_familia"] = len(hogar_familiares)
+
+        context["files_img"] = files.filter(tipo="Imagen")
+        context["files_docs"] = files.filter(tipo="Documento")
+
+        context["count_alertas"] = count_alertas
+        context["count_alta"] = count_alta
+        context["count_media"] = count_media
+        context["count_baja"] = count_baja
+
+        context["alertas_alta"] = alertas_alta
+        context["alertas_media"] = alertas_media
+        context["alertas_baja"] = alertas_baja
+
+        context["historial_alertas"] = historial_alertas
+
+        context["count_intervenciones"] = count_intervenciones
+
+        context["dimensionfamilia"] = dimensionfamilia
+
+        context["dimensionvivienda"] = dimensionvivienda
+
+        context["dimensionsalud"] = dimensionsalud
+
+        context["dimensiontrabajo"] = dimensiontrabajo
+
+        context["datos_json"] = datos_json
+
+        context["emoji_nacionalidad"] = emoji_nacionalidad
 
         return context
+
+    def grafico_evolucion_de_riesgo(  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+        self, fecha_actual, alertas
+    ):
+        if alertas.exists():
+            primer_dia_siguiente_mes = datetime(
+                fecha_actual.year, fecha_actual.month % 12 + 1, 1
+            )
+            fecha_inicio_doce_meses_excepto_mes_anterior = (
+                primer_dia_siguiente_mes - timedelta(days=365)
+            )
+
+            alertas_ultimo_anio = alertas.filter(
+                Q(fecha_inicio__gt=fecha_inicio_doce_meses_excepto_mes_anterior)
+                | Q(fecha_fin__gt=fecha_inicio_doce_meses_excepto_mes_anterior)
+                | Q(fecha_fin__isnull=True)
+            ).distinct()
+
+            todas_dimensiones = [dimension for dimension, _ in CHOICE_DIMENSIONES[1:]]
+            datos_por_dimension = {
+                dimension: [0] * 12 for dimension in todas_dimensiones
+            }
+
+            for alerta in alertas_ultimo_anio:
+                dimension = alerta["fk_alerta__fk_categoria__dimension"]
+                fecha_inicio = alerta["fecha_inicio"]
+                fecha_fin = alerta["fecha_fin"] or fecha_actual
+
+                meses_activos = []
+                while fecha_inicio <= fecha_fin:
+                    meses_activos.append(fecha_inicio.month)
+                    fecha_inicio = fecha_inicio.replace(day=1) + timedelta(days=32)
+                    fecha_inicio = fecha_inicio.replace(day=1)
+
+                for mes in meses_activos:
+                    datos_por_dimension[dimension][mes - 1] += 1
+
+            mes_actual = fecha_actual.month
+            datos_por_dimension = {
+                dimension: datos_por_dimension[dimension][mes_actual:]
+                + datos_por_dimension[dimension][:mes_actual]
+                for dimension in todas_dimensiones
+            }
+
+            nombres_meses = [
+                calendar.month_name[mes].capitalize() for mes in range(1, 13)
+            ]
+            nombres_meses_ordenados = (
+                nombres_meses[mes_actual:] + nombres_meses[:mes_actual]
+            )
+
+            datos_por_dimension["meses"] = nombres_meses_ordenados
+
+            datos_json = json.dumps(datos_por_dimension)
+        else:
+            datos_json = {}
+
+        return datos_json
 
 
 class LegajosDeleteView(PermisosMixin, DeleteView):
@@ -198,11 +567,30 @@ class LegajosDeleteView(PermisosMixin, DeleteView):
         context = super().get_context_data(**kwargs)
         legajo = self.get_object()
 
-        # Lista de nombres de relaciones
-        context.update(
-            {"relaciones_existentes": LegajosService.obtener_relaciones(legajo)}
-        )
+        # Crear una lista para almacenar los nombres de las relaciones existentes
+        relaciones_existentes = []
 
+        # Agregar los nombres de las relaciones existentes a la lista
+        if LegajosArchivos.objects.filter(fk_legajo=legajo).exists():
+            relaciones_existentes.append("Archivos")
+
+        if LegajosDerivaciones.objects.filter(fk_legajo=legajo).exists():
+            relaciones_existentes.append("Derivaciones")
+
+        if LegajoAlertas.objects.filter(fk_legajo=legajo).exists():
+            relaciones_existentes.append("Alertas")
+
+        if HistorialLegajoAlertas.objects.filter(fk_legajo=legajo).exists():
+            relaciones_existentes.append("Historial de Alertas")
+
+        if (
+            LegajoGrupoFamiliar.objects.filter(fk_legajo_1=legajo).exists()
+            or LegajoGrupoFamiliar.objects.filter(fk_legajo_2=legajo).exists()
+        ):
+            relaciones_existentes.append("Grupo Familiar")
+
+        # Agregar la lista de nombres de relaciones al contexto
+        context["relaciones_existentes"] = relaciones_existentes
         return context
 
     def form_valid(self, form):

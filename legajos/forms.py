@@ -6,6 +6,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from usuarios.validators import MaxSizeFileValidator
 
 from .models import (
+    DimensionEducacion,
     Legajos,
     LegajoProvincias,
     LegajoMunicipio,
@@ -25,7 +26,6 @@ from .models import (
     CHOICE_ESTADO_RELACION,
     CHOICE_SINO,
 )
-from .models import DimensionEducacion
 
 
 class LegajosForm(forms.ModelForm):
@@ -247,20 +247,25 @@ class NuevoLegajoFamiliarForm(forms.ModelForm):
         tipo_doc = cleaned_data.get("tipo_doc")
         documento = cleaned_data.get("documento")
         fecha_nacimiento = cleaned_data.get("fecha_nacimiento")
-        print(
-            fecha_nacimiento > date.today(), "--------------*********-----------------"
-        )
 
-        # Validación de campo unico, combinación de DNI + Tipo DNI
+        # Validación de campo único, combinación de DNI + Tipo DNI
         if Legajos.objects.filter(tipo_doc=tipo_doc, documento=documento).exists():
             self.add_error(
                 "documento", "Ya existe un legajo con ese TIPO y NÚMERO de documento."
             )
-        # validación de fecha de nacimiento
-        if fecha_nacimiento and fecha_nacimiento > date.today():
-            self.add_error(
-                "fecha_nacimiento", "La fecha de termino debe ser menor al día de hoy."
-            )
+
+        # Validación de fecha de nacimiento
+        if fecha_nacimiento:
+            if not isinstance(fecha_nacimiento, date):
+                self.add_error(
+                    "fecha_nacimiento",
+                    "La fecha de nacimiento debe ser una fecha válida.",
+                )
+            elif fecha_nacimiento > date.today():
+                self.add_error(
+                    "fecha_nacimiento",
+                    "La fecha de nacimiento debe ser menor o igual al día de hoy.",
+                )
 
         return cleaned_data
 
