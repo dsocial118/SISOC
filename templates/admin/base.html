@@ -1,9 +1,8 @@
 <!-- template de personalizacion del sitio admin -->
-
-{% extends 'admin/base.html' %}
-
-{% block extrastyle %}{{ block.super }}
-<style>
+{% extends "admin/base.html" %}
+{% block extrastyle %}
+    {{ block.super }}
+    <style>
 :root {
   --primary: #5a5b5b;
   --secondary: #4b5053;
@@ -12,5 +11,5 @@
   --header-color: #ffffff;
   --accent: #fafafd;
 }
-</style>
+    </style>
 {% endblock %}
