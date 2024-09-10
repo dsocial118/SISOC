@@ -22,7 +22,7 @@ class PermisosMixin(PermissionRequiredMixin):
             lista = []
 
             for p in permissions:
-                lista.append("Usuarios." + p.codename)
+                lista.append("usuarios." + p.codename)
             if self.permission_required in lista:
                 permisos_de_grupo = True
         permisos_de_usuario = any(user.has_perm(p) for p in self.permission_required)

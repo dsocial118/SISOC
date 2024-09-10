@@ -665,8 +665,12 @@ class DimensionEducacion(models.Model):
     ciclo = models.CharField(
         max_length=255, choices=CHOICE_NIVEL_EDUCATIVO, null=True, blank=True
     )
-    grado = models.CharField(max_length=255, choices=CHOICE_GRADO, null=True, blank=True)
-    turno = models.CharField(max_length=255, choices=CHOICE_TURNO, null=True, blank=True)
+    grado = models.CharField(
+        max_length=255, choices=CHOICE_GRADO, null=True, blank=True
+    )
+    turno = models.CharField(
+        max_length=255, choices=CHOICE_TURNO, null=True, blank=True
+    )
     obs_educacion = models.CharField(
         max_length=500, verbose_name="Observaciones", null=True, blank=True
     )

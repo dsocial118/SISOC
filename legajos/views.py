@@ -77,7 +77,7 @@ locale.setlocale(locale.LC_ALL, "es_AR.UTF-8")
 
 logger = logging.getLogger("django")
 
-ROL_ADMIN = "Usuarios.rol_admin"
+ROL_ADMIN = "usuarios.rol_admin"
 
 # region ############################################################### LEGAJOS
 
