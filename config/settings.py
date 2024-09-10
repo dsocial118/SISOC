@@ -210,12 +210,6 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
-    {
-        "NAME": "config.validators.UppercaseValidator",
-    },
-    {
-        "NAME": "config.validators.LowercaseValidator",
-    },
 ]
 
 # Configuración de Django Debug Toolbar
