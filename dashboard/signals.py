@@ -74,10 +74,10 @@ def update_dashboard_legajos(sender, instance, **kwargs):
 
 def register_signals():
     if (
-        table_exists("Legajos_legajos")
-        and table_exists("Legajos_legajoalertas")
-        and table_exists("Legajos_legajosderivaciones")
-        and table_exists("Configuraciones_alertas")
+        table_exists("legajos_legajos")
+        and table_exists("legajos_legajoalertas")
+        and table_exists("legajos_legajosderivaciones")
+        and table_exists("configuraciones_alertas")
     ):
 
         @receiver(post_save, sender=Legajos)
