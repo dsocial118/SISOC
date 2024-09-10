@@ -17,7 +17,7 @@ class Usuarios(models.Model):
     imagen = models.ImageField(upload_to="usuarios/", null=True, blank=True)
     dni = models.PositiveIntegerField(null=True, blank=True, unique=True)
     telefono = models.CharField(
-        max_length=30,
+        max_length=255,
         null=True,
         blank=True,
     )
