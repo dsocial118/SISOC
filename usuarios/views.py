@@ -36,9 +36,9 @@ from usuarios.utils import recortar_imagen
 from .mixins import PermisosMixin
 
 
-ROL_ADMIN = "Usuarios.rol_admin"
-ROL_OBSERVADOR = "Usuarios.rol_observador"
-ROL_CONSULTANTE = "Usuarios.rol_consultante"
+ROL_ADMIN = "usuarios.rol_admin"
+ROL_OBSERVADOR = "usuarios.rol_observador"
+ROL_CONSULTANTE = "usuarios.rol_consultante"
 
 
 def set_dark_mode(request):
@@ -97,7 +97,7 @@ class UsuariosDetailView(UserPassesTestMixin, DetailView):
         ROL_CONSULTANTE,
     ]
     model = Usuarios
-    template_name = "Usuarios/usuarios_detail.html"
+    template_name = "usuarios/usuarios_detail.html"
 
     def test_func(self):
         # accede a la vista de detalle si es admin o si es el mismo usuario
@@ -116,14 +116,14 @@ class UsuariosDetailView(UserPassesTestMixin, DetailView):
 class UsuariosDeleteView(PermisosMixin, SuccessMessageMixin, DeleteView):
     permission_required = ROL_ADMIN
     model = Usuarios
-    template_name = "Usuarios/usuarios_confirm_delete.html"
+    template_name = "usuarios/usuarios_confirm_delete.html"
     success_url = reverse_lazy("usuarios_listar")
     success_message = "El registro fue eliminado correctamente"
 
 
 class UsuariosCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
     permission_required = ROL_ADMIN
-    template_name = "Usuarios/usuarios_create_form.html"
+    template_name = "usuarios/usuarios_create_form.html"
     form_class = UsuariosCreateForm
     model = User
 
@@ -163,7 +163,7 @@ class UsuariosUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
     permission_required = ROL_ADMIN
     model = User
     form_class = UsuariosUpdateForm
-    template_name = "Usuarios/usuarios_update_form.html"
+    template_name = "usuarios/usuarios_update_form.html"
 
     def form_valid(self, form):
         dni = form.cleaned_data["dni"]

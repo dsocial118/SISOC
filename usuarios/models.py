@@ -33,7 +33,7 @@ class Usuarios(models.Model):
 
     class Meta:
         verbose_name = "Usuario"
-        verbose_name_plural = "Usuarios"
+        verbose_name_plural = "usuarios"
         permissions = [
             ("rol_directivo", "Directivo"),
             ("rol_operativo", "Equipo operativo"),
