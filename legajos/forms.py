@@ -1,9 +1,12 @@
 from datetime import date
+from typing import Any
 
 from django import forms
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.files.base import ContentFile
 
 from usuarios.validators import MaxSizeFileValidator
+from usuarios.utils import recortar_imagen
 
 from .models import (
     DimensionEducacion,
@@ -86,13 +89,34 @@ class LegajosForm(forms.ModelForm):
             self.add_error(
                 "documento", "Ya existe un legajo con ese TIPO y NÚMERO de documento."
             )
-        # validación de fecha de nacimiento
+
         if fecha_nacimiento and fecha_nacimiento > date.today():
             self.add_error(
                 "fecha_nacimiento", "La fecha de termino debe ser menor al día de hoy."
             )
 
         return cleaned_data
+
+    def crear_dimensiones(self, legajo):
+        DimensionFamilia.objects.create(fk_legajo_id=legajo.id)
+        DimensionVivienda.objects.create(fk_legajo_id=legajo.id)
+        DimensionSalud.objects.create(fk_legajo_id=legajo.id)
+        DimensionEconomia.objects.create(fk_legajo_id=legajo.id)
+        DimensionEducacion.objects.create(fk_legajo_id=legajo.id)
+        DimensionTrabajo.objects.create(fk_legajo_id=legajo.id)
+
+    def save(self, commit: bool = True):
+        legajo = super().save(commit=False)
+
+        if legajo.foto:
+            buffer = recortar_imagen(legajo.foto)
+            legajo.foto.save(legajo.foto.name, ContentFile(buffer.getvalue()))
+
+        if commit:
+            legajo.save()
+            self.crear_dimensiones(legajo)
+
+        return legajo
 
     class Meta:
         model = Legajos

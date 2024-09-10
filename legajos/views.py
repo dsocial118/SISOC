@@ -80,6 +80,7 @@ class MunicipiosView(View):
 
         return JsonResponse(municipios, safe=False)
 
+
 class LocalidadesView(View):
     def get(self, request, *args, **kwargs):
         municipio_id = request.GET.get("municipio_id")
@@ -200,7 +201,6 @@ class LegajosDeleteView(PermisosMixin, DeleteView):
         context = super().get_context_data(**kwargs)
         legajo = self.get_object()
 
-        # Lista de nombres de relaciones
         context.update(
             {"relaciones_existentes": LegajosService.obtener_relaciones(legajo)}
         )
@@ -211,7 +211,6 @@ class LegajosDeleteView(PermisosMixin, DeleteView):
         usuario_eliminacion = self.request.user
         legajo = self.get_object()
 
-        # Graba la data del usuario que realiza la eliminacion en el LOG
         mensaje = (
             f"Legajo borrado - Nombre: {legajo.nombre}, Apellido: {legajo.apellido}, "
             f"Tipo de documento: {legajo.tipo_doc}, Documento: {legajo.documento}"
@@ -226,37 +225,20 @@ class LegajosCreateView(PermisosMixin, CreateView):
     form_class = LegajosForm
 
     def form_valid(self, form):
-        legajo = form.save(commit=False)
-
-        if legajo.foto:
-            buffer = recortar_imagen(legajo.foto)
-            legajo.foto.save(legajo.foto.name, ContentFile(buffer.getvalue()))
-
         try:
-            with transaction.atomic():
-                legajo.save()
+            legajo = form.save()
 
-                # Crear las dimensiones
-                DimensionFamilia.objects.create(fk_legajo_id=legajo.id)
-                DimensionVivienda.objects.create(fk_legajo_id=legajo.id)
-                DimensionSalud.objects.create(fk_legajo_id=legajo.id)
-                DimensionEconomia.objects.create(fk_legajo_id=legajo.id)
-                DimensionEducacion.objects.create(fk_legajo_id=legajo.id)
-                DimensionTrabajo.objects.create(fk_legajo_id=legajo.id)
-
-            # Redireccionar según el botón presionado
-            if "form_legajos" in self.request.POST:
-                return redirect("legajos_ver", pk=int(legajo.id))
-            elif "form_step2" in self.request.POST:
+            if "form_step2" in self.request.POST: # Boton CONTINUAR
                 return redirect("legajosdimensiones_editar", pk=int(legajo.id))
-            return None
-
+            else: # Boton GUARDAR
+                return redirect("legajos_ver", pk=int(legajo.id))
         except Exception as e:
             messages.error(
                 self.request,
-                f"Se produjo un error al crear las dimensiones. Por favor, inténtalo de nuevo. Error: {e}",
+                f"Se produjo un error al crear el legajo o sus dimensiones. Error: {e}",
             )
             return redirect("legajos_crear")
+
 
 
 class LegajosUpdateView(PermisosMixin, UpdateView):
