@@ -1,284 +1,237 @@
 {% extends "includes/base.html" %};
 {% load static %}
 {% block head %}
-<link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
-<!-- Chart -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/charts.css/dist/charts.min.css">
+    <link rel="stylesheet"
+          href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css" />
+    <!-- Chart -->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/charts.css/dist/charts.min.css" />
 {% endblock %}
-
-{% block title %}Dashboard{% endblock %};
-
-{% block titulo-pagina %}Dashboard{% endblock %};
-
-{% block breadcrumb %}
-
-{% endblock %};
-
-{% block menu-adicional %}
-{% endblock %};
-
+{% block title %}Dashboard{% endblock %}
+;
+{% block titulo-pagina %}Dashboard{% endblock %}
+;
+{% block breadcrumb %}{% endblock %}
+;
+{% block menu-adicional %}{% endblock %}
+;
 {% block content %}
-
-<div class="row">
-    <div class="col-12 col-sm-6 col-md-3">
-        <div class="info-box">
-            <span class="info-box-icon bg-info elevation-1"><i class="fas fa-address-card"></i></span>
-            <div class="info-box-content">
-                <span class="info-box-text text-center h6">Legajos Activos</span>
-                <span class="info-box-number text-center h4">{{ cantidad_legajos_activos|default_if_none:'No implementado' }}</span>
-            </div>
-
-        </div>
-
-    </div>
-
-    <div class="col-12 col-sm-6 col-md-3">
-        <div class="info-box mb-3">
-            <span class="info-box-icon bg-danger elevation-1"><i class="fas fa-bell"></i></span>
-            <div class="info-box-content">
-                <span class="info-box-text text-center h6">Alarmas Activas</span>
-                <span class="info-box-number text-center h4">{{ cantidad_legajos_con_alarmas_activas|default_if_none:'No implementado' }}</span>
-            </div>
-
-        </div>
-
-    </div>
-
-    <div class="clearfix hidden-md-up"></div>
-    <div class="col-12 col-sm-6 col-md-3">
-        <div class="info-box mb-3">
-            <span class="info-box-icon bg-success elevation-1"><i class="fas fa-share-square"></i></span>
-            <div class="info-box-content">
-                <span class="info-box-text text-center h6">Derivaciones Pendientes</span>
-                <span class="info-box-number text-center h4">{{ cantidad_dv_pendientes|default_if_none:'No implementado' }}</span>
-            </div>
-
-        </div>
-
-    </div>
-
-    <div class="col-12 col-sm-6 col-md-3">
-        <div class="info-box mb-3">
-            <span class="info-box-icon bg-warning elevation-1"><i class="fas fa-handshake"></i></span>
-            <div class="info-box-content">
-                <span class="info-box-text text-center h6 text-nowrap">Benef. de Acciones Sociales</span>
-                <span class="info-box-number text-center h4">{{ cantidad_legajos_con_planes_sociales|default_if_none:'No implementado' }}</span>
-            </div>
-
-        </div>
-
-    </div>
-
-    <div class="col-md-8">
-
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Mapa de Calor Argentina</h3>
-                <div class="card-tools">
-                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                        <i class="fas fa-minus"></i>
-                    </button>
+    <div class="row">
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="info-box">
+                <span class="info-box-icon bg-info elevation-1"><i class="fas fa-address-card"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text text-center h6">Legajos Activos</span>
+                    <span class="info-box-number text-center h4">{{ cantidad_legajos_activos|default_if_none:'No implementado' }}</span>
                 </div>
             </div>
-
-            <div class="card-body p-0">
-                <div class="row">
-                    <div class="col-12 mr-0 pr-2 pl-2 text-center">
-                        <div class="embed-responsive embed-responsive-4by3 text-center">
-                            <iframe
-                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d26285617.576453168!2d-84.86622600167856!3d-36.46496148004889!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95bccaf5f5fdc667%3A0x3d2f77992af00fa8!2sArgentina!5e0!3m2!1sen!2sar!4v1714519306937!5m2!1sen!2sar"></iframe>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="info-box mb-3">
+                <span class="info-box-icon bg-danger elevation-1"><i class="fas fa-bell"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text text-center h6">Alarmas Activas</span>
+                    <span class="info-box-number text-center h4">{{ cantidad_legajos_con_alarmas_activas|default_if_none:'No implementado' }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="clearfix hidden-md-up"></div>
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="info-box mb-3">
+                <span class="info-box-icon bg-success elevation-1"><i class="fas fa-share-square"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text text-center h6">Derivaciones Pendientes</span>
+                    <span class="info-box-number text-center h4">{{ cantidad_dv_pendientes|default_if_none:'No implementado' }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="info-box mb-3">
+                <span class="info-box-icon bg-warning elevation-1"><i class="fas fa-handshake"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text text-center h6 text-nowrap">Benef. de Acciones Sociales</span>
+                    <span class="info-box-number text-center h4">{{ cantidad_legajos_con_planes_sociales|default_if_none:'No implementado' }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Mapa de Calor Argentina</h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="row">
+                        <div class="col-12 mr-0 pr-2 pl-2 text-center">
+                            <div class="embed-responsive embed-responsive-4by3 text-center">
+                                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d26285617.576453168!2d-84.86622600167856!3d-36.46496148004889!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95bccaf5f5fdc667%3A0x3d2f77992af00fa8!2sArgentina!5e0!3m2!1sen!2sar!4v1714519306937!5m2!1sen!2sar"></iframe>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-
         </div>
-
+        <div class="col-md-4 pt-5">
+            <div class="info-box mb-2 bg-dark">
+                <span class="info-box-icon bg-success elevation-1"><i class="fas fa-users"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text text-left h6 text-nowrap">Población total beneficiarios PAS</span>
+                    <span class="info-box-number text-center h4">No implementado</span>
+                </div>
+            </div>
+            <div class="info-box mb-2 bg-dark">
+                <span class="info-box-icon bg-success elevation-1"><i class="fas fa-child"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text text-left h6 text-nowrap">Población total</span>
+                    <span class="info-box-number text-center h4">No implementado</span>
+                </div>
+            </div>
+            <div class="info-box mb-2 bg-dark">
+                <span class="info-box-icon bg-success elevation-1"><i class="fas fa-user-check"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text text-left h6 text-nowrap">Poblacion total con NBI (censo)</span>
+                    <span class="info-box-number text-center h4">No implementado</span>
+                </div>
+            </div>
+            <div class="info-box mb-2 bg-dark">
+                <span class="info-box-icon bg-success elevation-1"><i class="fas fa-child"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text text-left h6 text-nowrap">Poblacion 018 con NBI (censo)</span>
+                    <span class="info-box-number text-center h4">No implementado</span>
+                </div>
+            </div>
+            <div class="info-box mb-2 bg-dark">
+                <span class="info-box-icon bg-success elevation-1"><i class="fas fa-address-card"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text text-left h6 text-nowrap">Poblacion total registrada en HSU</span>
+                    <span class="info-box-number text-center h4">{{ cantidad_total_legajos }}</span>
+                </div>
+            </div>
+            <div class="info-box mb-2 bg-dark">
+                <span class="info-box-icon bg-success elevation-1"><i class="fas fa-address-card"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text text-left h6 text-nowrap">Poblacion 018 en HSU</span>
+                    <span class="info-box-number text-center h4">No implementado</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 mt-3 ">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Nacimientos</h3>
+                </div>
+                <div class="card-body">
+                    <div class="small-box bg-green mb-2">
+                        <div class="inner">
+                            <h3>{{ cantidad_legajos_40_dias|default_if_none:'No implementado' }}</h3>
+                            <p>Nuevos</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fas fa-baby"></i>
+                        </div>
+                    </div>
+                    <div class="small-box bg-green mb-2">
+                        <div class="inner">
+                            <h3>{{ cantidad_bb_riesgo|default_if_none:'No implementado' }}</h3>
+                            <p>En Riesgo</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                    </div>
+                    <div class="small-box bg-green mb-2">
+                        <div class="inner">
+                            <h3>{{ cantidad_bb_sin_derivacion_aceptada|default_if_none:'No implementado' }}</h3>
+                            <p>Sin Derivación</p>
+                        </div>
+                        <div class="icon">
+                            <i class="far fa-share-square"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 mt-3">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Niños de 0 a 18</h3>
+                </div>
+                <div class="card-body">
+                    <div class="small-box bg-primary mb-2">
+                        <div class="inner">
+                            <h3>No implementado</h3>
+                            <p>Total</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fas fa-child"></i>
+                        </div>
+                    </div>
+                    <div class="small-box bg-primary mb-2">
+                        <div class="inner">
+                            <h3>{{ cantidad_adolescente_riesgo|default_if_none:'No implementado' }}</h3>
+                            <p>En Riesgo</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                    </div>
+                    <div class="small-box bg-primary mb-2">
+                        <div class="inner">
+                            <h3>{{ cantidad_adolescente_sin_derivacion_aceptada|default_if_none:'No implementado' }}</h3>
+                            <p>Sin Derivación</p>
+                        </div>
+                        <div class="icon">
+                            <i class="far fa-share-square"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 mt-3">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Embarazadas</h3>
+                </div>
+                <div class="card-body">
+                    <div class="small-box bg-danger mb-2">
+                        <div class="inner">
+                            <h3>{{ cantidad_legajos_embarazados|default_if_none:'No implementado' }}</h3>
+                            <p>Total</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-female"></i>
+                        </div>
+                    </div>
+                    <div class="small-box bg-danger mb-2">
+                        <div class="inner">
+                            <h3>{{ cantidad_embarazos_en_riesgo|default_if_none:'No implementado' }}</h3>
+                            <p>En Riesgo / Sin Control</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                    </div>
+                    <div class="small-box bg-danger mb-2">
+                        <div class="inner">
+                            <h3>{{ embarazos_sin_derivacion_aceptada|default_if_none:'No implementado' }}</h3>
+                            <p>Sin adherencia</p>
+                        </div>
+                        <div class="icon">
+                            <i class="far fa-share-square"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <div class="col-md-4 pt-5">
-
-        <div class="info-box mb-2 bg-dark">
-            <span class="info-box-icon bg-success elevation-1"><i class="fas fa-users"></i></span>
-            <div class="info-box-content">
-                <span class="info-box-text text-left h6 text-nowrap">Población total beneficiarios PAS</span>
-                <span class="info-box-number text-center h4">No implementado</span>
-            </div>
-
-        </div>
-        <div class="info-box mb-2 bg-dark">
-            <span class="info-box-icon bg-success elevation-1"><i class="fas fa-child"></i></span>
-            <div class="info-box-content">
-                <span class="info-box-text text-left h6 text-nowrap">Población total </span>
-                <span class="info-box-number text-center h4">No implementado</span>
-            </div>
-
-        </div>
-        <div class="info-box mb-2 bg-dark">
-            <span class="info-box-icon bg-success elevation-1"><i class="fas fa-user-check"></i></span>
-            <div class="info-box-content">
-                <span class="info-box-text text-left h6 text-nowrap">Poblacion total con NBI (censo)</span>
-                <span class="info-box-number text-center h4">No implementado</span>
-            </div>
-
-        </div>
-        <div class="info-box mb-2 bg-dark">
-            <span class="info-box-icon bg-success elevation-1"><i class="fas fa-child"></i></span>
-            <div class="info-box-content">
-                <span class="info-box-text text-left h6 text-nowrap">Poblacion 018 con NBI (censo)</span>
-                <span class="info-box-number text-center h4">No implementado</span>
-            </div>
-        </div>
-
-        <div class="info-box mb-2 bg-dark">
-            <span class="info-box-icon bg-success elevation-1"><i class="fas fa-address-card"></i></span>
-            <div class="info-box-content">
-                <span class="info-box-text text-left h6 text-nowrap">Poblacion total registrada en HSU</span>
-                <span class="info-box-number text-center h4">{{ cantidad_total_legajos }}</span>
-            </div>
-        </div>
-        <div class="info-box mb-2 bg-dark">
-            <span class="info-box-icon bg-success elevation-1"><i class="fas fa-address-card"></i></span>
-            <div class="info-box-content">
-                <span class="info-box-text text-left h6 text-nowrap">Poblacion 018 en HSU</span>
-                <span class="info-box-number text-center h4">No implementado</span>
-            </div>
-        </div>
-      
-        </div>
-
-    <div class="col-lg-4 mt-3 ">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">
-                    Nacimientos
-                </h3>
-            </div>
-
-            <div class="card-body">
-                <div class="small-box bg-green mb-2">
-                    <div class="inner">
-                        <h3>{{ cantidad_legajos_40_dias|default_if_none:'No implementado' }}</h3>
-                        <p>Nuevos</p>
-                    </div>
-                    <div class="icon">
-                        <i class="fas fas fa-baby"></i>
-                    </div>
-                </div>
-                <div class="small-box bg-green mb-2">
-                    <div class="inner">
-                        <h3>{{ cantidad_bb_riesgo|default_if_none:'No implementado' }}</h3>
-                        <p>En Riesgo</p>
-                    </div>
-                    <div class="icon">
-                        <i class="fas fa-user-md"></i>
-                    </div>
-                </div>
-                <div class="small-box bg-green mb-2">
-                    <div class="inner">
-                        <h3>{{ cantidad_bb_sin_derivacion_aceptada|default_if_none:'No implementado' }}</h3>
-                        <p>Sin Derivación</p>
-                    </div>
-                    <div class="icon">
-                        <i class="far fa-share-square"></i>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-    </div>
-
-    <div class="col-lg-4 mt-3">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">
-                    Niños de 0 a 18
-                </h3>
-            </div>
-
-            <div class="card-body">
-                <div class="small-box bg-primary mb-2">
-                    <div class="inner">
-                        <h3>No implementado</h3>
-                        <p>Total</p>
-                    </div>
-                    <div class="icon">
-                        <i class="fas fas fa-child"></i>
-                    </div>
-                </div>
-                <div class="small-box bg-primary mb-2">
-                    <div class="inner">
-                        <h3>{{ cantidad_adolescente_riesgo|default_if_none:'No implementado' }}</h3>
-                        <p>En Riesgo</p>
-                    </div>
-                    <div class="icon">
-                        <i class="fas fa-user-md"></i>
-                    </div>
-                </div>
-                <div class="small-box bg-primary mb-2">
-                    <div class="inner">
-                        <h3>{{ cantidad_adolescente_sin_derivacion_aceptada|default_if_none:'No implementado' }}</h3>
-                        <p>Sin Derivación</p>
-                    </div>
-                    <div class="icon">
-                        <i class="far fa-share-square"></i>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-    </div>
-
-    <div class="col-lg-4 mt-3">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">
-                    Embarazadas
-                </h3>
-            </div>
-
-            <div class="card-body">
-                <div class="small-box bg-danger mb-2">
-                    <div class="inner">
-                        <h3>{{ cantidad_legajos_embarazados|default_if_none:'No implementado' }}</h3>
-                        <p>Total</p>
-                    </div>
-                    <div class="icon">
-                        <i class="fas fa-female"></i>
-                    </div>
-                </div>
-                <div class="small-box bg-danger mb-2">
-                    <div class="inner">
-                        <h3>{{ cantidad_embarazos_en_riesgo|default_if_none:'No implementado' }}</h3>
-                        <p>En Riesgo / Sin Control </p>
-                    </div>
-                    <div class="icon">
-                        <i class="fas fa-user-md"></i>
-                    </div>
-                </div>
-                <div class="small-box bg-danger mb-2">
-                    <div class="inner">
-                        <h3>{{ embarazos_sin_derivacion_aceptada|default_if_none:'No implementado' }}</h3>
-                        <p>Sin adherencia</p>
-                    </div>
-                    <div class="icon">
-                        <i class="far fa-share-square"></i>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
 {% endblock %}
 {% block customJS %}
-<!--Utiliza el custom js-->
-<!-- Chart -->
-<!--script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script-->
-<!--script src="{% static 'custom/js/dashboard.js' %}"></script-->
+    <!--Utiliza el custom js-->
+    <!-- Chart -->
+    <!--script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script -->
+    <!--script src="{% static 'custom/js/dashboard.js' %}"></script -->
 {% endblock %}
