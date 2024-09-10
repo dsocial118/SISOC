@@ -28,9 +28,9 @@
             <div class="form-group">
                 <div class="input-group input-group-lg">
                     <input type="search" class="form-control form-control-lg" placeholder="Buscar"
-                        title="Ingresar DNI o apellido." name="busqueda">
+                        title="Ingresar DNI o apellido." id="legajoListSearchInput" name="busqueda">
                     <div class="input-group-append">
-                        <button type="submit" class="btn btn-lg btn-primary">
+                        <button type="submit" id="legajoListBuscar" class="btn btn-lg btn-primary">
                             <i class="fa fa-search"></i>
                         </button>
                     </div>
@@ -151,4 +151,15 @@
 {% endblock %}
 
 {% block customJS %}
+<script>
+    let legajosListar = "{% url 'legajos_listar' %}";
+    console.log(legajosListar);
+    let baseUrlLegajosVer = "{% url 'legajos_ver' 0 %}".replace('/0', '');
+    console.log(baseUrlLegajosVer);
+    let baseUrlLegajosEditar = "{% url 'legajos_editar' 0 %}".replace('/0', '');
+    console.log(baseUrlLegajosEditar);
+    let baseUrlLegajosEliminar = "{% url 'legajos_eliminar' 0 %}".replace('/0', '');
+    console.log(baseUrlLegajosEliminar);
+</script>
+<script src="{% static 'custom/js/legajolist.js' %}"></script>
 {% endblock %}
