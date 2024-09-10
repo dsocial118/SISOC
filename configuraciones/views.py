@@ -51,9 +51,9 @@ from .forms import (
 
 class SecretariasListView(PermisosMixin, ListView):
     permission_required = [
-        "Usuarios.rol_admin",
-        "Usuarios.rol_observador",
-        "Usuarios.rol_consultante",
+        "usuarios.rol_admin",
+        "usuarios.rol_observador",
+        "usuarios.rol_consultante",
     ]
     model = Secretarias
 
@@ -75,29 +75,29 @@ class SecretariasListView(PermisosMixin, ListView):
 
 class SecretariasDetailView(PermisosMixin, DetailView):
     permission_required = permission_required = [
-        "Usuarios.rol_admin",
-        "Usuarios.rol_observador",
-        "Usuarios.rol_consultante",
+        "usuarios.rol_admin",
+        "usuarios.rol_observador",
+        "usuarios.rol_consultante",
     ]
     model = Secretarias
 
 
 class SecretariasDeleteView(PermisosMixin, SuccessMessageMixin, DeleteView):
-    permission_required = permission_required = "Usuarios.rol_admin"
+    permission_required = permission_required = "usuarios.rol_admin"
     model = Secretarias
     success_url = reverse_lazy("secretarias_listar")
     success_message = "El registro fue eliminado correctamente"
 
 
 class SecretariasCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
-    permission_required = permission_required = "Usuarios.rol_admin"
+    permission_required = permission_required = "usuarios.rol_admin"
     model = Secretarias
     form_class = SecretariasForm
     success_message = "%(nombre)s fue registrado correctamente"
 
 
 class SecretariasUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = Secretarias
     form_class = SecretariasForm
     success_message = "%(nombre)s fue editado correctamente"
@@ -111,9 +111,9 @@ class SecretariasUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
 
 class SubsecretariasListView(PermisosMixin, ListView):
     permission_required = [
-        "Usuarios.rol_admin",
-        "Usuarios.rol_observador",
-        "Usuarios.rol_consultante",
+        "usuarios.rol_admin",
+        "usuarios.rol_observador",
+        "usuarios.rol_consultante",
     ]
     model = Subsecretarias
 
@@ -137,29 +137,29 @@ class SubsecretariasListView(PermisosMixin, ListView):
 
 class SubsecretariasDetailView(PermisosMixin, DetailView):
     permission_required = [
-        "Usuarios.rol_admin",
-        "Usuarios.rol_observador",
-        "Usuarios.rol_consultante",
+        "usuarios.rol_admin",
+        "usuarios.rol_observador",
+        "usuarios.rol_consultante",
     ]
     model = Subsecretarias
 
 
 class SubsecretariasDeleteView(PermisosMixin, SuccessMessageMixin, DeleteView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = Subsecretarias
     success_url = reverse_lazy("secretarias_listar")
     success_message = "El registro fue eliminado correctamente"
 
 
 class SubsecretariasCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = Subsecretarias
     form_class = SubsecretariasForm
     success_message = "%(nombre)s fue registrado correctamente"
 
 
 class SubsecretariasUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = Subsecretarias
     form_class = SubsecretariasForm
     success_message = "%(nombre)s fue editado correctamente"
@@ -173,9 +173,9 @@ class SubsecretariasUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
 
 class OrganismosListView(PermisosMixin, ListView):
     permission_required = [
-        "Usuarios.rol_admin",
-        "Usuarios.rol_observador",
-        "Usuarios.rol_consultante",
+        "usuarios.rol_admin",
+        "usuarios.rol_observador",
+        "usuarios.rol_consultante",
     ]
     model = Organismos
 
@@ -197,9 +197,9 @@ class OrganismosListView(PermisosMixin, ListView):
 
 class OrganismosDetailView(PermisosMixin, DetailView):
     permission_required = [
-        "Usuarios.rol_admin",
-        "Usuarios.rol_observador",
-        "Usuarios.rol_consultante",
+        "usuarios.rol_admin",
+        "usuarios.rol_observador",
+        "usuarios.rol_consultante",
     ]
     model = Organismos
 
@@ -214,21 +214,21 @@ class OrganismosDetailView(PermisosMixin, DetailView):
 
 
 class OrganismosDeleteView(PermisosMixin, SuccessMessageMixin, DeleteView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = Organismos
     success_url = reverse_lazy("organismos_listar")
     success_message = "El registro fue eliminado correctamente"
 
 
 class OrganismosCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = Organismos
     form_class = OrganismosForm
     success_message = "%(nombre)s fue registrado correctamente"
 
 
 class OrganismosUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = Organismos
     form_class = OrganismosForm
     success_message = "%(nombre)s fue editado correctamente"
@@ -242,9 +242,9 @@ class OrganismosUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
 
 class ProgramasListView(PermisosMixin, ListView):
     permission_required = [
-        "Usuarios.rol_admin",
-        "Usuarios.rol_observador",
-        "Usuarios.rol_consultante",
+        "usuarios.rol_admin",
+        "usuarios.rol_observador",
+        "usuarios.rol_consultante",
     ]
     model = Programas
     template_name = "programas_list.html"
@@ -274,29 +274,29 @@ class ProgramasListView(PermisosMixin, ListView):
 
 class ProgramasDetailView(PermisosMixin, DetailView):
     permission_required = [
-        "Usuarios.rol_admin",
-        "Usuarios.rol_observador",
-        "Usuarios.rol_consultante",
+        "usuarios.rol_admin",
+        "usuarios.rol_observador",
+        "usuarios.rol_consultante",
     ]
     model = Programas
 
 
 class ProgramasDeleteView(PermisosMixin, SuccessMessageMixin, DeleteView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = Programas
     success_url = reverse_lazy("programas_listar")
     success_message = "El registro fue eliminado correctamente"
 
 
 class ProgramasCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = Programas
     form_class = ProgramasForm
     success_message = "%(nombre)s fue registrado correctamente"
 
 
 class ProgramasUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = Programas
     form_class = ProgramasForm
     success_message = "%(nombre)s fue editado correctamente"
@@ -310,9 +310,9 @@ class ProgramasUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
 
 class PlanesSocialesListView(PermisosMixin, ListView):
     permission_required = [
-        "Usuarios.rol_admin",
-        "Usuarios.rol_observador",
-        "Usuarios.rol_consultante",
+        "usuarios.rol_admin",
+        "usuarios.rol_observador",
+        "usuarios.rol_consultante",
     ]
     model = PlanesSociales
 
@@ -336,29 +336,29 @@ class PlanesSocialesListView(PermisosMixin, ListView):
 
 class PlanesSocialesDetailView(PermisosMixin, DetailView):
     permission_required = [
-        "Usuarios.rol_admin",
-        "Usuarios.rol_observador",
-        "Usuarios.rol_consultante",
+        "usuarios.rol_admin",
+        "usuarios.rol_observador",
+        "usuarios.rol_consultante",
     ]
     model = PlanesSociales
 
 
 class PlanesSocialesDeleteView(PermisosMixin, SuccessMessageMixin, DeleteView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = PlanesSociales
     success_url = reverse_lazy("planes_sociales_listar")
     success_message = "El registro fue eliminado correctamente"
 
 
 class PlanesSocialesCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = PlanesSociales
     form_class = PlanesSocialesForm
     success_message = "%(nombre)s fue registrado correctamente"
 
 
 class PlanesSocialesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = PlanesSociales
     form_class = PlanesSocialesForm
     success_message = "%(nombre)s fue editado correctamente"
@@ -372,9 +372,9 @@ class PlanesSocialesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
 
 class AgentesExternosListView(PermisosMixin, ListView):
     permission_required = [
-        "Usuarios.rol_admin",
-        "Usuarios.rol_observador",
-        "Usuarios.rol_consultante",
+        "usuarios.rol_admin",
+        "usuarios.rol_observador",
+        "usuarios.rol_consultante",
     ]
     model = AgentesExternos
 
@@ -399,22 +399,22 @@ class AgentesExternosListView(PermisosMixin, ListView):
 
 class AgentesExternosDetailView(PermisosMixin, DetailView):
     permission_required = [
-        "Usuarios.rol_admin",
-        "Usuarios.rol_observador",
-        "Usuarios.rol_consultante",
+        "usuarios.rol_admin",
+        "usuarios.rol_observador",
+        "usuarios.rol_consultante",
     ]
     model = AgentesExternos
 
 
 class AgentesExternosDeleteView(PermisosMixin, SuccessMessageMixin, DeleteView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = AgentesExternos
     success_url = reverse_lazy("agentesexternos_listar")
     success_message = "El registro fue eliminado correctamente"
 
 
 class AgentesExternosCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = AgentesExternos
     form_class = AgentesExternosForm
     success_message = "%(nombre)s fue registrado correctamente"
@@ -434,7 +434,7 @@ class AgentesExternosCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
 
 
 class AgentesExternosUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = AgentesExternos
     form_class = AgentesExternosForm
     success_message = "%(nombre)s fue editado correctamente"
@@ -448,10 +448,10 @@ class AgentesExternosUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
 
 class GruposDestinatariosListView(PermisosMixin, ListView):
     permission_required = [
-        "Configuraciones.view_gruposdestinatarios",
-        "Usuarios.rol_admin",
-        "Usuarios.rol_observador",
-        "Usuarios.rol_consultante",
+        "configuraciones.view_gruposdestinatarios",
+        "usuarios.rol_admin",
+        "usuarios.rol_observador",
+        "usuarios.rol_consultante",
     ]
     model = GruposDestinatarios
 
@@ -477,29 +477,29 @@ class GruposDestinatariosListView(PermisosMixin, ListView):
 
 class GruposDestinatariosDetailView(PermisosMixin, DetailView):
     permission_required = [
-        "Usuarios.rol_admin",
-        "Usuarios.rol_observador",
-        "Usuarios.rol_consultante",
+        "usuarios.rol_admin",
+        "usuarios.rol_observador",
+        "usuarios.rol_consultante",
     ]
     model = GruposDestinatarios
 
 
 class GruposDestinatariosDeleteView(PermisosMixin, SuccessMessageMixin, DeleteView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = GruposDestinatarios
     success_url = reverse_lazy("gruposdestinatarios_listar")
     success_message = "El registro fue eliminado correctamente"
 
 
 class GruposDestinatariosCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = GruposDestinatarios
     form_class = GruposDestinatariosForm
     success_message = "%(nombre)s fue registrado correctamente"
 
 
 class GruposDestinatariosUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = GruposDestinatarios
     form_class = GruposDestinatariosForm
     success_message = "%(nombre)s fue editado correctamente"
@@ -513,9 +513,9 @@ class GruposDestinatariosUpdateView(PermisosMixin, SuccessMessageMixin, UpdateVi
 
 class CategoriaAlertasListView(PermisosMixin, ListView):
     permission_required = [
-        "Usuarios.rol_admin",
-        "Usuarios.rol_observador",
-        "Usuarios.rol_consultante",
+        "usuarios.rol_admin",
+        "usuarios.rol_observador",
+        "usuarios.rol_consultante",
     ]
     model = CategoriaAlertas
 
@@ -535,22 +535,22 @@ class CategoriaAlertasListView(PermisosMixin, ListView):
 
 class CategoriaAlertasDetailView(PermisosMixin, DetailView):
     permission_required = [
-        "Usuarios.rol_admin",
-        "Usuarios.rol_observador",
-        "Usuarios.rol_consultante",
+        "usuarios.rol_admin",
+        "usuarios.rol_observador",
+        "usuarios.rol_consultante",
     ]
     model = CategoriaAlertas
 
 
 class CategoriaAlertasDeleteView(PermisosMixin, SuccessMessageMixin, DeleteView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = CategoriaAlertas
     success_url = reverse_lazy("categoriaalertas_listar")
     success_message = "El registro fue eliminado correctamente"
 
 
 class CategoriaAlertasCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = CategoriaAlertas
     form_class = CategoriaAlertasForm
 
@@ -558,7 +558,7 @@ class CategoriaAlertasCreateView(PermisosMixin, SuccessMessageMixin, CreateView)
 
 
 class CategoriaAlertasUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = CategoriaAlertas
     form_class = CategoriaAlertasForm
 
@@ -572,9 +572,9 @@ class CategoriaAlertasUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView)
 
 class AlertasListView(PermisosMixin, ListView):
     permission_required = [
-        "Usuarios.rol_admin",
-        "Usuarios.rol_observador",
-        "Usuarios.rol_consultante",
+        "usuarios.rol_admin",
+        "usuarios.rol_observador",
+        "usuarios.rol_consultante",
     ]
     model = Alertas
 
@@ -594,22 +594,22 @@ class AlertasListView(PermisosMixin, ListView):
 
 class AlertasDetailView(PermisosMixin, DetailView):
     permission_required = [
-        "Usuarios.rol_admin",
-        "Usuarios.rol_observador",
-        "Usuarios.rol_consultante",
+        "usuarios.rol_admin",
+        "usuarios.rol_observador",
+        "usuarios.rol_consultante",
     ]
     model = Alertas
 
 
 class AlertasDeleteView(PermisosMixin, SuccessMessageMixin, DeleteView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = Alertas
     success_url = reverse_lazy("alertas_listar")
     success_message = "El registro fue eliminado correctamente"
 
 
 class AlertasCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = Alertas
     form_class = AlertasForm
 
@@ -617,7 +617,7 @@ class AlertasCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
 
 
 class AlertasUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = Alertas
     form_class = AlertasForm
 
@@ -632,9 +632,9 @@ class AlertasUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
 
 class EquiposListView(PermisosMixin, ListView):
     permission_required = [
-        "Usuarios.rol_admin",
-        "Usuarios.rol_observador",
-        "Usuarios.rol_consultante",
+        "usuarios.rol_admin",
+        "usuarios.rol_observador",
+        "usuarios.rol_consultante",
     ]
     model = Equipos
 
@@ -658,22 +658,22 @@ class EquiposListView(PermisosMixin, ListView):
 
 class EquiposDetailView(PermisosMixin, DetailView):
     permission_required = [
-        "Usuarios.rol_admin",
-        "Usuarios.rol_observador",
-        "Usuarios.rol_consultante",
+        "usuarios.rol_admin",
+        "usuarios.rol_observador",
+        "usuarios.rol_consultante",
     ]
     model = Equipos
 
 
 class EquiposDeleteView(PermisosMixin, SuccessMessageMixin, DeleteView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = Equipos
     success_url = reverse_lazy("equipos_listar")
     success_message = "El registro fue eliminado correctamente"
 
 
 class EquiposCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = Equipos
     form_class = EquiposForm
     success_message = "%(nombre)s fue registrado correctamente"
@@ -689,7 +689,7 @@ class EquiposCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
 
 
 class EquiposUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = Equipos
     form_class = EquiposForm
     success_message = "%(nombre)s fue editado correctamente"
@@ -712,9 +712,9 @@ class EquiposUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
 
 class AccionesListView(PermisosMixin, ListView):
     permission_required = [
-        "Usuarios.rol_admin",
-        "Usuarios.rol_observador",
-        "Usuarios.rol_consultante",
+        "usuarios.rol_admin",
+        "usuarios.rol_observador",
+        "usuarios.rol_consultante",
     ]
     model = Acciones
 
@@ -735,26 +735,26 @@ class AccionesListView(PermisosMixin, ListView):
 
 
 class AccionesDetailView(PermisosMixin, DetailView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = Acciones
 
 
 class AccionesDeleteView(PermisosMixin, SuccessMessageMixin, DeleteView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = Acciones
     success_url = reverse_lazy("acciones_listar")
     success_message = "El registro fue eliminado correctamente"
 
 
 class AccionesCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = Acciones
     form_class = AccionesForm
     success_message = "%(nombre)s fue registrado correctamente"
 
 
 class AccionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = Acciones
     form_class = AccionesForm
     success_message = "%(nombre)s fue editado correctamente"
@@ -767,7 +767,7 @@ class AccionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
 
 
 class CriteriosListView(PermisosMixin, ListView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = Criterios
 
     # Funcion de busqueda
@@ -790,26 +790,26 @@ class CriteriosListView(PermisosMixin, ListView):
 
 
 class CriteriosDetailView(PermisosMixin, DetailView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = Criterios
 
 
 class CriteriosDeleteView(PermisosMixin, SuccessMessageMixin, DeleteView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = Criterios
     success_url = reverse_lazy("criterios_listar")
     success_message = "El registro fue eliminado correctamente"
 
 
 class CriteriosCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = Criterios
     form_class = CriteriosForm
     success_message = "%(nombre)s fue registrado correctamente"
 
 
 class CriteriosUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = Criterios
     form_class = CriteriosForm
     success_message = "%(nombre)s fue editado correctamente"
@@ -822,7 +822,7 @@ class CriteriosUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
 
 
 class IndicesListView(PermisosMixin, ListView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = Indices
 
     # Funcion de busqueda
@@ -845,12 +845,12 @@ class IndicesListView(PermisosMixin, ListView):
 
 
 class IndicesDetailView(PermisosMixin, DetailView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = Indices
 
 
 class IndicesDeleteView(PermisosMixin, SuccessMessageMixin, DeleteView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = Indices
     success_url = reverse_lazy("indices_listar")
     success_message = "El registro fue eliminado correctamente"
@@ -865,7 +865,7 @@ class IndiceInline:
 
     form_class = IndicesForm
     model = Indices
-    template_name = "Configuraciones/indices_form.html"
+    template_name = "configuraciones/indices_form.html"
 
 
 def delete_variant(request, pk):
@@ -885,7 +885,7 @@ def delete_variant(request, pk):
 
 
 class IndicesCreateView(PermisosMixin, IndiceInline, CreateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
 
     def get_context_data(self, **kwargs):
         ctx = super(IndicesCreateView, self).get_context_data(**kwargs)
@@ -911,7 +911,7 @@ class IndicesCreateView(PermisosMixin, IndiceInline, CreateView):
 
 
 class IndicesUpdateView(PermisosMixin, IndiceInline, UpdateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
 
     def get_context_data(self, **kwargs):
         ctx = super(IndicesUpdateView, self).get_context_data(**kwargs)
@@ -939,9 +939,9 @@ class IndicesUpdateView(PermisosMixin, IndiceInline, UpdateView):
 
 class VacantesListView(PermisosMixin, ListView):
     permission_required = [
-        "Usuarios.rol_admin",
-        "Usuarios.rol_observador",
-        "Usuarios.rol_consultante",
+        "usuarios.rol_admin",
+        "usuarios.rol_observador",
+        "usuarios.rol_consultante",
     ]
     model = Vacantes
 
@@ -962,29 +962,29 @@ class VacantesListView(PermisosMixin, ListView):
 
 class VacantesDetailView(PermisosMixin, DetailView):
     permission_required = [
-        "Usuarios.rol_admin",
-        "Usuarios.rol_observador",
-        "Usuarios.rol_consultante",
+        "usuarios.rol_admin",
+        "usuarios.rol_observador",
+        "usuarios.rol_consultante",
     ]
     model = Vacantes
 
 
 class VacantesDeleteView(PermisosMixin, SuccessMessageMixin, DeleteView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = Vacantes
     success_url = reverse_lazy("vacantes_listar")
     success_message = "El registro fue eliminado correctamente"
 
 
 class VacantesCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = Vacantes
     form_class = VacantesForm
     success_message = "%(nombre)s fue registrado correctamente"
 
 
 class VacantesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
-    permission_required = "Usuarios.rol_admin"
+    permission_required = "usuarios.rol_admin"
     model = Vacantes
     form_class = VacantesForm
     success_message = "%(nombre)s fue editado correctamente"
