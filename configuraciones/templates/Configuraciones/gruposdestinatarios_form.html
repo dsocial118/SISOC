@@ -1,0 +1,73 @@
+{% extends "includes/base.html" %}
+{% load static %}
+{% block title %}Grupo de agentes{% endblock %}
+;
+{% block titulo-pagina %}Grupo de agentes{% endblock %}
+;
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right ">
+        <li class="breadcrumb-item text-muted ">Configuraciones</li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'gruposdestinatarios_listar' %}"
+               class="text-muted text-decoration-none">Grupo de agentes</a>
+        </li>
+        <li class="breadcrumb-item active">
+            {% if request.resolver_match.url_name == "gruposdestinatarios_editar" %}
+                Editar
+            {% else %}
+                Agregar
+            {% endif %}
+        </li>
+    </ol>
+{% endblock %}
+;
+{% load crispy_forms_tags %}
+{% block content %}
+    <div class="row">
+        <div class="col">
+            <form class="needs-validation" novalidate method="POST">
+                <!-- Security token -->
+                {% csrf_token %}
+                <div class="card card-primary card-outline">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            {% if request.resolver_match.url_name == "gruposdestinatarios_editar" %}
+                                Editar
+                            {% else %}
+                                Agregar
+                            {% endif %}
+                            Grupo de agente
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-group">{{ form.nombre| as_crispy_field }}</div>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-group">{{ form.m2m_agentes_externos| as_crispy_field }}</div>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-group">{{ form.m2m_usuarios| as_crispy_field }}</div>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-group">{{ form.observaciones| as_crispy_field }}</div>
+                            </div>
+                            <div class="col-12 {% if request.resolver_match.url_name != 'gruposdestinatarios_editar' %}d-none{% endif %}">
+                                <div class="form-group">{{ form.estado| as_crispy_field }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 mx-2">
+                    <button type="submit" class="btn btn-primary mr-1">Confirmar</button>
+                    <a href="{% url 'gruposdestinatarios_listar' %}"
+                       class="btn btn-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock content %}
+{% block customJS %}
+    <script src="{% static 'custom/js/Configuraciones.js' %}"></script>
+{% endblock customJS %}

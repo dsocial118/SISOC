@@ -1,44 +1,39 @@
 {% extends "includes/base.html" %};
 {% load static %}
-
-{% block title %}Error 500{% endblock %};
-
-{% block titulo-pagina %}{% endblock %};
-
-{% block breadcrumb %}
-
-{% endblock %};
-
-{% block menu-adicional %}
-{% endblock %};
-
+{% block title %}Error 500{% endblock %}
+;
+{% block titulo-pagina %}{% endblock %}
+;
+{% block breadcrumb %}{% endblock %}
+;
+{% block menu-adicional %}{% endblock %}
+;
 {% block content %}
-
-<div class="error-page align-items-center">
-    <h2 class="headline text-danger">
-        500
-    </h2>
-    <div class="error-content">
-        <h3><i class="fas fa-exclamation-triangle text-danger"></i>
-            ¡Ups! Algo salió mal.
-        </h3>
-        <div>
-            Trabajaremos para solucionarlo de inmediato.
-        </div>
-        <div class="mt-2">Mientras tanto, puede <a href="{% url 'legajos_listar' %}">volver al inicio </a>
-        o intentar usar el buscador de menú.
-        </p>
-        <form class="search-form" method="GET" action="{% url 'busqueda_menu'%}">
-            <div class="input-group">
-                <input type="text" name='punto_menu' class="form-control" placeholder="Buscar">
-                <div class="input-group-append">
-                    <button type="submit" name="submit" class="btn btn-danger"><i class="fas fa-search"></i>
-                    </button>
-                </div>
+    <div class="error-page align-items-center">
+        <h2 class="headline text-danger">500</h2>
+        <div class="error-content">
+            <h3>
+                <i class="fas fa-exclamation-triangle text-danger"></i>
+                ¡Ups! Algo salió mal.
+            </h3>
+            <div>Trabajaremos para solucionarlo de inmediato.</div>
+            <div class="mt-2">
+                Mientras tanto, puede <a href="{% url 'legajos_listar' %}">volver al inicio</a>
+                o intentar usar el buscador de menú.
+                <form class="search-form" method="GET" action="{% url 'busqueda_menu' %}">
+                    <div class="input-group">
+                        <input type="text"
+                               name='punto_menu'
+                               class="form-control"
+                               placeholder="Buscar" />
+                        <div class="input-group-append">
+                            <button type="submit" name="submit" class="btn btn-danger">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
             </div>
-
-        </form>
+        </div>
     </div>
-</div>
-
-{% endblock content%}
+{% endblock content %}

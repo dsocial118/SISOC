@@ -1,48 +1,42 @@
 {% extends "includes/base.html" %};
 {% load static %}
-
-{% block title %}Error 404{% endblock %};
-
-{% block titulo-pagina %}{% endblock %};
-
-{% block breadcrumb %}
-
-{% endblock %};
-
-{% block menu-adicional %}
-{% endblock %};
-
+{% block title %}Error 404{% endblock %}
+;
+{% block titulo-pagina %}{% endblock %}
+;
+{% block breadcrumb %}{% endblock %}
+;
+{% block menu-adicional %}{% endblock %}
+;
 {% block content %}
-<div class="error-page align-items-center">
-    <h2 class="headline text-warning">
-        404
-    </h2>
-    <div class="error-content">
-        <h3><i class="fas fa-exclamation-triangle text-warning"></i>
-            ¡Ups! Algo salió mal.
-        </h3>
-        <p>
-
-        <div>
-
-            No existe la página o el registro que estaba buscando.
-        </div>
-        <div class="mt-2">Puede 
-        <a href="{% url 'legajos_listar' %}">volver al inicio </a>
-        o intentar usar el buscador de menú.
-
-        </p>
-        <form class="search-form" method="GET" action="{% url 'busqueda_menu'%}">
-            <div class="input-group">
-                <input type="text" name="punto_menu" class="form-control" placeholder="Buscar">
-                <div class="input-group-append">
-                    <button type="submit" name="submit" class="btn btn-warning"><i class="fas fa-search"></i>
-                    </button>
-                </div>
+    <div class="error-page align-items-center">
+        <h2 class="headline text-warning">404</h2>
+        <div class="error-content">
+            <h3>
+                <i class="fas fa-exclamation-triangle text-warning"></i>
+                ¡Ups! Algo salió mal.
+            </h3>
+            <p>
+                <div>No existe la página o el registro que estaba buscando.</div>
+                <div class="mt-2">
+                    Puede
+                    <a href="{% url 'legajos_listar' %}">volver al inicio</a>
+                    o intentar usar el buscador de menú.
+                </p>
+                <form class="search-form" method="GET" action="{% url 'busqueda_menu' %}">
+                    <div class="input-group">
+                        <input type="text"
+                               name="punto_menu"
+                               class="form-control"
+                               placeholder="Buscar" />
+                        <div class="input-group-append">
+                            <button type="submit" name="submit" class="btn btn-warning">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
             </div>
-
-        </form>
+        </div>
     </div>
-</div>
-
-{% endblock content%}
+{% endblock content %}
