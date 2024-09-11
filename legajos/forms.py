@@ -496,9 +496,53 @@ class DimensionSaludForm(forms.ModelForm):
 
 
 class DimensionEducacionForm(forms.ModelForm):
+    provinciaInstitucion = forms.ModelChoiceField(
+        label="Provincia",
+        queryset=LegajoProvincias.objects.all(),
+    )
+    municipioInstitucion = forms.ModelChoiceField(
+        label="Municipio",
+        queryset=LegajoMunicipio.objects.none(),
+    )
+    localidadInstitucion = forms.ModelChoiceField(
+        label="Localidad",
+        queryset=LegajoLocalidad.objects.none(),
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["fk_legajo"].widget = forms.HiddenInput()
+
+        # Configurar el queryset del campo 'provinciaInstitucion' para cargar solo las provincias
+        self.fields["provinciaInstitucion"].queryset = LegajoProvincias.objects.all()
+        # Configurar los querysets de los campos 'municipioInstitucion' y 'localidadInstitucion' para que estén vacíos inicialmente
+        self.fields["municipioInstitucion"].queryset = LegajoMunicipio.objects.none()
+        self.fields["localidadInstitucion"].queryset = LegajoLocalidad.objects.none()
+
+        # Actualizar los querysets si los datos están presentes en el formulario
+        if "municipioInstitucion" in self.data:
+            try:
+                municipio_id = int(self.data.get("municipioInstitucion"))
+                self.fields["municipioInstitucion"].queryset = (
+                    LegajoMunicipio.objects.filter(id=municipio_id).order_by(
+                        "nombre_region"
+                    )
+                )
+            except (ValueError, TypeError):
+                self.fields["municipioInstitucion"].queryset = (
+                    LegajoMunicipio.objects.none()
+                )
+
+        if "localidadInstitucion" in self.data:
+            try:
+                localidad_id = int(self.data.get("localidadInstitucion"))
+                self.fields["localidadInstitucion"].queryset = (
+                    LegajoLocalidad.objects.filter(id=localidad_id).order_by("nombre")
+                )
+            except (ValueError, TypeError):
+                self.fields["localidadInstitucion"].queryset = (
+                    LegajoLocalidad.objects.none()
+                )
 
     class Meta:
         model = DimensionEducacion
@@ -510,11 +554,6 @@ class DimensionEducacionForm(forms.ModelForm):
                     "rows": 3,
                 }
             ),
-            #'asiste_escuela': forms.CheckboxInput(),
-            #'interesEstudio': forms.CheckboxInput(),
-            #'interesCurso': forms.CheckboxInput(),
-            #'realizandoCurso': forms.CheckboxInput()
-            # pruebas para hacer funcionar la seleccion multiple
             "areaCurso": forms.SelectMultiple(attrs={"class": "form-control"}),
             "areaOficio": forms.SelectMultiple(attrs={"class": "form-control"}),
         }
@@ -524,8 +563,6 @@ class DimensionEducacionForm(forms.ModelForm):
         if len(data) > 3:
             raise forms.ValidationError("Solo puedes seleccionar hasta 3 opciones.")
         return data
-
-    # fin de prueba
 
 
 class DimensionEconomiaForm(forms.ModelForm):
