@@ -516,7 +516,11 @@ class LegajosDetailView(DetailView):
                 | Q(fecha_fin__isnull=True)
             ).distinct()
 
-            dimensiones = {key.strip(): value for key, value in CHOICE_DIMENSIONES if key is not None}
+            dimensiones = {
+                key.strip(): value
+                for key, value in CHOICE_DIMENSIONES
+                if key is not None
+            }
             todas_dimensiones = [dimension for dimension in dimensiones.keys()]
             datos_por_dimension = {
                 dimension: [0] * 12 for dimension in todas_dimensiones
