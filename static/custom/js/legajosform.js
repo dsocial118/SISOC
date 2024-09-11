@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('id_nacionalidad').classList.add('select2');
 
     document.getElementById('id_fk_provincia').addEventListener('change', function() {
-        var url = "{% url 'ajax_load_municipios' %}";  // Obtén la URL de la vista
+        var url = ajaxLoadMunicipiosUrl;  // Obtén la URL de la vista
         var provinciaId = this.value;  // Obtén el ID de la provincia seleccionada
 
         fetch(url + '?provincia_id=' + provinciaId)
@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     document.getElementById('id_fk_municipio').addEventListener('change', function() {
-        var url = "{% url 'ajax_load_localidades' %}";  // Obtén la URL de la vista
+        var url = ajaxLoadLocalidadesUrl;  // Obtén la URL de la vista
         var localidadId = this.options[this.selectedIndex].getAttribute('data-departamento-id');;  // Obtén el ID de la provincia seleccionada
 
         fetch(url + '?municipio_id=' + localidadId)
