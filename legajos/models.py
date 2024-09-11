@@ -684,13 +684,25 @@ class DimensionEducacion(models.Model):
     )
     # Nuevos campos dimencion estudio
     provinciaInstitucion = models.ForeignKey(
-        LegajoProvincias, on_delete=models.SET_NULL, null=True, blank=True
+        LegajoProvincias,
+        on_delete=models.SET_NULL,
+        verbose_name="Provincia de la institucion",
+        null=True,
+        blank=True,
     )
     localidadInstitucion = models.ForeignKey(
-        LegajoLocalidad, on_delete=models.SET_NULL, null=True, blank=True
+        LegajoLocalidad,
+        on_delete=models.SET_NULL,
+        verbose_name="Localidad de la institucion",
+        null=True,
+        blank=True,
     )
     municipioInstitucion = models.ForeignKey(
-        LegajoMunicipio, on_delete=models.SET_NULL, null=True, blank=True
+        LegajoMunicipio,
+        on_delete=models.SET_NULL,
+        verbose_name="Municipio de la institucion",
+        null=True,
+        blank=True,
     )
     barrioInstitucion = models.CharField(
         verbose_name="Barrio", max_length=255, null=True, blank=True
