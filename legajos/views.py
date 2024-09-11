@@ -1489,6 +1489,14 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
             value = form_multiple.get(field)
 
             if value:
+                # TODO: Refactorizar
+                if field == "provinciaInstitucion":
+                    value = LegajoProvincias.objects.get(pk=value) or None
+                elif field == "municipioInstitucion":
+                    value = LegajoMunicipio.objects.get(pk=value) or None
+                elif field == "localidadInstitucion":
+                    value = LegajoLocalidad.objects.get(pk=value) or None
+
                 setattr(
                     legajo_dim_educacion,
                     fields_mapping_educacion.get(field, field),
