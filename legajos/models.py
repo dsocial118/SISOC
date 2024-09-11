@@ -23,7 +23,6 @@ from legajos.choices import (
     CHOICE_TIPO_DOC,
     CHOICE_NACIONALIDAD,
     CHOICE_ESTADO_CIVIL,
-    PROVINCE_CHOICES,
     CHOICE_VINCULO_FAMILIAR,
     CHOICE_ESTADO_RELACION,
     CHOICE_SINO,
@@ -78,11 +77,8 @@ class LegajoProvincias(models.Model):
 
     class Meta:
         ordering = ["id"]
-        verbose_name = "LegajoProvincia"
-        verbose_name_plural = "LegajosProvincia"
-        indexes = [
-            models.Index(fields=["id"]),
-        ]
+        verbose_name = "Provincia"
+        verbose_name_plural = "Provincia"
 
 
 class LegajoMunicipio(models.Model):
@@ -102,10 +98,10 @@ class LegajoMunicipio(models.Model):
 
     class Meta:
         ordering = ["id"]
-        verbose_name = "LegajoMunicipio"
-        verbose_name_plural = "LegajosMunicipio"
+        verbose_name = "Municipio"
+        verbose_name_plural = "Municipio"
         indexes = [
-            models.Index(fields=["id"]),
+            models.Index(fields=["codigo_ifam"]),
         ]
 
 
@@ -133,8 +129,11 @@ class LegajoLocalidad(models.Model):
         return str(self.nombre)
 
     class Meta:
-        verbose_name = "LegajoLocalidad"
-        verbose_name_plural = "LegajosLocalidad"
+        verbose_name = "Localidad"
+        verbose_name_plural = "Localidad"
+        indexes = [
+            models.Index(fields=["departamento_id"]),
+        ]
 
 
 class Legajos(models.Model):
@@ -219,13 +218,13 @@ class Legajos(models.Model):
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
     fk_provincia = models.ForeignKey(
-        LegajoProvincias, on_delete=models.CASCADE, null=True, blank=True
-    )  # abrebianura es el campo que relacion a municipio
+        LegajoProvincias, on_delete=models.SET_NULL, null=True, blank=True
+    )  # abreviatura es el campo que relacion a municipio
     fk_municipio = models.ForeignKey(
-        LegajoMunicipio, on_delete=models.CASCADE, null=True, blank=True
+        LegajoMunicipio, on_delete=models.SET_NULL, null=True, blank=True
     )  # codigo_ifam es el campo que se relaciona con provincia y departamento_id se relaciona con localidada
     fk_localidad = models.ForeignKey(
-        LegajoLocalidad, on_delete=models.CASCADE, null=True, blank=True
+        LegajoLocalidad, on_delete=models.SET_NULL, null=True, blank=True
     )  # departamento_id es el campo que se relaciona con municipio
 
     def __str__(self):
@@ -684,18 +683,14 @@ class DimensionEducacion(models.Model):
         verbose_name="Acepto los términos y condiciones", default=False
     )
     # Nuevos campos dimencion estudio
-    provinciaInstitucion = models.CharField(
-        verbose_name="Provincia",
-        max_length=255,
-        choices=PROVINCE_CHOICES,
-        null=True,
-        blank=True,
+    provinciaInstitucion = models.ForeignKey(
+        LegajoProvincias, on_delete=models.SET_NULL, null=True, blank=True
     )
-    localidadInstitucion = models.CharField(
-        verbose_name="Localidad", max_length=255, null=True, blank=True
+    localidadInstitucion = models.ForeignKey(
+        LegajoLocalidad, on_delete=models.SET_NULL, null=True, blank=True
     )
-    municipioInstitucion = models.CharField(
-        verbose_name="Municipio", max_length=255, null=True, blank=True
+    municipioInstitucion = models.ForeignKey(
+        LegajoMunicipio, on_delete=models.SET_NULL, null=True, blank=True
     )
     barrioInstitucion = models.CharField(
         verbose_name="Barrio", max_length=255, null=True, blank=True
