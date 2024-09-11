@@ -63,6 +63,25 @@ class LegajosForm(forms.ModelForm):
         self.fields["fk_municipio"].queryset = LegajoMunicipio.objects.none()
         self.fields["fk_localidad"].queryset = LegajoLocalidad.objects.none()
 
+        # Actualizar los querysets si los datos están presentes en el formulario
+        if "fk_municipio" in self.data:
+            try:
+                municipio_id = int(self.data.get("fk_municipio"))
+                self.fields["fk_municipio"].queryset = LegajoMunicipio.objects.filter(
+                    id=municipio_id
+                ).order_by("nombre_region")
+            except (ValueError, TypeError):
+                self.fields["fk_municipio"].queryset = LegajoMunicipio.objects.none()
+
+        if "fk_localidad" in self.data:
+            try:
+                localidad_id = int(self.data.get("fk_localidad"))
+                self.fields["fk_localidad"].queryset = LegajoLocalidad.objects.filter(
+                    id=localidad_id
+                ).order_by("nombre")
+            except (ValueError, TypeError):
+                self.fields["fk_localidad"].queryset = LegajoLocalidad.objects.none()
+
     def clean(self):
         cleaned_data = super().clean()
         tipo_doc = cleaned_data.get("tipo_doc")
