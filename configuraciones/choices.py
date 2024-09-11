@@ -88,12 +88,12 @@ CHOICE_IMPACTO = [
 ]
 CHOICE_DIMENSIONES = [
     (None, ""),
-    ("Familia", "Familia"),
-    ("Vivienda", "Vivienda"),
-    ("Salud", "Salud"),
-    ("Economía", "Economía"),
-    ("Educación", "Educación"),
-    ("Trabajo", "Trabajo"),
+    ("FAMILIA", "Familia"),
+    ("VIVIENDA", "Vivienda"),
+    ("SALUD", "Salud"),
+    ("ECONOMIA", "Economía"),
+    ("EDUCACION", "Educación"),
+    ("TRABAJO", "Trabajo"),
 ]
 CHOICE_TIPO_DE_DATOS = [
     (None, ""),
