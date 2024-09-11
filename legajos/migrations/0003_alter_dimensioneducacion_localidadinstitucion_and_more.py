@@ -7,23 +7,41 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('legajos', '0002_alter_legajolocalidad_options_and_more'),
+        ("legajos", "0002_alter_legajolocalidad_options_and_more"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='dimensioneducacion',
-            name='localidadInstitucion',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='legajos.legajolocalidad', verbose_name='Localidad de la institucion'),
+            model_name="dimensioneducacion",
+            name="localidadInstitucion",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                to="legajos.legajolocalidad",
+                verbose_name="Localidad de la institucion",
+            ),
         ),
         migrations.AlterField(
-            model_name='dimensioneducacion',
-            name='municipioInstitucion',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='legajos.legajomunicipio', verbose_name='Municipio de la institucion'),
+            model_name="dimensioneducacion",
+            name="municipioInstitucion",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                to="legajos.legajomunicipio",
+                verbose_name="Municipio de la institucion",
+            ),
         ),
         migrations.AlterField(
-            model_name='dimensioneducacion',
-            name='provinciaInstitucion',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='legajos.legajoprovincias', verbose_name='Provincia de la institucion'),
+            model_name="dimensioneducacion",
+            name="provinciaInstitucion",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                to="legajos.legajoprovincias",
+                verbose_name="Provincia de la institucion",
+            ),
         ),
     ]
