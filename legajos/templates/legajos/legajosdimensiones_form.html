@@ -289,10 +289,10 @@
                                                             <div class="form-group">{{ form_educacion.provinciaInstitucion | as_crispy_field }}</div>
                                                         </div>
                                                         <div class="col-sm-3">
-                                                            <div class="form-group">{{ form_educacion.localidadInstitucion | as_crispy_field }}</div>
+                                                            <div class="form-group">{{ form_educacion.municipioInstitucion | as_crispy_field }}</div>
                                                         </div>
                                                         <div class="col-sm-3">
-                                                            <div class="form-group">{{ form_educacion.municipioInstitucion | as_crispy_field }}</div>
+                                                            <div class="form-group">{{ form_educacion.localidadInstitucion | as_crispy_field }}</div>
                                                         </div>
                                                         <div class="col-sm-3">
                                                             <div class="form-group">{{ form_educacion.barrioInstitucion | as_crispy_field }}</div>
@@ -434,6 +434,10 @@
     <button type="submit">Enviar</button>
 </form>
 {% block customJS %}
+    <script>
+        var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
+        var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
+    </script>
     <script src="{% static 'custom/js/formutils.js' %}"></script>
     <script src="{% static 'custom/js/legajosdimensionesform.js' %}"></script>
 {% endblock %}
