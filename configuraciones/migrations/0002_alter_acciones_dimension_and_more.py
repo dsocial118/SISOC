@@ -6,23 +6,60 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('configuraciones', '0001_initial'),
+        ("configuraciones", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='acciones',
-            name='dimension',
-            field=models.CharField(choices=[(None, ''), ('FAMILIA', 'Familia'), ('VIVIENDA', 'Vivienda'), ('SALUD', 'Salud'), ('ECONOMIA', 'Economía'), ('EDUCACIÓN', 'Educación'), ('TRABAJO', 'Trabajo')], default='Desconocida', max_length=255),
+            model_name="acciones",
+            name="dimension",
+            field=models.CharField(
+                choices=[
+                    (None, ""),
+                    ("FAMILIA", "Familia"),
+                    ("VIVIENDA", "Vivienda"),
+                    ("SALUD", "Salud"),
+                    ("ECONOMIA", "Economía"),
+                    ("EDUCACIÓN", "Educación"),
+                    ("TRABAJO", "Trabajo"),
+                ],
+                default="Desconocida",
+                max_length=255,
+            ),
         ),
         migrations.AlterField(
-            model_name='categoriaalertas',
-            name='dimension',
-            field=models.CharField(blank=True, choices=[(None, ''), ('FAMILIA', 'Familia'), ('VIVIENDA', 'Vivienda'), ('SALUD', 'Salud'), ('ECONOMIA', 'Economía'), ('EDUCACIÓN', 'Educación'), ('TRABAJO', 'Trabajo')], max_length=255, null=True),
+            model_name="categoriaalertas",
+            name="dimension",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (None, ""),
+                    ("FAMILIA", "Familia"),
+                    ("VIVIENDA", "Vivienda"),
+                    ("SALUD", "Salud"),
+                    ("ECONOMIA", "Economía"),
+                    ("EDUCACIÓN", "Educación"),
+                    ("TRABAJO", "Trabajo"),
+                ],
+                max_length=255,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='criterios',
-            name='dimension',
-            field=models.CharField(choices=[(None, ''), ('FAMILIA', 'Familia'), ('VIVIENDA', 'Vivienda'), ('SALUD', 'Salud'), ('ECONOMIA', 'Economía'), ('EDUCACIÓN', 'Educación'), ('TRABAJO', 'Trabajo')], default='Desconocida', max_length=255),
+            model_name="criterios",
+            name="dimension",
+            field=models.CharField(
+                choices=[
+                    (None, ""),
+                    ("FAMILIA", "Familia"),
+                    ("VIVIENDA", "Vivienda"),
+                    ("SALUD", "Salud"),
+                    ("ECONOMIA", "Economía"),
+                    ("EDUCACIÓN", "Educación"),
+                    ("TRABAJO", "Trabajo"),
+                ],
+                default="Desconocida",
+                max_length=255,
+            ),
         ),
     ]
