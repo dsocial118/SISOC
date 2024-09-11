@@ -132,6 +132,10 @@ class LegajoLocalidad(models.Model):
     def __str__(self):
         return str(self.nombre)
 
+    class Meta:
+        verbose_name = "LegajoLocalidad"
+        verbose_name_plural = "LegajosLocalidad"
+
 
 class Legajos(models.Model):
     """
