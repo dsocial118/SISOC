@@ -35,12 +35,6 @@ document.addEventListener("DOMContentLoaded", function() {
      });
  });
 
- // Aplica select2
- $(document).ready(function() {
-  $('select').select2({
-    width: '100%' // Ajusta el ancho del selector
-    });
-  });
  
   // Formularios
   let estadoNivelForm = document.querySelector('#id_estado_nivel');
