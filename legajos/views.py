@@ -12,7 +12,6 @@ from django.db.models import Q
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
-
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -32,21 +31,19 @@ from legajos.choices import (
     EMOJIS_BANDERAS,
     VINCULO_MAP,
 )
-from legajos.forms import (
+from legajos.forms.alertas import LegajosAlertasForm
+from legajos.forms.derivaciones import LegajosDerivacionesForm
+from legajos.forms.dimensiones import (
     DimensionEconomiaForm,
     DimensionEducacionForm,
     DimensionFamiliaForm,
     DimensionSaludForm,
     DimensionTrabajoForm,
     DimensionViviendaForm,
-    LegajoGrupoHogarForm,
-    LegajosAlertasForm,
-    LegajosArchivosForm,
-    LegajosDerivacionesForm,
-    LegajosForm,
-    LegajosUpdateForm,
-    NuevoLegajoFamiliarForm,
 )
+from legajos.forms.grupo_familiar import NuevoLegajoFamiliarForm
+from legajos.forms.grupo_hogar import LegajoGrupoHogarForm
+from legajos.forms.legajos import LegajosArchivosForm, LegajosForm, LegajosUpdateForm
 from legajos.models import (
     DimensionEconomia,
     DimensionEducacion,
@@ -58,15 +55,14 @@ from legajos.models import (
     LegajoAlertas,
     LegajoGrupoFamiliar,
     LegajoGrupoHogar,
+    LegajoLocalidad,
+    LegajoMunicipio,
+    LegajoProvincias,
     Legajos,
     LegajosArchivos,
     LegajosDerivaciones,
-    LegajoProvincias,
-    LegajoMunicipio,
-    LegajoLocalidad
 )
 from legajos.services.legajos_service import LegajosService
-
 from usuarios.mixins import PermisosMixin
 from usuarios.utils import recortar_imagen
 
@@ -75,6 +71,7 @@ locale.setlocale(locale.LC_ALL, "es_AR.UTF-8")
 logger = logging.getLogger("django")
 
 ROL_ADMIN = "usuarios.rol_admin"
+
 
 class MunicipiosView(View):
     def get(self, request, *args, **kwargs):
@@ -232,9 +229,9 @@ class LegajosCreateView(PermisosMixin, CreateView):
         try:
             legajo = form.save()
 
-            if "form_step2" in self.request.POST: # Boton CONTINUAR
+            if "form_step2" in self.request.POST:  # Boton CONTINUAR
                 return redirect("legajosdimensiones_editar", pk=int(legajo.id))
-            else: # Boton GUARDAR
+            else:  # Boton GUARDAR
                 return redirect("legajos_ver", pk=int(legajo.id))
         except Exception as e:
             messages.error(
