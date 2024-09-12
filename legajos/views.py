@@ -5,9 +5,7 @@ from datetime import date
 from django.contrib import messages
 from django.contrib.messages.views import SuccessMessageMixin
 from django.core.cache import cache
-from django.core.files.base import ContentFile
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
@@ -64,7 +62,6 @@ from legajos.models import (
 )
 from legajos.services.legajos_service import LegajosService
 from usuarios.mixins import PermisosMixin
-from usuarios.utils import recortar_imagen
 
 locale.setlocale(locale.LC_ALL, "es_AR.UTF-8")
 
