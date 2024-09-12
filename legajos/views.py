@@ -61,6 +61,9 @@ from legajos.models import (
     Legajos,
     LegajosArchivos,
     LegajosDerivaciones,
+    LegajoProvincias,
+    LegajoMunicipio,
+    LegajoLocalidad
 )
 from legajos.services.legajos_service import LegajosService
 
