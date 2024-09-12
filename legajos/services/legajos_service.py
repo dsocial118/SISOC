@@ -138,8 +138,6 @@ class LegajosService:
 
     @staticmethod
     def obtener_extras_legajo(legajo_id: int) -> Dict[str, Any]:
-        fecha_actual = datetime.now().date()
-
         alertas_categorizadas = LegajosService.obtener_alertas_categorizadas(legajo_id)
 
         legajos_relacionados = LegajosService.obtener_legajos_relacionados(legajo_id)
@@ -170,7 +168,7 @@ class LegajosService:
         )
         datos_json = cache.get_or_set(
             f"{legajo_id}_datos_json",
-            LegajosService.obtener_grafico_evolucion_riesgo(fecha_actual, alertas),
+            LegajosService.obtener_grafico_evolucion_riesgo(alertas),
             CACHE_TIMEOUT,
         )
 
@@ -427,27 +425,27 @@ class LegajosService:
         }
 
     @staticmethod
-    def obtener_grafico_evolucion_riesgo(
-        fecha_actual: datetime, alertas: QuerySet
-    ) -> Union[str, Dict]:
+    def obtener_grafico_evolucion_riesgo(alertas: QuerySet) -> Union[str, Dict]:
+        fecha_actual = datetime.now().date()
+
         if alertas.exists():
-            primer_dia_siguiente_mes = datetime(
+            doce_meses_previos = datetime(
                 fecha_actual.year, fecha_actual.month % 12 + 1, 1
-            )
-            fecha_inicio_doce_meses_excepto_mes_anterior = (
-                primer_dia_siguiente_mes - timedelta(days=365)
-            )
+            ) - timedelta(days=365)
 
             alertas_ultimo_anio = alertas.filter(
-                Q(fecha_inicio__gt=fecha_inicio_doce_meses_excepto_mes_anterior)
-                | Q(fecha_fin__gt=fecha_inicio_doce_meses_excepto_mes_anterior)
+                Q(fecha_inicio__gt=doce_meses_previos)
+                | Q(fecha_fin__gt=doce_meses_previos)
                 | Q(fecha_fin__isnull=True)
             ).distinct()
 
-            todas_dimensiones = [dimension for dimension, _ in CHOICE_DIMENSIONES[1:]]
-            datos_por_dimension = {
-                dimension: [0] * 12 for dimension in todas_dimensiones
+            dimensiones = {
+                key.strip(): value
+                for key, value in CHOICE_DIMENSIONES
+                if key is not None
             }
+            dimensiones = list(dimensiones.keys())
+            datos_por_dimension = {dimension: [0] * 12 for dimension in dimensiones}
 
             for alerta in alertas_ultimo_anio:
                 dimension = alerta["fk_alerta__fk_categoria__dimension"]
@@ -467,15 +465,17 @@ class LegajosService:
             datos_por_dimension = {
                 dimension: datos_por_dimension[dimension][mes_actual:]
                 + datos_por_dimension[dimension][:mes_actual]
-                for dimension in todas_dimensiones
+                for dimension in dimensiones
             }
 
             nombres_meses = [
                 calendar.month_name[mes].capitalize() for mes in range(1, 13)
             ]
-            datos_por_dimension["meses"] = (
+            nombres_meses_ordenados = (
                 nombres_meses[mes_actual:] + nombres_meses[:mes_actual]
             )
+
+            datos_por_dimension["meses"] = nombres_meses_ordenados
 
             return json.dumps(datos_por_dimension)
 
