@@ -7,7 +7,7 @@ class Dashboard(models.Model):
     """
 
     llave = models.CharField(
-        max_length=250,
+        max_length=255,
         unique=True,
         primary_key=True,
         help_text="Llave única para identificar el registro en el dashboard.",

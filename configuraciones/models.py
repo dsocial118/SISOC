@@ -16,8 +16,8 @@ from .choices import (
 
 
 class Secretarias(models.Model):
-    nombre = models.CharField(max_length=40, unique=True)
-    observaciones = models.CharField(max_length=300, null=True, blank=True)
+    nombre = models.CharField(max_length=255, unique=True)
+    observaciones = models.CharField(max_length=500, null=True, blank=True)
     estado = models.BooleanField(default=True)
 
     def __str__(self):
@@ -37,9 +37,9 @@ class Secretarias(models.Model):
 
 class Subsecretarias(models.Model):
     fk_secretaria = models.ForeignKey(Secretarias, on_delete=models.CASCADE)
-    nombre = models.CharField(max_length=40, unique=True)
+    nombre = models.CharField(max_length=255, unique=True)
     observaciones = models.CharField(
-        max_length=300,
+        max_length=500,
         null=True,
         blank=True,
     )
@@ -62,9 +62,9 @@ class Subsecretarias(models.Model):
 
 class Programas(models.Model):
     fk_subsecretaria = models.ForeignKey(Subsecretarias, on_delete=models.CASCADE)
-    nombre = models.CharField(max_length=100, unique=True)
+    nombre = models.CharField(max_length=255, unique=True)
     estado = models.BooleanField(default=True)
-    observaciones = models.CharField(max_length=300, null=True, blank=True)
+    observaciones = models.CharField(max_length=500, null=True, blank=True)
 
     def __str__(self):
         return self.nombre
@@ -82,21 +82,21 @@ class Programas(models.Model):
 
 
 class Organismos(models.Model):
-    nombre = models.CharField(max_length=250, unique=True)
-    tipo = models.CharField(max_length=50, choices=CHOICE_TIPO_ORGANISMO)
-    calle = models.CharField(max_length=250, null=True, blank=True)
+    nombre = models.CharField(max_length=255, unique=True)
+    tipo = models.CharField(max_length=255, choices=CHOICE_TIPO_ORGANISMO)
+    calle = models.CharField(max_length=255, null=True, blank=True)
     altura = models.IntegerField(null=True, blank=True)
-    piso = models.CharField(max_length=100, null=False, blank=True)
+    piso = models.CharField(max_length=255, null=True, blank=True)
     barrio = models.CharField(
-        max_length=250, choices=CHOICE_BARRIOS, null=True, blank=True
+        max_length=255, choices=CHOICE_BARRIOS, null=True, blank=True
     )
     localidad = models.CharField(
-        max_length=250, choices=CHOICE_LOCALIDAD, null=True, blank=True
+        max_length=255, choices=CHOICE_LOCALIDAD, null=True, blank=True
     )
     telefono = models.IntegerField(null=True, blank=True)
     email = models.EmailField(null=True, blank=True)
     estado = models.BooleanField(default=True)
-    observaciones = models.CharField(max_length=300, null=True, blank=True)
+    observaciones = models.CharField(max_length=500, null=True, blank=True)
 
     def __str__(self):
         return self.nombre
@@ -114,8 +114,8 @@ class Organismos(models.Model):
 
 
 class PlanesSociales(models.Model):
-    nombre = models.CharField(max_length=250, unique=True)
-    jurisdiccion = models.CharField(max_length=50, choices=CHOICE_JURISDICCION)
+    nombre = models.CharField(max_length=255, unique=True)
+    jurisdiccion = models.CharField(max_length=255, choices=CHOICE_JURISDICCION)
     estado = models.BooleanField(default=True)
     observaciones = models.CharField(max_length=500, null=True, blank=True)
 
@@ -139,8 +139,8 @@ class AgentesExternos(models.Model):
     Agentes Externos para posteriores uso en envio de mails, alertas, etc.
     """
 
-    nombre = models.CharField(max_length=100)
-    apellido = models.CharField(max_length=100)
+    nombre = models.CharField(max_length=255)
+    apellido = models.CharField(max_length=255)
     email = models.EmailField()
     telefono = models.PositiveIntegerField(
         null=True,
@@ -179,7 +179,7 @@ class GruposDestinatarios(models.Model):
     La finalidad es su uso en envio de mails, alertas, etc.
     """
 
-    nombre = models.CharField(max_length=250)
+    nombre = models.CharField(max_length=255)
     m2m_agentes_externos = models.ManyToManyField(
         AgentesExternos,
         blank=True,
@@ -210,7 +210,7 @@ class Equipos(models.Model):
     """
 
     fk_programa = models.ForeignKey(Programas, on_delete=models.CASCADE)
-    nombre = models.CharField(max_length=250)
+    nombre = models.CharField(max_length=255)
     fk_coordinador = models.ForeignKey(
         Usuarios,
         on_delete=models.CASCADE,
@@ -242,9 +242,9 @@ class CategoriaAlertas(models.Model):
     Descripciones cortas que agrupan distintos tipos de alertas de vulnerabilidad.
     """
 
-    nombre = models.CharField(max_length=100, unique=True)
+    nombre = models.CharField(max_length=255, unique=True)
     dimension = models.CharField(
-        max_length=20, choices=CHOICE_DIMENSIONES, null=True, blank=True
+        max_length=255, choices=CHOICE_DIMENSIONES, null=True, blank=True
     )
     estado = models.BooleanField(default=True)
 
@@ -268,7 +268,7 @@ class Alertas(models.Model):
     Indicadores de vulnerabilidad, relacionados a una categoría específica a traves de una FK.
     """
 
-    nombre = models.CharField(max_length=100, unique=True)
+    nombre = models.CharField(max_length=255, unique=True)
     fk_categoria = models.ForeignKey(CategoriaAlertas, on_delete=models.CASCADE)
     estado = models.BooleanField(default=True)
     gravedad = models.CharField(max_length=500, null=False, blank=False)
@@ -298,7 +298,7 @@ class Sujetos(models.Model):
     o Cuidadores principales, bebés, adolescentes, etc.
     """
 
-    nombre = models.CharField(max_length=70, unique=True)
+    nombre = models.CharField(max_length=255, unique=True)
 
     def __str__(self):
         return self.nombre
@@ -321,9 +321,9 @@ class Acciones(models.Model):
     Acciones a desarrollar apuntando a revertir un determinado criterio.
     """
 
-    nombre = models.CharField(max_length=70, unique=True)
+    nombre = models.CharField(max_length=255, unique=True)
     dimension = models.CharField(
-        max_length=12, choices=CHOICE_DIMENSIONES, default="Desconocida"
+        max_length=255, choices=CHOICE_DIMENSIONES, default="Desconocida"
     )
     observaciones = models.CharField(max_length=500, null=True, blank=True)
 
@@ -347,9 +347,9 @@ class Criterios(models.Model):
     Criterios de vulnerabilidad que seran posteriormente utilizados en la conformacion de INDICES (Ej. IVI).
     """
 
-    nombre = models.CharField(max_length=250, unique=True)
+    nombre = models.CharField(max_length=255, unique=True)
     dimension = models.CharField(
-        max_length=12, choices=CHOICE_DIMENSIONES, default="Desconocida"
+        max_length=255, choices=CHOICE_DIMENSIONES, default="Desconocida"
     )
     fk_sujeto = models.ForeignKey(Sujetos, on_delete=models.CASCADE)
     permite_potencial = models.BooleanField(default=False)
@@ -379,7 +379,7 @@ class Indices(models.Model):
     Agrupan determinados criterios y les asigna a cada uno un puntaje válido para la instancia de Indice que se está generando.
     """
 
-    nombre = models.CharField(max_length=250, unique=True)
+    nombre = models.CharField(max_length=255, unique=True)
     m2m_criterios = models.ManyToManyField(Criterios, through="IndiceCriterios")
     m2m_programas = models.ManyToManyField(Programas)
     observaciones = models.CharField(max_length=500, null=True, blank=True)
@@ -425,48 +425,48 @@ class IndiceCriterios(models.Model):
 
 
 class Vacantes(models.Model):
-    nombre = models.CharField(max_length=100)
-    observaciones = models.CharField(max_length=300, null=True, blank=True)
+    nombre = models.CharField(max_length=255)
+    observaciones = models.CharField(max_length=500, null=True, blank=True)
     fk_programa = models.ForeignKey(Programas, on_delete=models.CASCADE)
     fk_organismo = models.ForeignKey(
         Organismos, on_delete=models.CASCADE, null=True, blank=True
     )
-    manianabb = models.PositiveIntegerField(
+    manianabb = models.IntegerField(
         validators=[MinValueValidator(0)],
         default=0,
         verbose_name="Turno Mañana",
     )
-    tardebb = models.PositiveIntegerField(
+    tardebb = models.IntegerField(
         validators=[MinValueValidator(0)],
         default=0,
         verbose_name="Turno Tarde",
     )
-    maniana2 = models.PositiveIntegerField(
+    maniana2 = models.IntegerField(
         validators=[MinValueValidator(0)],
         default=0,
         verbose_name="Turno Mañana",
     )
-    tarde2 = models.PositiveIntegerField(
+    tarde2 = models.IntegerField(
         validators=[MinValueValidator(0)],
         default=0,
         verbose_name="Turno Tarde",
     )
-    maniana3 = models.PositiveIntegerField(
+    maniana3 = models.IntegerField(
         validators=[MinValueValidator(0)],
         default=0,
         verbose_name="Turno Mañana",
     )
-    tarde3 = models.PositiveIntegerField(
+    tarde3 = models.IntegerField(
         validators=[MinValueValidator(0)],
         default=0,
         verbose_name="Turno Tarde",
     )
-    maniana4 = models.PositiveIntegerField(
+    maniana4 = models.IntegerField(
         validators=[MinValueValidator(0)],
         default=0,
         verbose_name="Turno Mañana",
     )
-    tarde4 = models.PositiveIntegerField(
+    tarde4 = models.IntegerField(
         validators=[MinValueValidator(0)],
         default=0,
         verbose_name="Turno Tarde",

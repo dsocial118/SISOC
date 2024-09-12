@@ -71,7 +71,7 @@ locale.setlocale(locale.LC_ALL, "es_AR.UTF-8")
 
 logger = logging.getLogger("django")
 
-ROL_ADMIN = "Usuarios.rol_admin"
+ROL_ADMIN = "usuarios.rol_admin"
 
 class MunicipiosView(View):
     def get(self, request, *args, **kwargs):
@@ -1004,6 +1004,9 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
             "CondicionDe": "CondicionDe",
             "CantidadAmbientes": "CantidadAmbientes",
             "gas": "gas",
+            "techos": "techos",
+            "agua": "agua",
+            "desague": "desague",
             "obs_vivienda": "obs_vivienda",
         }
 
@@ -1082,6 +1085,14 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
             value = form_multiple.get(field)
 
             if value:
+                # TODO: Refactorizar
+                if field == "provinciaInstitucion":
+                    value = LegajoProvincias.objects.get(pk=value) or None
+                elif field == "municipioInstitucion":
+                    value = LegajoMunicipio.objects.get(pk=value) or None
+                elif field == "localidadInstitucion":
+                    value = LegajoLocalidad.objects.get(pk=value) or None
+
                 setattr(
                     legajo_dim_educacion,
                     fields_mapping_educacion.get(field, field),

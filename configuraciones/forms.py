@@ -148,7 +148,7 @@ class GruposDestinatariosForm(forms.ModelForm):
         }
 
         labels = {
-            "m2m_usuarios": "Usuarios",
+            "m2m_usuarios": "usuarios",
             "m2m_agentes_externos": "Agentes externos",
         }
 
