@@ -60,7 +60,7 @@ from legajos.models import (
     LegajosArchivos,
     LegajosDerivaciones,
 )
-from legajos.services.legajos_service import LegajosService
+from legajos.services.legajos import LegajosService
 from usuarios.mixins import PermisosMixin
 
 locale.setlocale(locale.LC_ALL, "es_AR.UTF-8")
