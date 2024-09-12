@@ -224,6 +224,7 @@ class LegajosCreateView(PermisosMixin, CreateView):
     permission_required = ROL_ADMIN
     model = Legajos
     form_class = LegajosForm
+    template_name = "legajos_form.html"
 
     def form_valid(self, form):
         try:
@@ -245,6 +246,7 @@ class LegajosUpdateView(PermisosMixin, UpdateView):
     permission_required = ROL_ADMIN
     model = Legajos
     form_class = LegajosUpdateForm
+    template_name = "legajos_form.html"
 
     def form_valid(self, form):
         legajo = form.save(commit=False)  # Guardamos sin persistir en la base de datos
