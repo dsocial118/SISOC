@@ -865,7 +865,7 @@ class IndiceInline:
 
     form_class = IndicesForm
     model = Indices
-    template_name = "configuraciones/indices_form.html"
+    template_name = "indices_form.html"
 
 
 def delete_variant(request, pk):
