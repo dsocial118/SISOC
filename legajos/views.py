@@ -249,32 +249,13 @@ class LegajosUpdateView(PermisosMixin, UpdateView):
     template_name = "legajos_form.html"
 
     def form_valid(self, form):
-        legajo = form.save(commit=False)  # Guardamos sin persistir en la base de datos
-        current_legajo = self.get_object()
+        super().form_valid(form)
+        legajo = form.save(commit=False)
 
-        with transaction.atomic():
-            # Comprobamos si se ha cargado una nueva foto y si es diferente de la foto actual
-            if legajo.foto and legajo.foto != current_legajo.foto:
-                buffer = recortar_imagen(legajo.foto)
-                legajo.foto.save(legajo.foto.name, ContentFile(buffer.getvalue()))
-
-            self.object = (
-                form.save()
-            )  # Guardamos el objeto Legajos con la imagen recortada (si corresponde)
-
-        if "form_legajos" in self.request.POST:
-            return redirect("legajos_ver", pk=self.object.id)
-
-        if "form_step2" in self.request.POST:
+        if "form_step2" in self.request.POST:  # Boton CONTINUAR
             return redirect("legajosdimensiones_editar", pk=legajo.id)
-
-        return super().form_valid(form)
-
-
-# endregion
-
-
-# region ############################################################### GRUPO FAMILIAR
+        else:  # Boton GUARDAR
+            return redirect("legajos_ver", pk=self.object.id)
 
 
 class LegajosGrupoFamiliarCreateView(CreateView):

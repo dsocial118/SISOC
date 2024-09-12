@@ -229,6 +229,18 @@ class LegajosUpdateForm(forms.ModelForm):
 
         return cleaned_data
 
+    def save(self, commit: bool = True):
+        legajo = super().save(commit=False)
+
+        if legajo.foto and legajo.foto != self.instance.foto:
+            buffer = recortar_imagen(legajo.foto)
+            legajo.foto.save(legajo.foto.name, ContentFile(buffer.getvalue()))
+
+        if commit:
+            legajo.save()
+
+        return legajo
+
     class Meta:
         model = Legajos
         exclude = ("creado", "modificado", "m2m_familiares", "m2m_alertas")
