@@ -433,6 +433,10 @@
     {{ form|crispy }}
     <button type="submit">Enviar</button>
 </form>
+{% block customCSS %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/legajosdimensionesform.css' %}" />
+{% endblock %}
 {% block customJS %}
     <script>
         var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
