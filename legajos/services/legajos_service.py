@@ -1,38 +1,38 @@
 import calendar
-from datetime import datetime, timedelta
 import json
-from typing import Dict, List, Any, Union
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Union
 
+from django.core.cache import cache
 from django.db.models import (
     Case,
     Count,
+    ForeignKey,
     IntegerField,
+    ManyToManyField,
     Q,
+    QuerySet,
     Value,
     When,
-    QuerySet,
-    ForeignKey,
-    ManyToManyField,
 )
-from django.core.cache import cache
 
 from config.settings import CACHE_TIMEOUT
 from configuraciones.choices import CHOICE_DIMENSIONES
 from legajos.models import (
+    DimensionFamilia,
+    DimensionSalud,
+    DimensionTrabajo,
+    DimensionVivienda,
     HistorialLegajoAlertas,
     LegajoAlertas,
     LegajoGrupoFamiliar,
+    LegajoGrupoHogar,
     LegajoLocalidad,
     LegajoMunicipio,
     LegajoProvincias,
     Legajos,
-    LegajosDerivaciones,
-    LegajoGrupoHogar,
     LegajosArchivos,
-    DimensionFamilia,
-    DimensionVivienda,
-    DimensionSalud,
-    DimensionTrabajo,
+    LegajosDerivaciones,
 )
 
 
@@ -58,7 +58,9 @@ class LegajosService:
         return queryset
 
     @staticmethod
-    def obtener_municipios(provincia_id: Union[int, None]) -> List[Dict[str, Union[str, int]]]:
+    def obtener_municipios(
+        provincia_id: Union[int, None]
+    ) -> List[Dict[str, Union[str, int]]]:
         provincias = cache.get_or_set(
             "provincias", LegajoProvincias.objects.all(), CACHE_TIMEOUT
         )
@@ -77,7 +79,9 @@ class LegajosService:
         return list(municipios)
 
     @staticmethod
-    def obtener_localidades(municipio_id: Union[int, None]) -> List[Dict[str, Union[str, int]]]:
+    def obtener_localidades(
+        municipio_id: Union[int, None]
+    ) -> List[Dict[str, Union[str, int]]]:
         municipios = cache.get_or_set(
             "municipios", LegajoMunicipio.objects.all(), CACHE_TIMEOUT
         )

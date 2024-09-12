@@ -1,4 +1,5 @@
 from typing import Dict
+
 from dashboard.models import Dashboard
 from dashboard.utils import (
     contar_adolescente_riesgo,

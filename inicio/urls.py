@@ -4,7 +4,6 @@ from django.views.generic import TemplateView
 
 from inicio.views import BusquedaMenu
 
-
 urlpatterns = [
     path(
         "metricas/",
