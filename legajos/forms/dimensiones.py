@@ -146,8 +146,18 @@ class DimensionEducacionForm(forms.ModelForm):
                     "rows": 3,
                 }
             ),
-            "areaCurso": forms.SelectMultiple(attrs={"class": "form-control"}),
-            "areaOficio": forms.SelectMultiple(attrs={"class": "form-control"}),
+            "areaCurso": forms.SelectMultiple(
+                attrs={
+                    "class": "form-control",
+                    "style": "width: 100%;",
+                }
+            ),
+            "areaOficio": forms.SelectMultiple(
+                attrs={
+                    "class": "form-control",
+                    "style": "width: 100%;",
+                }
+            ),
         }
 
     def clean_area_curso(self):
@@ -172,9 +182,12 @@ class DimensionEconomiaForm(forms.ModelForm):
                     "rows": 3,
                 }
             ),
-            #'recibe_plan': forms.CheckboxInput(),
             "m2m_planes": forms.SelectMultiple(
-                attrs={"class": "select2 w-100", "multiple": True}
+                attrs={
+                    "class": "select2 w-100",
+                    "style": "width: 100%;",
+                    "multiple": True,
+                }
             ),
         }
         labels = {"m2m_planes": "Planes sociales que recibe"}

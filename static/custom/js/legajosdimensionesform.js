@@ -22,19 +22,20 @@ document.addEventListener("DOMContentLoaded", function() {
   const ID_OCUPACION = "#container_ocupacion";
   const ID_PLAN_SOCIAL = "#container_plan_social";
 
-  // Selecciones múltiples con límite
-  var selects = document.querySelectorAll('select[name="areaCurso"], select[name="areaOficio"]');
-  selects.forEach(function(select) {
-      select.setAttribute('multiple', 'multiple');
-      select.addEventListener('change', function() {
-          var selectedOptions = Array.from(select.selectedOptions);
-          if (selectedOptions.length > maxSelections) {
-              alert('Solo puedes seleccionar hasta 3 opciones.');
-              selectedOptions[selectedOptions.length - 1].selected = false;
-          }
-      });
-  });
+ // Selecciones múltiples con límite
+ var selects = document.querySelectorAll('select[name="areaCurso"], select[name="areaOficio"], select[name="m2m_planes"]');
+ selects.forEach(function(select) {
+     select.setAttribute('multiple', 'multiple');
+     select.addEventListener('change', function() {
+         var selectedOptions = Array.from(select.selectedOptions);
+         if (selectedOptions.length > maxSelections) {
+             alert('Solo puedes seleccionar hasta 3 opciones.');
+             selectedOptions[selectedOptions.length - 1].selected = false;
+         }
+     });
+ });
 
+ 
   // Formularios
   let estadoNivelForm = document.querySelector('#id_estado_nivel');
   let asisteEscuelaForm = document.querySelector('#id_asiste_escuela');
@@ -139,3 +140,4 @@ document.addEventListener("DOMContentLoaded", function() {
       });
   });
 });
+
