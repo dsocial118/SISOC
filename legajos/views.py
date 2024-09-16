@@ -256,121 +256,60 @@ class LegajosUpdateView(PermisosMixin, UpdateView):
 
 
 class LegajosGrupoFamiliarCreateView(CreateView):
+    template_name = "legajogrupofamiliar_form.html"
     permission_required = ROL_ADMIN
     model = LegajoGrupoFamiliar
     form_class = NuevoLegajoFamiliarForm
-    paginate_by = 8  # Número de elementos por página
+    paginate_by = 8
 
     def get_context_data(self, **kwargs):
-        # Paginación
-
         context = super().get_context_data(**kwargs)
         pk = self.kwargs["pk"]
-        legajo_principal = Legajos.objects.get(pk=pk)
-        # Calcula la edad utilizando la función 'edad' del modelo
-        edad_calculada = legajo_principal.edad()
-
-        # Verifica si tiene más de 18 años
-        es_menor_de_18 = True
-        if isinstance(edad_calculada, str) and "años" in edad_calculada:
-            edad_num = int(edad_calculada.split()[0])
-            if edad_num >= 18:
-                es_menor_de_18 = False
-
-        # Verificar si tiene un cuidador principal asignado utilizando el método que agregaste al modelo
-        tiene_cuidador_ppal = LegajoGrupoFamiliar.objects.filter(
-            fk_legajo_1=legajo_principal, cuidador_principal=True
-        ).exists()
-
-        # Obtiene los familiares asociados al legajo principal
-        familiares = LegajoGrupoFamiliar.objects.filter(
-            Q(fk_legajo_1=pk) | Q(fk_legajo_2=pk)
-        ).values(
-            "fk_legajo_1__nombre",
-            "fk_legajo_1__apellido",
-            "fk_legajo_1__id",
-            "fk_legajo_1__foto",
-            "fk_legajo_2__nombre",
-            "fk_legajo_2__apellido",
-            "fk_legajo_2__id",
-            "fk_legajo_2__foto",
-            "vinculo",
-            "vinculo_inverso",
-        )
+        familiares = LegajosService.obtener_grupo_familiar(pk)
 
         paginator = Paginator(familiares, self.paginate_by)
         page_number = self.request.GET.get("page")
         page_obj = paginator.get_page(page_number)
 
-        context["familiares_fk1"] = [
-            familiar for familiar in page_obj if familiar["fk_legajo_1__id"] == int(pk)
-        ]
-        context["familiares_fk2"] = [
-            familiar for familiar in page_obj if familiar["fk_legajo_2__id"] == int(pk)
-        ]
+        es_menor_de_18 = LegajosService.legajo_es_mayor(pk)
+        es_cuidador_principal = LegajosService.es_cuidador_principal(pk)
 
-        context["familiares"] = page_obj
-        context["count_familia"] = familiares.count()
-        context["legajo_principal"] = legajo_principal
         context.update(
             {
+                "familiares": page_obj,
+                "familiares_fk1": [
+                    familiar
+                    for familiar in page_obj
+                    if familiar["fk_legajo_1__id"] == int(pk)
+                ],
+                "familiares_fk2": [
+                    familiar
+                    for familiar in page_obj
+                    if familiar["fk_legajo_2__id"] == int(pk)
+                ],
+                "count_familia": familiares.count(),
+                "legajo_principal": Legajos.objects.get(pk=pk),
                 "es_menor_de_18": es_menor_de_18,
-                "tiene_cuidador_ppal": tiene_cuidador_ppal,
+                "tiene_cuidador_ppal": es_cuidador_principal,
                 "pk": pk,
                 "id_dimensionfamiliar": DimensionFamilia.objects.get(fk_legajo=pk).id,
             }
         )
         return context
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["pk"] = self.kwargs["pk"]  # Pasa el pk al formulario
+        return kwargs
+
     def form_valid(self, form):
-        pk = self.kwargs["pk"]
-        vinculo = form.cleaned_data["vinculo"]
-        conviven = form.cleaned_data["conviven"]
-        estado_relacion = form.cleaned_data["estado_relacion"]
-        cuidador_principal = form.cleaned_data["cuidador_principal"]
-
-        # Crea el objeto Legajos
         try:
-            nuevo_legajo = form.save()
-            DimensionFamilia.objects.create(fk_legajo=nuevo_legajo)
-            DimensionVivienda.objects.create(fk_legajo=nuevo_legajo)
-            DimensionSalud.objects.create(fk_legajo=nuevo_legajo)
-            DimensionEconomia.objects.create(fk_legajo=nuevo_legajo)
-            DimensionEducacion.objects.create(fk_legajo=nuevo_legajo)
-            DimensionTrabajo.objects.create(fk_legajo=nuevo_legajo)
+            form.save(pk=self.kwargs["pk"])
+            messages.success(self.request, "Familiar agregado correctamente.")
+            return HttpResponseRedirect(self.request.path_info)
         except Exception as e:
-            return messages.error(
-                self.request,
-                f"Verifique que no exista un legajo con ese DNI y NÚMERO. Error: {e}",
-            )
-
-        # Crea el objeto LegajoGrupoFamiliar con los valores del formulario
-        vinculo_data = VINCULO_MAP.get(vinculo)
-        if not vinculo_data:
-            return messages.error(self.request, "Vinculo inválido.")
-
-        # crea la relacion de grupo familiar
-        legajo_principal = Legajos.objects.get(id=pk)
-        try:
-            LegajoGrupoFamiliar.objects.create(
-                fk_legajo_1=legajo_principal,
-                fk_legajo_2=nuevo_legajo,
-                vinculo=vinculo_data["vinculo"],
-                vinculo_inverso=vinculo_data["vinculo_inverso"],
-                conviven=conviven,
-                estado_relacion=estado_relacion,
-                cuidador_principal=cuidador_principal,
-            )
-
-        except Exception as e:
-            return messages.error(
-                self.request,
-                f"Verifique que no exista un legajo con ese DNI y NÚMERO. Error: {e}",
-            )
-
-        messages.success(self.request, "Familair agregado correctamente.")
-        # Redireccionar a la misma página después de realizar la acción con éxito
-        return HttpResponseRedirect(self.request.path_info)
+            messages.error(self.request, str(e))
+            return self.form_invalid(form)
 
 
 def busqueda_familiares(request):

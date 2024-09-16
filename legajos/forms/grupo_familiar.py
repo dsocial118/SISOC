@@ -3,6 +3,7 @@ from datetime import date
 from django import forms
 from django.core.validators import MaxValueValidator, MinValueValidator
 
+from legajos.choices import VINCULO_MAP
 from legajos.models import (
     CHOICE_ESTADO_RELACION,
     CHOICE_SINO,
@@ -10,6 +11,7 @@ from legajos.models import (
     LegajoGrupoFamiliar,
     Legajos,
 )
+from legajos.services.legajos import LegajosService
 
 
 class LegajoGrupoFamiliarForm(forms.ModelForm):
@@ -29,25 +31,9 @@ class NuevoLegajoFamiliarForm(forms.ModelForm):
         widget=forms.NumberInput(),
     )
 
-    class Meta:
-        model = Legajos
-        fields = [
-            "apellido",
-            "nombre",
-            "fecha_nacimiento",
-            "tipo_doc",
-            "documento",
-            "sexo",
-            "vinculo",
-            "estado_relacion",
-            "conviven",
-            "cuidador_principal",
-        ]
-        widgets = {
-            "fecha_nacimiento": forms.DateInput(
-                attrs={"type": "date"}, format="%Y-%m-%d"
-            ),
-        }
+    def __init__(self, *args, **kwargs):
+        self.legajo_id = kwargs.pop("pk", None)
+        super().__init__(*args, **kwargs)
 
     def clean(self):
         cleaned_data = super().clean()
@@ -75,3 +61,46 @@ class NuevoLegajoFamiliarForm(forms.ModelForm):
                 )
 
         return cleaned_data
+
+    def save(self, commit=True, *args, **kwargs):
+        nuevo_legajo = super().save(commit=False)
+
+        if commit:
+            nuevo_legajo.save()
+            LegajosService.crear_dimensiones(nuevo_legajo.id)
+
+        vinculo_data = VINCULO_MAP.get(self.cleaned_data["vinculo"])
+        if not vinculo_data:
+            raise forms.ValidationError("Vinculo inválido.")
+
+        LegajoGrupoFamiliar.objects.create(
+            fk_legajo_1=Legajos.objects.get(id=self.legajo_id),
+            fk_legajo_2=nuevo_legajo,
+            vinculo=vinculo_data["vinculo"],
+            vinculo_inverso=vinculo_data["vinculo_inverso"],
+            conviven=self.cleaned_data["conviven"],
+            estado_relacion=self.cleaned_data["estado_relacion"],
+            cuidador_principal=self.cleaned_data["cuidador_principal"],
+        )
+
+        return nuevo_legajo
+
+    class Meta:
+        model = Legajos
+        fields = [
+            "apellido",
+            "nombre",
+            "fecha_nacimiento",
+            "tipo_doc",
+            "documento",
+            "sexo",
+            "vinculo",
+            "estado_relacion",
+            "conviven",
+            "cuidador_principal",
+        ]
+        widgets = {
+            "fecha_nacimiento": forms.DateInput(
+                attrs={"type": "date"}, format="%Y-%m-%d"
+            ),
+        }

@@ -19,6 +19,8 @@ from django.db.models import (
 from config.settings import CACHE_TIMEOUT
 from configuraciones.choices import CHOICE_DIMENSIONES
 from legajos.models import (
+    DimensionEconomia,
+    DimensionEducacion,
     DimensionFamilia,
     DimensionSalud,
     DimensionTrabajo,
@@ -36,6 +38,7 @@ from legajos.models import (
 )
 
 
+# TODO: Refactorizar en otros servicios
 class LegajosService:
     @staticmethod
     def obtener_queryset_filtrado(query: str) -> QuerySet[Legajos]:
@@ -286,38 +289,13 @@ class LegajosService:
     def obtener_legajos_relacionados(legajo_id) -> Dict[str, List[Dict[str, Any]]]:
         grupo_familiar = cache.get_or_set(
             f"{legajo_id}_familiares",
-            LegajoGrupoFamiliar.objects.filter(
-                Q(fk_legajo_1=legajo_id) | Q(fk_legajo_2=legajo_id)
-            ).values(
-                "fk_legajo_1__nombre",
-                "fk_legajo_1__apellido",
-                "fk_legajo_1__id",
-                "fk_legajo_1__foto",
-                "fk_legajo_2__nombre",
-                "fk_legajo_2__apellido",
-                "fk_legajo_2__id",
-                "fk_legajo_2__foto",
-                "vinculo",
-                "vinculo_inverso",
-            ),
+            LegajosService.obtener_grupo_familiar(legajo_id),
             CACHE_TIMEOUT,
         )
 
         grupo_hogar = cache.get_or_set(
             f"{legajo_id}_hogar_familiares",
-            LegajoGrupoHogar.objects.filter(
-                Q(fk_legajo_1Hogar=legajo_id) | Q(fk_legajo_2Hogar=legajo_id)
-            ).values(
-                "fk_legajo_2Hogar_id",
-                "fk_legajo_2Hogar",
-                "fk_legajo_1Hogar_id",
-                "fk_legajo_1Hogar",
-                "fk_legajo_1Hogar__nombre",
-                "fk_legajo_2Hogar__nombre",
-                "fk_legajo_1Hogar__foto",
-                "fk_legajo_2Hogar__foto",
-                "estado_relacion",
-            ),
+            LegajosService.obtener_grupo_hogar(legajo_id),
             CACHE_TIMEOUT,
         )
 
@@ -345,6 +323,39 @@ class LegajosService:
                 if legajo["fk_legajo_2Hogar"] == int(legajo_id)
             ],
         }
+
+    @staticmethod
+    def obtener_grupo_hogar(legajo_id) -> QuerySet[Dict[str, Any]]:
+        return LegajoGrupoHogar.objects.filter(
+            Q(fk_legajo_1Hogar=legajo_id) | Q(fk_legajo_2Hogar=legajo_id)
+        ).values(
+            "fk_legajo_2Hogar_id",
+            "fk_legajo_2Hogar",
+            "fk_legajo_1Hogar_id",
+            "fk_legajo_1Hogar",
+            "fk_legajo_1Hogar__nombre",
+            "fk_legajo_2Hogar__nombre",
+            "fk_legajo_1Hogar__foto",
+            "fk_legajo_2Hogar__foto",
+            "estado_relacion",
+        )
+
+    @staticmethod
+    def obtener_grupo_familiar(legajo_id) -> QuerySet[Dict[str, Any]]:
+        return LegajoGrupoFamiliar.objects.filter(
+            Q(fk_legajo_1=legajo_id) | Q(fk_legajo_2=legajo_id)
+        ).values(
+            "fk_legajo_1__nombre",
+            "fk_legajo_1__apellido",
+            "fk_legajo_1__id",
+            "fk_legajo_1__foto",
+            "fk_legajo_2__nombre",
+            "fk_legajo_2__apellido",
+            "fk_legajo_2__id",
+            "fk_legajo_2__foto",
+            "vinculo",
+            "vinculo_inverso",
+        )
 
     @staticmethod
     def obtener_alertas_categorizadas(
@@ -486,17 +497,53 @@ class LegajosService:
         return {}
 
     @staticmethod
-    def obtener_relaciones(legajo: int) -> List[str]:
+    def obtener_relaciones(legajo_id: int) -> List[str]:
         relaciones_existentes = []
 
-        for field in legajo._meta.get_fields():
+        for field in legajo_id._meta.get_fields():
             if isinstance(field, (ForeignKey, ManyToManyField)):
                 related_model_class = field.related_model
                 related_model_name = related_model_class.__name__
-                related_model = getattr(legajo, field.name, None)
+                related_model = getattr(legajo_id, field.name, None)
                 if related_model:
                     relaciones_existentes.append(
                         related_model_name,  # Guardar el nombre del modelo relacionado
                     )
 
         return relaciones_existentes
+
+    @staticmethod
+    def es_cuidador_principal(legajo_id: int) -> bool:
+        return LegajoGrupoFamiliar.objects.filter(
+            fk_legajo_1=legajo_id, cuidador_principal=True
+        ).exists()
+
+    @staticmethod
+    def legajo_es_mayor(legajo_id: int) -> bool:
+        legajo = Legajos.objects.get(pk=legajo_id)
+        edad_str = legajo.calcular_edad()
+        es_menor_de_18 = True
+        if isinstance(edad_str, str) and "años" in edad_str:
+            edad_int = int(edad_str.split()[0])
+            if edad_int >= 18:
+                es_menor_de_18 = False
+
+        return es_menor_de_18
+
+    @staticmethod
+    def crear_dimensiones(legajo_id: int) -> Dict[str, int]:
+        dimension_familia = DimensionFamilia.objects.create(fk_legajo_id=legajo_id)
+        dimension_vivienda = DimensionVivienda.objects.create(fk_legajo_id=legajo_id)
+        dimension_salud = DimensionSalud.objects.create(fk_legajo_id=legajo_id)
+        dimension_economia = DimensionEconomia.objects.create(fk_legajo_id=legajo_id)
+        dimension_educacion = DimensionEducacion.objects.create(fk_legajo_id=legajo_id)
+        dimension_trabajo = DimensionTrabajo.objects.create(fk_legajo_id=legajo_id)
+
+        return {
+            "dimension_familia_id": dimension_familia.id,
+            "dimension_vivienda_id": dimension_vivienda.id,
+            "dimension_salud_id": dimension_salud.id,
+            "dimension_economia_id": dimension_economia.id,
+            "dimension_educacion_id": dimension_educacion.id,
+            "dimension_trabajo_id": dimension_trabajo.id,
+        }

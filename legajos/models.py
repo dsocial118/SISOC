@@ -261,7 +261,7 @@ class Legajos(models.Model):
                 "La fecha de nacimiento debe ser menor o igual a la fecha actual."
             )
 
-    def edad(self):
+    def calcular_edad(self):
         today = date.today()
 
         if self.fecha_nacimiento:
