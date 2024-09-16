@@ -211,7 +211,7 @@ class UsuariosResetPassView(PermisosMixin, SuccessMessageMixin, PasswordResetVie
     """
 
     permission_required = ROL_ADMIN
-    template_name = "Passwords/password_reset.html"
+    template_name = "passwords/password_reset.html"
     form_class = MyResetPasswordForm
     success_url = reverse_lazy("usuarios_listar")
     success_message = "Mail de reseteo de contraseña enviado con éxito."
@@ -241,7 +241,7 @@ class PerfilUpdateView(UserPassesTestMixin, SuccessMessageMixin, UpdateView):
 
     model = User
     form_class = PerfilUpdateForm
-    template_name = "Perfiles/perfil_update_form.html"
+    template_name = "perfiles/perfil_update_form.html"
     success_message = "Perfil editado con éxito."
 
     def test_func(self):
@@ -281,7 +281,7 @@ class PerfilChangePassView(LoginRequiredMixin, SuccessMessageMixin, PasswordChan
     Es requisito conocer su clave anterior e introducir una nueva contraseña que cumpla con los requisitos del sistema.
     """
 
-    template_name = "Perfiles/perfil_change_password.html"
+    template_name = "perfiles/perfil_change_password.html"
     form_class = MyPasswordChangeForm
     success_url = reverse_lazy("legajos_listar")
     success_message = "La contraseña fue modificada con éxito."
@@ -300,7 +300,7 @@ class GruposListView(PermisosMixin, ListView):
         ROL_CONSULTANTE,
     ]
     model = Group
-    template_name = "Grupos/grupos_list.html"
+    template_name = "grupos/grupos_list.html"
 
     # Funcion de busqueda
     def get_queryset(self):
@@ -322,13 +322,13 @@ class GruposDetailView(PermisosMixin, DetailView):
         ROL_CONSULTANTE,
     ]
     model = Group
-    template_name = "Grupos/grupos_detail.html"
+    template_name = "grupos/grupos_detail.html"
 
 
 class GruposDeleteView(PermisosMixin, SuccessMessageMixin, DeleteView):
     permission_required = ("auth_user.delete_group", ROL_ADMIN)
     model = Group
-    template_name = "Grupos/grupos_confirm_delete.html"
+    template_name = "grupos/grupos_confirm_delete.html"
     success_url = reverse_lazy("grupos_listar")
     success_message = "El registro fue eliminado correctamente"
 
@@ -337,7 +337,7 @@ class GruposCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
     permission_required = ROL_ADMIN
     model = Group
     form_class = GruposUsuariosForm
-    template_name = "Grupos/grupos_form.html"
+    template_name = "grupos/grupos_form.html"
     success_message = "%(name)s fue registrado correctamente"
 
     def form_valid(self, form):
@@ -367,7 +367,7 @@ class GruposUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
     permission_required = ROL_ADMIN
     model = Group
     form_class = GruposUsuariosForm
-    template_name = "Grupos/grupos_form.html"
+    template_name = "grupos/grupos_form.html"
     success_message = "%(name)s fue editado correctamente"
 
     def form_valid(self, form):
