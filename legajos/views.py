@@ -68,6 +68,8 @@ from legajos.models import (
     LegajoProvincias,
     LegajoLocalidad,
     LegajoMunicipio,
+    Intervencion,
+    Llamado,
 )
 from usuarios.mixins import PermisosMixin
 from usuarios.utils import recortar_imagen
@@ -2036,4 +2038,113 @@ class DeleteGrupoHogar(View):
                 "mensaje": f"No fue posible eliminar el vinculo. Error: {e}",
             }
 
+        return JsonResponse(data)
+
+
+class IntervencionDetail(TemplateView):
+    permission_required = ROL_ADMIN
+    template_name = "legajos/intervencion_detail.html"
+    model = Intervencion
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        legajo = Legajos.objects.filter(pk=self.kwargs["pk"]).first()
+        intervenciones = Intervencion.objects.filter(fk_legajo=self.kwargs["pk"])
+
+        context["intervenciones"] = intervenciones
+        context["legajo"] = legajo
+
+        return context
+
+
+class DeletIntervencion(View):
+    def get(self, request):
+        pk = request.GET.get("id", None)
+        intervencion = get_object_or_404(Intervencion, pk=pk)
+        intervencion.delete()
+        data = {
+            "deleted": True,
+            "tipo_mensaje": "success",
+            "mensaje": "Intervencion eliminada correctamente.",
+        }
+        return JsonResponse(data)
+
+
+class CreateIntervencion(View):
+    def get(self, request):
+        pk = request.GET.get("id", None)
+        intervencion = get_object_or_404(Intervencion, pk=pk)
+        intervencion.delete()
+        data = {
+            "deleted": True,
+            "tipo_mensaje": "success",
+            "mensaje": "Intervencion eliminada correctamente.",
+        }
+        return JsonResponse(data)
+
+
+class EditIntervencion(View):
+    def get(self, request):
+        pk = request.GET.get("id", None)
+        intervencion = get_object_or_404(Intervencion, pk=pk)
+        intervencion.delete()
+        data = {
+            "deleted": True,
+            "tipo_mensaje": "success",
+            "mensaje": "Intervencion eliminada correctamente.",
+        }
+        return JsonResponse(data)
+
+
+class LlamadoDetail(TemplateView):
+    permission_required = ROL_ADMIN
+    template_name = "legajos/llamado_detail.html"
+    model = Llamado
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        legajo = Legajos.objects.filter(pk=self.kwargs["pk"]).first()
+        llamados = Llamado.objects.filter(fk_legajo=self.kwargs["pk"])
+        context["legajo"] = legajo
+        context["llamados"] = llamados
+
+        return context
+
+
+class DeleteLammado(View):
+    def get(self, request):
+        pk = request.GET.get("id", None)
+        llamado = get_object_or_404(Llamado, pk=pk)
+        llamado.delete()
+        data = {
+            "deleted": True,
+            "tipo_mensaje": "success",
+            "mensaje": "Llamado eliminado correctamente.",
+        }
+        return JsonResponse(data)
+
+
+class CreateLlamado(View):
+    def get(self, request):
+        pk = request.GET.get("id", None)
+        llamado = get_object_or_404(Llamado, pk=pk)
+        llamado.delete()
+        data = {
+            "deleted": True,
+            "tipo_mensaje": "success",
+            "mensaje": "Llamado eliminado correctamente.",
+        }
+        return JsonResponse(data)
+
+
+class EditLlamado(View):
+    def get(self, request):
+        pk = request.GET.get("id", None)
+        llamado = get_object_or_404(Llamado, pk=pk)
+        llamado.delete()
+        data = {
+            "deleted": True,
+            "tipo_mensaje": "success",
+            "mensaje": "Llamado eliminado correctamente.",
+        }
         return JsonResponse(data)
