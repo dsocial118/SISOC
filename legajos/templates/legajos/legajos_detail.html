@@ -39,6 +39,8 @@
         {% if perms.Usuarios.rol_admin %}
             <a href="{% url 'legajos_eliminar' object.id %}" class="btn btn-danger">Eliminar</a>
         {% endif %}
+        <a href="{% url 'intervencion_ver' object.id %}" class="btn btn-primary mr-1">Agregar Intervención</a>
+        <a href="{% url 'llamados_ver' object.id %}" class="btn btn-primary mr-1">Agregar Lllamado</a>
     </div>
     <div class="row">
         <div class="col-sm-3">

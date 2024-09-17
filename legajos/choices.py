@@ -1210,7 +1210,23 @@ CHOICE_VINCULO_FAMILIAR = [
     ("Pareja", "Pareja"),
     ("Otro", "Otro"),
 ]
+CHOICE_RECHAZO = [
+    (None, ""),
+    ("No corresponde", "No corresponde"),
+    ("Fuera de edad requerida", "Fuera de edad requerida"),
+]
 
+CHOICE_ESTADO_INTERVENCION = [
+    (None, ""),
+    ("En proceso", "En proceso"),
+    ("Finalizada", "Finalizada"),
+]
+
+CHOICE_ESTADO_LLAMADO = [
+    (None, ""),
+    ("En proceso", "En proceso"),
+    ("Finalizada", "Finalizada"),
+]
 CHOICE_IMPORTANCIA = [
     (None, ""),
     ("Alta", "Alta"),
@@ -1252,8 +1268,3 @@ NOMBRES_MESES_MAP = {
     11: "Noviembre",
     12: "Diciembre",
 }
-CHOICE_RECHAZO = [
-    (None, ""),
-    ("No corresponde", "No corresponde"),
-    ("Fuera de edad requerida", "Fuera de edad requerida"),
-]
