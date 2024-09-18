@@ -13,6 +13,7 @@ urlpatterns = [
     path("", include("inicio.urls")),
     path("", include("dashboard.urls")),
     path("", include("legajos.urls")),
+    path("", include("comedores.urls")),
     path("", include("healthcheck.urls")),
 ]
 
