@@ -28,4 +28,4 @@ class ComedorCreateView(CreateView):
     model = Comedor
     form_class = ComedorForm
     template_name = "comedor_form.html"
-    success_url = reverse_lazy("comedor_listar")  # TODO: Cambiar a comedor_detalle
+    success_url = reverse_lazy("comedor_listar")  # TODO: Cambiar a comedor_ver

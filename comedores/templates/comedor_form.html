@@ -1,0 +1,50 @@
+{% extends "includes/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+;
+{% block title %}Comedores{% endblock %}
+{% block titulo-pagina %}Comedores{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right px-3">
+        <li class="breadcrumb-item">
+            <a href="{% url 'legajos_listar' %}">Comedores</a>
+        </li>
+        {% if request.resolver_match.url_name == "comedor_editar" %}
+            <li class="breadcrumb-item">
+                <a href="{% url 'comedor_ver' comedor.id %}">{{ comedor }}</a>
+            </li>
+            <li class="breadcrumb-item active">Editar</li>
+        {% else %}
+            <li class="breadcrumb-item active">Agregar</li>
+        {% endif %}
+    </ol>
+{% endblock %}
+;
+{% block content %}
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="card card-primary card-outline">
+                <div class="bs-stepper">
+                    <div class="card-header mb-3">
+                        <h3 class="card-title">Agregar Comedor</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-row justify-content-center">
+                            <form method="post" class="w-100">
+                                {% csrf_token %}
+                                {% crispy form %}
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block customJS %}
+    <script>
+        var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
+        var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
+    </script>
+    <script src="{% static 'custom/js/comedorform.js' %}"></script>
+{% endblock %}

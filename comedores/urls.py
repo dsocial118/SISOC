@@ -1,7 +1,7 @@
 from django.urls import path
 from django.contrib.auth.decorators import login_required
 
-from comedores.views import ComedorListView
+from comedores.views import ComedorListView, ComedorCreateView
 
 
 urlpatterns = [
@@ -12,7 +12,7 @@ urlpatterns = [
     ),
     path(
         "comedores/crear",
-        login_required(ComedorListView.as_view()),
+        login_required(ComedorCreateView.as_view()),
         name="comedor_crear",
     ),
     path(
