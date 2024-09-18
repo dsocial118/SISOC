@@ -22,6 +22,8 @@ from .models import (
     DimensionSalud,
     DimensionEconomia,
     DimensionTrabajo,
+    Intervencion,
+    Llamado,
     CHOICE_VINCULO_FAMILIAR,
     CHOICE_ESTADO_RELACION,
     CHOICE_SINO,
@@ -637,4 +639,35 @@ class DerivacionesRechazoForm(forms.ModelForm):
         labels = {
             "motivo_rechazo": "Motivo de rechazo",
             "obs_rechazo": "Observaciones",
+        }
+
+
+class IntervencionForm(forms.ModelForm):
+    class Meta:
+        model = Intervencion
+        fields = "__all__"
+        widgets = {
+            "detalles": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 3,
+                }
+            ),
+        }
+        labels = {
+            "detalles": "Detalles de la intervención",
+        }
+
+
+class LlamadoForm(forms.ModelForm):
+    class Meta:
+        model = Llamado
+        fields = "__all__"
+        widgets = {
+            "observaciones": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 3,
+                }
+            ),
         }

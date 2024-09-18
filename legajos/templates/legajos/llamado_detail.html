@@ -2,17 +2,17 @@
 {% load static %};
 
 {% block title %}
-Admisiones Formulario
+Llamados Formulario
 {%endblock %};
 
 {% block titulo-pagina %}
-Admisiones
+Llamados
 {% endblock %};
 
 {% block breadcrumb %}
 <ol class="breadcrumb float-sm-right">
   <li class="breadcrumb-item"><a href="" title="Ver listado de admisiones">Admisiones</a></li>
-  <li class="breadcrumb-item "><a href="{% url 'legajos_ver' object.fk_preadmi.fk_legajo.id %}" title="Ver legajo">{{object.fk_preadmi.fk_legajo }}</a></li>
+  <li class="breadcrumb-item "><a href="{% url 'legajos_ver' object.id %}" title="Ver legajo">{{object}}</a></li>
   <li class="breadcrumb-item active">Detalle</li>
 </ol>
 {% endblock %};
@@ -25,9 +25,7 @@ Admisiones
 <div class="row">
   <!-- botones -->
   <div class="col-12 my-3 mx-2 d-print-none">
-    {% if object.estado != "Inactiva" %}
-    <a href="{% url 'CDLE_intervenciones_legajos_listar' object.id %}" class="btn btn-primary mr-1">Ver intervenciones</a>
-    {% endif %}
+    <a href="{% url 'llamados_crear' object.id %}" class="btn btn-primary mr-1">Agregar Lllamado</a>
     <a href="" class="btn btn-secondary mr-1 print">Imprimir</a>
   </div>
   <!-- ./botones -->
@@ -41,7 +39,7 @@ Admisiones
       <div class="card-header">
         <h3 class="card-title">Detalle Legajo</h3>
         <div class="card-tools d-inline">
-          <a href="{% url 'legajos_ver' object.fk_preadmi.fk_legajo.id %}" class="ml-3 mr-2">Ver detalles</a>
+          <a href="{% url 'legajos_ver' object.id %}" class="ml-3 mr-2">Ver detalles</a>
           <button type="button" class="btn btn-tool d-md-none" data-card-widget="collapse">
             <i class="fas fa-minus"></i>
           </button>
@@ -50,13 +48,13 @@ Admisiones
       <div class="card-body">
         <dl class="row">
           <dd class="col-sm-5 mb-2">Nombre</dd>
-          <dt class="col-sm-7 mb-2"><a href="{% url 'legajos_ver' object.fk_preadmi.fk_legajo.id %}" title="Ver legajo">{{object.fk_preadmi.fk_legajo}}</a> </dt>
+          <dt class="col-sm-7 mb-2"><a href="{% url 'legajos_ver' object.id %}" title="Ver legajo">{{object.nombre}} {{object.apellido}}</a> </dt>
           <dd class="col-sm-5 mb-2">DNI</dd>
-          <dt class="col-sm-7 mb-2">{{object.fk_preadmi.fk_legajo.documento}}</dt>
+          <dt class="col-sm-7 mb-2">{{object.documento}}</dt>
           <dd class="col-sm-5 mb-2">Fecha de nacimiento</dd>
-          <dt class="col-sm-7 mb-2">{{object.fk_preadmi.fk_legajo.fecha_nacimiento|date:'d/m/Y'}}</dt>
+          <dt class="col-sm-7 mb-2">{{object.fecha_nacimiento|date:'d/m/Y'}}</dt>
           <dd class="col-sm-5 mb-2">Sexo</dd>
-          <dt class="col-sm-7 mb-2">{{object.fk_preadmi.fk_legajo.sexo}}</dt>
+          <dt class="col-sm-7 mb-2">{{object.sexo}}</dt>
         </dl>
       </div>
     </div>
@@ -68,10 +66,9 @@ Admisiones
     <div class="row h-100">
       <div class="col-12">
         <div class="info-box py-3 ">
-          <span class="info-box-icon bg-secondary">{{intervenciones_count}}</span>
+          <span class="info-box-icon bg-secondary">{{cantidad_llamados}}</span>
           <div class="info-box-content">
-            <span class="info-box-text">Intervenciones</span>
-            <span class="info-box-number h6"> {{intervenciones_last|date:'d/m/Y'|default:'-'}}</span>
+            <span class="info-box-text">Llamados</span>
           </div>
         </div>
       </div>
@@ -79,11 +76,11 @@ Admisiones
   </div>
     <!-- /  -->
 
-    <!-- historial de Intervenciones -->
+    <!-- historial de Llamados -->
   <div class="col-12 mt-3">
     <div class="card card-primary card-outline">
       <div class="card-header">
-        <h3 class="card-title">Historial de Intervenciones </h3>
+        <h3 class="card-title">Historial de Llamados </h3>
         <div class="card-tools ">
           <button type="button" class="btn btn-tool d-md-none" data-card-widget="collapse">
             <i class="fas fa-minus"></i>
@@ -94,23 +91,25 @@ Admisiones
         <table class="table table-head-fixed table-bordered">
           <thead>
             <tr>
-              <th>Ingreso</th>
-              <th>Centro</th>
-              <th>Sala</th>
-              <th>Educadora</th>
-              <th>Egreso</th>
-              <th>Motivo</th>
+              <th>Fecha</th>
+              <th>Usuario</th>
+              <th>Tipo de llamada</th>
+              <th>Sub tipo de llamada</th>
+              <th>Estado</th>
+              <th></th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
-            {% for e in movimientosVO %}
+            {% for e in llamados %}
             <tr>
-              <td>{{e.fecha_ingreso|date:'d/m/Y'}}</td>
-              <td>{{e.fk_organismo}}</td>
-              <td>{{e.sala}}</td>
-              <td>{{e.educador}}</td>
-              <td>{{e.fecha_egreso|date:'d/m/Y'|default:"-"}}</td>
-              <td>{{e.motivo|default:"-"}}</td>
+              <td>{{e.fecha|date:'d/m/Y'}}</td>
+              <td>{{e.fk_usuario}}</td>
+              <td>{{e.fk_tipo_llamado}}</td>
+              <td>{{e.fk_subtipollamado}}</td>
+              <td>{{e.estado}}</td>
+              <td><a href="{% url 'llamados_editar' e.id object.id%}">Editar</a></td>
+              <td><a href="{% url 'llamados_borrar' e.id object.id %}">Eliminiar</a></td>
             </tr>
             {% endfor %}
           </tbody>
@@ -124,7 +123,7 @@ Admisiones
 <div class="row mt-4 d-print-none">
   <div class="col-12 mx-2">
     <div class="form-group  d-flex justify-content-between">
-      <a href="{% url 'CDLE_admisiones_listar' %}" class="btn btn-secondary">Volver</a>
+      <a href="{% url 'legajos_ver' object.id %}" class="btn btn-secondary">Volver</a>
     </div>
   </div>
 </div>
