@@ -1,0 +1,296 @@
+[
+    {
+        "model": "comedores.tipomodalidadprestacion",
+        "pk": 1,
+        "fields": {
+            "nombre": "Vianda"
+        }
+    },
+    {
+        "model": "comedores.tipomodalidadprestacion",
+        "pk": 2,
+        "fields": {
+            "nombre": "Servicio en el lugar"
+        }
+    },
+    {
+        "model": "comedores.tipomodalidadprestacion",
+        "pk": 3,
+        "fields": {
+            "nombre": "Vianda y servicio en el lugar"
+        }
+    },
+    {
+        "model": "comedores.tipoespacio",
+        "pk": 1,
+        "fields": {
+            "nombre": "Espacio Propio"
+        }
+    },
+    {
+        "model": "comedores.tipoespacio",
+        "pk": 2,
+        "fields": {
+            "nombre": "Espacio alquilado"
+        }
+    },
+    {
+        "model": "comedores.tipoespacio",
+        "pk": 3,
+        "fields": {
+            "nombre": "Espacio prestado (uso exclusivo)"
+        }
+    },
+    {
+        "model": "comedores.tipoespacio",
+        "pk": 4,
+        "fields": {
+            "nombre": "Espacio comunitario compartido"
+        }
+    },
+    {
+        "model": "comedores.tipoespacio",
+        "pk": 5,
+        "fields": {
+            "nombre": "Casa de familia"
+        }
+    },
+    {
+        "model": "comedores.tipoespacio",
+        "pk": 6,
+        "fields": {
+            "nombre": "Otro"
+        }
+    },
+    {
+        "model": "comedores.tipocombustible",
+        "pk": 1,
+        "fields": {
+            "nombre": "Gas natural"
+        }
+    },
+    {
+        "model": "comedores.tipocombustible",
+        "pk": 2,
+        "fields": {
+            "nombre": "Gas envasado"
+        }
+    },
+    {
+        "model": "comedores.tipocombustible",
+        "pk": 3,
+        "fields": {
+            "nombre": "Leña"
+        }
+    },
+    {
+        "model": "comedores.tipocombustible",
+        "pk": 4,
+        "fields": {
+            "nombre": "Gas natural/Gas envasado/Leña/Otro"
+        }
+    },
+    {
+        "model": "comedores.tipoagua",
+        "pk": 1,
+        "fields": {
+            "nombre": "Agua de red"
+        }
+    },
+    {
+        "model": "comedores.tipoagua",
+        "pk": 2,
+        "fields": {
+            "nombre": "Pozo"
+        }
+    },
+    {
+        "model": "comedores.tipoagua",
+        "pk": 3,
+        "fields": {
+            "nombre": "Otro"
+        }
+    },
+    {
+        "model": "comedores.tipodesague",
+        "pk": 1,
+        "fields": {
+            "nombre": "Cloaca"
+        }
+    },
+    {
+        "model": "comedores.tipodesague",
+        "pk": 2,
+        "fields": {
+            "nombre": "Pozo ciego"
+        }
+    },
+    {
+        "model": "comedores.tipodesague",
+        "pk": 3,
+        "fields": {
+            "nombre": "Letrina"
+        }
+    },
+    {
+        "model": "comedores.frecuencialimpieza",
+        "pk": 1,
+        "fields": {
+            "nombre": "1 vez por día"
+        }
+    },
+    {
+        "model": "comedores.frecuencialimpieza",
+        "pk": 2,
+        "fields": {
+            "nombre": "2 veces por día o más"
+        }
+    },
+    {
+        "model": "comedores.frecuencialimpieza",
+        "pk": 3,
+        "fields": {
+            "nombre": "Otra frecuencia"
+        }
+    },
+    {
+        "model": "comedores.cantidadcolaboradores",
+        "pk": 1,
+        "fields": {
+            "nombre": "1 a 3"
+        }
+    },
+    {
+        "model": "comedores.cantidadcolaboradores",
+        "pk": 2,
+        "fields": {
+            "nombre": "4 a 7"
+        }
+    },
+    {
+        "model": "comedores.cantidadcolaboradores",
+        "pk": 3,
+        "fields": {
+            "nombre": "8 o más"
+        }
+    },
+    {
+        "model": "comedores.frecuenciarecepcionrecursos",
+        "pk": 1,
+        "fields": {
+            "nombre": "1 vez por semana"
+        }
+    },
+    {
+        "model": "comedores.frecuenciarecepcionrecursos",
+        "pk": 2,
+        "fields": {
+            "nombre": "2 a 4 veces por mes"
+        }
+    },
+    {
+        "model": "comedores.frecuenciarecepcionrecursos",
+        "pk": 3,
+        "fields": {
+            "nombre": "5 o mas veces por mes"
+        }
+    },
+    {
+        "model": "comedores.frecuenciarecepcionrecursos",
+        "pk": 4,
+        "fields": {
+            "nombre": "Sin frecuencia"
+        }
+    },
+    {
+        "model": "comedores.tiporecurso",
+        "pk": 1,
+        "fields": {
+            "nombre": "Transferencia monetaria"
+        }
+    },
+    {
+        "model": "comedores.tiporecurso",
+        "pk": 2,
+        "fields": {
+            "nombre": "Mercadería"
+        }
+    },
+    {
+        "model": "comedores.tipocomida",
+        "pk": 1,
+        "fields": {
+            "nombre": "Desayuno"
+        }
+    },
+    {
+        "model": "comedores.tipocomida",
+        "pk": 2,
+        "fields": {
+            "nombre": "Almuerzo"
+        }
+    },
+    {
+        "model": "comedores.tipocomida",
+        "pk": 3,
+        "fields": {
+            "nombre": "Merienda"
+        }
+    },
+    {
+        "model": "comedores.tipocomida",
+        "pk": 4,
+        "fields": {
+            "nombre": "Cena"
+        }
+    },
+    {
+        "model": "comedores.nombredia",
+        "pk": 1,
+        "fields": {
+            "nombre": "Lunes"
+        }
+    },
+    {
+        "model": "comedores.nombredia",
+        "pk": 2,
+        "fields": {
+            "nombre": "Martes"
+        }
+    },
+    {
+        "model": "comedores.nombredia",
+        "pk": 3,
+        "fields": {
+            "nombre": "Miercoles"
+        }
+    },
+    {
+        "model": "comedores.nombredia",
+        "pk": 4,
+        "fields": {
+            "nombre": "Jueves"
+        }
+    },
+    {
+        "model": "comedores.nombredia",
+        "pk": 5,
+        "fields": {
+            "nombre": "Viernes"
+        }
+    },
+    {
+        "model": "comedores.nombredia",
+        "pk": 6,
+        "fields": {
+            "nombre": "Sabado"
+        }
+    },
+    {
+        "model": "comedores.nombredia",
+        "pk": 7,
+        "fields": {
+            "nombre": "Domingo"
+        }
+    }
+]
