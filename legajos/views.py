@@ -50,6 +50,8 @@ from legajos.forms import (
     LegajosForm,
     LegajosUpdateForm,
     NuevoLegajoFamiliarForm,
+    IntervencionForm,
+    LlamadoForm,
 )
 from legajos.models import (
     DimensionFamilia,
@@ -2050,50 +2052,66 @@ class IntervencionDetail(TemplateView):
         context = super().get_context_data(**kwargs)
         legajo = Legajos.objects.filter(pk=self.kwargs["pk"]).first()
         intervenciones = Intervencion.objects.filter(fk_legajo=self.kwargs["pk"])
-
+        cantidad_intervenciones = Intervencion.objects.filter(
+            fk_legajo=self.kwargs["pk"]
+        ).count()
         context["intervenciones"] = intervenciones
-        context["legajo"] = legajo
+        context["object"] = legajo
+        context["cantidad_intervenciones"] = cantidad_intervenciones
 
         return context
 
 
-class DeletIntervencion(View):
-    def get(self, request):
-        pk = request.GET.get("id", None)
-        intervencion = get_object_or_404(Intervencion, pk=pk)
-        intervencion.delete()
-        data = {
-            "deleted": True,
-            "tipo_mensaje": "success",
-            "mensaje": "Intervencion eliminada correctamente.",
-        }
-        return JsonResponse(data)
+class CreateIntervencion(CreateView):
+    permission_required = ROL_ADMIN
+    model = Intervencion
+    template_name = "legajos/intervencion_form.html"
+    form_class = IntervencionForm
+
+    def form_valid(self, form):
+        pk = self.kwargs["pk"]
+        form.save()
+        return redirect("intervencion_ver", pk=pk)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        legajo = Legajos.objects.filter(pk=self.kwargs["pk"]).first()
+
+        context["form"] = self.get_form()
+        context["object"] = legajo
+
+        return context
 
 
-class CreateIntervencion(View):
-    def get(self, request):
-        pk = request.GET.get("id", None)
-        intervencion = get_object_or_404(Intervencion, pk=pk)
-        intervencion.delete()
-        data = {
-            "deleted": True,
-            "tipo_mensaje": "success",
-            "mensaje": "Intervencion eliminada correctamente.",
-        }
-        return JsonResponse(data)
+class DeletIntervencion(DeleteView):
+    permission_required = ROL_ADMIN
+    model = Intervencion
+    template_name = "legajos/intervencion_confirm_delete.html"
+
+    def form_valid(self, form):
+        self.object.delete()
+        return redirect("intervencion_ver", pk=self.kwargs["pk2"])
 
 
-class EditIntervencion(View):
-    def get(self, request):
-        pk = request.GET.get("id", None)
-        intervencion = get_object_or_404(Intervencion, pk=pk)
-        intervencion.delete()
-        data = {
-            "deleted": True,
-            "tipo_mensaje": "success",
-            "mensaje": "Intervencion eliminada correctamente.",
-        }
-        return JsonResponse(data)
+class EditIntervencion(UpdateView):
+    permission_required = ROL_ADMIN
+    model = Intervencion
+    form_class = IntervencionForm
+    template_name = "legajos/intervencion_form.html"
+
+    def form_valid(self, form):
+        pk = self.kwargs["pk2"]
+        form.save()
+        return redirect("intervencion_ver", pk=pk)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        legajo = Legajos.objects.filter(pk=self.kwargs["pk2"]).first()
+
+        context["form"] = self.get_form()
+        context["object"] = legajo
+
+        return context
 
 
 class LlamadoDetail(TemplateView):
@@ -2105,46 +2123,60 @@ class LlamadoDetail(TemplateView):
         context = super().get_context_data(**kwargs)
         legajo = Legajos.objects.filter(pk=self.kwargs["pk"]).first()
         llamados = Llamado.objects.filter(fk_legajo=self.kwargs["pk"])
-        context["legajo"] = legajo
+        cantidad_llamados = Llamado.objects.filter(fk_legajo=self.kwargs["pk"]).count()
+        context["object"] = legajo
         context["llamados"] = llamados
+        context["cantidad_llamados"] = cantidad_llamados
 
         return context
 
 
-class DeleteLammado(View):
-    def get(self, request):
-        pk = request.GET.get("id", None)
-        llamado = get_object_or_404(Llamado, pk=pk)
-        llamado.delete()
-        data = {
-            "deleted": True,
-            "tipo_mensaje": "success",
-            "mensaje": "Llamado eliminado correctamente.",
-        }
-        return JsonResponse(data)
+class DeleteLammado(DeleteView):
+    permission_required = ROL_ADMIN
+    model = Llamado
+
+    def form_valid(self, form):
+        self.object.delete()
+        return redirect("llamados_ver", pk=self.kwargs["pk2"])
 
 
-class CreateLlamado(View):
-    def get(self, request):
-        pk = request.GET.get("id", None)
-        llamado = get_object_or_404(Llamado, pk=pk)
-        llamado.delete()
-        data = {
-            "deleted": True,
-            "tipo_mensaje": "success",
-            "mensaje": "Llamado eliminado correctamente.",
-        }
-        return JsonResponse(data)
+class CreateLlamado(CreateView):
+    permission_required = ROL_ADMIN
+    model = Llamado
+    template_name = "legajos/llamado_form.html"
+    form_class = LlamadoForm
+
+    def form_valid(self, form):
+        pk = self.kwargs["pk"]
+        form.save()
+        return redirect("llamados_ver", pk=pk)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        legajo = Legajos.objects.filter(pk=self.kwargs["pk"]).first()
+
+        context["form"] = self.get_form()
+        context["object"] = legajo
+
+        return context
 
 
-class EditLlamado(View):
-    def get(self, request):
-        pk = request.GET.get("id", None)
-        llamado = get_object_or_404(Llamado, pk=pk)
-        llamado.delete()
-        data = {
-            "deleted": True,
-            "tipo_mensaje": "success",
-            "mensaje": "Llamado eliminado correctamente.",
-        }
-        return JsonResponse(data)
+class EditLlamado(UpdateView):
+    permission_required = ROL_ADMIN
+    model = Llamado
+    form_class = LlamadoForm
+    template_name = "legajos/llamado_form.html"
+
+    def form_valid(self, form):
+        pk = self.kwargs["pk2"]
+        form.save()
+        return redirect("llamados_ver", pk=pk)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        legajo = Legajos.objects.filter(pk=self.kwargs["pk2"]).first()
+
+        context["form"] = self.get_form()
+        context["object"] = legajo
+
+        return context

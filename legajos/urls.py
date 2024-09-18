@@ -291,12 +291,12 @@ urlpatterns = [
         name="intervencion_crear",
     ),
     path(
-        "legajos/intervencion/editar/<pk>",
+        "legajos/intervencion/editar/<pk>/<pk2>",
         login_required(EditIntervencion.as_view()),
         name="intervencion_editar",
     ),
     path(
-        "legajos/intervencion/borrar/<pk>",
+        "legajos/intervencion/borrar/<pk>/<pk2>",
         login_required(DeletIntervencion.as_view()),
         name="intervencion_borrar",
     ),
@@ -306,17 +306,17 @@ urlpatterns = [
         name="llamados_ver",
     ),
     path(
-        "legajos/llamados/editar/<pk>",
+        "legajos/llamados/editar/<pk>/<pk2>",
         login_required(EditLlamado.as_view()),
         name="llamados_editar",
     ),
     path(
         "legajos/llamados/crear/<pk>",
         login_required(CreateLlamado.as_view()),
-        name="llamados_editar",
+        name="llamados_crear",
     ),
     path(
-        "legajos/llamados/borrar/<pk>",
+        "legajos/llamados/borrar/<pk>/<pk2>",
         login_required(DeleteLammado.as_view()),
         name="llamados_borrar",
     ),

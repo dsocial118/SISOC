@@ -1139,6 +1139,9 @@ class SubIntervencion(models.Model):
 
     nombre = models.CharField(max_length=255)
 
+    def __str__(self):
+        return f"{self.nombre}"
+
     class Meta:
         verbose_name = "SubIntervencion"
         verbose_name_plural = "SubIntervenciones"
@@ -1186,6 +1189,9 @@ class SubTipoLlamado(models.Model):
     Guardado de los SubTipoLlamado realizados a un legajo.
     """
 
+    def __str__(self):
+        return f"{self.nombre}"
+
     nombre = models.CharField(max_length=255)
 
     class Meta:
@@ -1204,6 +1210,7 @@ class Llamado(models.Model):
     fk_tipo_llamado = models.ForeignKey(TipoLammado, on_delete=models.DO_NOTHING)
     fecha = models.DateTimeField(auto_now_add=True)
     estado = models.CharField(max_length=255, choices=CHOICE_ESTADO_LLAMADO)
+    observaciones = models.CharField(max_length=500)
 
     class Meta:
         ordering = ["-fecha"]
