@@ -1,0 +1,123 @@
+{% extends "includes/base.html" %};
+{% load static %}
+;
+{% block title %}Comedor - {{ comedor.nombre }}{% endblock %}
+;
+{% block titulo-pagina %}
+    {{ comedor.nombre }}
+    <span class="ml-2 h5">| {{ comedor.provincia__nombre }}, {{ comedor.municipio__nombre_region }}, {{ comedor.localidad__nombre }}</span>
+{% endblock %}
+;
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <div class="breadcrumb-item">
+            <a href="{% url 'comedor_listar' %}">Comedores</a>
+        </div>
+        <div class="breadcrumb-item active">{{ comedor.nombre }}</div>
+    </ol>
+{% endblock %}
+;
+{% block content %}
+    <div class="row justify-content-sm-start justify-content-between d-print-none mx-1 mb-2">
+        <a href="{% url 'comedor_editar' comedor.id %}"
+           class="btn btn-primary mr-1">Editar</a>
+        <a href="#" class="btn btn-secondary print mr-1 d-none d-sm-inline">Imprimir</a>
+        <a href="{% url 'comedor_eliminar' comedor.id %}" class="btn btn-danger">Eliminar</a>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title font-weight-bold mr-3 pt-1">Información</h3>
+            <div class="card-tools">
+                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                    <i class="fas fa-minus"></i>
+                </button>
+            </div>
+        </div>
+        <div class="card-body card-comments p-0 pb-1">
+            <div class="nav nav-pills row my-3">
+                <div class="nav-item col-3 d-flex justify-content-center">
+                    <div class="comment-text comment-text d-flex flex-column align-items-center">
+                        Nombre
+                        <span class="username">{{ comedor.nombre }}</span>
+                    </div>
+                </div>
+                <div class="nav-item col-3 d-flex justify-content-center">
+                    <div class="comment-text comment-text d-flex flex-column align-items-center">
+                        Año en el que empezo a funcionar
+                        <span class="username">{{ comedor.comienzo }}</span>
+                    </div>
+                </div>
+                <div class="nav-item col-3 d-flex justify-content-center">
+                    <div class="comment-text comment-text d-flex flex-column align-items-center">
+                        Referente
+                        <span class="username">{{ comedor.referente__apellido }} y {{ comedor.referente__nombre }}</span>
+                    </div>
+                </div>
+                <div class="nav-item col-3 d-flex justify-content-center">
+                    <div class="comment-text comment-text d-flex flex-column align-items-center">
+                        Numero de contacto
+                        <span class="username">{{ comedor.referente__telefono | default_if_none:"-" }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="nav nav-pills row my-3">
+                <div class="nav-item col-3 d-flex justify-content-center">
+                    <div class="comment-text comment-text d-flex flex-column align-items-center">
+                        Provincia
+                        <span class="username">{{ comedor.provincia__nombre }}</span>
+                    </div>
+                </div>
+                <div class="nav-item col-3 d-flex justify-content-center">
+                    <div class="comment-text comment-text d-flex flex-column align-items-center">
+                        Municipio
+                        <span class="username">{{ comedor.municipio__nombre_region }}</span>
+                    </div>
+                </div>
+                <div class="nav-item col-3 d-flex justify-content-center">
+                    <div class="comment-text comment-text d-flex flex-column align-items-center">
+                        Localidad
+                        <span class="username">{{ comedor.localidad__nombre }}</span>
+                    </div>
+                </div>
+                <div class="nav-item col-3 d-flex justify-content-center">
+                    <div class="comment-text comment-text d-flex flex-column align-items-center">
+                        Partido
+                        <span class="username">{{ comedor.partido }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="nav nav-pills row my-3 justify-content-center">
+                <div class="nav-item col-2">
+                    <div class="comment-text comment-text d-flex flex-column align-items-center">
+                        Barrio
+                        <span class="username">{{ comedor.barrio }}</span>
+                    </div>
+                </div>
+                <div class="nav-item col-2">
+                    <div class="comment-text comment-text d-flex flex-column align-items-center">
+                        Codigo postal
+                        <span class="username">{{ comedor.codigo_postal }}</span>
+                    </div>
+                </div>
+                <div class="nav-item col-2">
+                    <div class="comment-text comment-text d-flex flex-column align-items-center">
+                        Calle
+                        <span class="username">{{ comedor.calle }}</span>
+                    </div>
+                </div>
+                <div class="nav-item col-2">
+                    <div class="comment-text comment-text d-flex flex-column align-items-center">
+                        Número
+                        <span class="username">{{ comedor.numero }}</span>
+                    </div>
+                </div>
+                <div class="nav-item col-2 ">
+                    <div class="comment-text comment-text d-flex flex-column align-items-center">
+                        Entre calles
+                        <span class="username">{{ comedor.entre_calle_1 | default_if_none:"-" }}, {{ comedor.entre_calle_2 | default_if_none:"-" }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
