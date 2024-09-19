@@ -53,8 +53,6 @@ from legajos.choices import (
     CHOICE_IMPORTANCIA,
     CHOICE_ESTADO_DERIVACION,
     CHOICE_RECHAZO,
-    CHOICE_ESTADO_INTERVENCION,
-    CHOICE_ESTADO_LLAMADO,
 )
 from usuarios.models import Usuarios, User
 
