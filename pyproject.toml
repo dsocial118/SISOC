@@ -1,12 +1,20 @@
 [tool.black]
-line-length = 150
-target-version = ['py39']
+line-length = 88
+target-version = ['py38', 'py39', 'py310'] 
+skip-string-normalization = false
+include = '\.pyi?$'
 exclude = '''
 /(
-    migrations
-    | __pycache__
-    | .*\.pyc
-    | .*\.pyo
-    | .*/site-packages/.*
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | venv
+  | migrations
 )/
 '''
