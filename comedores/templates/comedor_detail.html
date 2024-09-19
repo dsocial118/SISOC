@@ -1,0 +1,27 @@
+{% extends "includes/base.html" %};
+{% load static %}
+;
+{% block title %}Comedor - {{ comedor.nombre }}{% endblock %}
+;
+{% block titulo-pagina %}
+    {{ comedor.nombre }}
+    <span class="ml-2 h5">| {{ comedor.provincia }}, {{ comedor.municipio }}, {{ comedor.localidad }}</span>
+{% endblock %}
+;
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'comedor_listar' %}">Comedores</a>
+        </li>
+        <li class="breadcrumb-item active">{{ comedor.nombre }}</li>
+    </ol>
+{% endblock %}
+;
+{% block content %}
+    <div class="row justify-content-sm-start justify-content-between d-print-none mx-1 mb-2">
+        <a href="{% url 'comedor_editar' comedor.id %}"
+           class="btn btn-primary mr-1">Editar</a>
+        <a href="#" class="btn btn-secondary print mr-1 d-none d-sm-inline">Imprimir</a>
+        <a href="{% url 'comedor_eliminar' comedor.id %}" class="btn btn-danger">Eliminar</a>
+    </div>
+{% endblock %}

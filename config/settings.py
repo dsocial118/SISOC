@@ -214,10 +214,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Configuración de Django Debug Toolbar
 DEBUG_TOOLBAR_CONFIG = {
-    "SHOW_TOOLBAR_CALLBACK": lambda request: (
-        True if DEBUG else False  # pylint: disable=simplifiable-if-expression
-    )
-}
+    "SHOW_TOOLBAR_CALLBACK": lambda request: (True if DEBUG else False)
+}  # pylint: disable=simplifiable-if-expression
 # Configuración del HSTS para evitar conflictos en AWS previamente configurados
 SECURE_HSTS_SECONDS = None
 SECURE_HSTS_INCLUDE_SUBDOMAINS = False
