@@ -1,7 +1,7 @@
 from datetime import datetime
 from django import forms
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Row, Div, Submit
+from crispy_forms.layout import Layout, Row, Div, Submit, HTML
 
 from comedores.models import Comedor
 from legajos.models import LegajoLocalidad, LegajoMunicipio
@@ -44,7 +44,12 @@ class ComedorForm(forms.ModelForm):
                 Div("entre_calle_1", css_class="col-sm-3"),
                 Div("entre_calle_2", css_class="col-sm-3"),
             ),
-            Row(Submit("submit", "Crear", css_class="btn btn-primary")),
+            Row(
+                Submit("submit", "Confirmar", css_class="btn btn-primary mr-1"),
+                HTML(
+                    "<a href={% url 'comedor_listar' %} class='btn btn-secondary'>Cancelar</a>"
+                ),
+            ),
         )
 
     def popular_campos_ubicacion(self):
