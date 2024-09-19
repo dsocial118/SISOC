@@ -236,10 +236,10 @@
 		{%endif%}
 	</ul>
 </li>
-{%if perms.Usuarios.programa_Legajo%}
+{%if perms.Usuarios.programa_Legajo_Provincias%}
 <li class="nav-item">
-	<a href="{% url 'legajos_listar' %}" class="nav-link  {% if 'legajos/reportes' in pagina_actual %}active{% endif %}">
-		<i class="nav-icon fas fa-globe"></i>
+	<a href="{% url 'legajosprovincias_listar' %}" class="nav-link  {% if 'legajos_provincias' in pagina_actual %}active{% endif %}">
+		<i class="nav-icon fas fa-map"></i>
 		<p>Legajos Provincias</p>
 	</a>
 </li>

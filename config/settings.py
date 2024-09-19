@@ -80,13 +80,15 @@ INSTALLED_APPS = [
     'Inicio',
     'Dashboard',
     'Legajos',
+    #'Legajos_Provincias',
+    'Legajos_Provincias.apps.LegajosProvinciasConfig',
     # Programas
-    'SIF_CDIF',
-    'SIF_CDLE',
-    'SIF_MILD',
-    'SIF_PDV',
-    'SIF_SL',
-    'SIF_MA',
+    #'SIF_CDIF',
+    #'SIF_CDLE',
+    #'SIF_MILD',
+    #'SIF_PDV',
+    #'SIF_SL',
+    #'SIF_MA',
     # silk
     'silk',
     # Django debug toolbar

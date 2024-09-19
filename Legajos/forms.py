@@ -202,7 +202,7 @@ class LegajosDerivacionesForm(forms.ModelForm):
     archivos = forms.FileField(
         widget=forms.ClearableFileInput(
             attrs={
-                'multiple': True,
+                'multiple': False,
             }
         ),
         required=False,
