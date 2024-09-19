@@ -28,4 +28,7 @@ class ComedorCreateView(CreateView):
     model = Comedor
     form_class = ComedorForm
     template_name = "comedor_form.html"
-    success_url = reverse_lazy("comedor_listar")  # TODO: Cambiar a comedor_ver
+
+    def get_success_url(self):
+        return reverse("comedor_ver", kwargs={"pk": self.object.pk})
+
