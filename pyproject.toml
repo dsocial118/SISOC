@@ -1,0 +1,12 @@
+[tool.black]
+line-length = 150
+target-version = ['py39']
+exclude = '''
+/(
+    migrations
+    | __pycache__
+    | .*\.pyc
+    | .*\.pyo
+    | .*/site-packages/.*
+)/
+'''
