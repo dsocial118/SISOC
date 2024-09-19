@@ -189,8 +189,8 @@ class LegajosListView(ListView):
                     filter_condition |= Q(documento__contains=query)
                 queryset = queryset.filter(filter_condition)
 
-            self._cached_queryset = (  # pylint: disable=attribute-defined-outside-init
-                queryset
+            self._cached_queryset = (
+                queryset  # pylint: disable=attribute-defined-outside-init
             )
 
         return self._cached_queryset
@@ -198,9 +198,9 @@ class LegajosListView(ListView):
     def get(self, request, *args, **kwargs):
         query = self.request.GET.get("busqueda")
         if query:
-            self.object_list = (  # pylint: disable=attribute-defined-outside-init
+            self.object_list = (
                 self.get_queryset()
-            )
+            )  # pylint: disable=attribute-defined-outside-init
             size_queryset = self.object_list.count()
             if size_queryset == 1:
                 pk = self.object_list.first().id
@@ -235,9 +235,9 @@ class LegajosDetailView(DetailView):
     model = Legajos
     template_name = "legajos/legajos_detail.html"
 
-    def get_context_data(  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+    def get_context_data(
         self, **kwargs
-    ):
+    ):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         pk = self.kwargs["pk"]
         context = super().get_context_data(**kwargs)
 
@@ -499,9 +499,9 @@ class LegajosDetailView(DetailView):
 
         return context
 
-    def grafico_evolucion_de_riesgo(  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+    def grafico_evolucion_de_riesgo(
         self, fecha_actual, alertas
-    ):
+    ):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         if alertas.exists():
             primer_dia_siguiente_mes = datetime(
                 fecha_actual.year, fecha_actual.month % 12 + 1, 1
@@ -1366,9 +1366,9 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
 
         return context
 
-    def form_valid(  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+    def form_valid(
         self, form
-    ):
+    ):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         # TODO: Esto sera refactorizado
         self.object = form.save(commit=False)
 
