@@ -523,15 +523,14 @@ class Comedor(models.Model):
     )
     calle = models.CharField(max_length=255)
     numero = models.PositiveIntegerField()
-    entre_calle_1 = models.CharField(max_length=255)
-    entre_calle_2 = models.CharField(max_length=255)
+    entre_calle_1 = models.CharField(max_length=255, blank=True, null=True)
+    entre_calle_2 = models.CharField(max_length=255, blank=True, null=True)
     provincia = models.ForeignKey(to=LegajoProvincias, on_delete=models.PROTECT)
     municipio = models.ForeignKey(to=LegajoMunicipio, on_delete=models.PROTECT)
     localidad = models.ForeignKey(to=LegajoLocalidad, on_delete=models.PROTECT)
     partido = models.CharField(max_length=255)
     barrio = models.CharField(max_length=255)
     codigo_postal = models.IntegerField(
-        default=1000,
         validators=[
             MinValueValidator(999),
             MaxValueValidator(100000),
@@ -566,7 +565,7 @@ class Relevamiento(models.Model):
         to=Comedor,
         on_delete=models.CASCADE,
     )
-    fecha_visita = models.DateTimeField(default=timezone.now)
+    fecha_visita = models.DateTimeField(default=timezone.now, editable=False)
     funcionamiento = models.OneToOneField(
         to=FuncionamientoPrestacion,
         on_delete=models.PROTECT,
