@@ -35,11 +35,11 @@
             <a href="{% url 'legajosderivaciones_historial' object.id %}"
                class="btn btn-secondary mr-1">Derivar</a>
         {% endif %}
-        <a href="{% url 'intervencion_ver' object.id %}" class="btn btn-primary mr-1">Intervenciónes</a>
-        <a href="{% url 'llamados_ver' object.id %}" class="btn btn-primary mr-1">Lllamados</a>
-        <a href="#" class="btn btn-secondary print mr-1 d-none d-sm-inline">Imprimir</a>
+            <a href="{% url 'intervencion_ver' object.id %}" class="btn btn-primary mr-1">Intervenciónes</a>
+            <a href="{% url 'llamados_ver' object.id %}" class="btn btn-primary mr-1">Lllamados</a>
+            <a href="#" class="btn btn-secondary print mr-1 d-none d-sm-inline">Imprimir</a>
         {% if perms.Usuarios.rol_admin %}
-        <a href="{% url 'legajos_eliminar' object.id %}" class="btn btn-danger">Eliminar</a>
+            <a href="{% url 'legajos_eliminar' object.id %}" class="btn btn-danger">Eliminar</a>
         {% endif %}
     </div>
     <div class="row">
