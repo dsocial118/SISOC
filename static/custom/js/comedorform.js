@@ -1,15 +1,14 @@
-document.addEventListener('DOMContentLoaded', function () {
-    const provinciaSelect = document.getElementById('id_provincia');
-    const municipioSelect = document.getElementById('id_municipio');
-    const localidadSelect = document.getElementById('id_localidad');
+const provinciaSelect = document.getElementById('id_provincia');
+const municipioSelect = document.getElementById('id_municipio');
+const localidadSelect = document.getElementById('id_localidad');
 
-    provinciaSelect.addEventListener('change', async function () {
-        await cargarOpciones(`${ajaxLoadMunicipiosUrl}?provincia_id=${this.value}`, municipioSelect);
-    });
 
-    municipioSelect.addEventListener('change', async function () {
-        await cargarOpciones(`${ajaxLoadLocalidadesUrl}?municipio_id=${this.value}`, localidadSelect);
-    });
+provinciaSelect.addEventListener('change', async function () {
+    await cargarOpciones(`${ajaxLoadMunicipiosUrl}?provincia_id=${this.value}`, municipioSelect);
+});
+
+municipioSelect.addEventListener('change', async function () {
+    await cargarOpciones(`${ajaxLoadLocalidadesUrl}?municipio_id=${this.value}`, localidadSelect);
 });
 
 async function cargarOpciones(url, select) {
@@ -30,3 +29,7 @@ function crearOpcion({ id, nombre, nombre_region }, select) {
     option.textContent = nombre || nombre_region;
     select.appendChild(option);
 }
+
+$(document).ready(function () {
+    $('#id_referente').select2();
+});
