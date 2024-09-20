@@ -1096,7 +1096,7 @@ class EstadosLlamados(models.Model):
         verbose_name_plural = "EstadosLlamados"
 
 
-class TipoLammado(models.Model):
+class TipoLlamado(models.Model):
     """
     Guardado de los tipos de llamados realizados a un legajo.
     """
@@ -1107,7 +1107,7 @@ class TipoLammado(models.Model):
         return f"{self.nombre}"
 
     class Meta:
-        verbose_name = "TipoLammado"
+        verbose_name = "TipoLlamado"
         verbose_name_plural = "TiposLammado"
 
 
@@ -1120,7 +1120,7 @@ class SubTipoLlamado(models.Model):
         return f"{self.nombre}"
 
     nombre = models.CharField(max_length=255)
-    fk_tipo_llamado = models.ForeignKey(TipoLammado, on_delete=models.SET_NULL, default=1, null=True)
+    fk_tipo_llamado = models.ForeignKey(TipoLlamado, on_delete=models.SET_NULL, default=1, null=True)
 
     class Meta:
         verbose_name = "SubTipoLlamado"
@@ -1135,7 +1135,7 @@ class Llamado(models.Model):
     fk_legajo = models.ForeignKey(Legajos, on_delete=models.SET_NULL, null=True)
     fk_usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     fk_subtipollamado = models.ForeignKey(SubTipoLlamado, on_delete=models.SET_NULL, null=True)
-    fk_tipo_llamado = models.ForeignKey(TipoLammado, on_delete=models.SET_NULL, null=True)
+    fk_tipo_llamado = models.ForeignKey(TipoLlamado, on_delete=models.SET_NULL, null=True)
     fecha = models.DateTimeField(auto_now_add=True)
     fk_estado = models.ForeignKey(EstadosLlamados, on_delete=models.SET_NULL, default=1, null=True)
     observaciones = models.CharField(max_length=500)
