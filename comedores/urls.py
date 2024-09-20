@@ -1,7 +1,12 @@
 from django.urls import path
 from django.contrib.auth.decorators import login_required
 
-from comedores.views import ComedorListView, ComedorCreateView, ComedorDetailView
+from comedores.views import (
+    ComedorListView,
+    ComedorCreateView,
+    ComedorDetailView,
+    ComedorUpdateView,
+)
 
 
 urlpatterns = [
@@ -22,7 +27,7 @@ urlpatterns = [
     ),
     path(
         "comedores/editar/<pk>",
-        login_required(ComedorDetailView.as_view()),
+        login_required(ComedorUpdateView.as_view()),
         name="comedor_editar",
     ),
     path(

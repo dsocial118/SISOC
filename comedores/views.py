@@ -1,7 +1,7 @@
 from typing import Any
 from django.db.models.query import QuerySet
 from django.urls import reverse
-from django.views.generic import ListView, CreateView, DetailView
+from django.views.generic import ListView, CreateView, DetailView, UpdateView
 
 from comedores.forms.comedor import ComedorForm
 from .models import Comedor
@@ -60,3 +60,12 @@ class ComedorDetailView(DetailView):
             "referente__telefono",
             "referente__email",
         )
+
+
+class ComedorUpdateView(UpdateView):
+    model = Comedor
+    form_class = ComedorForm
+    template_name = "comedor_form.html"
+
+    def get_success_url(self):
+        return reverse("comedor_ver", kwargs={"pk": self.object.pk})

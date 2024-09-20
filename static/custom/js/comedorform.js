@@ -4,20 +4,27 @@ const localidadSelect = document.getElementById('id_localidad');
 
 
 provinciaSelect.addEventListener('change', async function () {
-    await cargarOpciones(`${ajaxLoadMunicipiosUrl}?provincia_id=${this.value}`, municipioSelect);
+    await cargarOpciones(`${ajaxLoadMunicipiosUrl}?provincia_id=${this.value}`, "municipio");
 });
 
 municipioSelect.addEventListener('change', async function () {
-    await cargarOpciones(`${ajaxLoadLocalidadesUrl}?municipio_id=${this.value}`, localidadSelect);
+    await cargarOpciones(`${ajaxLoadLocalidadesUrl}?municipio_id=${this.value}`, "localidad");
 });
 
 async function cargarOpciones(url, select) {
     try {
         const response = await fetch(url);
         const data = await response.json();
-        select.innerHTML = '';
+        if (select === "municipio") {
+            municipioSelect.innerHTML = '';
+            localidadSelect.innerHTML = '';
+            data.forEach(item => crearOpcion(item, municipioSelect));
+        }
 
-        data.forEach(item => crearOpcion(item, select));
+        if (select === "localidad") {
+            localidadSelect.innerHTML = '';
+            data.forEach(item => crearOpcion(item, localidadSelect));
+        }
     } catch (error) {
         console.error('Error al cargar opciones:', error);
     }
