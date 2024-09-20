@@ -1903,7 +1903,7 @@ class IntervencionDetail(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        legajo = Legajos.objects.filter(pk=self.kwargs["pk"]).first()
+        legajo = Legajos.objects.get(pk=self.kwargs["pk"])
         intervenciones = Intervencion.objects.filter(fk_legajo=self.kwargs["pk"])
         cantidad_intervenciones = Intervencion.objects.filter(fk_legajo=self.kwargs["pk"]).count()
         context["intervenciones"] = intervenciones
@@ -1913,7 +1913,7 @@ class IntervencionDetail(TemplateView):
         return context
 
 
-class CreateIntervencion(CreateView):
+class IntervencionCreateView(CreateView):
     permission_required = ROL_ADMIN
     model = Intervencion
     template_name = "legajos/intervencion_form.html"
@@ -1926,7 +1926,7 @@ class CreateIntervencion(CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        legajo = Legajos.objects.filter(pk=self.kwargs["pk"]).first()
+        legajo = Legajos.objects.get(pk=self.kwargs["pk"])
 
         context["form"] = self.get_form()
         context["object"] = legajo
@@ -1934,7 +1934,7 @@ class CreateIntervencion(CreateView):
         return context
 
 
-class DeletIntervencion(DeleteView):
+class IntervencionDeleteView(DeleteView):
     permission_required = ROL_ADMIN
     model = Intervencion
     template_name = "legajos/intervencion_confirm_delete.html"
@@ -1944,7 +1944,7 @@ class DeletIntervencion(DeleteView):
         return redirect("intervencion_ver", pk=self.kwargs["pk2"])
 
 
-class EditIntervencion(UpdateView):
+class IntervencionUpdateView(UpdateView):
     permission_required = ROL_ADMIN
     model = Intervencion
     form_class = IntervencionForm
@@ -1957,7 +1957,7 @@ class EditIntervencion(UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        legajo = Legajos.objects.filter(pk=self.kwargs["pk2"]).first()
+        legajo = Legajos.objects.get(pk=self.kwargs["pk2"])
 
         context["form"] = self.get_form()
         context["object"] = legajo
@@ -1972,7 +1972,7 @@ class LlamadoDetail(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        legajo = Legajos.objects.filter(pk=self.kwargs["pk"]).first()
+        legajo = Legajos.objects.get(pk=self.kwargs["pk"])
         llamados = Llamado.objects.filter(fk_legajo=self.kwargs["pk"])
         cantidad_llamados = Llamado.objects.filter(fk_legajo=self.kwargs["pk"]).count()
         context["object"] = legajo
@@ -1982,7 +1982,7 @@ class LlamadoDetail(TemplateView):
         return context
 
 
-class DeleteLammado(DeleteView):
+class LlamadoDeleteView(DeleteView):
     permission_required = ROL_ADMIN
     model = Llamado
 
@@ -1991,7 +1991,7 @@ class DeleteLammado(DeleteView):
         return redirect("llamados_ver", pk=self.kwargs["pk2"])
 
 
-class CreateLlamado(CreateView):
+class LlamadoCreateView(CreateView):
     permission_required = ROL_ADMIN
     model = Llamado
     template_name = "legajos/llamado_form.html"
@@ -2004,7 +2004,7 @@ class CreateLlamado(CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        legajo = Legajos.objects.filter(pk=self.kwargs["pk"]).first()
+        legajo = Legajos.objects.get(pk=self.kwargs["pk"])
 
         context["form"] = self.get_form()
         context["object"] = legajo
@@ -2012,7 +2012,7 @@ class CreateLlamado(CreateView):
         return context
 
 
-class EditLlamado(UpdateView):
+class LlamadoUpdateView(UpdateView):
     permission_required = ROL_ADMIN
     model = Llamado
     form_class = LlamadoForm
@@ -2025,7 +2025,7 @@ class EditLlamado(UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        legajo = Legajos.objects.filter(pk=self.kwargs["pk2"]).first()
+        legajo = Legajos.objects.get(pk=self.kwargs["pk2"])
 
         context["form"] = self.get_form()
         context["object"] = legajo
