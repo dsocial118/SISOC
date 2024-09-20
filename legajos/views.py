@@ -2051,7 +2051,9 @@ class IntervencionDetail(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        legajo = Legajos.objects.values("id", "nombre", "apellido", "documento","fecha_nacimiento","sexo").get(pk=self.kwargs["pk"])
+        legajo = Legajos.objects.values(
+            "id", "nombre", "apellido", "documento", "fecha_nacimiento", "sexo"
+        ).get(pk=self.kwargs["pk"])
         intervenciones = Intervencion.objects.filter(fk_legajo=self.kwargs["pk"])
         cantidad_intervenciones = Intervencion.objects.filter(
             fk_legajo=self.kwargs["pk"]
@@ -2076,7 +2078,9 @@ class IntervencionCreateView(CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        legajo = Legajos.objects.values("id", "nombre", "apellido", "documento","fecha_nacimiento","sexo").get(pk=self.kwargs["pk"])
+        legajo = Legajos.objects.values(
+            "id", "nombre", "apellido", "documento", "fecha_nacimiento", "sexo"
+        ).get(pk=self.kwargs["pk"])
 
         context["form"] = self.get_form()
         context["object"] = legajo
@@ -2107,7 +2111,9 @@ class IntervencionUpdateView(UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        legajo = Legajos.objects.values("id", "nombre", "apellido", "documento","fecha_nacimiento","sexo").get(pk=self.kwargs["pk2"])
+        legajo = Legajos.objects.values(
+            "id", "nombre", "apellido", "documento", "fecha_nacimiento", "sexo"
+        ).get(pk=self.kwargs["pk2"])
         context["form"] = self.get_form()
         context["object"] = legajo
         return context
@@ -2120,7 +2126,9 @@ class LlamadoDetail(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        legajo = Legajos.objects.values("id", "nombre", "apellido", "documento","fecha_nacimiento","sexo").get(pk=self.kwargs["pk"])
+        legajo = Legajos.objects.values(
+            "id", "nombre", "apellido", "documento", "fecha_nacimiento", "sexo"
+        ).get(pk=self.kwargs["pk"])
         llamados = Llamado.objects.filter(fk_legajo=self.kwargs["pk"])
         cantidad_llamados = Llamado.objects.filter(fk_legajo=self.kwargs["pk"]).count()
         context["object"] = legajo
@@ -2151,7 +2159,9 @@ class LlamadoCreateView(CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        legajo = Legajos.objects.values("id", "nombre", "apellido", "documento","fecha_nacimiento","sexo").get(pk=self.kwargs["pk"])
+        legajo = Legajos.objects.values(
+            "id", "nombre", "apellido", "documento", "fecha_nacimiento", "sexo"
+        ).get(pk=self.kwargs["pk"])
         context["form"] = self.get_form()
         context["object"] = legajo
         return context
@@ -2170,7 +2180,9 @@ class LlamadoUpdateView(UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        legajo = Legajos.objects.values("id", "nombre", "apellido", "documento","fecha_nacimiento","sexo").get(pk=self.kwargs["pk2"])
+        legajo = Legajos.objects.values(
+            "id", "nombre", "apellido", "documento", "fecha_nacimiento", "sexo"
+        ).get(pk=self.kwargs["pk2"])
         context["form"] = self.get_form()
         context["object"] = legajo
         return context
