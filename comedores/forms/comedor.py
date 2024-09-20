@@ -45,7 +45,7 @@ class ComedorForm(forms.ModelForm):
             Row(
                 Submit("submit", "Confirmar", css_class="btn btn-primary mr-1"),
                 HTML(
-                    "<a href={% url 'comedor_listar' %} class='btn btn-secondary'>Cancelar</a>"
+                    "<a href='javascript:history.back()' class='btn btn-secondary'>Cancelar</a>"
                 ),
             ),
         )
