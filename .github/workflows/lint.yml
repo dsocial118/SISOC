@@ -45,7 +45,7 @@ jobs:
                   pip install black
 
             - name: Run Black
-              run: black --check .
+              run: black --check . --config pyproject.toml
 
             - name: Upload Black report
               if: failure()
