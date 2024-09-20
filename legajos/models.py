@@ -158,15 +158,25 @@ class Legajos(models.Model):
         blank=True,
     )
     sexo = models.CharField(max_length=255, choices=CHOICE_SEXO)
-    nacionalidad = models.CharField(max_length=255, choices=CHOICE_NACIONALIDAD, null=True, blank=True)
-    estado_civil = models.CharField(max_length=255, choices=CHOICE_ESTADO_CIVIL, null=True, blank=True)
+    nacionalidad = models.CharField(
+        max_length=255, choices=CHOICE_NACIONALIDAD, null=True, blank=True
+    )
+    estado_civil = models.CharField(
+        max_length=255, choices=CHOICE_ESTADO_CIVIL, null=True, blank=True
+    )
     calle = models.CharField(max_length=255, null=True, blank=True)
     altura = models.IntegerField(null=True, blank=True)
     latitud = models.CharField(max_length=255, null=True, blank=True)
     longitud = models.CharField(max_length=255, null=True, blank=True)
-    pisodpto = models.CharField(max_length=255, null=True, blank=True, verbose_name="Piso/Dpto (optativo)")
-    circuito = models.CharField(max_length=255, choices=CHOICE_CIRCUITOS, null=True, blank=True)
-    torrepasillo = models.CharField(max_length=255, null=True, blank=True, verbose_name="Torre / Pasillo (optativo)")
+    pisodpto = models.CharField(
+        max_length=255, null=True, blank=True, verbose_name="Piso/Dpto (optativo)"
+    )
+    circuito = models.CharField(
+        max_length=255, choices=CHOICE_CIRCUITOS, null=True, blank=True
+    )
+    torrepasillo = models.CharField(
+        max_length=255, null=True, blank=True, verbose_name="Torre / Pasillo (optativo)"
+    )
     escaleramanzana = models.CharField(
         max_length=255,
         null=True,
@@ -174,14 +184,22 @@ class Legajos(models.Model):
         verbose_name="Escalera / Manzana (optativo)",
     )
 
-    codigopostal = models.IntegerField(null=True, blank=True, verbose_name="Código Postal")
+    codigopostal = models.IntegerField(
+        null=True, blank=True, verbose_name="Código Postal"
+    )
     telefono = models.IntegerField(null=True, blank=True)
-    telefonoalt = models.IntegerField(null=True, blank=True, verbose_name="Telefono Alternativo")
+    telefonoalt = models.IntegerField(
+        null=True, blank=True, verbose_name="Telefono Alternativo"
+    )
     email = models.EmailField(null=True, blank=True)
     foto = models.ImageField(upload_to="legajos", blank=True, null=True)
     m2m_alertas = models.ManyToManyField(Alertas, through="LegajoAlertas", blank=True)
-    m2m_familiares = models.ManyToManyField("self", through="LegajoGrupoFamiliar", symmetrical=True, blank=True)
-    observaciones = models.CharField(max_length=500, blank=True, null=True, verbose_name="Observaciones (optativo)")
+    m2m_familiares = models.ManyToManyField(
+        "self", through="LegajoGrupoFamiliar", symmetrical=True, blank=True
+    )
+    observaciones = models.CharField(
+        max_length=500, blank=True, null=True, verbose_name="Observaciones (optativo)"
+    )
     estado = models.BooleanField(default=True)
     creado_por = models.ForeignKey(
         Usuarios,
@@ -225,7 +243,9 @@ class Legajos(models.Model):
             qs = qs.exclude(pk=self.pk)
 
         if qs.exists():
-            raise ValidationError("Ya existe un legajo con ese TIPO y NÚMERO de documento.")
+            raise ValidationError(
+                "Ya existe un legajo con ese TIPO y NÚMERO de documento."
+            )
 
     def clean(self):
         # Separar y capitalizar las palabras en el campo "apellido"
@@ -237,19 +257,28 @@ class Legajos(models.Model):
             self.calle = self.calle.capitalize()
 
         if self.fecha_nacimiento and self.fecha_nacimiento > date.today():
-            raise ValidationError("La fecha de nacimiento debe ser menor o igual a la fecha actual.")
+            raise ValidationError(
+                "La fecha de nacimiento debe ser menor o igual a la fecha actual."
+            )
 
     def edad(self):
         today = date.today()
 
         if self.fecha_nacimiento:
             age = today.year - self.fecha_nacimiento.year
-            if today.month < self.fecha_nacimiento.month or (today.month == self.fecha_nacimiento.month and today.day < self.fecha_nacimiento.day):
+            if today.month < self.fecha_nacimiento.month or (
+                today.month == self.fecha_nacimiento.month
+                and today.day < self.fecha_nacimiento.day
+            ):
                 age -= 1
 
             if age == 0:
                 # Calcular la cantidad de meses entre las fechas
-                months = (today.year - self.fecha_nacimiento.year) * 12 + today.month - self.fecha_nacimiento.month
+                months = (
+                    (today.year - self.fecha_nacimiento.year) * 12
+                    + today.month
+                    - self.fecha_nacimiento.month
+                )
                 if months == 0:
                     # Calcular la cantidad de días entre las fechas
                     days = (today - self.fecha_nacimiento).days
@@ -282,8 +311,12 @@ class LegajoGrupoFamiliar(models.Model):
     del vínculo desde la consideración de cada parte involucrada.
     """
 
-    fk_legajo_1 = models.ForeignKey(Legajos, related_name="fk_legajo1", on_delete=models.CASCADE)
-    fk_legajo_2 = models.ForeignKey(Legajos, related_name="fk_legajo2", on_delete=models.CASCADE)
+    fk_legajo_1 = models.ForeignKey(
+        Legajos, related_name="fk_legajo1", on_delete=models.CASCADE
+    )
+    fk_legajo_2 = models.ForeignKey(
+        Legajos, related_name="fk_legajo2", on_delete=models.CASCADE
+    )
     vinculo = models.CharField(max_length=255, choices=CHOICE_VINCULO_FAMILIAR)
     vinculo_inverso = models.CharField(max_length=255, null=True, blank=True)
     estado_relacion = models.CharField(max_length=255, choices=CHOICE_ESTADO_RELACION)
@@ -322,20 +355,28 @@ class DimensionFamilia(models.Model):
     """
 
     fk_legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
-    estado_civil = models.CharField(max_length=255, choices=CHOICE_ESTADO_CIVIL, null=True, blank=True)
-    cant_hijos = models.SmallIntegerField(verbose_name="Cantidad de hijos", null=True, blank=True)
+    estado_civil = models.CharField(
+        max_length=255, choices=CHOICE_ESTADO_CIVIL, null=True, blank=True
+    )
+    cant_hijos = models.SmallIntegerField(
+        verbose_name="Cantidad de hijos", null=True, blank=True
+    )
     otro_responsable = models.BooleanField(
         verbose_name="¿Hay otro adulto responsable? (Padre o apoyo en la crianza)",
         null=True,
         blank=True,
     )
-    hay_embarazadas = models.BooleanField(verbose_name="Personas en el hogar embarazadas", null=True, blank=True)
+    hay_embarazadas = models.BooleanField(
+        verbose_name="Personas en el hogar embarazadas", null=True, blank=True
+    )
     hay_prbl_smental = models.BooleanField(
         verbose_name="Personas en el hogar con problemas de salud mental",
         null=True,
         blank=True,
     )
-    hay_fam_discapacidad = models.BooleanField(verbose_name="Personas en el hogar con discapacidad", null=True, blank=True)
+    hay_fam_discapacidad = models.BooleanField(
+        verbose_name="Personas en el hogar con discapacidad", null=True, blank=True
+    )
     hay_enf_cronica = models.BooleanField(
         verbose_name="Personas en el hogar con enfermedades crónicas",
         null=True,
@@ -346,14 +387,18 @@ class DimensionFamilia(models.Model):
         null=True,
         blank=True,
     )
-    obs_familia = models.CharField(verbose_name="Observaciones", max_length=500, null=True, blank=True)
+    obs_familia = models.CharField(
+        verbose_name="Observaciones", max_length=500, null=True, blank=True
+    )
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
 
     def clean(self):
         super().clean()
         if self.cant_hijos is not None and self.cant_hijos < 0:
-            raise ValidationError({"cant_hijos": "La cantidad de hijos debe ser un número positivo."})
+            raise ValidationError(
+                {"cant_hijos": "La cantidad de hijos debe ser un número positivo."}
+            )
 
     def __str__(self):
         return f"{self.fk_legajo}"
@@ -413,10 +458,18 @@ class DimensionVivienda(models.Model):
         blank=True,
         default=0,
     )
-    cant_menores = models.SmallIntegerField(verbose_name="¿Cuántos de ellos son menores de 18 años?", null=True, blank=True)
-    cant_camas = models.SmallIntegerField(verbose_name="¿Cuántas camas/ colchones posee?", null=True, blank=True)
-    cant_hogares = models.SmallIntegerField(verbose_name="¿Cuantos hogares hay en la vivienda?", null=True, blank=True)
-    obs_vivienda = models.CharField(verbose_name="Observaciones", max_length=500, null=True, blank=True)
+    cant_menores = models.SmallIntegerField(
+        verbose_name="¿Cuántos de ellos son menores de 18 años?", null=True, blank=True
+    )
+    cant_camas = models.SmallIntegerField(
+        verbose_name="¿Cuántas camas/ colchones posee?", null=True, blank=True
+    )
+    cant_hogares = models.SmallIntegerField(
+        verbose_name="¿Cuantos hogares hay en la vivienda?", null=True, blank=True
+    )
+    obs_vivienda = models.CharField(
+        verbose_name="Observaciones", max_length=500, null=True, blank=True
+    )
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
     # Nuevos campos
@@ -541,15 +594,23 @@ class DimensionSalud(models.Model):
         null=True,
         blank=True,
     )
-    hay_obra_social = models.BooleanField(verbose_name="¿Posee cobertura de salud?", null=True, blank=True)
+    hay_obra_social = models.BooleanField(
+        verbose_name="¿Posee cobertura de salud?", null=True, blank=True
+    )
     hay_enfermedad = models.BooleanField(
         verbose_name="¿Posee alguna enfermedad recurrente o crónica?",
         null=True,
         blank=True,
     )
-    hay_discapacidad = models.BooleanField(verbose_name="¿Posee alguna discapacidad?", null=True, blank=True)
-    hay_cud = models.BooleanField(verbose_name="¿Posee certificado de discapacidad?", null=True, blank=True)
-    obs_salud = models.CharField(verbose_name="Observaciones", max_length=500, null=True, blank=True)
+    hay_discapacidad = models.BooleanField(
+        verbose_name="¿Posee alguna discapacidad?", null=True, blank=True
+    )
+    hay_cud = models.BooleanField(
+        verbose_name="¿Posee certificado de discapacidad?", null=True, blank=True
+    )
+    obs_salud = models.CharField(
+        verbose_name="Observaciones", max_length=500, null=True, blank=True
+    )
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
 
@@ -604,13 +665,23 @@ class DimensionEducacion(models.Model):
         null=True,
         blank=True,
     )
-    ciclo = models.CharField(max_length=255, choices=CHOICE_NIVEL_EDUCATIVO, null=True, blank=True)
-    grado = models.CharField(max_length=255, choices=CHOICE_GRADO, null=True, blank=True)
-    turno = models.CharField(max_length=255, choices=CHOICE_TURNO, null=True, blank=True)
-    obs_educacion = models.CharField(max_length=500, verbose_name="Observaciones", null=True, blank=True)
+    ciclo = models.CharField(
+        max_length=255, choices=CHOICE_NIVEL_EDUCATIVO, null=True, blank=True
+    )
+    grado = models.CharField(
+        max_length=255, choices=CHOICE_GRADO, null=True, blank=True
+    )
+    turno = models.CharField(
+        max_length=255, choices=CHOICE_TURNO, null=True, blank=True
+    )
+    obs_educacion = models.CharField(
+        max_length=500, verbose_name="Observaciones", null=True, blank=True
+    )
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
-    acepta_terminos = models.BooleanField(verbose_name="Acepto los términos y condiciones", default=False)
+    acepta_terminos = models.BooleanField(
+        verbose_name="Acepto los términos y condiciones", default=False
+    )
     # Nuevos campos dimencion estudio
     provinciaInstitucion = models.ForeignKey(
         LegajoProvincias,
@@ -633,9 +704,15 @@ class DimensionEducacion(models.Model):
         null=True,
         blank=True,
     )
-    barrioInstitucion = models.CharField(verbose_name="Barrio", max_length=255, null=True, blank=True)
-    calleInstitucion = models.CharField(verbose_name="Calle", max_length=255, null=True, blank=True)
-    numeroInstitucion = models.CharField(verbose_name="Número", max_length=255, null=True, blank=True)
+    barrioInstitucion = models.CharField(
+        verbose_name="Barrio", max_length=255, null=True, blank=True
+    )
+    calleInstitucion = models.CharField(
+        verbose_name="Calle", max_length=255, null=True, blank=True
+    )
+    numeroInstitucion = models.CharField(
+        verbose_name="Número", max_length=255, null=True, blank=True
+    )
     nivelIncompleto = models.CharField(
         verbose_name="¿Cuál fue el motivo principal por el que no terminaste tus estudios?",
         max_length=255,
@@ -727,13 +804,17 @@ class DimensionEconomia(models.Model):
         null=True,
         blank=True,
     )
-    obs_economia = models.CharField(max_length=500, verbose_name="Observaciones", null=True, blank=True)
+    obs_economia = models.CharField(
+        max_length=500, verbose_name="Observaciones", null=True, blank=True
+    )
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
 
     # Migraciones para fix de DAD-123
 
-    ingresos = models.PositiveIntegerField(verbose_name="Ingresos Mensuales ", null=True, blank=True)
+    ingresos = models.PositiveIntegerField(
+        verbose_name="Ingresos Mensuales ", null=True, blank=True
+    )
     recibe_plan = models.CharField(
         verbose_name="¿Recibe planes sociales?",
         max_length=255,
@@ -762,9 +843,13 @@ class DimensionEconomia(models.Model):
 
 class DimensionTrabajo(models.Model):
     fk_legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
-    modo_contratacion = models.CharField(max_length=255, choices=CHOICE_MODO_CONTRATACION, null=True, blank=True)
+    modo_contratacion = models.CharField(
+        max_length=255, choices=CHOICE_MODO_CONTRATACION, null=True, blank=True
+    )
     ocupacion = models.CharField(max_length=255, null=True, blank=True)
-    obs_trabajo = models.CharField(max_length=500, verbose_name="Observaciones", null=True, blank=True)
+    obs_trabajo = models.CharField(
+        max_length=500, verbose_name="Observaciones", null=True, blank=True
+    )
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
     # NUEVOS CAMPOS DIMENSION TRABAJO
@@ -855,8 +940,12 @@ class LegajoAlertas(models.Model):
     Registro de Alertas de vulnerabilidad asociadas a un Legajo determinado Tanto el alta como la baja se guardan en un historial del alertas.
     """
 
-    fk_alerta = models.ForeignKey(Alertas, related_name="alerta", on_delete=models.CASCADE)
-    fk_legajo = models.ForeignKey(Legajos, related_name="legajo_alerta", on_delete=models.CASCADE)
+    fk_alerta = models.ForeignKey(
+        Alertas, related_name="alerta", on_delete=models.CASCADE
+    )
+    fk_legajo = models.ForeignKey(
+        Legajos, related_name="legajo_alerta", on_delete=models.CASCADE
+    )
     fecha_inicio = models.DateField(auto_now=True)
     creada_por = models.ForeignKey(
         Usuarios,
@@ -893,8 +982,12 @@ class HistorialLegajoAlertas(models.Model):
     Se graban a traves funciones detalladas en el archivo signals.py de esta app.
     """
 
-    fk_alerta = models.ForeignKey(Alertas, related_name="hist_alerta", on_delete=models.CASCADE)
-    fk_legajo = models.ForeignKey(Legajos, related_name="hist_legajo_alerta", on_delete=models.CASCADE)
+    fk_alerta = models.ForeignKey(
+        Alertas, related_name="hist_alerta", on_delete=models.CASCADE
+    )
+    fk_legajo = models.ForeignKey(
+        Legajos, related_name="hist_legajo_alerta", on_delete=models.CASCADE
+    )
     observaciones = models.CharField(max_length=255, null=True, blank=True)
     creada_por = models.ForeignKey(
         Usuarios,
@@ -936,13 +1029,23 @@ class LegajosDerivaciones(models.Model):
     """
 
     fk_legajo = models.ForeignKey(Legajos, on_delete=models.CASCADE)
-    fk_programa_solicitante = models.ForeignKey(Programas, related_name="programa_solicitante", on_delete=models.CASCADE)
-    fk_programa = models.ForeignKey(Programas, related_name="programa_derivado", on_delete=models.CASCADE)
-    fk_organismo = models.ForeignKey(Organismos, on_delete=models.CASCADE, null=True, blank=True)
+    fk_programa_solicitante = models.ForeignKey(
+        Programas, related_name="programa_solicitante", on_delete=models.CASCADE
+    )
+    fk_programa = models.ForeignKey(
+        Programas, related_name="programa_derivado", on_delete=models.CASCADE
+    )
+    fk_organismo = models.ForeignKey(
+        Organismos, on_delete=models.CASCADE, null=True, blank=True
+    )
     detalles = models.CharField(max_length=500, null=True, blank=True)
     fk_usuario = models.ForeignKey(User, on_delete=models.CASCADE)
-    importancia = models.CharField(max_length=15, choices=CHOICE_IMPORTANCIA, default="Alta")
-    estado = models.CharField(max_length=15, choices=CHOICE_ESTADO_DERIVACION, default="Pendiente")
+    importancia = models.CharField(
+        max_length=15, choices=CHOICE_IMPORTANCIA, default="Alta"
+    )
+    estado = models.CharField(
+        max_length=15, choices=CHOICE_ESTADO_DERIVACION, default="Pendiente"
+    )
     m2m_alertas = models.ManyToManyField(CategoriaAlertas, blank=True)
     archivos = models.FileField(upload_to="legajos/archivos", null=True, blank=True)
     motivo_rechazo = models.CharField(max_length=255, choices=CHOICE_RECHAZO)
@@ -988,8 +1091,12 @@ class LegajoGrupoHogar(models.Model):
     consideración de cada parte involucrada.
     """
 
-    fk_legajo_1Hogar = models.ForeignKey(Legajos, on_delete=models.CASCADE, related_name="hogar_1")
-    fk_legajo_2Hogar = models.ForeignKey(Legajos, on_delete=models.CASCADE, related_name="hogar_2")
+    fk_legajo_1Hogar = models.ForeignKey(
+        Legajos, on_delete=models.CASCADE, related_name="hogar_1"
+    )
+    fk_legajo_2Hogar = models.ForeignKey(
+        Legajos, on_delete=models.CASCADE, related_name="hogar_2"
+    )
     estado_relacion = models.CharField(max_length=255, choices=CHOICE_ESTADO_RELACION)
 
     def __str__(self):
@@ -1029,7 +1136,9 @@ class SubIntervencion(models.Model):
     """
 
     nombre = models.CharField(max_length=255)
-    fk_subintervencion = models.ForeignKey(TipoIntervencion, on_delete=models.SET_NULL, default=1, null=True)
+    fk_subintervencion = models.ForeignKey(
+        TipoIntervencion, on_delete=models.SET_NULL, default=1, null=True
+    )
 
     def __str__(self):
         return f"{self.nombre}"
@@ -1068,11 +1177,17 @@ class Intervencion(models.Model):
 
     fk_legajo = models.ForeignKey(Legajos, on_delete=models.SET_NULL, null=True)
     fk_usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    fk_subintervencion = models.ForeignKey(SubIntervencion, on_delete=models.SET_NULL, null=True)
-    fk_tipo_intervencion = models.ForeignKey(TipoIntervencion, on_delete=models.SET_NULL, null=True)
+    fk_subintervencion = models.ForeignKey(
+        SubIntervencion, on_delete=models.SET_NULL, null=True
+    )
+    fk_tipo_intervencion = models.ForeignKey(
+        TipoIntervencion, on_delete=models.SET_NULL, null=True
+    )
     fecha = models.DateTimeField(auto_now_add=True)
     fk_direccion = models.ManyToManyField(Direccion)
-    fk_estado = models.ForeignKey(EstadosIntervencion, on_delete=models.SET_NULL, default=1, null=True)
+    fk_estado = models.ForeignKey(
+        EstadosIntervencion, on_delete=models.SET_NULL, default=1, null=True
+    )
 
     class Meta:
         ordering = ["-fecha"]
@@ -1120,7 +1235,9 @@ class SubTipoLlamado(models.Model):
         return f"{self.nombre}"
 
     nombre = models.CharField(max_length=255)
-    fk_tipo_llamado = models.ForeignKey(TipoLlamado, on_delete=models.SET_NULL, default=1, null=True)
+    fk_tipo_llamado = models.ForeignKey(
+        TipoLlamado, on_delete=models.SET_NULL, default=1, null=True
+    )
 
     class Meta:
         verbose_name = "SubTipoLlamado"
@@ -1134,10 +1251,16 @@ class Llamado(models.Model):
 
     fk_legajo = models.ForeignKey(Legajos, on_delete=models.SET_NULL, null=True)
     fk_usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    fk_subtipollamado = models.ForeignKey(SubTipoLlamado, on_delete=models.SET_NULL, null=True)
-    fk_tipo_llamado = models.ForeignKey(TipoLlamado, on_delete=models.SET_NULL, null=True)
+    fk_subtipollamado = models.ForeignKey(
+        SubTipoLlamado, on_delete=models.SET_NULL, null=True
+    )
+    fk_tipo_llamado = models.ForeignKey(
+        TipoLlamado, on_delete=models.SET_NULL, null=True
+    )
     fecha = models.DateTimeField(auto_now_add=True)
-    fk_estado = models.ForeignKey(EstadosLlamados, on_delete=models.SET_NULL, default=1, null=True)
+    fk_estado = models.ForeignKey(
+        EstadosLlamados, on_delete=models.SET_NULL, default=1, null=True
+    )
     observaciones = models.CharField(max_length=500)
 
     class Meta:

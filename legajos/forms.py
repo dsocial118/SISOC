@@ -69,14 +69,18 @@ class LegajosForm(forms.ModelForm):
         if "fk_municipio" in self.data:
             try:
                 municipio_id = int(self.data.get("fk_municipio"))
-                self.fields["fk_municipio"].queryset = LegajoMunicipio.objects.filter(id=municipio_id).order_by("nombre_region")
+                self.fields["fk_municipio"].queryset = LegajoMunicipio.objects.filter(
+                    id=municipio_id
+                ).order_by("nombre_region")
             except (ValueError, TypeError):
                 self.fields["fk_municipio"].queryset = LegajoMunicipio.objects.none()
 
         if "fk_localidad" in self.data:
             try:
                 localidad_id = int(self.data.get("fk_localidad"))
-                self.fields["fk_localidad"].queryset = LegajoLocalidad.objects.filter(id=localidad_id).order_by("nombre")
+                self.fields["fk_localidad"].queryset = LegajoLocalidad.objects.filter(
+                    id=localidad_id
+                ).order_by("nombre")
             except (ValueError, TypeError):
                 self.fields["fk_localidad"].queryset = LegajoLocalidad.objects.none()
 
@@ -105,10 +109,14 @@ class LegajosForm(forms.ModelForm):
         )
 
         if existente:
-            self.add_error("documento", "Ya existe un legajo con ese TIPO y NÚMERO de documento.")
+            self.add_error(
+                "documento", "Ya existe un legajo con ese TIPO y NÚMERO de documento."
+            )
         # validación de fecha de nacimiento
         if fecha_nacimiento and fecha_nacimiento > date.today():
-            self.add_error("fecha_nacimiento", "La fecha de termino debe ser menor al día de hoy.")
+            self.add_error(
+                "fecha_nacimiento", "La fecha de termino debe ser menor al día de hoy."
+            )
 
         return cleaned_data
 
@@ -119,7 +127,9 @@ class LegajosForm(forms.ModelForm):
             "modificado",
         )
         widgets = {
-            "fecha_nacimiento": forms.DateInput(attrs={"type": "date", "required": True}, format="%Y-%m-%d"),
+            "fecha_nacimiento": forms.DateInput(
+                attrs={"type": "date", "required": True}, format="%Y-%m-%d"
+            ),
             "m2m_alertas": forms.Select(attrs={"class": "select2"}),
             "m2m_familiares": forms.Select(attrs={"class": "select2"}),
             "fk_municipio": forms.Select(attrs={"class": "select2 municipio-select"}),
@@ -173,8 +183,12 @@ class LegajosUpdateForm(forms.ModelForm):
         if self.instance and self.instance.pk:
             municipio_actual = self.instance.fk_municipio
             localidad_actual = self.instance.fk_localidad
-            self.fields["fk_municipio"].choices = [(municipio_actual.id, municipio_actual.nombre_region)]
-            self.fields["fk_localidad"].choices = [(localidad_actual.id, localidad_actual.nombre)]
+            self.fields["fk_municipio"].choices = [
+                (municipio_actual.id, municipio_actual.nombre_region)
+            ]
+            self.fields["fk_localidad"].choices = [
+                (localidad_actual.id, localidad_actual.nombre)
+            ]
 
     def clean(self):
         cleaned_data = super().clean()
@@ -186,14 +200,20 @@ class LegajosUpdateForm(forms.ModelForm):
         # Validación de campo unico, combinación de DNI + Tipo DNI
         if tipo_doc and documento:
             # Verificar si el tipo o el documento han cambiado
-            if (tipo_doc != instance.tipo_doc or documento != instance.documento) and Legajos.objects.filter(
+            if (
+                tipo_doc != instance.tipo_doc or documento != instance.documento
+            ) and Legajos.objects.filter(
                 tipo_doc=tipo_doc, documento=documento
             ).exists():
-                self.add_error("tipo", "Ya existe otro objeto con el mismo tipo y documento")
+                self.add_error(
+                    "tipo", "Ya existe otro objeto con el mismo tipo y documento"
+                )
 
         # validación de fecha de nacimiento
         if fecha_nacimiento and fecha_nacimiento > date.today():
-            self.add_error("fecha_nacimiento", "La fecha de termino debe ser menor al día de hoy.")
+            self.add_error(
+                "fecha_nacimiento", "La fecha de termino debe ser menor al día de hoy."
+            )
 
         return cleaned_data
 
@@ -202,7 +222,9 @@ class LegajosUpdateForm(forms.ModelForm):
         exclude = ("creado", "modificado", "m2m_familiares", "m2m_alertas")
         widgets = {
             "estado": forms.Select(choices=[(True, "Activo"), (False, "Inactivo")]),
-            "fecha_nacimiento": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "fecha_nacimiento": forms.DateInput(
+                attrs={"type": "date"}, format="%Y-%m-%d"
+            ),
             "fk_municipio": forms.Select(attrs={"class": "select2 municipio-select"}),
             "fk_localidad": forms.Select(attrs={"class": "select2 localidad-select"}),
             "fk_provincia": forms.Select(attrs={"class": "select2 provincia-select"}),
@@ -249,7 +271,9 @@ class NuevoLegajoFamiliarForm(forms.ModelForm):
             "cuidador_principal",
         ]
         widgets = {
-            "fecha_nacimiento": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "fecha_nacimiento": forms.DateInput(
+                attrs={"type": "date"}, format="%Y-%m-%d"
+            ),
         }
 
     def clean(self):
@@ -260,7 +284,9 @@ class NuevoLegajoFamiliarForm(forms.ModelForm):
 
         # Validación de campo único, combinación de DNI + Tipo DNI
         if Legajos.objects.filter(tipo_doc=tipo_doc, documento=documento).exists():
-            self.add_error("documento", "Ya existe un legajo con ese TIPO y NÚMERO de documento.")
+            self.add_error(
+                "documento", "Ya existe un legajo con ese TIPO y NÚMERO de documento."
+            )
 
         # Validación de fecha de nacimiento
         if fecha_nacimiento:
@@ -293,7 +319,9 @@ class LegajoGrupoHogarForm(forms.ModelForm):
         model = LegajoGrupoHogar
         fields = ["vinculo", "documento", "estado_relacion"]
         widgets = {
-            "fecha_nacimiento": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "fecha_nacimiento": forms.DateInput(
+                attrs={"type": "date"}, format="%Y-%m-%d"
+            ),
         }
 
     def clean(self):
@@ -301,14 +329,20 @@ class LegajoGrupoHogarForm(forms.ModelForm):
         tipo_doc = cleaned_data.get("tipo_doc")
         documento = cleaned_data.get("documento")
         fecha_nacimiento = cleaned_data.get("fecha_nacimiento")
-        print(fecha_nacimiento > date.today(), "--------------*********-----------------")
+        print(
+            fecha_nacimiento > date.today(), "--------------*********-----------------"
+        )
 
         # Validación de campo unico, combinación de DNI + Tipo DNI
         if Legajos.objects.filter(tipo_doc=tipo_doc, documento=documento).exists():
-            self.add_error("documento", "Ya existe un legajo con ese TIPO y NÚMERO de documento.")
+            self.add_error(
+                "documento", "Ya existe un legajo con ese TIPO y NÚMERO de documento."
+            )
         # validación de fecha de nacimiento
         if fecha_nacimiento and fecha_nacimiento > date.today():
-            self.add_error("fecha_nacimiento", "La fecha de termino debe ser menor al día de hoy.")
+            self.add_error(
+                "fecha_nacimiento", "La fecha de termino debe ser menor al día de hoy."
+            )
 
         return cleaned_data
 
@@ -330,7 +364,13 @@ class LegajosAlertasForm(forms.ModelForm):
         cleaned_data = super().clean()
         fk_alerta = cleaned_data.get("fk_alerta")
         fk_legajo = cleaned_data.get("fk_legajo")
-        if fk_alerta and fk_legajo and LegajoAlertas.objects.filter(fk_alerta=fk_alerta, fk_legajo=fk_legajo).exists():
+        if (
+            fk_alerta
+            and fk_legajo
+            and LegajoAlertas.objects.filter(
+                fk_alerta=fk_alerta, fk_legajo=fk_legajo
+            ).exists()
+        ):
             self.add_error("fk_alerta", "Ya existe esa alerta en el legajo")
         return cleaned_data
 
@@ -485,16 +525,26 @@ class DimensionEducacionForm(forms.ModelForm):
         if "municipioInstitucion" in self.data:
             try:
                 municipio_id = int(self.data.get("municipioInstitucion"))
-                self.fields["municipioInstitucion"].queryset = LegajoMunicipio.objects.filter(id=municipio_id).order_by("nombre_region")
+                self.fields["municipioInstitucion"].queryset = (
+                    LegajoMunicipio.objects.filter(id=municipio_id).order_by(
+                        "nombre_region"
+                    )
+                )
             except (ValueError, TypeError):
-                self.fields["municipioInstitucion"].queryset = LegajoMunicipio.objects.none()
+                self.fields["municipioInstitucion"].queryset = (
+                    LegajoMunicipio.objects.none()
+                )
 
         if "localidadInstitucion" in self.data:
             try:
                 localidad_id = int(self.data.get("localidadInstitucion"))
-                self.fields["localidadInstitucion"].queryset = LegajoLocalidad.objects.filter(id=localidad_id).order_by("nombre")
+                self.fields["localidadInstitucion"].queryset = (
+                    LegajoLocalidad.objects.filter(id=localidad_id).order_by("nombre")
+                )
             except (ValueError, TypeError):
-                self.fields["localidadInstitucion"].queryset = LegajoLocalidad.objects.none()
+                self.fields["localidadInstitucion"].queryset = (
+                    LegajoLocalidad.objects.none()
+                )
 
     class Meta:
         model = DimensionEducacion
@@ -603,8 +653,12 @@ class IntervencionForm(forms.ModelForm):
                     "rows": 3,
                 }
             ),
-            "fk_subintervencion": forms.Select(attrs={"class": "select2 subintervencion-select"}),
-            "fk_tipo_intervencion": forms.Select(attrs={"class": "select2 tipo_intervencion-select"}),
+            "fk_subintervencion": forms.Select(
+                attrs={"class": "select2 subintervencion-select"}
+            ),
+            "fk_tipo_intervencion": forms.Select(
+                attrs={"class": "select2 tipo_intervencion-select"}
+            ),
         }
         labels = {
             "detalles": "Detalles de la intervención",
@@ -626,8 +680,12 @@ class LlamadoForm(forms.ModelForm):
                     "rows": 3,
                 }
             ),
-            "fk_tipo_llamado": forms.Select(attrs={"class": "select2 tipo_llamado-select"}),
-            "fk_subtipollamado": forms.Select(attrs={"class": "select2 subtipollamado-select"}),
+            "fk_tipo_llamado": forms.Select(
+                attrs={"class": "select2 tipo_llamado-select"}
+            ),
+            "fk_subtipollamado": forms.Select(
+                attrs={"class": "select2 subtipollamado-select"}
+            ),
         }
         labels = {
             "fk_subtipollamado": "Subtipo de llamado",
