@@ -50,6 +50,8 @@ from legajos.forms import (
     LegajosForm,
     LegajosUpdateForm,
     NuevoLegajoFamiliarForm,
+    IntervencionForm,
+    LlamadoForm,
 )
 from legajos.models import (
     DimensionFamilia,
@@ -68,6 +70,10 @@ from legajos.models import (
     LegajoProvincias,
     LegajoLocalidad,
     LegajoMunicipio,
+    Intervencion,
+    Llamado,
+    SubTipoLlamado,
+    SubIntervencion,
 )
 from usuarios.mixins import PermisosMixin
 from usuarios.utils import recortar_imagen
@@ -188,7 +194,6 @@ class LegajosListView(ListView):
                 if query.isnumeric():
                     filter_condition |= Q(documento__contains=query)
                 queryset = queryset.filter(filter_condition)
-
             self._cached_queryset = (
                 queryset  # pylint: disable=attribute-defined-outside-init
             )
@@ -2037,3 +2042,175 @@ class DeleteGrupoHogar(View):
             }
 
         return JsonResponse(data)
+
+
+class IntervencionDetail(TemplateView):
+    permission_required = ROL_ADMIN
+    template_name = "legajos/intervencion_detail.html"
+    model = Intervencion
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        legajo = Legajos.objects.values(
+            "id", "nombre", "apellido", "documento", "fecha_nacimiento", "sexo"
+        ).get(pk=self.kwargs["pk"])
+        intervenciones = Intervencion.objects.filter(fk_legajo=self.kwargs["pk"])
+        cantidad_intervenciones = Intervencion.objects.filter(
+            fk_legajo=self.kwargs["pk"]
+        ).count()
+        context["intervenciones"] = intervenciones
+        context["object"] = legajo
+        context["cantidad_intervenciones"] = cantidad_intervenciones
+
+        return context
+
+
+class IntervencionCreateView(CreateView):
+    permission_required = ROL_ADMIN
+    model = Intervencion
+    template_name = "legajos/intervencion_form.html"
+    form_class = IntervencionForm
+
+    def form_valid(self, form):
+        pk = self.kwargs["pk"]
+        form.save()
+        return redirect("intervencion_ver", pk=pk)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        legajo = Legajos.objects.values(
+            "id", "nombre", "apellido", "documento", "fecha_nacimiento", "sexo"
+        ).get(pk=self.kwargs["pk"])
+
+        context["form"] = self.get_form()
+        context["object"] = legajo
+
+        return context
+
+
+class IntervencionDeleteView(DeleteView):
+    permission_required = ROL_ADMIN
+    model = Intervencion
+    template_name = "legajos/intervencion_confirm_delete.html"
+
+    def form_valid(self, form):
+        self.object.delete()
+        return redirect("intervencion_ver", pk=self.kwargs["pk2"])
+
+
+class IntervencionUpdateView(UpdateView):
+    permission_required = ROL_ADMIN
+    model = Intervencion
+    form_class = IntervencionForm
+    template_name = "legajos/intervencion_form.html"
+
+    def form_valid(self, form):
+        pk = self.kwargs["pk2"]
+        form.save()
+        return redirect("intervencion_ver", pk=pk)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        legajo = Legajos.objects.values(
+            "id", "nombre", "apellido", "documento", "fecha_nacimiento", "sexo"
+        ).get(pk=self.kwargs["pk2"])
+        context["form"] = self.get_form()
+        context["object"] = legajo
+        return context
+
+
+class LlamadoDetail(TemplateView):
+    permission_required = ROL_ADMIN
+    template_name = "legajos/llamado_detail.html"
+    model = Llamado
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        legajo = Legajos.objects.values(
+            "id", "nombre", "apellido", "documento", "fecha_nacimiento", "sexo"
+        ).get(pk=self.kwargs["pk"])
+        llamados = Llamado.objects.filter(fk_legajo=self.kwargs["pk"])
+        cantidad_llamados = Llamado.objects.filter(fk_legajo=self.kwargs["pk"]).count()
+        context["object"] = legajo
+        context["llamados"] = llamados
+        context["cantidad_llamados"] = cantidad_llamados
+        return context
+
+
+class LlamadoDeleteView(DeleteView):
+    permission_required = ROL_ADMIN
+    model = Llamado
+
+    def form_valid(self, form):
+        self.object.delete()
+        return redirect("llamados_ver", pk=self.kwargs["pk2"])
+
+
+class LlamadoCreateView(CreateView):
+    permission_required = ROL_ADMIN
+    model = Llamado
+    template_name = "legajos/llamado_form.html"
+    form_class = LlamadoForm
+
+    def form_valid(self, form):
+        pk = self.kwargs["pk"]
+        form.save()
+        return redirect("llamados_ver", pk=pk)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        legajo = Legajos.objects.values(
+            "id", "nombre", "apellido", "documento", "fecha_nacimiento", "sexo"
+        ).get(pk=self.kwargs["pk"])
+        context["form"] = self.get_form()
+        context["object"] = legajo
+        return context
+
+
+class LlamadoUpdateView(UpdateView):
+    permission_required = ROL_ADMIN
+    model = Llamado
+    form_class = LlamadoForm
+    template_name = "legajos/llamado_form.html"
+
+    def form_valid(self, form):
+        pk = self.kwargs["pk2"]
+        form.save()
+        return redirect("llamados_ver", pk=pk)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        legajo = Legajos.objects.values(
+            "id", "nombre", "apellido", "documento", "fecha_nacimiento", "sexo"
+        ).get(pk=self.kwargs["pk2"])
+        context["form"] = self.get_form()
+        context["object"] = legajo
+        return context
+
+
+class SubEstadosIntervencionesAJax(View):
+    def get(self, request):
+        request_id = request.GET.get("id", None)
+        if request_id:
+            sub_estados = SubIntervencion.objects.filter(fk_subintervencion=request_id)
+        else:
+            sub_estados = SubIntervencion.objects.all()
+        data = [
+            {"id": sub_estado.id, "text": sub_estado.nombre}
+            for sub_estado in sub_estados
+        ]
+        return JsonResponse(data, safe=False)
+
+
+class SubEstadosLlamadosAjax(View):
+    def get(self, request):
+        request_id = request.GET.get("id", None)
+        if request_id:
+            sub_estados = SubTipoLlamado.objects.filter(fk_tipo_llamado=request_id)
+        else:
+            sub_estados = SubTipoLlamado.objects.all()
+        data = [
+            {"id": sub_estado.id, "text": sub_estado.nombre}
+            for sub_estado in sub_estados
+        ]
+        return JsonResponse(data, safe=False)
