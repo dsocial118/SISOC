@@ -22,6 +22,8 @@ from .models import (
     DimensionSalud,
     DimensionEconomia,
     DimensionTrabajo,
+    Intervencion,
+    Llamado,
     CHOICE_VINCULO_FAMILIAR,
     CHOICE_ESTADO_RELACION,
     CHOICE_SINO,
@@ -637,4 +639,56 @@ class DerivacionesRechazoForm(forms.ModelForm):
         labels = {
             "motivo_rechazo": "Motivo de rechazo",
             "obs_rechazo": "Observaciones",
+        }
+
+
+class IntervencionForm(forms.ModelForm):
+    class Meta:
+        model = Intervencion
+        fields = "__all__"
+        widgets = {
+            "detalles": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 3,
+                }
+            ),
+            "fk_subintervencion": forms.Select(
+                attrs={"class": "select2 subintervencion-select"}
+            ),
+            "fk_tipo_intervencion": forms.Select(
+                attrs={"class": "select2 tipo_intervencion-select"}
+            ),
+        }
+        labels = {
+            "detalles": "Detalles de la intervención",
+            "fk_subintervencion": "Subintervención",
+            "fk_tipo_intervencion": "Tipo de intervención",
+            "fk_estado": "Estado",
+            "fk_direccion": "Dirección",
+        }
+
+
+class LlamadoForm(forms.ModelForm):
+    class Meta:
+        model = Llamado
+        fields = "__all__"
+        widgets = {
+            "observaciones": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 3,
+                }
+            ),
+            "fk_tipo_llamado": forms.Select(
+                attrs={"class": "select2 tipo_llamado-select"}
+            ),
+            "fk_subtipollamado": forms.Select(
+                attrs={"class": "select2 subtipollamado-select"}
+            ),
+        }
+        labels = {
+            "fk_subtipollamado": "Subtipo de llamado",
+            "fk_tipo_llamado": "Tipo de llamado",
+            "fk_estado": "Estado",
         }
