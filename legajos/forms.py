@@ -603,6 +603,8 @@ class IntervencionForm(forms.ModelForm):
                     "rows": 3,
                 }
             ),
+            "fk_subintervencion": forms.Select(attrs={"class": "select2 subintervencion-select"}),
+            "fk_tipo_intervencion": forms.Select(attrs={"class": "select2 tipo_intervencion-select"}),
         }
         labels = {
             "detalles": "Detalles de la intervención",
@@ -624,9 +626,11 @@ class LlamadoForm(forms.ModelForm):
                     "rows": 3,
                 }
             ),
+            "fk_tipo_llamado": forms.Select(attrs={"class": "select2 tipo_llamado-select"}),
+            "fk_subtipollamado": forms.Select(attrs={"class": "select2 subtipollamado-select"}),
         }
         labels = {
-            "fk_subtipollamado": "Subintervención",
-            "fk_tipo_llamado": "Tipo de intervención",
+            "fk_subtipollamado": "Subtipo de llamado",
+            "fk_tipo_llamado": "Tipo de llamado",
             "fk_estado": "Estado",
         }

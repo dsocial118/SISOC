@@ -5,7 +5,7 @@
 ;
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right ">
-        <li class="breadcrumb-item">Intervenciones</li>
+        <li class="breadcrumb-item">Llamados</li>
         <li class="breadcrumb-item">
             <a href="{% url 'legajos_ver' object.id %}" title="Ver legajo">{{ object.nombre }} {{ object.apellido }}</a>
         </li>
@@ -65,10 +65,10 @@
                             <input type="hidden" name="fk_legajo" value="{{ object.id }}" />
                             <input type="hidden" name="fk_usuario" value="{{ request.user.id }}" />
                             <div class="col-sm-6">
-                                <div class="form-group">{{ form.fk_subtipollamado| as_crispy_field }}</div>
+                                <div class="form-group">{{ form.fk_tipo_llamado| as_crispy_field }}</div>
                             </div>
                             <div class="col-sm-6">
-                                <div class="form-group">{{ form.fk_tipo_llamado| as_crispy_field }}</div>
+                                <div class="form-group">{{ form.fk_subtipollamado| as_crispy_field }}</div>
                             </div>
                             <div class="col-sm-3">
                                 <div class="form-group">{{ form.fk_estado| as_crispy_field }}</div>
@@ -88,25 +88,28 @@
     </div>
 {% endblock %}
 {% block customJS %}
-    <!--<script>
-    $(document).ready(function () {
-        $('#criterio_presente').change(function () {
-            if ($(this).val() === 'NUEVO CRITERIO') {
-                $('#nuevo_criterio').removeClass('d-none');
-            } else {
-                $('#nuevo_criterio').addClass('d-none');
-            }
-        });
-
-        $('#accion').change(function () {
-            if ($(this).val() === 'OTRA') {
-                $('#otra_accion').removeClass('d-none');
-            } else {
-                $('#otra_accion').addClass('d-none');
-            }
+<script>
+    $(document).ready(function() {
+        $('.tipo_llamado-select').change(function() {
+            var estadoId = $(this).val();
+            $.ajax({
+                url: "{% url 'ajax_load_subestadosllamados' %}",
+                data: {
+                    'id': estadoId
+                },
+                success: function(data) {
+                    var $subIntervencion = $('.subtipollamado-select');
+                    $subIntervencion.empty();
+                    $.each(data, function(index, item) {
+                        $subIntervencion.append($('<option>', {
+                            value: item.id,
+                            text: item.text
+                        }));
+                    });
+                }
+            });
         });
     });
-
-    </script>-->
+    </script>
 {% endblock %}
 ;
