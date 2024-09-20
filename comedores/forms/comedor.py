@@ -4,7 +4,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Row, Div, Submit, HTML
 
 from comedores.models import Comedor
-from legajos.models import LegajoLocalidad, LegajoMunicipio
+from legajos.models import LegajoLocalidad, LegajoMunicipio, LegajoProvincias
 
 
 class ComedorForm(forms.ModelForm):
@@ -14,8 +14,6 @@ class ComedorForm(forms.ModelForm):
         self.layout()
 
         self.popular_campos_ubicacion()
-
-        self.fields["comienzo"].help_text = None
 
     def layout(self):
         self.helper = FormHelper()
@@ -53,32 +51,41 @@ class ComedorForm(forms.ModelForm):
         )
 
     def popular_campos_ubicacion(self):
-        self.fields["municipio"].queryset = (
-            LegajoMunicipio.objects.none()
-        )  # Evitar la carga total de las instancias
-        self.fields["localidad"].queryset = (
-            LegajoLocalidad.objects.none()
-        )  # Evitar la carga total de las instancias
+        provincia = LegajoProvincias.objects.filter(
+            pk=self.data.get("provincia")
+        ).first() or getattr(self.instance, "provincia", None)
+        municipio = LegajoMunicipio.objects.filter(
+            pk=self.data.get("municipio")
+        ).first() or getattr(self.instance, "municipio", None)
+        localidad = LegajoLocalidad.objects.filter(
+            pk=self.data.get("localidad")
+        ).first() or getattr(self.instance, "localidad", None)
 
-        if "municipio" in self.data:
-            try:
-                municipio_id = int(self.data.get("municipio"))
-                self.fields["municipio"].queryset = LegajoMunicipio.objects.filter(
-                    id=municipio_id
-                ).order_by("nombre_region")
-            except (ValueError, TypeError):
-                self.fields["municipio"].queryset = LegajoMunicipio.objects.none()
+        if provincia:
+            self.fields["provincia"].initial = LegajoProvincias.objects.get(
+                id=provincia.id
+            )
+            self.fields["provincia"].queryset = LegajoProvincias.objects.all()
+            self.fields["municipio"].queryset = LegajoMunicipio.objects.filter(
+                codigo_ifam__startswith=provincia.abreviatura
+            )
+        else:
+            self.fields["provincia"].queryset = LegajoProvincias.objects.all()
+            self.fields["municipio"].queryset = (
+                LegajoMunicipio.objects.none()
+            )  # Evitar la carga total de las instancias
+            self.fields["localidad"].queryset = (
+                LegajoLocalidad.objects.none()
+            )  # Evitar la carga total de las instancias
 
-        if "localidad" in self.data:
-            try:
-                localidad_id = int(self.data.get("localidad"))
-                self.fields["localidad"].queryset = LegajoLocalidad.objects.filter(
-                    id=localidad_id
-                ).order_by("nombre")
-            except (ValueError, TypeError):
-                self.fields["localidad"].queryset = (
-                    LegajoLocalidad.objects.none()
-                )  # Evitar helptext innecesario
+        if municipio:
+            self.fields["municipio"].initial = municipio
+            self.fields["localidad"].queryset = LegajoLocalidad.objects.filter(
+                departamento_id=municipio.departamento_id
+            )
+
+        if hasattr(self.instance, "localidad"):
+            self.fields["localidad"].initial = localidad
 
     class Meta:
         model = Comedor
