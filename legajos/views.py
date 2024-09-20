@@ -184,18 +184,14 @@ class LegajosListView(ListView):
                 if query.isnumeric():
                     filter_condition |= Q(documento__contains=query)
                 queryset = queryset.filter(filter_condition)
-            self._cached_queryset = (
-                queryset  # pylint: disable=attribute-defined-outside-init
-            )
+            self._cached_queryset = queryset  # pylint: disable=attribute-defined-outside-init
 
         return self._cached_queryset
 
     def get(self, request, *args, **kwargs):
         query = self.request.GET.get("busqueda")
         if query:
-            self.object_list = (
-                self.get_queryset()
-            )  # pylint: disable=attribute-defined-outside-init
+            self.object_list = self.get_queryset()  # pylint: disable=attribute-defined-outside-init
             size_queryset = self.object_list.count()
             if size_queryset == 1:
                 pk = self.object_list.first().id
@@ -227,10 +223,8 @@ class LegajosListView(ListView):
 class LegajosDetailView(DetailView):
     model = Legajos
     template_name = "legajos/legajos_detail.html"
-    
-    def get_context_data(
-        self, **kwargs
-    ):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+
+    def get_context_data(self, **kwargs):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         pk = self.kwargs["pk"]
         context = super().get_context_data(**kwargs)
 
@@ -458,9 +452,7 @@ class LegajosDetailView(DetailView):
 
         return context
 
-    def grafico_evolucion_de_riesgo(
-        self, fecha_actual, alertas
-    ):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+    def grafico_evolucion_de_riesgo(self, fecha_actual, alertas):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         if alertas.exists():
             primer_dia_siguiente_mes = datetime(fecha_actual.year, fecha_actual.month % 12 + 1, 1)
             fecha_inicio_doce_meses_excepto_mes_anterior = primer_dia_siguiente_mes - timedelta(days=365)
@@ -1266,9 +1258,7 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
 
         return context
 
-    def form_valid(
-        self, form
-    ):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+    def form_valid(self, form):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         # TODO: Esto sera refactorizado
         self.object = form.save(commit=False)
 
@@ -1967,10 +1957,8 @@ class IntervencionUpdateView(UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         legajo = Legajos.objects.get(pk=self.kwargs["pk2"])
-
         context["form"] = self.get_form()
         context["object"] = legajo
-
         return context
 
 
@@ -1987,7 +1975,6 @@ class LlamadoDetail(TemplateView):
         context["object"] = legajo
         context["llamados"] = llamados
         context["cantidad_llamados"] = cantidad_llamados
-
         return context
 
 
@@ -2014,10 +2001,8 @@ class LlamadoCreateView(CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         legajo = Legajos.objects.get(pk=self.kwargs["pk"])
-
         context["form"] = self.get_form()
         context["object"] = legajo
-
         return context
 
 
@@ -2035,10 +2020,8 @@ class LlamadoUpdateView(UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         legajo = Legajos.objects.get(pk=self.kwargs["pk2"])
-
         context["form"] = self.get_form()
         context["object"] = legajo
-
         return context
 
 
@@ -2049,7 +2032,6 @@ class SubEstadosIntervencionesAJax(View):
             sub_estados = SubIntervencion.objects.filter(fk_subintervencion=request_id)
         else:
             sub_estados = SubIntervencion.objects.all()
-
         data = [{"id": sub_estado.id, "text": sub_estado.nombre} for sub_estado in sub_estados]
         return JsonResponse(data, safe=False)
 
@@ -2061,6 +2043,5 @@ class SubEstadosLlamadosAjax(View):
             sub_estados = SubTipoLlamado.objects.filter(fk_tipo_llamado=request_id)
         else:
             sub_estados = SubTipoLlamado.objects.all()
-
         data = [{"id": sub_estado.id, "text": sub_estado.nombre} for sub_estado in sub_estados]
         return JsonResponse(data, safe=False)

@@ -119,9 +119,10 @@
                                     <td>{{ e.fk_subintervencion }}</td>
                                     <td>{{ e.fk_tipo_intervencion }}</td>
                                     <td>
-                                      {% for direccion in e.fk_direccion.all %}
-                                        {{ direccion }}{% if not forloop.last %}, {% endif %}
-                                      {% endfor %}
+                                        {% for direccion in e.fk_direccion.all %}
+                                            {{ direccion }}
+                                            {% if not forloop.last %},{% endif %}
+                                        {% endfor %}
                                     </td>
                                     <td>{{ e.fk_estado }}</td>
                                     <td>
