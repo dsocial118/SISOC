@@ -72,6 +72,8 @@ from legajos.models import (
     LegajoMunicipio,
     Intervencion,
     Llamado,
+    SubTipoLlamado,
+    SubIntervencion,
 )
 from usuarios.mixins import PermisosMixin
 from usuarios.utils import recortar_imagen
@@ -89,20 +91,14 @@ ROL_ADMIN = "usuarios.rol_admin"
 def load_municipios(request):
     provincia_id = request.GET.get("provincia_id")
     provincia_search = LegajoProvincias.objects.get(id=provincia_id)
-    municipios = LegajoMunicipio.objects.filter(
-        codigo_ifam__startswith=provincia_search.abreviatura
-    )
-    return JsonResponse(
-        list(municipios.values("id", "departamento_id", "nombre_region")), safe=False
-    )
+    municipios = LegajoMunicipio.objects.filter(codigo_ifam__startswith=provincia_search.abreviatura)
+    return JsonResponse(list(municipios.values("id", "departamento_id", "nombre_region")), safe=False)
 
 
 def load_localidad(request):
     municipio_id = request.GET.get("municipio_id")
     localidad_search = LegajoMunicipio.objects.get(id=municipio_id)
-    localidades = LegajoLocalidad.objects.filter(
-        departamento_id=localidad_search.departamento_id
-    )
+    localidades = LegajoLocalidad.objects.filter(departamento_id=localidad_search.departamento_id)
     return JsonResponse(list(localidades.values("id", "nombre")), safe=False)
 
 
@@ -152,11 +148,7 @@ class LegajosReportesListView(ListView):
         if data_fecha_desde:
             filters &= Q(fecha_creado__gte=data_fecha_desde)
 
-        object_list = (
-            LegajosDerivaciones.objects.filter(filters)
-            .select_related("fk_programa", "fk_organismo", "fk_legajo")
-            .distinct()
-        )
+        object_list = LegajosDerivaciones.objects.filter(filters).select_related("fk_programa", "fk_organismo", "fk_legajo").distinct()
 
         if not object_list.exists():
             messages.warning(self.request, "La búsqueda no arrojó resultados.")
@@ -193,18 +185,14 @@ class LegajosListView(ListView):
                     filter_condition |= Q(documento__contains=query)
                 queryset = queryset.filter(filter_condition)
 
-            self._cached_queryset = (  # pylint: disable=attribute-defined-outside-init
-                queryset
-            )
+            self._cached_queryset = queryset  # pylint: disable=attribute-defined-outside-init
 
         return self._cached_queryset
 
     def get(self, request, *args, **kwargs):
         query = self.request.GET.get("busqueda")
         if query:
-            self.object_list = (  # pylint: disable=attribute-defined-outside-init
-                self.get_queryset()
-            )
+            self.object_list = self.get_queryset()  # pylint: disable=attribute-defined-outside-init
             size_queryset = self.object_list.count()
             if size_queryset == 1:
                 pk = self.object_list.first().id
@@ -221,9 +209,7 @@ class LegajosListView(ListView):
         page_obj = context.get("page_obj")
 
         if page_obj:
-            context["page_range"] = page_obj.paginator.get_elided_page_range(
-                number=page_obj.number
-            )
+            context["page_range"] = page_obj.paginator.get_elided_page_range(number=page_obj.number)
 
         context.update(
             {
@@ -239,9 +225,7 @@ class LegajosDetailView(DetailView):
     model = Legajos
     template_name = "legajos/legajos_detail.html"
 
-    def get_context_data(  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
-        self, **kwargs
-    ):
+    def get_context_data(self, **kwargs):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         pk = self.kwargs["pk"]
         context = super().get_context_data(**kwargs)
 
@@ -272,19 +256,13 @@ class LegajosDetailView(DetailView):
         emoji_nacionalidad = cache.get("emoji_nacionalidad")
 
         if not legajo_alertas:
-            legajo_alertas = LegajoAlertas.objects.filter(fk_legajo=pk).select_related(
-                "fk_alerta__fk_categoria"
-            )
+            legajo_alertas = LegajoAlertas.objects.filter(fk_legajo=pk).select_related("fk_alerta__fk_categoria")
             cache.set("legajo_alertas", legajo_alertas, 60)
         if not alertas:
-            alertas = HistorialLegajoAlertas.objects.filter(fk_legajo=pk).values(
-                "fecha_inicio", "fecha_fin", "fk_alerta__fk_categoria__dimension"
-            )
+            alertas = HistorialLegajoAlertas.objects.filter(fk_legajo=pk).values("fecha_inicio", "fecha_fin", "fk_alerta__fk_categoria__dimension")
             cache.set("alertas", alertas, 60)
         if not familiares:
-            familiares = LegajoGrupoFamiliar.objects.filter(
-                Q(fk_legajo_1=pk) | Q(fk_legajo_2=pk)
-            ).values(
+            familiares = LegajoGrupoFamiliar.objects.filter(Q(fk_legajo_1=pk) | Q(fk_legajo_2=pk)).values(
                 "fk_legajo_1__nombre",
                 "fk_legajo_1__apellido",
                 "fk_legajo_1__id",
@@ -298,9 +276,7 @@ class LegajosDetailView(DetailView):
             )
             cache.set("familiares", familiares, 60)
         if not hogar_familiares:
-            hogar_familiares = LegajoGrupoHogar.objects.filter(
-                Q(fk_legajo_1Hogar=pk) | Q(fk_legajo_2Hogar=pk)
-            ).values(
+            hogar_familiares = LegajoGrupoHogar.objects.filter(Q(fk_legajo_1Hogar=pk) | Q(fk_legajo_2Hogar=pk)).values(
                 "fk_legajo_2Hogar_id",
                 "fk_legajo_2Hogar",
                 "fk_legajo_1Hogar_id",
@@ -313,9 +289,7 @@ class LegajosDetailView(DetailView):
             )
             cache.set("hogar_familiares", hogar_familiares, 60)
         if not files:
-            files = LegajosArchivos.objects.filter(
-                Q(tipo="Imagen") | Q(tipo="Documento"), fk_legajo=pk
-            )
+            files = LegajosArchivos.objects.filter(Q(tipo="Imagen") | Q(tipo="Documento"), fk_legajo=pk)
             cache.set("files", files, 60)
         if not legajo_alertas_organizadas:
             legajo_alertas_organizadas = legajo_alertas.annotate(
@@ -340,19 +314,13 @@ class LegajosDetailView(DetailView):
             count_alertas = legajo_alertas.count()
             cache.set("count_alertas", count_alertas, 60)
         if not count_alta:
-            count_alta = legajo_alertas_organizadas.aggregate(
-                count=Count("es_critica")
-            ).get("count", 0)
+            count_alta = legajo_alertas_organizadas.aggregate(count=Count("es_critica")).get("count", 0)
             cache.set("count_alta", count_alta, 60)
         if not count_media:
-            count_media = legajo_alertas_organizadas.aggregate(
-                count=Count("es_importante")
-            ).get("count", 0)
+            count_media = legajo_alertas_organizadas.aggregate(count=Count("es_importante")).get("count", 0)
             cache.set("count_media", count_media, 60)
         if not count_baja:
-            count_baja = legajo_alertas_organizadas.aggregate(
-                count=Count("es_precaucion")
-            ).get("count", 0)
+            count_baja = legajo_alertas_organizadas.aggregate(count=Count("es_precaucion")).get("count", 0)
             cache.set("count_baja", count_baja, 60)
         if not alertas_alta:
             alertas_alta = legajo_alertas_organizadas.filter(es_critica=True)
@@ -367,9 +335,7 @@ class LegajosDetailView(DetailView):
             historial_alertas = alertas.exists()
             cache.set("historial_alertas", historial_alertas, 60)
         if not count_intervenciones:
-            count_intervenciones = LegajosDerivaciones.objects.filter(
-                fk_legajo=pk
-            ).count()
+            count_intervenciones = LegajosDerivaciones.objects.filter(fk_legajo=pk).count()
             cache.set("count_intervenciones", count_intervenciones, 60)
         if not dimensionfamilia:
             dimensionfamilia = (
@@ -449,28 +415,12 @@ class LegajosDetailView(DetailView):
             emoji_nacionalidad = EMOJIS_BANDERAS.get(legajo.nacionalidad, "")
             cache.set("emoji_nacionalidad", emoji_nacionalidad, 60)
 
-        context["familiares_fk1"] = [
-            familiar
-            for familiar in familiares
-            if familiar["fk_legajo_1__id"] == int(pk)
-        ]
-        context["familiares_fk2"] = [
-            familiar
-            for familiar in familiares
-            if familiar["fk_legajo_2__id"] == int(pk)
-        ]
+        context["familiares_fk1"] = [familiar for familiar in familiares if familiar["fk_legajo_1__id"] == int(pk)]
+        context["familiares_fk2"] = [familiar for familiar in familiares if familiar["fk_legajo_2__id"] == int(pk)]
         context["count_familia"] = len(familiares)
 
-        context["hogar_familiares_fk1"] = [
-            familiar
-            for familiar in hogar_familiares
-            if familiar["fk_legajo_1Hogar"] == int(pk)
-        ]
-        context["hogar_familiares_fk2"] = [
-            familiar
-            for familiar in hogar_familiares
-            if familiar["fk_legajo_2Hogar"] == int(pk)
-        ]
+        context["hogar_familiares_fk1"] = [familiar for familiar in hogar_familiares if familiar["fk_legajo_1Hogar"] == int(pk)]
+        context["hogar_familiares_fk2"] = [familiar for familiar in hogar_familiares if familiar["fk_legajo_2Hogar"] == int(pk)]
         context["hogar_count_familia"] = len(hogar_familiares)
 
         context["files_img"] = files.filter(tipo="Imagen")
@@ -503,16 +453,10 @@ class LegajosDetailView(DetailView):
 
         return context
 
-    def grafico_evolucion_de_riesgo(  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
-        self, fecha_actual, alertas
-    ):
+    def grafico_evolucion_de_riesgo(self, fecha_actual, alertas):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         if alertas.exists():
-            primer_dia_siguiente_mes = datetime(
-                fecha_actual.year, fecha_actual.month % 12 + 1, 1
-            )
-            fecha_inicio_doce_meses_excepto_mes_anterior = (
-                primer_dia_siguiente_mes - timedelta(days=365)
-            )
+            primer_dia_siguiente_mes = datetime(fecha_actual.year, fecha_actual.month % 12 + 1, 1)
+            fecha_inicio_doce_meses_excepto_mes_anterior = primer_dia_siguiente_mes - timedelta(days=365)
 
             alertas_ultimo_anio = alertas.filter(
                 Q(fecha_inicio__gt=fecha_inicio_doce_meses_excepto_mes_anterior)
@@ -520,15 +464,9 @@ class LegajosDetailView(DetailView):
                 | Q(fecha_fin__isnull=True)
             ).distinct()
 
-            dimensiones = {
-                key.strip(): value
-                for key, value in CHOICE_DIMENSIONES
-                if key is not None
-            }
+            dimensiones = {key.strip(): value for key, value in CHOICE_DIMENSIONES if key is not None}
             todas_dimensiones = list(dimensiones.keys())
-            datos_por_dimension = {
-                dimension: [0] * 12 for dimension in todas_dimensiones
-            }
+            datos_por_dimension = {dimension: [0] * 12 for dimension in todas_dimensiones}
 
             for alerta in alertas_ultimo_anio:
                 dimension = alerta["fk_alerta__fk_categoria__dimension"]
@@ -546,17 +484,12 @@ class LegajosDetailView(DetailView):
 
             mes_actual = fecha_actual.month
             datos_por_dimension = {
-                dimension: datos_por_dimension[dimension][mes_actual:]
-                + datos_por_dimension[dimension][:mes_actual]
+                dimension: datos_por_dimension[dimension][mes_actual:] + datos_por_dimension[dimension][:mes_actual]
                 for dimension in todas_dimensiones
             }
 
-            nombres_meses = [
-                calendar.month_name[mes].capitalize() for mes in range(1, 13)
-            ]
-            nombres_meses_ordenados = (
-                nombres_meses[mes_actual:] + nombres_meses[:mes_actual]
-            )
+            nombres_meses = [calendar.month_name[mes].capitalize() for mes in range(1, 13)]
+            nombres_meses_ordenados = nombres_meses[mes_actual:] + nombres_meses[:mes_actual]
 
             datos_por_dimension["meses"] = nombres_meses_ordenados
 
@@ -592,10 +525,7 @@ class LegajosDeleteView(PermisosMixin, DeleteView):
         if HistorialLegajoAlertas.objects.filter(fk_legajo=legajo).exists():
             relaciones_existentes.append("Historial de Alertas")
 
-        if (
-            LegajoGrupoFamiliar.objects.filter(fk_legajo_1=legajo).exists()
-            or LegajoGrupoFamiliar.objects.filter(fk_legajo_2=legajo).exists()
-        ):
+        if LegajoGrupoFamiliar.objects.filter(fk_legajo_1=legajo).exists() or LegajoGrupoFamiliar.objects.filter(fk_legajo_2=legajo).exists():
             relaciones_existentes.append("Grupo Familiar")
 
         # Agregar la lista de nombres de relaciones al contexto
@@ -669,9 +599,7 @@ class LegajosUpdateView(PermisosMixin, UpdateView):
                 buffer = recortar_imagen(legajo.foto)
                 legajo.foto.save(legajo.foto.name, ContentFile(buffer.getvalue()))
 
-            self.object = (
-                form.save()
-            )  # Guardamos el objeto Legajos con la imagen recortada (si corresponde)
+            self.object = form.save()  # Guardamos el objeto Legajos con la imagen recortada (si corresponde)
 
         if "form_legajos" in self.request.POST:
             return redirect("legajos_ver", pk=self.object.id)
@@ -711,14 +639,10 @@ class LegajosGrupoFamiliarCreateView(CreateView):
                 es_menor_de_18 = False
 
         # Verificar si tiene un cuidador principal asignado utilizando el método que agregaste al modelo
-        tiene_cuidador_ppal = LegajoGrupoFamiliar.objects.filter(
-            fk_legajo_1=legajo_principal, cuidador_principal=True
-        ).exists()
+        tiene_cuidador_ppal = LegajoGrupoFamiliar.objects.filter(fk_legajo_1=legajo_principal, cuidador_principal=True).exists()
 
         # Obtiene los familiares asociados al legajo principal
-        familiares = LegajoGrupoFamiliar.objects.filter(
-            Q(fk_legajo_1=pk) | Q(fk_legajo_2=pk)
-        ).values(
+        familiares = LegajoGrupoFamiliar.objects.filter(Q(fk_legajo_1=pk) | Q(fk_legajo_2=pk)).values(
             "id",
             "fk_legajo_1__nombre",
             "fk_legajo_1__apellido",
@@ -736,12 +660,8 @@ class LegajosGrupoFamiliarCreateView(CreateView):
         page_number = self.request.GET.get("page")
         page_obj = paginator.get_page(page_number)
 
-        context["familiares_fk1"] = [
-            familiar for familiar in page_obj if familiar["fk_legajo_1__id"] == int(pk)
-        ]
-        context["familiares_fk2"] = [
-            familiar for familiar in page_obj if familiar["fk_legajo_2__id"] == int(pk)
-        ]
+        context["familiares_fk1"] = [familiar for familiar in page_obj if familiar["fk_legajo_1__id"] == int(pk)]
+        context["familiares_fk2"] = [familiar for familiar in page_obj if familiar["fk_legajo_2__id"] == int(pk)]
 
         context["familiares"] = page_obj
         context["count_familia"] = familiares.count()
@@ -814,9 +734,9 @@ def busqueda_familiares(request):
     legajo_principal_id = request.POST.get("id")
     page_number = request.POST.get("page", 1)
 
-    legajos_asociados = LegajoGrupoFamiliar.objects.filter(
-        Q(fk_legajo_1_id=legajo_principal_id) | Q(fk_legajo_2_id=legajo_principal_id)
-    ).values_list("fk_legajo_1_id", "fk_legajo_2_id")
+    legajos_asociados = LegajoGrupoFamiliar.objects.filter(Q(fk_legajo_1_id=legajo_principal_id) | Q(fk_legajo_2_id=legajo_principal_id)).values_list(
+        "fk_legajo_1_id", "fk_legajo_2_id"
+    )
 
     legajos_asociados_ids = set()
     for fk_legajo_1_id, fk_legajo_2_id in legajos_asociados:
@@ -826,10 +746,9 @@ def busqueda_familiares(request):
             legajos_asociados_ids.add(fk_legajo_2_id)
 
     paginate_by = 10
-    familiares = Legajos.objects.filter(
-        ~Q(id=legajo_principal_id)
-        & (Q(apellido__icontains=busqueda) | Q(documento__icontains=busqueda))
-    ).exclude(id__in=legajos_asociados_ids)
+    familiares = Legajos.objects.filter(~Q(id=legajo_principal_id) & (Q(apellido__icontains=busqueda) | Q(documento__icontains=busqueda))).exclude(
+        id__in=legajos_asociados_ids
+    )
 
     if len(familiares) > 0 and busqueda:
         paginator = Paginator(familiares, paginate_by)
@@ -875,9 +794,7 @@ class LegajoGrupoFamiliarList(ListView):
         context = super().get_context_data(**kwargs)
         context["familiares_fk1"] = LegajoGrupoFamiliar.objects.filter(fk_legajo_1=pk)
         context["familiares_fk2"] = LegajoGrupoFamiliar.objects.filter(fk_legajo_2=pk)
-        context["count_familia"] = (
-            context["familiares_fk1"].count() + context["familiares_fk1"].count()
-        )
+        context["count_familia"] = context["familiares_fk1"].count() + context["familiares_fk1"].count()
         context["nombre"] = Legajos.objects.filter(pk=pk).first()
         context["pk"] = pk
         return context
@@ -984,21 +901,12 @@ class LegajosDerivacionesBuscar(PermisosMixin, TemplateView):
         query = self.request.GET.get("busqueda")
         if query:
             derivaciones_filtrado = (
-                derivaciones.filter(
-                    Q(fk_legajo__apellido__icontains=query)
-                    | Q(fk_legajo__documento__icontains=query)
-                )
-                .values("fk_legajo")
-                .distinct()
+                derivaciones.filter(Q(fk_legajo__apellido__icontains=query) | Q(fk_legajo__documento__icontains=query)).values("fk_legajo").distinct()
             )
-            legajos_filtrado = legajos.filter(
-                Q(apellido__icontains=query) | Q(documento__icontains=query)
-            ).distinct()
+            legajos_filtrado = legajos.filter(Q(apellido__icontains=query) | Q(documento__icontains=query)).distinct()
 
             if derivaciones_filtrado:
-                sin_derivaciones = legajos_filtrado.exclude(
-                    id__in=derivaciones_filtrado
-                )
+                sin_derivaciones = legajos_filtrado.exclude(id__in=derivaciones_filtrado)
                 con_derivaciones = legajos_filtrado.filter(id__in=derivaciones_filtrado)
 
             else:
@@ -1051,10 +959,7 @@ class LegajosDerivacionesListView(PermisosMixin, ListView):
         query = self.request.GET.get("busqueda")
 
         if query:
-            object_list = model.filter(
-                Q(fk_legajo__apellido__icontains=query)
-                | Q(fk_legajo__documento__icontains=query)
-            ).distinct()
+            object_list = model.filter(Q(fk_legajo__apellido__icontains=query) | Q(fk_legajo__documento__icontains=query)).distinct()
 
         else:
             object_list = model.all()
@@ -1180,9 +1085,7 @@ class LegajosAlertasListView(PermisosMixin, ListView):
         pk = self.kwargs["pk"]
         context = super().get_context_data(**kwargs)
         context["legajo_alertas"] = HistorialLegajoAlertas.objects.filter(fk_legajo=pk)
-        context["legajo"] = (
-            Legajos.objects.filter(id=pk).values("apellido", "nombre", "id").first()
-        )
+        context["legajo"] = Legajos.objects.filter(id=pk).values("apellido", "nombre", "id").first()
         return context
 
 
@@ -1229,9 +1132,7 @@ class DeleteAlerta(PermisosMixin, View):
             legajo_alerta.delete()
 
             # Filtrar el registro activo actualmente (sin fecha_fin)
-            registro_historial = HistorialLegajoAlertas.objects.filter(
-                Q(fk_alerta=alerta) & Q(fk_legajo=legajo) & Q(fecha_fin__isnull=True)
-            ).first()
+            registro_historial = HistorialLegajoAlertas.objects.filter(Q(fk_alerta=alerta) & Q(fk_legajo=legajo) & Q(fecha_fin__isnull=True)).first()
 
             if registro_historial:
                 registro_historial.eliminada_por = request.user.usuarios
@@ -1267,9 +1168,7 @@ class CategoriasSelectView(View):
         else:
             categorias = CategoriaAlertas.objects.all()
 
-        data = [
-            {"id": categoria.id, "text": categoria.nombre} for categoria in categorias
-        ]
+        data = [{"id": categoria.id, "text": categoria.nombre} for categoria in categorias]
         return JsonResponse(data, safe=False)
 
 
@@ -1350,29 +1249,17 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
         context.update(
             {
                 "legajo": legajo,
-                "form_vivienda": self.form_vivienda(
-                    instance=getattr(legajo, "dimensionvivienda", None)
-                ),
-                "form_salud": self.form_salud(
-                    instance=getattr(legajo, "dimensionsalud", None)
-                ),
-                "form_educacion": self.form_educacion(
-                    instance=getattr(legajo, "dimensioneducacion", None)
-                ),
-                "form_economia": self.form_economia(
-                    instance=getattr(legajo, "dimensioneconomia", None)
-                ),
-                "form_trabajo": self.form_trabajo(
-                    instance=getattr(legajo, "dimensiontrabajo", None)
-                ),
+                "form_vivienda": self.form_vivienda(instance=getattr(legajo, "dimensionvivienda", None)),
+                "form_salud": self.form_salud(instance=getattr(legajo, "dimensionsalud", None)),
+                "form_educacion": self.form_educacion(instance=getattr(legajo, "dimensioneducacion", None)),
+                "form_economia": self.form_economia(instance=getattr(legajo, "dimensioneconomia", None)),
+                "form_trabajo": self.form_trabajo(instance=getattr(legajo, "dimensiontrabajo", None)),
             }
         )
 
         return context
 
-    def form_valid(  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
-        self, form
-    ):
+    def form_valid(self, form):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         # TODO: Esto sera refactorizado
         self.object = form.save(commit=False)
 
@@ -1646,9 +1533,7 @@ class CreateArchivo(TemplateView):
         legajo = Legajos.objects.get(id=pk)
         response_data_list = []  # Lista para almacenar las respuestas de los archivos
 
-        files = request.FILES.getlist(
-            "file"
-        )  # Acceder a los archivos enviados desde Dropzone
+        files = request.FILES.getlist("file")  # Acceder a los archivos enviados desde Dropzone
 
         for f in files:
             if f:
@@ -1658,9 +1543,7 @@ class CreateArchivo(TemplateView):
                 else:
                     tipo = "Documento"
 
-                legajo_archivo = LegajosArchivos.objects.create(
-                    fk_legajo=legajo, archivo=f, tipo=tipo
-                )
+                legajo_archivo = LegajosArchivos.objects.create(fk_legajo=legajo, archivo=f, tipo=tipo)
 
                 response_data = {
                     "id": legajo_archivo.id,
@@ -1668,13 +1551,9 @@ class CreateArchivo(TemplateView):
                     "archivo_url": legajo_archivo.archivo.url,
                 }
 
-                response_data_list.append(
-                    response_data
-                )  # Agregar la respuesta actual a la lista
+                response_data_list.append(response_data)  # Agregar la respuesta actual a la lista
 
-        return JsonResponse(
-            response_data_list, safe=False
-        )  # Devolver la lista completa de respuestas como JSON
+        return JsonResponse(response_data_list, safe=False)  # Devolver la lista completa de respuestas como JSON
 
 
 class DeleteArchivo(PermisosMixin, View):
@@ -1797,9 +1676,7 @@ class LegajosGrupoHogarCreateView(CreateView):
 
         context = super().get_context_data(**kwargs)
 
-        hogares = LegajoGrupoHogar.objects.filter(
-            Q(fk_legajo_1Hogar=pk) | Q(fk_legajo_2Hogar=pk)
-        ).values(
+        hogares = LegajoGrupoHogar.objects.filter(Q(fk_legajo_1Hogar=pk) | Q(fk_legajo_2Hogar=pk)).values(
             "id",
             "fk_legajo_1Hogar__nombre",
             "fk_legajo_2Hogar__nombre",
@@ -1817,16 +1694,8 @@ class LegajosGrupoHogarCreateView(CreateView):
         page_number = self.request.GET.get("page")
         page_obj = paginator.get_page(page_number)
 
-        context["hogar_1"] = [
-            familiar
-            for familiar in page_obj
-            if familiar["fk_legajo_1Hogar__id"] == int(pk)
-        ]
-        context["hogar_2"] = [
-            familiar
-            for familiar in page_obj
-            if familiar["fk_legajo_2Hogar__id"] == int(pk)
-        ]
+        context["hogar_1"] = [familiar for familiar in page_obj if familiar["fk_legajo_1Hogar__id"] == int(pk)]
+        context["hogar_2"] = [familiar for familiar in page_obj if familiar["fk_legajo_2Hogar__id"] == int(pk)]
         print(context["hogar_1"])
 
         context["hogares"] = page_obj
@@ -1890,8 +1759,7 @@ def busqueda_hogar(request):
     page_number = request.POST.get("page", 1)
 
     legajos_asociados = LegajoGrupoHogar.objects.filter(
-        Q(fk_legajo_1Hogar_id=legajo_principal_id)
-        | Q(fk_legajo_2Hogar_id=legajo_principal_id)
+        Q(fk_legajo_1Hogar_id=legajo_principal_id) | Q(fk_legajo_2Hogar_id=legajo_principal_id)
     ).values_list("fk_legajo_1Hogar_id", "fk_legajo_2Hogar_id")
 
     legajos_asociados_ids = set()
@@ -1902,10 +1770,9 @@ def busqueda_hogar(request):
             legajos_asociados_ids.add(fk_legajo_2)
 
     paginate_by = 10
-    hogares = Legajos.objects.filter(
-        ~Q(id=legajo_principal_id)
-        & (Q(apellido__icontains=busqueda) | Q(documento__icontains=busqueda))
-    ).exclude(id__in=legajos_asociados_ids)
+    hogares = Legajos.objects.filter(~Q(id=legajo_principal_id) & (Q(apellido__icontains=busqueda) | Q(documento__icontains=busqueda))).exclude(
+        id__in=legajos_asociados_ids
+    )
 
     if len(hogares) > 0 and busqueda:
         paginator = Paginator(hogares, paginate_by)
@@ -1950,9 +1817,7 @@ class LegajoGrupoHogarList(ListView):
         context = super().get_context_data(**kwargs)
 
         # FIXME: Esta query optimizada de "familiares" no se termino de implementar
-        familiares = LegajoGrupoFamiliar.objects.filter(
-            Q(fk_legajo_1=pk) | Q(fk_legajo_2=pk)
-        ).values(
+        familiares = LegajoGrupoFamiliar.objects.filter(Q(fk_legajo_1=pk) | Q(fk_legajo_2=pk)).values(
             "fk_legajo2__id",
             "fk_legajo1__id",
             "fk_legajo_2__nombre",
@@ -1973,19 +1838,9 @@ class LegajoGrupoHogarList(ListView):
             "fk_legajo_1__foto",
             "vinculo",
         )
-        context["familiares_fk1"] = [
-            familiar
-            for familiar in familiares
-            if familiar["fk_legajo_1__id"] == int(pk)
-        ]
-        context["familiares_fk2"] = [
-            familiar
-            for familiar in familiares
-            if familiar["fk_legajo_1__id"] == int(pk)
-        ]
-        context["count_familia"] = (
-            context["familiares_fk1"].count() + context["familiares_fk1"].count()
-        )
+        context["familiares_fk1"] = [familiar for familiar in familiares if familiar["fk_legajo_1__id"] == int(pk)]
+        context["familiares_fk2"] = [familiar for familiar in familiares if familiar["fk_legajo_1__id"] == int(pk)]
+        context["count_familia"] = context["familiares_fk1"].count() + context["familiares_fk1"].count()
         context["nombre"] = Legajos.objects.filter(pk=pk).values("nombre").first()
         context["pk"] = pk
         return context
@@ -2010,9 +1865,7 @@ class CreateGrupoHogar(View):
             "fk_legajo_2": obj.fk_legajo_2Hogar.id,
             "nombre": obj.fk_legajo_2Hogar.nombre,
             "apellido": obj.fk_legajo_2Hogar.apellido,
-            "foto": (
-                obj.fk_legajo_2Hogar.foto.url if obj.fk_legajo_2Hogar.foto else None
-            ),
+            "foto": (obj.fk_legajo_2Hogar.foto.url if obj.fk_legajo_2Hogar.foto else None),
         }
         data = {
             "tipo_mensaje": "success",
@@ -2052,9 +1905,7 @@ class IntervencionDetail(TemplateView):
         context = super().get_context_data(**kwargs)
         legajo = Legajos.objects.filter(pk=self.kwargs["pk"]).first()
         intervenciones = Intervencion.objects.filter(fk_legajo=self.kwargs["pk"])
-        cantidad_intervenciones = Intervencion.objects.filter(
-            fk_legajo=self.kwargs["pk"]
-        ).count()
+        cantidad_intervenciones = Intervencion.objects.filter(fk_legajo=self.kwargs["pk"]).count()
         context["intervenciones"] = intervenciones
         context["object"] = legajo
         context["cantidad_intervenciones"] = cantidad_intervenciones
@@ -2180,3 +2031,27 @@ class EditLlamado(UpdateView):
         context["object"] = legajo
 
         return context
+
+
+class SubEstadosIntervencionesAJax(View):
+    def get(self, request):
+        request_id = request.GET.get("id", None)
+        if request_id:
+            sub_estados = SubIntervencion.objects.filter(fk_subintervencion=request_id)
+        else:
+            sub_estados = SubIntervencion.objects.all()
+
+        data = [{"id": sub_estado.id, "text": sub_estado.nombre} for sub_estado in sub_estados]
+        return JsonResponse(data, safe=False)
+
+
+class SubEstadosLlamadosAjax(View):
+    def get(self, request):
+        request_id = request.GET.get("id", None)
+        if request_id:
+            sub_estados = SubTipoLlamado.objects.filter(fk_tipo_llamado=request_id)
+        else:
+            sub_estados = SubTipoLlamado.objects.all()
+
+        data = [{"id": sub_estado.id, "text": sub_estado.nombre} for sub_estado in sub_estados]
+        return JsonResponse(data, safe=False)

@@ -46,6 +46,8 @@ from legajos.views import (
     CreateLlamado,
     EditLlamado,
     DeleteLammado,
+    SubEstadosIntervencionesAJax,
+    SubEstadosLlamadosAjax,
     busqueda_hogar,
     busqueda_familiares,
     load_localidad,
@@ -151,9 +153,7 @@ urlpatterns = [
     # path('legajos/alertas/crear/ajax/', login_required(CreateAlerta.as_view()), name='alerta_ajax_crear'),
     # URLs para los select dinamicos para legajoalertas_form
     path("alertas-select/", AlertasSelectView.as_view(), name="alertas_select"),
-    path(
-        "categorias-select/", CategoriasSelectView.as_view(), name="categorias_select"
-    ),
+    path("categorias-select/", CategoriasSelectView.as_view(), name="categorias_select"),
     # Legajos Archivos
     path(
         "legajos/archivos/listar/<pk>",
@@ -280,6 +280,8 @@ urlpatterns = [
     ),
     path("ajax/load-municipios/", load_municipios, name="ajax_load_municipios"),
     path("ajax/load-localidades/", load_localidad, name="ajax_load_localidades"),
+    path("ajax/load-subestadosintervenciones/", SubEstadosIntervencionesAJax.as_view(), name="ajax_load_subestadosintervenciones"),
+    path("ajax/load-subestadosllamados/", SubEstadosLlamadosAjax.as_view(), name="ajax_load_subestadosllamados"),
     path(
         "legajos/intervencion/ver/<pk>",
         login_required(IntervencionDetail.as_view()),
