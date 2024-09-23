@@ -589,7 +589,7 @@ class Relevamiento(models.Model):
         to=Comedor,
         on_delete=models.CASCADE,
     )
-    fecha_visita = models.DateTimeField(default=timezone.now, editable=False)
+    fecha_visita = models.DateTimeField(default=timezone.now)
     funcionamiento = models.OneToOneField(
         to=FuncionamientoPrestacion,
         on_delete=models.PROTECT,
