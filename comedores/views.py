@@ -1,10 +1,19 @@
 from typing import Any
 from django.db.models.query import QuerySet
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, CreateView, DetailView, UpdateView
 
-from comedores.forms.comedor import ComedorForm
-from .models import Comedor
+from comedores.forms.comedor import ComedorForm, ReferenteForm
+from comedores.forms.relevamiento import (
+    RelevamientoForm,
+    FuncionamientoPrestacionForm,
+    EspacioForm,
+    ColaboradoresForm,
+    FuenteRecursosForm,
+    FuenteComprasForm,
+    PrestacionFormSet,
+)
+from .models import Comedor, Relevamiento
 
 
 class ComedorListView(ListView):
@@ -20,9 +29,8 @@ class ComedorListView(ListView):
             "provincia__nombre",
             "calle",
             "numero",
-            "referente__apellido",
-            "referente__nombre",
-            "referente__telefono",
+            "referente__nombre_completo",
+            "referente__numero",
         )
 
 
@@ -33,6 +41,29 @@ class ComedorCreateView(CreateView):
 
     def get_success_url(self):
         return reverse("comedor_ver", kwargs={"pk": self.object.pk})
+
+    def get_context_data(self, **kwargs):
+        data = super().get_context_data(**kwargs)
+        if self.request.POST:
+            data["referente_form"] = ReferenteForm(self.request.POST)
+        else:
+            data["referente_form"] = ReferenteForm()
+        return data
+
+    def form_valid(self, form):
+        context = self.get_context_data()
+        referente_form = context["referente_form"]
+
+        if referente_form.is_valid():
+            self.object = form.save()
+            referente = referente_form.save()
+
+            self.object.referente = referente
+            self.object.save()
+
+            return super().form_valid(form)
+        else:
+            return self.form_invalid(form)
 
 
 class ComedorDetailView(DetailView):
@@ -55,10 +86,10 @@ class ComedorDetailView(DetailView):
             "entre_calle_1",
             "entre_calle_2",
             "codigo_postal",
-            "referente__apellido",
-            "referente__nombre",
-            "referente__telefono",
-            "referente__email",
+            "referente__nombre_completo",
+            "referente__mail",
+            "referente__numero",
+            "referente__documento",
         )
 
 
@@ -69,3 +100,30 @@ class ComedorUpdateView(UpdateView):
 
     def get_success_url(self):
         return reverse("comedor_ver", kwargs={"pk": self.object.pk})
+
+    def get_context_data(self, **kwargs):
+        data = super().get_context_data(**kwargs)
+        self.object = self.get_object()
+        if self.request.POST:
+            data["referente_form"] = ReferenteForm(
+                self.request.POST, instance=self.object.referente
+            )
+        else:
+            data["referente_form"] = ReferenteForm(instance=self.object.referente)
+        return data
+
+    def form_valid(self, form):
+        context = self.get_context_data()
+        referente_form = context["referente_form"]
+
+        if referente_form.is_valid():
+            self.object = form.save()
+            referente = referente_form.save()
+
+            self.object.referente = referente
+            self.object.save()
+
+            return super().form_valid(form)
+        else:
+            return self.form_invalid(form)
+

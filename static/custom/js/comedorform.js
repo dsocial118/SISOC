@@ -36,7 +36,3 @@ function crearOpcion({ id, nombre, nombre_region }, select) {
     option.textContent = nombre || nombre_region;
     select.appendChild(option);
 }
-
-$(document).ready(function () {
-    $('#id_referente').select2();
-});

@@ -31,7 +31,35 @@
                         <div class="form-row justify-content-center">
                             <form method="post" class="w-100">
                                 {% csrf_token %}
-                                {% crispy form %}
+                                <div class="form-group row">
+                                    <div class="col-sm-6">{{ form.nombre|as_crispy_field }}</div>
+                                    <div class="col-sm-6">{{ form.comienzo|as_crispy_field }}</div>
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col-sm-4">{{ form.provincia|as_crispy_field }}</div>
+                                    <div class="col-sm-4">{{ form.municipio|as_crispy_field }}</div>
+                                    <div class="col-sm-4">{{ form.localidad|as_crispy_field }}</div>
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col-sm-4">{{ form.partido|as_crispy_field }}</div>
+                                    <div class="col-sm-4">{{ form.barrio|as_crispy_field }}</div>
+                                    <div class="col-sm-4">{{ form.codigo_postal|as_crispy_field }}</div>
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col-sm-3">{{ form.calle|as_crispy_field }}</div>
+                                    <div class="col-sm-3">{{ form.numero|as_crispy_field }}</div>
+                                    <div class="col-sm-3">{{ form.entre_calle_1|as_crispy_field }}</div>
+                                    <div class="col-sm-3">{{ form.entre_calle_2|as_crispy_field }}</div>
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col-sm-3">{{ referente_form.nombre_completo|as_crispy_field }}</div>
+                                    <div class="col-sm-3">{{ referente_form.mail|as_crispy_field }}</div>
+                                    <div class="col-sm-3">{{ referente_form.numero|as_crispy_field }}</div>
+                                    <div class="col-sm-3">{{ referente_form.documento|as_crispy_field }}</div>
+                                </div>
+                                <button class="btn btn-primary mx-1" type="submit">Confirmar</button>
+                                <a class='btn btn-secondary print mr-1 d-none d-sm-inline'>Imprimir</a>
+                                <a href='#' onclick='window.history.back();' class='btn btn-secondary'>Cancelar</a>
                             </form>
                         </div>
                     </div>
