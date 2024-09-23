@@ -491,6 +491,27 @@ class Prestacion(models.Model):
         unique_together = ["relevamiento", "tipo_comida", "nombre_dia"]
 
 
+class Referente(models.Model):
+    """
+    Modelo que representa a un referente, en algun futuro se migrara a Legajo.
+
+    Atributos:
+        nombre_completo (CharField): Nombre completo del referente.
+        mail (EmailField): Dirección de correo electrónico única del referente.
+        numero (IntegerField): Número único del referente.
+        documento (IntegerField): Documento único del referente.
+    """
+
+    nombre_completo = models.CharField(max_length=255)
+    mail = models.EmailField(unique=True)
+    numero = models.IntegerField(unique=True)
+    documento = models.IntegerField(unique=True)
+
+    class Meta:
+        verbose_name = "Referente"
+        verbose_name_plural = "Referentes"
+
+
 class Comedor(models.Model):
     """
     Modelo que representa un comedor.
@@ -536,7 +557,10 @@ class Comedor(models.Model):
             MaxValueValidator(100000),
         ],  # Entre 4 a 6 digitos
     )
-    referente = models.ForeignKey(to=Legajos, on_delete=models.SET_NULL, null=True)
+    referente = models.ForeignKey(to=Referente, on_delete=models.SET_NULL, null=True)
+
+    def __str__(self) -> str:
+        return str(self.nombre)
 
     class Meta:
         indexes = [
