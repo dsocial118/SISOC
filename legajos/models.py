@@ -350,7 +350,6 @@ class DimensionFamilia(models.Model):
     """
     Guardado de la informacion de salud asociada a un Legajo.
     """
-
     fk_legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
     cant_hijos = models.SmallIntegerField(
         verbose_name="Cantidad de hijos", null=True, blank=True
