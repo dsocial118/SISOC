@@ -45,6 +45,9 @@ class ComedorForm(forms.ModelForm):
             Row(
                 Submit("submit", "Confirmar", css_class="btn btn-primary mr-1"),
                 HTML(
+                    "<a class='btn btn-secondary print mr-1 d-none d-sm-inline'>Imprimir</a>"
+                ),
+                HTML(
                     "<a href='javascript:history.back()' class='btn btn-secondary'>Cancelar</a>"
                 ),
             ),
