@@ -6,12 +6,14 @@ from comedores.views import (
     ComedorCreateView,
     ComedorDetailView,
     ComedorUpdateView,
+    RelevamientoCreateView,
+    RelevamientoDetailView,
 )
 
 
 urlpatterns = [
     path(
-        "comedores/listar",
+        "comedores",
         login_required(ComedorListView.as_view()),
         name="comedor_listar",
     ),
@@ -21,17 +23,17 @@ urlpatterns = [
         name="comedor_crear",
     ),
     path(
-        "comedores/ver/<pk>",
+        "comedores/<pk>",
         login_required(ComedorDetailView.as_view()),
-        name="comedor_ver",
+        name="comedor_detalle",
     ),
     path(
-        "comedores/editar/<pk>",
+        "comedores/<pk>/editar",
         login_required(ComedorUpdateView.as_view()),
         name="comedor_editar",
     ),
     path(
-        "comedores/eliminar/<pk>",
+        "comedores/<pk>/eliminar",
         login_required(ComedorDetailView.as_view()),
         name="comedor_eliminar",
     ),
@@ -44,5 +46,25 @@ urlpatterns = [
         "comedores/<pk>/observaciones",
         login_required(ComedorListView.as_view()),
         name="comedor_observaciones",
+    ),
+    path(
+        "comedores/<pk>/relevamientos/crear",
+        login_required(RelevamientoCreateView.as_view()),
+        name="relevamiento_crear",
+    ),
+    path(
+        "relevamientos/<pk>",
+        login_required(RelevamientoDetailView.as_view()),
+        name="relevamiento_detalle",
+    ),
+    path(
+        "relevamientos/<pk>/editar",
+        login_required(RelevamientoDetailView.as_view()),
+        name="relevamiento_editar",
+    ),
+    path(
+        "relevamientos/<pk>/eliminar",
+        login_required(RelevamientoDetailView.as_view()),
+        name="relevamiento_eliminar",
     ),
 ]
