@@ -1,57 +1,20 @@
-from datetime import datetime
 from django import forms
-from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Row, Div, Submit, HTML
 
-from comedores.models import Comedor
+from comedores.models import Comedor, Referente
 from legajos.models import LegajoLocalidad, LegajoMunicipio, LegajoProvincias
+
+
+class ReferenteForm(forms.ModelForm):
+    class Meta:
+        model = Referente
+        fields = "__all__"
 
 
 class ComedorForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.layout()
-
         self.popular_campos_ubicacion()
-
-    def layout(self):
-        self.helper = FormHelper()
-        self.helper.form_class = "form-inline"
-        self.helper.layout = Layout(
-            Row(
-                Div("nombre", css_class="col-sm-4"),
-                Div(
-                    "comienzo", css_class="col-sm-4", min=1900, max=datetime.now().year
-                ),
-                Div("referente", css_class="col-sm-4"),
-            ),
-            Row(
-                Div("provincia", css_class="col-sm-4"),
-                Div("municipio", css_class="col-sm-4"),
-                Div("localidad", css_class="col-sm-4"),
-            ),
-            Row(
-                Div("partido", css_class="col-sm-4"),
-                Div("barrio", css_class="col-sm-4"),
-                Div("codigo_postal", css_class="col-sm-4"),
-            ),
-            Row(
-                Div("calle", css_class="col-sm-3"),
-                Div("numero", css_class="col-sm-3"),
-                Div("entre_calle_1", css_class="col-sm-3"),
-                Div("entre_calle_2", css_class="col-sm-3"),
-            ),
-            Row(
-                Submit("submit", "Confirmar", css_class="btn btn-primary mr-1"),
-                HTML(
-                    "<a class='btn btn-secondary print mr-1 d-none d-sm-inline'>Imprimir</a>"
-                ),
-                HTML(
-                    "<a href='javascript:history.back()' class='btn btn-secondary'>Cancelar</a>"
-                ),
-            ),
-        )
 
     def popular_campos_ubicacion(self):
         provincia = LegajoProvincias.objects.filter(
@@ -87,7 +50,7 @@ class ComedorForm(forms.ModelForm):
                 departamento_id=municipio.departamento_id
             )
 
-        if hasattr(self.instance, "localidad"):
+        if localidad:
             self.fields["localidad"].initial = localidad
 
     class Meta:

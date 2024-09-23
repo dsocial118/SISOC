@@ -504,7 +504,7 @@ class Referente(models.Model):
 
     nombre_completo = models.CharField(max_length=255)
     mail = models.EmailField(unique=True)
-    numero = models.IntegerField(unique=True)
+    numero = models.BigIntegerField(unique=True)
     documento = models.IntegerField(unique=True)
 
     class Meta:
@@ -557,7 +557,9 @@ class Comedor(models.Model):
             MaxValueValidator(100000),
         ],  # Entre 4 a 6 digitos
     )
-    referente = models.ForeignKey(to=Referente, on_delete=models.SET_NULL, null=True)
+    referente = models.ForeignKey(
+        to=Referente, on_delete=models.SET_NULL, null=True, blank=True
+    )
 
     def __str__(self) -> str:
         return str(self.nombre)

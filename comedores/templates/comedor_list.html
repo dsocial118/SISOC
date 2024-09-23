@@ -70,8 +70,8 @@
                                     </td>
                                     <td>{{ comedor.provincia__nombre }}</td>
                                     <td>{{ comedor.calle }} {{ comedor.numero }}</td>
-                                    <td>{{ comedor.referente__apellido }} {{ comedor.referente__nombre }}</td>
-                                    <td>{{ comedor.referente__telefono|default_if_none:"-" }}</td>
+                                    <td>{{ comedor.referente__nombre_completo }}</td>
+                                    <td>{{ comedor.referente__numero|default_if_none:"-" }}</td>
                                     <td><a href="{% url 'comedor_relevamientos' comedor.id %}">VER</a></td>
                                     <td><a href="{% url 'comedor_observaciones' comedor.id %}">VER</a></td>
                                 </tr>
