@@ -87,7 +87,7 @@
         "model": "comedores.tipocombustible",
         "pk": 4,
         "fields": {
-            "nombre": "Gas natural/Gas envasado/Leña/Otro"
+            "nombre": "Otro"
         }
     },
     {
