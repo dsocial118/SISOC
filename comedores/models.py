@@ -192,7 +192,7 @@ class EspacioPrestacion(models.Model):
         verbose_name="¿Están señalizadas las salidas de emergencia?"
     )
     tiene_equipacion_incendio = models.BooleanField(
-        verbose_name="El lugar cuenta con elementos para apagar incendios (matafuegos / manguera)?"
+        verbose_name="¿El lugar cuenta con elementos para apagar incendios (matafuegos / manguera)?"
     )
     tiene_botiquin = models.BooleanField(
         verbose_name="¿El lugar cuenta con un botiquín de primeros auxilios?"
@@ -207,6 +207,8 @@ class EspacioPrestacion(models.Model):
         to=TipoDesague,
         on_delete=models.PROTECT,
         verbose_name="Si hay sanitarios, ¿cómo es el desagüe del hinodoro?",
+        blank=True,
+        null=True,
     )
     tiene_buzon_quejas = models.BooleanField(
         verbose_name="¿El comedor cuenta con un buzón de quejas y reclamos en el lugar?"
@@ -277,12 +279,16 @@ class Espacio(models.Model):
         to=EspacioCocina,
         on_delete=models.PROTECT,
         verbose_name="Informacion relacionada a la cocina y almacenamiento de alimentos",
+        blank=True,
+        null=True,
     )
 
     prestacion = models.OneToOneField(
         to=EspacioPrestacion,
         on_delete=models.PROTECT,
         verbose_name="Informacion relacionada al espacio donde se brinda la prestacion del comedor",
+        blank=True,
+        null=True,
     )
 
     class Meta:
@@ -333,12 +339,16 @@ class FuenteRecursos(models.Model):
         on_delete=models.PROTECT,
         verbose_name="Si recibe, ¿Con qué frecuencia recibe donaciones particulares?",
         related_name="frecuencia_donaciones_particulares",
+        blank=True,
+        null=True,
     )
     recursos_donaciones_particulares = models.ForeignKey(
         to=TipoRecurso,
         on_delete=models.PROTECT,
         verbose_name="¿Qué tipo de recursos recibe de donaciones particulares?",
         related_name="tipo_donaciones_particulares",
+        blank=True,
+        null=True,
     )
 
     recibe_estado_nacional = models.BooleanField()
@@ -347,12 +357,16 @@ class FuenteRecursos(models.Model):
         on_delete=models.PROTECT,
         verbose_name="Si recibe, ¿Con qué frecuencia recibe del estado nacional?",
         related_name="frecuencia_estado_nacional",
+        blank=True,
+        null=True,
     )
     recursos_estado_nacional = models.ForeignKey(
         to=TipoRecurso,
         on_delete=models.PROTECT,
         verbose_name="¿Qué tipo de recursos recibe del estado nacional?",
         related_name="tipo_estado_nacional",
+        blank=True,
+        null=True,
     )
 
     recibe_estado_provincial = models.BooleanField()
@@ -361,12 +375,16 @@ class FuenteRecursos(models.Model):
         on_delete=models.PROTECT,
         verbose_name="Si recibe, ¿Con qué frecuencia recibe del estado provincial?",
         related_name="frecuencia_estado_provincial",
+        blank=True,
+        null=True,
     )
     recursos_estado_provincial = models.ForeignKey(
         to=TipoRecurso,
         on_delete=models.PROTECT,
         verbose_name="¿Qué tipo de recursos recibe del estado provincial?",
         related_name="tipo_estado_provincial",
+        blank=True,
+        null=True,
     )
 
     recibe_estado_municipal = models.BooleanField()
@@ -375,12 +393,16 @@ class FuenteRecursos(models.Model):
         on_delete=models.PROTECT,
         verbose_name="Si recibe, ¿Con qué frecuencia recibe del estado municipal?",
         related_name="frecuencia_estado_municipal",
+        blank=True,
+        null=True,
     )
     recursos_estado_municipal = models.ForeignKey(
         to=TipoRecurso,
         on_delete=models.PROTECT,
         verbose_name="¿Qué tipo de recursos recibe del estado municipal?",
         related_name="tipo_estado_municipal",
+        blank=True,
+        null=True,
     )
 
     recibe_otros = models.BooleanField()
@@ -389,12 +411,16 @@ class FuenteRecursos(models.Model):
         on_delete=models.PROTECT,
         verbose_name="Si recibe, ¿Con qué frecuencia recibe de otras fuentes?",
         related_name="frecuencia_otros",
+        blank=True,
+        null=True,
     )
     recursos_otros = models.ForeignKey(
         to=TipoRecurso,
         on_delete=models.PROTECT,
         verbose_name="¿Qué tipo de recursos recibe de otras fuentes?",
         related_name="tipo_otros",
+        blank=True,
+        null=True,
     )
 
     class Meta:
@@ -591,7 +617,7 @@ class Relevamiento(models.Model):
         to=Comedor,
         on_delete=models.CASCADE,
     )
-    fecha_visita = models.DateTimeField(default=timezone.now)
+    fecha_visita = models.DateTimeField(default=timezone.now, blank=True)
     funcionamiento = models.OneToOneField(
         to=FuncionamientoPrestacion,
         on_delete=models.PROTECT,
