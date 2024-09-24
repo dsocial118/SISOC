@@ -3,11 +3,11 @@ from django.utils import timezone
 from django.core.validators import MaxValueValidator, MinValueValidator
 
 from legajos.models import LegajoLocalidad, LegajoMunicipio, LegajoProvincias, Legajos
-
+from usuarios.models import Usuarios
 
 class TipoModalidadPrestacion(models.Model):
     """
-    Opciones de modalidades de prestacion de un comedor
+    Opciones de modalidades de prestacion de un Comedor/Merendero
     """
 
     nombre = models.CharField(max_length=255, unique=True)
@@ -23,7 +23,7 @@ class TipoModalidadPrestacion(models.Model):
 
 class TipoEspacio(models.Model):
     """
-    Opciones de tipos de espacios fisicos para un comedor
+    Opciones de tipos de espacios fisicos para un Comedor/Merendero
     """
 
     nombre = models.CharField(max_length=255, unique=True)
@@ -39,7 +39,7 @@ class TipoEspacio(models.Model):
 
 class TipoCombustible(models.Model):
     """
-    Opciones de tipos de abastecimiento de combustible de un comedor
+    Opciones de tipos de abastecimiento de combustible de un Comedor/Merendero
     """
 
     nombre = models.CharField(max_length=255, unique=True)
@@ -55,7 +55,7 @@ class TipoCombustible(models.Model):
 
 class TipoAgua(models.Model):
     """
-    Opciones de tipos de abastecimiento de agua de un comedor
+    Opciones de tipos de abastecimiento de agua de un Comedor/Merendero
     """
 
     nombre = models.CharField(max_length=255, unique=True)
@@ -71,7 +71,7 @@ class TipoAgua(models.Model):
 
 class TipoDesague(models.Model):
     """
-    Opciones de tipos de desagues de hinodoro de un comedor
+    Opciones de tipos de desagues de hinodoro de un Comedor/Merendero
     """
 
     nombre = models.CharField(max_length=255, unique=True)
@@ -87,7 +87,7 @@ class TipoDesague(models.Model):
 
 class FrecuenciaLimpieza(models.Model):
     """
-    Opciones de frecuencias de limpieza de un comedor
+    Opciones de frecuencias de limpieza de un Comedor/Merendero
     """
 
     nombre = models.CharField(max_length=255, unique=True)
@@ -103,7 +103,7 @@ class FrecuenciaLimpieza(models.Model):
 
 class CantidadColaboradores(models.Model):
     """
-    Opciones de cantidades de colaboradores de un comedor
+    Opciones de cantidades de colaboradores de un Comedor/Merendero
     """
 
     nombre = models.CharField(max_length=255, unique=True)
@@ -119,7 +119,7 @@ class CantidadColaboradores(models.Model):
 
 class FuncionamientoPrestacion(models.Model):
     """
-    Informacion relacionada al funcionamiento del comedor
+    Informacion relacionada al funcionamiento del Comedor/Merendero
     """
 
     modalidad_prestacion = models.ForeignKey(
@@ -129,7 +129,14 @@ class FuncionamientoPrestacion(models.Model):
     servicio_por_turnos = models.BooleanField(
         verbose_name="¿El servicio esta organizado por turnos?"
     )
-    cantidad_turnos = models.PositiveIntegerField(blank=True, null=True)
+    cantidad_turnos = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(3),
+        ],
+    )
 
     class Meta:
         verbose_name = "Funcionamiento de comedor"
@@ -152,10 +159,10 @@ class EspacioCocina(models.Model):
         verbose_name="¿La cocina cuenta con un espacio o recipientes destinados a la disposición de residuos orgánicos y asimilables?"
     )
     recipiente_residuos_reciclables = models.BooleanField(
-        verbose_name="¿El comedor cuenta con un espacio o recipientes destinados a la disposición de residuos reciclables?"
+        verbose_name="¿El Comedor/Merendero cuenta con un espacio o recipientes destinados a la disposición de residuos reciclables?"
     )
     recipiente_otros_residuos = models.BooleanField(
-        verbose_name="¿El comedor genera otro tipo de residuos? ¿Cuenta con un espacio destinados a la disposición de dichos residuos?"
+        verbose_name="¿El Comedor/Merendero genera otro tipo de residuos? ¿Cuenta con un espacio destinados a la disposición de dichos residuos?"
     )
     abastecimiento_combustible = models.ManyToManyField(
         to=TipoCombustible,
@@ -165,7 +172,7 @@ class EspacioCocina(models.Model):
     abastecimiento_agua = models.ForeignKey(
         to=TipoAgua,
         on_delete=models.PROTECT,
-        verbose_name="¿Cómo se abastece de agua el comedor?",
+        verbose_name="¿Cómo se abastece de agua el Comedor/Merendero?",
     )
     instalacion_electrica = models.BooleanField()
 
@@ -176,17 +183,17 @@ class EspacioCocina(models.Model):
 
 class EspacioPrestacion(models.Model):
     """
-    Informacion relacionada al espacio donde se brinda la prestacion del comedor
+    Informacion relacionada al espacio donde se brinda la prestacion del Comedor/Merendero
     """
 
     espacio_equipado = models.BooleanField(
         verbose_name="¿Cuenta con espacio y equipamiento (mesas, bancos o sillas)?"
     )
     tiene_ventilacion = models.BooleanField(
-        verbose_name="¿El espacio donde tiene actividad el comedor cuenta con un sistema de ventilación adecuado?"
+        verbose_name="¿El espacio donde tiene actividad el Comedor/Merendero cuenta con un sistema de ventilación adecuado?"
     )
     tiene_salida_emergencia = models.BooleanField(
-        verbose_name="¿El espacio donde tiene actividad el comedor cuenta con salidas de emergencia?"
+        verbose_name="¿El espacio donde tiene actividad el Comedor/Merendero cuenta con salidas de emergencia?"
     )
     salida_emergencia_senializada = models.BooleanField(
         verbose_name="¿Están señalizadas las salidas de emergencia?"
@@ -198,10 +205,10 @@ class EspacioPrestacion(models.Model):
         verbose_name="¿El lugar cuenta con un botiquín de primeros auxilios?"
     )
     tiene_buena_iluminacion = models.BooleanField(
-        verbose_name="¿El espacio donde tiene actividad el comedor cuenta con buena iluminación?"
+        verbose_name="¿El espacio donde tiene actividad el Comedor/Merendero cuenta con buena iluminación?"
     )
     tiene_sanitarios = models.BooleanField(
-        verbose_name="¿El lugar cuenta con baño para las personas que realizan tareas en el comedor y para los destinatarios?"
+        verbose_name="¿El lugar cuenta con baño para las personas que realizan tareas en el Comedor/Merendero y para los destinatarios?"
     )
     desague_hinodoro = models.ForeignKey(
         to=TipoDesague,
@@ -211,10 +218,10 @@ class EspacioPrestacion(models.Model):
         null=True,
     )
     tiene_buzon_quejas = models.BooleanField(
-        verbose_name="¿El comedor cuenta con un buzón de quejas y reclamos en el lugar?"
+        verbose_name="¿El Comedor/Merendero cuenta con un buzón de quejas y reclamos en el lugar?"
     )
     tiene_gestion_quejas = models.BooleanField(
-        verbose_name="¿Hay en el lugar cartelería con información sobre los mecanismos de gestión de quejas, reclamos y sugerencias del comedor?"
+        verbose_name="¿Hay en el lugar cartelería con información sobre los mecanismos de gestión de quejas, reclamos y sugerencias del Comedor/Merendero/Merendero?"
     )
     frecuencia_limpieza = models.ForeignKey(
         to=FrecuenciaLimpieza,
@@ -223,13 +230,15 @@ class EspacioPrestacion(models.Model):
     )
 
     class Meta:
-        verbose_name = "Espacio donde se brinda la prestacion del comedor"
-        verbose_name_plural = "Espacios donde se brinda la prestacion del comedor"
+        verbose_name = "Espacio donde se brinda la prestacion del Comedor/Merendero"
+        verbose_name_plural = (Comedor/Merendero
+            "Espacios donde se brinda la prestacion del Comedor/Merendero"
+        )
 
 
 class Colaboradores(models.Model):
     """
-    Informacion relacionada a las personas que realizan tareas en el comedor
+    Informacion relacionada a las personas que realizan tareas en el Comedor/Merendero
     """
 
     cantidad_colaboradores = models.ForeignKey(
@@ -259,14 +268,14 @@ class Colaboradores(models.Model):
 
 class Espacio(models.Model):
     """
-    Informacion relacionada al espacio fisico del comedor.
-    Contiene la informacion de la cocina y la prestacion del comedor
+    Informacion relacionada al espacio fisico del Comedor/Merendero.
+    Contiene la informacion de la cocina y la prestacion del Comedor/Merendero
     """
 
     tipo_espacio_fisico = models.ForeignKey(
         to=TipoEspacio,
         on_delete=models.PROTECT,
-        verbose_name="¿En qué tipo de espacio físico funciona el comedor?",
+        verbose_name="¿En qué tipo de espacio físico funciona el Comedor/Merendero?",
     )
     espacio_fisico_otro = models.CharField(
         max_length=255,
@@ -286,7 +295,7 @@ class Espacio(models.Model):
     prestacion = models.OneToOneField(
         to=EspacioPrestacion,
         on_delete=models.PROTECT,
-        verbose_name="Informacion relacionada al espacio donde se brinda la prestacion del comedor",
+        verbose_name="Informacion relacionada al espacio donde se brinda la prestacion del Comedor/Merendero",
         blank=True,
         null=True,
     )
@@ -298,7 +307,7 @@ class Espacio(models.Model):
 
 class FrecuenciaRecepcionRecursos(models.Model):
     """
-    Opciones de frecuencias de recepcion de recursos para un comedor
+    Opciones de frecuencias de recepcion de recursos para un Comedor/Merendero
     """
 
     nombre = models.CharField(max_length=255, unique=True)
@@ -314,7 +323,7 @@ class FrecuenciaRecepcionRecursos(models.Model):
 
 class TipoRecurso(models.Model):
     """
-    Opciones de tipos de recursos recibidos por un comedor
+    Opciones de tipos de recursos recibidos por un Comedor/Merendero
     """
 
     nombre = models.CharField(max_length=255, unique=True)
@@ -330,7 +339,7 @@ class TipoRecurso(models.Model):
 
 class FuenteRecursos(models.Model):
     """
-    Informacion relacionada a las fuentes de recursos del comedor
+    Informacion relacionada a las fuentes de recursos del Comedor/Merendero
     """
 
     recibe_donaciones_particulares = models.BooleanField()
@@ -430,7 +439,7 @@ class FuenteRecursos(models.Model):
 
 class FuenteCompras(models.Model):
     """
-    Informacion relacionada a la realizacion de compras para abastecer el comedor
+    Informacion relacionada a la realizacion de compras para abastecer el Comedor/Merendero
     """
 
     almacen_cercano = models.BooleanField()
@@ -451,7 +460,7 @@ class FuenteCompras(models.Model):
 
 class TipoComida(models.Model):
     """
-    Opciones de tipos de comidas por horario que se brindan en un comedor
+    Opciones de tipos de comidas por horario que se brindan en un Comedor/Merendero
     """
 
     nombre = models.CharField(max_length=255, unique=True)
@@ -483,7 +492,7 @@ class NombreDia(models.Model):
 
 class Prestacion(models.Model):
     """
-    Modelo que representa una prestación brindada en un comedor.
+    Modelo que representa una prestación brindada en un Comedor/Merendero.
 
     Atributos:
         relevamiento (ForeignKey): Relación con el relevamiento al que pertenece la prestación.
@@ -525,15 +534,17 @@ class Referente(models.Model):
         nombre (CharField): Nombre del referente.
         apellido (CharField): Apellido del referente.
         mail (EmailField): Dirección de correo electrónico única del referente.
-        numero (IntegerField): Número único del referente.
-        documento (IntegerField): Documento único del referente.
+        celular (BigIntegerField): Número único del referente.
+        documento (BigIntegerField): Documento único del referente.
     """
 
-    nombre = models.CharField(max_length=255)
-    apellido = models.CharField(max_length=255)
-    mail = models.EmailField(unique=True)
-    numero = models.BigIntegerField(unique=True)
-    documento = models.IntegerField(unique=True)
+    nombre = models.CharField(max_length=255, verbose_name="Nombe del referente")
+    apellido = models.CharField(max_length=255, verbose_name="Apellido del referente")
+    mail = models.EmailField(unique=True, verbose_name="Mail del referente")
+    celular = models.BigIntegerField(unique=True, verbose_name="Celular del referente")
+    documento = models.BigIntegerField(
+        unique=True, verbose_name="Documento del referente"
+    )
 
     class Meta:
         verbose_name = "Referente"
@@ -542,22 +553,22 @@ class Referente(models.Model):
 
 class Comedor(models.Model):
     """
-    Modelo que representa un comedor.
+    Modelo que representa un Comedor/Merendero.
 
     Atributos:
-        nombre (CharField): Nombre del comedor.
-        comienzo (IntegerField): Año de inicio de la actividad del comedor.
-        calle (CharField): Calle donde se encuentra el comedor.
-        numero (PositiveIntegerField): Número de la calle donde se encuentra el comedor.
-        entre_calle_1 (CharField): Primera calle entre la cual se encuentra el comedor.
-        entre_calle_2 (CharField): Segunda calle entre la cual se encuentra el comedor.
-        provincia (ForeignKey): Provincia donde se encuentra el comedor.
-        municipio (ForeignKey): Municipio donde se encuentra el comedor.
-        localidad (ForeignKey): Localidad donde se encuentra el comedor.
-        partido (CharField): Partido donde se encuentra el comedor.
-        barrio (CharField): Barrio donde se encuentra el comedor.
-        codigo_postal (IntegerField): Código postal del comedor.
-        referente (ForeignKey): Referente del comedor.
+        nombre (CharField): Nombre del Comedor/Merendero.
+        comienzo (IntegerField): Año de inicio de la actividad del Comedor/Merendero.
+        calle (CharField): Calle donde se encuentra el Comedor/Merendero.
+        numero (PositiveIntegerField): Número de la calle donde se encuentra el Comedor/Merendero.
+        entre_calle_1 (CharField): Primera calle entre la cual se encuentra el Comedor/Merendero.
+        entre_calle_2 (CharField): Segunda calle entre la cual se encuentra el Comedor/Merendero.
+        provincia (ForeignKey): Provincia donde se encuentra el Comedor/Merendero.
+        municipio (ForeignKey): Municipio donde se encuentra el Comedor/Merendero.
+        localidad (ForeignKey): Localidad donde se encuentra el Comedor/Merendero.
+        partido (CharField): Partido donde se encuentra el Comedor/Merendero/Merendero.
+        barrio (CharField): Barrio donde se encuentra el Comedor/Merendero.
+        codigo_postal (IntegerField): Código postal del Comedor/Merendero.
+        referente (ForeignKey): Referente del Comedor/Merendero.
     """
 
     nombre = models.CharField(
@@ -581,8 +592,8 @@ class Comedor(models.Model):
     barrio = models.CharField(max_length=255)
     codigo_postal = models.IntegerField(
         validators=[
-            MinValueValidator(999),
-            MaxValueValidator(100000),
+            MinValueValidator(1000),
+            MaxValueValidator(999999),
         ],  # Entre 4 a 6 digitos
     )
     referente = models.ForeignKey(
@@ -603,47 +614,48 @@ class Comedor(models.Model):
 
 class Relevamiento(models.Model):
     """
-    Modelo que representa un relevamiento realizado en un comedor.
+    Modelo que representa un relevamiento realizado en un Comedor/Merendero.
 
     Atributos:
-        comedor (ForeignKey): Relación con el comedor donde se realizó el relevamiento.
+        Comedor/Merendero/Merendero (ForeignKey): Relación con el Comedor/Merendero donde se realizó el relevamiento.
         fecha_visita (DateTimeField): Fecha y hora de la visita.
-        funcionamiento (OneToOneField): Información relacionada al funcionamiento del comedor.
-        espacio (OneToOneField): Información relacionada al espacio físico del comedor.
-        colaboradores (OneToOneField): Información relacionada a las personas que realizan tareas en el comedor.
-        recursos (OneToOneField): Información relacionada a las fuentes de recursos del comedor.
-        compras (OneToOneField): Información relacionada a la realización de compras para abastecer el comedor.
+        funcionamiento (OneToOneField): Información relacionada al funcionamiento del Comedor/Merendero.
+        espacio (OneToOneField): Información relacionada al espacio físico del Comedor/Merendero.
+        colaboradores (OneToOneField): Información relacionada a las personas que realizan tareas en el Comedor/Merendero/Merendero/Merendero.
+        recursos (OneToOneField): Información relacionada a las fuentes de recursos del Comedor/Merendero.
+        compras (OneToOneField): Información relacionada a la realización de compras para abastecer el Comedor/Merendero.
     """
 
     comedor = models.ForeignKey(
         to=Comedor,
         on_delete=models.CASCADE,
     )
+    creador = models.ForeignKey(Usuarios, on_delete=models.SET_NULL, null=True)
     fecha_visita = models.DateTimeField(default=timezone.now, blank=True)
     funcionamiento = models.OneToOneField(
         to=FuncionamientoPrestacion,
         on_delete=models.PROTECT,
-        verbose_name="Informacion del funcionamiento del comedor",
+        verbose_name="Informacion del funcionamiento del Comedor/Merendero",
     )
     espacio = models.OneToOneField(
         to=Espacio,
         on_delete=models.PROTECT,
-        verbose_name="Informacion del espacio fisico del comedor",
+        verbose_name="Informacion del espacio fisico del Comedor/Merendero",
     )
     colaboradores = models.OneToOneField(
         to=Colaboradores,
         on_delete=models.PROTECT,
-        verbose_name="Informacion de las personas que realizan tareas en el comedor",
+        verbose_name="Informacion de las personas que realizan tareas en el Comedor/Merendero",
     )
     recursos = models.OneToOneField(
         to=FuenteRecursos,
         on_delete=models.PROTECT,
-        verbose_name="Informacion de las fuentes de recursos del comedor",
+        verbose_name="Informacion de las fuentes de recursos del Comedor/Merendero",
     )
     compras = models.OneToOneField(
         to=FuenteCompras,
         on_delete=models.PROTECT,
-        verbose_name="Informacion de la realizacion de compras para abastecer el comedor",
+        verbose_name="Informacion de la realizacion de compras para abastecer el Comedor/Merendero",
     )
 
     class Meta:
@@ -656,7 +668,7 @@ class Relevamiento(models.Model):
 
 class Observacion(models.Model):
     """
-    Modelo que representa una observación realizada en un comedor.
+    Modelo que representa una observación realizada en un Comedor/Merendero.
     """
 
     comedor = models.ForeignKey(

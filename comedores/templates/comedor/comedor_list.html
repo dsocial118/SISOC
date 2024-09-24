@@ -21,8 +21,8 @@
                     <div class="input-group input-group-lg">
                         <input type="search"
                                class="form-control form-control-lg"
-                               placeholder="Buscar por nombre comedor ubicación"
-                               title="Ingresar nombre comedor ubicación."
+                               placeholder="Buscar por nombre Comedor/Merendero o ubicación"
+                               title="Ingresar nombre Comedor/Merendero o ubicación."
                                name="busqueda" />
                         <div class="input-group-append">
                             <button type="submit" class="btn btn-lg btn-primary">
@@ -34,11 +34,10 @@
             </div>
         </div>
     </form>
-    
     <div class="row mt-3">
         <div class="col-12 text-center">
             <a href="{% url 'comedor_crear' %}"
-                class="btn btn-primary btn-lg d-block d-sm-inline mt-2 mr-2 ">Agregar</a>
+               class="btn btn-primary btn-lg d-block d-sm-inline mt-2 mr-2 ">Agregar</a>
             <a href="{% url 'comedores' %}"
                class="btn btn-secondary btn-lg d-block d-sm-inline mt-2 ">Resetear</a>
         </div>
@@ -63,13 +62,13 @@
                                 <tr>
                                     <td>
                                         <a href="{% url 'comedor_detalle' comedor.id %}"
-                                            class="font-weight-bold"
-                                            title="Ver detalles">{{ comedor.nombre }}</a>
+                                           class="font-weight-bold"
+                                           title="Ver detalles">{{ comedor.nombre }}</a>
                                     </td>
                                     <td>{{ comedor.provincia__nombre }}</td>
                                     <td>{{ comedor.calle }} {{ comedor.numero }}</td>
                                     <td>{{ comedor.referente__nombre }} {{ comedor.referente__apellido }}</td>
-                                    <td>{{ comedor.referente__numero|default_if_none:"-" }}</td>
+                                    <td>{{ comedor.referente__celular|default_if_none:"-" }}</td>
                                 </tr>
                             {% endfor %}
                         </tbody>
@@ -80,7 +79,7 @@
                                 {% if page_obj.has_previous %}
                                     <li class="page-item">
                                         <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ page_obj.previous_page_number }}"
-                                            class="page-link">Volver</a>
+                                           class="page-link">Volver</a>
                                     </li>
                                 {% else %}
                                     <li class="page-item disabled">
@@ -95,14 +94,14 @@
                                     {% else %}
                                         <li class="page-item {% if page_obj.number == i %}active{% endif %}">
                                             <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ i }}"
-                                                class="page-link">{{ i }}</a>
+                                               class="page-link">{{ i }}</a>
                                         </li>
                                     {% endif %}
                                 {% endfor %}
                                 {% if page_obj.has_next %}
                                     <li class="page-item">
                                         <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ page_obj.next_page_number }}"
-                                            class="page-link">Continuar</a>
+                                           class="page-link">Continuar</a>
                                     </li>
                                 {% else %}
                                     <li class="page-item disabled">
