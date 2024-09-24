@@ -131,6 +131,13 @@ class ComedorUpdateView(UpdateView):
             return self.form_invalid(form)
 
 
+class ComedorDeleteView(DeleteView):
+    model = Comedor
+    template_name = "comedor/comedor_confirm_delete.html"
+    context_object_name = "comedor"
+    success_url = reverse_lazy("comedores")
+
+
 class RelevamientoCreateView(CreateView):
     model = Relevamiento
     form_class = RelevamientoForm
@@ -222,5 +229,12 @@ class RelevamientoDetailView(DetailView):
     template_name = "relevamiento/relevamiento_detail.html"
     context_object_name = "relevamiento"
 
-    def get_queryset(self) -> QuerySet[Any]:
-        return Relevamiento.objects.values()
+class RelevamientoDeleteView(DeleteView):
+    model = Relevamiento
+    template_name = "relevamiento/relevamiento_confirm_delete.html"
+    context_object_name = "relevamiento"
+
+    def get_success_url(self):
+        comedor = self.object.comedor
+
+        return reverse_lazy("comedor_detalle", kwargs={"pk": comedor.id})
