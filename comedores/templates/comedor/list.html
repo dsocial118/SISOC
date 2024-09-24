@@ -69,6 +69,16 @@
                                     <td>{{ comedor.calle }} {{ comedor.numero }}</td>
                                     <td>{{ comedor.referente__nombre }} {{ comedor.referente__apellido }}</td>
                                     <td>{{ comedor.referente__celular|default_if_none:"-" }}</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'comedor_detalle' comedor.id %}"
+                                               class="btn btn-primary btn-sm ver">Ver</a>
+                                            <a href="{% url 'comedor_editar' comedor.id %}"
+                                               class="btn btn-primary btn-sm editar">Editar</a>
+                                            <a href="{% url 'comedor_eliminar' comedor.id %}"
+                                               class="btn btn-danger btn-sm eliminar">Eliminar</a>
+                                        </div>
+                                    </td>
                                 </tr>
                             {% endfor %}
                         </tbody>
