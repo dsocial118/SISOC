@@ -12,7 +12,7 @@ from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
-from django.db.models import Case, Count, IntegerField, Q, Value, When
+from django.db.models import Case, IntegerField, Q, Value, When
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
