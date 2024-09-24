@@ -47,14 +47,14 @@ document.addEventListener("DOMContentLoaded", function() {
 
   // Estados de formulario
   let asisteEscuelaFormEstados = [
-    { valor: "a", mostrar: [ID_MAX_NIVEL, ID_ESTADO_NIVEL, ID_DATOS_INSTITUCION], ocultar: [ID_INCOMPLETO_FORM, ID_SIN_EDU_FORMAL] },
-    { valor: "b", mostrar: [ID_MAX_NIVEL, ID_ESTADO_NIVEL, ID_INCOMPLETO_FORM, ID_DATOS_INSTITUCION], ocultar: [ID_SIN_EDU_FORMAL] },
-    { valor: "c", mostrar: [ID_SIN_EDU_FORMAL], ocultar: [ID_MAX_NIVEL, ID_ESTADO_NIVEL, ID_INCOMPLETO_FORM, ID_DATOS_INSTITUCION] }
+    { valor: "a", mostrar: [ID_MAX_NIVEL, ID_DATOS_INSTITUCION], ocultar: [ID_ESTADO_NIVEL, ID_INCOMPLETO_FORM, ID_SIN_EDU_FORMAL] },
+    { valor: "b", mostrar: [ID_MAX_NIVEL, ID_ESTADO_NIVEL, ID_DATOS_INSTITUCION], ocultar: [ID_SIN_EDU_FORMAL] },
+    { valor: "c", mostrar: [ID_SIN_EDU_FORMAL], ocultar: [ID_MAX_NIVEL, ID_ESTADO_NIVEL, ID_DATOS_INSTITUCION] }
   ];
 
   let estadoNivelFormEstados = [
-    { valor: INCOMPLETO_OPTION, mostrar: [ID_INCOMPLETO_FORM, ID_SIN_EDU_FORMAL], ocultar: [] },
-    { valor: null, mostrar: [], ocultar: [ID_INCOMPLETO_FORM, ID_SIN_EDU_FORMAL] }
+    { valor: INCOMPLETO_OPTION, mostrar: [], ocultar: [] },
+    { valor: null, mostrar: [], ocultar: [] }
   ];
 
   let realizandoCursoFormEstados = [
@@ -99,7 +99,61 @@ document.addEventListener("DOMContentLoaded", function() {
   FormUtils.mostrarOcultar(hayBanioForm.value, hayBanioFormEstados);
   FormUtils.mostrarOcultar(tieneTrabajoForm.value, tieneTrabajoFormEstados);
   FormUtils.mostrarOcultar(busquedaLaboralForm.value, busquedaLaboralFormEstados);
-  FormUtils.mostrarOcultar(planSocialForm.value, planSocialFormEstados)
+  FormUtils.mostrarOcultar(planSocialForm.value, planSocialFormEstados);
+
+  // Manejo de pregunta id_nivelIncompleto, se maneja aparte
+  let preguntasVinculadas = document.querySelectorAll(
+    "#id_asiste_escuela, #id_max_nivel, #id_estado_nivel"
+  );
+
+  function mostrarOcultarPreguntaEducacionIncompleta() {
+    // Calculamos un puntaje acorde al progreso educativo hecho por el encuestado.
+    // Obtenemos los valores de los campos y la multiplicación de esos valores nos da un puntaje
+    // que de pasar cierto límite nos mostrará o no la pregunta.
+    const PUNTAJE_MINIMO = 12;
+    let maxNivelValue = document.querySelector("#id_max_nivel").selectedIndex;
+    let estadoNivelValue =
+      document.querySelector("#id_estado_nivel").selectedIndex;
+    let puntaje = maxNivelValue * estadoNivelValue;
+    console.log(maxNivelValue, estadoNivelValue, puntaje);
+    if (asisteEscuelaForm.value != "a" && puntaje < PUNTAJE_MINIMO) {
+      console.log("Mostrar pregunta incompleto");
+      FormUtils.mostrar(ID_INCOMPLETO_FORM, true);
+    } else {
+      FormUtils.mostrar(ID_INCOMPLETO_FORM, false);
+    }
+  }
+
+  preguntasVinculadas.forEach((elemento) => {
+    elemento.addEventListener("change", () => {
+      mostrarOcultarPreguntaEducacionIncompleta();
+    });
+  });
+
+  // Llamamos al inicio para dejar correcta su visualización
+  mostrarOcultarPreguntaEducacionIncompleta();
+  // Fin manejo de pregunta id_nivelIncompleto
+
+  // Si asisteEscuelaForm es "a", estadoNivel se oculta y por default queda su valor en "En curso"
+
+  function setEstadoNivelEnCurso() {
+    if (asisteEscuelaForm.value === "a") {
+      estadoNivelForm.selectedIndex = 1;
+    } else {
+      for (let i = 0; i < estadoNivelForm.options.length; i++) {
+        if (estadoNivelForm.options[i].text === "En curso") {
+          estadoNivelForm.remove(i);
+          break;
+        }
+      }
+    }
+  }
+
+  asisteEscuelaForm.addEventListener("change", () => {
+    setEstadoNivelEnCurso();
+  });
+
+  setEstadoNivelEnCurso();
 
   document.getElementById('id_provinciaInstitucion').addEventListener('change', function () {
     var url = ajaxLoadMunicipiosUrl;  // Obtén la URL de la vista
