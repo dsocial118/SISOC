@@ -6,7 +6,7 @@
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right px-3">
         <li class="breadcrumb-item">
-            <a href="{% url 'legajos_listar' %}">Comedores</a>
+            <a href="{% url 'comedores' %}">Comedores</a>
         </li>
         {% if request.resolver_match.url_name == "comedor_editar" %}
             <li class="breadcrumb-item">

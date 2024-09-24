@@ -29,7 +29,7 @@ class FuncionamientoPrestacionForm(forms.ModelForm):
         label="1.1.5 ¿El servicio está organizado por turnos?",
     )
     cantidad_turnos = forms.IntegerField(
-        min_value=1, max_value=3, label="1.1.6 Cantidad de turnos"
+        min_value=1, max_value=3, label="1.1.6 Cantidad de turnos", required=False
     )
 
     class Meta:
@@ -290,7 +290,7 @@ class RelevamientoForm(forms.ModelForm):
     )
 
     def __init__(self, *args, **kwargs):
-        comedor_id = kwargs.pop("pk", None)
+        comedor_id = kwargs.pop("comedor_pk", None)
         super().__init__(*args, **kwargs)
 
         self.popular_informacion_comedor(comedor_id)

@@ -160,7 +160,7 @@
             <div class="nav nav-pills row my-3">
                 {% for relevamiento in relevamientos %}
                     <div class="col-2 d-flex justify-content-center">
-                        <a href="{% url 'relevamiento_detalle' relevamiento.id %}">{{ relevamiento.id }} - {{ relevamiento.fecha_visita }}</a>
+                        <a href="{% url 'relevamiento_detalle' comedor.id relevamiento.id %}">{{ relevamiento.id }} - {{ relevamiento.fecha_visita }}</a>
                     </div>
                 {% endfor %}
             </div>
