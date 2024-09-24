@@ -256,6 +256,29 @@ class RelevamientoDetailView(DetailView):
     template_name = "relevamiento/relevamiento_detail.html"
     context_object_name = "relevamiento"
 
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        tipos_str = self.generar_string_gas()
+
+        context["relevamiento"][
+            "espacio__cocina__abastecimiento_combustible__nombre"
+        ] = tipos_str
+
+        return context
+
+    def generar_string_gas(self):
+        tipos = Relevamiento.objects.get(
+            pk=self.get_object()["id"]
+        ).espacio.cocina.abastecimiento_combustible.all()
+
+        tipos_list = [str(tipo) for tipo in tipos]
+
+        if len(tipos_list) > 1:
+            tipos_str = ", ".join(tipos_list[:-1]) + " y " + tipos_list[-1]
+        else:
+            tipos_str = tipos_list[0]
+        return tipos_str
+
     def get_object(self, queryset=None) -> Model:
         return (
             Relevamiento.objects.prefetch_related(
@@ -300,7 +323,6 @@ class RelevamientoDetailView(DetailView):
                 "espacio__cocina__recipiente_residuos_organicos",
                 "espacio__cocina__recipiente_residuos_reciclables",
                 "espacio__cocina__recipiente_otros_residuos",
-                "espacio__cocina__abastecimiento_combustible__nombre",
                 "espacio__cocina__abastecimiento_agua__nombre",
                 "espacio__cocina__instalacion_electrica",
                 "espacio__prestacion__espacio_equipado",

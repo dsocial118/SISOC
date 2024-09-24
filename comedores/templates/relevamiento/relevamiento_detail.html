@@ -285,7 +285,9 @@
                 <div class="nav-item col-3 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         ¿Cómo se abastece de combustible?
-                        <span class="username">{{ relevamiento.espacio__cocina__abastecimiento_combustible__nombre | default_if_none:"-" }}</span>
+                        <span class="username">
+                            {{ relevamiento.espacio__cocina__abastecimiento_combustible__nombre | default_if_none:"-" }}
+                        </span>
                     </div>
                 </div>
                 <div class="nav-item col-3 d-flex justify-content-center">
@@ -306,7 +308,6 @@
                         <span class="username">{{ relevamiento.espacio__prestacion__espacio_equipado | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                ¿
                 <div class="nav-item col-3 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         ¿El espacio donde tiene actividad el Comedor/Merendero cuenta con un sistema de ventilación adecuado?
