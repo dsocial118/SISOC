@@ -6,7 +6,7 @@
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
         <li class="breadcrumb-item">
-            <a href="{% url 'comedor_listar' %}">Comedores</a>
+            <a href="{% url 'comedores' %}">Comedores</a>
         </li>
         <li class="breadcrumb-item active">Listar</li>
     </ol>
@@ -39,7 +39,7 @@
         <div class="col-12 text-center">
             <a href="{% url 'comedor_crear' %}"
                 class="btn btn-primary btn-lg d-block d-sm-inline mt-2 mr-2 ">Agregar</a>
-            <a href="{% url 'comedor_listar' %}"
+            <a href="{% url 'comedores' %}"
                class="btn btn-secondary btn-lg d-block d-sm-inline mt-2 ">Resetear</a>
         </div>
     </div>
