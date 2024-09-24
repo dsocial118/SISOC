@@ -1192,7 +1192,9 @@ class LegajosAlertasCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
 
         alertas = LegajoAlertas.objects.filter(fk_legajo=pk)
 
-        legajo = Legajos.objects.values("pk", "dimensionfamilia__id","nombre","apellido").get(pk=pk)
+        legajo = Legajos.objects.values(
+            "pk", "dimensionfamilia__id", "nombre", "apellido"
+        ).get(pk=pk)
 
         context["alertas"] = alertas
         context["legajo"] = legajo
