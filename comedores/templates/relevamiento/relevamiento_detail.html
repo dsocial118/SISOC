@@ -29,15 +29,15 @@
         <a href="{% url 'relevamiento_eliminar' relevamiento.id %}"
            class="btn btn-danger">Eliminar</a>
     </div>
-    <div class="card"></div>
-    <div class="card-header">
-        <h3 class="card-title font-weight-bold mr-3 pt-1">Relevamiento</h3>
-        <div class="card-tools">
-            <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                <i class="fas fa-minus"></i>
-            </button>
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title font-weight-bold mr-3 pt-1">Relevamiento</h3>
+            <div class="card-tools">
+                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                    <i class="fas fa-minus"></i>
+                </button>
+            </div>
         </div>
-    </div>
     <div class="card-body card-comments p-0 pb-1">
         <div class="nav nav-pills row my-3">
             <div class="nav-item col-6 d-flex justify-content-center">
@@ -54,6 +54,7 @@
             </div>
         </div>
     </div>
+</div>
     <div class="card">
         <div class="card-header">
             <h3 class="card-title font-weight-bold mr-3 pt-1">Información</h3>
@@ -253,8 +254,14 @@
                 </div>
                 <div class="nav-item col-3 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
-                        ¿Cuenta con heladera o freezer?
-                        <span class="username">{{ relevamiento.espacio__cocina__refrigerador | yesno:"Sí,No,-" }}</span>
+                        ¿El Comedor/Merendero cuenta con heladera?
+                        <span class="username">{{ relevamiento.espacio__cocina__heladera | yesno:"Sí,No,-" }}</span>
+                    </div>
+                </div>
+                <div class="nav-item col-3 d-flex justify-content-center">
+                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                        ¿El Comedor/Merendero cuenta con freezer?
+                        <span class="username">{{ relevamiento.espacio__cocina__freezer | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
                 <div class="nav-item col-3 d-flex justify-content-center">
@@ -388,7 +395,7 @@
                 </div>
                 <div class="nav-item col-4 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
-                        ¿Cuentan con personas que realizan tareas capacitadas para la manipulación de alimentos?
+                        3.1.2 ¿El Comedor/Merendero cuentan con personas que realizan tareas capacitadas para la manipulación de alimentos?
                         <span class="username">{{ relevamiento.colaboradores__colaboradores_capacitados_alimentos | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
