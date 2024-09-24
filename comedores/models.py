@@ -221,7 +221,10 @@ class EspacioPrestacion(models.Model):
         verbose_name="¿El Comedor/Merendero cuenta con un buzón de quejas y reclamos en el lugar?"
     )
     tiene_gestion_quejas = models.BooleanField(
-        verbose_name="¿Hay en el lugar cartelería con información sobre los mecanismos de gestión de quejas, reclamos y sugerencias del Comedor/Merendero/Merendero?"
+        verbose_name=(
+            "¿Hay en el lugar cartelería con información sobre los mecanismos "
+            "de gestión de quejas, reclamos y sugerencias del Comedor/Merendero/Merendero?"
+        )
     )
     frecuencia_limpieza = models.ForeignKey(
         to=FrecuenciaLimpieza,
@@ -231,7 +234,7 @@ class EspacioPrestacion(models.Model):
 
     class Meta:
         verbose_name = "Espacio donde se brinda la prestacion del Comedor/Merendero"
-        verbose_name_plural = (Comedor/Merendero
+        verbose_name_plural = (
             "Espacios donde se brinda la prestacion del Comedor/Merendero"
         )
 
