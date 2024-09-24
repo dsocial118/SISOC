@@ -115,9 +115,7 @@ document.addEventListener("DOMContentLoaded", function() {
     let estadoNivelValue =
       document.querySelector("#id_estado_nivel").selectedIndex;
     let puntaje = maxNivelValue * estadoNivelValue;
-    console.log(maxNivelValue, estadoNivelValue, puntaje);
     if (asisteEscuelaForm.value != "a" && puntaje < PUNTAJE_MINIMO) {
-      console.log("Mostrar pregunta incompleto");
       FormUtils.mostrar(ID_INCOMPLETO_FORM, true);
     } else {
       FormUtils.mostrar(ID_INCOMPLETO_FORM, false);
