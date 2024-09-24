@@ -56,9 +56,11 @@ class ComedorCreateView(CreateView):
     def get_context_data(self, **kwargs):
         data = super().get_context_data(**kwargs)
         if self.request.POST:
-            data["referente_form"] = ReferenteForm(self.request.POST)
+            data["referente_form"] = ReferenteForm(
+                self.request.POST, prefix="referente"
+            )
         else:
-            data["referente_form"] = ReferenteForm()
+            data["referente_form"] = ReferenteForm(prefix="referente")
         return data
 
     def form_valid(self, form):
