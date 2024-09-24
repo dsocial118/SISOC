@@ -236,9 +236,8 @@ class RelevamientoForm(forms.ModelForm):
     partido = forms.CharField(required=True, disabled=True, label="Partido")
     barrio = forms.CharField(required=True, disabled=True, label="Barrio")
     codigo_postal = forms.CharField(required=True, disabled=True, label="Codigo Postal")
-    referente_nombre_completo = forms.CharField(
-        required=True, disabled=True, label="Nombre y apellido"
-    )
+    referente_nombre = forms.CharField(required=True, disabled=True, label="Nombre")
+    referente_apellido = forms.CharField(required=True, disabled=True, label="Apellido")
     referente_mail = forms.CharField(required=True, disabled=True, label="Mail")
     referente_numero = forms.CharField(required=True, disabled=True, label="Celular")
     referente_documento = forms.CharField(required=True, disabled=True, label="DNI")
@@ -270,9 +269,8 @@ class RelevamientoForm(forms.ModelForm):
         self.fields["partido"].initial = comedor.partido
         self.fields["barrio"].initial = comedor.barrio
         self.fields["codigo_postal"].initial = comedor.codigo_postal
-        self.fields["referente_nombre_completo"].initial = (
-            comedor.referente.nombre_completo
-        )
+        self.fields["referente_nombre"].initial = comedor.referente.nombre
+        self.fields["referente_apellido"].initial = comedor.referente.apellido
         self.fields["referente_mail"].initial = comedor.referente.mail
         self.fields["referente_numero"].initial = comedor.referente.numero
         self.fields["referente_documento"].initial = comedor.referente.documento
