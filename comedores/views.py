@@ -1,6 +1,7 @@
 from typing import Any
 from django.db.models.base import Model
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.shortcuts import redirect
 from django.contrib import messages
 from django.views.generic import (
@@ -23,8 +24,8 @@ from comedores.forms.relevamiento import (
     FuenteComprasForm,
     PrestacionFormSet,
 )
-from .models import Comedor, Relevamiento
-
+from comedores.models import Comedor, Relevamiento
+from usuarios.models import Usuarios
 
 class ComedorListView(ListView):
     model = Comedor
@@ -232,6 +233,9 @@ class RelevamientoCreateView(CreateView):
             compras = forms["compras_form"].save()
             self.object.compras = compras
 
+            self.object.relevador = Usuarios.objects.get(pk=self.request.user.pk)
+            self.object.fecha_visita = timezone.now()
+
             self.object.save()
 
             return redirect("relevamiento_detalle", pk=int(self.object.id))
@@ -291,7 +295,8 @@ class RelevamientoDetailView(DetailView):
                 "espacio__espacio_fisico_otro",
                 "espacio__cocina__espacio_elaboracion_alimentos",
                 "espacio__cocina__almacenamiento_alimentos_secos",
-                "espacio__cocina__refrigerador",
+                "espacio__cocina__heladera",
+                "espacio__cocina__freezer",
                 "espacio__cocina__recipiente_residuos_organicos",
                 "espacio__cocina__recipiente_residuos_reciclables",
                 "espacio__cocina__recipiente_otros_residuos",

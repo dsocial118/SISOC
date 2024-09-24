@@ -125,10 +125,9 @@ class FuncionamientoPrestacion(models.Model):
     modalidad_prestacion = models.ForeignKey(
         TipoModalidadPrestacion,
         on_delete=models.PROTECT,
+        verbose_name="1.1.4 Modalidad de prestación",
     )
-    servicio_por_turnos = models.BooleanField(
-        verbose_name="¿El servicio esta organizado por turnos?"
-    )
+    servicio_por_turnos = models.BooleanField()
     cantidad_turnos = models.PositiveIntegerField(
         blank=True,
         null=True,
@@ -148,31 +147,22 @@ class EspacioCocina(models.Model):
     Informacion relacionada a la cocina y almacenamiento de alimentos
     """
 
-    espacio_elaboracion_alimentos = models.BooleanField(
-        verbose_name="¿Cuenta con un espacio específico para elaboración de alimentos?",
-    )
-    almacenamiento_alimentos_secos = models.BooleanField(
-        verbose_name="¿El espacio posee un lugar para el almacenamiento de los alimentos secos que compra / recibe?",
-    )
-    refrigerador = models.BooleanField(verbose_name="¿Cuenta con heladera o freezer?")
-    recipiente_residuos_organicos = models.BooleanField(
-        verbose_name="¿La cocina cuenta con un espacio o recipientes destinados a la disposición de residuos orgánicos y asimilables?"
-    )
-    recipiente_residuos_reciclables = models.BooleanField(
-        verbose_name="¿El Comedor/Merendero cuenta con un espacio o recipientes destinados a la disposición de residuos reciclables?"
-    )
-    recipiente_otros_residuos = models.BooleanField(
-        verbose_name="¿El Comedor/Merendero genera otro tipo de residuos? ¿Cuenta con un espacio destinados a la disposición de dichos residuos?"
-    )
+    espacio_elaboracion_alimentos = models.BooleanField()
+    almacenamiento_alimentos_secos = models.BooleanField()
+    heladera = models.BooleanField()
+    freezer = models.BooleanField()
+    recipiente_residuos_organicos = models.BooleanField()
+    recipiente_residuos_reciclables = models.BooleanField()
+    recipiente_otros_residuos = models.BooleanField()
     abastecimiento_combustible = models.ManyToManyField(
         to=TipoCombustible,
         related_name="espacios",
-        verbose_name="¿Cómo se abastece de combustible?",
+        verbose_name="2.2.7 Para cocinar utiliza",
     )
     abastecimiento_agua = models.ForeignKey(
         to=TipoAgua,
         on_delete=models.PROTECT,
-        verbose_name="¿Cómo se abastece de agua el Comedor/Merendero?",
+        verbose_name="2.2.8 El abastecimiento del agua es con",
     )
     instalacion_electrica = models.BooleanField()
 
@@ -186,40 +176,22 @@ class EspacioPrestacion(models.Model):
     Informacion relacionada al espacio donde se brinda la prestacion del Comedor/Merendero
     """
 
-    espacio_equipado = models.BooleanField(
-        verbose_name="¿Cuenta con espacio y equipamiento (mesas, bancos o sillas)?"
-    )
-    tiene_ventilacion = models.BooleanField(
-        verbose_name="¿El espacio donde tiene actividad el Comedor/Merendero cuenta con un sistema de ventilación adecuado?"
-    )
-    tiene_salida_emergencia = models.BooleanField(
-        verbose_name="¿El espacio donde tiene actividad el Comedor/Merendero cuenta con salidas de emergencia?"
-    )
-    salida_emergencia_senializada = models.BooleanField(
-        verbose_name="¿Están señalizadas las salidas de emergencia?"
-    )
-    tiene_equipacion_incendio = models.BooleanField(
-        verbose_name="¿El lugar cuenta con elementos para apagar incendios (matafuegos / manguera)?"
-    )
-    tiene_botiquin = models.BooleanField(
-        verbose_name="¿El lugar cuenta con un botiquín de primeros auxilios?"
-    )
-    tiene_buena_iluminacion = models.BooleanField(
-        verbose_name="¿El espacio donde tiene actividad el Comedor/Merendero cuenta con buena iluminación?"
-    )
-    tiene_sanitarios = models.BooleanField(
-        verbose_name="¿El lugar cuenta con baño para las personas que realizan tareas en el Comedor/Merendero y para los destinatarios?"
-    )
+    espacio_equipado = models.BooleanField()
+    tiene_ventilacion = models.BooleanField()
+    tiene_salida_emergencia = models.BooleanField()
+    salida_emergencia_senializada = models.BooleanField()
+    tiene_equipacion_incendio = models.BooleanField()
+    tiene_botiquin = models.BooleanField()
+    tiene_buena_iluminacion = models.BooleanField()
+    tiene_sanitarios = models.BooleanField()
     desague_hinodoro = models.ForeignKey(
         to=TipoDesague,
         on_delete=models.PROTECT,
-        verbose_name="Si hay sanitarios, ¿cómo es el desagüe del hinodoro?",
+        verbose_name="2.3.9 Si la respuesta anterior es SI, el desagüe del inodoro es",
         blank=True,
         null=True,
     )
-    tiene_buzon_quejas = models.BooleanField(
-        verbose_name="¿El Comedor/Merendero cuenta con un buzón de quejas y reclamos en el lugar?"
-    )
+    tiene_buzon_quejas = models.BooleanField()
     tiene_gestion_quejas = models.BooleanField(
         verbose_name=(
             "¿Hay en el lugar cartelería con información sobre los mecanismos "
@@ -229,7 +201,7 @@ class EspacioPrestacion(models.Model):
     frecuencia_limpieza = models.ForeignKey(
         to=FrecuenciaLimpieza,
         on_delete=models.PROTECT,
-        verbose_name="¿Con qué frecuencia se realiza la limpieza de las instalaciones?",
+        verbose_name="2.4.1 ¿Con qué frecuencia se realiza la limpieza de las instalaciones?",
     )
 
     class Meta:
@@ -247,20 +219,14 @@ class Colaboradores(models.Model):
     cantidad_colaboradores = models.ForeignKey(
         to=CantidadColaboradores,
         on_delete=models.PROTECT,
-        verbose_name="¿Qué cantidad de personas realizan tareas en el Comedor?",
+        verbose_name="3.1.1 ¿Qué cantidad de personas realizan tareas en el Comedor / Merendero?",
     )
     colaboradores_capacitados_alimentos = models.BooleanField(
-        verbose_name="¿Cuentan con personas que realizan tareas capacitadas para la manipulación de alimentos?"
+        verbose_name="3.1.2 ¿El Comedor/Merendero cuentan con personas que realizan tareas capacitadas para la manipulación de alimentos?"
     )
-    colaboradores_recibieron_capacitacion_alimentos = models.BooleanField(
-        verbose_name="¿Los colaboradores recibieron capacitación sobre manipulación segura de alimentos?"
-    )
-    colaboradores_capacitados_salud_seguridad = models.BooleanField(
-        verbose_name="¿Los colaboradores recibieron capacitación sobre salud y seguridad ocupacional?"
-    )
-    colaboradores_recibieron_capacitacion_emergencias = models.BooleanField(
-        verbose_name="¿Los colaboradores recibieron capacitación sobre preparación y respuesta a las emergencias?"
-    )
+    colaboradores_recibieron_capacitacion_alimentos = models.BooleanField()
+    colaboradores_capacitados_salud_seguridad = models.BooleanField()
+    colaboradores_recibieron_capacitacion_emergencias = models.BooleanField()
     colaboradores_recibieron_capacitacion_violencia = models.BooleanField(
         verbose_name=(
             "¿Los colaboradores recibieron capacitación sobre prevención de violencia de género "
@@ -278,19 +244,18 @@ class Espacio(models.Model):
     tipo_espacio_fisico = models.ForeignKey(
         to=TipoEspacio,
         on_delete=models.PROTECT,
-        verbose_name="¿En qué tipo de espacio físico funciona el Comedor/Merendero?",
+        verbose_name="2.1.1 ¿En qué tipo de espacio físico funciona el Comedor/Merendero?",
     )
     espacio_fisico_otro = models.CharField(
         max_length=255,
         blank=True,
         null=True,
-        verbose_name="Si eligió 'Otro', especificar",
+        verbose_name="2.1.2 Si eligió 'Otro', especificar",
     )
 
     cocina = models.OneToOneField(
         to=EspacioCocina,
         on_delete=models.PROTECT,
-        verbose_name="Informacion relacionada a la cocina y almacenamiento de alimentos",
         blank=True,
         null=True,
     )
@@ -298,7 +263,6 @@ class Espacio(models.Model):
     prestacion = models.OneToOneField(
         to=EspacioPrestacion,
         on_delete=models.PROTECT,
-        verbose_name="Informacion relacionada al espacio donde se brinda la prestacion del Comedor/Merendero",
         blank=True,
         null=True,
     )
@@ -349,7 +313,7 @@ class FuenteRecursos(models.Model):
     frecuencia_donaciones_particulares = models.ForeignKey(
         to=FrecuenciaRecepcionRecursos,
         on_delete=models.PROTECT,
-        verbose_name="Si recibe, ¿Con qué frecuencia recibe donaciones particulares?",
+        verbose_name="4.1.8 Si recibe, ¿Con qué frecuencia recibe donaciones particulares?",
         related_name="frecuencia_donaciones_particulares",
         blank=True,
         null=True,
@@ -357,7 +321,7 @@ class FuenteRecursos(models.Model):
     recursos_donaciones_particulares = models.ForeignKey(
         to=TipoRecurso,
         on_delete=models.PROTECT,
-        verbose_name="¿Qué tipo de recursos recibe de donaciones particulares?",
+        verbose_name="4.1.9 ¿Qué tipo de recursos recibe de donaciones particulares?",
         related_name="tipo_donaciones_particulares",
         blank=True,
         null=True,
@@ -367,7 +331,7 @@ class FuenteRecursos(models.Model):
     frecuencia_estado_nacional = models.ForeignKey(
         to=FrecuenciaRecepcionRecursos,
         on_delete=models.PROTECT,
-        verbose_name="Si recibe, ¿Con qué frecuencia recibe del estado nacional?",
+        verbose_name="4.1.10 Si recibe, ¿Con qué frecuencia recibe del estado nacional?",
         related_name="frecuencia_estado_nacional",
         blank=True,
         null=True,
@@ -375,7 +339,7 @@ class FuenteRecursos(models.Model):
     recursos_estado_nacional = models.ForeignKey(
         to=TipoRecurso,
         on_delete=models.PROTECT,
-        verbose_name="¿Qué tipo de recursos recibe del estado nacional?",
+        verbose_name="4.1.11 ¿Qué tipo de recursos recibe del estado nacional?",
         related_name="tipo_estado_nacional",
         blank=True,
         null=True,
@@ -385,7 +349,7 @@ class FuenteRecursos(models.Model):
     frecuencia_estado_provincial = models.ForeignKey(
         to=FrecuenciaRecepcionRecursos,
         on_delete=models.PROTECT,
-        verbose_name="Si recibe, ¿Con qué frecuencia recibe del estado provincial?",
+        verbose_name="4.1.12 Si recibe, ¿Con qué frecuencia recibe del estado provincial?",
         related_name="frecuencia_estado_provincial",
         blank=True,
         null=True,
@@ -393,7 +357,7 @@ class FuenteRecursos(models.Model):
     recursos_estado_provincial = models.ForeignKey(
         to=TipoRecurso,
         on_delete=models.PROTECT,
-        verbose_name="¿Qué tipo de recursos recibe del estado provincial?",
+        verbose_name="4.1.15 ¿Qué tipo de recursos recibe del estado provincial?",
         related_name="tipo_estado_provincial",
         blank=True,
         null=True,
@@ -403,7 +367,7 @@ class FuenteRecursos(models.Model):
     frecuencia_estado_municipal = models.ForeignKey(
         to=FrecuenciaRecepcionRecursos,
         on_delete=models.PROTECT,
-        verbose_name="Si recibe, ¿Con qué frecuencia recibe del estado municipal?",
+        verbose_name="4.1.16Si recibe, ¿Con qué frecuencia recibe del estado municipal?",
         related_name="frecuencia_estado_municipal",
         blank=True,
         null=True,
@@ -411,7 +375,7 @@ class FuenteRecursos(models.Model):
     recursos_estado_municipal = models.ForeignKey(
         to=TipoRecurso,
         on_delete=models.PROTECT,
-        verbose_name="¿Qué tipo de recursos recibe del estado municipal?",
+        verbose_name="4.1.17 ¿Qué tipo de recursos recibe del estado municipal?",
         related_name="tipo_estado_municipal",
         blank=True,
         null=True,
@@ -421,7 +385,7 @@ class FuenteRecursos(models.Model):
     frecuencia_otros = models.ForeignKey(
         to=FrecuenciaRecepcionRecursos,
         on_delete=models.PROTECT,
-        verbose_name="Si recibe, ¿Con qué frecuencia recibe de otras fuentes?",
+        verbose_name="4.1.18 Si recibe, ¿Con qué frecuencia recibe de otras fuentes?",
         related_name="frecuencia_otros",
         blank=True,
         null=True,
@@ -429,7 +393,7 @@ class FuenteRecursos(models.Model):
     recursos_otros = models.ForeignKey(
         to=TipoRecurso,
         on_delete=models.PROTECT,
-        verbose_name="¿Qué tipo de recursos recibe de otras fuentes?",
+        verbose_name="4.1.19 ¿Qué tipo de recursos recibe de otras fuentes?",
         related_name="tipo_otros",
         blank=True,
         null=True,
@@ -508,17 +472,14 @@ class Prestacion(models.Model):
     relevamiento = models.ForeignKey(
         to="Relevamiento",
         on_delete=models.CASCADE,
-        verbose_name="Relevamiento al que pertenece la prestacion",
     )
     tipo_comida = models.ForeignKey(
         to=TipoComida,
         on_delete=models.PROTECT,
-        verbose_name="Tipo de comida en que se brinda la prestacion",
     )
     nombre_dia = models.ForeignKey(
         to=NombreDia,
         on_delete=models.PROTECT,
-        verbose_name="Nombre del dia en que se brinda la prestacion",
     )
     cantidad_actual_personas = models.PositiveIntegerField()
     cantidad_personas_espera = models.PositiveIntegerField(null=True, blank=True)
@@ -633,32 +594,27 @@ class Relevamiento(models.Model):
         to=Comedor,
         on_delete=models.CASCADE,
     )
-    creador = models.ForeignKey(Usuarios, on_delete=models.SET_NULL, null=True)
+    relevador = models.ForeignKey(Usuarios, on_delete=models.SET_NULL, null=True)
     fecha_visita = models.DateTimeField(default=timezone.now, blank=True)
     funcionamiento = models.OneToOneField(
         to=FuncionamientoPrestacion,
         on_delete=models.PROTECT,
-        verbose_name="Informacion del funcionamiento del Comedor/Merendero",
     )
     espacio = models.OneToOneField(
         to=Espacio,
         on_delete=models.PROTECT,
-        verbose_name="Informacion del espacio fisico del Comedor/Merendero",
     )
     colaboradores = models.OneToOneField(
         to=Colaboradores,
         on_delete=models.PROTECT,
-        verbose_name="Informacion de las personas que realizan tareas en el Comedor/Merendero",
     )
     recursos = models.OneToOneField(
         to=FuenteRecursos,
         on_delete=models.PROTECT,
-        verbose_name="Informacion de las fuentes de recursos del Comedor/Merendero",
     )
     compras = models.OneToOneField(
         to=FuenteCompras,
         on_delete=models.PROTECT,
-        verbose_name="Informacion de la realizacion de compras para abastecer el Comedor/Merendero",
     )
 
     class Meta:
