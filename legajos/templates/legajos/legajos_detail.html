@@ -167,8 +167,7 @@
                                                  alt="User Image"
                                                  width="60px" />
                                         {% endif %}
-                                        <span class="users-list-date">{{ f.fk_legajo_2__apellido }} {{ f.fk_legajo_2__nombre
-                                        }}</span>
+                                        <span class="users-list-date">{{ f.fk_legajo_2__apellido }} {{ f.fk_legajo_2__nombre }}</span>
                                         <span class="users-list-date">{{ f.vinculo }}</span>
                                     </a>
                                 </li>
@@ -221,8 +220,7 @@
                     </div>
                     <h3 class="card-title font-weight-bold pt-1 mr-3">Grupo Conviviente Hogar</h3>
                     <span title="Cantidad total de Conviviente en el Hogar"
-                          class="badge badge-secondary mt-1">{{
-                    hogar_count_familia }}</span>
+                          class="badge badge-secondary mt-1">{{hogar_count_familia }}</span>
                 </div>
                 {% if hogar_count_familia != 0 %}
                     <div class="card-body bg-light p-0">
@@ -762,22 +760,19 @@
                                     Estado del nivel
                                 </dd>
                                 <dt class="col-sm-4">
-                                    {{ object.dimensioneducacion.estado_nivel|default_if_none:"-"
-                                    }}
+                                    {{ object.dimensioneducacion.estado_nivel|default_if_none:"-"}}
                                 </dt>
                                 <dd class="col-sm-8 ">
                                     Motivo principal por el que no terminaste tus estudios
                                 </dd>
                                 <dt class="col-sm-4">
-                                    {{
-                                    object.dimensioneducacion.nivelIncompleto|default_if_none:"-" }}
+                                    {{object.dimensioneducacion.nivelIncompleto|default_if_none:"-" }}
                                 </dt>
                                 <dd class="col-sm-8 ">
                                     Motivo principal por el que no tuviste educación formal
                                 </dd>
                                 <dt class="col-sm-4">
-                                    {{ object.dimensioneducacion.sinEduFormal|default_if_none:"-"
-                                    }}
+                                    {{ object.dimensioneducacion.sinEduFormal|default_if_none:"-"}}
                                 </dt>
                                 <dd class="col-sm-8">
                                     Institución
@@ -803,43 +798,37 @@
                                     Provincia Institucion
                                 </dd>
                                 <dt class="col-sm-4">
-                                    {{
-                                    object.dimensioneducacion.provinciaInstitucion|default_if_none:"-" }}
+                                    {{object.dimensioneducacion.provinciaInstitucion|default_if_none:"-" }}
                                 </dt>
                                 <dd class="col-sm-8 ">
                                     Municipio Institucion
                                 </dd>
                                 <dt class="col-sm-4">
-                                    {{
-                                    object.dimensioneducacion.municipioInstitucion|default_if_none:"-" }}
+                                    {{object.dimensioneducacion.municipioInstitucion|default_if_none:"-" }}
                                 </dt>
                                 <dd class="col-sm-8 ">
                                     Localidad Institucion
                                 </dd>
                                 <dt class="col-sm-4">
-                                    {{
-                                    object.dimensioneducacion.localidadInstitucion|default_if_none:"-" }}
+                                    {{object.dimensioneducacion.localidadInstitucion|default_if_none:"-" }}
                                 </dt>
                                 <dd class="col-sm-8 ">
                                     Barrio Institucion
                                 </dd>
                                 <dt class="col-sm-4">
-                                    {{
-                                    object.dimensioneducacion.barrioInstitucion|default_if_none:"-" }}
+                                    {{object.dimensioneducacion.barrioInstitucion|default_if_none:"-" }}
                                 </dt>
                                 <dd class="col-sm-8 ">
                                     Calle Institucion
                                 </dd>
                                 <dt class="col-sm-4">
-                                    {{
-                                    object.dimensioneducacion.calleInstitucion|default_if_none:"-" }}
+                                    {{object.dimensioneducacion.calleInstitucion|default_if_none:"-" }}
                                 </dt>
                                 <dd class="col-sm-8 ">
                                     Numero Institucion
                                 </dd>
                                 <dt class="col-sm-4">
-                                    {{
-                                    object.dimensioneducacion.numeroInstitucion|default_if_none:"-" }}
+                                    {{object.dimensioneducacion.numeroInstitucion|default_if_none:"-" }}
                                 </dt>
                                 <dd class="col-sm-8 ">
                                     Interes Estudio
@@ -857,8 +846,7 @@
                                     Observaciones
                                 </dd>
                                 <dt class="col-sm-4">
-                                    {{ object.dimensioneducacion.obs_educacion|default_if_none:"-"
-                                    }}
+                                    {{ object.dimensioneducacion.obs_educacion|default_if_none:"-"}}
                                 </dt>
                             </dl>
                             <!-- ./dimension educacion -->
@@ -889,8 +877,7 @@
                                     conviviente
                                 </dd>
                                 <dt class="col-sm-4">
-                                    {{ object.dimensioneconomia.cant_aportantes|default_if_none:"-"
-                                    }}
+                                    {{ object.dimensioneconomia.cant_aportantes|default_if_none:"-"}}
                                 </dt>
                                 <dd class="col-12 mt-3">
                                     Observaciones
@@ -939,10 +926,8 @@
                 <div class="card-header">
                     <h3 class="card-title font-weight-bold mr-3 pt-1">Indicadores de riesgo</h3>
                     {% if count_media or count_baja %}
-                        <span title="{{ count_media }} alertas" class="badge badge-Importante p-2">{{ count_media
-                        }}</span>
-                        <span title="{{ count_baja }} alertas" class="badge badge-Precaución p-2">{{ count_baja
-                        }}</span>
+                        <span title="{{ count_media }} alertas" class="badge badge-Importante p-2">{{count_media}}</span>
+                        <span title="{{ count_baja }} alertas" class="badge badge-Precaución p-2">{{ count_baja}}</span>
                     {% endif %}
                     <div class="card-tools">
                         {% if count_media or count_baja %}

@@ -341,19 +341,13 @@ class LegajosDetailView(DetailView):
             count_alertas = legajo_alertas.count()
             cache.set("count_alertas", count_alertas, 60)
         if not count_alta:
-            count_alta = legajo_alertas_organizadas.aggregate(
-                count=Count("es_critica")
-            ).get("count", 0)
+            count_alta = legajo_alertas_organizadas.filter(es_critica=True).count()
             cache.set("count_alta", count_alta, 60)
         if not count_media:
-            count_media = legajo_alertas_organizadas.aggregate(
-                count=Count("es_importante")
-            ).get("count", 0)
+            count_media = legajo_alertas_organizadas.filter(es_importante=True).count()
             cache.set("count_media", count_media, 60)
         if not count_baja:
-            count_baja = legajo_alertas_organizadas.aggregate(
-                count=Count("es_precaucion")
-            ).get("count", 0)
+            count_baja = legajo_alertas_organizadas.filter(es_precaucion=True).count()
             cache.set("count_baja", count_baja, 60)
         if not alertas_alta:
             alertas_alta = legajo_alertas_organizadas.filter(es_critica=True)
@@ -1198,7 +1192,7 @@ class LegajosAlertasCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
 
         alertas = LegajoAlertas.objects.filter(fk_legajo=pk)
 
-        legajo = Legajos.objects.values("pk", "dimensionfamilia__id").get(pk=pk)
+        legajo = Legajos.objects.values("pk", "dimensionfamilia__id","nombre","apellido").get(pk=pk)
 
         context["alertas"] = alertas
         context["legajo"] = legajo
