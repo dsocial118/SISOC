@@ -23,10 +23,10 @@
 ;
 {% block content %}
     <div class="row justify-content-sm-start justify-content-between d-print-none mx-1 mb-2">
-        <a href="{% url 'relevamiento_editar' relevamiento.id %}"
+        <a href="{% url 'relevamiento_editar' relevamiento.comedor__id relevamiento.id %}"
            class="btn btn-primary mr-1">Editar</a>
         <a href="#" class="btn btn-secondary print mr-1 d-none d-sm-inline">Imprimir</a>
-        <a href="{% url 'relevamiento_eliminar' relevamiento.id %}"
+        <a href="{% url 'relevamiento_eliminar' relevamiento.comedor__id relevamiento.id %}"
            class="btn btn-danger">Eliminar</a>
     </div>
     <div class="card">
@@ -43,7 +43,7 @@
             <div class="nav-item col-6 d-flex justify-content-center">
                 <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                     Relevador
-                    <span class="username">{{ relevamiento.creador__usuario__first_name }} {{ relevamiento.creador__usuario__last_name }}</span>
+                    <span class="username">{{ relevamiento.relevador__usuario__first_name }} {{ relevamiento.relevador__usuario__last_name }}</span>
                 </div>
             </div>
             <div class="nav-item col-6 d-flex justify-content-center">
@@ -66,13 +66,13 @@
         </div>
         <div class="card-body card-comments p-0 pb-1">
             <div class="nav nav-pills row my-3">
-                <div class="nav-item col-4 d-flex justify-content-center">
+                <div class="nav-item col-6 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Comedor
                         <span class="username">{{ relevamiento.comedor__nombre | default_if_none:"-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-4 d-flex justify-content-center">
+                <div class="nav-item col-6 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Año en el que empezo a funcionar
                         <span class="username">{{ relevamiento.comedor__comienzo | default_if_none:"-" }}</span>
@@ -353,7 +353,7 @@
                 <div class="nav-item col-3 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Si hay sanitarios, ¿cómo es el desagüe del hinodoro?
-                        <span class="username">{{ relevamiento.espacio__prestacion__desague_hinodoro | default_if_none:"-" }}</span>
+                        <span class="username">{{ relevamiento.espacio__prestacion__desague_hinodoro__nombre | default_if_none:"-" }}</span>
                     </div>
                 </div>
                 <div class="nav-item col-3 d-flex justify-content-center">
@@ -542,37 +542,37 @@
         </div>
         <div class="card-body card-comments p-0 pb-1">
             <div class="nav nav-pills row my-3">
-                <div class="nav-item col-3 d-flex justify-content-center">
+                <div class="nav-item col-2 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Almacen cercano
                         <span class="username">{{ relevamiento.compras__almacen_cercano | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
+                <div class="nav-item col-2 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Verduleria
                         <span class="username">{{ relevamiento.compras__verduleria | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
+                <div class="nav-item col-2 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Granja
                         <span class="username">{{ relevamiento.compras__granja | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
+                <div class="nav-item col-2 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Carniceria
                         <span class="username">{{ relevamiento.compras__carniceria | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
+                <div class="nav-item col-2 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Pescaderia
                         <span class="username">{{ relevamiento.compras__pescaderia | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
+                <div class="nav-item col-2 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Supermercado
                         <span class="username">{{ relevamiento.compras__supermercado | yesno:"Sí,No,-" }}</span>

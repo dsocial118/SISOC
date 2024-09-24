@@ -8,6 +8,7 @@ from comedores.views import (
     ComedorUpdateView,
     RelevamientoCreateView,
     RelevamientoDetailView,
+    RelevamientoUpdateView,
     RelevamientoDeleteView,
     ComedorDeleteView,
 )
@@ -50,22 +51,22 @@ urlpatterns = [
         name="comedor_observaciones",
     ),
     path(
-        "comedores/<pk>/relevamientos/crear",
+        "comedores/<comedor_pk>/relevamientos/crear",
         login_required(RelevamientoCreateView.as_view()),
         name="relevamiento_crear",
     ),
     path(
-        "relevamientos/<pk>",
+        "comedores/<comedor_pk>/relevamientos/<pk>",
         login_required(RelevamientoDetailView.as_view()),
         name="relevamiento_detalle",
     ),
     path(
-        "relevamientos/<pk>/editar",
-        login_required(RelevamientoDetailView.as_view()),
+        "comedores/<comedor_pk>/relevamientos/<pk>/editar",
+        login_required(RelevamientoUpdateView.as_view()),
         name="relevamiento_editar",
     ),
     path(
-        "relevamientos/<pk>/eliminar",
+        "comedores/<comedor_pk>/relevamientos/<pk>/eliminar",
         login_required(RelevamientoDeleteView.as_view()),
         name="relevamiento_eliminar",
     ),

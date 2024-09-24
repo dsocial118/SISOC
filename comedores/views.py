@@ -175,7 +175,7 @@ class RelevamientoCreateView(CreateView):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs["pk"] = self.kwargs["pk"]
+        kwargs["comedor_pk"] = self.kwargs["comedor_pk"]
         return kwargs
 
     def get_context_data(self, **kwargs):
@@ -238,7 +238,11 @@ class RelevamientoCreateView(CreateView):
 
             self.object.save()
 
-            return redirect("relevamiento_detalle", pk=int(self.object.id))
+            return redirect(
+                "relevamiento_detalle",
+                comedor_pk=int(self.object.comedor.id),
+                pk=int(self.object.id),
+            )
         else:
             self.error_message(forms)
             return self.form_invalid(form)
@@ -292,6 +296,8 @@ class RelevamientoDetailView(DetailView):
             .filter(pk=self.kwargs["pk"])
             .values(
                 "id",
+                "relevador__usuario__first_name",
+                "relevador__usuario__last_name",
                 "comedor__nombre",
                 "fecha_visita",
                 "comedor__comienzo",
@@ -333,7 +339,7 @@ class RelevamientoDetailView(DetailView):
                 "espacio__prestacion__tiene_botiquin",
                 "espacio__prestacion__tiene_buena_iluminacion",
                 "espacio__prestacion__tiene_sanitarios",
-                "espacio__prestacion__desague_hinodoro",
+                "espacio__prestacion__desague_hinodoro__nombre",
                 "espacio__prestacion__tiene_buzon_quejas",
                 "espacio__prestacion__tiene_gestion_quejas",
                 "espacio__prestacion__frecuencia_limpieza__nombre",
@@ -371,6 +377,101 @@ class RelevamientoDetailView(DetailView):
             )
             .first()
         )
+
+
+class RelevamientoUpdateView(UpdateView):
+    model = Relevamiento
+    form_class = RelevamientoForm
+    template_name = "relevamiento/relevamiento_form.html"
+    success_url = reverse_lazy(
+        "relevamiento_lista"
+    )  # Cambia a la URL deseada tras la actualización
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["comedor_pk"] = self.kwargs["comedor_pk"]
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        data = super().get_context_data(**kwargs)
+        forms = {
+            "funcionamiento_form": FuncionamientoPrestacionForm,
+            "espacio_form": EspacioForm,
+            "espacio_cocina_form": EspacioCocinaForm,
+            "espacio_prestacion_form": EspacioPrestacionForm,
+            "colaboradores_form": ColaboradoresForm,
+            "recursos_form": FuenteRecursosForm,
+            "compras_form": FuenteComprasForm,
+        }
+
+        for form_name, form_class in forms.items():
+            if self.request.POST:
+                data[form_name] = form_class(
+                    self.request.POST,
+                    instance=getattr(self.object, form_name.split("_form")[0], None),
+                )
+            else:
+                data[form_name] = form_class(
+                    instance=getattr(self.object, form_name.split("_form")[0], None)
+                )
+
+        return data
+
+    def form_valid(self, form):
+        context = self.get_context_data()
+        forms = {
+            "funcionamiento_form": context["funcionamiento_form"],
+            "espacio_form": context["espacio_form"],
+            "espacio_cocina_form": context["espacio_cocina_form"],
+            "espacio_prestacion_form": context["espacio_prestacion_form"],
+            "colaboradores_form": context["colaboradores_form"],
+            "recursos_form": context["recursos_form"],
+            "compras_form": context["compras_form"],
+        }
+
+        if all(form.is_valid() for form in forms.values()):
+            self.object = form.save(commit=False)
+
+            funcionamiento = forms["funcionamiento_form"].save()
+            self.object.funcionamiento = funcionamiento
+
+            espacio = forms["espacio_form"].save(commit=False)
+            cocina = forms["espacio_cocina_form"].save(commit=True)
+            espacio.cocina = cocina
+            prestacion = forms["espacio_prestacion_form"].save(commit=True)
+            espacio.prestacion = prestacion
+            espacio.save()
+            self.object.espacio = espacio
+
+            colaboradores = forms["colaboradores_form"].save()
+            self.object.colaboradores = colaboradores
+
+            recursos = forms["recursos_form"].save()
+            self.object.recursos = recursos
+
+            compras = forms["compras_form"].save()
+            self.object.compras = compras
+
+            self.object.relevador = Usuarios.objects.get(pk=self.request.user.pk)
+            self.object.fecha_visita = timezone.now()
+
+            self.object.save()
+
+            return redirect(
+                "relevamiento_detalle",
+                comedor_pk=int(self.object.comedor.id),
+                pk=int(self.object.id),
+            )
+        else:
+            self.error_message(forms)
+            return self.form_invalid(form)
+
+    def error_message(self, forms):
+        for form_name, form_instance in forms.items():
+            if not form_instance.is_valid():
+                messages.error(
+                    self.request, f"Errores en {form_name}: {form_instance.errors}"
+                )
 
 
 class RelevamientoDeleteView(DeleteView):
