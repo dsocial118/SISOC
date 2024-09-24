@@ -15,6 +15,7 @@ from comedores.models import (
     FuenteCompras,
     Prestacion,
 )
+from usuarios.models import Usuarios
 
 BOOLEAN_CHOICE = [
     (False, "No"),
@@ -81,12 +82,12 @@ class EspacioPrestacionForm(forms.ModelForm):
     tiene_ventilacion = forms.ChoiceField(
         choices=BOOLEAN_CHOICE,
         widget=forms.Select,
-        label="¿El espacio donde tiene actividad el comedor cuenta con un sistema de ventilación adecuado?",
+        label="¿El espacio donde tiene actividad el Comedor/Merendero cuenta con un sistema de ventilación adecuado?",
     )
     tiene_salida_emergencia = forms.ChoiceField(
         choices=BOOLEAN_CHOICE,
         widget=forms.Select,
-        label="¿El espacio donde tiene actividad el comedor cuenta con salidas de emergencia?",
+        label="¿El espacio donde tiene actividad el Comedor/Merendero cuenta con salidas de emergencia?",
     )
     salida_emergencia_senializada = forms.ChoiceField(
         choices=BOOLEAN_CHOICE,
@@ -106,22 +107,22 @@ class EspacioPrestacionForm(forms.ModelForm):
     tiene_buena_iluminacion = forms.ChoiceField(
         choices=BOOLEAN_CHOICE,
         widget=forms.Select,
-        label="¿El espacio donde tiene actividad el comedor cuenta con buena iluminación?",
+        label="¿El espacio donde tiene actividad el Comedor/Merendero cuenta con buena iluminación?",
     )
     tiene_sanitarios = forms.ChoiceField(
         choices=BOOLEAN_CHOICE,
         widget=forms.Select,
-        label="¿El lugar cuenta con baño para las personas que realizan tareas en el comedor y para los destinatarios?",
+        label="¿El lugar cuenta con baño para las personas que realizan tareas en el Comedor/Merendero y para los destinatarios?",
     )
     tiene_buzon_quejas = forms.ChoiceField(
         choices=BOOLEAN_CHOICE,
         widget=forms.Select,
-        label="¿El comedor cuenta con un buzón de quejas y reclamos en el lugar?",
+        label="¿El Comedor/Merendero cuenta con un buzón de quejas y reclamos en el lugar?",
     )
     tiene_gestion_quejas = forms.ChoiceField(
         choices=BOOLEAN_CHOICE,
         widget=forms.Select,
-        label="¿Hay en el lugar cartelería con información sobre los mecanismos de gestión de quejas, reclamos y sugerencias del comedor?",
+        label="¿Hay en el lugar cartelería con información sobre los mecanismos de gestión de quejas, reclamos y sugerencias del Comedor/Merendero?",
     )
 
     class Meta:
@@ -239,15 +240,22 @@ class RelevamientoForm(forms.ModelForm):
     referente_nombre = forms.CharField(required=True, disabled=True, label="Nombre")
     referente_apellido = forms.CharField(required=True, disabled=True, label="Apellido")
     referente_mail = forms.CharField(required=True, disabled=True, label="Mail")
-    referente_numero = forms.CharField(required=True, disabled=True, label="Celular")
+    referente_celular = forms.CharField(required=True, disabled=True, label="Celular")
     referente_documento = forms.CharField(required=True, disabled=True, label="DNI")
 
     def __init__(self, *args, **kwargs):
-        comedor_id = kwargs.pop("pk", None)
         super().__init__(*args, **kwargs)
+        comedor_id = kwargs.pop("pk", None)
+        usuario_id = kwargs.pop("usuario", None)
 
-        if comedor_id is not None:
-            self.popular_informacion_comedor(comedor_id)
+        self.popular_informacion_comedor(comedor_id)
+        self.popular_usuario_creador(usuario_id)
+
+    def popular_usuario_creador(self, usuario_id):
+        usuario = Usuarios.object.get(pk=usuario_id)
+
+        self.fields["creador"].initial = usuario
+        self.fields["creador"].widget_attrs["hidden"] = True
 
     def popular_informacion_comedor(self, comedor_id):
         comedor = Comedor.objects.get(pk=comedor_id)
@@ -272,7 +280,7 @@ class RelevamientoForm(forms.ModelForm):
         self.fields["referente_nombre"].initial = comedor.referente.nombre
         self.fields["referente_apellido"].initial = comedor.referente.apellido
         self.fields["referente_mail"].initial = comedor.referente.mail
-        self.fields["referente_numero"].initial = comedor.referente.numero
+        self.fields["referente_celular"].initial = comedor.referente.celular
         self.fields["referente_documento"].initial = comedor.referente.documento
 
     class Meta:
@@ -281,4 +289,4 @@ class RelevamientoForm(forms.ModelForm):
             "fecha_visita",
             "comedor",
         ]
-        field_order = ["fecha_visita", "comedor", "comienzo"]
+        field_order = ["fecha_visita", "comedor", "comienzo", "creador"]

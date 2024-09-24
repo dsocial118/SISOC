@@ -128,13 +128,13 @@
                 <div class="nav-item col-3 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center">
                         Numero de contacto
-                        <span class="username">{{ comedor.referente__numero | default_if_none:"-" }}</span>
+                        <span class="username">{{ comedor.referente__celular | default_if_none:"-" }}</span>
                     </div>
                 </div>
                 <div class="nav-item col-3 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center">
                         Mail de contacto
-                        <span class="username"><a href="mailto:{{ relevamiento.comedor__referente__mail}}">{{ comedor.referente__mail | default_if_none:"-" }}</a></span>
+                        <span class="username"><a href="mailto:{{ relevamiento.comedor__referente__mail }}">{{ comedor.referente__mail | default_if_none:"-" }}</a></span>
                     </div>
                 </div>
                 <div class="nav-item col-3 d-flex justify-content-center">
@@ -160,9 +160,9 @@
             <div class="nav nav-pills row my-3">
                 {% for relevamiento in relevamientos %}
                     <div class="col-2 d-flex justify-content-center">
-                        <a href="{% url 'relevamiento_detalle' relevamiento.id %}">{{relevamiento.id}} - {{relevamiento.fecha_visita}}</a>
+                        <a href="{% url 'relevamiento_detalle' relevamiento.id %}">{{ relevamiento.id }} - {{ relevamiento.fecha_visita }}</a>
                     </div>
-                {% endfor%}
+                {% endfor %}
             </div>
         </div>
     </div>

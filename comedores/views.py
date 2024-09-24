@@ -41,7 +41,7 @@ class ComedorListView(ListView):
             "numero",
             "referente__nombre",
             "referente__apellido",
-            "referente__numero",
+            "referente__celular",
         )
 
 
@@ -102,7 +102,7 @@ class ComedorDetailView(DetailView):
                 "referente__nombre",
                 "referente__apellido",
                 "referente__mail",
-                "referente__numero",
+                "referente__celular",
                 "referente__documento",
             )
             .get(pk=self.kwargs["pk"])
@@ -281,7 +281,7 @@ class RelevamientoDetailView(DetailView):
                 "comedor__referente__nombre",
                 "comedor__referente__apellido",
                 "comedor__referente__mail",
-                "comedor__referente__numero",
+                "comedor__referente__celular",
                 "comedor__referente__documento",
                 "espacio__tipo_espacio_fisico__nombre",
                 "espacio__espacio_fisico_otro",
