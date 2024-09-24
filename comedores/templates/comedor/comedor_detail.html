@@ -121,8 +121,8 @@
             <div class="nav nav-pills row my-3">
                 <div class="nav-item col-3 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center">
-                        Referente
-                        <span class="username">{{ comedor.referente__nombre_completo }}</span>
+                        Nombre completo
+                        <span class="username">{{ comedor.referente__nombre }} {{ comedor.referente__apellido }}</span>
                     </div>
                 </div>
                 <div class="nav-item col-3 d-flex justify-content-center">
@@ -134,7 +134,7 @@
                 <div class="nav-item col-3 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center">
                         Mail de contacto
-                        <span class="username">{{ comedor.referente__mail | default_if_none:"-" }}</span>
+                        <span class="username"><a href="mailto:{{ relevamiento.comedor__referente__mail}}">{{ comedor.referente__mail | default_if_none:"-" }}</a></span>
                     </div>
                 </div>
                 <div class="nav-item col-3 d-flex justify-content-center">

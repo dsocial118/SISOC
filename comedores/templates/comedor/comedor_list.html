@@ -55,8 +55,6 @@
                                 <th>Direccion</th>
                                 <th>Referente</th>
                                 <th>Numero de contacto</th>
-                                <th>Relevamientos</th>
-                                <th>Observaciones</th>
                                 <th style="width: 15%" class="notexport">Aciones</th>
                             </tr>
                         </thead>
@@ -70,10 +68,8 @@
                                     </td>
                                     <td>{{ comedor.provincia__nombre }}</td>
                                     <td>{{ comedor.calle }} {{ comedor.numero }}</td>
-                                    <td>{{ comedor.referente__nombre_completo }}</td>
+                                    <td>{{ comedor.referente__nombre }} {{ comedor.referente__apellido }}</td>
                                     <td>{{ comedor.referente__numero|default_if_none:"-" }}</td>
-                                    <td><a href="{% url 'comedor_relevamientos' comedor.id %}">VER</a></td>
-                                    <td><a href="{% url 'comedor_observaciones' comedor.id %}">VER</a></td>
                                 </tr>
                             {% endfor %}
                         </tbody>

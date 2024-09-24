@@ -522,13 +522,15 @@ class Referente(models.Model):
     Modelo que representa a un referente, en algun futuro se migrara a Legajo.
 
     Atributos:
-        nombre_completo (CharField): Nombre completo del referente.
+        nombre (CharField): Nombre del referente.
+        apellido (CharField): Apellido del referente.
         mail (EmailField): Dirección de correo electrónico única del referente.
         numero (IntegerField): Número único del referente.
         documento (IntegerField): Documento único del referente.
     """
 
-    nombre_completo = models.CharField(max_length=255)
+    nombre = models.CharField(max_length=255)
+    apellido = models.CharField(max_length=255)
     mail = models.EmailField(unique=True)
     numero = models.BigIntegerField(unique=True)
     documento = models.IntegerField(unique=True)

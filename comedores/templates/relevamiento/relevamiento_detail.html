@@ -176,13 +176,13 @@
                 <div class="nav-item col-3 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Nombre completo
-                        <span class="username">{{ relevamiento.comedor__referente__nombre_completo | default_if_none:"-" }}</span>
+                        <span class="username">{{ relevamiento.comedor__referente__nombre | default_if_none:"-" }} {{ relevamiento.comedor__referente__apellido | default_if_none:"-" }}</span>
                     </div>
                 </div>
                 <div class="nav-item col-3 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
-                        Email de contacto
-                        <span class="username">{{ relevamiento.comedor__referente__mail | default_if_none:"-" }}</span>
+                        Mail de contacto
+                        <span class="username"><a href="mailto:{{ relevamiento.comedor__referente__mail}}">{{ relevamiento.comedor__referente__mail | default_if_none:"-" }}</a></span>
                     </div>
                 </div>
                 <div class="nav-item col-3 d-flex justify-content-center">
