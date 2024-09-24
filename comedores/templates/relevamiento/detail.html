@@ -42,13 +42,13 @@
         <div class="nav nav-pills row my-3">
             <div class="nav-item col-6 d-flex justify-content-center">
                 <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
-                    Relevador
+                    Usuario relevador
                     <span class="username">{{ relevamiento.relevador__usuario__first_name }} {{ relevamiento.relevador__usuario__last_name }}</span>
                 </div>
             </div>
             <div class="nav-item col-6 d-flex justify-content-center">
                 <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
-                    Fecha de relevamiento
+                    Fecha y horario de la visita
                     <span class="username">{{ relevamiento.fecha_visita | default_if_none:"-" }}</span>
                 </div>
             </div>
@@ -68,13 +68,13 @@
             <div class="nav nav-pills row my-3">
                 <div class="nav-item col-6 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
-                        Comedor
+                        Nombre del Comedor/Merendero
                         <span class="username">{{ relevamiento.comedor__nombre | default_if_none:"-" }}</span>
                     </div>
                 </div>
                 <div class="nav-item col-6 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
-                        Año en el que empezo a funcionar
+                        ¿En qué año comenzó a funcionar?
                         <span class="username">{{ relevamiento.comedor__comienzo | default_if_none:"-" }}</span>
                     </div>
                 </div>
@@ -88,7 +88,7 @@
                 </div>
                 <div class="nav-item col-4 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
-                        Servicio por turnos
+                        ¿El servicio está organizado por turnos?
                         <span class="username">{{ relevamiento.funcionamiento__servicio_por_turnos | yesno:"Si,No,-" }}</span>
                     </div>
                 </div>
@@ -103,7 +103,7 @@
     </div>
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title font-weight-bold mr-3 pt-1">Domicilio</h3>
+            <h3 class="card-title font-weight-bold mr-3 pt-1">Domicilio del Comedor/Merendero</h3>
             <div class="card-tools">
                 <button type="button" class="btn btn-tool" data-card-widget="collapse">
                     <i class="fas fa-minus"></i>
@@ -120,7 +120,7 @@
                 </div>
                 <div class="nav-item col-3 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
-                        Numero
+                        Número
                         <span class="username">{{ relevamiento.comedor__numero | default_if_none:"-" }}</span>
                     </div>
                 </div>
@@ -172,7 +172,7 @@
                 </div>
                 <div class="nav-item col-6 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
-                        Codigo postal
+                        Código postal
                         <span class="username">{{ relevamiento.comedor__codigo_postal | default_if_none:"-" }}</span>
                     </div>
                 </div>
@@ -181,7 +181,7 @@
     </div>
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title font-weight-bold mr-3 pt-1">Datos sobre el referente del comedor</h3>
+            <h3 class="card-title font-weight-bold mr-3 pt-1">Datos del referente/responsable del Comedor/Merendero</h3>
             <div class="card-tools">
                 <button type="button" class="btn btn-tool" data-card-widget="collapse">
                     <i class="fas fa-minus"></i>
@@ -192,25 +192,25 @@
             <div class="nav nav-pills row my-3">
                 <div class="nav-item col-3 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
-                        Nombre completo
+                        Nombre y Apellido
                         <span class="username">{{ relevamiento.comedor__referente__nombre | default_if_none:"-" }} {{ relevamiento.comedor__referente__apellido | default_if_none:"-" }}</span>
                     </div>
                 </div>
                 <div class="nav-item col-3 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
-                        Mail de contacto
+                        Mail de referente/responsable
                         <span class="username"><a href="mailto:{{ relevamiento.comedor__referente__mail }}">{{ relevamiento.comedor__referente__mail | default_if_none:"-" }}</a></span>
                     </div>
                 </div>
                 <div class="nav-item col-3 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
-                        Numero de contacto
+                        Numero de referente/responsable
                         <span class="username">{{ relevamiento.comedor__referente__celular | default_if_none:"-" }}</span>
                     </div>
                 </div>
                 <div class="nav-item col-3 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
-                        Documento
+                        DNI de referente/responsable
                         <span class="username">{{ relevamiento.comedor__referente__documento | default_if_none:"-" }}</span>
                     </div>
                 </div>
@@ -219,7 +219,7 @@
     </div>
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title font-weight-bold mr-3 pt-1">Datos sobre el espacio fisico donde funciona el comedor</h3>
+            <h3 class="card-title font-weight-bold mr-3 pt-1">Datos sobre el espacio fisico donde funciona el Comedor/Merendero</h3>
             <div class="card-tools">
                 <button type="button" class="btn btn-tool" data-card-widget="collapse">
                     <i class="fas fa-minus"></i>
@@ -284,7 +284,7 @@
                 </div>
                 <div class="nav-item col-3 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
-                        ¿Cómo se abastece de combustible?
+                        Para cocinar utiliza:
                         <span class="username">
                             {{ relevamiento.espacio__cocina__abastecimiento_combustible__nombre | default_if_none:"-" }}
                         </span>
@@ -292,13 +292,13 @@
                 </div>
                 <div class="nav-item col-3 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
-                        ¿Cómo se abastece de agua el Comedor/Merendero?
+                        El abastecimiento del agua es con:
                         <span class="username">{{ relevamiento.espacio__cocina__abastecimiento_agua__nombre | default_if_none:"-" }}</span>
                     </div>
                 </div>
                 <div class="nav-item col-3 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
-                        ¿Cuenta con instalación eléctrica?
+                        ¿Cuenta con instalación eléctrica adecuada?
                         <span class="username">{{ relevamiento.espacio__cocina__instalacion_electrica | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>

@@ -166,4 +166,24 @@
             </div>
         </div>
     </div>
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title font-weight-bold mr-3 pt-1">Observaciones</h3>
+            <div class="card-tools">
+                <a href="{% url 'observacion_crear' comedor.id %}" class="mx-3">Agregar</a>
+                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                    <i class="fas fa-minus"></i>
+                </button>
+            </div>
+        </div>
+        <div class="card-body card-comments p-0 pb-1">
+            <div class="nav nav-pills row my-3">
+                {% for observacion in observaciones %}
+                    <div class="col-2 d-flex justify-content-center">
+                        <a href="{% url 'observacion_detalle' comedor.id observacion.id %}">{{ observacion.id }} - {{ observacion.fecha_visita }}</a>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
 {% endblock %}
