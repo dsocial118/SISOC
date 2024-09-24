@@ -136,10 +136,12 @@ class ComedorUpdateView(UpdateView):
         self.object = self.get_object()
         if self.request.POST:
             data["referente_form"] = ReferenteForm(
-                self.request.POST, instance=self.object.referente
+                self.request.POST, instance=self.object.referente, prefix="referente"
             )
         else:
-            data["referente_form"] = ReferenteForm(instance=self.object.referente)
+            data["referente_form"] = ReferenteForm(
+                instance=self.object.referente, prefix="referente"
+            )
         return data
 
     def form_valid(self, form):
