@@ -24,7 +24,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media/")
 
 # Configuración de URLs para autenticación
 LOGIN_URL = "/"
-LOGIN_REDIRECT_URL = "inicio/"
+LOGIN_REDIRECT_URL = "dashboard/"
 LOGOUT_REDIRECT_URL = "/"
 
 # Formularios personalizados para cuentas de usuario
@@ -143,7 +143,6 @@ MIDDLEWARE = [
     "silk.middleware.SilkyMiddleware",
     "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "usuarios.middleware.CustomLoginMiddleware",
     "config.middlewares.xss_protection.XSSProtectionMiddleware",
     "config.middlewares.no_special_characters.NoSpecialCharactersMiddleware",
 ]
