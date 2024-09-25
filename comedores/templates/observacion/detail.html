@@ -4,7 +4,7 @@
 {% block title %}Observacion - Comedor: {{ observacion.comedor__nombre }}{% endblock %}
 ;
 {% block titulo-pagina %}
-    Observacion {{ observacion.id }} - Comedor: {{ observacioncomedor__nombre }}
+    Observacion {{ observacion.id }} - Comedor: {{ observacion.comedor__nombre }}
 {% endblock %}
 ;
 {% block breadcrumb %}
@@ -12,7 +12,7 @@
         <div class="breadcrumb-item">
             <a href="{% url 'comedores' %}">Comedores</a>
         </div>
-        <div class="breadcrumb-item">{{ observacion.comedor__nombre }}</div>
+        <div class="breadcrumb-item"><a href="{% url 'comedor_detalle' observacion.comedor__id %}">{{ observacion.comedor__nombre }}</a></div>
         <div class="breadcrumb-item active">Observacion {{ observacion.id }}</div>
     </ol>
 {% endblock %}
