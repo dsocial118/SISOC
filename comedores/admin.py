@@ -13,8 +13,6 @@ from comedores.models import (
     CantidadColaboradores,
     FrecuenciaRecepcionRecursos,
     TipoRecurso,
-    TipoComida,
-    NombreDia,
     FuenteRecursos,
     FuenteCompras,
     Prestacion,
@@ -93,22 +91,6 @@ class TipoRecursoAdmin(admin.ModelAdmin):
     ordering = ["nombre"]
 
 
-@admin.register(TipoComida)
-class TipoComidaAdmin(admin.ModelAdmin):
-    list_display = ("nombre",)
-
-    search_fields = ["nombre"]
-    ordering = ["nombre"]
-
-
-@admin.register(NombreDia)
-class NombreDiaAdmin(admin.ModelAdmin):
-    list_display = ("nombre",)
-
-    search_fields = ["nombre"]
-    ordering = ["nombre"]
-
-
 @admin.register(FuenteRecursos)
 class FuenteRecursosAdmin(admin.ModelAdmin):
     list_display = (
@@ -138,14 +120,8 @@ class FuenteComprasAdmin(admin.ModelAdmin):
 
 @admin.register(Prestacion)
 class PrestacionAdmin(admin.ModelAdmin):
-    list_display = (
-        "relevamiento",
-        "tipo_comida",
-        "nombre_dia",
-        "cantidad_actual_personas",
-        "cantidad_personas_espera",
-    )
-    search_fields = ("relevamiento", "tipo_comida", "nombre_dia")
+    list_display = ["relevamiento"]
+    search_fields = ["relevamiento"]
     ordering = ["relevamiento"]
 
 

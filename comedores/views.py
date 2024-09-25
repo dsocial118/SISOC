@@ -24,6 +24,7 @@ from comedores.forms.relevamiento import (
     ColaboradoresForm,
     FuenteRecursosForm,
     FuenteComprasForm,
+    PrestacionForm,
 )
 from comedores.forms.observacion import (
     ObservacionForm,
@@ -196,6 +197,7 @@ class RelevamientoCreateView(CreateView):
             "colaboradores_form": ColaboradoresForm,
             "recursos_form": FuenteRecursosForm,
             "compras_form": FuenteComprasForm,
+            "prestaciones_form": PrestacionForm,
         }
 
         for form_name, form_class in forms.items():
@@ -414,17 +416,22 @@ class RelevamientoUpdateView(UpdateView):
             "colaboradores_form": ColaboradoresForm,
             "recursos_form": FuenteRecursosForm,
             "compras_form": FuenteComprasForm,
+            "prestaciones_form": PrestacionForm,
         }
 
         for form_name, form_class in forms.items():
             if self.request.POST:
                 data[form_name] = form_class(
                     self.request.POST,
-                    instance=getattr(self.object, form_name.split("_form")[0], None),
+                    instance=getattr(
+                        self.object, form_name.split("_form", maxsplit=1)[0], None
+                    ),
                 )
             else:
                 data[form_name] = form_class(
-                    instance=getattr(self.object, form_name.split("_form")[0], None)
+                    instance=getattr(
+                        self.object, form_name.split("_form", maxsplit=1)[0], None
+                    )
                 )
 
         data["comedor"] = Comedor.objects.values("id", "nombre").get(

@@ -231,14 +231,14 @@ class FuenteComprasForm(forms.ModelForm):
 
 class PrestacionForm(forms.ModelForm):
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.label = False
+
     class Meta:
         model = Prestacion
         fields = "__all__"
-
-
-PrestacionFormSet = inlineformset_factory(
-    Relevamiento, Prestacion, form=PrestacionForm, extra=1, can_delete=False
-)
 
 
 class RelevamientoForm(forms.ModelForm):
