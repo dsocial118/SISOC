@@ -1,0 +1,76 @@
+/* Contenedor general */
+ body {
+    margin: 0;
+    display: flex;
+    height: 100vh;
+    background-color: #111d35;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.login-container {
+    display: flex;
+    flex: 1;
+}
+
+/* Panel izquierdo con la imagen de fondo */
+.left-panel {
+    flex: 1;
+    background: url("../img/Sign.png") no-repeat center center;
+    background-size: cover;
+}
+
+/* Panel derecho (formulario) */
+.right-panel {
+    flex: 0.4;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #1d274184;
+    border-radius: 20px;
+    margin: 20px;
+}
+
+/* Caja del formulario */
+.login-box {
+    text-align: center;
+    width: 80%;
+}
+
+h2 {
+    color: #fff;
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+    font-family: 'Montserrat', sans-serif;
+}
+
+
+
+
+input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-family: 'Montserrat', sans-serif;
+}
+
+button {
+    background-color: #6b7cff;
+    border: none;
+    padding: 10px;
+    border-radius: 10px;
+    color: #fff;
+    width: 100%;
+    cursor: pointer;
+    font-family: 'Montserrat', sans-serif;
+}
+
+footer {
+    color: #fff;
+    font-size: 0.8rem;
+    margin-top: 2rem;
+        font-family: 'Montserrat', sans-serif;
+}
