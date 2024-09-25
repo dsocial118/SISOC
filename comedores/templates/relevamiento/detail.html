@@ -604,5 +604,120 @@
                 </div>
             </div>
         </div>
+    </div>    
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title font-weight-bold mr-3 pt-1">Datos sobre la prestacion alimentaria</h3>
+            <div class="card-tools">
+                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                    <i class="fas fa-minus"></i>
+                </button>
+            </div>
+        </div>
+        <div class="card-body card-comments p-0 pb-1 overflow-hidden">
+            <div class="nav nav-pills row my-3">
+                <table class="table table-striped" border="1">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th colspan="2" class="text-center">LUNES</th>
+                            <th colspan="2" class="text-center">MARTES</th>
+                            <th colspan="2" class="text-center">MIÉRCOLES</th>
+                            <th colspan="2" class="text-center">JUEVES</th>
+                            <th colspan="2" class="text-center">VIERNES</th>
+                            <th colspan="2" class="text-center">SÁBADO</th>
+                            <th colspan="2" class="text-center">DOMINGO</th>
+                        </tr>
+                        <tr>
+                            <th></th>
+                            <th>Personas actuales</th>
+                            <th>Personas en espera</th>
+                            <th>Personas actuales</th>
+                            <th>Personas en espera</th>
+                            <th>Personas actuales</th>
+                            <th>Personas en espera</th>
+                            <th>Personas actuales</th>
+                            <th>Personas en espera</th>
+                            <th>Personas actuales</th>
+                            <th>Personas en espera</th>
+                            <th>Personas actuales</th>
+                            <th>Personas en espera</th>
+                            <th>Personas actuales</th>
+                            <th>Personas en espera</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>DESAYUNO</td>
+                            <td>{{ prestacion.lunes_desayuno_actual | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.lunes_desayuno_espera | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.martes_desayuno_actual | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.martes_desayuno_espera | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.miercoles_desayuno_actual | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.miercoles_desayuno_espera | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.jueves_desayuno_actual | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.jueves_desayuno_espera | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.viernes_desayuno_actual | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.viernes_desayuno_espera | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.sabado_desayuno_actual | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.sabado_desayuno_espera | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.domingo_desayuno_actual | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.domingo_desayuno_espera | default_if_none:"-" }}</td>
+                        </tr>
+                        <tr>
+                            <td>ALMUERZO</td>
+                            <td>{{ prestacion.lunes_almuerzo_actual | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.lunes_almuerzo_espera | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.martes_almuerzo_actual | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.martes_almuerzo_espera | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.miercoles_almuerzo_actual | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.miercoles_almuerzo_espera | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.jueves_almuerzo_actual | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.jueves_almuerzo_espera | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.viernes_almuerzo_actual | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.viernes_almuerzo_espera | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.sabado_almuerzo_actual | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.sabado_almuerzo_espera | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.domingo_almuerzo_actual | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.domingo_almuerzo_espera | default_if_none:"-" }}</td>
+                        </tr>
+                        <tr>
+                            <td>MERIENDA</td>
+                            <td>{{ prestacion.lunes_merienda_actual | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.lunes_merienda_espera | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.martes_merienda_actual | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.martes_merienda_espera | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.miercoles_merienda_actual | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.miercoles_merienda_espera | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.jueves_merienda_actual | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.jueves_merienda_espera | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.viernes_merienda_actual | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.viernes_merienda_espera | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.sabado_merienda_actual | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.sabado_merienda_espera | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.domingo_merienda_actual | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.domingo_merienda_espera | default_if_none:"-" }}</td>
+                        </tr>
+                        <tr>
+                            <td>CENA</td>
+                            <td>{{ prestacion.lunes_cena_actual | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.lunes_cena_espera | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.martes_cena_actual | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.martes_cena_espera | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.miercoles_cena_actual | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.miercoles_cena_espera | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.jueves_cena_actual | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.jueves_cena_espera | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.viernes_cena_actual | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.viernes_cena_espera | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.sabado_cena_actual | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.sabado_cena_espera | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.domingo_cena_actual | default_if_none:"-" }}</td>
+                            <td>{{ prestacion.domingo_cena_espera | default_if_none:"-" }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 {% endblock %}

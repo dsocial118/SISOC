@@ -29,7 +29,7 @@ from comedores.forms.relevamiento import (
 from comedores.forms.observacion import (
     ObservacionForm,
 )
-from comedores.models import Comedor, Relevamiento, Observacion
+from comedores.models import Comedor, Relevamiento, Observacion, Prestacion
 from usuarios.models import Usuarios
 
 class ComedorListView(ListView):
@@ -197,7 +197,7 @@ class RelevamientoCreateView(CreateView):
             "colaboradores_form": ColaboradoresForm,
             "recursos_form": FuenteRecursosForm,
             "compras_form": FuenteComprasForm,
-            "prestaciones_form": PrestacionForm,
+            "prestacion_form": PrestacionForm,
         }
 
         for form_name, form_class in forms.items():
@@ -222,6 +222,7 @@ class RelevamientoCreateView(CreateView):
             "colaboradores_form": context["colaboradores_form"],
             "recursos_form": context["recursos_form"],
             "compras_form": context["compras_form"],
+            "prestacion_form": context["prestacion_form"],
         }
 
         if all(form.is_valid() for form in forms.values()):
@@ -246,6 +247,9 @@ class RelevamientoCreateView(CreateView):
 
             compras = forms["compras_form"].save()
             self.object.compras = compras
+
+            prestacion = forms["prestacion_form"].save()
+            self.object.prestacion = prestacion
 
             self.object.relevador = Usuarios.objects.get(pk=self.request.user.id)
             self.object.fecha_visita = timezone.now()
@@ -281,6 +285,8 @@ class RelevamientoDetailView(DetailView):
         context["relevamiento"][
             "espacio__cocina__abastecimiento_combustible__nombre"
         ] = tipos_str
+
+        context["prestacion"] = Prestacion.objects.get(pk=self.object["prestacion__id"])
 
         return context
 
@@ -388,6 +394,7 @@ class RelevamientoDetailView(DetailView):
                 "compras__ferias_comunales",
                 "compras__mayoristas",
                 "compras__otro",
+                "prestacion__id",
             )
             .first()
         )
@@ -416,7 +423,7 @@ class RelevamientoUpdateView(UpdateView):
             "colaboradores_form": ColaboradoresForm,
             "recursos_form": FuenteRecursosForm,
             "compras_form": FuenteComprasForm,
-            "prestaciones_form": PrestacionForm,
+            "prestacion_form": PrestacionForm,
         }
 
         for form_name, form_class in forms.items():
