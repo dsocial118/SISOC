@@ -580,3 +580,14 @@ class ObservacionUpdateView(UpdateView):
             comedor_pk=int(self.kwargs["comedor_pk"]),
             pk=int(self.object.id),
         )
+
+
+class ObservacionDeleteView(DeleteView):
+    model = Observacion
+    template_name = "observacion/confirm_delete.html"
+    context_object_name = "observacion"
+
+    def get_success_url(self):
+        comedor = self.object.comedor
+
+        return reverse_lazy("comedor_detalle", kwargs={"pk": comedor.id})
