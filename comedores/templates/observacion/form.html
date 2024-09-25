@@ -1,0 +1,52 @@
+{% extends "includes/base.html" %}
+{% load static crispy_forms_tags %}
+;
+{% block title %}Comedores{% endblock %}
+{% block titulo-pagina %}Observacion{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right px-3">
+        <li class="breadcrumb-item">
+            <a href="{% url 'comedores' %}">Comedores</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'comedor_detalle' comedor.id %}">{{ comedor.nombre }}</a>
+        </li>
+        {% if request.resolver_match.url_name == "observacion_editar" %}
+            <li class="breadcrumb-item">
+                <a href="{% url 'observacion_detalle' observacion__id %}">{{ observacion.id }}</a>
+            </li>
+            <li class="breadcrumb-item active">Editar</li>
+        {% else %}
+            <li class="breadcrumb-item active">Agregar</li>
+        {% endif %}
+    </ol>
+{% endblock %}
+;
+{% block content %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card card-primary card-outline">
+                <div class="bs-stepper">
+                    <div class="card-header mb-3">
+                        <h3 class="card-title">Agregar observacion al comedor: <a href="{% url 'comedor_detalle' comedor.id %}">{{ comedor.nombre }}</a></h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-row justify-content-center">
+                            <form method="post" class="w-100">
+                                {% csrf_token %}
+                                {{ form.observacion | as_crispy_field }}
+                                <button class="btn btn-primary mx-1" type="submit">Confirmar</button>
+                                <a class='btn btn-secondary print mr-1 d-none d-sm-inline'>Imprimir</a>
+                                <a href='#' onclick='window.history.back();' class='btn btn-secondary'>Cancelar</a>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+;
+{% block customJS %}
+    <script src="{% static 'custom/js/relevamientoform.js' %}"></script>
+{% endblock %}
