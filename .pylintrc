@@ -46,7 +46,7 @@ fail-under=10
 #from-stdin=
 
 # Files or directories to be skipped. They should be base names, not paths.
-ignore=CVS, migrations
+ignore=CVS, migrations, venv
 
 # Add files or directories matching the regular expressions patterns to the
 # ignore-list. The regex matches against paths and can be in Posix or Windows
@@ -456,6 +456,7 @@ disable=raw-checker-failed,
         W0201, # attribute-defined-outside-init
         R1725, # super-with-arguments
         E5110, 
+        R0801,
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option

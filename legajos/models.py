@@ -1113,3 +1113,158 @@ class LegajoGrupoHogar(models.Model):
 
     def get_absolute_url(self):
         return reverse("LegajoGrupoHogarForm_ver", kwargs={"pk": self.pk})
+
+
+class TipoIntervencion(models.Model):
+    """
+    Guardado de los tipos de intervenciones realizadas a un legajo.
+    """
+
+    nombre = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"{self.nombre}"
+
+    class Meta:
+        verbose_name = "TipoIntervencion"
+        verbose_name_plural = "TiposIntervencion"
+
+
+class SubIntervencion(models.Model):
+    """
+    Guardado de las SubIntervencion realizadas a un legajo.
+    """
+
+    nombre = models.CharField(max_length=255)
+    fk_subintervencion = models.ForeignKey(
+        TipoIntervencion, on_delete=models.SET_NULL, default=1, null=True
+    )
+
+    def __str__(self):
+        return f"{self.nombre}"
+
+    class Meta:
+        verbose_name = "SubIntervencion"
+        verbose_name_plural = "SubIntervenciones"
+
+
+class EstadosIntervencion(models.Model):
+    """
+    Guardado de los estados de las intervenciones realizadas a un legajo.
+    """
+
+    nombre = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"{self.nombre}"
+
+    class Meta:
+        verbose_name = "EstadosIntervencion"
+        verbose_name_plural = "EstadosIntervenciones"
+
+
+class Direccion(models.Model):
+    nombre = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"{self.nombre}"
+
+
+class Intervencion(models.Model):
+    """
+    Guardado de las intervenciones realizadas a un legajo.
+    """
+
+    fk_legajo = models.ForeignKey(Legajos, on_delete=models.SET_NULL, null=True)
+    fk_usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    fk_subintervencion = models.ForeignKey(
+        SubIntervencion, on_delete=models.SET_NULL, null=True
+    )
+    fk_tipo_intervencion = models.ForeignKey(
+        TipoIntervencion, on_delete=models.SET_NULL, null=True
+    )
+    fecha = models.DateTimeField(auto_now_add=True)
+    fk_direccion = models.ManyToManyField(Direccion)
+    fk_estado = models.ForeignKey(
+        EstadosIntervencion, on_delete=models.SET_NULL, default=1, null=True
+    )
+
+    class Meta:
+        ordering = ["-fecha"]
+        verbose_name = "Intervencion"
+        verbose_name_plural = "Intervenciones"
+        indexes = [models.Index(fields=["fk_legajo"])]
+
+
+class EstadosLlamados(models.Model):
+    """
+    Guardado de los estados de las intervenciones realizadas a un legajo.
+    """
+
+    nombre = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"{self.nombre}"
+
+    class Meta:
+        verbose_name = "EstadoLlamado"
+        verbose_name_plural = "EstadosLlamados"
+
+
+class TipoLlamado(models.Model):
+    """
+    Guardado de los tipos de llamados realizados a un legajo.
+    """
+
+    nombre = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"{self.nombre}"
+
+    class Meta:
+        verbose_name = "TipoLlamado"
+        verbose_name_plural = "TiposLammado"
+
+
+class SubTipoLlamado(models.Model):
+    """
+    Guardado de los SubTipoLlamado realizados a un legajo.
+    """
+
+    def __str__(self):
+        return f"{self.nombre}"
+
+    nombre = models.CharField(max_length=255)
+    fk_tipo_llamado = models.ForeignKey(
+        TipoLlamado, on_delete=models.SET_NULL, default=1, null=True
+    )
+
+    class Meta:
+        verbose_name = "SubTipoLlamado"
+        verbose_name_plural = "SubTiposLlamado"
+
+
+class Llamado(models.Model):
+    """
+    Guardado de los llamados realizados a un legajo.
+    """
+
+    fk_legajo = models.ForeignKey(Legajos, on_delete=models.SET_NULL, null=True)
+    fk_usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    fk_subtipollamado = models.ForeignKey(
+        SubTipoLlamado, on_delete=models.SET_NULL, null=True
+    )
+    fk_tipo_llamado = models.ForeignKey(
+        TipoLlamado, on_delete=models.SET_NULL, null=True
+    )
+    fecha = models.DateTimeField(auto_now_add=True)
+    fk_estado = models.ForeignKey(
+        EstadosLlamados, on_delete=models.SET_NULL, default=1, null=True
+    )
+    observaciones = models.CharField(max_length=500)
+
+    class Meta:
+        ordering = ["-fecha"]
+        verbose_name = "Llamado"
+        verbose_name_plural = "Llamados"
+        indexes = [models.Index(fields=["fk_legajo"])]
