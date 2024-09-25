@@ -13,6 +13,7 @@ from comedores.views import (
     ComedorDeleteView,
     ObservacionCreateView,
     ObservacionDetailView,
+    ObservacionUpdateView,
 )
 
 
@@ -74,7 +75,7 @@ urlpatterns = [
     ),
     path(
         "comedores/<comedor_pk>/observacion/<pk>/editar",
-        login_required(RelevamientoUpdateView.as_view()),
+        login_required(ObservacionUpdateView.as_view()),
         name="observacion_editar",
     ),
     path(

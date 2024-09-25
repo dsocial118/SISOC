@@ -550,3 +550,33 @@ class ObservacionDetailView(DetailView):
             )
             .get(pk=self.kwargs["pk"])
         )
+
+
+class ObservacionUpdateView(UpdateView):
+    model = Observacion
+    form_class = ObservacionForm
+    template_name = "observacion/form.html"
+    context_object_name = "observacion"
+
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        comedor = Comedor.objects.values("id", "nombre").get(
+            pk=self.kwargs["comedor_pk"]
+        )
+
+        context.update({"comedor": comedor})
+
+        return context
+
+    def form_valid(self, form: BaseModelForm) -> HttpResponse:
+        form.instance.comedor_id = Comedor.objects.get(pk=self.kwargs["comedor_pk"]).id
+        form.instance.observador = Usuarios.objects.get(pk=self.request.user.id)
+        form.instance.fecha = timezone.now()
+
+        self.object = form.save()
+
+        return redirect(
+            "observacion_detalle",
+            comedor_pk=int(self.kwargs["comedor_pk"]),
+            pk=int(self.object.id),
+        )
