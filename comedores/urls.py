@@ -11,6 +11,8 @@ from comedores.views import (
     RelevamientoUpdateView,
     RelevamientoDeleteView,
     ComedorDeleteView,
+    ObservacionCreateView,
+    ObservacionDetailView,
 )
 
 
@@ -41,33 +43,43 @@ urlpatterns = [
         name="comedor_eliminar",
     ),
     path(
-        "comedores/<pk>/relevamientos",
-        login_required(ComedorListView.as_view()),
-        name="comedor_relevamientos",
-    ),
-    path(
-        "comedores/<pk>/observaciones",
-        login_required(ComedorListView.as_view()),
-        name="comedor_observaciones",
-    ),
-    path(
-        "comedores/<comedor_pk>/relevamientos/crear",
+        "comedores/<comedor_pk>/relevamiento/crear",
         login_required(RelevamientoCreateView.as_view()),
         name="relevamiento_crear",
     ),
     path(
-        "comedores/<comedor_pk>/relevamientos/<pk>",
+        "comedores/<comedor_pk>/relevamiento/<pk>",
         login_required(RelevamientoDetailView.as_view()),
         name="relevamiento_detalle",
     ),
     path(
-        "comedores/<comedor_pk>/relevamientos/<pk>/editar",
+        "comedores/<comedor_pk>/relevamiento/<pk>/editar",
         login_required(RelevamientoUpdateView.as_view()),
         name="relevamiento_editar",
     ),
     path(
-        "comedores/<comedor_pk>/relevamientos/<pk>/eliminar",
+        "comedores/<comedor_pk>/relevamiento/<pk>/eliminar",
         login_required(RelevamientoDeleteView.as_view()),
         name="relevamiento_eliminar",
+    ),
+    path(
+        "comedores/<comedor_pk>/observacion/crear",
+        login_required(ObservacionCreateView.as_view()),
+        name="observacion_crear",
+    ),
+    path(
+        "comedores/<comedor_pk>/observacion/<pk>",
+        login_required(ObservacionDetailView.as_view()),
+        name="observacion_detalle",
+    ),
+    path(
+        "comedores/<comedor_pk>/observacion/<pk>/editar",
+        login_required(RelevamientoUpdateView.as_view()),
+        name="observacion_editar",
+    ),
+    path(
+        "comedores/<comedor_pk>/observacion/<pk>/eliminar",
+        login_required(RelevamientoDeleteView.as_view()),
+        name="observacion_eliminar",
     ),
 ]

@@ -1,5 +1,7 @@
 from typing import Any
 from django.db.models.base import Model
+from django.forms import BaseModelForm
+from django.http import HttpResponse
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.shortcuts import redirect
@@ -22,9 +24,11 @@ from comedores.forms.relevamiento import (
     ColaboradoresForm,
     FuenteRecursosForm,
     FuenteComprasForm,
-    PrestacionFormSet,
 )
-from comedores.models import Comedor, Relevamiento
+from comedores.forms.observacion import (
+    ObservacionForm,
+)
+from comedores.models import Comedor, Relevamiento, Observacion
 from usuarios.models import Usuarios
 
 class ComedorListView(ListView):
@@ -114,11 +118,15 @@ class ComedorDetailView(DetailView):
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
 
-        # Utiliza el diccionario self.object para acceder al id del comedor
-        context["relevamientos"] = (
-            Relevamiento.objects.filter(comedor=self.object["id"])
-            .values("id", "fecha_visita")
-            .order_by("fecha_visita")[:12]
+        context.update(
+            {
+                "relevamientos": Relevamiento.objects.filter(comedor=self.object["id"])
+                .values("id", "fecha_visita")
+                .order_by("-fecha_visita")[:12],
+                "observaciones": Observacion.objects.filter(comedor=self.object["id"])
+                .values("id", "fecha")
+                .order_by("-fecha")[:12],
+            }
         )
 
         return context
@@ -196,6 +204,10 @@ class RelevamientoCreateView(CreateView):
             else:
                 data[form_name] = form_class()
 
+        data["comedor"] = Comedor.objects.values("id", "nombre").get(
+            pk=self.kwargs["comedor_pk"]
+        )
+
         return data
 
     def form_valid(self, form):
@@ -233,7 +245,7 @@ class RelevamientoCreateView(CreateView):
             compras = forms["compras_form"].save()
             self.object.compras = compras
 
-            self.object.relevador = Usuarios.objects.get(pk=self.request.user.pk)
+            self.object.relevador = Usuarios.objects.get(pk=self.request.user.id)
             self.object.fecha_visita = timezone.now()
 
             self.object.save()
@@ -415,6 +427,10 @@ class RelevamientoUpdateView(UpdateView):
                     instance=getattr(self.object, form_name.split("_form")[0], None)
                 )
 
+        data["comedor"] = Comedor.objects.values("id", "nombre").get(
+            pk=self.kwargs["comedor_pk"]
+        )
+
         return data
 
     def form_valid(self, form):
@@ -452,7 +468,7 @@ class RelevamientoUpdateView(UpdateView):
             compras = forms["compras_form"].save()
             self.object.compras = compras
 
-            self.object.relevador = Usuarios.objects.get(pk=self.request.user.pk)
+            self.object.relevador = Usuarios.objects.get(pk=self.request.user.id)
             self.object.fecha_visita = timezone.now()
 
             self.object.save()
@@ -488,4 +504,49 @@ class RelevamientoDeleteView(DeleteView):
 class ObservacionCreateView(CreateView):
     model = Observacion
     form_class = ObservacionForm
-    template_name = "observacion/relevamiento_form.html"
+    template_name = "observacion/form.html"
+    context_object_name = "observacion"
+
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        comedor = Comedor.objects.values("id", "nombre").get(
+            pk=self.kwargs["comedor_pk"]
+        )
+
+        context.update({"comedor": comedor})
+
+        return context
+
+    def form_valid(self, form: BaseModelForm) -> HttpResponse:
+        form.instance.comedor_id = Comedor.objects.get(pk=self.kwargs["comedor_pk"]).id
+        form.instance.observador = Usuarios.objects.get(pk=self.request.user.id)
+        form.instance.fecha = timezone.now()
+
+        self.object = form.save()
+
+        return redirect(
+            "observacion_detalle",
+            comedor_pk=int(self.kwargs["comedor_pk"]),
+            pk=int(self.object.id),
+        )
+
+
+class ObservacionDetailView(DetailView):
+    model = Observacion
+    template_name = "observacion/detail.html"
+    context_object_name = "observacion"
+
+    def get_object(self, queryset=None) -> Model:
+        return (
+            Observacion.objects.prefetch_related("comedor")
+            .values(
+                "id",
+                "fecha",
+                "observacion",
+                "comedor__id",
+                "comedor__nombre",
+                "observador__usuario__first_name",
+                "observador__usuario__last_name",
+            )
+            .get(pk=self.kwargs["pk"])
+        )

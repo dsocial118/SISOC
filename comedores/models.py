@@ -630,11 +630,15 @@ class Observacion(models.Model):
     Modelo que representa una observación realizada en un Comedor/Merendero.
     """
 
+    observador = models.ForeignKey(
+        to=Usuarios, on_delete=models.SET_NULL, null=True, blank=True
+    )
     comedor = models.ForeignKey(
         to=Comedor,
         on_delete=models.CASCADE,
+        blank=True,
     )
-    fecha = models.DateTimeField(auto_now=True)
+    fecha = models.DateTimeField(default=timezone.now, blank=True)
     observacion = models.TextField()
 
     class Meta:

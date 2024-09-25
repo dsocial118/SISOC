@@ -1,7 +1,7 @@
 {% extends "includes/base.html" %};
 {% load static %}
 ;
-{% block title %}Comedor - {{ comedor.nombre }}{% endblock %}
+{% block title %}Comedor: {{ comedor.nombre }}{% endblock %}
 ;
 {% block titulo-pagina %}
     {{ comedor.nombre }}
@@ -180,7 +180,7 @@
             <div class="nav nav-pills row my-3">
                 {% for observacion in observaciones %}
                     <div class="col-2 d-flex justify-content-center">
-                        <a href="{% url 'observacion_detalle' comedor.id observacion.id %}">{{ observacion.id }} - {{ observacion.fecha_visita }}</a>
+                        <a href="{% url 'observacion_detalle' comedor.id observacion.id %}">{{ observacion.id }} - {{ observacion.fecha }}</a>
                     </div>
                 {% endfor %}
             </div>

@@ -1,16 +1,19 @@
 {% extends "includes/base.html" %}
 {% load static crispy_forms_tags %}
 ;
-{% block title %}Comedores{% endblock %}
-{% block titulo-pagina %}Comedores{% endblock %}
+{% block title %}Comedores - Relevamientos{% endblock %}
+{% block titulo-pagina %}Comedores - Relevamientos{% endblock %}
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right px-3">
         <li class="breadcrumb-item">
             <a href="{% url 'comedores' %}">Comedores</a>
         </li>
-        {% if request.resolver_match.url_name == "comedor_editar" %}
+        <li class="breadcrumb-item">
+            <a href="{% url 'comedor_detalle' comedor.id %}">{{ comedor.nombre }}</a>
+        </li>
+        {% if request.resolver_match.url_name == "relevamiento_editar" %}
             <li class="breadcrumb-item">
-                <a href="{% url 'comedor_detalle' comedor.id %}">{{ comedor }}</a>
+                <a href="{% url 'relevamiento_detalle' comedor.id relevamiento.id %}">{{ relevamiento.fecha_visita }}</a>
             </li>
             <li class="breadcrumb-item active">Editar</li>
         {% else %}
