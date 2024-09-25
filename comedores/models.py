@@ -425,69 +425,82 @@ class FuenteCompras(models.Model):
         verbose_name_plural = "Fuentes de compras"
 
 
-class TipoComida(models.Model):
-    """
-    Opciones de tipos de comidas por horario que se brindan en un Comedor/Merendero
-    """
-
-    nombre = models.CharField(max_length=255, unique=True)
-
-    def __str__(self):
-        return str(self.nombre)
-
-    class Meta:
-        verbose_name = "Tipo de comida"
-        verbose_name_plural = "Tipos de comida"
-        ordering = ["nombre"]
-
-
-class NombreDia(models.Model):
-    """
-    Opciones de nombres de dias de la semana
-    """
-
-    nombre = models.CharField(max_length=255, unique=True)
-
-    def __str__(self):
-        return str(self.nombre)
-
-    class Meta:
-        verbose_name = "Nombre del dia"
-        verbose_name_plural = "Nombre de los dias"
-        ordering = ["nombre"]
-
-
 class Prestacion(models.Model):
     """
     Modelo que representa una prestación brindada en un Comedor/Merendero.
-
-    Atributos:
-        relevamiento (ForeignKey): Relación con el relevamiento al que pertenece la prestación.
-        tipo_comida (ForeignKey): Tipo de comida en que se brinda la prestación.
-        nombre_dia (ForeignKey): Nombre del día en que se brinda la prestación.
-        cantidad_actual_personas (PositiveIntegerField): Cantidad actual de personas que reciben la prestación.
-        cantidad_personas_espera (PositiveIntegerField): Cantidad de personas en espera para recibir la prestación.
     """
 
     relevamiento = models.ForeignKey(
-        to="Relevamiento",
-        on_delete=models.CASCADE,
+        to="Relevamiento", on_delete=models.CASCADE, blank=True
     )
-    tipo_comida = models.ForeignKey(
-        to=TipoComida,
-        on_delete=models.PROTECT,
-    )
-    nombre_dia = models.ForeignKey(
-        to=NombreDia,
-        on_delete=models.PROTECT,
-    )
-    cantidad_actual_personas = models.PositiveIntegerField()
-    cantidad_personas_espera = models.PositiveIntegerField(null=True, blank=True)
+
+    # TODO: Esto tiene que se refactorizado, pero se como hacer los formularios :p
+    lunes_desayuno_actual = models.PositiveIntegerField()
+    lunes_desayuno_espera = models.PositiveIntegerField(null=True, blank=True)
+    lunes_almuerzo_actual = models.PositiveIntegerField()
+    lunes_almuerzo_espera = models.PositiveIntegerField(null=True, blank=True)
+    lunes_merienda_actual = models.PositiveIntegerField()
+    lunes_merienda_espera = models.PositiveIntegerField(null=True, blank=True)
+    lunes_cena_actual = models.PositiveIntegerField()
+    lunes_cena_espera = models.PositiveIntegerField(null=True, blank=True)
+
+    martes_desayuno_actual = models.PositiveIntegerField()
+    martes_desayuno_espera = models.PositiveIntegerField(null=True, blank=True)
+    martes_almuerzo_actual = models.PositiveIntegerField()
+    martes_almuerzo_espera = models.PositiveIntegerField(null=True, blank=True)
+    martes_merienda_actual = models.PositiveIntegerField()
+    martes_merienda_espera = models.PositiveIntegerField(null=True, blank=True)
+    martes_cena_actual = models.PositiveIntegerField()
+    martes_cena_espera = models.PositiveIntegerField(null=True, blank=True)
+
+    miercoles_desayuno_actual = models.PositiveIntegerField()
+    miercoles_desayuno_espera = models.PositiveIntegerField(null=True, blank=True)
+    miercoles_almuerzo_actual = models.PositiveIntegerField()
+    miercoles_almuerzo_espera = models.PositiveIntegerField(null=True, blank=True)
+    miercoles_merienda_actual = models.PositiveIntegerField()
+    miercoles_merienda_espera = models.PositiveIntegerField(null=True, blank=True)
+    miercoles_cena_actual = models.PositiveIntegerField()
+    miercoles_cena_espera = models.PositiveIntegerField(null=True, blank=True)
+
+    jueves_desayuno_actual = models.PositiveIntegerField()
+    jueves_desayuno_espera = models.PositiveIntegerField(null=True, blank=True)
+    jueves_almuerzo_actual = models.PositiveIntegerField()
+    jueves_almuerzo_espera = models.PositiveIntegerField(null=True, blank=True)
+    jueves_merienda_actual = models.PositiveIntegerField()
+    jueves_merienda_espera = models.PositiveIntegerField(null=True, blank=True)
+    jueves_cena_actual = models.PositiveIntegerField()
+    jueves_cena_espera = models.PositiveIntegerField(null=True, blank=True)
+
+    viernes_desayuno_actual = models.PositiveIntegerField()
+    viernes_desayuno_espera = models.PositiveIntegerField(null=True, blank=True)
+    viernes_almuerzo_actual = models.PositiveIntegerField()
+    viernes_almuerzo_espera = models.PositiveIntegerField(null=True, blank=True)
+    viernes_merienda_actual = models.PositiveIntegerField()
+    viernes_merienda_espera = models.PositiveIntegerField(null=True, blank=True)
+    viernes_cena_actual = models.PositiveIntegerField()
+    viernes_cena_espera = models.PositiveIntegerField(null=True, blank=True)
+
+    sabado_desayuno_actual = models.PositiveIntegerField()
+    sabado_desayuno_espera = models.PositiveIntegerField(null=True, blank=True)
+    sabado_almuerzo_actual = models.PositiveIntegerField()
+    sabado_almuerzo_espera = models.PositiveIntegerField(null=True, blank=True)
+    sabado_merienda_actual = models.PositiveIntegerField()
+    sabado_merienda_espera = models.PositiveIntegerField(null=True, blank=True)
+    sabado_cena_actual = models.PositiveIntegerField()
+    sabado_cena_espera = models.PositiveIntegerField(null=True, blank=True)
+
+    domingo_desayuno_actual = models.PositiveIntegerField()
+    domingo_desayuno_espera = models.PositiveIntegerField(null=True, blank=True)
+    domingo_almuerzo_actual = models.PositiveIntegerField()
+    domingo_almuerzo_espera = models.PositiveIntegerField(null=True, blank=True)
+    domingo_merienda_actual = models.PositiveIntegerField()
+    domingo_merienda_espera = models.PositiveIntegerField(null=True, blank=True)
+    domingo_cena_actual = models.PositiveIntegerField()
+    domingo_cena_espera = models.PositiveIntegerField(null=True, blank=True)
 
     class Meta:
         verbose_name = "Prestacion"
         verbose_name_plural = "Prestaciones"
-        unique_together = ["relevamiento", "tipo_comida", "nombre_dia"]
 
 
 class Referente(models.Model):

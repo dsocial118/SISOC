@@ -151,7 +151,7 @@
                                 <h1>3- Datos sobre las personas que realizan tareas en el Comedor/Merendero</h1>
                                 <div class="px-3">
                                     <h3 class="mt-5">3.1 Personas que realizan tareas en el Comedor/Merendero</h3>
-                                    <div class="px-3 mx1">
+                                    <div class="px-3 mx-1">
                                         <div class="form-group row align-items-end">
                                             <div class="col-6">{{ colaboradores_form.cantidad_colaboradores|as_crispy_field }}</div>
                                             <div class="col-6">{{ colaboradores_form.colaboradores_capacitados_alimentos|as_crispy_field }}</div>
@@ -170,7 +170,7 @@
                                 <h1>4- Datos sobre recursos del Comedor/Merendero</h1>
                                 <div class="px-3">
                                     <h3 class="mt-5">4.1 Origen y tipo de recursos</h3>
-                                    <div class="px-3 mx1">
+                                    <div class="px-3 mx-1">
                                         <div class="form-group row align-items-end">
                                             <div class="col-4">{{ recursos_form.recibe_donaciones_particulares|as_crispy_field }}</div>
                                             <div class="col-4">{{ recursos_form.frecuencia_donaciones_particulares|as_crispy_field }}</div>
@@ -202,7 +202,7 @@
                                 <h1>5- Datos sobre la realización de compras para abastecer el Comedor/Merendero</h1>
                                 <div class="px-3">
                                     <h3 class="mt-5">5.1 Lugares donde suele realizar las compras para abastecer el Comedor/Merendero</h3>
-                                    <div class="px-3 mx1">
+                                    <div class="px-3 mx-1">
                                         <div class="form-group row align-items-end">
                                             <div class="col-6">{{ compras_form.almacen_cercano|as_crispy_field }}</div>
                                             <div class="col-6">{{ compras_form.verduleria|as_crispy_field }}</div>
@@ -229,7 +229,108 @@
                                 <h1>6- Datos sobre la prestación alimentaria</h1>
                                 <div class="px-3">
                                     <h3 class="mt-5">6.1 Resumen de prestaciones actuales y en lista de esprea informadas por el Comedor/Merendero</h3>
-                                    <div class="px-3 mx1">
+                                    <div class="px-3 mx-1">
+                                        <table class="table table-striped" border="1">
+                                            <thead>
+                                                <tr>
+                                                    <th></th>
+                                                    <th colspan="2">LUNES</th>
+                                                    <th colspan="2">MARTES</th>
+                                                    <th colspan="2">MIÉRCOLES</th>
+                                                    <th colspan="2">JUEVES</th>
+                                                    <th colspan="2">VIERNES</th>
+                                                    <th colspan="2">SÁBADO</th>
+                                                    <th colspan="2">DOMINGO</th>
+                                                </tr>
+                                                <tr>
+                                                    <th></th>
+                                                    <th>Personas actuales</th>
+                                                    <th>Personas en espera</th>
+                                                    <th>Personas actuales</th>
+                                                    <th>Personas en espera</th>
+                                                    <th>Personas actuales</th>
+                                                    <th>Personas en espera</th>
+                                                    <th>Personas actuales</th>
+                                                    <th>Personas en espera</th>
+                                                    <th>Personas actuales</th>
+                                                    <th>Personas en espera</th>
+                                                    <th>Personas actuales</th>
+                                                    <th>Personas en espera</th>
+                                                    <th>Personas actuales</th>
+                                                    <th>Personas en espera</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>DESAYUNO</td>
+                                                    <td>{{ prestaciones_form.lunes_desayuno_actual | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.lunes_desayuno_espera | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.martes_desayuno_actual | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.martes_desayuno_espera | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.miercoles_desayuno_actual | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.miercoles_desayuno_espera | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.jueves_desayuno_actual | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.jueves_desayuno_espera | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.viernes_desayuno_actual | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.viernes_desayuno_espera | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.sabado_desayuno_actual | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.sabado_desayuno_espera | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.domingo_desayuno_actual | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.domingo_desayuno_espera | as_crispy_field }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>ALMUERZO</td>
+                                                    <td>{{ prestaciones_form.lunes_almuerzo_actual | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.lunes_almuerzo_espera | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.martes_almuerzo_actual | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.martes_almuerzo_espera | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.miercoles_almuerzo_actual | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.miercoles_almuerzo_espera | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.jueves_almuerzo_actual | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.jueves_almuerzo_espera | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.viernes_almuerzo_actual | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.viernes_almuerzo_espera | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.sabado_almuerzo_actual | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.sabado_almuerzo_espera | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.domingo_almuerzo_actual | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.domingo_almuerzo_espera | as_crispy_field }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>MERIENDA</td>
+                                                    <td>{{ prestaciones_form.lunes_merienda_actual | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.lunes_merienda_espera | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.martes_merienda_actual | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.martes_merienda_espera | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.miercoles_merienda_actual | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.miercoles_merienda_espera | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.jueves_merienda_actual | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.jueves_merienda_espera | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.viernes_merienda_actual | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.viernes_merienda_espera | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.sabado_merienda_actual | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.sabado_merienda_espera | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.domingo_merienda_actual | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.domingo_merienda_espera | as_crispy_field }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>CENA</td>
+                                                    <td>{{ prestaciones_form.lunes_cena_actual | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.lunes_cena_espera | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.martes_cena_actual | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.martes_cena_espera | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.miercoles_cena_actual | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.miercoles_cena_espera | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.jueves_cena_actual | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.jueves_cena_espera | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.viernes_cena_actual | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.viernes_cena_espera | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.sabado_cena_actual | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.sabado_cena_espera | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.domingo_cena_actual | as_crispy_field }}</td>
+                                                    <td>{{ prestaciones_form.domingo_cena_espera | as_crispy_field }}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                             </div>
@@ -238,7 +339,6 @@
                                 <a class='btn btn-secondary print mx-3 d-none d-sm-inline'>Imprimir</a>
                                 <a href='#' onclick='window.history.back();' class='btn btn-secondary'>Cancelar</a>
                             </div>
-                            <script></script>
                         </form>
                     </div>
                 </div>
