@@ -21,8 +21,8 @@
                     <div class="input-group input-group-lg">
                         <input type="search"
                                class="form-control form-control-lg"
-                               placeholder="Buscar por nombre o ubicación"
-                               title="Ingresar nombre o ubicación."
+                               placeholder="Buscar por nombre, ubicación o referente"
+                               title="Ingresar nombre, ubicación o referente."
                                name="busqueda" />
                         <div class="input-group-append">
                             <button type="submit" class="btn btn-lg btn-primary">
@@ -50,7 +50,7 @@
                         <thead>
                             <tr>
                                 <th>Nombre</th>
-                                <th>Provincia</th>
+                                <th>Ubicacion</th>
                                 <th>Direccion</th>
                                 <th>Referente</th>
                                 <th>Numero de contacto</th>
@@ -65,7 +65,7 @@
                                            class="font-weight-bold"
                                            title="Ver detalles">{{ comedor.nombre }}</a>
                                     </td>
-                                    <td>{{ comedor.provincia__nombre }}</td>
+                                    <td>{{ comedor.provincia__nombre }}, {{ comedor.municipio__nombre_region }}, {{ comedor.localidad__nombre }}, {{ comedor.barrio }}</td>
                                     <td>{{ comedor.calle }} {{ comedor.numero }}</td>
                                     <td>{{ comedor.referente__nombre }} {{ comedor.referente__apellido }}</td>
                                     <td>{{ comedor.referente__celular|default_if_none:"-" }}</td>
