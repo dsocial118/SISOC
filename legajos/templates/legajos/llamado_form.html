@@ -64,6 +64,10 @@
                         <div class="row m-0 p-0">
                             <input type="hidden" name="fk_legajo" value="{{ object.id }}" />
                             <input type="hidden" name="fk_usuario" value="{{ request.user.id }}" />
+                            
+                            <div class="col-sm-6">
+                                <div class="form-group">{{ form.fk_programas_llamados| as_crispy_field }}</div>
+                            </div>
                             <div class="col-sm-6">
                                 <div class="form-group">{{ form.fk_tipo_llamado| as_crispy_field }}</div>
                             </div>
@@ -99,6 +103,26 @@
                 },
                 success: function(data) {
                     var $subIntervencion = $('.subtipollamado-select');
+                    $subIntervencion.empty();
+                    $.each(data, function(index, item) {
+                        $subIntervencion.append($('<option>', {
+                            value: item.id,
+                            text: item.text
+                        }));
+                    });
+                }
+            });
+        });
+
+        $('.programasllamado-select').change(function() {
+            var estadoId = $(this).val();
+            $.ajax({
+                url: "{% url 'ajax_load_tiposllamados' %}",
+                data: {
+                    'id': estadoId
+                },
+                success: function(data) {
+                    var $subIntervencion = $('.tipo_llamado-select');
                     $subIntervencion.empty();
                     $.each(data, function(index, item) {
                         $subIntervencion.append($('<option>', {

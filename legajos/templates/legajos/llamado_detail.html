@@ -103,6 +103,7 @@
                             <tr>
                                 <th>Fecha</th>
                                 <th>Usuario</th>
+                                <th>Programa LLamado</th>
                                 <th>Tipo de llamada</th>
                                 <th>Sub tipo de llamada</th>
                                 <th>Estado</th>
@@ -115,6 +116,7 @@
                                 <tr>
                                     <td>{{ e.fecha|date:'d/m/Y' }}</td>
                                     <td>{{ e.fk_usuario }}</td>
+                                    <td>{{ e.fk_programas_llamados }}</td>
                                     <td>{{ e.fk_tipo_llamado }}</td>
                                     <td>{{ e.fk_subtipollamado }}</td>
                                     <td>{{ e.fk_estado }}</td>

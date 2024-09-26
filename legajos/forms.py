@@ -686,9 +686,13 @@ class LlamadoForm(forms.ModelForm):
             "fk_subtipollamado": forms.Select(
                 attrs={"class": "select2 subtipollamado-select"}
             ),
+            "fk_programas_llamados": forms.Select(
+                attrs={"class": "select2 programasllamado-select"}
+            ),
         }
         labels = {
             "fk_subtipollamado": "Subtipo de llamado",
             "fk_tipo_llamado": "Tipo de llamado",
             "fk_estado": "Estado",
+            "fk_programas_llamados": "Programa llamado",
         }
