@@ -1195,6 +1195,7 @@ class Intervencion(models.Model):
         verbose_name_plural = "Intervenciones"
         indexes = [models.Index(fields=["fk_legajo"])]
 
+
 class ProgramasLlamados(models.Model):
     """
     Guardado de los programas a los que se llama.
@@ -1208,6 +1209,7 @@ class ProgramasLlamados(models.Model):
     class Meta:
         verbose_name = "ProgramasLlamados"
         verbose_name_plural = "ProgramasLlamados"
+
 
 class EstadosLlamados(models.Model):
     """
@@ -1230,7 +1232,9 @@ class TipoLlamado(models.Model):
     """
 
     nombre = models.CharField(max_length=255)
-    fk_programas_llamados = models.ForeignKey(ProgramasLlamados, on_delete=models.SET_NULL, default=1, null=True)
+    fk_programas_llamados = models.ForeignKey(
+        ProgramasLlamados, on_delete=models.SET_NULL, default=1, null=True
+    )
 
     def __str__(self):
         return f"{self.nombre}"
@@ -1268,13 +1272,17 @@ class Llamado(models.Model):
     fk_subtipollamado = models.ForeignKey(
         SubTipoLlamado, on_delete=models.SET_NULL, null=True
     )
-    fk_tipo_llamado = models.ForeignKey(TipoLlamado, on_delete=models.SET_NULL, null=True)
+    fk_tipo_llamado = models.ForeignKey(
+        TipoLlamado, on_delete=models.SET_NULL, null=True
+    )
     fecha = models.DateTimeField(auto_now_add=True)
     fk_estado = models.ForeignKey(
         EstadosLlamados, on_delete=models.SET_NULL, default=1, null=True
     )
-    fk_programas_llamados = models.ForeignKey(ProgramasLlamados, on_delete=models.SET_NULL, null=True)
-    
+    fk_programas_llamados = models.ForeignKey(
+        ProgramasLlamados, on_delete=models.SET_NULL, null=True
+    )
+
     observaciones = models.CharField(max_length=500)
 
     class Meta:
