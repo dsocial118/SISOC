@@ -64,7 +64,6 @@
                         <div class="row m-0 p-0">
                             <input type="hidden" name="fk_legajo" value="{{ object.id }}" />
                             <input type="hidden" name="fk_usuario" value="{{ request.user.id }}" />
-                            
                             <div class="col-sm-6">
                                 <div class="form-group">{{ form.fk_programas_llamados| as_crispy_field }}</div>
                             </div>
