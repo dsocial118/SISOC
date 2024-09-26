@@ -20,7 +20,7 @@ from comedores.views import (
 
 urlpatterns = [
     path(
-        "comedores",
+        "comedores/listar",
         login_required(ComedorListView.as_view()),
         name="comedores",
     ),
