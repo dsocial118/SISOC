@@ -2215,6 +2215,7 @@ class SubEstadosLlamadosAjax(View):
         ]
         return JsonResponse(data, safe=False)
 
+
 class TipoEstadosLlamadosAjax(View):
     def get(self, request):
         request_id = request.GET.get("id", None)
