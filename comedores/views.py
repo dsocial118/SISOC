@@ -6,6 +6,7 @@ from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.shortcuts import redirect
 from django.contrib import messages
+from django.db.models import Q
 from django.views.generic import (
     ListView,
     CreateView,
@@ -39,16 +40,32 @@ class ComedorListView(ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        return Comedor.objects.prefetch_related("provincia", "referente").values(
+        queryset = Comedor.objects.prefetch_related("provincia", "referente").values(
             "id",
             "nombre",
             "provincia__nombre",
+            "municipio__nombre_region",
+            "localidad__nombre",
+            "barrio",
+            "partido",
             "calle",
             "numero",
             "referente__nombre",
             "referente__apellido",
             "referente__celular",
         )
+        query = self.request.GET.get("busqueda")
+        if query:
+            queryset = queryset.filter(
+                Q(nombre__icontains=query)
+                | Q(provincia__nombre__icontains=query)
+                | Q(municipio__nombre_region=query)
+                | Q(localidad__nombre=query)
+                | Q(referente__nombre=query)
+                | Q(referente__apellido=query)
+                | Q(referente__celular=query)
+            )
+        return queryset
 
 
 class ComedorCreateView(CreateView):
