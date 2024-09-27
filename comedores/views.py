@@ -15,8 +15,8 @@ from django.views.generic import (
     DeleteView,
 )
 
-from comedores.forms.comedor import ComedorForm, ReferenteForm
-from comedores.forms.relevamiento import (
+from comedores.forms.comedor_form import ComedorForm, ReferenteForm
+from comedores.forms.relevamiento_form import (
     RelevamientoForm,
     FuncionamientoPrestacionForm,
     EspacioForm,
@@ -27,7 +27,7 @@ from comedores.forms.relevamiento import (
     FuenteComprasForm,
     PrestacionForm,
 )
-from comedores.forms.observacion import (
+from comedores.forms.observacion_form import (
     ObservacionForm,
 )
 from comedores.models import Comedor, Relevamiento, Observacion, Prestacion
@@ -35,7 +35,7 @@ from usuarios.models import Usuarios
 
 class ComedorListView(ListView):
     model = Comedor
-    template_name = "comedor/list.html"
+    template_name = "comedor/comedor_list.html"
     context_object_name = "comedores"
     paginate_by = 10
 
@@ -71,7 +71,7 @@ class ComedorListView(ListView):
 class ComedorCreateView(CreateView):
     model = Comedor
     form_class = ComedorForm
-    template_name = "comedor/form.html"
+    template_name = "comedor/comedor_form.html"
 
     def get_success_url(self):
         return reverse("comedor_detalle", kwargs={"pk": self.object.pk})
@@ -104,7 +104,7 @@ class ComedorCreateView(CreateView):
 
 class ComedorDetailView(DetailView):
     model = Comedor
-    template_name = "comedor/detail.html"
+    template_name = "comedor/comedor_detail.html"
     context_object_name = "comedor"
 
     def get_object(self, queryset=None):
@@ -153,7 +153,7 @@ class ComedorDetailView(DetailView):
 class ComedorUpdateView(UpdateView):
     model = Comedor
     form_class = ComedorForm
-    template_name = "comedor/form.html"
+    template_name = "comedor/comedor_form.html"
 
     def get_success_url(self):
         return reverse("comedor_detalle", kwargs={"pk": self.object.pk})
@@ -189,7 +189,7 @@ class ComedorUpdateView(UpdateView):
 
 class ComedorDeleteView(DeleteView):
     model = Comedor
-    template_name = "comedor/confirm_delete.html"
+    template_name = "comedor/comedor_confirm_delete.html"
     context_object_name = "comedor"
     success_url = reverse_lazy("comedores")
 
@@ -197,7 +197,7 @@ class ComedorDeleteView(DeleteView):
 class RelevamientoCreateView(CreateView):
     model = Relevamiento
     form_class = RelevamientoForm
-    template_name = "relevamiento/form.html"
+    template_name = "relevamiento/relevamiento_form.html"
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -292,7 +292,7 @@ class RelevamientoCreateView(CreateView):
 
 class RelevamientoDetailView(DetailView):
     model = Relevamiento
-    template_name = "relevamiento/detail.html"
+    template_name = "relevamiento/relevamiento_detail.html"
     context_object_name = "relevamiento"
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
@@ -420,7 +420,7 @@ class RelevamientoDetailView(DetailView):
 class RelevamientoUpdateView(UpdateView):
     model = Relevamiento
     form_class = RelevamientoForm
-    template_name = "relevamiento/form.html"
+    template_name = "relevamiento/relevamiento_form.html"
     success_url = reverse_lazy(
         "relevamiento_lista"
     )  # Cambia a la URL deseada tras la actualización
@@ -523,7 +523,7 @@ class RelevamientoUpdateView(UpdateView):
 
 class RelevamientoDeleteView(DeleteView):
     model = Relevamiento
-    template_name = "relevamiento/confirm_delete.html"
+    template_name = "relevamiento/relevamiento_confirm_delete.html"
     context_object_name = "relevamiento"
 
     def get_success_url(self):
@@ -535,7 +535,7 @@ class RelevamientoDeleteView(DeleteView):
 class ObservacionCreateView(CreateView):
     model = Observacion
     form_class = ObservacionForm
-    template_name = "observacion/form.html"
+    template_name = "observacion/observacion_form.html"
     context_object_name = "observacion"
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
@@ -564,7 +564,7 @@ class ObservacionCreateView(CreateView):
 
 class ObservacionDetailView(DetailView):
     model = Observacion
-    template_name = "observacion/detail.html"
+    template_name = "observacion/observacion_detail.html"
     context_object_name = "observacion"
 
     def get_object(self, queryset=None) -> Model:
@@ -586,7 +586,7 @@ class ObservacionDetailView(DetailView):
 class ObservacionUpdateView(UpdateView):
     model = Observacion
     form_class = ObservacionForm
-    template_name = "observacion/form.html"
+    template_name = "observacion/observacion_form.html"
     context_object_name = "observacion"
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
@@ -615,7 +615,7 @@ class ObservacionUpdateView(UpdateView):
 
 class ObservacionDeleteView(DeleteView):
     model = Observacion
-    template_name = "observacion/confirm_delete.html"
+    template_name = "observacion/observacion_confirm_delete.html"
     context_object_name = "observacion"
 
     def get_success_url(self):
