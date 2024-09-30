@@ -674,6 +674,7 @@ class LlamadoForm(forms.ModelForm):
         widget=forms.Select(attrs={"class": "select2 subtipollamado-select"}),
         required=False,
     )
+
     class Meta:
         model = Llamado
         fields = "__all__"
