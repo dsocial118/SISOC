@@ -121,11 +121,10 @@ def load_departamento(request):
 
 def load_asentamiento(request):
     municipio_id = request.GET.get("municipio_id")
-    localidad_search = LegajoMunicipio.objects.get(id=municipio_id)
-    localidades = LegajoLocalidad.objects.filter(
-        departamento_id=localidad_search.departamento_id
+    asentamientos = LegajoAsentamientos.objects.filter(
+        fk_localidad=municipio_id
     )
-    return JsonResponse(list(localidades.values("id", "nombre")), safe=False)
+    return JsonResponse(list(asentamientos.values("id", "nombre")), safe=False)
 
 
 class LegajosReportesListView(ListView):
