@@ -12,7 +12,7 @@
             <a href="{% url 'legajos_listar' %}">Legajos</a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{% url 'legajos_ver' legajo.pk %}">{{ legajo }}</a>
+            <a href="{% url 'legajos_ver' legajo.pk %}">{{ legajo.nombre }} {{ legajo.apellido }}</a>
         </li>
         <li class="breadcrumb-item active ">Alertas</li>
     </ol>

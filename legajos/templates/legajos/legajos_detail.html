@@ -219,8 +219,7 @@
                     </div>
                     <h3 class="card-title font-weight-bold pt-1 mr-3">Grupo Conviviente Hogar</h3>
                     <span title="Cantidad total de Conviviente en el Hogar"
-                          class="badge badge-secondary mt-1">{{
-                    hogar_count_familia }}</span>
+                          class="badge badge-secondary mt-1">{{ hogar_count_familia }}</span>
                 </div>
                 {% if hogar_count_familia != 0 %}
                     <div class="card-body bg-light p-0">
@@ -763,10 +762,7 @@
                                 <dd class="col-sm-8 ">
                                     Motivo principal por el que no terminaste tus estudios
                                 </dd>
-                                <dt class="col-sm-4">
-                                    {{
-                                    object.dimensioneducacion.nivelIncompleto|default_if_none:"-" }}
-                                </dt>
+                                <dt class="col-sm-4">{{ object.dimensioneducacion.nivelIncompleto|default_if_none:"-" }}</dt>
                                 <dd class="col-sm-8 ">
                                     Motivo principal por el que no tuviste educación formal
                                 </dd>
@@ -794,45 +790,27 @@
                                 <dd class="col-sm-8">
                                     Provincia Institucion
                                 </dd>
-                                <dt class="col-sm-4">
-                                    {{
-                                    object.dimensioneducacion.provinciaInstitucion|default_if_none:"-" }}
-                                </dt>
+                                <dt class="col-sm-4">{{ object.dimensioneducacion.provinciaInstitucion|default_if_none:"-" }}</dt>
                                 <dd class="col-sm-8 ">
                                     Municipio Institucion
                                 </dd>
-                                <dt class="col-sm-4">
-                                    {{
-                                    object.dimensioneducacion.municipioInstitucion|default_if_none:"-" }}
-                                </dt>
+                                <dt class="col-sm-4">{{ object.dimensioneducacion.municipioInstitucion|default_if_none:"-" }}</dt>
                                 <dd class="col-sm-8 ">
                                     Localidad Institucion
                                 </dd>
-                                <dt class="col-sm-4">
-                                    {{
-                                    object.dimensioneducacion.localidadInstitucion|default_if_none:"-" }}
-                                </dt>
+                                <dt class="col-sm-4">{{ object.dimensioneducacion.localidadInstitucion|default_if_none:"-" }}</dt>
                                 <dd class="col-sm-8 ">
                                     Barrio Institucion
                                 </dd>
-                                <dt class="col-sm-4">
-                                    {{
-                                    object.dimensioneducacion.barrioInstitucion|default_if_none:"-" }}
-                                </dt>
+                                <dt class="col-sm-4">{{ object.dimensioneducacion.barrioInstitucion|default_if_none:"-" }}</dt>
                                 <dd class="col-sm-8 ">
                                     Calle Institucion
                                 </dd>
-                                <dt class="col-sm-4">
-                                    {{
-                                    object.dimensioneducacion.calleInstitucion|default_if_none:"-" }}
-                                </dt>
+                                <dt class="col-sm-4">{{ object.dimensioneducacion.calleInstitucion|default_if_none:"-" }}</dt>
                                 <dd class="col-sm-8 ">
                                     Numero Institucion
                                 </dd>
-                                <dt class="col-sm-4">
-                                    {{
-                                    object.dimensioneducacion.numeroInstitucion|default_if_none:"-" }}
-                                </dt>
+                                <dt class="col-sm-4">{{ object.dimensioneducacion.numeroInstitucion|default_if_none:"-" }}</dt>
                                 <dd class="col-sm-8 ">
                                     Interes Estudio
                                 </dd>
