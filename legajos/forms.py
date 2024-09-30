@@ -167,29 +167,45 @@ class LegajosUpdateForm(forms.ModelForm):
         queryset=LegajoProvincias.objects.all(),
     )
     fk_municipio = forms.ModelChoiceField(
-        required=True,
+        required=False,
         label="Municipio",
         queryset=LegajoMunicipio.objects.all(),
     )
     fk_localidad = forms.ModelChoiceField(
-        required=True,
+        required=False,
         label="Localidad",
         queryset=LegajoLocalidad.objects.all(),
     )
-
+    fk_departamento = forms.ModelChoiceField(
+        required=False,
+        label="Departamento",
+        queryset=LegajoMunicipio.objects.none(),
+    )
+    fk_asentamiento = forms.ModelChoiceField(
+        required=False,
+        label="Asentamiento",
+        queryset=LegajoMunicipio.objects.none(),
+    )
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["fk_provincia"].queryset = LegajoProvincias.objects.all()
         if self.instance and self.instance.pk:
             municipio_actual = self.instance.fk_municipio
             localidad_actual = self.instance.fk_localidad
+            departamento_actual = self.instance.fk_departamento
+            asentamiento_actual = self.instance.fk_asentamiento
             self.fields["fk_municipio"].choices = [
                 (municipio_actual.id, municipio_actual.nombre_region)
             ]
             self.fields["fk_localidad"].choices = [
                 (localidad_actual.id, localidad_actual.nombre)
             ]
-
+            self.fields["fk_departamento"].choices = [
+                (departamento_actual.id, departamento_actual.nombre)
+            ]
+            self.fields["fk_asentamiento"].choices = [
+                (asentamiento_actual.id, asentamiento_actual.nombre)
+            ]
     def clean(self):
         cleaned_data = super().clean()
         tipo_doc = cleaned_data.get("tipo_doc")
@@ -226,6 +242,8 @@ class LegajosUpdateForm(forms.ModelForm):
                 attrs={"type": "date"}, format="%Y-%m-%d"
             ),
             "fk_municipio": forms.Select(attrs={"class": "select2 municipio-select"}),
+            "fk_departamento": forms.Select(attrs={"class": "select2 departamento-select"}),
+            "fk_asentamiento": forms.Select(attrs={"class": "select2 asentamiento-select"}),
             "fk_localidad": forms.Select(attrs={"class": "select2 localidad-select"}),
             "fk_provincia": forms.Select(attrs={"class": "select2 provincia-select"}),
         }
@@ -236,6 +254,8 @@ class LegajosUpdateForm(forms.ModelForm):
             "fk_provincia": "Provincia",
             "fk_localidad": "Localidad",
             "fk_municipio": "Municipio",
+            "fk_departamento": "Departamento",
+            "fk_asentamiento": "Asentamiento",
         }
 
 

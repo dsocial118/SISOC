@@ -249,7 +249,12 @@ class Legajos(models.Model):
     fk_localidad = models.ForeignKey(
         LegajoLocalidad, on_delete=models.SET_NULL, null=True, blank=True
     )  # departamento_id es el campo que se relaciona con municipio
-
+    fk_departamento = models.ForeignKey(
+        LegjosDepatamento, on_delete=models.SET_NULL, null=True, blank=True
+    )  # departamento_id es el campo que se relaciona con municipio
+    fk_asentamiento = models.ForeignKey(
+        LegajoAsentamientos, on_delete=models.SET_NULL, null=True, blank=True
+    )  # departamento_id es el campo que se relaciona con municip
     def __str__(self):
         return f"{self.apellido}, {self.nombre}"
 
