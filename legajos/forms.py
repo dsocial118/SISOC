@@ -56,7 +56,16 @@ class LegajosForm(forms.ModelForm):
         label="Localidad",
         queryset=LegajoLocalidad.objects.none(),
     )
-
+    fk_departamento = forms.ModelChoiceField(
+        required=False,
+        label="Departamento",
+        queryset=LegajoMunicipio.objects.none(),
+    )
+    fk_asentamiento = forms.ModelChoiceField(
+        required=False,
+        label="Asentamiento",
+        queryset=LegajoMunicipio.objects.none(),
+    )
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Configurar el queryset del campo 'fk_provincia' para cargar solo las provincias
@@ -64,7 +73,8 @@ class LegajosForm(forms.ModelForm):
         # Configurar los querysets de los campos 'fk_municipio' y 'fk_localidad' para que estén vacíos inicialmente
         self.fields["fk_municipio"].queryset = LegajoMunicipio.objects.none()
         self.fields["fk_localidad"].queryset = LegajoLocalidad.objects.none()
-
+        self.fields["fk_departamento"].queryset = LegajoMunicipio.objects.none()
+        self.fields["fk_asentamiento"].queryset = LegajoMunicipio.objects.none()
         # Actualizar los querysets si los datos están presentes en el formulario
         if "fk_municipio" in self.data:
             try:
@@ -135,6 +145,8 @@ class LegajosForm(forms.ModelForm):
             "fk_municipio": forms.Select(attrs={"class": "select2 municipio-select"}),
             "fk_localidad": forms.Select(attrs={"class": "select2 localidad-select"}),
             "fk_provincia": forms.Select(attrs={"class": "select2 provincia-select"}),
+            "fk_departamento": forms.Select(attrs={"class": "select2 departamento-select"}),
+            "fk_asentamiento": forms.Select(attrs={"class": "select2 asentamiento-select"}),
         }
         labels = {
             "fk_provincia": "Provincia",
@@ -146,6 +158,8 @@ class LegajosForm(forms.ModelForm):
             "m2m_alertas": "",
             "Longitud": "Longitud",
             "Latitud": "Latitud",
+            "fk_departamento": "Departamento",
+            "fk_asentamiento": "Asentamiento",
         }
 
 
