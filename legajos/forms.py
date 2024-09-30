@@ -670,6 +670,10 @@ class IntervencionForm(forms.ModelForm):
 
 
 class LlamadoForm(forms.ModelForm):
+    fk_subtipollamado = forms.FileField(
+        widget=forms.Select(attrs={"class": "select2 subtipollamado-select"}),
+        required=False,
+    )
     class Meta:
         model = Llamado
         fields = "__all__"
@@ -682,9 +686,6 @@ class LlamadoForm(forms.ModelForm):
             ),
             "fk_tipo_llamado": forms.Select(
                 attrs={"class": "select2 tipo_llamado-select"}
-            ),
-            "fk_subtipollamado": forms.Select(
-                attrs={"class": "select2 subtipollamado-select"}
             ),
             "fk_programas_llamados": forms.Select(
                 attrs={"class": "select2 programasllamado-select"}
