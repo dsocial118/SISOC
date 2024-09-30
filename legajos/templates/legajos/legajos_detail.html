@@ -167,8 +167,7 @@
                                                  alt="User Image"
                                                  width="60px" />
                                         {% endif %}
-                                        <span class="users-list-date">{{ f.fk_legajo_2__apellido }} {{ f.fk_legajo_2__nombre
-                                        }}</span>
+                                        <span class="users-list-date">{{ f.fk_legajo_2__apellido }} {{ f.fk_legajo_2__nombre }}</span>
                                         <span class="users-list-date">{{ f.vinculo }}</span>
                                     </a>
                                 </li>
@@ -186,8 +185,7 @@
                                                  alt="User Image"
                                                  width="60px" />
                                         {% endif %}
-                                        <span class="users-list-date">{{ f.fk_legajo_2__apellido }} {{ f.fk_legajo_2__nombre
-                                        }}</span>
+                                        <span class="users-list-date">{{ f.fk_legajo_2__apellido }} {{ f.fk_legajo_2__nombre }}</span>
                                         <span class="users-list-date">{{ f.vinculo_inverso }}</span>
                                     </a>
                                 </li>
@@ -761,10 +759,7 @@
                                 <dd class="col-sm-8">
                                     Estado del nivel
                                 </dd>
-                                <dt class="col-sm-4">
-                                    {{ object.dimensioneducacion.estado_nivel|default_if_none:"-"
-                                    }}
-                                </dt>
+                                <dt class="col-sm-4">{{ object.dimensioneducacion.estado_nivel|default_if_none:"-" }}</dt>
                                 <dd class="col-sm-8 ">
                                     Motivo principal por el que no terminaste tus estudios
                                 </dd>
@@ -775,10 +770,7 @@
                                 <dd class="col-sm-8 ">
                                     Motivo principal por el que no tuviste educación formal
                                 </dd>
-                                <dt class="col-sm-4">
-                                    {{ object.dimensioneducacion.sinEduFormal|default_if_none:"-"
-                                    }}
-                                </dt>
+                                <dt class="col-sm-4">{{ object.dimensioneducacion.sinEduFormal|default_if_none:"-" }}</dt>
                                 <dd class="col-sm-8">
                                     Institución
                                 </dd>
@@ -856,10 +848,7 @@
                                 <dd class="col-sm-8 ">
                                     Observaciones
                                 </dd>
-                                <dt class="col-sm-4">
-                                    {{ object.dimensioneducacion.obs_educacion|default_if_none:"-"
-                                    }}
-                                </dt>
+                                <dt class="col-sm-4">{{ object.dimensioneducacion.obs_educacion|default_if_none:"-" }}</dt>
                             </dl>
                             <!-- ./dimension educacion -->
                         </div>
@@ -888,10 +877,7 @@
                                     Miembros de la familia que trabajan o aportan al grupo
                                     conviviente
                                 </dd>
-                                <dt class="col-sm-4">
-                                    {{ object.dimensioneconomia.cant_aportantes|default_if_none:"-"
-                                    }}
-                                </dt>
+                                <dt class="col-sm-4">{{ object.dimensioneconomia.cant_aportantes|default_if_none:"-" }}</dt>
                                 <dd class="col-12 mt-3">
                                     Observaciones
                                 </dd>
@@ -939,10 +925,8 @@
                 <div class="card-header">
                     <h3 class="card-title font-weight-bold mr-3 pt-1">Indicadores de riesgo</h3>
                     {% if count_media or count_baja %}
-                        <span title="{{ count_media }} alertas" class="badge badge-Importante p-2">{{ count_media
-                        }}</span>
-                        <span title="{{ count_baja }} alertas" class="badge badge-Precaución p-2">{{ count_baja
-                        }}</span>
+                        <span title="{{ count_media }} alertas" class="badge badge-Importante p-2">{{ count_media }}</span>
+                        <span title="{{ count_baja }} alertas" class="badge badge-Precaución p-2">{{ count_baja }}</span>
                     {% endif %}
                     <div class="card-tools">
                         {% if count_media or count_baja %}
