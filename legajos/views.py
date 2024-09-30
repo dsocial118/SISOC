@@ -70,6 +70,8 @@ from legajos.models import (
     LegajoProvincias,
     LegajoLocalidad,
     LegajoMunicipio,
+    LegjosDepatamento,
+    LegajoAsentamientos,
     Intervencion,
     Llamado,
     SubTipoLlamado,
@@ -90,16 +92,34 @@ ROL_ADMIN = "usuarios.rol_admin"
 
 def load_municipios(request):
     provincia_id = request.GET.get("provincia_id")
-    provincia_search = LegajoProvincias.objects.get(id=provincia_id)
-    municipios = LegajoMunicipio.objects.filter(
-        codigo_ifam__startswith=provincia_search.abreviatura
+    municipios = LegjosDepatamento.objects.filter(
+        fk_provincia=provincia_id
     )
-    return JsonResponse(
-        list(municipios.values("id", "departamento_id", "nombre_region")), safe=False
-    )
+    return JsonResponse(list(municipios.values("id", "nombre")), safe=False)
 
 
 def load_localidad(request):
+    municipio_id = request.GET.get("municipio_id")
+    departamento_id = request.GET.get("departamento_id")
+
+    if municipio_id:
+        localidades = LegajoLocalidad.objects.filter(
+            fk_departamento=municipio_id
+        )
+    else:
+        localidades = LegajoLocalidad.objects.filter(
+            fk_municipio=departamento_id
+        )
+    return JsonResponse(list(localidades.values("id", "nombre")), safe=False)
+
+def load_departamento(request):
+    provincia_id = request.GET.get("provincia_id")
+    departamentos = LegjosDepatamento.objects.filter(
+        fk_provincia=provincia_id
+    )
+    return JsonResponse(list(departamentos.values("id", "nombre")), safe=False)
+
+def load_asentamiento(request):
     municipio_id = request.GET.get("municipio_id")
     localidad_search = LegajoMunicipio.objects.get(id=municipio_id)
     localidades = LegajoLocalidad.objects.filter(

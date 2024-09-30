@@ -61,16 +61,7 @@ class LegajoProvincias(models.Model):
     """
     Guardado de las provincias de los vecinos y vecinas registrados.
     """
-
-    iso_provincia = models.CharField(max_length=255)
-    abreviatura = models.CharField(max_length=255)
-    region_id = models.IntegerField()
-    number = models.IntegerField()
     nombre = models.CharField(max_length=255)
-    region_id = models.IntegerField()
-    region_territorial_id = models.IntegerField()
-    uuid = models.CharField(max_length=255)
-    status = models.IntegerField()
 
     def __str__(self):
         return str(self.nombre)
@@ -86,24 +77,36 @@ class LegajoMunicipio(models.Model):
     Guardado de los municipios de los vecinos y vecinas registrados.
     """
 
-    nombre_region = models.CharField(max_length=255)
-    codigo_ifam = models.CharField(max_length=255)
-    carta_organica = models.IntegerField()
-    categoria_id = models.IntegerField()
-    departamento_id = models.IntegerField()
-    iso_provincia = models.CharField(max_length=255)
+    nombre = models.CharField(max_length=255)
+    fk_provincia = models.ForeignKey(
+        LegajoProvincias, on_delete=models.SET_NULL, null=True, blank=True
+    )
 
     def __str__(self):
-        return str(self.nombre_region)
+        return str(self.nombre)
 
     class Meta:
         ordering = ["id"]
         verbose_name = "Municipio"
         verbose_name_plural = "Municipio"
-        indexes = [
-            models.Index(fields=["codigo_ifam"]),
+        indexs = [
+            models.Index(fields=["provincia_id"]),
         ]
 
+class LegjosDepatamento(models.Model):
+    nombre = models.CharField(max_length=255)
+    fk_provincia = models.ForeignKey(
+        LegajoProvincias, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    def __str__(self):
+        return str(self.nombre)
+    class Meta:
+        ordering = ["id"]
+        verbose_name = "Departamento"
+        verbose_name_plural = "Departamento"
+        indexs = [
+            models.Index(fields=["provincia_id"]),
+        ]
 
 class LegajoLocalidad(models.Model):
     """
@@ -111,19 +114,12 @@ class LegajoLocalidad(models.Model):
     """
 
     nombre = models.CharField(max_length=255)
-    cod_bahra = models.BigIntegerField()
-    bahra_gid = models.IntegerField()
-    cod_loc = models.IntegerField()
-    cod_sit = models.IntegerField()
-    cod_entidad = models.IntegerField()
-    lat_gd = models.FloatField()
-    long_gd = models.FloatField()
-    long_gms = models.CharField(max_length=255)
-    the_geom = models.CharField(max_length=255)
-    departamento_id = models.IntegerField()
-    fuente_ubicacion = models.IntegerField()
-    tipo_bahra = models.IntegerField()
-    cod_depto = models.IntegerField()
+    fk_municipio = models.ForeignKey(
+        LegajoMunicipio, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    fk_departamento = models.ForeignKey(
+        LegjosDepatamento, on_delete=models.SET_NULL, null=True, blank=True
+    )
 
     def __str__(self):
         return str(self.nombre)
@@ -132,9 +128,36 @@ class LegajoLocalidad(models.Model):
         verbose_name = "Localidad"
         verbose_name_plural = "Localidad"
         indexes = [
+            models.Index(fields=["municipio_id"]),
             models.Index(fields=["departamento_id"]),
         ]
 
+class LegajoAsentamientos(models.Model):
+    """
+    Guardado de los asentamientos de los vecinos y vecinas registrados.
+    """
+
+    nombre = models.CharField(max_length=255)
+    fk_departamento = models.ForeignKey(
+        LegjosDepatamento, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    fk_municipio = models.ForeignKey(
+        LegajoMunicipio, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    fk_localidad = models.ForeignKey(
+        LegajoLocalidad, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        verbose_name = "Asentamiento"
+        verbose_name_plural = "Asentamientos"
+        indexes = [
+            models.Index(fields=["departamento_id"]),
+            models.Index(fields=["municipio_id"]),
+            models.Index(fields=["localidad_id"]),
+        ]
 
 class Legajos(models.Model):
     """
