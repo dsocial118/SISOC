@@ -89,9 +89,6 @@ class LegajoMunicipio(models.Model):
         ordering = ["id"]
         verbose_name = "Municipio"
         verbose_name_plural = "Municipio"
-        indexs = [
-            models.Index(fields=["provincia_id"]),
-        ]
 
 class LegjosDepatamento(models.Model):
     nombre = models.CharField(max_length=255)
@@ -104,9 +101,6 @@ class LegjosDepatamento(models.Model):
         ordering = ["id"]
         verbose_name = "Departamento"
         verbose_name_plural = "Departamento"
-        indexs = [
-            models.Index(fields=["provincia_id"]),
-        ]
 
 class LegajoLocalidad(models.Model):
     """
@@ -127,10 +121,6 @@ class LegajoLocalidad(models.Model):
     class Meta:
         verbose_name = "Localidad"
         verbose_name_plural = "Localidad"
-        indexes = [
-            models.Index(fields=["municipio_id"]),
-            models.Index(fields=["departamento_id"]),
-        ]
 
 class LegajoAsentamientos(models.Model):
     """
@@ -153,11 +143,6 @@ class LegajoAsentamientos(models.Model):
     class Meta:
         verbose_name = "Asentamiento"
         verbose_name_plural = "Asentamientos"
-        indexes = [
-            models.Index(fields=["departamento_id"]),
-            models.Index(fields=["municipio_id"]),
-            models.Index(fields=["localidad_id"]),
-        ]
 
 class Legajos(models.Model):
     """
