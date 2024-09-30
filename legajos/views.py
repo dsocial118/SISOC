@@ -376,7 +376,6 @@ class LegajosDetailView(DetailView):
             dimensionfamilia = (
                 DimensionFamilia.objects.filter(fk_legajo=pk)
                 .values(
-                    "estado_civil",
                     "cant_hijos",
                     "otro_responsable",
                     "hay_embarazadas",
