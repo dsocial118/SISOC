@@ -121,6 +121,8 @@ INSTALLED_APPS = [
     "multiselectfield",
     "debug_toolbar",
     "silk",
+    "rest_framework",
+    "rest_framework_api_key",
     # Aplicaciones propias
     "usuarios",
     "configuraciones",
