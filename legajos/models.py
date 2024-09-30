@@ -355,9 +355,6 @@ class DimensionFamilia(models.Model):
     """
 
     fk_legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
-    estado_civil = models.CharField(
-        max_length=255, choices=CHOICE_ESTADO_CIVIL, null=True, blank=True
-    )
     cant_hijos = models.SmallIntegerField(
         verbose_name="Cantidad de hijos", null=True, blank=True
     )
@@ -1233,7 +1230,7 @@ class TipoLlamado(models.Model):
 
     nombre = models.CharField(max_length=255)
     fk_programas_llamados = models.ForeignKey(
-        ProgramasLlamados, on_delete=models.SET_NULL, default=1, null=True
+        ProgramasLlamados, on_delete=models.SET_NULL, null=True
     )
 
     def __str__(self):
