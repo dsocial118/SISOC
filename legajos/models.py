@@ -1230,7 +1230,7 @@ class TipoLlamado(models.Model):
 
     nombre = models.CharField(max_length=255)
     fk_programas_llamados = models.ForeignKey(
-        ProgramasLlamados, on_delete=models.SET_NULL, default=1, null=True
+        ProgramasLlamados, on_delete=models.SET_NULL, null=True
     )
 
     def __str__(self):
