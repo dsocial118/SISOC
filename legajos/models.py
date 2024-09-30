@@ -233,7 +233,7 @@ class Legajos(models.Model):
     )  # codigo_ifam es el campo que se relaciona con provincia y departamento_id se relaciona con localidada
     fk_localidad = models.ForeignKey(
         LegajoLocalidad, on_delete=models.SET_NULL, null=True, blank=True
-    )  # departamento_id es el campo que se relaciona con municipio
+    )  # localidad_id es el campo que se relaciona con municipio
     fk_departamento = models.ForeignKey(
         LegjosDepatamento, on_delete=models.SET_NULL, null=True, blank=True
     )  # departamento_id es el campo que se relaciona con municipio
