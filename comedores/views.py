@@ -17,6 +17,7 @@ from django.views.generic import (
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_api_key.permissions import HasAPIKey
 
 from comedores.forms.comedor_form import ComedorForm, ReferenteForm
 from comedores.forms.observacion_form import ObservacionForm
@@ -408,6 +409,8 @@ class ObservacionDeleteView(DeleteView):
 
 
 class ComedorRelevamientoObservacion(APIView):
+    permission_classes = [HasAPIKey]
+
     def post(self, request):
         comedor_data = request.data.get("comedor")
 
