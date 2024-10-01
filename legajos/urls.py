@@ -48,6 +48,7 @@ from legajos.views import (
     LlamadoDeleteView,
     SubEstadosIntervencionesAJax,
     SubEstadosLlamadosAjax,
+    TipoEstadosLlamadosAjax,
     busqueda_hogar,
     busqueda_familiares,
     load_localidad,
@@ -295,6 +296,11 @@ urlpatterns = [
         "ajax/load-subestadosllamados/",
         SubEstadosLlamadosAjax.as_view(),
         name="ajax_load_subestadosllamados",
+    ),
+    path(
+        "ajax/load-tiposllamados/",
+        TipoEstadosLlamadosAjax.as_view(),
+        name="ajax_load_tiposllamados",
     ),
     path(
         "legajos/intervencion/ver/<pk>",

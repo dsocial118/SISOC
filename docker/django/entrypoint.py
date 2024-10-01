@@ -28,7 +28,19 @@ def wait_for_mysql():
 def run_django_commands():
     subprocess.run(["python", "manage.py", "makemigrations"])
     subprocess.run(["python", "manage.py", "migrate", "--noinput"])
+    load_fixtures()
     subprocess.run(["python", "manage.py", "runserver", "0.0.0.0:8000"])
+
+
+def load_fixtures():
+    for root, dirs, files in os.walk("."):
+        if "fixtures" in dirs:
+            fixtures_dir = os.path.join(root, "fixtures")
+            for file in os.listdir(fixtures_dir):
+                if file.endswith(".json"):
+                    fixture_path = os.path.join(fixtures_dir, file)
+                    subprocess.run(["python", "manage.py", "loaddata", fixture_path])
+                    # Carga todos los fixtures .json que esten en SISOC/$APP/fixtures
 
 
 if __name__ == "__main__":
