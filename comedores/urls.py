@@ -1,22 +1,22 @@
-from django.urls import path
 from django.contrib.auth.decorators import login_required
+from django.urls import path
 
 from comedores.views import (
-    ComedorListView,
     ComedorCreateView,
-    ComedorDetailView,
-    ComedorUpdateView,
-    RelevamientoCreateView,
-    RelevamientoDetailView,
-    RelevamientoUpdateView,
-    RelevamientoDeleteView,
     ComedorDeleteView,
+    ComedorDetailView,
+    ComedorListView,
+    ComedorRelevamientoObservacion,
+    ComedorUpdateView,
     ObservacionCreateView,
+    ObservacionDeleteView,
     ObservacionDetailView,
     ObservacionUpdateView,
-    ObservacionDeleteView,
+    RelevamientoCreateView,
+    RelevamientoDeleteView,
+    RelevamientoDetailView,
+    RelevamientoUpdateView,
 )
-
 
 urlpatterns = [
     path(
@@ -83,5 +83,10 @@ urlpatterns = [
         "comedores/<comedor_pk>/observacion/<pk>/eliminar",
         login_required(ObservacionDeleteView.as_view()),
         name="observacion_eliminar",
+    ),
+    path(
+        "api/comedor-relevamiento-observacion",
+        ComedorRelevamientoObservacion.as_view(),
+        name="api_comedor_relevamiento_observacion",
     ),
 ]

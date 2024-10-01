@@ -1,21 +1,21 @@
 from django.contrib import admin
 
 from comedores.models import (
-    Comedor,
-    Observacion,
-    Relevamiento,
-    TipoModalidadPrestacion,
-    TipoEspacio,
-    TipoCombustible,
-    TipoAgua,
-    TipoDesague,
-    FrecuenciaLimpieza,
     CantidadColaboradores,
+    Comedor,
+    FrecuenciaLimpieza,
     FrecuenciaRecepcionRecursos,
-    TipoRecurso,
-    FuenteRecursos,
     FuenteCompras,
+    FuenteRecursos,
+    Observacion,
     Prestacion,
+    Relevamiento,
+    TipoAgua,
+    TipoCombustible,
+    TipoDesague,
+    TipoEspacio,
+    TipoModalidadPrestacion,
+    TipoRecurso,
 )
 
 

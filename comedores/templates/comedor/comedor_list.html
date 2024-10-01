@@ -65,7 +65,9 @@
                                            class="font-weight-bold"
                                            title="Ver detalles">{{ comedor.nombre }}</a>
                                     </td>
-                                    <td>{{ comedor.provincia__nombre }}, {{ comedor.municipio__nombre_region }}, {{ comedor.localidad__nombre }}, {{ comedor.barrio }}</td>
+                                    <td>
+                                        {{ comedor.provincia__nombre }}, {{ comedor.municipio__nombre_region }}, {{ comedor.localidad__nombre }}, {{ comedor.barrio }}
+                                    </td>
                                     <td>{{ comedor.calle }} {{ comedor.numero }}</td>
                                     <td>{{ comedor.referente__nombre }} {{ comedor.referente__apellido }}</td>
                                     <td>{{ comedor.referente__celular|default_if_none:"-" }}</td>

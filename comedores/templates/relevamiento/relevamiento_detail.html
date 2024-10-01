@@ -38,23 +38,23 @@
                 </button>
             </div>
         </div>
-    <div class="card-body card-comments p-0 pb-1">
-        <div class="nav nav-pills row my-3">
-            <div class="nav-item col-6 d-flex justify-content-center">
-                <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
-                    Usuario relevador
-                    <span class="username">{{ relevamiento.relevador__usuario__first_name }} {{ relevamiento.relevador__usuario__last_name }}</span>
+        <div class="card-body card-comments p-0 pb-1">
+            <div class="nav nav-pills row my-3">
+                <div class="nav-item col-6 d-flex justify-content-center">
+                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                        Usuario relevador
+                        <span class="username">{{ relevamiento.relevador__usuario__first_name }} {{ relevamiento.relevador__usuario__last_name }}</span>
+                    </div>
                 </div>
-            </div>
-            <div class="nav-item col-6 d-flex justify-content-center">
-                <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
-                    Fecha y horario de la visita
-                    <span class="username">{{ relevamiento.fecha_visita | default_if_none:"-" }}</span>
+                <div class="nav-item col-6 d-flex justify-content-center">
+                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                        Fecha y horario de la visita
+                        <span class="username">{{ relevamiento.fecha_visita | default_if_none:"-" }}</span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
     <div class="card">
         <div class="card-header">
             <h3 class="card-title font-weight-bold mr-3 pt-1">Información</h3>
@@ -219,7 +219,9 @@
     </div>
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title font-weight-bold mr-3 pt-1">Datos sobre el espacio fisico donde funciona el Comedor/Merendero</h3>
+            <h3 class="card-title font-weight-bold mr-3 pt-1">
+                Datos sobre el espacio fisico donde funciona el Comedor/Merendero
+            </h3>
             <div class="card-tools">
                 <button type="button" class="btn btn-tool" data-card-widget="collapse">
                     <i class="fas fa-minus"></i>
@@ -285,9 +287,7 @@
                 <div class="nav-item col-3 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Para cocinar utiliza:
-                        <span class="username">
-                            {{ relevamiento.gas | default_if_none:"-" }}
-                        </span>
+                        <span class="username">{{ relevamiento.gas | default_if_none:"-" }}</span>
                     </div>
                 </div>
                 <div class="nav-item col-3 d-flex justify-content-center">
@@ -379,7 +379,9 @@
     </div>
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title font-weight-bold mr-3 pt-1">Datos sobre las personas que realizan tareas en el Comedor/Merendero</h3>
+            <h3 class="card-title font-weight-bold mr-3 pt-1">
+                Datos sobre las personas que realizan tareas en el Comedor/Merendero
+            </h3>
             <div class="card-tools">
                 <button type="button" class="btn btn-tool" data-card-widget="collapse">
                     <i class="fas fa-minus"></i>
@@ -533,7 +535,9 @@
     </div>
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title font-weight-bold mr-3 pt-1">Datos sobre la realizacion de compras para abastecer el Comedor/Merendero</h3>
+            <h3 class="card-title font-weight-bold mr-3 pt-1">
+                Datos sobre la realizacion de compras para abastecer el Comedor/Merendero
+            </h3>
             <div class="card-tools">
                 <button type="button" class="btn btn-tool" data-card-widget="collapse">
                     <i class="fas fa-minus"></i>
@@ -604,7 +608,7 @@
                 </div>
             </div>
         </div>
-    </div>    
+    </div>
     <div class="card">
         <div class="card-header">
             <h3 class="card-title font-weight-bold mr-3 pt-1">Datos sobre la prestacion alimentaria</h3>
