@@ -74,6 +74,7 @@ from legajos.models import (
     Llamado,
     SubTipoLlamado,
     SubIntervencion,
+    TipoLlamado,
 )
 from usuarios.mixins import PermisosMixin
 from usuarios.utils import recortar_imagen
@@ -2204,6 +2205,20 @@ class SubEstadosLlamadosAjax(View):
             sub_estados = SubTipoLlamado.objects.filter(fk_tipo_llamado=request_id)
         else:
             sub_estados = SubTipoLlamado.objects.all()
+        data = [
+            {"id": sub_estado.id, "text": sub_estado.nombre}
+            for sub_estado in sub_estados
+        ]
+        return JsonResponse(data, safe=False)
+
+
+class TipoEstadosLlamadosAjax(View):
+    def get(self, request):
+        request_id = request.GET.get("id", None)
+        if request_id:
+            sub_estados = TipoLlamado.objects.filter(fk_programas_llamados=request_id)
+        else:
+            sub_estados = TipoLlamado.objects.all()
         data = [
             {"id": sub_estado.id, "text": sub_estado.nombre}
             for sub_estado in sub_estados
