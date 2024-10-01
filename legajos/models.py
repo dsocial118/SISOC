@@ -227,19 +227,19 @@ class Legajos(models.Model):
     modificado = models.DateField(auto_now=True)
     fk_provincia = models.ForeignKey(
         LegajoProvincias, on_delete=models.SET_NULL, null=True, blank=True
-    )  # abreviatura es el campo que relacion a municipio
+    )
     fk_municipio = models.ForeignKey(
         LegajoMunicipio, on_delete=models.SET_NULL, null=True, blank=True
-    )  # codigo_ifam es el campo que se relaciona con provincia y departamento_id se relaciona con localidada
+    )
     fk_localidad = models.ForeignKey(
         LegajoLocalidad, on_delete=models.SET_NULL, null=True, blank=True
-    )  # localidad_id es el campo que se relaciona con municipio
+    )
     fk_departamento = models.ForeignKey(
         LegjosDepatamento, on_delete=models.SET_NULL, null=True, blank=True
-    )  # departamento_id es el campo que se relaciona con municipio
+    )
     fk_asentamiento = models.ForeignKey(
         LegajoAsentamientos, on_delete=models.SET_NULL, null=True, blank=True
-    )  # departamento_id es el campo que se relaciona con municip
+    )
     def __str__(self):
         return f"{self.apellido}, {self.nombre}"
 
