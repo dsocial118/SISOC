@@ -5,11 +5,11 @@ from django.urls import reverse
 from usuarios.models import Usuarios
 
 from .choices import (
-    CHOICE_TIPO_ORGANISMO,
     CHOICE_BARRIOS,
-    CHOICE_LOCALIDAD,
-    CHOICE_JURISDICCION,
     CHOICE_DIMENSIONES,
+    CHOICE_JURISDICCION,
+    CHOICE_LOCALIDAD,
+    CHOICE_TIPO_ORGANISMO,
 )
 
 # -------------------------------CONFIGURACIONES GENERALES (se usan en todo el proyecto)--------------------------------------

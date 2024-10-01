@@ -4,21 +4,21 @@ from django.forms.models import inlineformset_factory
 from configuraciones.choices import CHOICE_CRITERIO_ALERTA
 
 from .models import (
-    Secretarias,
-    Subsecretarias,
-    Programas,
-    Organismos,
-    PlanesSociales,
-    AgentesExternos,
-    GruposDestinatarios,
-    CategoriaAlertas,
-    Alertas,
-    Equipos,
     Acciones,
+    AgentesExternos,
+    Alertas,
+    CategoriaAlertas,
     Criterios,
-    Vacantes,
+    Equipos,
+    GruposDestinatarios,
     IndiceCriterios,
     Indices,
+    Organismos,
+    PlanesSociales,
+    Programas,
+    Secretarias,
+    Subsecretarias,
+    Vacantes,
 )
 
 

@@ -1,9 +1,9 @@
 import calendar  # pylint: disable=too-many-lines
 import json
-import logging
 
 # Configurar el locale para usar el idioma español
 import locale
+import logging
 from datetime import date, datetime, timedelta
 
 from django.contrib import messages
@@ -28,8 +28,8 @@ from django.views.generic import (
     View,
 )
 
-from configuraciones.models import Alertas, CategoriaAlertas, Organismos, Programas
 from configuraciones.choices import CHOICE_CIRCUITOS, CHOICE_DIMENSIONES
+from configuraciones.models import Alertas, CategoriaAlertas, Organismos, Programas
 from legajos.choices import (
     CHOICE_ESTADO_DERIVACION,
     CHOICE_NACIONALIDAD,
@@ -37,50 +37,46 @@ from legajos.choices import (
     VINCULO_MAP,
 )
 from legajos.forms import (
+    DimensionEconomiaForm,
     DimensionEducacionForm,
+    DimensionFamiliaForm,
     DimensionSaludForm,
+    DimensionTrabajoForm,
     DimensionViviendaForm,
+    IntervencionForm,
     LegajoGrupoHogarForm,
     LegajosAlertasForm,
     LegajosArchivosForm,
     LegajosDerivacionesForm,
-    DimensionFamiliaForm,
-    DimensionEconomiaForm,
-    DimensionTrabajoForm,
     LegajosForm,
     LegajosUpdateForm,
-    NuevoLegajoFamiliarForm,
-    IntervencionForm,
     LlamadoForm,
+    NuevoLegajoFamiliarForm,
 )
 from legajos.models import (
-    DimensionFamilia,
-    DimensionVivienda,
-    DimensionSalud,
     DimensionEconomia,
     DimensionEducacion,
+    DimensionFamilia,
+    DimensionSalud,
     DimensionTrabajo,
+    DimensionVivienda,
     HistorialLegajoAlertas,
-    LegajosDerivaciones,
-    Legajos,
-    LegajoGrupoFamiliar,
+    Intervencion,
     LegajoAlertas,
+    LegajoGrupoFamiliar,
     LegajoGrupoHogar,
-    LegajosArchivos,
-    LegajoProvincias,
     LegajoLocalidad,
     LegajoMunicipio,
-    LegajoDepartamento,
-    LegajoAsentamientos,
-    Intervencion,
+    LegajoProvincias,
+    Legajos,
+    LegajosArchivos,
+    LegajosDerivaciones,
     Llamado,
-    SubTipoLlamado,
     SubIntervencion,
-    TipoLlamado,
+    SubTipoLlamado,
 )
 from usuarios.mixins import PermisosMixin
 from usuarios.utils import recortar_imagen
-
 
 locale.setlocale(locale.LC_ALL, "es_AR.UTF-8")
 
