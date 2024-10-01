@@ -65,6 +65,9 @@
                             <input type="hidden" name="fk_legajo" value="{{ object.id }}" />
                             <input type="hidden" name="fk_usuario" value="{{ request.user.id }}" />
                             <div class="col-sm-6">
+                                <div class="form-group">{{ form.fk_programas_llamados| as_crispy_field }}</div>
+                            </div>
+                            <div class="col-sm-6">
                                 <div class="form-group">{{ form.fk_tipo_llamado| as_crispy_field }}</div>
                             </div>
                             <div class="col-sm-6">
@@ -89,27 +92,9 @@
 {% endblock %}
 {% block customJS %}
     <script>
-    $(document).ready(function() {
-        $('.tipo_llamado-select').change(function() {
-            var estadoId = $(this).val();
-            $.ajax({
-                url: "{% url 'ajax_load_subestadosllamados' %}",
-                data: {
-                    'id': estadoId
-                },
-                success: function(data) {
-                    var $subIntervencion = $('.subtipollamado-select');
-                    $subIntervencion.empty();
-                    $.each(data, function(index, item) {
-                        $subIntervencion.append($('<option>', {
-                            value: item.id,
-                            text: item.text
-                        }));
-                    });
-                }
-            });
-        });
-    });
+        var ajaxLoadSubLlamados = "{% url 'ajax_load_subestadosllamados' %}";
+        var ajaxLoadLlamadosTipos = "{% url 'ajax_load_tiposllamados' %}";
     </script>
+    <script src="{% static 'custom/js/legajosllamados.js' %}"></script>
 {% endblock %}
 ;
