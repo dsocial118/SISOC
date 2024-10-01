@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import LegajoProvincias, LegajoMunicipio, LegajoLocalidad
+
+from .models import LegajoLocalidad, LegajoMunicipio, LegajoProvincias
 
 
 @admin.register(LegajoProvincias)
