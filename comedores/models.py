@@ -1,10 +1,11 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
-from django.core.validators import MaxValueValidator, MinValueValidator
+from django.forms.models import model_to_dict
 
-from legajos.models import LegajoLocalidad, LegajoMunicipio, LegajoProvincias, Legajos
+from legajos.models import LegajoLocalidad, LegajoMunicipio, LegajoProvincias
 from usuarios.models import Usuarios
+
 
 class TipoModalidadPrestacion(models.Model):
     """
@@ -559,11 +560,17 @@ class Comedor(models.Model):
     numero = models.PositiveIntegerField()
     entre_calle_1 = models.CharField(max_length=255, blank=True, null=True)
     entre_calle_2 = models.CharField(max_length=255, blank=True, null=True)
-    provincia = models.ForeignKey(to=LegajoProvincias, on_delete=models.PROTECT)
-    municipio = models.ForeignKey(to=LegajoMunicipio, on_delete=models.PROTECT)
-    localidad = models.ForeignKey(to=LegajoLocalidad, on_delete=models.PROTECT)
-    partido = models.CharField(max_length=255)
-    barrio = models.CharField(max_length=255)
+    provincia = models.ForeignKey(
+        to=LegajoProvincias, on_delete=models.PROTECT, null=True
+    )
+    municipio = models.ForeignKey(
+        to=LegajoMunicipio, on_delete=models.PROTECT, null=True
+    )
+    localidad = models.ForeignKey(
+        to=LegajoLocalidad, on_delete=models.PROTECT, null=True
+    )
+    partido = models.CharField(max_length=255, null=True)
+    barrio = models.CharField(max_length=255, null=True)
     codigo_postal = models.IntegerField(
         validators=[
             MinValueValidator(1000),
@@ -573,6 +580,16 @@ class Comedor(models.Model):
     referente = models.ForeignKey(
         to=Referente, on_delete=models.SET_NULL, null=True, blank=True
     )
+
+    unique_key = models.CharField(max_length=255, unique=True, editable=False)
+
+    def save(self, *args, **kwargs):
+        from comedores.services.comedor_service import (  # pylint: disable=import-outside-toplevel
+            ComedorService,
+        )
+
+        self.unique_key = ComedorService.generar_unique_key(model_to_dict(self))
+        super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         return str(self.nombre)
