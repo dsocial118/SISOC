@@ -1,38 +1,42 @@
 from typing import Any
+
+from django.contrib import messages
 from django.db.models.base import Model
 from django.forms import BaseModelForm
 from django.http import HttpResponse
+from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
-from django.shortcuts import redirect
-from django.contrib import messages
 from django.views.generic import (
-    ListView,
     CreateView,
-    DetailView,
-    UpdateView,
     DeleteView,
+    DetailView,
+    ListView,
+    UpdateView,
 )
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from comedores.services.comedor_service import ComedorService
 from comedores.forms.comedor_form import ComedorForm, ReferenteForm
+from comedores.forms.observacion_form import ObservacionForm
 from comedores.forms.relevamiento_form import (
-    RelevamientoForm,
-    FuncionamientoPrestacionForm,
-    EspacioForm,
-    EspacioCocinaForm,
-    EspacioPrestacionForm,
     ColaboradoresForm,
-    FuenteRecursosForm,
+    EspacioCocinaForm,
+    EspacioForm,
+    EspacioPrestacionForm,
     FuenteComprasForm,
+    FuenteRecursosForm,
+    FuncionamientoPrestacionForm,
     PrestacionForm,
+    RelevamientoForm,
 )
-from comedores.forms.observacion_form import (
-    ObservacionForm,
-)
-from comedores.models import Comedor, Relevamiento, Observacion, Prestacion
+from comedores.models import Comedor, Observacion, Prestacion, Relevamiento
+from comedores.serializers.comedor_serializer import ComedorSerializer
+from comedores.services.comedor_service import ComedorService
 from comedores.services.relevamiento_service import RelevamientoService
 from usuarios.models import Usuarios
+
 
 class ComedorListView(ListView):
     model = Comedor
@@ -401,3 +405,23 @@ class ObservacionDeleteView(DeleteView):
         comedor = self.object.comedor
 
         return reverse_lazy("comedor_detalle", kwargs={"pk": comedor.id})
+
+
+class ComedorRelevamientoObservacion(APIView):
+    def post(self, request):
+        comedor_data = request.data.get("comedor")
+
+        comedor_serializer = ComedorSerializer(data=comedor_data).clean()
+        if comedor_serializer.is_valid():
+            comedor_serializer.save()
+        else:
+            return Response(
+                comedor_serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return Response(
+            {
+                "comedor": comedor_serializer.data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
