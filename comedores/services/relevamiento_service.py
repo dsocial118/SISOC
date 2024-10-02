@@ -32,10 +32,13 @@ class RelevamientoService:
         prestacion = extra_forms["prestacion_form"].save()
         relevamiento.prestacion = prestacion
 
-        relevamiento.relevador = Usuarios.objects.get(pk=user_id)
+        usuario = Usuarios.objects.get(pk=user_id).usuario
+        relevamiento.relevador = f"{usuario.first_name} {usuario.last_name}"
         relevamiento.fecha_visita = timezone.now()
 
-        return relevamiento.save()
+        relevamiento.save()
+
+        return relevamiento
 
     @staticmethod
     def generar_string_gas(relevamiento_id):
@@ -65,8 +68,7 @@ class RelevamientoService:
             .filter(pk=relevamiento_id)
             .values(
                 "id",
-                "relevador__usuario__first_name",
-                "relevador__usuario__last_name",
+                "relevador",
                 "comedor__nombre",
                 "fecha_visita",
                 "comedor__comienzo",
