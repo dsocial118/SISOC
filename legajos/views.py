@@ -93,7 +93,7 @@ ROL_ADMIN = "usuarios.rol_admin"
 
 def load_municipios(request):
     provincia_id = request.GET.get("provincia_id")
-    municipios = LegjosDepatamento.objects.filter(fk_provincia=provincia_id)
+    municipios = LegajoMunicipio.objects.filter(fk_provincia=provincia_id)
     return JsonResponse(list(municipios.values("id", "nombre")), safe=False)
 
 

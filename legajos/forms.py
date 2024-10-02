@@ -82,7 +82,7 @@ class LegajosForm(forms.ModelForm):
                 municipio_id = int(self.data.get("fk_municipio"))
                 self.fields["fk_municipio"].queryset = LegajoMunicipio.objects.filter(
                     id=municipio_id
-                ).order_by("nombre_region")
+                ).order_by("nombre")
             except (ValueError, TypeError):
                 self.fields["fk_municipio"].queryset = LegajoMunicipio.objects.none()
 
