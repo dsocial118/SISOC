@@ -105,11 +105,11 @@ def load_localidad(request):
 
     if municipio_id:
         localidades = LegajoLocalidad.objects.filter(
-            fk_departamento=municipio_id
+            fk_municipio=municipio_id
         )
     else:
         localidades = LegajoLocalidad.objects.filter(
-            fk_municipio=departamento_id
+            fk_departamento=departamento_id
         )
     return JsonResponse(list(localidades.values("id", "nombre")), safe=False)
 
@@ -122,9 +122,16 @@ def load_departamento(request):
 
 def load_asentamiento(request):
     municipio_id = request.GET.get("municipio_id")
-    asentamientos = LegajoAsentamientos.objects.filter(
-        fk_localidad=municipio_id
-    )
+    departamento_id = request.GET.get("departamento_id")
+
+    if municipio_id:
+        asentamientos = LegajoAsentamientos.objects.filter(
+            fk_localidad=municipio_id
+        )
+    else:
+        asentamientos = LegajoAsentamientos.objects.filter(
+            fk_departamento=departamento_id
+        )
     return JsonResponse(list(asentamientos.values("id", "nombre")), safe=False)
 
 
