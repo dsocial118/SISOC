@@ -34,6 +34,7 @@ from comedores.forms.relevamiento_form import (
 )
 from comedores.models import Comedor, Observacion, Prestacion, Relevamiento
 from comedores.serializers.comedor_serializer import ComedorSerializer
+from comedores.serializers.relevamiento_serializer import RelevamientoSerializer
 from comedores.services.comedor_service import ComedorService
 from comedores.services.relevamiento_service import RelevamientoService
 from usuarios.models import Usuarios
@@ -334,7 +335,8 @@ class ObservacionCreateView(CreateView):
 
     def form_valid(self, form: BaseModelForm) -> HttpResponse:
         form.instance.comedor_id = Comedor.objects.get(pk=self.kwargs["comedor_pk"]).id
-        form.instance.observador = Usuarios.objects.get(pk=self.request.user.id)
+        usuario = Usuarios.objects.get(pk=self.request.user.id).usuario
+        form.instance.observador = f"{usuario.first_name} {usuario.last_name}"
         form.instance.fecha = timezone.now()
 
         self.object = form.save()
@@ -360,8 +362,7 @@ class ObservacionDetailView(DetailView):
                 "observacion",
                 "comedor__id",
                 "comedor__nombre",
-                "observador__usuario__first_name",
-                "observador__usuario__last_name",
+                "observador",
             )
             .get(pk=self.kwargs["pk"])
         )
@@ -385,7 +386,8 @@ class ObservacionUpdateView(UpdateView):
 
     def form_valid(self, form: BaseModelForm) -> HttpResponse:
         form.instance.comedor_id = Comedor.objects.get(pk=self.kwargs["comedor_pk"]).id
-        form.instance.observador = Usuarios.objects.get(pk=self.request.user.id)
+        usuario = Usuarios.objects.get(pk=self.request.user.id).usuario
+        form.instance.observador = f"{usuario.first_name} {usuario.last_name}"
         form.instance.fecha = timezone.now()
 
         self.object = form.save()
@@ -413,18 +415,29 @@ class ComedorRelevamientoObservacion(APIView):
 
     def post(self, request):
         comedor_data = request.data.get("comedor")
+        relevamiento_data = request.data.get("relevamiento")
 
         comedor_serializer = ComedorSerializer(data=comedor_data).clean()
         if comedor_serializer.is_valid():
             comedor_serializer.save()
+            relevamiento_data["comedor"] = comedor_serializer.data["id"]
         else:
             return Response(
                 comedor_serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
 
+        relevamiento_serializer = RelevamientoSerializer(data=relevamiento_data).clean()
+        if relevamiento_serializer.is_valid():
+            relevamiento_serializer.save()
+        else:
+            return Response(
+                relevamiento_serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+
         return Response(
             {
                 "comedor": comedor_serializer.data,
+                "relevamiento": relevamiento_serializer.data,
             },
             status=status.HTTP_201_CREATED,
         )

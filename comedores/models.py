@@ -621,7 +621,7 @@ class Relevamiento(models.Model):
         to=Comedor,
         on_delete=models.CASCADE,
     )
-    relevador = models.ForeignKey(Usuarios, on_delete=models.SET_NULL, null=True)
+    relevador = models.CharField(max_length=255, blank=True)
     fecha_visita = models.DateTimeField(default=timezone.now, blank=True)
     funcionamiento = models.OneToOneField(
         to=FuncionamientoPrestacion,
@@ -661,9 +661,7 @@ class Observacion(models.Model):
     Modelo que representa una observación realizada en un Comedor/Merendero.
     """
 
-    observador = models.ForeignKey(
-        to=Usuarios, on_delete=models.SET_NULL, null=True, blank=True
-    )
+    observador = models.CharField(max_length=255, blank=True)
     comedor = models.ForeignKey(
         to=Comedor,
         on_delete=models.CASCADE,
