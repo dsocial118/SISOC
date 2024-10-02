@@ -1,0 +1,170 @@
+[
+    {
+        "model": "legajos.LegajoProvincias",
+        "pk": "02",
+        "fields": {
+            "nombre": "Ciudad Autónoma de Buenos Aires"
+        }
+    },
+    {
+        "model": "legajos.LegajoProvincias",
+        "pk": "58",
+        "fields": {
+            "nombre": "Neuquén"
+        }
+    },
+    {
+        "model": "legajos.LegajoProvincias",
+        "pk": "74",
+        "fields": {
+            "nombre": "San Luis"
+        }
+    },
+    {
+        "model": "legajos.LegajoProvincias",
+        "pk": "82",
+        "fields": {
+            "nombre": "Santa Fe"
+        }
+    },
+    {
+        "model": "legajos.LegajoProvincias",
+        "pk": "46",
+        "fields": {
+            "nombre": "La Rioja"
+        }
+    },
+    {
+        "model": "legajos.LegajoProvincias",
+        "pk": "10",
+        "fields": {
+            "nombre": "Catamarca"
+        }
+    },
+    {
+        "model": "legajos.LegajoProvincias",
+        "pk": "90",
+        "fields": {
+            "nombre": "Tucumán"
+        }
+    },
+    {
+        "model": "legajos.LegajoProvincias",
+        "pk": "22",
+        "fields": {
+            "nombre": "Chaco"
+        }
+    },
+    {
+        "model": "legajos.LegajoProvincias",
+        "pk": "34",
+        "fields": {
+            "nombre": "Formosa"
+        }
+    },
+    {
+        "model": "legajos.LegajoProvincias",
+        "pk": "78",
+        "fields": {
+            "nombre": "Santa Cruz"
+        }
+    },
+    {
+        "model": "legajos.LegajoProvincias",
+        "pk": "26",
+        "fields": {
+            "nombre": "Chubut"
+        }
+    },
+    {
+        "model": "legajos.LegajoProvincias",
+        "pk": "50",
+        "fields": {
+            "nombre": "Mendoza"
+        }
+    },
+    {
+        "model": "legajos.LegajoProvincias",
+        "pk": "30",
+        "fields": {
+            "nombre": "Entre Ríos"
+        }
+    },
+    {
+        "model": "legajos.LegajoProvincias",
+        "pk": "70",
+        "fields": {
+            "nombre": "San Juan"
+        }
+    },
+    {
+        "model": "legajos.LegajoProvincias",
+        "pk": "38",
+        "fields": {
+            "nombre": "Jujuy"
+        }
+    },
+    {
+        "model": "legajos.LegajoProvincias",
+        "pk": "86",
+        "fields": {
+            "nombre": "Santiago del Estero"
+        }
+    },
+    {
+        "model": "legajos.LegajoProvincias",
+        "pk": "62",
+        "fields": {
+            "nombre": "Río Negro"
+        }
+    },
+    {
+        "model": "legajos.LegajoProvincias",
+        "pk": "18",
+        "fields": {
+            "nombre": "Corrientes"
+        }
+    },
+    {
+        "model": "legajos.LegajoProvincias",
+        "pk": "54",
+        "fields": {
+            "nombre": "Misiones"
+        }
+    },
+    {
+        "model": "legajos.LegajoProvincias",
+        "pk": "66",
+        "fields": {
+            "nombre": "Salta"
+        }
+    },
+    {
+        "model": "legajos.LegajoProvincias",
+        "pk": "14",
+        "fields": {
+            "nombre": "Córdoba"
+        }
+    },
+    {
+        "model": "legajos.LegajoProvincias",
+        "pk": "06",
+        "fields": {
+            "nombre": "Buenos Aires"
+        }
+    },
+    {
+        "model": "legajos.LegajoProvincias",
+        "pk": "42",
+        "fields": {
+            "nombre": "La Pampa"
+        }
+    },
+    {
+        "model": "legajos.LegajoProvincias",
+        "pk": "94",
+        "fields": {
+            "nombre": "Tierra del Fuego, Antártida e Islas del Atlántico Sur"
+        }
+    }
+]

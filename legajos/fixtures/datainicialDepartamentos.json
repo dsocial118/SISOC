@@ -1,0 +1,4234 @@
+[
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06014",
+        "fields": {
+            "nombre": "Adolfo Gonzales Chaves",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "30015",
+        "fields": {
+            "nombre": "Concordia",
+            "fk_provincia": "30"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "30035",
+        "fields": {
+            "nombre": "Federal",
+            "fk_provincia": "30"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "30056",
+        "fields": {
+            "nombre": "Gualeguaychú",
+            "fk_provincia": "30"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "30063",
+        "fields": {
+            "nombre": "Islas del Ibicuy",
+            "fk_provincia": "30"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "30105",
+        "fields": {
+            "nombre": "Victoria",
+            "fk_provincia": "30"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "30021",
+        "fields": {
+            "nombre": "Diamante",
+            "fk_provincia": "30"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "30098",
+        "fields": {
+            "nombre": "Uruguay",
+            "fk_provincia": "30"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "30084",
+        "fields": {
+            "nombre": "Paraná",
+            "fk_provincia": "30"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06707",
+        "fields": {
+            "nombre": "Saladillo",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06455",
+        "fields": {
+            "nombre": "Las Flores",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06686",
+        "fields": {
+            "nombre": "Rojas",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06252",
+        "fields": {
+            "nombre": "Escobar",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06412",
+        "fields": {
+            "nombre": "José C. Paz",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06056",
+        "fields": {
+            "nombre": "Bahía Blanca",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06735",
+        "fields": {
+            "nombre": "San Antonio de Areco",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06511",
+        "fields": {
+            "nombre": "Maipú",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06280",
+        "fields": {
+            "nombre": "General Alvarado",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06357",
+        "fields": {
+            "nombre": "General Pueyrredón",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06518",
+        "fields": {
+            "nombre": "Mar Chiquita",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06868",
+        "fields": {
+            "nombre": "Villa Gesell",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06644",
+        "fields": {
+            "nombre": "Pinamar",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06336",
+        "fields": {
+            "nombre": "General Lavalle",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06420",
+        "fields": {
+            "nombre": "La Costa",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06505",
+        "fields": {
+            "nombre": "Magdalena",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "18175",
+        "fields": {
+            "nombre": "Sauce",
+            "fk_provincia": "18"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06861",
+        "fields": {
+            "nombre": "Vicente López",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "66098",
+        "fields": {
+            "nombre": "La Viña",
+            "fk_provincia": "66"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06672",
+        "fields": {
+            "nombre": "Rauch",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "66112",
+        "fields": {
+            "nombre": "Metán",
+            "fk_provincia": "66"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "66119",
+        "fields": {
+            "nombre": "Molinos",
+            "fk_provincia": "66"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "22112",
+        "fields": {
+            "nombre": "O'Higgins",
+            "fk_provincia": "22"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06560",
+        "fields": {
+            "nombre": "Moreno",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06427",
+        "fields": {
+            "nombre": "La Matanza",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06791",
+        "fields": {
+            "nombre": "Tandil",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06203",
+        "fields": {
+            "nombre": "Coronel Suárez",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "46035",
+        "fields": {
+            "nombre": "Chamical",
+            "fk_provincia": "46"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "26035",
+        "fields": {
+            "nombre": "Futaleufú",
+            "fk_provincia": "26"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "78049",
+        "fields": {
+            "nombre": "Río Chico",
+            "fk_provincia": "78"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "62077",
+        "fields": {
+            "nombre": "San Antonio",
+            "fk_provincia": "62"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "86014",
+        "fields": {
+            "nombre": "Alberdi",
+            "fk_provincia": "86"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "86098",
+        "fields": {
+            "nombre": "Juan Felipe Ibarra",
+            "fk_provincia": "86"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "86077",
+        "fields": {
+            "nombre": "General Taboada",
+            "fk_provincia": "86"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06721",
+        "fields": {
+            "nombre": "Salliqueló",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06091",
+        "fields": {
+            "nombre": "Berazategui",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "66049",
+        "fields": {
+            "nombre": "General Güemes",
+            "fk_provincia": "66"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "66154",
+        "fields": {
+            "nombre": "San Carlos",
+            "fk_provincia": "66"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06343",
+        "fields": {
+            "nombre": "General Paz",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06308",
+        "fields": {
+            "nombre": "General Guido",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06315",
+        "fields": {
+            "nombre": "General Juan Madariaga",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "78028",
+        "fields": {
+            "nombre": "Lago Argentino",
+            "fk_provincia": "78"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "86154",
+        "fields": {
+            "nombre": "Rivadavia",
+            "fk_provincia": "86"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "86126",
+        "fields": {
+            "nombre": "Ojo de Agua",
+            "fk_provincia": "86"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "86063",
+        "fields": {
+            "nombre": "Choya",
+            "fk_provincia": "86"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "74042",
+        "fields": {
+            "nombre": "Gobernador Dupuy",
+            "fk_provincia": "74"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "66014",
+        "fields": {
+            "nombre": "Cachi",
+            "fk_provincia": "66"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "66042",
+        "fields": {
+            "nombre": "Chicoana",
+            "fk_provincia": "66"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "26042",
+        "fields": {
+            "nombre": "Gaiman",
+            "fk_provincia": "26"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "26077",
+        "fields": {
+            "nombre": "Rawson",
+            "fk_provincia": "26"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "46077",
+        "fields": {
+            "nombre": "General Lamadrid",
+            "fk_provincia": "46"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "74007",
+        "fields": {
+            "nombre": "Ayacucho",
+            "fk_provincia": "74"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "22036",
+        "fields": {
+            "nombre": "12 de Octubre",
+            "fk_provincia": "22"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "14175",
+        "fields": {
+            "nombre": "Tulumba",
+            "fk_provincia": "14"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "14028",
+        "fields": {
+            "nombre": "Cruz del Eje",
+            "fk_provincia": "14"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "14091",
+        "fields": {
+            "nombre": "Punilla",
+            "fk_provincia": "14"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "02042",
+        "fields": {
+            "nombre": "Comuna 6",
+            "fk_provincia": "02"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "50112",
+        "fields": {
+            "nombre": "Santa Rosa",
+            "fk_provincia": "50"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "22063",
+        "fields": {
+            "nombre": "General Güemes",
+            "fk_provincia": "22"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "46084",
+        "fields": {
+            "nombre": "General Ortiz de Ocampo",
+            "fk_provincia": "46"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "14035",
+        "fields": {
+            "nombre": "General Roca",
+            "fk_provincia": "14"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "34042",
+        "fields": {
+            "nombre": "Pilagás",
+            "fk_provincia": "34"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "34021",
+        "fields": {
+            "nombre": "Laishi",
+            "fk_provincia": "34"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "50084",
+        "fields": {
+            "nombre": "Rivadavia",
+            "fk_provincia": "50"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06819",
+        "fields": {
+            "nombre": "Tornquist",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "50042",
+        "fields": {
+            "nombre": "La Paz",
+            "fk_provincia": "50"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06196",
+        "fields": {
+            "nombre": "Coronel Pringles",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "62028",
+        "fields": {
+            "nombre": "Conesa",
+            "fk_provincia": "62"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06875",
+        "fields": {
+            "nombre": "Villarino",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "34056",
+        "fields": {
+            "nombre": "Pirané",
+            "fk_provincia": "34"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06351",
+        "fields": {
+            "nombre": "General Pinto",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06742",
+        "fields": {
+            "nombre": "San Cayetano",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06833",
+        "fields": {
+            "nombre": "Tres Arroyos",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06189",
+        "fields": {
+            "nombre": "Coronel Dorrego",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06581",
+        "fields": {
+            "nombre": "Necochea",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "46105",
+        "fields": {
+            "nombre": "Independencia",
+            "fk_provincia": "46"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06218",
+        "fields": {
+            "nombre": "Chascomús",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06655",
+        "fields": {
+            "nombre": "Punta Indio",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "38014",
+        "fields": {
+            "nombre": "El Carmen",
+            "fk_provincia": "38"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "14147",
+        "fields": {
+            "nombre": "Santa María",
+            "fk_provincia": "14"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "62084",
+        "fields": {
+            "nombre": "Valcheta",
+            "fk_provincia": "62"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "46007",
+        "fields": {
+            "nombre": "Arauco",
+            "fk_provincia": "46"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06466",
+        "fields": {
+            "nombre": "Lezama",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06126",
+        "fields": {
+            "nombre": "Campana",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "78042",
+        "fields": {
+            "nombre": "Magallanes",
+            "fk_provincia": "78"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "78007",
+        "fields": {
+            "nombre": "Corpen Aike",
+            "fk_provincia": "78"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "14070",
+        "fields": {
+            "nombre": "Minas",
+            "fk_provincia": "14"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "14126",
+        "fields": {
+            "nombre": "San Alberto",
+            "fk_provincia": "14"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "14119",
+        "fields": {
+            "nombre": "Río Segundo",
+            "fk_provincia": "14"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "14140",
+        "fields": {
+            "nombre": "San Justo",
+            "fk_provincia": "14"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "14182",
+        "fields": {
+            "nombre": "Unión",
+            "fk_provincia": "14"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "14161",
+        "fields": {
+            "nombre": "Tercero Arriba",
+            "fk_provincia": "14"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "66035",
+        "fields": {
+            "nombre": "Cerrillos",
+            "fk_provincia": "66"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "14098",
+        "fields": {
+            "nombre": "Río Cuarto",
+            "fk_provincia": "14"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "50126",
+        "fields": {
+            "nombre": "Tupungato",
+            "fk_provincia": "50"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "62049",
+        "fields": {
+            "nombre": "9 de Julio",
+            "fk_provincia": "62"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "62056",
+        "fields": {
+            "nombre": "Ñorquinco",
+            "fk_provincia": "62"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "50105",
+        "fields": {
+            "nombre": "San Rafael",
+            "fk_provincia": "50"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "66007",
+        "fields": {
+            "nombre": "Anta",
+            "fk_provincia": "66"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "58098",
+        "fields": {
+            "nombre": "Picún Leufú",
+            "fk_provincia": "58"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "58112",
+        "fields": {
+            "nombre": "Zapala",
+            "fk_provincia": "58"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "62091",
+        "fields": {
+            "nombre": "25 de Mayo",
+            "fk_provincia": "62"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "26105",
+        "fields": {
+            "nombre": "Telsen",
+            "fk_provincia": "26"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "62070",
+        "fields": {
+            "nombre": "Pilcaniyeu",
+            "fk_provincia": "62"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06007",
+        "fields": {
+            "nombre": "Adolfo Alsina",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "50014",
+        "fields": {
+            "nombre": "General Alvear",
+            "fk_provincia": "50"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "66077",
+        "fields": {
+            "nombre": "La Caldera",
+            "fk_provincia": "66"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "22154",
+        "fields": {
+            "nombre": "Sargento Cabral",
+            "fk_provincia": "22"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06616",
+        "fields": {
+            "nombre": "Pellegrini",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "58007",
+        "fields": {
+            "nombre": "Aluminé",
+            "fk_provincia": "58"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "66070",
+        "fields": {
+            "nombre": "Iruya",
+            "fk_provincia": "66"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "58056",
+        "fields": {
+            "nombre": "Lácar",
+            "fk_provincia": "58"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "10063",
+        "fields": {
+            "nombre": "Fray Mamerto Esquiú",
+            "fk_provincia": "10"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "10112",
+        "fields": {
+            "nombre": "Valle Viejo",
+            "fk_provincia": "10"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "18133",
+        "fields": {
+            "nombre": "San Cosme",
+            "fk_provincia": "18"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "26091",
+        "fields": {
+            "nombre": "Sarmiento",
+            "fk_provincia": "26"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "02007",
+        "fields": {
+            "nombre": "Comuna 1",
+            "fk_provincia": "02"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "02028",
+        "fields": {
+            "nombre": "Comuna 4",
+            "fk_provincia": "02"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "62035",
+        "fields": {
+            "nombre": "El Cuy",
+            "fk_provincia": "62"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "50049",
+        "fields": {
+            "nombre": "Las Heras",
+            "fk_provincia": "50"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "22161",
+        "fields": {
+            "nombre": "Tapenagá",
+            "fk_provincia": "22"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "50056",
+        "fields": {
+            "nombre": "Lavalle",
+            "fk_provincia": "50"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "50077",
+        "fields": {
+            "nombre": "Malargüe",
+            "fk_provincia": "50"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "14084",
+        "fields": {
+            "nombre": "Presidente Roque Sáenz Peña",
+            "fk_provincia": "14"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "58021",
+        "fields": {
+            "nombre": "Catán Lil",
+            "fk_provincia": "58"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "22119",
+        "fields": {
+            "nombre": "Presidencia de la Plaza",
+            "fk_provincia": "22"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "02035",
+        "fields": {
+            "nombre": "Comuna 5",
+            "fk_provincia": "02"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "18049",
+        "fields": {
+            "nombre": "Esquina",
+            "fk_provincia": "18"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "94015",
+        "fields": {
+            "nombre": "Ushuaia",
+            "fk_provincia": "94"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "10028",
+        "fields": {
+            "nombre": "Antofagasta de la Sierra",
+            "fk_provincia": "10"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06245",
+        "fields": {
+            "nombre": "Ensenada",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "90084",
+        "fields": {
+            "nombre": "Capital",
+            "fk_provincia": "90"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "82007",
+        "fields": {
+            "nombre": "Belgrano",
+            "fk_provincia": "82"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06623",
+        "fields": {
+            "nombre": "Pergamino",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06651",
+        "fields": {
+            "nombre": "Puán",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06392",
+        "fields": {
+            "nombre": "General Villegas",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "02084",
+        "fields": {
+            "nombre": "Comuna 12",
+            "fk_provincia": "02"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "82049",
+        "fields": {
+            "nombre": "General Obligado",
+            "fk_provincia": "82"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "82133",
+        "fields": {
+            "nombre": "Vera",
+            "fk_provincia": "82"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "82077",
+        "fields": {
+            "nombre": "9 de Julio",
+            "fk_provincia": "82"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "62007",
+        "fields": {
+            "nombre": "Adolfo Alsina",
+            "fk_provincia": "62"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "22133",
+        "fields": {
+            "nombre": "Quitilipi",
+            "fk_provincia": "22"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "78021",
+        "fields": {
+            "nombre": "Güer Aike",
+            "fk_provincia": "78"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "10042",
+        "fields": {
+            "nombre": "Capayán",
+            "fk_provincia": "10"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "90007",
+        "fields": {
+            "nombre": "Burruyacú",
+            "fk_provincia": "90"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "82105",
+        "fields": {
+            "nombre": "San Jerónimo",
+            "fk_provincia": "82"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "22070",
+        "fields": {
+            "nombre": "Independencia",
+            "fk_provincia": "22"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "18035",
+        "fields": {
+            "nombre": "Curuzú Cuatiá",
+            "fk_provincia": "18"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "50063",
+        "fields": {
+            "nombre": "Luján de Cuyo",
+            "fk_provincia": "50"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "10105",
+        "fields": {
+            "nombre": "Tinogasta",
+            "fk_provincia": "10"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "02049",
+        "fields": {
+            "nombre": "Comuna 7",
+            "fk_provincia": "02"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "42077",
+        "fields": {
+            "nombre": "Hucal",
+            "fk_provincia": "42"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "18077",
+        "fields": {
+            "nombre": "Itatí",
+            "fk_provincia": "18"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "02070",
+        "fields": {
+            "nombre": "Comuna 10",
+            "fk_provincia": "02"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "42014",
+        "fields": {
+            "nombre": "Caleu Caleu",
+            "fk_provincia": "42"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "42084",
+        "fields": {
+            "nombre": "Lihuel Calel",
+            "fk_provincia": "42"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "42042",
+        "fields": {
+            "nombre": "Curacó",
+            "fk_provincia": "42"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "58035",
+        "fields": {
+            "nombre": "Confluencia",
+            "fk_provincia": "58"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "58105",
+        "fields": {
+            "nombre": "Picunches",
+            "fk_provincia": "58"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "58014",
+        "fields": {
+            "nombre": "Añelo",
+            "fk_provincia": "58"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "58063",
+        "fields": {
+            "nombre": "Loncopué",
+            "fk_provincia": "58"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "58084",
+        "fields": {
+            "nombre": "Ñorquín",
+            "fk_provincia": "58"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "58091",
+        "fields": {
+            "nombre": "Pehuenches",
+            "fk_provincia": "58"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "02077",
+        "fields": {
+            "nombre": "Comuna 11",
+            "fk_provincia": "02"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "54084",
+        "fields": {
+            "nombre": "Montecarlo",
+            "fk_provincia": "54"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "54042",
+        "fields": {
+            "nombre": "Eldorado",
+            "fk_provincia": "54"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "54112",
+        "fields": {
+            "nombre": "San Pedro",
+            "fk_provincia": "54"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "94028",
+        "fields": {
+            "nombre": "Antártida Argentina",
+            "fk_provincia": "94"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "58077",
+        "fields": {
+            "nombre": "Minas",
+            "fk_provincia": "58"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "58042",
+        "fields": {
+            "nombre": "Chos Malal",
+            "fk_provincia": "58"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "26014",
+        "fields": {
+            "nombre": "Cushamen",
+            "fk_provincia": "26"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "78035",
+        "fields": {
+            "nombre": "Lago Buenos Aires",
+            "fk_provincia": "78"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "62063",
+        "fields": {
+            "nombre": "Pichi Mahuida",
+            "fk_provincia": "62"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "86175",
+        "fields": {
+            "nombre": "San Martín",
+            "fk_provincia": "86"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "38112",
+        "fields": {
+            "nombre": "Yavi",
+            "fk_provincia": "38"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "38077",
+        "fields": {
+            "nombre": "Santa Catalina",
+            "fk_provincia": "38"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "38063",
+        "fields": {
+            "nombre": "San Pedro",
+            "fk_provincia": "38"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "38105",
+        "fields": {
+            "nombre": "Valle Grande",
+            "fk_provincia": "38"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "34035",
+        "fields": {
+            "nombre": "Patiño",
+            "fk_provincia": "34"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "34007",
+        "fields": {
+            "nombre": "Bermejo",
+            "fk_provincia": "34"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "38084",
+        "fields": {
+            "nombre": "Susques",
+            "fk_provincia": "38"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "34028",
+        "fields": {
+            "nombre": "Matacos",
+            "fk_provincia": "34"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "66105",
+        "fields": {
+            "nombre": "Los Andes",
+            "fk_provincia": "66"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "66126",
+        "fields": {
+            "nombre": "Orán",
+            "fk_provincia": "66"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "38094",
+        "fields": {
+            "nombre": "Tilcara",
+            "fk_provincia": "38"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "38042",
+        "fields": {
+            "nombre": "Palpalá",
+            "fk_provincia": "38"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "42098",
+        "fields": {
+            "nombre": "Loventué",
+            "fk_provincia": "42"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "26084",
+        "fields": {
+            "nombre": "Río Senguer",
+            "fk_provincia": "26"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "62021",
+        "fields": {
+            "nombre": "Bariloche",
+            "fk_provincia": "62"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "58049",
+        "fields": {
+            "nombre": "Huiliches",
+            "fk_provincia": "58"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "42091",
+        "fields": {
+            "nombre": "Limay Mahuida",
+            "fk_provincia": "42"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "42112",
+        "fields": {
+            "nombre": "Puelén",
+            "fk_provincia": "42"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "42049",
+        "fields": {
+            "nombre": "Chalileo",
+            "fk_provincia": "42"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "42063",
+        "fields": {
+            "nombre": "Chical Co",
+            "fk_provincia": "42"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "86140",
+        "fields": {
+            "nombre": "Quebrachos",
+            "fk_provincia": "86"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "18112",
+        "fields": {
+            "nombre": "Monte Caseros",
+            "fk_provincia": "18"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "22098",
+        "fields": {
+            "nombre": "Mayor Luis J. Fontana",
+            "fk_provincia": "22"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "22043",
+        "fields": {
+            "nombre": "Fray Justo Santa María de Oro",
+            "fk_provincia": "22"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "46063",
+        "fields": {
+            "nombre": "General Belgrano",
+            "fk_provincia": "46"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "82070",
+        "fields": {
+            "nombre": "Las Colonias",
+            "fk_provincia": "82"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "82112",
+        "fields": {
+            "nombre": "San Justo",
+            "fk_provincia": "82"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "82091",
+        "fields": {
+            "nombre": "San Cristóbal",
+            "fk_provincia": "82"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "82098",
+        "fields": {
+            "nombre": "San Javier",
+            "fk_provincia": "82"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "42056",
+        "fields": {
+            "nombre": "Chapaleufú",
+            "fk_provincia": "42"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "42133",
+        "fields": {
+            "nombre": "Realicó",
+            "fk_provincia": "42"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "42105",
+        "fields": {
+            "nombre": "Maracó",
+            "fk_provincia": "42"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "42147",
+        "fields": {
+            "nombre": "Trenel",
+            "fk_provincia": "42"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "86056",
+        "fields": {
+            "nombre": "Copo",
+            "fk_provincia": "86"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "42021",
+        "fields": {
+            "nombre": "Capital",
+            "fk_provincia": "42"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "38070",
+        "fields": {
+            "nombre": "Santa Bárbara",
+            "fk_provincia": "38"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "22007",
+        "fields": {
+            "nombre": "Almirante Brown",
+            "fk_provincia": "22"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "66140",
+        "fields": {
+            "nombre": "Rosario de la Frontera",
+            "fk_provincia": "66"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "58028",
+        "fields": {
+            "nombre": "Collón Curá",
+            "fk_provincia": "58"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "02021",
+        "fields": {
+            "nombre": "Comuna 3",
+            "fk_provincia": "02"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06749",
+        "fields": {
+            "nombre": "San Fernando",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06805",
+        "fields": {
+            "nombre": "Tigre",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "10091",
+        "fields": {
+            "nombre": "Santa María",
+            "fk_provincia": "10"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "10098",
+        "fields": {
+            "nombre": "Santa Rosa",
+            "fk_provincia": "10"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "10070",
+        "fields": {
+            "nombre": "La Paz",
+            "fk_provincia": "10"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "86147",
+        "fields": {
+            "nombre": "Río Hondo",
+            "fk_provincia": "86"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "46098",
+        "fields": {
+            "nombre": "Vinchina",
+            "fk_provincia": "46"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "46014",
+        "fields": {
+            "nombre": "Capital",
+            "fk_provincia": "46"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "14112",
+        "fields": {
+            "nombre": "Río Seco",
+            "fk_provincia": "14"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "62014",
+        "fields": {
+            "nombre": "Avellaneda",
+            "fk_provincia": "62"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "62042",
+        "fields": {
+            "nombre": "General Roca",
+            "fk_provincia": "62"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "74014",
+        "fields": {
+            "nombre": "Belgrano",
+            "fk_provincia": "74"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "58070",
+        "fields": {
+            "nombre": "Los Lagos",
+            "fk_provincia": "58"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "10049",
+        "fields": {
+            "nombre": "Capital",
+            "fk_provincia": "10"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "10014",
+        "fields": {
+            "nombre": "Ancasti",
+            "fk_provincia": "10"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "10084",
+        "fields": {
+            "nombre": "Pomán",
+            "fk_provincia": "10"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "02014",
+        "fields": {
+            "nombre": "Comuna 2",
+            "fk_provincia": "02"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "22105",
+        "fields": {
+            "nombre": "9 de Julio",
+            "fk_provincia": "22"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "14077",
+        "fields": {
+            "nombre": "Pocho",
+            "fk_provincia": "14"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06270",
+        "fields": {
+            "nombre": "Ezeiza",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "10021",
+        "fields": {
+            "nombre": "Andalgalá",
+            "fk_provincia": "10"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "10007",
+        "fields": {
+            "nombre": "Ambato",
+            "fk_provincia": "10"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "02056",
+        "fields": {
+            "nombre": "Comuna 8",
+            "fk_provincia": "02"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "86084",
+        "fields": {
+            "nombre": "Guasayán",
+            "fk_provincia": "86"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "10077",
+        "fields": {
+            "nombre": "Paclín",
+            "fk_provincia": "10"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "10056",
+        "fields": {
+            "nombre": "El Alto",
+            "fk_provincia": "10"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "14154",
+        "fields": {
+            "nombre": "Sobremonte",
+            "fk_provincia": "14"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "94008",
+        "fields": {
+            "nombre": "Río Grande",
+            "fk_provincia": "94"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "02091",
+        "fields": {
+            "nombre": "Comuna 13",
+            "fk_provincia": "02"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "86035",
+        "fields": {
+            "nombre": "Banda",
+            "fk_provincia": "86"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "26070",
+        "fields": {
+            "nombre": "Paso de Indios",
+            "fk_provincia": "26"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "14014",
+        "fields": {
+            "nombre": "Capital",
+            "fk_provincia": "14"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "26063",
+        "fields": {
+            "nombre": "Mártires",
+            "fk_provincia": "26"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "86182",
+        "fields": {
+            "nombre": "Sarmiento",
+            "fk_provincia": "86"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "78014",
+        "fields": {
+            "nombre": "Deseado",
+            "fk_provincia": "78"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "26056",
+        "fields": {
+            "nombre": "Languiñeo",
+            "fk_provincia": "26"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "86042",
+        "fields": {
+            "nombre": "Belgrano",
+            "fk_provincia": "86"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "86007",
+        "fields": {
+            "nombre": "Aguirre",
+            "fk_provincia": "86"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "22091",
+        "fields": {
+            "nombre": "Maipú",
+            "fk_provincia": "22"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "50091",
+        "fields": {
+            "nombre": "San Carlos",
+            "fk_provincia": "50"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "50119",
+        "fields": {
+            "nombre": "Tunuyán",
+            "fk_provincia": "50"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "86161",
+        "fields": {
+            "nombre": "Robles",
+            "fk_provincia": "86"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "86105",
+        "fields": {
+            "nombre": "Loreto",
+            "fk_provincia": "86"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "42028",
+        "fields": {
+            "nombre": "Catriló",
+            "fk_provincia": "42"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "86049",
+        "fields": {
+            "nombre": "Capital",
+            "fk_provincia": "86"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "02098",
+        "fields": {
+            "nombre": "Comuna 14",
+            "fk_provincia": "02"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "30008",
+        "fields": {
+            "nombre": "Colón",
+            "fk_provincia": "30"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "30113",
+        "fields": {
+            "nombre": "Villaguay",
+            "fk_provincia": "30"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06168",
+        "fields": {
+            "nombre": "Castelli",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "30088",
+        "fields": {
+            "nombre": "San Salvador",
+            "fk_provincia": "30"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "10035",
+        "fields": {
+            "nombre": "Belén",
+            "fk_provincia": "10"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06028",
+        "fields": {
+            "nombre": "Almirante Brown",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "30077",
+        "fields": {
+            "nombre": "Nogoyá",
+            "fk_provincia": "30"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "30091",
+        "fields": {
+            "nombre": "Tala",
+            "fk_provincia": "30"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "30049",
+        "fields": {
+            "nombre": "Gualeguay",
+            "fk_provincia": "30"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "30028",
+        "fields": {
+            "nombre": "Federación",
+            "fk_provincia": "30"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "30070",
+        "fields": {
+            "nombre": "La Paz",
+            "fk_provincia": "30"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "30042",
+        "fields": {
+            "nombre": "Feliciano",
+            "fk_provincia": "30"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06648",
+        "fields": {
+            "nombre": "Presidente Perón",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06413",
+        "fields": {
+            "nombre": "Junín",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06119",
+        "fields": {
+            "nombre": "Brandsen",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06224",
+        "fields": {
+            "nombre": "Chivilcoy",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06021",
+        "fields": {
+            "nombre": "Alberti",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06112",
+        "fields": {
+            "nombre": "Bragado",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06329",
+        "fields": {
+            "nombre": "General Las Heras",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06147",
+        "fields": {
+            "nombre": "Carlos Casares",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06525",
+        "fields": {
+            "nombre": "Marcos Paz",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06385",
+        "fields": {
+            "nombre": "General Viamonte",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06154",
+        "fields": {
+            "nombre": "Carlos Tejedor",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06854",
+        "fields": {
+            "nombre": "25 de Mayo",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06588",
+        "fields": {
+            "nombre": "9 de Julio",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06609",
+        "fields": {
+            "nombre": "Pehuajó",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06798",
+        "fields": {
+            "nombre": "Tapalqué",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06826",
+        "fields": {
+            "nombre": "Trenque Lauquen",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06301",
+        "fields": {
+            "nombre": "General Belgrano",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06547",
+        "fields": {
+            "nombre": "Monte",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06693",
+        "fields": {
+            "nombre": "Roque Pérez",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06595",
+        "fields": {
+            "nombre": "Olavarría",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06539",
+        "fields": {
+            "nombre": "Merlo",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "54014",
+        "fields": {
+            "nombre": "Cainguás",
+            "fk_provincia": "54"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "94021",
+        "fields": {
+            "nombre": "Islas del Atlántico Sur",
+            "fk_provincia": "94"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06260",
+        "fields": {
+            "nombre": "Esteban Echeverría",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06077",
+        "fields": {
+            "nombre": "Arrecifes",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06140",
+        "fields": {
+            "nombre": "Capitán Sarmiento",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "38021",
+        "fields": {
+            "nombre": "Dr. Manuel Belgrano",
+            "fk_provincia": "38"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06161",
+        "fields": {
+            "nombre": "Carmen de Areco",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06714",
+        "fields": {
+            "nombre": "Salto",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06266",
+        "fields": {
+            "nombre": "Exaltación de la Cruz",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06760",
+        "fields": {
+            "nombre": "San Miguel",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06728",
+        "fields": {
+            "nombre": "San Andrés de Giles",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06532",
+        "fields": {
+            "nombre": "Mercedes",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06638",
+        "fields": {
+            "nombre": "Pilar",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06497",
+        "fields": {
+            "nombre": "Luján",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "90028",
+        "fields": {
+            "nombre": "Famaillá",
+            "fk_provincia": "90"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06408",
+        "fields": {
+            "nombre": "Hurlingham",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06568",
+        "fields": {
+            "nombre": "Morón",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06210",
+        "fields": {
+            "nombre": "Chacabuco",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "50035",
+        "fields": {
+            "nombre": "Junín",
+            "fk_provincia": "50"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06515",
+        "fields": {
+            "nombre": "Malvinas Argentinas",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06847",
+        "fields": {
+            "nombre": "Tres Lomas",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06042",
+        "fields": {
+            "nombre": "Ayacucho",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06399",
+        "fields": {
+            "nombre": "Guaminí",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06371",
+        "fields": {
+            "nombre": "General San Martín",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06469",
+        "fields": {
+            "nombre": "Lincoln",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06448",
+        "fields": {
+            "nombre": "Laprida",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06756",
+        "fields": {
+            "nombre": "San Isidro",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06084",
+        "fields": {
+            "nombre": "Benito Juárez",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06175",
+        "fields": {
+            "nombre": "Colón",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06410",
+        "fields": {
+            "nombre": "Ituzaingó",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06364",
+        "fields": {
+            "nombre": "General Rodríguez",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06784",
+        "fields": {
+            "nombre": "Suipacha",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06840",
+        "fields": {
+            "nombre": "Tres de Febrero",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "46028",
+        "fields": {
+            "nombre": "General Felipe Varela",
+            "fk_provincia": "46"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06274",
+        "fields": {
+            "nombre": "Florencio Varela",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06574",
+        "fields": {
+            "nombre": "Navarro",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06134",
+        "fields": {
+            "nombre": "Cañuelas",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "86119",
+        "fields": {
+            "nombre": "Moreno",
+            "fk_provincia": "86"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "22028",
+        "fields": {
+            "nombre": "Chacabuco",
+            "fk_provincia": "22"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06778",
+        "fields": {
+            "nombre": "San Vicente",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06483",
+        "fields": {
+            "nombre": "Lobos",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06287",
+        "fields": {
+            "nombre": "General Alvear",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06658",
+        "fields": {
+            "nombre": "Quilmes",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06630",
+        "fields": {
+            "nombre": "Pila",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06322",
+        "fields": {
+            "nombre": "General La Madrid",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06105",
+        "fields": {
+            "nombre": "Bolívar",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "46021",
+        "fields": {
+            "nombre": "Castro Barros",
+            "fk_provincia": "46"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06063",
+        "fields": {
+            "nombre": "Balcarce",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06406",
+        "fields": {
+            "nombre": "Hipólito Yrigoyen",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "50007",
+        "fields": {
+            "nombre": "Capital",
+            "fk_provincia": "50"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06238",
+        "fields": {
+            "nombre": "Dolores",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06049",
+        "fields": {
+            "nombre": "Azul",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06231",
+        "fields": {
+            "nombre": "Daireaux",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "50021",
+        "fields": {
+            "nombre": "Godoy Cruz",
+            "fk_provincia": "50"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "66021",
+        "fields": {
+            "nombre": "Cafayate",
+            "fk_provincia": "66"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "86070",
+        "fields": {
+            "nombre": "Figueroa",
+            "fk_provincia": "86"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06700",
+        "fields": {
+            "nombre": "Saavedra",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06553",
+        "fields": {
+            "nombre": "Monte Hermoso",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06476",
+        "fields": {
+            "nombre": "Lobería",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06098",
+        "fields": {
+            "nombre": "Berisso",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06812",
+        "fields": {
+            "nombre": "Tordillo",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06882",
+        "fields": {
+            "nombre": "Zárate",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06665",
+        "fields": {
+            "nombre": "Ramallo",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06763",
+        "fields": {
+            "nombre": "San Nicolás",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "86168",
+        "fields": {
+            "nombre": "Salavina",
+            "fk_provincia": "86"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "86133",
+        "fields": {
+            "nombre": "Pellegrini",
+            "fk_provincia": "86"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "86028",
+        "fields": {
+            "nombre": "Avellaneda",
+            "fk_provincia": "86"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "22039",
+        "fields": {
+            "nombre": "2 de Abril",
+            "fk_provincia": "22"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "50028",
+        "fields": {
+            "nombre": "Guaymallén",
+            "fk_provincia": "50"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "14056",
+        "fields": {
+            "nombre": "Juárez Celman",
+            "fk_provincia": "14"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "66028",
+        "fields": {
+            "nombre": "Capital",
+            "fk_provincia": "66"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "86189",
+        "fields": {
+            "nombre": "Silípica",
+            "fk_provincia": "86"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "66084",
+        "fields": {
+            "nombre": "La Candelaria",
+            "fk_provincia": "66"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "42126",
+        "fields": {
+            "nombre": "Rancul",
+            "fk_provincia": "42"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "50070",
+        "fields": {
+            "nombre": "Maipú",
+            "fk_provincia": "50"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "66063",
+        "fields": {
+            "nombre": "Guachipas",
+            "fk_provincia": "66"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "42007",
+        "fields": {
+            "nombre": "Atreucó",
+            "fk_provincia": "42"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "50098",
+        "fields": {
+            "nombre": "San Martín",
+            "fk_provincia": "50"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "42070",
+        "fields": {
+            "nombre": "Guatraché",
+            "fk_provincia": "42"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "46126",
+        "fields": {
+            "nombre": "Sanagasta",
+            "fk_provincia": "46"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "42035",
+        "fields": {
+            "nombre": "Conhelo",
+            "fk_provincia": "42"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "54077",
+        "fields": {
+            "nombre": "Libertador General San Martín",
+            "fk_provincia": "54"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "46112",
+        "fields": {
+            "nombre": "Rosario Vera Peñaloza",
+            "fk_provincia": "46"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "18154",
+        "fields": {
+            "nombre": "San Miguel",
+            "fk_provincia": "18"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "46070",
+        "fields": {
+            "nombre": "General Juan Facundo Quiroga",
+            "fk_provincia": "46"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "46056",
+        "fields": {
+            "nombre": "Ángel Vicente Peñaloza",
+            "fk_provincia": "46"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "18042",
+        "fields": {
+            "nombre": "Empedrado",
+            "fk_provincia": "18"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "46042",
+        "fields": {
+            "nombre": "Chilecito",
+            "fk_provincia": "46"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "42140",
+        "fields": {
+            "nombre": "Toay",
+            "fk_provincia": "42"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "14021",
+        "fields": {
+            "nombre": "Colón",
+            "fk_provincia": "14"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "18084",
+        "fields": {
+            "nombre": "Ituzaingó",
+            "fk_provincia": "18"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "46049",
+        "fields": {
+            "nombre": "Famatina",
+            "fk_provincia": "46"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "82042",
+        "fields": {
+            "nombre": "General López",
+            "fk_provincia": "82"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "82028",
+        "fields": {
+            "nombre": "Constitución",
+            "fk_provincia": "82"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "82014",
+        "fields": {
+            "nombre": "Caseros",
+            "fk_provincia": "82"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "82084",
+        "fields": {
+            "nombre": "Rosario",
+            "fk_provincia": "82"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "82119",
+        "fields": {
+            "nombre": "San Lorenzo",
+            "fk_provincia": "82"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "82056",
+        "fields": {
+            "nombre": "Iriondo",
+            "fk_provincia": "82"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06434",
+        "fields": {
+            "nombre": "Lanús",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "46091",
+        "fields": {
+            "nombre": "General San Martín",
+            "fk_provincia": "46"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "46119",
+        "fields": {
+            "nombre": "San Blas de Los Sauces",
+            "fk_provincia": "46"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "38056",
+        "fields": {
+            "nombre": "San Antonio",
+            "fk_provincia": "38"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "38049",
+        "fields": {
+            "nombre": "Rinconada",
+            "fk_provincia": "38"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "34063",
+        "fields": {
+            "nombre": "Ramón Lista",
+            "fk_provincia": "34"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "66091",
+        "fields": {
+            "nombre": "La Poma",
+            "fk_provincia": "66"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "26007",
+        "fields": {
+            "nombre": "Biedma",
+            "fk_provincia": "26"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "18021",
+        "fields": {
+            "nombre": "Capital",
+            "fk_provincia": "18"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "18140",
+        "fields": {
+            "nombre": "San Luis del Palmar",
+            "fk_provincia": "18"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "34014",
+        "fields": {
+            "nombre": "Formosa",
+            "fk_provincia": "34"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "34049",
+        "fields": {
+            "nombre": "Pilcomayo",
+            "fk_provincia": "34"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "26098",
+        "fields": {
+            "nombre": "Tehuelches",
+            "fk_provincia": "26"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "26021",
+        "fields": {
+            "nombre": "Escalante",
+            "fk_provincia": "26"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "14049",
+        "fields": {
+            "nombre": "Ischilín",
+            "fk_provincia": "14"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "14168",
+        "fields": {
+            "nombre": "Totoral",
+            "fk_provincia": "14"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "14042",
+        "fields": {
+            "nombre": "General San Martín",
+            "fk_provincia": "14"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "14133",
+        "fields": {
+            "nombre": "San Javier",
+            "fk_provincia": "14"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "14105",
+        "fields": {
+            "nombre": "Río Primero",
+            "fk_provincia": "14"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "14063",
+        "fields": {
+            "nombre": "Marcos Juárez",
+            "fk_provincia": "14"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "22056",
+        "fields": {
+            "nombre": "General Donovan",
+            "fk_provincia": "22"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06462",
+        "fields": {
+            "nombre": "Leandro N. Alem",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "22084",
+        "fields": {
+            "nombre": "Libertador General San Martín",
+            "fk_provincia": "22"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "26049",
+        "fields": {
+            "nombre": "Gastre",
+            "fk_provincia": "26"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06294",
+        "fields": {
+            "nombre": "General Arenales",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "22014",
+        "fields": {
+            "nombre": "Bermejo",
+            "fk_provincia": "22"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "14007",
+        "fields": {
+            "nombre": "Calamuchita",
+            "fk_provincia": "14"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "90014",
+        "fields": {
+            "nombre": "Cruz Alta",
+            "fk_provincia": "90"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "90063",
+        "fields": {
+            "nombre": "Lules",
+            "fk_provincia": "90"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "90119",
+        "fields": {
+            "nombre": "Yerba Buena",
+            "fk_provincia": "90"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "90105",
+        "fields": {
+            "nombre": "Tafí Viejo",
+            "fk_provincia": "90"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "74063",
+        "fields": {
+            "nombre": "Libertador General San Martín",
+            "fk_provincia": "74"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "74021",
+        "fields": {
+            "nombre": "Coronel Pringles",
+            "fk_provincia": "74"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "74028",
+        "fields": {
+            "nombre": "Chacabuco",
+            "fk_provincia": "74"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06679",
+        "fields": {
+            "nombre": "Rivadavia",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06602",
+        "fields": {
+            "nombre": "Patagones",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "74056",
+        "fields": {
+            "nombre": "Juan Martín de Pueyrredón",
+            "fk_provincia": "74"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "74035",
+        "fields": {
+            "nombre": "General Pedernera",
+            "fk_provincia": "74"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "90112",
+        "fields": {
+            "nombre": "Trancas",
+            "fk_provincia": "90"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "90098",
+        "fields": {
+            "nombre": "Tafí del Valle",
+            "fk_provincia": "90"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "02063",
+        "fields": {
+            "nombre": "Comuna 9",
+            "fk_provincia": "02"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "74049",
+        "fields": {
+            "nombre": "Junín",
+            "fk_provincia": "74"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "86112",
+        "fields": {
+            "nombre": "Mitre",
+            "fk_provincia": "86"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "86021",
+        "fields": {
+            "nombre": "Atamisqui",
+            "fk_provincia": "86"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "18014",
+        "fields": {
+            "nombre": "Berón de Astrada",
+            "fk_provincia": "18"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "94011",
+        "fields": {
+            "nombre": "Tolhuin",
+            "fk_provincia": "94"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "54028",
+        "fields": {
+            "nombre": "Capital",
+            "fk_provincia": "54"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "54021",
+        "fields": {
+            "nombre": "Candelaria",
+            "fk_provincia": "54"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "86091",
+        "fields": {
+            "nombre": "Jiménez",
+            "fk_provincia": "86"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06182",
+        "fields": {
+            "nombre": "Coronel de Marina Leonardo Rosales",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06070",
+        "fields": {
+            "nombre": "Baradero",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06770",
+        "fields": {
+            "nombre": "San Pedro",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "66161",
+        "fields": {
+            "nombre": "Santa Victoria",
+            "fk_provincia": "66"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "66056",
+        "fields": {
+            "nombre": "General José de San Martín",
+            "fk_provincia": "66"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "66133",
+        "fields": {
+            "nombre": "Rivadavia",
+            "fk_provincia": "66"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "66147",
+        "fields": {
+            "nombre": "Rosario de Lerma",
+            "fk_provincia": "66"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "38035",
+        "fields": {
+            "nombre": "Ledesma",
+            "fk_provincia": "38"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "38028",
+        "fields": {
+            "nombre": "Humahuaca",
+            "fk_provincia": "38"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "38007",
+        "fields": {
+            "nombre": "Cochinoca",
+            "fk_provincia": "38"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "38098",
+        "fields": {
+            "nombre": "Tumbaya",
+            "fk_provincia": "38"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06277",
+        "fields": {
+            "nombre": "Florentino Ameghino",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "26028",
+        "fields": {
+            "nombre": "Florentino Ameghino",
+            "fk_provincia": "26"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "90049",
+        "fields": {
+            "nombre": "La Cocha",
+            "fk_provincia": "90"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "90035",
+        "fields": {
+            "nombre": "Graneros",
+            "fk_provincia": "90"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "90042",
+        "fields": {
+            "nombre": "Juan Bautista Alberdi",
+            "fk_provincia": "90"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "90077",
+        "fields": {
+            "nombre": "Río Chico",
+            "fk_provincia": "90"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "90091",
+        "fields": {
+            "nombre": "Simoca",
+            "fk_provincia": "90"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "90021",
+        "fields": {
+            "nombre": "Chicligasta",
+            "fk_provincia": "90"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "90070",
+        "fields": {
+            "nombre": "Monteros",
+            "fk_provincia": "90"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "90056",
+        "fields": {
+            "nombre": "Leales",
+            "fk_provincia": "90"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "82126",
+        "fields": {
+            "nombre": "San Martín",
+            "fk_provincia": "82"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "82063",
+        "fields": {
+            "nombre": "La Capital",
+            "fk_provincia": "82"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "54049",
+        "fields": {
+            "nombre": "General Manuel Belgrano",
+            "fk_provincia": "54"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "54056",
+        "fields": {
+            "nombre": "Guaraní",
+            "fk_provincia": "54"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "54063",
+        "fields": {
+            "nombre": "Iguazú",
+            "fk_provincia": "54"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "54119",
+        "fields": {
+            "nombre": "25 de Mayo",
+            "fk_provincia": "54"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "54091",
+        "fields": {
+            "nombre": "Oberá",
+            "fk_provincia": "54"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "82021",
+        "fields": {
+            "nombre": "Castellanos",
+            "fk_provincia": "82"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "82035",
+        "fields": {
+            "nombre": "Garay",
+            "fk_provincia": "82"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "42119",
+        "fields": {
+            "nombre": "Quemú Quemú",
+            "fk_provincia": "42"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "54098",
+        "fields": {
+            "nombre": "San Ignacio",
+            "fk_provincia": "54"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "42154",
+        "fields": {
+            "nombre": "Utracán",
+            "fk_provincia": "42"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "18147",
+        "fields": {
+            "nombre": "San Martín",
+            "fk_provincia": "18"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "18119",
+        "fields": {
+            "nombre": "Paso de los Libres",
+            "fk_provincia": "18"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "18070",
+        "fields": {
+            "nombre": "Goya",
+            "fk_provincia": "18"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "18091",
+        "fields": {
+            "nombre": "Lavalle",
+            "fk_provincia": "18"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "18161",
+        "fields": {
+            "nombre": "San Roque",
+            "fk_provincia": "18"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "18056",
+        "fields": {
+            "nombre": "General Alvear",
+            "fk_provincia": "18"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "18028",
+        "fields": {
+            "nombre": "Concepción",
+            "fk_provincia": "18"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "18007",
+        "fields": {
+            "nombre": "Bella Vista",
+            "fk_provincia": "18"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "18168",
+        "fields": {
+            "nombre": "Santo Tomé",
+            "fk_provincia": "18"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "18126",
+        "fields": {
+            "nombre": "Saladas",
+            "fk_provincia": "18"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "18063",
+        "fields": {
+            "nombre": "General Paz",
+            "fk_provincia": "18"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "54070",
+        "fields": {
+            "nombre": "Leandro N. Alem",
+            "fk_provincia": "54"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "54105",
+        "fields": {
+            "nombre": "San Javier",
+            "fk_provincia": "54"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "18098",
+        "fields": {
+            "nombre": "Mburucuyá",
+            "fk_provincia": "18"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "54035",
+        "fields": {
+            "nombre": "Concepción",
+            "fk_provincia": "54"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "54007",
+        "fields": {
+            "nombre": "Apóstoles",
+            "fk_provincia": "54"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "22126",
+        "fields": {
+            "nombre": "1° de Mayo",
+            "fk_provincia": "22"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "22140",
+        "fields": {
+            "nombre": "San Fernando",
+            "fk_provincia": "22"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "22147",
+        "fields": {
+            "nombre": "San Lorenzo",
+            "fk_provincia": "22"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06490",
+        "fields": {
+            "nombre": "Lomas de Zamora",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06035",
+        "fields": {
+            "nombre": "Avellaneda",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "22168",
+        "fields": {
+            "nombre": "25 de Mayo",
+            "fk_provincia": "22"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "22049",
+        "fields": {
+            "nombre": "General Belgrano",
+            "fk_provincia": "22"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "22077",
+        "fields": {
+            "nombre": "Libertad",
+            "fk_provincia": "22"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "22021",
+        "fields": {
+            "nombre": "Comandante Fernández",
+            "fk_provincia": "22"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "02105",
+        "fields": {
+            "nombre": "Comuna 15",
+            "fk_provincia": "02"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "70042",
+        "fields": {
+            "nombre": "Chimbas",
+            "fk_provincia": "70"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "70028",
+        "fields": {
+            "nombre": "Capital",
+            "fk_provincia": "70"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "70084",
+        "fields": {
+            "nombre": "Rivadavia",
+            "fk_provincia": "70"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "70063",
+        "fields": {
+            "nombre": "9 de Julio",
+            "fk_provincia": "70"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "70007",
+        "fields": {
+            "nombre": "Albardón",
+            "fk_provincia": "70"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "70014",
+        "fields": {
+            "nombre": "Angaco",
+            "fk_provincia": "70"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "70098",
+        "fields": {
+            "nombre": "Santa Lucía",
+            "fk_provincia": "70"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "70077",
+        "fields": {
+            "nombre": "Rawson",
+            "fk_provincia": "70"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "70126",
+        "fields": {
+            "nombre": "25 de Mayo",
+            "fk_provincia": "70"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "70091",
+        "fields": {
+            "nombre": "San Martín",
+            "fk_provincia": "70"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "70070",
+        "fields": {
+            "nombre": "Pocito",
+            "fk_provincia": "70"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "70133",
+        "fields": {
+            "nombre": "Zonda",
+            "fk_provincia": "70"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "70112",
+        "fields": {
+            "nombre": "Ullum",
+            "fk_provincia": "70"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "70105",
+        "fields": {
+            "nombre": "Sarmiento",
+            "fk_provincia": "70"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "70021",
+        "fields": {
+            "nombre": "Calingasta",
+            "fk_provincia": "70"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "70049",
+        "fields": {
+            "nombre": "Iglesia",
+            "fk_provincia": "70"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "70056",
+        "fields": {
+            "nombre": "Jáchal",
+            "fk_provincia": "70"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "70119",
+        "fields": {
+            "nombre": "Valle Fértil",
+            "fk_provincia": "70"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "70035",
+        "fields": {
+            "nombre": "Caucete",
+            "fk_provincia": "70"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "06441",
+        "fields": {
+            "nombre": "La Plata",
+            "fk_provincia": "06"
+        }
+    },
+    {
+        "model": "legajos.LegjosDepatamento",
+        "pk": "18105",
+        "fields": {
+            "nombre": "Mercedes",
+            "fk_provincia": "18"
+        }
+    }
+]
