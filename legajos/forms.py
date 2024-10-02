@@ -66,6 +66,7 @@ class LegajosForm(forms.ModelForm):
         label="Asentamiento",
         queryset=LegajoMunicipio.objects.none(),
     )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Configurar el queryset del campo 'fk_provincia' para cargar solo las provincias
@@ -145,8 +146,12 @@ class LegajosForm(forms.ModelForm):
             "fk_municipio": forms.Select(attrs={"class": "select2 municipio-select"}),
             "fk_localidad": forms.Select(attrs={"class": "select2 localidad-select"}),
             "fk_provincia": forms.Select(attrs={"class": "select2 provincia-select"}),
-            "fk_departamento": forms.Select(attrs={"class": "select2 departamento-select"}),
-            "fk_asentamiento": forms.Select(attrs={"class": "select2 asentamiento-select"}),
+            "fk_departamento": forms.Select(
+                attrs={"class": "select2 departamento-select"}
+            ),
+            "fk_asentamiento": forms.Select(
+                attrs={"class": "select2 asentamiento-select"}
+            ),
         }
         labels = {
             "fk_provincia": "Provincia",
@@ -200,6 +205,7 @@ class LegajosUpdateForm(forms.ModelForm):
         label="Asentamiento",
         queryset=LegajoMunicipio.objects.none(),
     )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["fk_provincia"].queryset = LegajoProvincias.objects.all()
@@ -220,6 +226,7 @@ class LegajosUpdateForm(forms.ModelForm):
             self.fields["fk_asentamiento"].choices = [
                 (asentamiento_actual.id, asentamiento_actual.nombre)
             ]
+
     def clean(self):
         cleaned_data = super().clean()
         tipo_doc = cleaned_data.get("tipo_doc")
@@ -256,8 +263,12 @@ class LegajosUpdateForm(forms.ModelForm):
                 attrs={"type": "date"}, format="%Y-%m-%d"
             ),
             "fk_municipio": forms.Select(attrs={"class": "select2 municipio-select"}),
-            "fk_departamento": forms.Select(attrs={"class": "select2 departamento-select"}),
-            "fk_asentamiento": forms.Select(attrs={"class": "select2 asentamiento-select"}),
+            "fk_departamento": forms.Select(
+                attrs={"class": "select2 departamento-select"}
+            ),
+            "fk_asentamiento": forms.Select(
+                attrs={"class": "select2 asentamiento-select"}
+            ),
             "fk_localidad": forms.Select(attrs={"class": "select2 localidad-select"}),
             "fk_provincia": forms.Select(attrs={"class": "select2 provincia-select"}),
         }

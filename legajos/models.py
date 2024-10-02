@@ -61,6 +61,7 @@ class LegajoProvincias(models.Model):
     """
     Guardado de las provincias de los vecinos y vecinas registrados.
     """
+
     nombre = models.CharField(max_length=255)
 
     def __str__(self):
@@ -90,17 +91,21 @@ class LegajoMunicipio(models.Model):
         verbose_name = "Municipio"
         verbose_name_plural = "Municipio"
 
+
 class LegjosDepatamento(models.Model):
     nombre = models.CharField(max_length=255)
     fk_provincia = models.ForeignKey(
         LegajoProvincias, on_delete=models.SET_NULL, null=True, blank=True
     )
+
     def __str__(self):
         return str(self.nombre)
+
     class Meta:
         ordering = ["id"]
         verbose_name = "Departamento"
         verbose_name_plural = "Departamento"
+
 
 class LegajoLocalidad(models.Model):
     """
@@ -122,6 +127,7 @@ class LegajoLocalidad(models.Model):
         verbose_name = "Localidad"
         verbose_name_plural = "Localidad"
 
+
 class LegajoAsentamientos(models.Model):
     """
     Guardado de los asentamientos de los vecinos y vecinas registrados.
@@ -137,12 +143,14 @@ class LegajoAsentamientos(models.Model):
     fk_localidad = models.ForeignKey(
         LegajoLocalidad, on_delete=models.SET_NULL, null=True, blank=True
     )
+
     def __str__(self):
         return str(self.nombre)
 
     class Meta:
         verbose_name = "Asentamiento"
         verbose_name_plural = "Asentamientos"
+
 
 class Legajos(models.Model):
     """
@@ -240,6 +248,7 @@ class Legajos(models.Model):
     fk_asentamiento = models.ForeignKey(
         LegajoAsentamientos, on_delete=models.SET_NULL, null=True, blank=True
     )
+
     def __str__(self):
         return f"{self.apellido}, {self.nombre}"
 
