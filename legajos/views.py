@@ -70,7 +70,7 @@ from legajos.models import (
     LegajoProvincias,
     LegajoLocalidad,
     LegajoMunicipio,
-    LegjosDepartamento,
+    LegajoDepartamento,
     LegajoAsentamientos,
     Intervencion,
     Llamado,
@@ -110,7 +110,7 @@ def load_localidad(request):
 
 def load_departamento(request):
     provincia_id = request.GET.get("provincia_id")
-    departamentos = LegjosDepartamento.objects.filter(fk_provincia=provincia_id)
+    departamentos = LegajoDepartamento.objects.filter(fk_provincia=provincia_id)
     return JsonResponse(list(departamentos.values("id", "nombre")), safe=False)
 
 

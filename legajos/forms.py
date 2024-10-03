@@ -11,7 +11,7 @@ from .models import (
     LegajoProvincias,
     LegajoMunicipio,
     LegajoLocalidad,
-    LegjosDepartamento,
+    LegajoDepartamento,
     LegajoAsentamientos,
     LegajoGrupoFamiliar,
     LegajoGrupoHogar,
@@ -61,7 +61,7 @@ class LegajosForm(forms.ModelForm):
     fk_departamento = forms.ModelChoiceField(
         required=False,
         label="Departamento",
-        queryset=LegjosDepartamento.objects.none(),
+        queryset=LegajoDepartamento.objects.none(),
     )
     fk_asentamiento = forms.ModelChoiceField(
         required=False,
@@ -76,7 +76,7 @@ class LegajosForm(forms.ModelForm):
         # Configurar los querysets de los campos 'fk_municipio' y 'fk_localidad' para que estén vacíos inicialmente
         self.fields["fk_municipio"].queryset = LegajoMunicipio.objects.none()
         self.fields["fk_localidad"].queryset = LegajoLocalidad.objects.none()
-        self.fields["fk_departamento"].queryset = LegjosDepartamento.objects.none()
+        self.fields["fk_departamento"].queryset = LegajoDepartamento.objects.none()
         self.fields["fk_asentamiento"].queryset = LegajoAsentamientos.objects.none()
         # Actualizar los querysets si los datos están presentes en el formulario
         if "fk_municipio" in self.data:
@@ -101,13 +101,13 @@ class LegajosForm(forms.ModelForm):
             try:
                 departamento_id = int(self.data.get("fk_departamento"))
                 self.fields["fk_departamento"].queryset = (
-                    LegjosDepartamento.objects.filter(id=departamento_id).order_by(
+                    LegajoDepartamento.objects.filter(id=departamento_id).order_by(
                         "nombre"
                     )
                 )
             except (ValueError, TypeError):
                 self.fields["fk_departamento"].queryset = (
-                    LegjosDepartamento.objects.none()
+                    LegajoDepartamento.objects.none()
                 )
 
         if "fk_asentamiento" in self.data:
@@ -226,7 +226,7 @@ class LegajosUpdateForm(forms.ModelForm):
     fk_departamento = forms.ModelChoiceField(
         required=False,
         label="Departamento",
-        queryset=LegjosDepartamento.objects.all(),
+        queryset=LegajoDepartamento.objects.all(),
     )
     fk_asentamiento = forms.ModelChoiceField(
         required=False,
