@@ -29,6 +29,11 @@ from .models import (
     CHOICE_SINO,
 )
 
+BOOLEAN_CHOICE = [
+    (False, "No"),
+    (True, "Si"),
+]
+
 
 class LegajosForm(forms.ModelForm):
     foto = forms.ImageField(
@@ -509,6 +514,21 @@ class DimensionEducacionForm(forms.ModelForm):
     localidadInstitucion = forms.ModelChoiceField(
         label="Localidad",
         queryset=LegajoLocalidad.objects.none(),
+    )
+    interesCapLab = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿Tenés interés en realizar cursos de capacitación laboral?"
+    )
+    realizandoCurso = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿Actualmente te encontrás haciendo algún curso de capacitación?"
+    )
+    oficio = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿Tenés conocimiento de algún oficio?"
+    )
+    interesEstudio = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿Tenés interés en estudiar?"
+    )
+    interesCurso = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿Tenés interés en realizar algún curso?"
     )
 
     def __init__(self, *args, **kwargs):
