@@ -100,20 +100,28 @@ class LegajosForm(forms.ModelForm):
         if "fk_departamento" in self.data:
             try:
                 departamento_id = int(self.data.get("fk_departamento"))
-                self.fields["fk_departamento"].queryset = LegjosDepatamento.objects.filter(
-                    id=departamento_id
-                ).order_by("nombre")
+                self.fields["fk_departamento"].queryset = (
+                    LegjosDepatamento.objects.filter(id=departamento_id).order_by(
+                        "nombre"
+                    )
+                )
             except (ValueError, TypeError):
-                self.fields["fk_departamento"].queryset = LegjosDepatamento.objects.none()
-        
+                self.fields["fk_departamento"].queryset = (
+                    LegjosDepatamento.objects.none()
+                )
+
         if "fk_asentamiento" in self.data:
             try:
                 asentameinto_id = int(self.data.get("fk_asentamiento"))
-                self.fields["fk_asentamiento"].queryset = LegajoAsentamientos.objects.filter(
-                    id=asentameinto_id
-                ).order_by("nombre")
+                self.fields["fk_asentamiento"].queryset = (
+                    LegajoAsentamientos.objects.filter(id=asentameinto_id).order_by(
+                        "nombre"
+                    )
+                )
             except (ValueError, TypeError):
-                self.fields["fk_asentamiento"].queryset = LegajoAsentamientos.objects.none()
+                self.fields["fk_asentamiento"].queryset = (
+                    LegajoAsentamientos.objects.none()
+                )
 
     def clean(self):
         cleaned_data = super().clean()
@@ -234,7 +242,7 @@ class LegajosUpdateForm(forms.ModelForm):
             localidad_actual = self.instance.fk_localidad
             departamento_actual = self.instance.fk_departamento
             asentamiento_actual = self.instance.fk_asentamiento
-            
+
             if municipio_actual:
                 self.fields["fk_municipio"].choices = [
                     (municipio_actual.id, municipio_actual.nombre)
