@@ -925,12 +925,9 @@ class DimensionEducacion(models.Model):
         null=True,
         blank=True,
     )
-    realizandoCurso = models.CharField(
+    realizandoCurso = models.BooleanField(
         verbose_name="¿Actualmente te encontrás haciendo algún curso de capacitación?",
-        max_length=255,
-        choices=CHOICE_SINO,
-        null=True,
-        blank=True,
+        default=False,
     )
     areaCurso = models.ForeignKey(
         AreaCurso,
@@ -939,19 +936,14 @@ class DimensionEducacion(models.Model):
         null=True,
         blank=True,
     )
-    interesCapLab = models.CharField(
+    interesCapLab = models.BooleanField(
         verbose_name="¿Tenés interés en realizar cursos de capacitación laboral?",
-        max_length=255,
-        choices=CHOICE_SINO,
-        null=True,
-        blank=True,
+        default=False,
+        
     )
-    oficio = models.CharField(
+    oficio = models.BooleanField(
         verbose_name="¿Tenés conocimiento de algún oficio?",
-        max_length=255,
-        choices=CHOICE_SINO,
-        null=True,
-        blank=True,
+        default=False,
     )
     areaOficio = models.ForeignKey(
         AreaCurso,
@@ -962,19 +954,13 @@ class DimensionEducacion(models.Model):
     )
 
     # Migraciones para fix de DAD-118
-    interesEstudio = models.CharField(
+    interesEstudio = models.BooleanField(
         verbose_name="¿Le interesa estudiar?",
-        max_length=255,
-        choices=CHOICE_SINO,
-        null=True,
-        blank=True,
+        default=False,
     )
-    interesCurso = models.CharField(
+    interesCurso = models.BooleanField(
         verbose_name="¿le interesa algun curso?",
-        max_length=255,
-        choices=CHOICE_SINO,
-        null=True,
-        blank=True,
+        default=False,
     )
 
     def __str__(self):
