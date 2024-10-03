@@ -69,13 +69,15 @@ class EspacioCocinaForm(forms.ModelForm):
         widget=forms.Select,
         label="2.2.5 ¿El Comedor/Merendero cuenta con un espacio o recipientes destinados a la disposición de residuos reciclables?",
     )
+    otros_residuos = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="2.2.6 ¿Las actividades del Comedor/Merendero generan otro tipo de residuos?",
+    )
     recipiente_otros_residuos = forms.ChoiceField(
         choices=BOOLEAN_CHOICE,
         widget=forms.Select,
-        label=(
-            "2.2.6 ¿Las actividades del Comedor/Merendero generan otro tipo de residuos? "
-            "¿Cuenta con un espacio o recipientes destinados a la disposición de dichos residuos?"
-        ),
+        label="¿Cuenta con un espacio o recipientes destinados a la disposición de dichos residuos?",
     )
     instalacion_electrica = forms.ChoiceField(
         choices=BOOLEAN_CHOICE,
@@ -129,12 +131,7 @@ class EspacioPrestacionForm(forms.ModelForm):
         widget=forms.Select,
         label="2.3.8 ¿El lugar cuenta con baño para las personas que realizan tareas en el comedor/merendero y para los destinatarios?",
     )
-    tiene_buzon_quejas = forms.ChoiceField(
-        choices=BOOLEAN_CHOICE,
-        widget=forms.Select,
-        label="2.3.10 ¿El Comedor y/o Merendero cuenta con alguna forma de registro de los reclamos sobre la prestación alimentaria?",
-    )
-    tiene_gestion_quejas = forms.ChoiceField(
+    informacion_quejas = forms.ChoiceField(
         choices=BOOLEAN_CHOICE,
         widget=forms.Select,
         label=(

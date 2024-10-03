@@ -155,6 +155,7 @@ class EspacioCocina(models.Model):
     freezer = models.BooleanField()
     recipiente_residuos_organicos = models.BooleanField()
     recipiente_residuos_reciclables = models.BooleanField()
+    otros_residuos = models.BooleanField()
     recipiente_otros_residuos = models.BooleanField()
     abastecimiento_combustible = models.ManyToManyField(
         to=TipoCombustible,
@@ -166,11 +167,28 @@ class EspacioCocina(models.Model):
         on_delete=models.PROTECT,
         verbose_name="2.2.8 El abastecimiento del agua es con",
     )
+    abastecimiento_agua_otro = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="En caso de otro, especificar",
+    )
     instalacion_electrica = models.BooleanField()
 
     class Meta:
         verbose_name = "Espacio de cocina y almacenamiento de alimentos"
         verbose_name_plural = "Espacios de cocina y almacenamiento de alimentos"
+
+
+class TipoGestionQuejas(models.Model):
+    nombre = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        verbose_name = "Tipo de gestion de quejas"
+        verbose_name_plural = "Tipos de gestion de quejas"
 
 
 class EspacioPrestacion(models.Model):
@@ -193,13 +211,21 @@ class EspacioPrestacion(models.Model):
         blank=True,
         null=True,
     )
-    tiene_buzon_quejas = models.BooleanField()
-    tiene_gestion_quejas = models.BooleanField(
+    gestion_quejas = models.ForeignKey(
+        to=TipoGestionQuejas,
+        on_delete=models.PROTECT,
         verbose_name=(
-            "¿Hay en el lugar cartelería con información sobre los mecanismos "
-            "de gestión de quejas, reclamos y sugerencias del Comedor/Merendero/Merendero?"
-        )
+            "2.3.10 ¿El Comedor/Merendero cuenta con alguna forma de "
+            "registro de los reclamos sobre la prestacion alimentaria"
+        ),
     )
+    gestion_quejas_otro = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="En caso de otro, especificar",
+    )
+    informacion_quejas = models.BooleanField()
     frecuencia_limpieza = models.ForeignKey(
         to=FrecuenciaLimpieza,
         on_delete=models.PROTECT,

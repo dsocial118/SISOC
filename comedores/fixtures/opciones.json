@@ -175,6 +175,41 @@
         }
     },
     {
+        "model": "comedores.tipogestionquejas",
+        "pk": 1,
+        "fields": {
+            "nombre": "Reunion"
+        }
+    },
+    {
+        "model": "comedores.tipogestionquejas",
+        "pk": 2,
+        "fields": {
+            "nombre": "Buzón"
+        }
+    },
+    {
+        "model": "comedores.tipogestionquejas",
+        "pk": 3,
+        "fields": {
+            "nombre": "Cuaderno"
+        }
+    },
+    {
+        "model": "comedores.tipogestionquejas",
+        "pk": 4,
+        "fields": {
+            "nombre": "Otro"
+        }
+    },
+    {
+        "model": "comedores.tipogestionquejas",
+        "pk": 5,
+        "fields": {
+            "nombre": "Ninguna"
+        }
+    },
+    {
         "model": "comedores.frecuenciarecepcionrecursos",
         "pk": 1,
         "fields": {
@@ -199,7 +234,7 @@
         "model": "comedores.frecuenciarecepcionrecursos",
         "pk": 4,
         "fields": {
-            "nombre": "Sin frecuencia"
+            "nombre": "Sin frecuencia específica"
         }
     },
     {

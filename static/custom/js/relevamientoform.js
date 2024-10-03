@@ -17,6 +17,8 @@ function configurarInputs() {
     const selectElements = [
         { select: "id_servicio_por_turnos", inputs: ["id_cantidad_turnos"], condition: conditionBoolean },
         { select: "id_tipo_espacio_fisico", inputs: ["id_espacio_fisico_otro"], condition: conditionOtro },
+        { select: "id_abastecimiento_agua", inputs: ["id_abastecimiento_agua_otro"], condition: conditionOtro },
+        { select: "id_gestion_quejas", inputs: ["id_gestion_quejas_otro"], condition: conditionOtro },
         { select: "id_tiene_sanitarios", inputs: ["id_desague_hinodoro"], condition: conditionBoolean },
         { select: "id_recibe_donaciones_particulares", inputs: ["id_frecuencia_donaciones_particulares", "id_recursos_donaciones_particulares"], condition: conditionBoolean },
         { select: "id_recibe_estado_nacional", inputs: ["id_frecuencia_estado_nacional", "id_recursos_estado_nacional"], condition: conditionBoolean },

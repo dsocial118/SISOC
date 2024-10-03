@@ -107,10 +107,14 @@
                                         </div>
                                         <div class="form-group row align-items-end">
                                             <div class="col-6">{{ espacio_cocina_form.recipiente_otros_residuos|as_crispy_field }}</div>
-                                            <div class="col-6">{{ espacio_cocina_form.abastecimiento_combustible|as_crispy_field }}</div>
+                                            <div class="col-6">{{ espacio_cocina_form.otros_residuos|as_crispy_field }}</div>
                                         </div>
                                         <div class="form-group row align-items-end">
+                                            <div class="col-6">{{ espacio_cocina_form.abastecimiento_combustible|as_crispy_field }}</div>
                                             <div class="col-6">{{ espacio_cocina_form.abastecimiento_agua|as_crispy_field }}</div>
+                                        </div>
+                                        <div class="form-group row align-items-end">
+                                            <div class="col-6">{{ espacio_cocina_form.abastecimiento_agua_otro|as_crispy_field }}</div>
                                             <div class="col-6">{{ espacio_cocina_form.instalacion_electrica|as_crispy_field }}</div>
                                         </div>
                                     </div>
@@ -134,10 +138,11 @@
                                         </div>
                                         <div class="form-group row align-items-end">
                                             <div class="col-6">{{ espacio_prestacion_form.desague_hinodoro|as_crispy_field }}</div>
-                                            <div class="col-6">{{ espacio_prestacion_form.tiene_buzon_quejas|as_crispy_field }}</div>
+                                            <div class="col-6">{{ espacio_prestacion_form.gestion_quejas|as_crispy_field }}</div>
                                         </div>
                                         <div class="form-group row align-items-end">
-                                            <div class="col-12">{{ espacio_prestacion_form.tiene_gestion_quejas|as_crispy_field }}</div>
+                                            <div class="col-6">{{ espacio_prestacion_form.gestion_quejas_otro|as_crispy_field }}</div>
+                                            <div class="col-6">{{ espacio_prestacion_form.informacion_quejas|as_crispy_field }}</div>
                                         </div>
                                     </div>
                                     <h3 class="mt-5">2.4 Higiene del espacio fisico</h3>
