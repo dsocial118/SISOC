@@ -145,7 +145,7 @@ class TurnoChoices(models.TextChoices):
 #Modelo para choices de dimension educacion
 
 class NivelEducativo(models.Model):
-    nivel = models.CharField(max_length=255, choices=NivelEducativoChoices.choices)
+    nivel = models.CharField(max_length=255)
 
     def __str__(self):
         return str(self.nivel)
@@ -155,7 +155,7 @@ class NivelEducativo(models.Model):
         verbose_name_plural = "Niveles Educativos"
 
 class EstadoNivelEducativo(models.Model):
-    estado = models.CharField(max_length=255, choices=EstadoNivelEducativoChoices.choices)
+    estado = models.CharField(max_length=255)
 
     def __str__(self):
         return str(self.estado)
@@ -165,7 +165,7 @@ class EstadoNivelEducativo(models.Model):
         verbose_name_plural = "Estados Niveles Educativos"
 
 class AsisteEscuela(models.Model):
-    asiste = models.CharField(max_length=255, choices=AsisteEscuelaChoices.choices)
+    asiste = models.CharField(max_length=255)
 
     def __str__(self):
         return str(self.asiste)
@@ -175,7 +175,7 @@ class AsisteEscuela(models.Model):
         verbose_name_plural = "Asiste Escuelas"
 
 class EstadoEducativo(models.Model):
-    estado = models.CharField(max_length=255, choices=EstadoEducativoChoices.choices)
+    estado = models.CharField(max_length=255)
 
     def __str__(self):
         return str(self.estado)
@@ -185,7 +185,7 @@ class EstadoEducativo(models.Model):
         verbose_name_plural = "Estados Educativos"
 
 class MotivoNivelIncompleto(models.Model):
-    motivo = models.CharField(max_length=255, choices=MotivoNivelIncompletoChoices.choices)
+    motivo = models.CharField(max_length=255)
 
     def __str__(self):
         return str(self.motivo)
@@ -195,7 +195,7 @@ class MotivoNivelIncompleto(models.Model):
         verbose_name_plural = "Motivos Niveles Incompletos"
 
 class AreaCurso(models.Model):
-    area = models.CharField(max_length=255, choices=AreaCursoChoices.choices)
+    area = models.CharField(max_length=255)
 
     def __str__(self):
         return str(self.area)
@@ -205,7 +205,7 @@ class AreaCurso(models.Model):
         verbose_name_plural = "Areas Cursos"
 
 class TipoGestion(models.Model):
-    gestion = models.CharField(max_length=255, choices=TipoGestionChoices.choices)
+    gestion = models.CharField(max_length=255)
 
     def __str__(self):
         return str(self.gestion)
@@ -215,7 +215,7 @@ class TipoGestion(models.Model):
         verbose_name_plural = "Tipos Gestion"
 
 class Grado(models.Model):
-    grado = models.CharField(max_length=255, choices=GradoChoices.choices)
+    grado = models.CharField(max_length=255)
 
     def __str__(self):
         return str(self.grado)
@@ -225,7 +225,7 @@ class Grado(models.Model):
         verbose_name_plural = "Grados"
 
 class Turno(models.Model):
-    turno = models.CharField(max_length=255, choices=TurnoChoices.choices)
+    turno = models.CharField(max_length=255)
 
     def __str__(self):
         return str(self.turno)
@@ -822,6 +822,7 @@ class DimensionEducacion(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        related_name="max_nivel_dimension",
     )
     estado_nivel = models.ForeignKey(
         EstadoNivelEducativo,
@@ -857,7 +858,8 @@ class DimensionEducacion(models.Model):
         NivelEducativo,
         on_delete=models.SET_NULL,
         null=True, 
-        blank=True
+        blank=True,
+        related_name="ciclo_dimension",
     )
     grado = models.ForeignKey(
         Grado,
@@ -917,6 +919,7 @@ class DimensionEducacion(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        related_name="nivel_incompleto_dimension",
     )
     sinEduFormal = models.ForeignKey(
         MotivoNivelIncompleto,
@@ -924,6 +927,7 @@ class DimensionEducacion(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        related_name="sin_edu_formal_dimension",
     )
     realizandoCurso = models.BooleanField(
         verbose_name="¿Actualmente te encontrás haciendo algún curso de capacitación?",
@@ -935,11 +939,11 @@ class DimensionEducacion(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        related_name="area_curso_dimension",
     )
     interesCapLab = models.BooleanField(
         verbose_name="¿Tenés interés en realizar cursos de capacitación laboral?",
         default=False,
-        
     )
     oficio = models.BooleanField(
         verbose_name="¿Tenés conocimiento de algún oficio?",
@@ -951,6 +955,7 @@ class DimensionEducacion(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        related_name="area_oficio_dimension",
     )
 
     # Migraciones para fix de DAD-118
