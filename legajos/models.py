@@ -56,6 +56,195 @@ from legajos.choices import (
 )
 from usuarios.models import Usuarios, User
 
+#Choices dimension educacion
+class NivelEducativoChoices(models.TextChoices):
+    NO_APLICA = 'No aplica', 'No aplica'
+    EDUCACION_ESPECIAL = 'Educación especial', 'Educación especial'
+    JARDIN = 'Jardín', 'Jardín'
+    PRIMARIO = 'Primario', 'Primario'
+    EGB = 'EGB', 'EGB'
+    SECUNDARIO = 'Secundario', 'Secundario'
+    POLIMODAL = 'Polimodal', 'Polimodal'
+    TERCIARIO = 'Terciario', 'Terciario'
+    UNIVERSITARIO = 'Universitario', 'Universitario'
+
+class EstadoNivelEducativoChoices(models.TextChoices):
+    EN_CURSO = 'En curso', 'En curso'
+    INCOMPLETO = 'Incompleto', 'Incompleto'
+    COMPLETO = 'Completo', 'Completo'
+
+class AsisteEscuelaChoices(models.TextChoices):
+    SI_ASISTE_ACTUALMENTE = 'a', 'Sí, asisto actualmente'
+    SI_ASISTI_EN_ALGUN_MOMENTO = 'b', 'Sí, asistí en algún momento'
+    NO_NUNCA_ASISTI = 'c', 'No, nunca asistí'
+
+class EstadoEducativoChoices(models.TextChoices):
+    EN_CURSO = 'En curso', 'En curso'
+    INCOMPLETO = 'Incompleto', 'Incompleto'
+    COMPLETO = 'Completo', 'Completo'
+
+class MotivoNivelIncompletoChoices(models.TextChoices):
+    LEJOS = 'El establecimiento quedaba lejos y/o no tenía cómo llegar', 'El establecimiento quedaba lejos y/o no tenía cómo llegar'
+    TRABAJO = 'Necesitaba trabajar', 'Necesitaba trabajar'
+    GASTOS = 'No podía pagar los gastos', 'No podía pagar los gastos'
+    CUIDAR = 'Tenía que cuidar a otras personas del hogar (niños/as, personas mayores, otras)', 'Tenía que cuidar a otras personas del hogar (niños/as, personas mayores, otras)'
+    EMBARAZO = 'Estaba embarazada', 'Estaba embarazada'
+    INTERES = 'No tenía de interés', 'No tenía de interés'
+    DIFICULTADES = 'Tenía dificultades para aprender o estudiar', 'Tenía dificultades para aprender o estudiar'
+    SALUD = 'Tenía problemas de salud', 'Tenía problemas de salud'
+
+class AreaCursoChoices(models.TextChoices):
+    ALBANILERIA = 'Albañilería', 'Albañilería'
+    MECANICA_AUTOMOTOR = 'Mecánica Automotor básica', 'Mecánica Automotor básica'
+    VENTA_COMERCIO = 'Venta en comercio', 'Venta en comercio'
+    ELABORACION_ALIMENTOS = 'Elaboración de alimentos', 'Elaboración de alimentos'
+    COLOCACION_CERAMICOS = 'Colocación de cerámicos', 'Colocación de cerámicos'
+    INSTALACIONES_ELECTRICAS = 'Instalaciones eléctricas domiciliarias', 'Instalaciones eléctricas domiciliarias'
+    INSTALACION_GAS = 'Instalación de gas domiciliario', 'Instalación de gas domiciliario'
+    INSTALACION_SANITARIOS = 'Instalación de sanitarios en casas', 'Instalación de sanitarios en casas'
+    JARDINERIA = 'Jardinería y mantenimiento espacios verdes', 'Jardinería y mantenimiento espacios verdes'
+    MECANICA_MOTOS = 'Mecánica de Motos', 'Mecánica de Motos'
+    ATENCION_BARES = 'Atención en bares y restaurantes', 'Atención en bares y restaurantes'
+    MUCAMO_HOTEL = 'Mucamo/a de hotel', 'Mucamo/a de hotel'
+    CONFECCION_INDUMENTARIA = 'Confección de indumentaria', 'Confección de indumentaria'
+    INDUSTRIAS_CARNE = 'Industrias de la carne', 'Industrias de la carne'
+    TAREAS_GENERALES = 'Tareas generales en Industrias varias', 'Tareas generales en Industrias varias'
+    CUIDADO_PERSONAS = 'Cuidado de personas', 'Cuidado de personas'
+    SERVICIOS_GENERALES = 'Servicios generales en casas particulares', 'Servicios generales en casas particulares'
+    PINTURA_OBRA = 'Pintura de Obra', 'Pintura de Obra'
+
+class TipoGestionChoices(models.TextChoices):
+    ESTATAL = 'Estatal', 'Estatal'
+    PRIVADA = 'Privada o subvencionada', 'Privada o subvencionada'
+
+class GradoChoices(models.TextChoices):
+    PRIMERO_GRADO = '1º Grado', '1º Grado'
+    SEGUNDO_GRADO = '2º Grado', '2º Grado'
+    TERCERO_GRADO = '3º Grado', '3º Grado'
+    CUARTO_GRADO = '4º Grado', '4º Grado'
+    QUINTO_GRADO = '5º Grado', '5º Grado'
+    SEXTO_GRADO = '6º Grado', '6º Grado'
+    PRIMERO_ANO = '1º año', '1º año'
+    SEGUNDO_ANO = '2º año', '2º año'
+    TERCERO_ANO = '3º año', '3º año'
+    CUARTO_ANO = '4º año', '4º año'
+    QUINTO_ANO = '5º año', '5º año'
+    SEXTO_ANO = '6º año', '6º año'
+    OTRO = 'Otro', 'Otro'
+
+class TurnoChoices(models.TextChoices):
+    MANANA = 'Mañana', 'Mañana'
+    TARDE = 'Tarde', 'Tarde'
+    NOCHE = 'Noche', 'Noche'
+    JORNADA_COMPLETA = 'Jornada Completa', 'Jornada Completa'
+
+class InstitucionesEducativas(models.TextChoices):
+
+#Fin de choices educacion
+
+#Modelo para choices de dimension educacion
+
+class NivelEducativo(models.Model):
+    nivel = models.CharField(max_length=255, choices=NivelEducativoChoices.choices)
+
+    def __str__(self):
+        return self.nivel
+
+    class Meta:
+        verbose_name = "Nivel Educativo"
+        verbose_name_plural = "Niveles Educativos"
+
+class EstadoNivelEducativo(models.Model):
+    estado = models.CharField(max_length=255, choices=EstadoNivelEducativoChoices.choices)
+
+    def __str__(self):
+        return self.estado
+
+    class Meta:
+        verbose_name = "Estado Nivel Educativo"
+        verbose_name_plural = "Estados Niveles Educativos"
+
+class AsisteEscuela(models.Model):
+    asiste = models.CharField(max_length=255, choices=AsisteEscuelaChoices.choices)
+
+    def __str__(self):
+        return self.asiste
+
+    class Meta:
+        verbose_name = "Asiste Escuela"
+        verbose_name_plural = "Asiste Escuelas"
+
+class EstadoEducativo(models.Model):
+    estado = models.CharField(max_length=255, choices=EstadoEducativoChoices.choices)
+
+    def __str__(self):
+        return self.estado
+
+    class Meta:
+        verbose_name = "Estado Educativo"
+        verbose_name_plural = "Estados Educativos"
+
+class MotivoNivelIncompleto(models.Model):
+    motivo = models.CharField(max_length=255, choices=MotivoNivelIncompletoChoices.choices)
+
+    def __str__(self):
+        return self.motivo
+
+    class Meta:
+        verbose_name = "Motivo Nivel Incompleto"
+        verbose_name_plural = "Motivos Niveles Incompletos"
+
+class AreaCurso(models.Model):
+    area = models.CharField(max_length=255, choices=AreaCursoChoices.choices)
+
+    def __str__(self):
+        return self.area
+
+    class Meta:
+        verbose_name = "Area Curso"
+        verbose_name_plural = "Areas Cursos"
+
+class TipoGestion(models.Model):
+    gestion = models.CharField(max_length=255, choices=TipoGestionChoices.choices)
+
+    def __str__(self):
+        return self.gestion
+
+    class Meta:
+        verbose_name = "Tipo Gestion"
+        verbose_name_plural = "Tipos Gestion"
+
+class Grado(models.Model):
+    grado = models.CharField(max_length=255, choices=GradoChoices.choices)
+
+    def __str__(self):
+        return self.grado
+
+    class Meta:
+        verbose_name = "Grado"
+        verbose_name_plural = "Grados"
+
+class Turno(models.Model):
+    turno = models.CharField(max_length=255, choices=TurnoChoices.choices)
+
+    def __str__(self):
+        return self.turno
+
+    class Meta:
+        verbose_name = "Turno"
+        verbose_name_plural = "Turnos"
+
+class InstitucionesEducativas(models.Model):
+    institucion = models.CharField(max_length=255, choices=InstitucionesEducativas.choices)
+
+    def __str__(self):
+        return self.institucion
+
+    class Meta:
+        verbose_name = "Institucion Educativa"
+        verbose_name_plural = "Instituciones Educativas"
+
+#Fin de modelo para choices de dimension educacion
 
 class LegajoProvincias(models.Model):
     """
@@ -626,50 +815,61 @@ class DimensionSalud(models.Model):
 
 class DimensionEducacion(models.Model):
     fk_legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
-    max_nivel = models.CharField(
+    max_nivel = models.ForeignKey(
+        NivelEducativo,
         verbose_name="Máximo nivel educativo alcanzado",
-        max_length=255,
-        choices=CHOICE_NIVEL_EDUCATIVO,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
-    estado_nivel = models.CharField(
+    estado_nivel = models.ForeignKey(
+        EstadoNivelEducativo,
         verbose_name="Estado del nivel",
-        max_length=255,
-        choices=CHOICE_ESTADO_NIVEL_EDUCATIVO,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
-    asiste_escuela = models.CharField(
+    asiste_escuela = models.ForeignKey(
+        AsisteEscuela,
         verbose_name="¿Asistís o asististe alguna vez a algún establecimiento educativo?",
-        max_length=255,
-        choices=CHOICE_ASISTE_ESCUELA,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
 
-    institucion = models.CharField(
+    #TODO: Crear choices para instituciones educativas
+    institucion = models.ForeignKey(
+        InstitucionesEducativas,
         verbose_name="Escuela",
-        max_length=255,
-        choices=CHOICE_INSTITUCIONES_EDUCATIVAS,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
-    gestion = models.CharField(
-        verbose_name="Gestión",
-        max_length=255,
-        choices=CHOICE_TIPO_GESTION,
+    gestion = models.ForeignKey(
+        TipoGestion,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        verbose_name='Tipo de gestión'
     )
-    ciclo = models.CharField(
-        max_length=255, choices=CHOICE_NIVEL_EDUCATIVO, null=True, blank=True
+    ciclo = models.ForeignKey(
+        NivelEducativo,
+        on_delete=models.SET_NULL,
+        null=True, 
+        blank=True
     )
-    grado = models.CharField(
-        max_length=255, choices=CHOICE_GRADO, null=True, blank=True
+    grado = models.ForeignKey(
+        Grado,
+        on_delete=models.SET_NULL,
+        null=True, 
+        blank=True
     )
-    turno = models.CharField(
-        max_length=255, choices=CHOICE_TURNO, null=True, blank=True
+    turno = models.ForeignKey(
+        Turno,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Turno'
     )
     obs_educacion = models.CharField(
         max_length=500, verbose_name="Observaciones", null=True, blank=True
@@ -710,17 +910,17 @@ class DimensionEducacion(models.Model):
     numeroInstitucion = models.CharField(
         verbose_name="Número", max_length=255, null=True, blank=True
     )
-    nivelIncompleto = models.CharField(
+    nivelIncompleto = models.ForeignKey(
+        MotivoNivelIncompleto,
         verbose_name="¿Cuál fue el motivo principal por el que no terminaste tus estudios?",
-        max_length=255,
-        choices=CHOICE_MOTIVO_NIVEL_INCOMPLETO,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
-    sinEduFormal = models.CharField(
+    sinEduFormal = models.ForeignKey(
+        MotivoNivelIncompleto,
         verbose_name="¿Cuál fue el motivo principal por el que nunca asististe a un establecimiento educativo?",
-        max_length=255,
-        choices=CHOICE_MOTIVO_NIVEL_INCOMPLETO,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
@@ -731,10 +931,10 @@ class DimensionEducacion(models.Model):
         null=True,
         blank=True,
     )
-    areaCurso = MultiSelectField(
-        choices=CHOICE_AREA_CURSO,
+    areaCurso = models.ForeignKey(
+        AreaCurso,
         verbose_name="¿En qué áreas?",
-        max_length=255,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
@@ -752,10 +952,10 @@ class DimensionEducacion(models.Model):
         null=True,
         blank=True,
     )
-    areaOficio = MultiSelectField(
-        choices=CHOICE_AREA_CURSO,
+    areaOficio = models.ForeignKey(
+        AreaCurso,
         verbose_name="¿En qué áreas?",
-        max_length=255,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
