@@ -168,7 +168,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06014",
         "fields": {
             "nombre": "Adolfo Gonzales Chaves",
@@ -176,7 +176,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "30015",
         "fields": {
             "nombre": "Concordia",
@@ -184,7 +184,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "30035",
         "fields": {
             "nombre": "Federal",
@@ -192,7 +192,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "30056",
         "fields": {
             "nombre": "Gualeguaychú",
@@ -200,7 +200,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "30063",
         "fields": {
             "nombre": "Islas del Ibicuy",
@@ -208,7 +208,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "30105",
         "fields": {
             "nombre": "Victoria",
@@ -216,7 +216,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "30021",
         "fields": {
             "nombre": "Diamante",
@@ -224,7 +224,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "30098",
         "fields": {
             "nombre": "Uruguay",
@@ -232,7 +232,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "30084",
         "fields": {
             "nombre": "Paraná",
@@ -240,7 +240,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06707",
         "fields": {
             "nombre": "Saladillo",
@@ -248,7 +248,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06455",
         "fields": {
             "nombre": "Las Flores",
@@ -256,7 +256,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06686",
         "fields": {
             "nombre": "Rojas",
@@ -264,7 +264,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06252",
         "fields": {
             "nombre": "Escobar",
@@ -272,7 +272,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06412",
         "fields": {
             "nombre": "José C. Paz",
@@ -280,7 +280,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06056",
         "fields": {
             "nombre": "Bahía Blanca",
@@ -288,7 +288,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06735",
         "fields": {
             "nombre": "San Antonio de Areco",
@@ -296,7 +296,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06511",
         "fields": {
             "nombre": "Maipú",
@@ -304,7 +304,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06280",
         "fields": {
             "nombre": "General Alvarado",
@@ -312,7 +312,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06357",
         "fields": {
             "nombre": "General Pueyrredón",
@@ -320,7 +320,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06518",
         "fields": {
             "nombre": "Mar Chiquita",
@@ -328,7 +328,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06868",
         "fields": {
             "nombre": "Villa Gesell",
@@ -336,7 +336,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06644",
         "fields": {
             "nombre": "Pinamar",
@@ -344,7 +344,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06336",
         "fields": {
             "nombre": "General Lavalle",
@@ -352,7 +352,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06420",
         "fields": {
             "nombre": "La Costa",
@@ -360,7 +360,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06505",
         "fields": {
             "nombre": "Magdalena",
@@ -368,7 +368,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "18175",
         "fields": {
             "nombre": "Sauce",
@@ -376,7 +376,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06861",
         "fields": {
             "nombre": "Vicente López",
@@ -384,7 +384,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "66098",
         "fields": {
             "nombre": "La Viña",
@@ -392,7 +392,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06672",
         "fields": {
             "nombre": "Rauch",
@@ -400,7 +400,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "66112",
         "fields": {
             "nombre": "Metán",
@@ -408,7 +408,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "66119",
         "fields": {
             "nombre": "Molinos",
@@ -416,7 +416,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "22112",
         "fields": {
             "nombre": "O'Higgins",
@@ -424,7 +424,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06560",
         "fields": {
             "nombre": "Moreno",
@@ -432,7 +432,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06427",
         "fields": {
             "nombre": "La Matanza",
@@ -440,7 +440,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06791",
         "fields": {
             "nombre": "Tandil",
@@ -448,7 +448,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06203",
         "fields": {
             "nombre": "Coronel Suárez",
@@ -456,7 +456,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "46035",
         "fields": {
             "nombre": "Chamical",
@@ -464,7 +464,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "26035",
         "fields": {
             "nombre": "Futaleufú",
@@ -472,7 +472,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "78049",
         "fields": {
             "nombre": "Río Chico",
@@ -480,7 +480,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "62077",
         "fields": {
             "nombre": "San Antonio",
@@ -488,7 +488,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "86014",
         "fields": {
             "nombre": "Alberdi",
@@ -496,7 +496,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "86098",
         "fields": {
             "nombre": "Juan Felipe Ibarra",
@@ -504,7 +504,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "86077",
         "fields": {
             "nombre": "General Taboada",
@@ -512,7 +512,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06721",
         "fields": {
             "nombre": "Salliqueló",
@@ -520,7 +520,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06091",
         "fields": {
             "nombre": "Berazategui",
@@ -528,7 +528,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "66049",
         "fields": {
             "nombre": "General Güemes",
@@ -536,7 +536,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "66154",
         "fields": {
             "nombre": "San Carlos",
@@ -544,7 +544,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06343",
         "fields": {
             "nombre": "General Paz",
@@ -552,7 +552,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06308",
         "fields": {
             "nombre": "General Guido",
@@ -560,7 +560,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06315",
         "fields": {
             "nombre": "General Juan Madariaga",
@@ -568,7 +568,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "78028",
         "fields": {
             "nombre": "Lago Argentino",
@@ -576,7 +576,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "86154",
         "fields": {
             "nombre": "Rivadavia",
@@ -584,7 +584,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "86126",
         "fields": {
             "nombre": "Ojo de Agua",
@@ -592,7 +592,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "86063",
         "fields": {
             "nombre": "Choya",
@@ -600,7 +600,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "74042",
         "fields": {
             "nombre": "Gobernador Dupuy",
@@ -608,7 +608,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "66014",
         "fields": {
             "nombre": "Cachi",
@@ -616,7 +616,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "66042",
         "fields": {
             "nombre": "Chicoana",
@@ -624,7 +624,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "26042",
         "fields": {
             "nombre": "Gaiman",
@@ -632,7 +632,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "26077",
         "fields": {
             "nombre": "Rawson",
@@ -640,7 +640,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "46077",
         "fields": {
             "nombre": "General Lamadrid",
@@ -648,7 +648,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "74007",
         "fields": {
             "nombre": "Ayacucho",
@@ -656,7 +656,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "22036",
         "fields": {
             "nombre": "12 de Octubre",
@@ -664,7 +664,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "14175",
         "fields": {
             "nombre": "Tulumba",
@@ -672,7 +672,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "14028",
         "fields": {
             "nombre": "Cruz del Eje",
@@ -680,7 +680,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "14091",
         "fields": {
             "nombre": "Punilla",
@@ -688,7 +688,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "02042",
         "fields": {
             "nombre": "Comuna 6",
@@ -696,7 +696,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "50112",
         "fields": {
             "nombre": "Santa Rosa",
@@ -704,7 +704,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "22063",
         "fields": {
             "nombre": "General Güemes",
@@ -712,7 +712,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "46084",
         "fields": {
             "nombre": "General Ortiz de Ocampo",
@@ -720,7 +720,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "14035",
         "fields": {
             "nombre": "General Roca",
@@ -728,7 +728,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "34042",
         "fields": {
             "nombre": "Pilagás",
@@ -736,7 +736,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "34021",
         "fields": {
             "nombre": "Laishi",
@@ -744,7 +744,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "50084",
         "fields": {
             "nombre": "Rivadavia",
@@ -752,7 +752,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06819",
         "fields": {
             "nombre": "Tornquist",
@@ -760,7 +760,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "50042",
         "fields": {
             "nombre": "La Paz",
@@ -768,7 +768,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06196",
         "fields": {
             "nombre": "Coronel Pringles",
@@ -776,7 +776,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "62028",
         "fields": {
             "nombre": "Conesa",
@@ -784,7 +784,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06875",
         "fields": {
             "nombre": "Villarino",
@@ -792,7 +792,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "34056",
         "fields": {
             "nombre": "Pirané",
@@ -800,7 +800,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06351",
         "fields": {
             "nombre": "General Pinto",
@@ -808,7 +808,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06742",
         "fields": {
             "nombre": "San Cayetano",
@@ -816,7 +816,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06833",
         "fields": {
             "nombre": "Tres Arroyos",
@@ -824,7 +824,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06189",
         "fields": {
             "nombre": "Coronel Dorrego",
@@ -832,7 +832,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06581",
         "fields": {
             "nombre": "Necochea",
@@ -840,7 +840,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "46105",
         "fields": {
             "nombre": "Independencia",
@@ -848,7 +848,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06218",
         "fields": {
             "nombre": "Chascomús",
@@ -856,7 +856,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06655",
         "fields": {
             "nombre": "Punta Indio",
@@ -864,7 +864,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "38014",
         "fields": {
             "nombre": "El Carmen",
@@ -872,7 +872,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "14147",
         "fields": {
             "nombre": "Santa María",
@@ -880,7 +880,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "62084",
         "fields": {
             "nombre": "Valcheta",
@@ -888,7 +888,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "46007",
         "fields": {
             "nombre": "Arauco",
@@ -896,7 +896,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06466",
         "fields": {
             "nombre": "Lezama",
@@ -904,7 +904,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06126",
         "fields": {
             "nombre": "Campana",
@@ -912,7 +912,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "78042",
         "fields": {
             "nombre": "Magallanes",
@@ -920,7 +920,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "78007",
         "fields": {
             "nombre": "Corpen Aike",
@@ -928,7 +928,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "14070",
         "fields": {
             "nombre": "Minas",
@@ -936,7 +936,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "14126",
         "fields": {
             "nombre": "San Alberto",
@@ -944,7 +944,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "14119",
         "fields": {
             "nombre": "Río Segundo",
@@ -952,7 +952,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "14140",
         "fields": {
             "nombre": "San Justo",
@@ -960,7 +960,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "14182",
         "fields": {
             "nombre": "Unión",
@@ -968,7 +968,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "14161",
         "fields": {
             "nombre": "Tercero Arriba",
@@ -976,7 +976,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "66035",
         "fields": {
             "nombre": "Cerrillos",
@@ -984,7 +984,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "14098",
         "fields": {
             "nombre": "Río Cuarto",
@@ -992,7 +992,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "50126",
         "fields": {
             "nombre": "Tupungato",
@@ -1000,7 +1000,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "62049",
         "fields": {
             "nombre": "9 de Julio",
@@ -1008,7 +1008,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "62056",
         "fields": {
             "nombre": "Ñorquinco",
@@ -1016,7 +1016,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "50105",
         "fields": {
             "nombre": "San Rafael",
@@ -1024,7 +1024,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "66007",
         "fields": {
             "nombre": "Anta",
@@ -1032,7 +1032,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "58098",
         "fields": {
             "nombre": "Picún Leufú",
@@ -1040,7 +1040,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "58112",
         "fields": {
             "nombre": "Zapala",
@@ -1048,7 +1048,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "62091",
         "fields": {
             "nombre": "25 de Mayo",
@@ -1056,7 +1056,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "26105",
         "fields": {
             "nombre": "Telsen",
@@ -1064,7 +1064,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "62070",
         "fields": {
             "nombre": "Pilcaniyeu",
@@ -1072,7 +1072,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06007",
         "fields": {
             "nombre": "Adolfo Alsina",
@@ -1080,7 +1080,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "50014",
         "fields": {
             "nombre": "General Alvear",
@@ -1088,7 +1088,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "66077",
         "fields": {
             "nombre": "La Caldera",
@@ -1096,7 +1096,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "22154",
         "fields": {
             "nombre": "Sargento Cabral",
@@ -1104,7 +1104,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06616",
         "fields": {
             "nombre": "Pellegrini",
@@ -1112,7 +1112,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "58007",
         "fields": {
             "nombre": "Aluminé",
@@ -1120,7 +1120,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "66070",
         "fields": {
             "nombre": "Iruya",
@@ -1128,7 +1128,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "58056",
         "fields": {
             "nombre": "Lácar",
@@ -1136,7 +1136,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "10063",
         "fields": {
             "nombre": "Fray Mamerto Esquiú",
@@ -1144,7 +1144,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "10112",
         "fields": {
             "nombre": "Valle Viejo",
@@ -1152,7 +1152,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "18133",
         "fields": {
             "nombre": "San Cosme",
@@ -1160,7 +1160,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "26091",
         "fields": {
             "nombre": "Sarmiento",
@@ -1168,7 +1168,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "02007",
         "fields": {
             "nombre": "Comuna 1",
@@ -1176,7 +1176,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "02028",
         "fields": {
             "nombre": "Comuna 4",
@@ -1184,7 +1184,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "62035",
         "fields": {
             "nombre": "El Cuy",
@@ -1192,7 +1192,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "50049",
         "fields": {
             "nombre": "Las Heras",
@@ -1200,7 +1200,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "22161",
         "fields": {
             "nombre": "Tapenagá",
@@ -1208,7 +1208,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "50056",
         "fields": {
             "nombre": "Lavalle",
@@ -1216,7 +1216,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "50077",
         "fields": {
             "nombre": "Malargüe",
@@ -1224,7 +1224,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "14084",
         "fields": {
             "nombre": "Presidente Roque Sáenz Peña",
@@ -1232,7 +1232,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "58021",
         "fields": {
             "nombre": "Catán Lil",
@@ -1240,7 +1240,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "22119",
         "fields": {
             "nombre": "Presidencia de la Plaza",
@@ -1248,7 +1248,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "02035",
         "fields": {
             "nombre": "Comuna 5",
@@ -1256,7 +1256,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "18049",
         "fields": {
             "nombre": "Esquina",
@@ -1264,7 +1264,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "94015",
         "fields": {
             "nombre": "Ushuaia",
@@ -1272,7 +1272,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "10028",
         "fields": {
             "nombre": "Antofagasta de la Sierra",
@@ -1280,7 +1280,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06245",
         "fields": {
             "nombre": "Ensenada",
@@ -1288,7 +1288,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "90084",
         "fields": {
             "nombre": "Capital",
@@ -1296,7 +1296,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "82007",
         "fields": {
             "nombre": "Belgrano",
@@ -1304,7 +1304,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06623",
         "fields": {
             "nombre": "Pergamino",
@@ -1312,7 +1312,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06651",
         "fields": {
             "nombre": "Puán",
@@ -1320,7 +1320,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06392",
         "fields": {
             "nombre": "General Villegas",
@@ -1328,7 +1328,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "02084",
         "fields": {
             "nombre": "Comuna 12",
@@ -1336,7 +1336,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "82049",
         "fields": {
             "nombre": "General Obligado",
@@ -1344,7 +1344,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "82133",
         "fields": {
             "nombre": "Vera",
@@ -1352,7 +1352,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "82077",
         "fields": {
             "nombre": "9 de Julio",
@@ -1360,7 +1360,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "62007",
         "fields": {
             "nombre": "Adolfo Alsina",
@@ -1368,7 +1368,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "22133",
         "fields": {
             "nombre": "Quitilipi",
@@ -1376,7 +1376,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "78021",
         "fields": {
             "nombre": "Güer Aike",
@@ -1384,7 +1384,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "10042",
         "fields": {
             "nombre": "Capayán",
@@ -1392,7 +1392,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "90007",
         "fields": {
             "nombre": "Burruyacú",
@@ -1400,7 +1400,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "82105",
         "fields": {
             "nombre": "San Jerónimo",
@@ -1408,7 +1408,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "22070",
         "fields": {
             "nombre": "Independencia",
@@ -1416,7 +1416,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "18035",
         "fields": {
             "nombre": "Curuzú Cuatiá",
@@ -1424,7 +1424,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "50063",
         "fields": {
             "nombre": "Luján de Cuyo",
@@ -1432,7 +1432,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "10105",
         "fields": {
             "nombre": "Tinogasta",
@@ -1440,7 +1440,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "02049",
         "fields": {
             "nombre": "Comuna 7",
@@ -1448,7 +1448,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "42077",
         "fields": {
             "nombre": "Hucal",
@@ -1456,7 +1456,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "18077",
         "fields": {
             "nombre": "Itatí",
@@ -1464,7 +1464,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "02070",
         "fields": {
             "nombre": "Comuna 10",
@@ -1472,7 +1472,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "42014",
         "fields": {
             "nombre": "Caleu Caleu",
@@ -1480,7 +1480,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "42084",
         "fields": {
             "nombre": "Lihuel Calel",
@@ -1488,7 +1488,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "42042",
         "fields": {
             "nombre": "Curacó",
@@ -1496,7 +1496,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "58035",
         "fields": {
             "nombre": "Confluencia",
@@ -1504,7 +1504,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "58105",
         "fields": {
             "nombre": "Picunches",
@@ -1512,7 +1512,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "58014",
         "fields": {
             "nombre": "Añelo",
@@ -1520,7 +1520,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "58063",
         "fields": {
             "nombre": "Loncopué",
@@ -1528,7 +1528,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "58084",
         "fields": {
             "nombre": "Ñorquín",
@@ -1536,7 +1536,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "58091",
         "fields": {
             "nombre": "Pehuenches",
@@ -1544,7 +1544,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "02077",
         "fields": {
             "nombre": "Comuna 11",
@@ -1552,7 +1552,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "54084",
         "fields": {
             "nombre": "Montecarlo",
@@ -1560,7 +1560,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "54042",
         "fields": {
             "nombre": "Eldorado",
@@ -1568,7 +1568,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "54112",
         "fields": {
             "nombre": "San Pedro",
@@ -1576,7 +1576,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "94028",
         "fields": {
             "nombre": "Antártida Argentina",
@@ -1584,7 +1584,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "58077",
         "fields": {
             "nombre": "Minas",
@@ -1592,7 +1592,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "58042",
         "fields": {
             "nombre": "Chos Malal",
@@ -1600,7 +1600,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "26014",
         "fields": {
             "nombre": "Cushamen",
@@ -1608,7 +1608,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "78035",
         "fields": {
             "nombre": "Lago Buenos Aires",
@@ -1616,7 +1616,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "62063",
         "fields": {
             "nombre": "Pichi Mahuida",
@@ -1624,7 +1624,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "86175",
         "fields": {
             "nombre": "San Martín",
@@ -1632,7 +1632,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "38112",
         "fields": {
             "nombre": "Yavi",
@@ -1640,7 +1640,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "38077",
         "fields": {
             "nombre": "Santa Catalina",
@@ -1648,7 +1648,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "38063",
         "fields": {
             "nombre": "San Pedro",
@@ -1656,7 +1656,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "38105",
         "fields": {
             "nombre": "Valle Grande",
@@ -1664,7 +1664,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "34035",
         "fields": {
             "nombre": "Patiño",
@@ -1672,7 +1672,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "34007",
         "fields": {
             "nombre": "Bermejo",
@@ -1680,7 +1680,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "38084",
         "fields": {
             "nombre": "Susques",
@@ -1688,7 +1688,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "34028",
         "fields": {
             "nombre": "Matacos",
@@ -1696,7 +1696,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "66105",
         "fields": {
             "nombre": "Los Andes",
@@ -1704,7 +1704,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "66126",
         "fields": {
             "nombre": "Orán",
@@ -1712,7 +1712,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "38094",
         "fields": {
             "nombre": "Tilcara",
@@ -1720,7 +1720,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "38042",
         "fields": {
             "nombre": "Palpalá",
@@ -1728,7 +1728,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "42098",
         "fields": {
             "nombre": "Loventué",
@@ -1736,7 +1736,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "26084",
         "fields": {
             "nombre": "Río Senguer",
@@ -1744,7 +1744,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "62021",
         "fields": {
             "nombre": "Bariloche",
@@ -1752,7 +1752,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "58049",
         "fields": {
             "nombre": "Huiliches",
@@ -1760,7 +1760,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "42091",
         "fields": {
             "nombre": "Limay Mahuida",
@@ -1768,7 +1768,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "42112",
         "fields": {
             "nombre": "Puelén",
@@ -1776,7 +1776,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "42049",
         "fields": {
             "nombre": "Chalileo",
@@ -1784,7 +1784,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "42063",
         "fields": {
             "nombre": "Chical Co",
@@ -1792,7 +1792,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "86140",
         "fields": {
             "nombre": "Quebrachos",
@@ -1800,7 +1800,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "18112",
         "fields": {
             "nombre": "Monte Caseros",
@@ -1808,7 +1808,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "22098",
         "fields": {
             "nombre": "Mayor Luis J. Fontana",
@@ -1816,7 +1816,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "22043",
         "fields": {
             "nombre": "Fray Justo Santa María de Oro",
@@ -1824,7 +1824,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "46063",
         "fields": {
             "nombre": "General Belgrano",
@@ -1832,7 +1832,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "82070",
         "fields": {
             "nombre": "Las Colonias",
@@ -1840,7 +1840,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "82112",
         "fields": {
             "nombre": "San Justo",
@@ -1848,7 +1848,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "82091",
         "fields": {
             "nombre": "San Cristóbal",
@@ -1856,7 +1856,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "82098",
         "fields": {
             "nombre": "San Javier",
@@ -1864,7 +1864,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "42056",
         "fields": {
             "nombre": "Chapaleufú",
@@ -1872,7 +1872,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "42133",
         "fields": {
             "nombre": "Realicó",
@@ -1880,7 +1880,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "42105",
         "fields": {
             "nombre": "Maracó",
@@ -1888,7 +1888,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "42147",
         "fields": {
             "nombre": "Trenel",
@@ -1896,7 +1896,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "86056",
         "fields": {
             "nombre": "Copo",
@@ -1904,7 +1904,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "42021",
         "fields": {
             "nombre": "Capital",
@@ -1912,7 +1912,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "38070",
         "fields": {
             "nombre": "Santa Bárbara",
@@ -1920,7 +1920,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "22007",
         "fields": {
             "nombre": "Almirante Brown",
@@ -1928,7 +1928,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "66140",
         "fields": {
             "nombre": "Rosario de la Frontera",
@@ -1936,7 +1936,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "58028",
         "fields": {
             "nombre": "Collón Curá",
@@ -1944,7 +1944,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "02021",
         "fields": {
             "nombre": "Comuna 3",
@@ -1952,7 +1952,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06749",
         "fields": {
             "nombre": "San Fernando",
@@ -1960,7 +1960,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06805",
         "fields": {
             "nombre": "Tigre",
@@ -1968,7 +1968,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "10091",
         "fields": {
             "nombre": "Santa María",
@@ -1976,7 +1976,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "10098",
         "fields": {
             "nombre": "Santa Rosa",
@@ -1984,7 +1984,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "10070",
         "fields": {
             "nombre": "La Paz",
@@ -1992,7 +1992,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "86147",
         "fields": {
             "nombre": "Río Hondo",
@@ -2000,7 +2000,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "46098",
         "fields": {
             "nombre": "Vinchina",
@@ -2008,7 +2008,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "46014",
         "fields": {
             "nombre": "Capital",
@@ -2016,7 +2016,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "14112",
         "fields": {
             "nombre": "Río Seco",
@@ -2024,7 +2024,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "62014",
         "fields": {
             "nombre": "Avellaneda",
@@ -2032,7 +2032,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "62042",
         "fields": {
             "nombre": "General Roca",
@@ -2040,7 +2040,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "74014",
         "fields": {
             "nombre": "Belgrano",
@@ -2048,7 +2048,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "58070",
         "fields": {
             "nombre": "Los Lagos",
@@ -2056,7 +2056,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "10049",
         "fields": {
             "nombre": "Capital",
@@ -2064,7 +2064,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "10014",
         "fields": {
             "nombre": "Ancasti",
@@ -2072,7 +2072,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "10084",
         "fields": {
             "nombre": "Pomán",
@@ -2080,7 +2080,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "02014",
         "fields": {
             "nombre": "Comuna 2",
@@ -2088,7 +2088,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "22105",
         "fields": {
             "nombre": "9 de Julio",
@@ -2096,7 +2096,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "14077",
         "fields": {
             "nombre": "Pocho",
@@ -2104,7 +2104,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06270",
         "fields": {
             "nombre": "Ezeiza",
@@ -2112,7 +2112,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "10021",
         "fields": {
             "nombre": "Andalgalá",
@@ -2120,7 +2120,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "10007",
         "fields": {
             "nombre": "Ambato",
@@ -2128,7 +2128,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "02056",
         "fields": {
             "nombre": "Comuna 8",
@@ -2136,7 +2136,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "86084",
         "fields": {
             "nombre": "Guasayán",
@@ -2144,7 +2144,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "10077",
         "fields": {
             "nombre": "Paclín",
@@ -2152,7 +2152,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "10056",
         "fields": {
             "nombre": "El Alto",
@@ -2160,7 +2160,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "14154",
         "fields": {
             "nombre": "Sobremonte",
@@ -2168,7 +2168,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "94008",
         "fields": {
             "nombre": "Río Grande",
@@ -2176,7 +2176,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "02091",
         "fields": {
             "nombre": "Comuna 13",
@@ -2184,7 +2184,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "86035",
         "fields": {
             "nombre": "Banda",
@@ -2192,7 +2192,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "26070",
         "fields": {
             "nombre": "Paso de Indios",
@@ -2200,7 +2200,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "14014",
         "fields": {
             "nombre": "Capital",
@@ -2208,7 +2208,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "26063",
         "fields": {
             "nombre": "Mártires",
@@ -2216,7 +2216,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "86182",
         "fields": {
             "nombre": "Sarmiento",
@@ -2224,7 +2224,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "78014",
         "fields": {
             "nombre": "Deseado",
@@ -2232,7 +2232,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "26056",
         "fields": {
             "nombre": "Languiñeo",
@@ -2240,7 +2240,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "86042",
         "fields": {
             "nombre": "Belgrano",
@@ -2248,7 +2248,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "86007",
         "fields": {
             "nombre": "Aguirre",
@@ -2256,7 +2256,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "22091",
         "fields": {
             "nombre": "Maipú",
@@ -2264,7 +2264,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "50091",
         "fields": {
             "nombre": "San Carlos",
@@ -2272,7 +2272,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "50119",
         "fields": {
             "nombre": "Tunuyán",
@@ -2280,7 +2280,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "86161",
         "fields": {
             "nombre": "Robles",
@@ -2288,7 +2288,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "86105",
         "fields": {
             "nombre": "Loreto",
@@ -2296,7 +2296,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "42028",
         "fields": {
             "nombre": "Catriló",
@@ -2304,7 +2304,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "86049",
         "fields": {
             "nombre": "Capital",
@@ -2312,7 +2312,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "02098",
         "fields": {
             "nombre": "Comuna 14",
@@ -2320,7 +2320,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "30008",
         "fields": {
             "nombre": "Colón",
@@ -2328,7 +2328,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "30113",
         "fields": {
             "nombre": "Villaguay",
@@ -2336,7 +2336,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06168",
         "fields": {
             "nombre": "Castelli",
@@ -2344,7 +2344,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "30088",
         "fields": {
             "nombre": "San Salvador",
@@ -2352,7 +2352,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "10035",
         "fields": {
             "nombre": "Belén",
@@ -2360,7 +2360,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06028",
         "fields": {
             "nombre": "Almirante Brown",
@@ -2368,7 +2368,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "30077",
         "fields": {
             "nombre": "Nogoyá",
@@ -2376,7 +2376,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "30091",
         "fields": {
             "nombre": "Tala",
@@ -2384,7 +2384,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "30049",
         "fields": {
             "nombre": "Gualeguay",
@@ -2392,7 +2392,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "30028",
         "fields": {
             "nombre": "Federación",
@@ -2400,7 +2400,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "30070",
         "fields": {
             "nombre": "La Paz",
@@ -2408,7 +2408,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "30042",
         "fields": {
             "nombre": "Feliciano",
@@ -2416,7 +2416,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06648",
         "fields": {
             "nombre": "Presidente Perón",
@@ -2424,7 +2424,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06413",
         "fields": {
             "nombre": "Junín",
@@ -2432,7 +2432,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06119",
         "fields": {
             "nombre": "Brandsen",
@@ -2440,7 +2440,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06224",
         "fields": {
             "nombre": "Chivilcoy",
@@ -2448,7 +2448,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06021",
         "fields": {
             "nombre": "Alberti",
@@ -2456,7 +2456,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06112",
         "fields": {
             "nombre": "Bragado",
@@ -2464,7 +2464,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06329",
         "fields": {
             "nombre": "General Las Heras",
@@ -2472,7 +2472,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06147",
         "fields": {
             "nombre": "Carlos Casares",
@@ -2480,7 +2480,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06525",
         "fields": {
             "nombre": "Marcos Paz",
@@ -2488,7 +2488,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06385",
         "fields": {
             "nombre": "General Viamonte",
@@ -2496,7 +2496,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06154",
         "fields": {
             "nombre": "Carlos Tejedor",
@@ -2504,7 +2504,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06854",
         "fields": {
             "nombre": "25 de Mayo",
@@ -2512,7 +2512,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06588",
         "fields": {
             "nombre": "9 de Julio",
@@ -2520,7 +2520,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06609",
         "fields": {
             "nombre": "Pehuajó",
@@ -2528,7 +2528,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06798",
         "fields": {
             "nombre": "Tapalqué",
@@ -2536,7 +2536,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06826",
         "fields": {
             "nombre": "Trenque Lauquen",
@@ -2544,7 +2544,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06301",
         "fields": {
             "nombre": "General Belgrano",
@@ -2552,7 +2552,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06547",
         "fields": {
             "nombre": "Monte",
@@ -2560,7 +2560,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06693",
         "fields": {
             "nombre": "Roque Pérez",
@@ -2568,7 +2568,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06595",
         "fields": {
             "nombre": "Olavarría",
@@ -2576,7 +2576,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06539",
         "fields": {
             "nombre": "Merlo",
@@ -2584,7 +2584,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "54014",
         "fields": {
             "nombre": "Cainguás",
@@ -2592,7 +2592,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "94021",
         "fields": {
             "nombre": "Islas del Atlántico Sur",
@@ -2600,7 +2600,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06260",
         "fields": {
             "nombre": "Esteban Echeverría",
@@ -2608,7 +2608,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06077",
         "fields": {
             "nombre": "Arrecifes",
@@ -2616,7 +2616,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06140",
         "fields": {
             "nombre": "Capitán Sarmiento",
@@ -2624,7 +2624,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "38021",
         "fields": {
             "nombre": "Dr. Manuel Belgrano",
@@ -2632,7 +2632,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06161",
         "fields": {
             "nombre": "Carmen de Areco",
@@ -2640,7 +2640,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06714",
         "fields": {
             "nombre": "Salto",
@@ -2648,7 +2648,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06266",
         "fields": {
             "nombre": "Exaltación de la Cruz",
@@ -2656,7 +2656,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06760",
         "fields": {
             "nombre": "San Miguel",
@@ -2664,7 +2664,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06728",
         "fields": {
             "nombre": "San Andrés de Giles",
@@ -2672,7 +2672,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06532",
         "fields": {
             "nombre": "Mercedes",
@@ -2680,7 +2680,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06638",
         "fields": {
             "nombre": "Pilar",
@@ -2688,7 +2688,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06497",
         "fields": {
             "nombre": "Luján",
@@ -2696,7 +2696,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "90028",
         "fields": {
             "nombre": "Famaillá",
@@ -2704,7 +2704,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06408",
         "fields": {
             "nombre": "Hurlingham",
@@ -2712,7 +2712,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06568",
         "fields": {
             "nombre": "Morón",
@@ -2720,7 +2720,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06210",
         "fields": {
             "nombre": "Chacabuco",
@@ -2728,7 +2728,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "50035",
         "fields": {
             "nombre": "Junín",
@@ -2736,7 +2736,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06515",
         "fields": {
             "nombre": "Malvinas Argentinas",
@@ -2744,7 +2744,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06847",
         "fields": {
             "nombre": "Tres Lomas",
@@ -2752,7 +2752,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06042",
         "fields": {
             "nombre": "Ayacucho",
@@ -2760,7 +2760,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06399",
         "fields": {
             "nombre": "Guaminí",
@@ -2768,7 +2768,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06371",
         "fields": {
             "nombre": "General San Martín",
@@ -2776,7 +2776,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06469",
         "fields": {
             "nombre": "Lincoln",
@@ -2784,7 +2784,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06448",
         "fields": {
             "nombre": "Laprida",
@@ -2792,7 +2792,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06756",
         "fields": {
             "nombre": "San Isidro",
@@ -2800,7 +2800,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06084",
         "fields": {
             "nombre": "Benito Juárez",
@@ -2808,7 +2808,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06175",
         "fields": {
             "nombre": "Colón",
@@ -2816,7 +2816,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06410",
         "fields": {
             "nombre": "Ituzaingó",
@@ -2824,7 +2824,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06364",
         "fields": {
             "nombre": "General Rodríguez",
@@ -2832,7 +2832,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06784",
         "fields": {
             "nombre": "Suipacha",
@@ -2840,7 +2840,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06840",
         "fields": {
             "nombre": "Tres de Febrero",
@@ -2848,7 +2848,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "46028",
         "fields": {
             "nombre": "General Felipe Varela",
@@ -2856,7 +2856,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06274",
         "fields": {
             "nombre": "Florencio Varela",
@@ -2864,7 +2864,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06574",
         "fields": {
             "nombre": "Navarro",
@@ -2872,7 +2872,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06134",
         "fields": {
             "nombre": "Cañuelas",
@@ -2880,7 +2880,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "86119",
         "fields": {
             "nombre": "Moreno",
@@ -2888,7 +2888,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "22028",
         "fields": {
             "nombre": "Chacabuco",
@@ -2896,7 +2896,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06778",
         "fields": {
             "nombre": "San Vicente",
@@ -2904,7 +2904,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06483",
         "fields": {
             "nombre": "Lobos",
@@ -2912,7 +2912,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06287",
         "fields": {
             "nombre": "General Alvear",
@@ -2920,7 +2920,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06658",
         "fields": {
             "nombre": "Quilmes",
@@ -2928,7 +2928,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06630",
         "fields": {
             "nombre": "Pila",
@@ -2936,7 +2936,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06322",
         "fields": {
             "nombre": "General La Madrid",
@@ -2944,7 +2944,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06105",
         "fields": {
             "nombre": "Bolívar",
@@ -2952,7 +2952,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "46021",
         "fields": {
             "nombre": "Castro Barros",
@@ -2960,7 +2960,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06063",
         "fields": {
             "nombre": "Balcarce",
@@ -2968,7 +2968,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06406",
         "fields": {
             "nombre": "Hipólito Yrigoyen",
@@ -2976,7 +2976,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "50007",
         "fields": {
             "nombre": "Capital",
@@ -2984,7 +2984,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06238",
         "fields": {
             "nombre": "Dolores",
@@ -2992,7 +2992,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06049",
         "fields": {
             "nombre": "Azul",
@@ -3000,7 +3000,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06231",
         "fields": {
             "nombre": "Daireaux",
@@ -3008,7 +3008,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "50021",
         "fields": {
             "nombre": "Godoy Cruz",
@@ -3016,7 +3016,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "66021",
         "fields": {
             "nombre": "Cafayate",
@@ -3024,7 +3024,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "86070",
         "fields": {
             "nombre": "Figueroa",
@@ -3032,7 +3032,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06700",
         "fields": {
             "nombre": "Saavedra",
@@ -3040,7 +3040,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06553",
         "fields": {
             "nombre": "Monte Hermoso",
@@ -3048,7 +3048,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06476",
         "fields": {
             "nombre": "Lobería",
@@ -3056,7 +3056,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06098",
         "fields": {
             "nombre": "Berisso",
@@ -3064,7 +3064,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06812",
         "fields": {
             "nombre": "Tordillo",
@@ -3072,7 +3072,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06882",
         "fields": {
             "nombre": "Zárate",
@@ -3080,7 +3080,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06665",
         "fields": {
             "nombre": "Ramallo",
@@ -3088,7 +3088,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06763",
         "fields": {
             "nombre": "San Nicolás",
@@ -3096,7 +3096,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "86168",
         "fields": {
             "nombre": "Salavina",
@@ -3104,7 +3104,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "86133",
         "fields": {
             "nombre": "Pellegrini",
@@ -3112,7 +3112,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "86028",
         "fields": {
             "nombre": "Avellaneda",
@@ -3120,7 +3120,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "22039",
         "fields": {
             "nombre": "2 de Abril",
@@ -3128,7 +3128,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "50028",
         "fields": {
             "nombre": "Guaymallén",
@@ -3136,7 +3136,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "14056",
         "fields": {
             "nombre": "Juárez Celman",
@@ -3144,7 +3144,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "66028",
         "fields": {
             "nombre": "Capital",
@@ -3152,7 +3152,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "86189",
         "fields": {
             "nombre": "Silípica",
@@ -3160,7 +3160,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "66084",
         "fields": {
             "nombre": "La Candelaria",
@@ -3168,7 +3168,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "42126",
         "fields": {
             "nombre": "Rancul",
@@ -3176,7 +3176,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "50070",
         "fields": {
             "nombre": "Maipú",
@@ -3184,7 +3184,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "66063",
         "fields": {
             "nombre": "Guachipas",
@@ -3192,7 +3192,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "42007",
         "fields": {
             "nombre": "Atreucó",
@@ -3200,7 +3200,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "50098",
         "fields": {
             "nombre": "San Martín",
@@ -3208,7 +3208,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "42070",
         "fields": {
             "nombre": "Guatraché",
@@ -3216,7 +3216,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "46126",
         "fields": {
             "nombre": "Sanagasta",
@@ -3224,7 +3224,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "42035",
         "fields": {
             "nombre": "Conhelo",
@@ -3232,7 +3232,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "54077",
         "fields": {
             "nombre": "Libertador General San Martín",
@@ -3240,7 +3240,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "46112",
         "fields": {
             "nombre": "Rosario Vera Peñaloza",
@@ -3248,7 +3248,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "18154",
         "fields": {
             "nombre": "San Miguel",
@@ -3256,7 +3256,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "46070",
         "fields": {
             "nombre": "General Juan Facundo Quiroga",
@@ -3264,7 +3264,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "46056",
         "fields": {
             "nombre": "Ángel Vicente Peñaloza",
@@ -3272,7 +3272,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "18042",
         "fields": {
             "nombre": "Empedrado",
@@ -3280,7 +3280,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "46042",
         "fields": {
             "nombre": "Chilecito",
@@ -3288,7 +3288,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "42140",
         "fields": {
             "nombre": "Toay",
@@ -3296,7 +3296,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "14021",
         "fields": {
             "nombre": "Colón",
@@ -3304,7 +3304,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "18084",
         "fields": {
             "nombre": "Ituzaingó",
@@ -3312,7 +3312,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "46049",
         "fields": {
             "nombre": "Famatina",
@@ -3320,7 +3320,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "82042",
         "fields": {
             "nombre": "General López",
@@ -3328,7 +3328,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "82028",
         "fields": {
             "nombre": "Constitución",
@@ -3336,7 +3336,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "82014",
         "fields": {
             "nombre": "Caseros",
@@ -3344,7 +3344,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "82084",
         "fields": {
             "nombre": "Rosario",
@@ -3352,7 +3352,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "82119",
         "fields": {
             "nombre": "San Lorenzo",
@@ -3360,7 +3360,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "82056",
         "fields": {
             "nombre": "Iriondo",
@@ -3368,7 +3368,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06434",
         "fields": {
             "nombre": "Lanús",
@@ -3376,7 +3376,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "46091",
         "fields": {
             "nombre": "General San Martín",
@@ -3384,7 +3384,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "46119",
         "fields": {
             "nombre": "San Blas de Los Sauces",
@@ -3392,7 +3392,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "38056",
         "fields": {
             "nombre": "San Antonio",
@@ -3400,7 +3400,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "38049",
         "fields": {
             "nombre": "Rinconada",
@@ -3408,7 +3408,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "34063",
         "fields": {
             "nombre": "Ramón Lista",
@@ -3416,7 +3416,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "66091",
         "fields": {
             "nombre": "La Poma",
@@ -3424,7 +3424,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "26007",
         "fields": {
             "nombre": "Biedma",
@@ -3432,7 +3432,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "18021",
         "fields": {
             "nombre": "Capital",
@@ -3440,7 +3440,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "18140",
         "fields": {
             "nombre": "San Luis del Palmar",
@@ -3448,7 +3448,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "34014",
         "fields": {
             "nombre": "Formosa",
@@ -3456,7 +3456,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "34049",
         "fields": {
             "nombre": "Pilcomayo",
@@ -3464,7 +3464,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "26098",
         "fields": {
             "nombre": "Tehuelches",
@@ -3472,7 +3472,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "26021",
         "fields": {
             "nombre": "Escalante",
@@ -3480,7 +3480,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "14049",
         "fields": {
             "nombre": "Ischilín",
@@ -3488,7 +3488,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "14168",
         "fields": {
             "nombre": "Totoral",
@@ -3496,7 +3496,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "14042",
         "fields": {
             "nombre": "General San Martín",
@@ -3504,7 +3504,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "14133",
         "fields": {
             "nombre": "San Javier",
@@ -3512,7 +3512,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "14105",
         "fields": {
             "nombre": "Río Primero",
@@ -3520,7 +3520,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "14063",
         "fields": {
             "nombre": "Marcos Juárez",
@@ -3528,7 +3528,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "22056",
         "fields": {
             "nombre": "General Donovan",
@@ -3536,7 +3536,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06462",
         "fields": {
             "nombre": "Leandro N. Alem",
@@ -3544,7 +3544,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "22084",
         "fields": {
             "nombre": "Libertador General San Martín",
@@ -3552,7 +3552,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "26049",
         "fields": {
             "nombre": "Gastre",
@@ -3560,7 +3560,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06294",
         "fields": {
             "nombre": "General Arenales",
@@ -3568,7 +3568,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "22014",
         "fields": {
             "nombre": "Bermejo",
@@ -3576,7 +3576,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "14007",
         "fields": {
             "nombre": "Calamuchita",
@@ -3584,7 +3584,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "90014",
         "fields": {
             "nombre": "Cruz Alta",
@@ -3592,7 +3592,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "90063",
         "fields": {
             "nombre": "Lules",
@@ -3600,7 +3600,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "90119",
         "fields": {
             "nombre": "Yerba Buena",
@@ -3608,7 +3608,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "90105",
         "fields": {
             "nombre": "Tafí Viejo",
@@ -3616,7 +3616,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "74063",
         "fields": {
             "nombre": "Libertador General San Martín",
@@ -3624,7 +3624,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "74021",
         "fields": {
             "nombre": "Coronel Pringles",
@@ -3632,7 +3632,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "74028",
         "fields": {
             "nombre": "Chacabuco",
@@ -3640,7 +3640,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06679",
         "fields": {
             "nombre": "Rivadavia",
@@ -3648,7 +3648,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06602",
         "fields": {
             "nombre": "Patagones",
@@ -3656,7 +3656,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "74056",
         "fields": {
             "nombre": "Juan Martín de Pueyrredón",
@@ -3664,7 +3664,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "74035",
         "fields": {
             "nombre": "General Pedernera",
@@ -3672,7 +3672,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "90112",
         "fields": {
             "nombre": "Trancas",
@@ -3680,7 +3680,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "90098",
         "fields": {
             "nombre": "Tafí del Valle",
@@ -3688,7 +3688,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "02063",
         "fields": {
             "nombre": "Comuna 9",
@@ -3696,7 +3696,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "74049",
         "fields": {
             "nombre": "Junín",
@@ -3704,7 +3704,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "86112",
         "fields": {
             "nombre": "Mitre",
@@ -3712,7 +3712,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "86021",
         "fields": {
             "nombre": "Atamisqui",
@@ -3720,7 +3720,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "18014",
         "fields": {
             "nombre": "Berón de Astrada",
@@ -3728,7 +3728,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "94011",
         "fields": {
             "nombre": "Tolhuin",
@@ -3736,7 +3736,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "54028",
         "fields": {
             "nombre": "Capital",
@@ -3744,7 +3744,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "54021",
         "fields": {
             "nombre": "Candelaria",
@@ -3752,7 +3752,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "86091",
         "fields": {
             "nombre": "Jiménez",
@@ -3760,7 +3760,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06182",
         "fields": {
             "nombre": "Coronel de Marina Leonardo Rosales",
@@ -3768,7 +3768,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06070",
         "fields": {
             "nombre": "Baradero",
@@ -3776,7 +3776,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06770",
         "fields": {
             "nombre": "San Pedro",
@@ -3784,7 +3784,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "66161",
         "fields": {
             "nombre": "Santa Victoria",
@@ -3792,7 +3792,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "66056",
         "fields": {
             "nombre": "General José de San Martín",
@@ -3800,7 +3800,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "66133",
         "fields": {
             "nombre": "Rivadavia",
@@ -3808,7 +3808,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "66147",
         "fields": {
             "nombre": "Rosario de Lerma",
@@ -3816,7 +3816,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "38035",
         "fields": {
             "nombre": "Ledesma",
@@ -3824,7 +3824,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "38028",
         "fields": {
             "nombre": "Humahuaca",
@@ -3832,7 +3832,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "38007",
         "fields": {
             "nombre": "Cochinoca",
@@ -3840,7 +3840,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "38098",
         "fields": {
             "nombre": "Tumbaya",
@@ -3848,7 +3848,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06277",
         "fields": {
             "nombre": "Florentino Ameghino",
@@ -3856,7 +3856,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "26028",
         "fields": {
             "nombre": "Florentino Ameghino",
@@ -3864,7 +3864,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "90049",
         "fields": {
             "nombre": "La Cocha",
@@ -3872,7 +3872,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "90035",
         "fields": {
             "nombre": "Graneros",
@@ -3880,7 +3880,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "90042",
         "fields": {
             "nombre": "Juan Bautista Alberdi",
@@ -3888,7 +3888,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "90077",
         "fields": {
             "nombre": "Río Chico",
@@ -3896,7 +3896,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "90091",
         "fields": {
             "nombre": "Simoca",
@@ -3904,7 +3904,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "90021",
         "fields": {
             "nombre": "Chicligasta",
@@ -3912,7 +3912,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "90070",
         "fields": {
             "nombre": "Monteros",
@@ -3920,7 +3920,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "90056",
         "fields": {
             "nombre": "Leales",
@@ -3928,7 +3928,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "82126",
         "fields": {
             "nombre": "San Martín",
@@ -3936,7 +3936,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "82063",
         "fields": {
             "nombre": "La Capital",
@@ -3944,7 +3944,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "54049",
         "fields": {
             "nombre": "General Manuel Belgrano",
@@ -3952,7 +3952,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "54056",
         "fields": {
             "nombre": "Guaraní",
@@ -3960,7 +3960,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "54063",
         "fields": {
             "nombre": "Iguazú",
@@ -3968,7 +3968,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "54119",
         "fields": {
             "nombre": "25 de Mayo",
@@ -3976,7 +3976,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "54091",
         "fields": {
             "nombre": "Oberá",
@@ -3984,7 +3984,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "82021",
         "fields": {
             "nombre": "Castellanos",
@@ -3992,7 +3992,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "82035",
         "fields": {
             "nombre": "Garay",
@@ -4000,7 +4000,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "42119",
         "fields": {
             "nombre": "Quemú Quemú",
@@ -4008,7 +4008,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "54098",
         "fields": {
             "nombre": "San Ignacio",
@@ -4016,7 +4016,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "42154",
         "fields": {
             "nombre": "Utracán",
@@ -4024,7 +4024,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "18147",
         "fields": {
             "nombre": "San Martín",
@@ -4032,7 +4032,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "18119",
         "fields": {
             "nombre": "Paso de los Libres",
@@ -4040,7 +4040,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "18070",
         "fields": {
             "nombre": "Goya",
@@ -4048,7 +4048,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "18091",
         "fields": {
             "nombre": "Lavalle",
@@ -4056,7 +4056,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "18161",
         "fields": {
             "nombre": "San Roque",
@@ -4064,7 +4064,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "18056",
         "fields": {
             "nombre": "General Alvear",
@@ -4072,7 +4072,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "18028",
         "fields": {
             "nombre": "Concepción",
@@ -4080,7 +4080,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "18007",
         "fields": {
             "nombre": "Bella Vista",
@@ -4088,7 +4088,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "18168",
         "fields": {
             "nombre": "Santo Tomé",
@@ -4096,7 +4096,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "18126",
         "fields": {
             "nombre": "Saladas",
@@ -4104,7 +4104,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "18063",
         "fields": {
             "nombre": "General Paz",
@@ -4112,7 +4112,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "54070",
         "fields": {
             "nombre": "Leandro N. Alem",
@@ -4120,7 +4120,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "54105",
         "fields": {
             "nombre": "San Javier",
@@ -4128,7 +4128,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "18098",
         "fields": {
             "nombre": "Mburucuyá",
@@ -4136,7 +4136,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "54035",
         "fields": {
             "nombre": "Concepción",
@@ -4144,7 +4144,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "54007",
         "fields": {
             "nombre": "Apóstoles",
@@ -4152,7 +4152,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "22126",
         "fields": {
             "nombre": "1° de Mayo",
@@ -4160,7 +4160,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "22140",
         "fields": {
             "nombre": "San Fernando",
@@ -4168,7 +4168,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "22147",
         "fields": {
             "nombre": "San Lorenzo",
@@ -4176,7 +4176,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06490",
         "fields": {
             "nombre": "Lomas de Zamora",
@@ -4184,7 +4184,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06035",
         "fields": {
             "nombre": "Avellaneda",
@@ -4192,7 +4192,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "22168",
         "fields": {
             "nombre": "25 de Mayo",
@@ -4200,7 +4200,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "22049",
         "fields": {
             "nombre": "General Belgrano",
@@ -4208,7 +4208,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "22077",
         "fields": {
             "nombre": "Libertad",
@@ -4216,7 +4216,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "22021",
         "fields": {
             "nombre": "Comandante Fernández",
@@ -4224,7 +4224,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "02105",
         "fields": {
             "nombre": "Comuna 15",
@@ -4232,7 +4232,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "70042",
         "fields": {
             "nombre": "Chimbas",
@@ -4240,7 +4240,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "70028",
         "fields": {
             "nombre": "Capital",
@@ -4248,7 +4248,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "70084",
         "fields": {
             "nombre": "Rivadavia",
@@ -4256,7 +4256,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "70063",
         "fields": {
             "nombre": "9 de Julio",
@@ -4264,7 +4264,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "70007",
         "fields": {
             "nombre": "Albardón",
@@ -4272,7 +4272,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "70014",
         "fields": {
             "nombre": "Angaco",
@@ -4280,7 +4280,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "70098",
         "fields": {
             "nombre": "Santa Lucía",
@@ -4288,7 +4288,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "70077",
         "fields": {
             "nombre": "Rawson",
@@ -4296,7 +4296,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "70126",
         "fields": {
             "nombre": "25 de Mayo",
@@ -4304,7 +4304,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "70091",
         "fields": {
             "nombre": "San Martín",
@@ -4312,7 +4312,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "70070",
         "fields": {
             "nombre": "Pocito",
@@ -4320,7 +4320,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "70133",
         "fields": {
             "nombre": "Zonda",
@@ -4328,7 +4328,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "70112",
         "fields": {
             "nombre": "Ullum",
@@ -4336,7 +4336,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "70105",
         "fields": {
             "nombre": "Sarmiento",
@@ -4344,7 +4344,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "70021",
         "fields": {
             "nombre": "Calingasta",
@@ -4352,7 +4352,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "70049",
         "fields": {
             "nombre": "Iglesia",
@@ -4360,7 +4360,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "70056",
         "fields": {
             "nombre": "Jáchal",
@@ -4368,7 +4368,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "70119",
         "fields": {
             "nombre": "Valle Fértil",
@@ -4376,7 +4376,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "70035",
         "fields": {
             "nombre": "Caucete",
@@ -4384,7 +4384,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "06441",
         "fields": {
             "nombre": "La Plata",
@@ -4392,7 +4392,7 @@
         }
     },
     {
-        "model": "legajos.LegjosDepartamento",
+        "model": "legajos.LegajoDepartamento",
         "pk": "18105",
         "fields": {
             "nombre": "Mercedes",
