@@ -1,0 +1,30 @@
+[
+    {
+        "model": "legajos.turno",
+        "pk": 1,
+        "fields": {
+            "nombre": "Mañana"
+        }
+    },
+    {
+        "model": "legajos.turno",
+        "pk": 2,
+        "fields": {
+            "nombre": "Tarde"
+        }
+    },
+    {
+        "model": "legajos.turno",
+        "pk": 3,
+        "fields": {
+            "nombre": "Noche"
+        }
+    },
+    {
+        "model": "legajos.turno",
+        "pk": 4,
+        "fields": {
+            "nombre": "Jornada Completa"
+        }
+    }
+]
