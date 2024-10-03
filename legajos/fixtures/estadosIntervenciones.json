@@ -1,20 +1,20 @@
 [
     {
-        "model": "legajos.estadoIntervencion",
+        "model": "legajos.estadosIntervencion",
         "pk": 1,
         "fields": {
             "nombre": "En espera"
         }
     },
     {
-        "model": "legajos.estadoIntervencion",
+        "model": "legajos.estadosIntervencion",
         "pk": 2,
         "fields": {
             "nombre": "En curso"
         }
     },
     {
-        "model": "legajos.estadoIntervencion",
+        "model": "legajos.estadosIntervencion",
         "pk": 3,
         "fields": {
             "nombre": "Finalizada"
