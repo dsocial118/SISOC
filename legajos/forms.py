@@ -76,8 +76,8 @@ class LegajosForm(forms.ModelForm):
         # Configurar los querysets de los campos 'fk_municipio' y 'fk_localidad' para que estén vacíos inicialmente
         self.fields["fk_municipio"].queryset = LegajoMunicipio.objects.none()
         self.fields["fk_localidad"].queryset = LegajoLocalidad.objects.none()
-        self.fields["fk_departamento"].queryset = LegajoMunicipio.objects.none()
-        self.fields["fk_asentamiento"].queryset = LegajoMunicipio.objects.none()
+        self.fields["fk_departamento"].queryset = LegjosDepatamento.objects.none()
+        self.fields["fk_asentamiento"].queryset = LegajoAsentamientos.objects.none()
         # Actualizar los querysets si los datos están presentes en el formulario
         if "fk_municipio" in self.data:
             try:
@@ -96,6 +96,24 @@ class LegajosForm(forms.ModelForm):
                 ).order_by("nombre")
             except (ValueError, TypeError):
                 self.fields["fk_localidad"].queryset = LegajoLocalidad.objects.none()
+
+        if "fk_departamento" in self.data:
+            try:
+                departamento_id = int(self.data.get("fk_departamento"))
+                self.fields["fk_departamento"].queryset = LegjosDepatamento.objects.filter(
+                    id=departamento_id
+                ).order_by("nombre")
+            except (ValueError, TypeError):
+                self.fields["fk_departamento"].queryset = LegjosDepatamento.objects.none()
+        
+        if "fk_asentamiento" in self.data:
+            try:
+                asentameinto_id = int(self.data.get("fk_asentamiento"))
+                self.fields["fk_asentamiento"].queryset = LegajoAsentamientos.objects.filter(
+                    id=asentameinto_id
+                ).order_by("nombre")
+            except (ValueError, TypeError):
+                self.fields["fk_asentamiento"].queryset = LegajoAsentamientos.objects.none()
 
     def clean(self):
         cleaned_data = super().clean()
@@ -200,12 +218,12 @@ class LegajosUpdateForm(forms.ModelForm):
     fk_departamento = forms.ModelChoiceField(
         required=False,
         label="Departamento",
-        queryset=LegajoMunicipio.objects.none(),
+        queryset=LegjosDepatamento.objects.all(),
     )
     fk_asentamiento = forms.ModelChoiceField(
         required=False,
         label="Asentamiento",
-        queryset=LegajoMunicipio.objects.none(),
+        queryset=LegajoAsentamientos.objects.all(),
     )
 
     def __init__(self, *args, **kwargs):
@@ -216,18 +234,23 @@ class LegajosUpdateForm(forms.ModelForm):
             localidad_actual = self.instance.fk_localidad
             departamento_actual = self.instance.fk_departamento
             asentamiento_actual = self.instance.fk_asentamiento
-            self.fields["fk_municipio"].choices = [
-                (municipio_actual.id, municipio_actual.nombre_region)
-            ]
-            self.fields["fk_localidad"].choices = [
-                (localidad_actual.id, localidad_actual.nombre)
-            ]
-            self.fields["fk_departamento"].choices = [
-                (departamento_actual.id, departamento_actual.nombre)
-            ]
-            self.fields["fk_asentamiento"].choices = [
-                (asentamiento_actual.id, asentamiento_actual.nombre)
-            ]
+            
+            if municipio_actual:
+                self.fields["fk_municipio"].choices = [
+                    (municipio_actual.id, municipio_actual.nombre)
+                ]
+            if localidad_actual:
+                self.fields["fk_localidad"].choices = [
+                    (localidad_actual.id, localidad_actual.nombre)
+                ]
+            if departamento_actual:
+                self.fields["fk_departamento"].choices = [
+                    (departamento_actual.id, departamento_actual.nombre)
+                ]
+            if asentamiento_actual:
+                self.fields["fk_asentamiento"].choices = [
+                    (asentamiento_actual.id, asentamiento_actual.nombre)
+                ]
 
     def clean(self):
         cleaned_data = super().clean()
