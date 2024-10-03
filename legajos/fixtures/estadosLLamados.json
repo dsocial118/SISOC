@@ -1,0 +1,23 @@
+[
+    {
+        "model": "legajos.estadosLLamados",
+        "pk": 1,
+        "fields": {
+            "nombre": "Pendiente"
+        }
+    },
+    {
+        "model": "legajos.estadosLLamados",
+        "pk": 2,
+        "fields": {
+            "nombre": "Realizado"
+        }
+    },
+    {
+        "model": "legajos.estadosLLamados",
+        "pk": 3,
+        "fields": {
+            "nombre": "No Realizado"
+        }
+    }
+]
