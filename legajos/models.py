@@ -92,7 +92,7 @@ class LegajoMunicipio(models.Model):
         verbose_name_plural = "Municipio"
 
 
-class LegjosDepatamento(models.Model):
+class LegjosDepartamento(models.Model):
     nombre = models.CharField(max_length=255)
     fk_provincia = models.ForeignKey(
         LegajoProvincias, on_delete=models.SET_NULL, null=True, blank=True
@@ -117,7 +117,7 @@ class LegajoLocalidad(models.Model):
         LegajoMunicipio, on_delete=models.SET_NULL, null=True, blank=True
     )
     fk_departamento = models.ForeignKey(
-        LegjosDepatamento, on_delete=models.SET_NULL, null=True, blank=True
+        LegjosDepartamento, on_delete=models.SET_NULL, null=True, blank=True
     )
 
     def __str__(self):
@@ -135,7 +135,7 @@ class LegajoAsentamientos(models.Model):
 
     nombre = models.CharField(max_length=255)
     fk_departamento = models.ForeignKey(
-        LegjosDepatamento, on_delete=models.SET_NULL, null=True, blank=True
+        LegjosDepartamento, on_delete=models.SET_NULL, null=True, blank=True
     )
     fk_municipio = models.ForeignKey(
         LegajoMunicipio, on_delete=models.SET_NULL, null=True, blank=True
@@ -243,7 +243,7 @@ class Legajos(models.Model):
         LegajoLocalidad, on_delete=models.SET_NULL, null=True, blank=True
     )
     fk_departamento = models.ForeignKey(
-        LegjosDepatamento, on_delete=models.SET_NULL, null=True, blank=True
+        LegjosDepartamento, on_delete=models.SET_NULL, null=True, blank=True
     )
     fk_asentamiento = models.ForeignKey(
         LegajoAsentamientos, on_delete=models.SET_NULL, null=True, blank=True
