@@ -138,7 +138,7 @@ class TurnoChoices(models.TextChoices):
     NOCHE = 'Noche', 'Noche'
     JORNADA_COMPLETA = 'Jornada Completa', 'Jornada Completa'
 
-class InstitucionesEducativas(models.TextChoices):
+#class InstitucionesEducativas(models.TextChoices):
 
 #Fin de choices educacion
 
@@ -148,7 +148,7 @@ class NivelEducativo(models.Model):
     nivel = models.CharField(max_length=255, choices=NivelEducativoChoices.choices)
 
     def __str__(self):
-        return self.nivel
+        return str(self.nivel)
 
     class Meta:
         verbose_name = "Nivel Educativo"
@@ -158,7 +158,7 @@ class EstadoNivelEducativo(models.Model):
     estado = models.CharField(max_length=255, choices=EstadoNivelEducativoChoices.choices)
 
     def __str__(self):
-        return self.estado
+        return str(self.estado)
 
     class Meta:
         verbose_name = "Estado Nivel Educativo"
@@ -168,7 +168,7 @@ class AsisteEscuela(models.Model):
     asiste = models.CharField(max_length=255, choices=AsisteEscuelaChoices.choices)
 
     def __str__(self):
-        return self.asiste
+        return str(self.asiste)
 
     class Meta:
         verbose_name = "Asiste Escuela"
@@ -178,7 +178,7 @@ class EstadoEducativo(models.Model):
     estado = models.CharField(max_length=255, choices=EstadoEducativoChoices.choices)
 
     def __str__(self):
-        return self.estado
+        return str(self.estado)
 
     class Meta:
         verbose_name = "Estado Educativo"
@@ -188,7 +188,7 @@ class MotivoNivelIncompleto(models.Model):
     motivo = models.CharField(max_length=255, choices=MotivoNivelIncompletoChoices.choices)
 
     def __str__(self):
-        return self.motivo
+        return str(self.motivo)
 
     class Meta:
         verbose_name = "Motivo Nivel Incompleto"
@@ -198,7 +198,7 @@ class AreaCurso(models.Model):
     area = models.CharField(max_length=255, choices=AreaCursoChoices.choices)
 
     def __str__(self):
-        return self.area
+        return str(self.area)
 
     class Meta:
         verbose_name = "Area Curso"
@@ -208,7 +208,7 @@ class TipoGestion(models.Model):
     gestion = models.CharField(max_length=255, choices=TipoGestionChoices.choices)
 
     def __str__(self):
-        return self.gestion
+        return str(self.gestion)
 
     class Meta:
         verbose_name = "Tipo Gestion"
@@ -218,7 +218,7 @@ class Grado(models.Model):
     grado = models.CharField(max_length=255, choices=GradoChoices.choices)
 
     def __str__(self):
-        return self.grado
+        return str(self.grado)
 
     class Meta:
         verbose_name = "Grado"
@@ -228,17 +228,18 @@ class Turno(models.Model):
     turno = models.CharField(max_length=255, choices=TurnoChoices.choices)
 
     def __str__(self):
-        return self.turno
+        return str(self.turno)
 
     class Meta:
         verbose_name = "Turno"
         verbose_name_plural = "Turnos"
 
+#TODO: Crear choices para instituciones educativas
 class InstitucionesEducativas(models.Model):
-    institucion = models.CharField(max_length=255, choices=InstitucionesEducativas.choices)
+    institucion = models.CharField(max_length=255,)
 
     def __str__(self):
-        return self.institucion
+        return str(self.institucion)
 
     class Meta:
         verbose_name = "Institucion Educativa"
