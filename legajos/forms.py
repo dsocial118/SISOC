@@ -11,6 +11,8 @@ from .models import (
     LegajoProvincias,
     LegajoMunicipio,
     LegajoLocalidad,
+    LegjosDepatamento,
+    LegajoAsentamientos,
     LegajoGrupoFamiliar,
     LegajoGrupoHogar,
     CategoriaAlertas,
@@ -59,12 +61,12 @@ class LegajosForm(forms.ModelForm):
     fk_departamento = forms.ModelChoiceField(
         required=False,
         label="Departamento",
-        queryset=LegajoMunicipio.objects.none(),
+        queryset=LegjosDepatamento.objects.none(),
     )
     fk_asentamiento = forms.ModelChoiceField(
         required=False,
         label="Asentamiento",
-        queryset=LegajoMunicipio.objects.none(),
+        queryset=LegajoAsentamientos.objects.none(),
     )
 
     def __init__(self, *args, **kwargs):
