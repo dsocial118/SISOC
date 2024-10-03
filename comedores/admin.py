@@ -16,6 +16,7 @@ from comedores.models import (
     TipoEspacio,
     TipoModalidadPrestacion,
     TipoRecurso,
+    TipoGestionQuejas,
 )
 
 
@@ -77,6 +78,14 @@ class CantidadColaboradoresAdmin(admin.ModelAdmin):
 
 @admin.register(FrecuenciaRecepcionRecursos)
 class FrecuenciaRecepcionRecursosAdmin(admin.ModelAdmin):
+    list_display = ("nombre",)
+
+    search_fields = ["nombre"]
+    ordering = ["nombre"]
+
+
+@admin.register(TipoGestionQuejas)
+class TipoGestionQuejasAdmin(admin.ModelAdmin):
     list_display = ("nombre",)
 
     search_fields = ["nombre"]

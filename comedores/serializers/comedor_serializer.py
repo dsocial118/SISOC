@@ -13,7 +13,6 @@ class ComedorSerializer(serializers.ModelSerializer):
             ).replace(".", "")
 
             self.obtener_ubicacion_ids(self.initial_data)
-            self.validar_unique_key(self.initial_data)
             self.crear_referente(self.initial_data)
         except Exception as e:
             raise serializers.ValidationError({"error": str(e)})
@@ -47,13 +46,6 @@ class ComedorSerializer(serializers.ModelSerializer):
             nombre__iexact=data["localidad"]
         ).first()
         data["localidad"] = localidad_obj.id if localidad_obj else None
-
-    def validar_unique_key(self, data):
-        unique_key = ComedorService.generar_unique_key(data)
-        if unique_key in Comedor.objects.values_list("unique_key", flat=True):
-            raise serializers.ValidationError(
-                {"unique_key": "Ya existe un comedor con esa clave única"}
-            )
 
     class Meta:
         model = Comedor

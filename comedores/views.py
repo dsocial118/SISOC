@@ -1,8 +1,8 @@
 from typing import Any
-
 from django.contrib import messages
 from django.db.models.base import Model
 from django.forms import BaseModelForm
+from django.forms.models import model_to_dict
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
@@ -35,6 +35,7 @@ from comedores.forms.relevamiento_form import (
 from comedores.models import Comedor, Observacion, Prestacion, Relevamiento
 from comedores.serializers.comedor_serializer import ComedorSerializer
 from comedores.serializers.relevamiento_serializer import RelevamientoSerializer
+from comedores.serializers.observacion_serializer import ObservacionSerializer
 from comedores.services.comedor_service import ComedorService
 from comedores.services.relevamiento_service import RelevamientoService
 from usuarios.models import Usuarios
@@ -416,16 +417,22 @@ class ComedorRelevamientoObservacion(APIView):
     def post(self, request):
         comedor_data = request.data.get("comedor")
         relevamiento_data = request.data.get("relevamiento")
+        observacion_data = request.data.get("observacion")
 
-        comedor_serializer = ComedorSerializer(data=comedor_data).clean()
-        if comedor_serializer.is_valid():
-            comedor_serializer.save()
-            relevamiento_data["comedor"] = comedor_serializer.data["id"]
-        else:
-            return Response(
-                comedor_serializer.errors, status=status.HTTP_400_BAD_REQUEST
+        try:
+            comedor = Comedor.objects.get(
+                unique_key=ComedorService.generar_unique_key(comedor_data)
             )
-
+        except Comedor.DoesNotExist:
+            comedor_serializer = ComedorSerializer(data=comedor_data).clean()
+            if comedor_serializer.is_valid():
+                comedor_serializer.save()
+                comedor = comedor_serializer.instance
+            else:
+                return Response(
+                    comedor_serializer.errors, status=status.HTTP_400_BAD_REQUEST
+                )
+        relevamiento_data["comedor"] = comedor.id
         relevamiento_serializer = RelevamientoSerializer(data=relevamiento_data).clean()
         if relevamiento_serializer.is_valid():
             relevamiento_serializer.save()
@@ -434,10 +441,20 @@ class ComedorRelevamientoObservacion(APIView):
                 relevamiento_serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
 
+        observacion_data["comedor"] = comedor.id
+        observacion_serializer = ObservacionSerializer(data=observacion_data).clean()
+        if observacion_serializer.is_valid():
+            observacion_serializer.save()
+        else:
+            return Response(
+                observacion_serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+
         return Response(
             {
-                "comedor": comedor_serializer.data,
+                "comedor": model_to_dict(comedor),
                 "relevamiento": relevamiento_serializer.data,
+                "observacion": observacion_serializer.data,
             },
             status=status.HTTP_201_CREATED,
         )
