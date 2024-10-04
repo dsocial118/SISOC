@@ -192,7 +192,7 @@ class RelevamientoCreateView(CreateView):
         }
 
         if all(form.is_valid() for form in forms.values()):
-            self.object = RelevamientoService.guardar_relevamiento(
+            self.object = RelevamientoService.populate_relevamiento(
                 form, forms, self.request.user.id
             )
 
@@ -283,7 +283,7 @@ class RelevamientoUpdateView(UpdateView):
         }
 
         if all(form.is_valid() for form in forms.values()):
-            self.object = RelevamientoService.guardar_relevamiento(
+            self.object = RelevamientoService.populate_relevamiento(
                 form, forms, self.request.user.id
             )
 
@@ -476,3 +476,32 @@ class ComedorApiView(APIView):
             )
 
         return Response(ComedorSerializer(comedor).data, status=status.HTTP_200_OK)
+
+
+class RelevamientoApiView(APIView):
+    permission_classes = [HasAPIKey]
+
+    def patch(self, request):
+        relevamiento = Comedor.objects.get(
+            gestionar_uid=request.data["comedor_gestionar_uid"]
+        ).id
+        relevamiento = Relevamiento.objects.get(
+            comedor=relevamiento,
+            fecha_visita=RelevamientoService.format_fecha_visita(
+                request.data["fecha_visita"]
+            ),
+        )
+        relevamiento_serializer = RelevamientoSerializer(
+            relevamiento, data=request.data, partial=True
+        ).clean()
+        if relevamiento_serializer.is_valid():
+            relevamiento_serializer.save()
+            relevamiento = relevamiento_serializer.instance
+        else:
+            return Response(
+                relevamiento_serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return Response(
+            RelevamientoSerializer(relevamiento).data, status=status.HTTP_200_OK
+        )
