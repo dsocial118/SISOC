@@ -33,7 +33,7 @@ class ComedorForm(forms.ModelForm):
             )
             self.fields["provincia"].queryset = LegajoProvincias.objects.all()
             self.fields["municipio"].queryset = LegajoMunicipio.objects.filter(
-                codigo_ifam__startswith=provincia.abreviatura
+                fk_provincia=provincia
             )
         else:
             self.fields["provincia"].queryset = LegajoProvincias.objects.all()
@@ -47,7 +47,7 @@ class ComedorForm(forms.ModelForm):
         if municipio:
             self.fields["municipio"].initial = municipio
             self.fields["localidad"].queryset = LegajoLocalidad.objects.filter(
-                departamento_id=municipio.departamento_id
+                fk_municipio=municipio
             )
 
         if localidad:
