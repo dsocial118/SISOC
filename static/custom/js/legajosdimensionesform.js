@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function () {
   const INCOMPLETO_OPTION = "Incompleto";
   const maxSelections = 3;
 
@@ -22,20 +22,20 @@ document.addEventListener("DOMContentLoaded", function() {
   const ID_OCUPACION = "#container_ocupacion";
   const ID_PLAN_SOCIAL = "#container_plan_social";
 
- // Selecciones múltiples con límite
- var selects = document.querySelectorAll('select[name="areaCurso"], select[name="areaOficio"], select[name="m2m_planes"]');
- selects.forEach(function(select) {
-     select.setAttribute('multiple', 'multiple');
-     select.addEventListener('change', function() {
-         var selectedOptions = Array.from(select.selectedOptions);
-         if (selectedOptions.length > maxSelections) {
-             alert('Solo puedes seleccionar hasta 3 opciones.');
-             selectedOptions[selectedOptions.length - 1].selected = false;
-         }
-     });
- });
+  // Selecciones múltiples con límite
+  var selects = document.querySelectorAll('select[name="areaCurso"], select[name="areaOficio"], select[name="m2m_planes"]');
+  selects.forEach(function (select) {
+    select.setAttribute('multiple', 'multiple');
+    select.addEventListener('change', function () {
+      var selectedOptions = Array.from(select.selectedOptions);
+      if (selectedOptions.length > maxSelections) {
+        alert('Solo puedes seleccionar hasta 3 opciones.');
+        selectedOptions[selectedOptions.length - 1].selected = false;
+      }
+    });
+  });
 
- 
+
   // Formularios
   let estadoNivelForm = document.querySelector('#id_estado_nivel');
   let asisteEscuelaForm = document.querySelector('#id_asiste_escuela');
@@ -87,7 +87,7 @@ document.addEventListener("DOMContentLoaded", function() {
   FormUtils.manejarCambioMostrarOcultar(asisteEscuelaForm, asisteEscuelaFormEstados);
   FormUtils.manejarCambioMostrarOcultar(estadoNivelForm, estadoNivelFormEstados);
   FormUtils.manejarCambioMostrarOcultar(realizandoCursoForm, realizandoCursoFormEstados);
-  FormUtils.manejarCambioMostrarOcultar(hayBanioForm, hayBanioFormEstados );
+  FormUtils.manejarCambioMostrarOcultar(hayBanioForm, hayBanioFormEstados);
   FormUtils.manejarCambioMostrarOcultar(tieneTrabajoForm, tieneTrabajoFormEstados);
   FormUtils.manejarCambioMostrarOcultar(busquedaLaboralForm, busquedaLaboralFormEstados);
   FormUtils.manejarCambioMostrarOcultar(planSocialForm, planSocialFormEstados);
@@ -114,8 +114,8 @@ document.addEventListener("DOMContentLoaded", function() {
         data.forEach(function (municipio) {
           var option = document.createElement('option');
           option.value = municipio.id;
-          option.setAttribute('data-departamento-id', municipio.departamento_id);  // Añadir propiedad personalizada
-          option.textContent = municipio.nombre_region;
+          option.setAttribute('data-departamento-id', municipio.id);  // Añadir propiedad personalizada
+          option.textContent = municipio.nombre;
           municipioSelect.appendChild(option);
         });
       });
