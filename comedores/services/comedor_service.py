@@ -60,11 +60,3 @@ class ComedorService:
             )
             .get(pk=comedor_id)
         )
-
-    @staticmethod
-    def generar_unique_key(data: dict):
-        nombre = data.get("nombre", "").replace(" ", "")[:3]
-        calle = data.get("calle", "").replace(" ", "")
-        numero = str(data.get("numero", ""))
-
-        return (f"{nombre}-{calle}-{numero}").upper()

@@ -30,8 +30,6 @@ class ComedorSerializer(serializers.ModelSerializer):
         data["referente"] = referente.id
 
     def obtener_ubicacion_ids(self, data):
-        # TODO: Refactorizar cuando nehui termine lo de las provincias
-
         provincia_obj = LegajoProvincias.objects.filter(
             nombre__iexact=data["provincia"]
         ).first()

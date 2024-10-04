@@ -420,9 +420,7 @@ class ComedorRelevamientoObservacionApiView(APIView):
         observacion_data = request.data.get("observacion")
 
         try:
-            comedor = Comedor.objects.get(
-                unique_key=ComedorService.generar_unique_key(comedor_data)
-            )
+            comedor = Comedor.objects.get(gestionar_uid=comedor_data["gestionar_uid"])
         except Comedor.DoesNotExist:
             comedor_serializer = ComedorSerializer(data=comedor_data).clean()
             if comedor_serializer.is_valid():
@@ -432,6 +430,7 @@ class ComedorRelevamientoObservacionApiView(APIView):
                 return Response(
                     comedor_serializer.errors, status=status.HTTP_400_BAD_REQUEST
                 )
+
         relevamiento_data["comedor"] = comedor.id
         relevamiento_serializer = RelevamientoSerializer(data=relevamiento_data).clean()
         if relevamiento_serializer.is_valid():

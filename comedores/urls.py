@@ -86,7 +86,7 @@ urlpatterns = [
     ),
     path(
         "api/comedor-relevamiento-observacion",
-        ComedorRelevamientoObservacion.as_view(),
+        ComedorRelevamientoObservacionApiView.as_view(),
         name="api_comedor_relevamiento_observacion",
     ),
 ]
