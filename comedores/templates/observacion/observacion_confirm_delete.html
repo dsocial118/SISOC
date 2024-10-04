@@ -25,7 +25,7 @@
                 <i class="fas fa-exclamation-triangle text-danger px-2"></i> Atención!
             </h3>
             <p>
-                ¿Estás seguro que deseas eliminar de manera permanente el observacion: <span class="font-weight-bold"><a href="{% url 'observacion_detalle' observacion.comedor.id observacion.id %}">{{ observacion.id }} - {{ observacion.fecha }}</a></span>?
+                ¿Estás seguro que deseas eliminar de manera permanente el observacion: <span class="font-weight-bold"><a href="{% url 'observacion_detalle' observacion.comedor.id observacion.id %}">{{ observacion.id }} - {{ observacion.fecha_visita }}</a></span>?
             </p>
             <div class="text-left">
                 <form method="post">

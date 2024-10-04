@@ -693,7 +693,7 @@ class Observacion(models.Model):
         on_delete=models.CASCADE,
         blank=True,
     )
-    fecha = models.DateTimeField(default=timezone.now, blank=True)
+    fecha_visita = models.DateTimeField(default=timezone.now, blank=True)
     observacion = models.TextField()
 
     class Meta:

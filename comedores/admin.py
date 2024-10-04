@@ -166,10 +166,10 @@ class RelevamientoAdmin(admin.ModelAdmin):
 class ObservacionAdmin(admin.ModelAdmin):
     list_display = (
         "comedor",
-        "fecha",
+        "fecha_visita",
     )
     search_fields = [
         "comedor",
-        "fecha",
+        "fecha_visita",
     ]
     ordering = ["comedor"]
