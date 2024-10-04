@@ -541,11 +541,9 @@ class Referente(models.Model):
 
     nombre = models.CharField(max_length=255, verbose_name="Nombe del referente")
     apellido = models.CharField(max_length=255, verbose_name="Apellido del referente")
-    mail = models.EmailField(unique=True, verbose_name="Mail del referente")
-    celular = models.BigIntegerField(unique=True, verbose_name="Celular del referente")
-    documento = models.BigIntegerField(
-        unique=True, verbose_name="Documento del referente"
-    )
+    mail = models.EmailField(verbose_name="Mail del referente")
+    celular = models.BigIntegerField(verbose_name="Celular del referente")
+    documento = models.BigIntegerField(verbose_name="Documento del referente")
 
     class Meta:
         verbose_name = "Referente"
@@ -557,6 +555,7 @@ class Comedor(models.Model):
     Modelo que representa un Comedor/Merendero.
 
     Atributos:
+        gestionar_uid (CharField): UID unica que referencia al Comedor/Merendero en GESTIONAR.
         nombre (CharField): Nombre del Comedor/Merendero.
         comienzo (IntegerField): Año de inicio de la actividad del Comedor/Merendero.
         calle (CharField): Calle donde se encuentra el Comedor/Merendero.
@@ -571,6 +570,8 @@ class Comedor(models.Model):
         codigo_postal (IntegerField): Código postal del Comedor/Merendero.
         referente (ForeignKey): Referente del Comedor/Merendero.
     """
+
+    gestionar_uid = models.CharField(max_length=255, unique=True, blank=True)
 
     nombre = models.CharField(
         max_length=255,
@@ -606,16 +607,6 @@ class Comedor(models.Model):
     referente = models.ForeignKey(
         to=Referente, on_delete=models.SET_NULL, null=True, blank=True
     )
-
-    unique_key = models.CharField(max_length=255, unique=True, editable=False)
-
-    def save(self, *args, **kwargs):
-        from comedores.services.comedor_service import (  # pylint: disable=import-outside-toplevel
-            ComedorService,
-        )
-
-        self.unique_key = ComedorService.generar_unique_key(model_to_dict(self))
-        super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         return str(self.nombre)
