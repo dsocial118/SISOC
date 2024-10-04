@@ -3,56 +3,56 @@
         "model": "legajos.motivonivelincompleto",
         "pk": 1,
         "fields": {
-            "nombre": "El establecimiento quedaba lejos y/o no tenía cómo llegar"
+            "motivo": "El establecimiento quedaba lejos y/o no tenía cómo llegar"
         }
     },
     {
         "model": "legajos.motivonivelincompleto",
         "pk": 2,
         "fields": {
-            "nombre": "Necesitaba trabajar"
+            "motivo": "Necesitaba trabajar"
         }
     },
     {
         "model": "legajos.motivonivelincompleto",
         "pk": 3,
         "fields": {
-            "nombre": "No podía pagar los gastos"
+            "motivo": "No podía pagar los gastos"
         }
     },
     {
         "model": "legajos.motivonivelincompleto",
         "pk": 4,
         "fields": {
-            "nombre": "Tenía que cuidar a otras personas del hogar (niños/as, personas mayores, otras)"
+            "motivo": "Tenía que cuidar a otras personas del hogar (niños/as, personas mayores, otras)"
         }
     },
     {
         "model": "legajos.motivonivelincompleto",
         "pk": 5,
         "fields": {
-            "nombre": "Estaba embarazada"
+            "motivo": "Estaba embarazada"
         }
     },
     {
         "model": "legajos.motivonivelincompleto",
         "pk": 6,
         "fields": {
-            "nombre": "No tenía de interés"
+            "motivo": "No tenía de interés"
         }
     },
     {
         "model": "legajos.motivonivelincompleto",
         "pk": 7,
         "fields": {
-            "nombre": "Tenía dificultades para aprender o estudiar"
+            "motivo": "Tenía dificultades para aprender o estudiar"
         }
     },
     {
         "model": "legajos.motivonivelincompleto",
         "pk": 8,
         "fields": {
-            "nombre": "Tenía problemas de salud"
+            "motivo": "Tenía problemas de salud"
         }
     }
 ]
