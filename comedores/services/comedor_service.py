@@ -2,7 +2,8 @@ from typing import Union
 
 from django.db.models import Q
 
-from comedores.models import Comedor
+from comedores.models import Comedor, Referente
+from legajos.models import LegajoProvincias, LegajoMunicipio, LegajoLocalidad
 
 
 class ComedorService:
@@ -60,3 +61,32 @@ class ComedorService:
             )
             .get(pk=comedor_id)
         )
+
+    @staticmethod
+    def get_ubicaciones_ids(data):
+        provincia_obj = LegajoProvincias.objects.filter(
+            nombre__iexact=data["provincia"]
+        ).first()
+        data["provincia"] = provincia_obj.id if provincia_obj else None
+
+        municipio_obj = LegajoMunicipio.objects.filter(
+            nombre__iexact=data["municipio"]
+        ).first()
+        data["municipio"] = municipio_obj.id if municipio_obj else None
+
+        localidad_obj = LegajoLocalidad.objects.filter(
+            nombre__iexact=data["localidad"]
+        ).first()
+        data["localidad"] = localidad_obj.id if localidad_obj else None
+
+    @staticmethod
+    def create_referente(data):
+        referente = Referente.objects.create(
+            nombre=data["referente"]["nombre"],
+            apellido=data["referente"]["apellido"],
+            celular=data["referente"]["celular"].replace("-", ""),
+            mail=data["referente"]["mail"],
+            documento=data["referente"]["documento"].replace(".", ""),
+        )
+
+        return referente
