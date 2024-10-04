@@ -5,7 +5,7 @@
 ;
 {% block titulo-pagina %}
     {{ comedor.nombre }}
-    <span class="ml-2 h5">| {{ comedor.provincia__nombre }}, {{ comedor.municipio__nombre_region }}, {{ comedor.localidad__nombre }}</span>
+    <span class="ml-2 h5">| {{ comedor.provincia__nombre }}, {{ comedor.municipio__nombre }}, {{ comedor.localidad__nombre }}</span>
 {% endblock %}
 ;
 {% block breadcrumb %}
@@ -58,7 +58,7 @@
                 <div class="nav-item col-4 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center">
                         Municipio
-                        <span class="username">{{ comedor.municipio__nombre_region }}</span>
+                        <span class="username">{{ comedor.municipio__nombre }}</span>
                     </div>
                 </div>
                 <div class="nav-item col-4 d-flex justify-content-center">
