@@ -165,6 +165,9 @@ class InstitucionesEducativas(models.Model):
 
 #Fin de modelo para choices de dimension educacion
 
+#Modelo para choices de dimension Familia
+
+
 class LegajoProvincias(models.Model):
     """
     Guardado de las provincias de los vecinos y vecinas registrados.
@@ -944,12 +947,9 @@ class DimensionEconomia(models.Model):
     ingresos = models.PositiveIntegerField(
         verbose_name="Ingresos Mensuales ", null=True, blank=True
     )
-    recibe_plan = models.CharField(
+    recibe_plan = models.BooleanField(
         verbose_name="¿Recibe planes sociales?",
-        max_length=255,
-        choices=CHOICE_SINO,
-        null=True,
-        blank=True,
+        default=False,
     )
 
     def save(self, *args, **kwargs):
