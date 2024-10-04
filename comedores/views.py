@@ -457,3 +457,22 @@ class ComedorRelevamientoObservacionApiView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+
+
+class ComedorApiView(APIView):
+    permission_classes = [HasAPIKey]
+
+    def patch(self, request):
+        comedor = Comedor.objects.get(gestionar_uid=request.data["gestionar_uid"])
+        comedor_serializer = ComedorSerializer(
+            comedor, data=request.data, partial=True
+        ).clean()
+        if comedor_serializer.is_valid():
+            comedor_serializer.save()
+            comedor = comedor_serializer.instance
+        else:
+            return Response(
+                comedor_serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return Response(ComedorSerializer(comedor).data, status=status.HTTP_200_OK)
