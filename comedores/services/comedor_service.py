@@ -64,29 +64,41 @@ class ComedorService:
 
     @staticmethod
     def get_ubicaciones_ids(data):
-        provincia_obj = LegajoProvincias.objects.filter(
-            nombre__iexact=data["provincia"]
-        ).first()
-        data["provincia"] = provincia_obj.id if provincia_obj else None
+        if "provincia" in data:
+            provincia_obj = LegajoProvincias.objects.filter(
+                nombre__iexact=data["provincia"]
+            ).first()
+            data["provincia"] = provincia_obj.id if provincia_obj else None
 
-        municipio_obj = LegajoMunicipio.objects.filter(
-            nombre__iexact=data["municipio"]
-        ).first()
-        data["municipio"] = municipio_obj.id if municipio_obj else None
+        if "municipio" in data:
+            municipio_obj = LegajoMunicipio.objects.filter(
+                nombre__iexact=data["municipio"]
+            ).first()
+            data["municipio"] = municipio_obj.id if municipio_obj else None
 
-        localidad_obj = LegajoLocalidad.objects.filter(
-            nombre__iexact=data["localidad"]
-        ).first()
-        data["localidad"] = localidad_obj.id if localidad_obj else None
+        if "localidad" in data:
+            localidad_obj = LegajoLocalidad.objects.filter(
+                nombre__iexact=data["localidad"]
+            ).first()
+            data["localidad"] = localidad_obj.id if localidad_obj else None
+
+        return data
 
     @staticmethod
-    def create_referente(data):
-        referente = Referente.objects.create(
-            nombre=data["referente"]["nombre"],
-            apellido=data["referente"]["apellido"],
-            celular=data["referente"]["celular"].replace("-", ""),
-            mail=data["referente"]["mail"],
-            documento=data["referente"]["documento"].replace(".", ""),
-        )
+    def create_or_update_referente(data, referente_instance=None):
+        referente_data = data.get("referente", {})
+
+        if "celular" in referente_data:
+            referente_data["celular"] = referente_data["celular"].replace("-", "")
+        if "documento" in referente_data:
+            referente_data["documento"] = referente_data["documento"].replace(".", "")
+
+        if referente_instance is None:  # Crear referente
+            referente = Referente.objects.create(**referente_data)
+        else:  # Actualizar referente
+            for field, value in referente_data.items():
+                setattr(referente_instance, field, value)
+            referente_instance.save()
+            referente = referente_instance
 
         return referente

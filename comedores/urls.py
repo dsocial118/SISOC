@@ -6,7 +6,8 @@ from comedores.views import (
     ComedorDeleteView,
     ComedorDetailView,
     ComedorListView,
-    ComedorRelevamientoObservacion,
+    ComedorRelevamientoObservacionApiView,
+    ComedorApiView,
     ComedorUpdateView,
     ObservacionCreateView,
     ObservacionDeleteView,
@@ -88,5 +89,10 @@ urlpatterns = [
         "api/comedor-relevamiento-observacion",
         ComedorRelevamientoObservacionApiView.as_view(),
         name="api_comedor_relevamiento_observacion",
+    ),
+    path(
+        "api/comedor/update",
+        ComedorApiView.as_view(),
+        name="api_comedor_update",
     ),
 ]
