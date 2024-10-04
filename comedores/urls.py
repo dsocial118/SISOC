@@ -18,6 +18,7 @@ from comedores.views import (
     RelevamientoDetailView,
     RelevamientoUpdateView,
     RelevamientoApiView,
+    ObservacionApiView,
 )
 
 urlpatterns = [
@@ -99,6 +100,11 @@ urlpatterns = [
     path(
         "api/relevamiento/update",
         RelevamientoApiView.as_view(),
-        name="api_comedor_update",
+        name="api_relevamiento_update",
+    ),
+    path(
+        "api/observacion/update",
+        ObservacionApiView.as_view(),
+        name="api_observacion_update",
     ),
 ]

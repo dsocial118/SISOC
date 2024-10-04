@@ -505,3 +505,32 @@ class RelevamientoApiView(APIView):
         return Response(
             RelevamientoSerializer(relevamiento).data, status=status.HTTP_200_OK
         )
+
+
+class ObservacionApiView(APIView):
+    permission_classes = [HasAPIKey]
+
+    def patch(self, request):
+        comedor = Comedor.objects.get(
+            gestionar_uid=request.data["comedor_gestionar_uid"]
+        ).id
+        observacion = Observacion.objects.get(
+            comedor=comedor,
+            fecha_visita=RelevamientoService.format_fecha_visita(
+                request.data["fecha_visita"]
+            ),
+        )
+        observacion_serializer = ObservacionSerializer(
+            observacion, data=request.data, partial=True
+        ).clean()
+        if observacion_serializer.is_valid():
+            observacion_serializer.save()
+            observacion = observacion_serializer.instance
+        else:
+            return Response(
+                observacion_serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return Response(
+            ObservacionSerializer(observacion).data, status=status.HTTP_200_OK
+        )
