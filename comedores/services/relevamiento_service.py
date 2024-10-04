@@ -4,10 +4,10 @@ from django.utils import timezone
 
 from comedores.models import (
     CantidadColaboradores,
-    Colaboradores,
     Espacio,
     EspacioCocina,
     EspacioPrestacion,
+    Colaboradores,
     FrecuenciaLimpieza,
     FrecuenciaRecepcionRecursos,
     FuenteCompras,
@@ -278,10 +278,8 @@ class RelevamientoService:
                 prestacion_data["informacion_quejas"] == "Y"
             )
         if "frecuencia_limpieza" in prestacion_data:
-            prestacion_data["frecuencia_limpieza"] = (
-                FrecuenciaLimpieza.objects.get(
-                    nombre__iexact=prestacion_data["frecuencia_limpieza"]
-                ),
+            prestacion_data["frecuencia_limpieza"] = FrecuenciaLimpieza.objects.get(
+                nombre__iexact=prestacion_data["frecuencia_limpieza"]
             )
 
         return prestacion_data
@@ -289,6 +287,13 @@ class RelevamientoService:
     @staticmethod
     def create_or_update_cocina(cocina_data, cocina_instance=None):
         cocina_data = RelevamientoService.populate_cocina_data(cocina_data)
+
+        if "abastecimiento_combustible" in cocina_data:
+            combustible_str = cocina_data.pop("abastecimiento_combustible", None)
+            combustibles_arr = [nombre.strip() for nombre in combustible_str.split(",")]
+            combustibles_queryset = TipoCombustible.objects.filter(
+                nombre__in=combustibles_arr
+            )
 
         if cocina_instance is None:
             cocina_instance = EspacioCocina.objects.create(**cocina_data)
@@ -298,11 +303,6 @@ class RelevamientoService:
             cocina_instance.save()
 
         if "abastecimiento_combustible" in cocina_data:
-            combustible_str = cocina_data["abastecimiento_combustible"]
-            combustibles_arr = [nombre.strip() for nombre in combustible_str.split(",")]
-            combustibles_queryset = TipoCombustible.objects.filter(
-                nombre__in=combustibles_arr
-            )
             cocina_instance.abastecimiento_combustible.set(combustibles_queryset)
 
         return cocina_instance
@@ -386,7 +386,7 @@ class RelevamientoService:
         )
 
         if colaboradores_instance is None:
-            colaboradores_instance = Espacio.objects.create(**colaboradores_data)
+            colaboradores_instance = Colaboradores.objects.create(**colaboradores_data)
         else:
             for field, value in colaboradores_data.items():
                 setattr(colaboradores_instance, field, value)
@@ -402,26 +402,28 @@ class RelevamientoService:
                     nombre__iexact=colaboradores_data["cantidad_colaboradores"]
                 )
             )
-
         if "colaboradores_capacitados_alimentos" in colaboradores_data:
             colaboradores_data["colaboradores_capacitados_alimentos"] = (
-                colaboradores_data["cantidad_colaboradores"] == "Y"
+                colaboradores_data["colaboradores_capacitados_alimentos"] == "Y"
             )
         if "colaboradores_recibieron_capacitacion_alimentos" in colaboradores_data:
             colaboradores_data["colaboradores_recibieron_capacitacion_alimentos"] = (
-                colaboradores_data["cantidad_colaboradores"] == "Y"
+                colaboradores_data["colaboradores_recibieron_capacitacion_alimentos"]
+                == "Y"
             )
         if "colaboradores_capacitados_salud_seguridad" in colaboradores_data:
             colaboradores_data["colaboradores_capacitados_salud_seguridad"] = (
-                colaboradores_data["cantidad_colaboradores"] == "Y"
+                colaboradores_data["colaboradores_capacitados_salud_seguridad"] == "Y"
             )
         if "colaboradores_recibieron_capacitacion_emergencias" in colaboradores_data:
             colaboradores_data["colaboradores_recibieron_capacitacion_emergencias"] = (
-                colaboradores_data["cantidad_colaboradores"] == "Y"
+                colaboradores_data["colaboradores_recibieron_capacitacion_emergencias"]
+                == "Y"
             )
         if "colaboradores_recibieron_capacitacion_violencia" in colaboradores_data:
             colaboradores_data["colaboradores_recibieron_capacitacion_violencia"] = (
-                colaboradores_data["cantidad_colaboradores"] == "Y"
+                colaboradores_data["colaboradores_recibieron_capacitacion_violencia"]
+                == "Y"
             )
 
         return colaboradores_data
@@ -519,7 +521,7 @@ class RelevamientoService:
 
         if "recibe_otros" in recursos_data:
             recursos_data["recibe_otros"] = (
-                recursos_data["recibe_donaciones_particulares"] == "Y",
+                recursos_data["recibe_donaciones_particulares"] == "Y"
             )
 
         if "frecuencia_otros" in recursos_data:
