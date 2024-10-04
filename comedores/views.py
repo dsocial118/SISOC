@@ -97,8 +97,8 @@ class ComedorDetailView(DetailView):
                 .values("id", "fecha_visita")
                 .order_by("-fecha_visita")[:12],
                 "observaciones": Observacion.objects.filter(comedor=self.object["id"])
-                .values("id", "fecha")
-                .order_by("-fecha")[:12],
+                .values("id", "fecha_visita")
+                .order_by("-fecha_visita")[:12],
             }
         )
 
@@ -338,7 +338,7 @@ class ObservacionCreateView(CreateView):
         form.instance.comedor_id = Comedor.objects.get(pk=self.kwargs["comedor_pk"]).id
         usuario = Usuarios.objects.get(pk=self.request.user.id).usuario
         form.instance.observador = f"{usuario.first_name} {usuario.last_name}"
-        form.instance.fecha = timezone.now()
+        form.instance.fecha_visita = timezone.now()
 
         self.object = form.save()
 
@@ -359,7 +359,7 @@ class ObservacionDetailView(DetailView):
             Observacion.objects.prefetch_related("comedor")
             .values(
                 "id",
-                "fecha",
+                "fecha_visita",
                 "observacion",
                 "comedor__id",
                 "comedor__nombre",
@@ -389,7 +389,7 @@ class ObservacionUpdateView(UpdateView):
         form.instance.comedor_id = Comedor.objects.get(pk=self.kwargs["comedor_pk"]).id
         usuario = Usuarios.objects.get(pk=self.request.user.id).usuario
         form.instance.observador = f"{usuario.first_name} {usuario.last_name}"
-        form.instance.fecha = timezone.now()
+        form.instance.fecha_visita = timezone.now()
 
         self.object = form.save()
 
@@ -411,7 +411,7 @@ class ObservacionDeleteView(DeleteView):
         return reverse_lazy("comedor_detalle", kwargs={"pk": comedor.id})
 
 
-class ComedorRelevamientoObservacion(APIView):
+class ComedorRelevamientoObservacionApiView(APIView):
     permission_classes = [HasAPIKey]
 
     def post(self, request):

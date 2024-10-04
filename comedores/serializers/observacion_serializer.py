@@ -8,7 +8,7 @@ from comedores.models import Observacion
 
 class ObservacionSerializer(serializers.ModelSerializer):
     def clean(self):
-        self.initial_data["fecha"] = self.format_fecha(self.initial_data["fecha"])
+        self.initial_data["fecha_visita"] = self.format_fecha(self.initial_data["fecha_visita"])
 
         return self
 
