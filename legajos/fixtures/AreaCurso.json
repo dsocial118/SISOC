@@ -3,126 +3,126 @@
         "model": "legajos.areacurso",
         "pk": 1,
         "fields": {
-            "nombre": "Albañilería"
+            "area": "Albañilería"
         }
     },
     {
         "model": "legajos.areacurso",
         "pk": 2,
         "fields": {
-            "nombre": "Mecánica Automotor básica"
+            "area": "Mecánica Automotor básica"
         }
     },
     {
         "model": "legajos.areacurso",
         "pk": 3,
         "fields": {
-            "nombre": "Venta en comercio"
+            "area": "Venta en comercio"
         }
     },
     {
         "model": "legajos.areacurso",
         "pk": 4,
         "fields": {
-            "nombre": "Elaboración de alimentos"
+            "area": "Elaboración de alimentos"
         }
     },
     {
         "model": "legajos.areacurso",
         "pk": 5,
         "fields": {
-            "nombre": "Colocación de cerámicos"
+            "area": "Colocación de cerámicos"
         }
     },
     {
         "model": "legajos.areacurso",
         "pk": 6,
         "fields": {
-            "nombre": "Instalaciones eléctricas domiciliarias"
+            "area": "Instalaciones eléctricas domiciliarias"
         }
     },
     {
         "model": "legajos.areacurso",
         "pk": 7,
         "fields": {
-            "nombre": "Instalación de gas domiciliario"
+            "area": "Instalación de gas domiciliario"
         }
     },
     {
         "model": "legajos.areacurso",
         "pk": 8,
         "fields": {
-            "nombre": "Instalación de sanitarios en casas"
+            "area": "Instalación de sanitarios en casas"
         }
     },
     {
         "model": "legajos.areacurso",
         "pk": 9,
         "fields": {
-            "nombre": "Jardinería y mantenimiento espacios verdes"
+            "area": "Jardinería y mantenimiento espacios verdes"
         }
     },
     {
         "model": "legajos.areacurso",
         "pk": 10,
         "fields": {
-            "nombre": "Mecánica de Motos"
+            "area": "Mecánica de Motos"
         }
     },
     {
         "model": "legajos.areacurso",
         "pk": 11,
         "fields": {
-            "nombre": "Atención en bares y restaurantes"
+            "area": "Atención en bares y restaurantes"
         }
     },
     {
         "model": "legajos.areacurso",
         "pk": 12,
         "fields": {
-            "nombre": "Mucamo/a de hotel"
+            "area": "Mucamo/a de hotel"
         }
     },
     {
         "model": "legajos.areacurso",
         "pk": 13,
         "fields": {
-            "nombre": "Confección de indumentaria"
+            "area": "Confección de indumentaria"
         }
     },
     {
         "model": "legajos.areacurso",
         "pk": 14,
         "fields": {
-            "nombre": "Industrias de la carne"
+            "area": "Industrias de la carne"
         }
     },
     {
         "model": "legajos.areacurso",
         "pk": 15,
         "fields": {
-            "nombre": "Tareas generales en Industrias varias"
+            "area": "Tareas generales en Industrias varias"
         }
     },
     {
         "model": "legajos.areacurso",
         "pk": 16,
         "fields": {
-            "nombre": "Cuidado de personas"
+            "area": "Cuidado de personas"
         }
     },
     {
         "model": "legajos.areacurso",
         "pk": 17,
         "fields": {
-            "nombre": "Servicios generales en casas particulares"
+            "area": "Servicios generales en casas particulares"
         }
     },
     {
         "model": "legajos.areacurso",
         "pk": 18,
         "fields": {
-            "nombre": "Pintura de Obra"
+            "area": "Pintura de Obra"
         }
     }
 ]

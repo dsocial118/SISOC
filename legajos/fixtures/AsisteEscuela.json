@@ -3,7 +3,7 @@
         "model": "legajos.asisteescuela",
         "pk": 1,
         "fields": {
-            "nombre": "Sí, asisto actualmente"
+            "asiste": "Sí, asisto actualmente"
         }
 
     },
@@ -11,14 +11,14 @@
         "model": "legajos.asisteescuela",
         "pk": 2,
         "fields": {
-            "nombre": "Sí, asistí en algún momento"
+            "asiste": "Sí, asistí en algún momento"
         }
     },
     {
         "model": "legajos.asisteescuela",
         "pk": 3,
         "fields": {
-            "nombre": "No, nunca asistí"
+            "asiste": "No, nunca asistí"
         }
     }
 ]
