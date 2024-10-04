@@ -676,6 +676,10 @@ class DimensionEducacionForm(forms.ModelForm):
 
 
 class DimensionEconomiaForm(forms.ModelForm):
+    recibe_plan = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿Recibe planes sociales?"
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["fk_legajo"].widget = forms.HiddenInput()
