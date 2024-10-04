@@ -12,7 +12,7 @@ class ComedorService:
             "id",
             "nombre",
             "provincia__nombre",
-            "municipio__nombre_region",
+            "municipio__nombre",
             "localidad__nombre",
             "barrio",
             "partido",
@@ -26,7 +26,7 @@ class ComedorService:
             queryset = queryset.filter(
                 Q(nombre__icontains=query)
                 | Q(provincia__nombre__icontains=query)
-                | Q(municipio__nombre_region=query)
+                | Q(municipio__nombre=query)
                 | Q(localidad__nombre=query)
                 | Q(referente__nombre=query)
                 | Q(referente__apellido=query)
@@ -43,7 +43,7 @@ class ComedorService:
                 "nombre",
                 "comienzo",
                 "provincia__nombre",
-                "municipio__nombre_region",
+                "municipio__nombre",
                 "localidad__nombre",
                 "partido",
                 "barrio",

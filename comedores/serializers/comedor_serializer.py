@@ -38,7 +38,7 @@ class ComedorSerializer(serializers.ModelSerializer):
         data["provincia"] = provincia_obj.id if provincia_obj else None
 
         municipio_obj = LegajoMunicipio.objects.filter(
-            nombre_region__iexact=data["municipio"]
+            nombre__iexact=data["municipio"]
         ).first()
         data["municipio"] = municipio_obj.id if municipio_obj else None
 

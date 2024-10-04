@@ -103,7 +103,7 @@ class RelevamientoService:
                 "comedor__entre_calle_1",
                 "comedor__entre_calle_2",
                 "comedor__provincia__nombre",
-                "comedor__municipio__nombre_region",
+                "comedor__municipio__nombre",
                 "comedor__localidad__nombre",
                 "comedor__partido",
                 "comedor__barrio",
