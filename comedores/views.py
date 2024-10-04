@@ -482,11 +482,11 @@ class RelevamientoApiView(APIView):
     permission_classes = [HasAPIKey]
 
     def patch(self, request):
-        relevamiento = Comedor.objects.get(
+        comedor = Comedor.objects.get(
             gestionar_uid=request.data["comedor_gestionar_uid"]
         ).id
         relevamiento = Relevamiento.objects.get(
-            comedor=relevamiento,
+            comedor=comedor,
             fecha_visita=RelevamientoService.format_fecha_visita(
                 request.data["fecha_visita"]
             ),
