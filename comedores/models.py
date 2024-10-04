@@ -669,6 +669,7 @@ class Relevamiento(models.Model):
         indexes = [
             models.Index(fields=["comedor"]),
         ]
+        unique_together = [["comedor", "fecha_visita"]]
         verbose_name = "Relevamiento"
         verbose_name_plural = "Relevamientos"
 
@@ -691,5 +692,6 @@ class Observacion(models.Model):
         indexes = [
             models.Index(fields=["comedor"]),
         ]
+        unique_together = [["comedor", "fecha_visita"]]
         verbose_name = "Observacion"
         verbose_name_plural = "Observaciones"

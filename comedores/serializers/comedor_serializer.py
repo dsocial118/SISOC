@@ -11,9 +11,6 @@ class ComedorSerializer(serializers.ModelSerializer):
                 self.initial_data["comienzo"] = self.initial_data.get(
                     "comienzo", ""
                 ).replace(".", "")
-                self.initial_data["comienzo"] = self.initial_data.get(
-                    "comienzo", ""
-                ).replace(".", "")
 
             if "referente" in self.initial_data:
                 if self.instance and self.instance.referente:

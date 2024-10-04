@@ -94,11 +94,10 @@ class ComedorService:
             referente_data["documento"] = referente_data["documento"].replace(".", "")
 
         if referente_instance is None:  # Crear referente
-            referente = Referente.objects.create(**referente_data)
+            referente_instance = Referente.objects.create(**referente_data)
         else:  # Actualizar referente
             for field, value in referente_data.items():
                 setattr(referente_instance, field, value)
             referente_instance.save()
-            referente = referente_instance
 
-        return referente
+        return referente_instance
