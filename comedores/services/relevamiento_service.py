@@ -71,7 +71,7 @@ class RelevamientoService:
         tipos_list = [str(tipo) for tipo in tipos]
 
         if len(tipos_list) == 0:
-            tipos_str = ""
+            tipos_str = "-"
         elif len(tipos_list) > 1:
             tipos_str = ", ".join(tipos_list[:-1]) + " y " + tipos_list[-1]
         else:
