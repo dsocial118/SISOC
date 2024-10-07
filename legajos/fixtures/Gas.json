@@ -1,0 +1,58 @@
+[
+    {
+        "model": "legajos.gas",
+        "pk": 1,
+        "fields": {
+            "tipo": "Gas de red"
+        }
+    },
+    {
+        "model": "legajos.gas",
+        "pk": 2,
+        "fields": {
+            "tipo": "Gas a granel"
+        }
+    },
+    {
+        "model": "legajos.gas",
+        "pk": 3,
+        "fields": {
+            "tipo": "Gas en tubo"
+        }
+    },
+    {
+        "model": "legajos.gas",
+        "pk": 4,
+        "fields": {
+            "tipo": "Gas en garrafa sin subsidio"
+        }
+    },
+    {
+        "model": "legajos.gas",
+        "pk": 5,
+        "fields": {
+            "tipo": "Gas en garrafa con subsidio estatal"
+        }
+    },
+    {
+        "model": "legajos.gas",
+        "pk": 6,
+        "fields": {
+            "tipo": "Electricidad"
+        }
+    },
+    {
+        "model": "legajos.gas",
+        "pk": 7,
+        "fields": {
+            "tipo": "Leña o carbón"
+        }
+    },
+    {
+        "model": "legajos.gas",
+        "pk": 8,
+        "fields": {
+            "tipo": "Otro"
+        }
+    }
+]

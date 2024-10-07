@@ -1,0 +1,44 @@
+[
+    {
+        "model": "legajos.desague",
+        "pk": 1,
+        "fields": {
+            "tipo": "A red pública"
+        }
+    },
+    {
+        "model": "legajos.desague",
+        "pk": 2,
+        "fields": {
+            "tipo": "A cámara séptica"
+        }
+    },
+    {
+        "model": "legajos.desague",
+        "pk": 3,
+        "fields": {
+            "tipo": "A pozo ciego"
+        }
+    },
+    {
+        "model": "legajos.desague",
+        "pk": 4,
+        "fields": {
+            "tipo": "A hoyo, excavación en la tierra, etc"
+        }
+    },
+    {
+        "model": "legajos.desague",
+        "pk": 5,
+        "fields": {
+            "tipo": "Otro"
+        }
+    },
+    {
+        "model": "legajos.desague",
+        "pk": 6,
+        "fields": {
+            "tipo": "Ns/Nc"
+        }
+    }
+]
