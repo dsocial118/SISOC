@@ -1,0 +1,23 @@
+[
+    {
+        "model": "legajos.tipoestadovivienda",
+        "pk": 1,
+        "fields": {
+            "tipo": "Bueno"
+        }
+    },
+    {
+        "model": "legajos.tipoestadovivienda",
+        "pk": 2,
+        "fields": {
+            "tipo": "Malo"
+        }
+    },
+    {
+        "model": "legajos.tipoestadovivienda",
+        "pk": 3,
+        "fields": {
+            "tipo": "Muy malo"
+        }
+    }
+]
