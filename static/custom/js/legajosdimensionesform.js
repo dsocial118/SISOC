@@ -63,8 +63,8 @@ document.addEventListener("DOMContentLoaded", function() {
   ];
 
   let hayBanioFormEstados = [
-    { valor: 'No tiene inodoro', mostrar: [], ocultar: [ID_DESAGUE_BANIO] },
-    { valor: 'No tiene baño', mostrar: [], ocultar: [ID_DESAGUE_BANIO] },
+    { valor: '3', mostrar: [], ocultar: [ID_DESAGUE_BANIO] },
+    { valor: '4', mostrar: [], ocultar: [ID_DESAGUE_BANIO] },
     { valor: null, mostrar: [ID_DESAGUE_BANIO], ocultar: [] }
   ];
 
