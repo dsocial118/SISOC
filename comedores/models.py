@@ -1,10 +1,8 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
-from django.forms.models import model_to_dict
 
 from legajos.models import LegajoLocalidad, LegajoMunicipio, LegajoProvincias
-from usuarios.models import Usuarios
 
 
 class TipoModalidadPrestacion(models.Model):
