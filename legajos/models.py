@@ -62,15 +62,7 @@ class LegajoProvincias(models.Model):
     Guardado de las provincias de los vecinos y vecinas registrados.
     """
 
-    iso_provincia = models.CharField(max_length=255)
-    abreviatura = models.CharField(max_length=255)
-    region_id = models.IntegerField()
-    number = models.IntegerField()
     nombre = models.CharField(max_length=255)
-    region_id = models.IntegerField()
-    region_territorial_id = models.IntegerField()
-    uuid = models.CharField(max_length=255)
-    status = models.IntegerField()
 
     def __str__(self):
         return str(self.nombre)
@@ -86,23 +78,33 @@ class LegajoMunicipio(models.Model):
     Guardado de los municipios de los vecinos y vecinas registrados.
     """
 
-    nombre_region = models.CharField(max_length=255)
-    codigo_ifam = models.CharField(max_length=255)
-    carta_organica = models.IntegerField()
-    categoria_id = models.IntegerField()
-    departamento_id = models.IntegerField()
-    iso_provincia = models.CharField(max_length=255)
+    nombre = models.CharField(max_length=255)
+    fk_provincia = models.ForeignKey(
+        LegajoProvincias, on_delete=models.SET_NULL, null=True, blank=True
+    )
 
     def __str__(self):
-        return str(self.nombre_region)
+        return str(self.nombre)
 
     class Meta:
         ordering = ["id"]
         verbose_name = "Municipio"
         verbose_name_plural = "Municipio"
-        indexes = [
-            models.Index(fields=["codigo_ifam"]),
-        ]
+
+
+class LegajoDepartamento(models.Model):
+    nombre = models.CharField(max_length=255)
+    fk_provincia = models.ForeignKey(
+        LegajoProvincias, on_delete=models.SET_NULL, null=True, blank=True
+    )
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        ordering = ["id"]
+        verbose_name = "Departamento"
+        verbose_name_plural = "Departamento"
 
 
 class LegajoLocalidad(models.Model):
@@ -111,19 +113,12 @@ class LegajoLocalidad(models.Model):
     """
 
     nombre = models.CharField(max_length=255)
-    cod_bahra = models.BigIntegerField()
-    bahra_gid = models.IntegerField()
-    cod_loc = models.IntegerField()
-    cod_sit = models.IntegerField()
-    cod_entidad = models.IntegerField()
-    lat_gd = models.FloatField()
-    long_gd = models.FloatField()
-    long_gms = models.CharField(max_length=255)
-    the_geom = models.CharField(max_length=255)
-    departamento_id = models.IntegerField()
-    fuente_ubicacion = models.IntegerField()
-    tipo_bahra = models.IntegerField()
-    cod_depto = models.IntegerField()
+    fk_municipio = models.ForeignKey(
+        LegajoMunicipio, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    fk_departamento = models.ForeignKey(
+        LegajoDepartamento, on_delete=models.SET_NULL, null=True, blank=True
+    )
 
     def __str__(self):
         return str(self.nombre)
@@ -131,9 +126,30 @@ class LegajoLocalidad(models.Model):
     class Meta:
         verbose_name = "Localidad"
         verbose_name_plural = "Localidad"
-        indexes = [
-            models.Index(fields=["departamento_id"]),
-        ]
+
+
+class LegajoAsentamientos(models.Model):
+    """
+    Guardado de los asentamientos de los vecinos y vecinas registrados.
+    """
+
+    nombre = models.CharField(max_length=255)
+    fk_departamento = models.ForeignKey(
+        LegajoDepartamento, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    fk_municipio = models.ForeignKey(
+        LegajoMunicipio, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    fk_localidad = models.ForeignKey(
+        LegajoLocalidad, on_delete=models.SET_NULL, null=True, blank=True
+    )
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        verbose_name = "Asentamiento"
+        verbose_name_plural = "Asentamientos"
 
 
 class Legajos(models.Model):
@@ -219,13 +235,19 @@ class Legajos(models.Model):
     modificado = models.DateField(auto_now=True)
     fk_provincia = models.ForeignKey(
         LegajoProvincias, on_delete=models.SET_NULL, null=True, blank=True
-    )  # abreviatura es el campo que relacion a municipio
+    )
     fk_municipio = models.ForeignKey(
         LegajoMunicipio, on_delete=models.SET_NULL, null=True, blank=True
-    )  # codigo_ifam es el campo que se relaciona con provincia y departamento_id se relaciona con localidada
+    )
     fk_localidad = models.ForeignKey(
         LegajoLocalidad, on_delete=models.SET_NULL, null=True, blank=True
-    )  # departamento_id es el campo que se relaciona con municipio
+    )
+    fk_departamento = models.ForeignKey(
+        LegajoDepartamento, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    fk_asentamiento = models.ForeignKey(
+        LegajoAsentamientos, on_delete=models.SET_NULL, null=True, blank=True
+    )
 
     def __str__(self):
         return f"{self.apellido}, {self.nombre}"
@@ -355,9 +377,6 @@ class DimensionFamilia(models.Model):
     """
 
     fk_legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
-    estado_civil = models.CharField(
-        max_length=255, choices=CHOICE_ESTADO_CIVIL, null=True, blank=True
-    )
     cant_hijos = models.SmallIntegerField(
         verbose_name="Cantidad de hijos", null=True, blank=True
     )
@@ -1196,6 +1215,21 @@ class Intervencion(models.Model):
         indexes = [models.Index(fields=["fk_legajo"])]
 
 
+class ProgramasLlamados(models.Model):
+    """
+    Guardado de los programas a los que se llama.
+    """
+
+    nombre = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"{self.nombre}"
+
+    class Meta:
+        verbose_name = "ProgramasLlamados"
+        verbose_name_plural = "ProgramasLlamados"
+
+
 class EstadosLlamados(models.Model):
     """
     Guardado de los estados de las intervenciones realizadas a un legajo.
@@ -1217,6 +1251,9 @@ class TipoLlamado(models.Model):
     """
 
     nombre = models.CharField(max_length=255)
+    fk_programas_llamados = models.ForeignKey(
+        ProgramasLlamados, on_delete=models.SET_NULL, null=True
+    )
 
     def __str__(self):
         return f"{self.nombre}"
@@ -1261,6 +1298,10 @@ class Llamado(models.Model):
     fk_estado = models.ForeignKey(
         EstadosLlamados, on_delete=models.SET_NULL, default=1, null=True
     )
+    fk_programas_llamados = models.ForeignKey(
+        ProgramasLlamados, on_delete=models.SET_NULL, null=True
+    )
+
     observaciones = models.CharField(max_length=500)
 
     class Meta:

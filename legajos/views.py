@@ -12,7 +12,7 @@ from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
-from django.db.models import Case, Count, IntegerField, Q, Value, When
+from django.db.models import Case, IntegerField, Q, Value, When
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
@@ -70,10 +70,13 @@ from legajos.models import (
     LegajoProvincias,
     LegajoLocalidad,
     LegajoMunicipio,
+    LegajoDepartamento,
+    LegajoAsentamientos,
     Intervencion,
     Llamado,
     SubTipoLlamado,
     SubIntervencion,
+    TipoLlamado,
 )
 from usuarios.mixins import PermisosMixin
 from usuarios.utils import recortar_imagen
@@ -90,22 +93,38 @@ ROL_ADMIN = "usuarios.rol_admin"
 
 def load_municipios(request):
     provincia_id = request.GET.get("provincia_id")
-    provincia_search = LegajoProvincias.objects.get(id=provincia_id)
-    municipios = LegajoMunicipio.objects.filter(
-        codigo_ifam__startswith=provincia_search.abreviatura
-    )
-    return JsonResponse(
-        list(municipios.values("id", "departamento_id", "nombre_region")), safe=False
-    )
+    municipios = LegajoMunicipio.objects.filter(fk_provincia=provincia_id)
+    return JsonResponse(list(municipios.values("id", "nombre")), safe=False)
 
 
 def load_localidad(request):
     municipio_id = request.GET.get("municipio_id")
-    localidad_search = LegajoMunicipio.objects.get(id=municipio_id)
-    localidades = LegajoLocalidad.objects.filter(
-        departamento_id=localidad_search.departamento_id
-    )
+    departamento_id = request.GET.get("departamento_id")
+
+    if municipio_id:
+        localidades = LegajoLocalidad.objects.filter(fk_municipio=municipio_id)
+    else:
+        localidades = LegajoLocalidad.objects.filter(fk_departamento=departamento_id)
     return JsonResponse(list(localidades.values("id", "nombre")), safe=False)
+
+
+def load_departamento(request):
+    provincia_id = request.GET.get("provincia_id")
+    departamentos = LegajoDepartamento.objects.filter(fk_provincia=provincia_id)
+    return JsonResponse(list(departamentos.values("id", "nombre")), safe=False)
+
+
+def load_asentamiento(request):
+    municipio_id = request.GET.get("municipio_id")
+    departamento_id = request.GET.get("departamento_id")
+
+    if municipio_id:
+        asentamientos = LegajoAsentamientos.objects.filter(fk_localidad=municipio_id)
+    else:
+        asentamientos = LegajoAsentamientos.objects.filter(
+            fk_departamento=departamento_id
+        )
+    return JsonResponse(list(asentamientos.values("id", "nombre")), safe=False)
 
 
 class LegajosReportesListView(ListView):
@@ -341,19 +360,13 @@ class LegajosDetailView(DetailView):
             count_alertas = legajo_alertas.count()
             cache.set("count_alertas", count_alertas, 60)
         if not count_alta:
-            count_alta = legajo_alertas_organizadas.aggregate(
-                count=Count("es_critica")
-            ).get("count", 0)
+            count_alta = legajo_alertas_organizadas.filter(es_critica=True).count()
             cache.set("count_alta", count_alta, 60)
         if not count_media:
-            count_media = legajo_alertas_organizadas.aggregate(
-                count=Count("es_importante")
-            ).get("count", 0)
+            count_media = legajo_alertas_organizadas.filter(es_importante=True).count()
             cache.set("count_media", count_media, 60)
         if not count_baja:
-            count_baja = legajo_alertas_organizadas.aggregate(
-                count=Count("es_precaucion")
-            ).get("count", 0)
+            count_baja = legajo_alertas_organizadas.filter(es_precaucion=True).count()
             cache.set("count_baja", count_baja, 60)
         if not alertas_alta:
             alertas_alta = legajo_alertas_organizadas.filter(es_critica=True)
@@ -376,7 +389,6 @@ class LegajosDetailView(DetailView):
             dimensionfamilia = (
                 DimensionFamilia.objects.filter(fk_legajo=pk)
                 .values(
-                    "estado_civil",
                     "cant_hijos",
                     "otro_responsable",
                     "hay_embarazadas",
@@ -1199,7 +1211,9 @@ class LegajosAlertasCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
 
         alertas = LegajoAlertas.objects.filter(fk_legajo=pk)
 
-        legajo = Legajos.objects.values("pk", "dimensionfamilia__id").get(pk=pk)
+        legajo = Legajos.objects.values(
+            "pk", "dimensionfamilia__id", "nombre", "apellido"
+        ).get(pk=pk)
 
         context["alertas"] = alertas
         context["legajo"] = legajo
@@ -2209,6 +2223,20 @@ class SubEstadosLlamadosAjax(View):
             sub_estados = SubTipoLlamado.objects.filter(fk_tipo_llamado=request_id)
         else:
             sub_estados = SubTipoLlamado.objects.all()
+        data = [
+            {"id": sub_estado.id, "text": sub_estado.nombre}
+            for sub_estado in sub_estados
+        ]
+        return JsonResponse(data, safe=False)
+
+
+class TipoEstadosLlamadosAjax(View):
+    def get(self, request):
+        request_id = request.GET.get("id", None)
+        if request_id:
+            sub_estados = TipoLlamado.objects.filter(fk_programas_llamados=request_id)
+        else:
+            sub_estados = TipoLlamado.objects.all()
         data = [
             {"id": sub_estado.id, "text": sub_estado.nombre}
             for sub_estado in sub_estados

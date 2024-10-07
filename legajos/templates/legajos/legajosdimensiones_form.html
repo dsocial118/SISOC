@@ -115,9 +115,6 @@
                                                             <div class="form-group">{{ form.fk_legajo| as_crispy_field }}</div>
                                                         </div>
                                                         <div class="col-sm-6">
-                                                            <div class="form-group">{{ form.estado_civil| as_crispy_field }}</div>
-                                                        </div>
-                                                        <div class="col-sm-6">
                                                             <div class="form-group">{{ form.cant_hijos| as_crispy_field }}</div>
                                                         </div>
                                                         <div class="col-sm-6">
@@ -441,6 +438,8 @@
     <script>
         var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
         var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
+        var ajaxLoadDepartamentosUrl = "{% url 'ajax_load_departamentos' %}";
+        var ajaxLoadAsentameintosUrl = "{% url 'ajax_load_asentamientos' %}";
     </script>
     <script src="{% static 'custom/js/formutils.js' %}"></script>
     <script src="{% static 'custom/js/legajosdimensionesform.js' %}"></script>
