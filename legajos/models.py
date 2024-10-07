@@ -165,8 +165,161 @@ class InstitucionesEducativas(models.Model):
 
 #Fin de modelo para choices de dimension educacion
 
-#Modelo para choices de dimension Familia
+#Modelo para choices de dimension Vivienda
 
+class CantidadAmbientes(models.Model):
+    cantidad = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.cantidad)
+
+    class Meta:
+        verbose_name = "Cantidad de Ambientes"
+        verbose_name_plural = "Cantidades de Ambientes"
+
+
+class CondicionDe(models.Model):
+    condicion = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.condicion)
+
+    class Meta:
+        verbose_name = "Condición de"
+        verbose_name_plural = "Condiciones de"
+
+
+class ContextoCasa(models.Model):
+    contexto = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.contexto)
+
+    class Meta:
+        verbose_name = "Contexto de Casa"
+        verbose_name_plural = "Contextos de Casa"
+
+
+class TipoAyudaHogar(models.Model):
+    tipo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.tipo)
+
+    class Meta:
+        verbose_name = "Tipo de Ayuda al Hogar"
+        verbose_name_plural = "Tipos de Ayuda al Hogar"
+
+class TipoVivienda(models.Model):
+    tipo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.tipo)
+
+    class Meta:
+        verbose_name = "Tipo de Vivienda"
+        verbose_name_plural = "Tipos de Vivienda"
+
+
+class TipoPosesionVivienda(models.Model):
+    tipo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.tipo)
+
+    class Meta:
+        verbose_name = "Tipo de Posesión de Vivienda"
+        verbose_name_plural = "Tipos de Posesión de Vivienda"
+
+
+class TipoPisosVivienda(models.Model):
+    tipo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.tipo)
+
+    class Meta:
+        verbose_name = "Tipo de Pisos de Vivienda"
+        verbose_name_plural = "Tipos de Pisos de Vivienda"
+
+
+class TipoTechoVivienda(models.Model):
+    tipo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.tipo)
+
+    class Meta:
+        verbose_name = "Tipo de Techo de Vivienda"
+        verbose_name_plural = "Tipos de Techo de Vivienda"
+
+
+class Agua(models.Model):
+    tipo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.tipo)
+
+    class Meta:
+        verbose_name = "Agua"
+        verbose_name_plural = "Aguas"
+
+
+class Desague(models.Model):
+    tipo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.tipo)
+
+    class Meta:
+        verbose_name = "Desagüe"
+        verbose_name_plural = "Desagües"
+
+
+class Inodoro(models.Model):
+    tipo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.tipo)
+
+    class Meta:
+        verbose_name = "Inodoro"
+        verbose_name_plural = "Inodoros"
+
+
+class Gas(models.Model):
+    tipo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.tipo)
+
+    class Meta:
+        verbose_name = "Gas"
+        verbose_name_plural = "Gases"
+
+
+class TipoConstruccionVivienda(models.Model):
+    tipo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.tipo)
+
+    class Meta:
+        verbose_name = "Tipo de Construcción de Vivienda"
+        verbose_name_plural = "Tipos de Construcción de Vivienda"
+
+
+class TipoEstadoVivienda(models.Model):
+    tipo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.tipo)
+
+    class Meta:
+        verbose_name = "Tipo de Estado de Vivienda"
+        verbose_name_plural = "Tipos de Estado de Vivienda"
+
+#Fin de modelo para choices de dimension Vivienda
 
 class LegajoProvincias(models.Model):
     """
@@ -548,37 +701,33 @@ class DimensionVivienda(models.Model):
     """
 
     fk_legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
-    tipo = models.CharField(
-        verbose_name="Dirías que tu vivienda es…  ",
-        max_length=255,
-        choices=CHOICE_TIPO_VIVIENDA,
+    tipo = models.ForeignKey(
+        TipoVivienda,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
-    material = models.CharField(
-        verbose_name="Material principal de la vivienda",
-        max_length=255,
-        choices=CHOICE_TIPO_CONSTRUCCION_VIVIENDA,
+    material = models.ForeignKey(
+        TipoConstruccionVivienda,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
-    pisos = models.CharField(
-        verbose_name="Material principal de los pisos",
-        max_length=255,
-        choices=CHOICE_TIPO_PISOS_VIVIENDA,
+    pisos = models.ForeignKey(
+        TipoPisosVivienda,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
-    posesion = models.CharField(
-        verbose_name="Tipo de posesión",
-        max_length=255,
-        choices=CHOICE_CONDICIONDE,
+    posesion = models.ForeignKey(
+        TipoPosesionVivienda,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
-    cant_ambientes = models.SmallIntegerField(
-        verbose_name="¿Cuántos ambientes tiene la vivienda? (Sin contar baño ni cocina)",
-        choices=CHOICE_CANTIDADAMBIENTES,
+    cant_ambientes = models.ForeignKey(
+        CantidadAmbientes,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
@@ -604,84 +753,63 @@ class DimensionVivienda(models.Model):
     modificado = models.DateField(auto_now=True)
     # Nuevos campos
 
-    ContextoCasa = models.CharField(
-        verbose_name="La vivienda está ubicada...",
-        max_length=255,
-        choices=CHOICE_CONTEXTOCASA,
+    ContextoCasa = models.ForeignKey(
+        ContextoCasa,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
-    gas = models.CharField(
-        verbose_name="¿Qué utilizan principalmente para cocinar?",
-        max_length=255,
-        choices=CHOICE_GAS,
+    gas = models.ForeignKey(
+        Gas,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
-    techos = models.CharField(
-        verbose_name="¿Cuál es el material predominante de la cubierta exterior del techo de la vivienda?",
-        max_length=255,
-        choices=CHOICE_TIPO_TECHO_VIVIENDA,
+    techos = models.ForeignKey(
+        TipoTechoVivienda,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
-    agua = models.CharField(
-        verbose_name="El agua que usan para beber y cocinar proviene de…",
-        max_length=255,
-        choices=CHOICE_AGUA,
+    agua = models.ForeignKey(
+        Agua,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
-    desague = models.CharField(
-        verbose_name="El desagüe del inodoro es…",
-        max_length=255,
-        choices=CHOICE_DESAGUE,
+    desague = models.ForeignKey(
+        Desague,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
 
     # Migraciones para fix de DAD-106
-    hay_banio = models.CharField(
-        verbose_name="El baño tiene…",
-        max_length=255,
-        choices=CHOICE_INODORO,
+    hay_banio = models.ForeignKey(
+        Inodoro,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
-    hay_desmoronamiento = models.CharField(
+    hay_desmoronamiento = models.BooleanField(
         verbose_name="Existe riesgo de desmoronamiento?",
-        max_length=255,
-        choices=CHOICE_SINO,
-        null=True,
-        blank=True,
+        default=False,
     )
-    PoseenCeludar = models.CharField(
+    PoseenCelular = models.BooleanField(
         verbose_name="¿En tu hogar cuentan con Teléfonos celulares?",
-        max_length=255,
-        choices=CHOICE_SINO,
-        null=True,
-        blank=True,
+        default=False,
     )
-    PoseenPC = models.CharField(
+    PoseenPC = models.BooleanField(
         verbose_name="¿En tu hogar cuentan con Computadoras? (de escritorio / laptop / tablet) ",
-        max_length=255,
-        choices=CHOICE_SINO,
-        null=True,
-        blank=True,
+        default=False,
     )
-    Poseeninternet = models.CharField(
+    Poseeninternet = models.BooleanField(
         verbose_name="En tu hogar cuentan con Internet (a través del celular o por conexión en la vivienda - wifi)",
-        max_length=255,
-        choices=CHOICE_SINO,
-        null=True,
-        blank=True,
+        default=False,
     )
-    hay_agua_caliente = models.CharField(
+    hay_agua_caliente = models.BooleanField(
         verbose_name="¿Posee Agua caliente?",
-        max_length=255,
-        choices=CHOICE_SINO,
-        null=True,
-        blank=True,
+        default=False,
     )
 
     def save(self, *args, **kwargs):
