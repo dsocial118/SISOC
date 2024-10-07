@@ -179,11 +179,6 @@ class RelevamientoService:
         )
 
     @staticmethod
-    def format_fecha_visita(fecha_visita):
-        fecha_formateada = datetime.datetime.strptime(fecha_visita, "%d/%m/%Y %H:%M")
-        return timezone.make_aware(fecha_formateada, timezone.get_default_timezone())
-
-    @staticmethod
     def create_or_update_funcionamiento(
         funcionamiento_data, funcionamiento_instance=None
     ):

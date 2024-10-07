@@ -8,6 +8,7 @@ from comedores.serializers.comedor_serializer import ComedorSerializer
 from comedores.serializers.relevamiento_serializer import RelevamientoSerializer
 from comedores.serializers.observacion_serializer import ObservacionSerializer
 from comedores.services.relevamiento_service import RelevamientoService
+from comedores.utils import format_serializer_errors, format_fecha_visita
 
 
 class ComedorRelevamientoObservacionApiView(APIView):
@@ -26,8 +27,11 @@ class ComedorRelevamientoObservacionApiView(APIView):
                 comedor_serializer.save()
                 comedor = comedor_serializer.instance
             else:
+                error_message_str = format_serializer_errors(comedor_serializer)
+
                 return Response(
-                    comedor_serializer.errors, status=status.HTTP_400_BAD_REQUEST
+                    f"Error en comedor: '{error_message_str}'",
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
 
         relevamiento_data["comedor"] = comedor.id
@@ -35,8 +39,11 @@ class ComedorRelevamientoObservacionApiView(APIView):
         if relevamiento_serializer.is_valid():
             relevamiento_serializer.save()
         else:
+            error_message_str = format_serializer_errors(relevamiento_serializer)
+
             return Response(
-                relevamiento_serializer.errors, status=status.HTTP_400_BAD_REQUEST
+                f"Error en relevamiento: '{error_message_str}'",
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         observacion_data["comedor"] = comedor.id
@@ -44,8 +51,11 @@ class ComedorRelevamientoObservacionApiView(APIView):
         if observacion_serializer.is_valid():
             observacion_serializer.save()
         else:
+            error_message_str = format_serializer_errors(observacion_serializer)
+
             return Response(
-                observacion_serializer.errors, status=status.HTTP_400_BAD_REQUEST
+                f"Error en observación: '{error_message_str}'",
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         return Response(
@@ -70,8 +80,11 @@ class ComedorApiView(APIView):
             comedor_serializer.save()
             comedor = comedor_serializer.instance
         else:
+            error_message_str = format_serializer_errors(comedor_serializer)
+
             return Response(
-                comedor_serializer.errors, status=status.HTTP_400_BAD_REQUEST
+                f"Error en comedor: '{error_message_str}'",
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         return Response(ComedorSerializer(comedor).data, status=status.HTTP_200_OK)
@@ -86,9 +99,7 @@ class RelevamientoApiView(APIView):
         ).id
         relevamiento = Relevamiento.objects.get(
             comedor=comedor,
-            fecha_visita=RelevamientoService.format_fecha_visita(
-                request.data["fecha_visita"]
-            ),
+            fecha_visita=format_fecha_visita(request.data["fecha_visita"]),
         )
         relevamiento_serializer = RelevamientoSerializer(
             relevamiento, data=request.data, partial=True
@@ -97,8 +108,11 @@ class RelevamientoApiView(APIView):
             relevamiento_serializer.save()
             relevamiento = relevamiento_serializer.instance
         else:
+            error_message_str = format_serializer_errors(relevamiento_serializer)
+
             return Response(
-                relevamiento_serializer.errors, status=status.HTTP_400_BAD_REQUEST
+                f"Error en relevamiento: '{error_message_str}'",
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         return Response(
@@ -115,9 +129,7 @@ class ObservacionApiView(APIView):
         ).id
         observacion = Observacion.objects.get(
             comedor=comedor,
-            fecha_visita=RelevamientoService.format_fecha_visita(
-                request.data["fecha_visita"]
-            ),
+            fecha_visita=format_fecha_visita(request.data["fecha_visita"]),
         )
         observacion_serializer = ObservacionSerializer(
             observacion, data=request.data, partial=True
@@ -126,8 +138,11 @@ class ObservacionApiView(APIView):
             observacion_serializer.save()
             observacion = observacion_serializer.instance
         else:
+            error_message_str = format_serializer_errors(observacion_serializer)
+
             return Response(
-                observacion_serializer.errors, status=status.HTTP_400_BAD_REQUEST
+                f"Error en observación: '{error_message_str}'",
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         return Response(
