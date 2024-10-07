@@ -1,0 +1,23 @@
+[
+    {
+        "model": "legajos.generopronombre",
+        "pk": 1,
+        "fields": {
+            "pronombre": "ELLA"
+        }
+    },
+    {
+        "model": "legajos.generopronombre",
+        "pk": 2,
+        "fields": {
+            "pronombre": "ÉL"
+        }
+    },
+    {
+        "model": "legajos.generopronombre",
+        "pk": 3,
+        "fields": {
+            "pronombre": "NEUTRO"
+        }
+    }
+]
