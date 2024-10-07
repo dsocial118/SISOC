@@ -26,7 +26,12 @@ from .models import (
     Gas,
     TipoConstruccionVivienda,
     TipoEstadoVivienda,
-    
+    EstadoCivil,
+    Sexo,
+    Genero,
+    GeneroPronombre,
+    TipoDoc,
+
 )
 
 
@@ -74,3 +79,8 @@ admin.site.register(Inodoro)
 admin.site.register(Gas)
 admin.site.register(TipoConstruccionVivienda)
 admin.site.register(TipoEstadoVivienda)
+admin.site.register(EstadoCivil)
+admin.site.register(Sexo)
+admin.site.register(Genero)
+admin.site.register(GeneroPronombre)
+admin.site.register(TipoDoc)

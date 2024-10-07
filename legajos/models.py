@@ -321,6 +321,59 @@ class TipoEstadoVivienda(models.Model):
 
 #Fin de modelo para choices de dimension Vivienda
 
+#Modelo para choices de datos personales
+class EstadoCivil(models.Model):
+    estado = models.CharField(max_length=20)
+
+    def __str__(self):
+        return str(self.estado)
+
+    class Meta:
+        verbose_name = "Estado Civil"
+        verbose_name_plural = "Estados Civiles"
+
+class Sexo(models.Model):
+    sexo = models.CharField(max_length=10)
+
+    def __str__(self):
+        return str(self.sexo)
+
+    class Meta:
+        verbose_name = "Sexo"
+        verbose_name_plural = "Sexos"
+
+class Genero(models.Model):
+    genero = models.CharField(max_length=20)
+
+    def __str__(self):
+        return str(self.genero)
+
+    class Meta:
+        verbose_name = "Género"
+        verbose_name_plural = "Géneros"
+
+class GeneroPronombre(models.Model):
+    pronombre = models.CharField(max_length=10)
+
+    def __str__(self):
+        return str(self.pronombre)
+
+    class Meta:
+        verbose_name = "Género Pronombre"
+        verbose_name_plural = "Géneros Pronombres"
+
+class TipoDoc(models.Model):
+    tipo = models.CharField(max_length=20)
+
+    def __str__(self):
+        return str(self.tipo)
+
+    class Meta:
+        verbose_name = "Tipo de Documento"
+        verbose_name_plural = "Tipos de Documentos"
+
+#fin de modelo para choices de datos personales
+
 class LegajoProvincias(models.Model):
     """
     Guardado de las provincias de los vecinos y vecinas registrados.
@@ -425,10 +478,10 @@ class Legajos(models.Model):
     apellido = models.CharField(max_length=255)
     nombre = models.CharField(max_length=255)
     fecha_nacimiento = models.DateField()
-    tipo_doc = models.CharField(
-        max_length=255,
-        choices=CHOICE_TIPO_DOC,
+    tipo_doc = models.ForeignKey(
+        TipoDoc,
         verbose_name="Tipo documento",
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
@@ -437,12 +490,19 @@ class Legajos(models.Model):
         null=True,
         blank=True,
     )
-    sexo = models.CharField(max_length=255, choices=CHOICE_SEXO)
+    sexo = models.ForeignKey(
+        Sexo,
+        on_delete=models.SET_NULL,
+        null=True,
+    )
     nacionalidad = models.CharField(
         max_length=255, choices=CHOICE_NACIONALIDAD, null=True, blank=True
     )
-    estado_civil = models.CharField(
-        max_length=255, choices=CHOICE_ESTADO_CIVIL, null=True, blank=True
+    estado_civil = models.ForeignKey(
+        EstadoCivil,
+        on_delete=models.SET_NULL,
+        null=True, 
+        blank=True
     )
     calle = models.CharField(max_length=255, null=True, blank=True)
     altura = models.IntegerField(null=True, blank=True)
