@@ -533,6 +533,17 @@ class DimensionFamiliaForm(forms.ModelForm):
 
 
 class DimensionViviendaForm(forms.ModelForm):
+    hay_desmoronamiento = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿Existe riesgo de desmoronamiento?")
+    PoseenCelular = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿Poseen celular?")
+    PoseenPC = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿Poseen PC?")
+    Poseeninternet = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿Poseen internet?")
+    hay_agua_caliente = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿Tienen agua caliente?")
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["fk_legajo"].widget = forms.HiddenInput()
