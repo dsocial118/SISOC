@@ -1,0 +1,23 @@
+[
+    {
+        "model": "comedores.tipomodalidadprestacion",
+        "pk": 1,
+        "fields": {
+            "nombre": "Vianda"
+        }
+    },
+    {
+        "model": "comedores.tipomodalidadprestacion",
+        "pk": 2,
+        "fields": {
+            "nombre": "Servicio en el lugar"
+        }
+    },
+    {
+        "model": "comedores.tipomodalidadprestacion",
+        "pk": 3,
+        "fields": {
+            "nombre": "Vianda y servicio en el lugar"
+        }
+    }
+]

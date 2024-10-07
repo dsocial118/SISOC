@@ -1,0 +1,23 @@
+[
+    {
+        "model": "comedores.tipoagua",
+        "pk": 1,
+        "fields": {
+            "nombre": "Agua de red"
+        }
+    },
+    {
+        "model": "comedores.tipoagua",
+        "pk": 2,
+        "fields": {
+            "nombre": "Pozo"
+        }
+    },
+    {
+        "model": "comedores.tipoagua",
+        "pk": 3,
+        "fields": {
+            "nombre": "Otro"
+        }
+    }
+]
