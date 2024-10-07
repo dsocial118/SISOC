@@ -420,7 +420,7 @@ class LegajosDetailView(DetailView):
                     "ContextoCasa",
                     "PoseenPC",
                     "Poseeninternet",
-                    "PoseenCeludar",
+                    "PoseenCelular",
                     "obs_vivienda",
                 )
                 .first()
@@ -1423,7 +1423,7 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
             "hay_agua_caliente": "hay_agua_caliente",
             "hay_desmoronamiento": "hay_desmoronamiento",
             "hay_banio": "hay_banio",
-            "PoseenCeludar": "PoseenCeludar",
+            "PoseenCelular": "PoseenCelular",
             "PoseenPC": "PoseenPC",
             "Poseeninternet": "Poseeninternet",
             "ContextoCasa": "ContextoCasa",
