@@ -48,10 +48,13 @@ from legajos.views import (
     LlamadoDeleteView,
     SubEstadosIntervencionesAJax,
     SubEstadosLlamadosAjax,
+    TipoEstadosLlamadosAjax,
     busqueda_hogar,
     busqueda_familiares,
     load_localidad,
     load_municipios,
+    load_departamento,
+    load_asentamiento,
 )
 
 urlpatterns = [
@@ -282,6 +285,8 @@ urlpatterns = [
     ),
     path("ajax/load-municipios/", load_municipios, name="ajax_load_municipios"),
     path("ajax/load-localidades/", load_localidad, name="ajax_load_localidades"),
+    path("ajax/load-departamentos/", load_departamento, name="ajax_load_departamentos"),
+    path("ajax/load-asentamientos/", load_asentamiento, name="ajax_load_asentamientos"),
     path(
         "ajax/load-subestadosintervenciones/",
         SubEstadosIntervencionesAJax.as_view(),
@@ -291,6 +296,11 @@ urlpatterns = [
         "ajax/load-subestadosllamados/",
         SubEstadosLlamadosAjax.as_view(),
         name="ajax_load_subestadosllamados",
+    ),
+    path(
+        "ajax/load-tiposllamados/",
+        TipoEstadosLlamadosAjax.as_view(),
+        name="ajax_load_tiposllamados",
     ),
     path(
         "legajos/intervencion/ver/<pk>",
