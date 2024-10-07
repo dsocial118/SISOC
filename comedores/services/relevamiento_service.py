@@ -63,17 +63,20 @@ class RelevamientoService:
         return relevamiento
 
     @staticmethod
-    def generar_string_gas(relevamiento_id):
+    def get_tipos_gas_string(relevamiento_id):
         tipos = Relevamiento.objects.get(
             pk=relevamiento_id
         ).espacio.cocina.abastecimiento_combustible.all()
 
         tipos_list = [str(tipo) for tipo in tipos]
 
-        if len(tipos_list) > 1:
+        if len(tipos_list) == 0:
+            tipos_str = ""
+        elif len(tipos_list) > 1:
             tipos_str = ", ".join(tipos_list[:-1]) + " y " + tipos_list[-1]
         else:
             tipos_str = tipos_list[0]
+
         return tipos_str
 
     @staticmethod
