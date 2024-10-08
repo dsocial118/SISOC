@@ -604,9 +604,7 @@ class DimensionEducacionForm(forms.ModelForm):
             try:
                 municipio_id = int(self.data.get("municipioInstitucion"))
                 self.fields["municipioInstitucion"].queryset = (
-                    LegajoMunicipio.objects.filter(id=municipio_id).order_by(
-                        "nombre_region"
-                    )
+                    LegajoMunicipio.objects.filter(id=municipio_id).order_by("nombre")
                 )
             except (ValueError, TypeError):
                 self.fields["municipioInstitucion"].queryset = (
