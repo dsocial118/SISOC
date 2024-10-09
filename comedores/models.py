@@ -662,6 +662,7 @@ class Relevamiento(models.Model):
         to=Prestacion,
         on_delete=models.PROTECT,
     )
+    observacion = models.TextField(blank=True, null=True)
 
     class Meta:
         indexes = [

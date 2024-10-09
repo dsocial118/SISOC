@@ -318,6 +318,4 @@ class RelevamientoForm(forms.ModelForm):
 
     class Meta:
         model = Relevamiento
-        fields = [
-            "comedor",
-        ]
+        fields = ["comedor", "observacion"]

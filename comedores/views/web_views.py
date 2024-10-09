@@ -272,6 +272,7 @@ class RelevamientoUpdateView(UpdateView):
             "colaboradores_form": context["colaboradores_form"],
             "recursos_form": context["recursos_form"],
             "compras_form": context["compras_form"],
+            "prestacion_form": context["prestacion_form"],
         }
 
         if all(form.is_valid() for form in forms.values()):
