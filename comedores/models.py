@@ -147,14 +147,14 @@ class EspacioCocina(models.Model):
     Informacion relacionada a la cocina y almacenamiento de alimentos
     """
 
-    espacio_elaboracion_alimentos = models.BooleanField()
-    almacenamiento_alimentos_secos = models.BooleanField()
-    heladera = models.BooleanField()
-    freezer = models.BooleanField()
-    recipiente_residuos_organicos = models.BooleanField()
-    recipiente_residuos_reciclables = models.BooleanField()
-    otros_residuos = models.BooleanField()
-    recipiente_otros_residuos = models.BooleanField()
+    espacio_elaboracion_alimentos = models.BooleanField(default=False)
+    almacenamiento_alimentos_secos = models.BooleanField(default=False)
+    heladera = models.BooleanField(default=False)
+    freezer = models.BooleanField(default=False)
+    recipiente_residuos_organicos = models.BooleanField(default=False)
+    recipiente_residuos_reciclables = models.BooleanField(default=False)
+    otros_residuos = models.BooleanField(default=False)
+    recipiente_otros_residuos = models.BooleanField(default=False)
     abastecimiento_combustible = models.ManyToManyField(
         to=TipoCombustible,
         related_name="espacios",
@@ -171,7 +171,7 @@ class EspacioCocina(models.Model):
         null=True,
         verbose_name="En caso de otro, especificar",
     )
-    instalacion_electrica = models.BooleanField()
+    instalacion_electrica = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = "Espacio de cocina y almacenamiento de alimentos"
@@ -194,14 +194,14 @@ class EspacioPrestacion(models.Model):
     Informacion relacionada al espacio donde se brinda la prestacion del Comedor/Merendero
     """
 
-    espacio_equipado = models.BooleanField()
-    tiene_ventilacion = models.BooleanField()
-    tiene_salida_emergencia = models.BooleanField()
-    salida_emergencia_senializada = models.BooleanField()
-    tiene_equipacion_incendio = models.BooleanField()
-    tiene_botiquin = models.BooleanField()
-    tiene_buena_iluminacion = models.BooleanField()
-    tiene_sanitarios = models.BooleanField()
+    espacio_equipado = models.BooleanField(default=False)
+    tiene_ventilacion = models.BooleanField(default=False)
+    tiene_salida_emergencia = models.BooleanField(default=False)
+    salida_emergencia_senializada = models.BooleanField(default=False)
+    tiene_equipacion_incendio = models.BooleanField(default=False)
+    tiene_botiquin = models.BooleanField(default=False)
+    tiene_buena_iluminacion = models.BooleanField(default=False)
+    tiene_sanitarios = models.BooleanField(default=False)
     desague_hinodoro = models.ForeignKey(
         to=TipoDesague,
         on_delete=models.PROTECT,
@@ -223,7 +223,7 @@ class EspacioPrestacion(models.Model):
         null=True,
         verbose_name="En caso de otro, especificar",
     )
-    informacion_quejas = models.BooleanField()
+    informacion_quejas = models.BooleanField(default=False)
     frecuencia_limpieza = models.ForeignKey(
         to=FrecuenciaLimpieza,
         on_delete=models.PROTECT,
@@ -248,16 +248,20 @@ class Colaboradores(models.Model):
         verbose_name="3.1.1 ¿Qué cantidad de personas realizan tareas en el Comedor / Merendero?",
     )
     colaboradores_capacitados_alimentos = models.BooleanField(
-        verbose_name="3.1.2 ¿El Comedor/Merendero cuentan con personas que realizan tareas capacitadas para la manipulación de alimentos?"
+        default=False,
+        verbose_name="3.1.2 ¿El Comedor/Merendero cuentan con personas que realizan tareas capacitadas para la manipulación de alimentos?",
     )
-    colaboradores_recibieron_capacitacion_alimentos = models.BooleanField()
-    colaboradores_capacitados_salud_seguridad = models.BooleanField()
-    colaboradores_recibieron_capacitacion_emergencias = models.BooleanField()
+    colaboradores_recibieron_capacitacion_alimentos = models.BooleanField(default=False)
+    colaboradores_capacitados_salud_seguridad = models.BooleanField(default=False)
+    colaboradores_recibieron_capacitacion_emergencias = models.BooleanField(
+        default=False
+    )
     colaboradores_recibieron_capacitacion_violencia = models.BooleanField(
+        default=False,
         verbose_name=(
             "¿Los colaboradores recibieron capacitación sobre prevención de violencia de género "
             "incluyendo acoso sexual, explotación sexual y abuso infantil?"
-        )
+        ),
     )
 
 
@@ -335,7 +339,7 @@ class FuenteRecursos(models.Model):
     Informacion relacionada a las fuentes de recursos del Comedor/Merendero
     """
 
-    recibe_donaciones_particulares = models.BooleanField()
+    recibe_donaciones_particulares = models.BooleanField(default=False)
     frecuencia_donaciones_particulares = models.ForeignKey(
         to=FrecuenciaRecepcionRecursos,
         on_delete=models.PROTECT,
@@ -353,7 +357,7 @@ class FuenteRecursos(models.Model):
         null=True,
     )
 
-    recibe_estado_nacional = models.BooleanField()
+    recibe_estado_nacional = models.BooleanField(default=False)
     frecuencia_estado_nacional = models.ForeignKey(
         to=FrecuenciaRecepcionRecursos,
         on_delete=models.PROTECT,
@@ -371,7 +375,7 @@ class FuenteRecursos(models.Model):
         null=True,
     )
 
-    recibe_estado_provincial = models.BooleanField()
+    recibe_estado_provincial = models.BooleanField(default=False)
     frecuencia_estado_provincial = models.ForeignKey(
         to=FrecuenciaRecepcionRecursos,
         on_delete=models.PROTECT,
@@ -389,7 +393,7 @@ class FuenteRecursos(models.Model):
         null=True,
     )
 
-    recibe_estado_municipal = models.BooleanField()
+    recibe_estado_municipal = models.BooleanField(default=False)
     frecuencia_estado_municipal = models.ForeignKey(
         to=FrecuenciaRecepcionRecursos,
         on_delete=models.PROTECT,
@@ -407,7 +411,7 @@ class FuenteRecursos(models.Model):
         null=True,
     )
 
-    recibe_otros = models.BooleanField()
+    recibe_otros = models.BooleanField(default=False)
     frecuencia_otros = models.ForeignKey(
         to=FrecuenciaRecepcionRecursos,
         on_delete=models.PROTECT,
@@ -435,16 +439,16 @@ class FuenteCompras(models.Model):
     Informacion relacionada a la realizacion de compras para abastecer el Comedor/Merendero
     """
 
-    almacen_cercano = models.BooleanField()
-    verduleria = models.BooleanField()
-    granja = models.BooleanField()
-    carniceria = models.BooleanField()
-    pescaderia = models.BooleanField()
-    supermercado = models.BooleanField()
-    mercado_central = models.BooleanField()
-    ferias_comunales = models.BooleanField()
-    mayoristas = models.BooleanField()
-    otro = models.BooleanField()
+    almacen_cercano = models.BooleanField(default=False)
+    verduleria = models.BooleanField(default=False)
+    granja = models.BooleanField(default=False)
+    carniceria = models.BooleanField(default=False)
+    pescaderia = models.BooleanField(default=False)
+    supermercado = models.BooleanField(default=False)
+    mercado_central = models.BooleanField(default=False)
+    ferias_comunales = models.BooleanField(default=False)
+    mayoristas = models.BooleanField(default=False)
+    otro = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = "Fuente de compras"
