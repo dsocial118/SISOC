@@ -17,6 +17,10 @@ def format_serializer_errors(serializer):
     return error_message_str
 
 
-def format_fecha_visita(fecha_visita):
+def format_fecha_django(fecha_visita: str):
     fecha_formateada = datetime.datetime.strptime(fecha_visita, "%d/%m/%Y %H:%M")
     return timezone.make_aware(fecha_formateada, timezone.get_default_timezone())
+
+
+def format_fecha_gestionar(fecha_visita: datetime.datetime):
+    return fecha_visita.strftime("%d/%m/%Y %H:%M")

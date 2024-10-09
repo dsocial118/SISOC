@@ -213,8 +213,10 @@ class RelevamientoDetailView(DetailView):
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
 
-        context["relevamiento"]["gas"] = RelevamientoService.get_tipos_gas_string(
-            self.get_object()["id"]
+        context["relevamiento"]["gas"] = RelevamientoService.separate_m2m_string(
+            Relevamiento.objects.get(
+                pk=self.get_object()["id"]
+            ).espacio.cocina.abastecimiento_combustible.all()
         )
         context["prestacion"] = Prestacion.objects.get(pk=self.object["prestacion__id"])
 
