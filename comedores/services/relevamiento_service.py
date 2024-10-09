@@ -193,6 +193,13 @@ class RelevamientoService:
                 funcionamiento_data["servicio_por_turnos"] == "Y"
             )
 
+        if "cantidad_turnos" in funcionamiento_data:
+            funcionamiento_data["cantidad_turnos"] = (
+                None
+                if funcionamiento_data["cantidad_turnos"] == ""
+                else int(funcionamiento_data["cantidad_turnos"])
+            )
+
         if funcionamiento_instance is None:
             funcionamiento_instance = FuncionamientoPrestacion.objects.create(
                 **funcionamiento_data
