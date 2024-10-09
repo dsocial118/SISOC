@@ -1122,5 +1122,9 @@ class RelevamientoService:
                 headers=headers,
             )
             response.raise_for_status()
+            response = response.json()
+
+            relevamiento.gestionar_uid = response["Rows"][0]["Id_formularioComedores"]
+            relevamiento.save()
         except requests.exceptions.RequestException as e:
             print(f"Error en la petición POST: {e}")

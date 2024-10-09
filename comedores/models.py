@@ -626,7 +626,8 @@ class Relevamiento(models.Model):
     """
     Modelo que representa un relevamiento realizado en un Comedor/Merendero.
 
-    Atributos:
+    Atributos
+        gestionar_uid (CharField): UID unica que referencia al Relevamiento en GESTIONAR.
         Comedor/Merendero/Merendero (ForeignKey): Relación con el Comedor/Merendero donde se realizó el relevamiento.
         fecha_visita (DateTimeField): Fecha y hora de la visita.
         funcionamiento (OneToOneField): Información relacionada al funcionamiento del Comedor/Merendero.
@@ -635,6 +636,8 @@ class Relevamiento(models.Model):
         recursos (OneToOneField): Información relacionada a las fuentes de recursos del Comedor/Merendero.
         compras (OneToOneField): Información relacionada a la realización de compras para abastecer el Comedor/Merendero.
     """
+
+    gestionar_uid = models.CharField(max_length=255, unique=True, blank=True)
 
     comedor = models.ForeignKey(
         to=Comedor,
