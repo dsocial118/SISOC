@@ -8,7 +8,7 @@ from comedores.serializers.comedor_serializer import ComedorSerializer
 from comedores.serializers.relevamiento_serializer import RelevamientoSerializer
 from comedores.serializers.observacion_serializer import ObservacionSerializer
 from comedores.services.relevamiento_service import RelevamientoService
-from comedores.utils import format_serializer_errors, format_fecha_visita
+from comedores.utils import format_serializer_errors, format_fecha_django
 
 
 class ComedorRelevamientoObservacionApiView(APIView):
@@ -99,7 +99,7 @@ class RelevamientoApiView(APIView):
         ).id
         relevamiento = Relevamiento.objects.get(
             comedor=comedor,
-            fecha_visita=format_fecha_visita(request.data["fecha_visita"]),
+            fecha_visita=format_fecha_django(request.data["fecha_visita"]),
         )
         relevamiento_serializer = RelevamientoSerializer(
             relevamiento, data=request.data, partial=True
@@ -129,7 +129,7 @@ class ObservacionApiView(APIView):
         ).id
         observacion = Observacion.objects.get(
             comedor=comedor,
-            fecha_visita=format_fecha_visita(request.data["fecha_visita"]),
+            fecha_visita=format_fecha_django(request.data["fecha_visita"]),
         )
         observacion_serializer = ObservacionSerializer(
             observacion, data=request.data, partial=True
