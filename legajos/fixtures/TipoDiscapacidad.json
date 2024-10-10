@@ -1,0 +1,44 @@
+[
+    {
+        "model": "legajos.tipodiscapacidad",
+        "pk": 1,
+        "fields": {
+            "tipo": "Discapacidad física"
+        }
+    },
+    {
+        "model": "legajos.tipodiscapacidad",
+        "pk": 2,
+        "fields": {
+            "tipo": "Discapacidad mental"
+        }
+    },
+    {
+        "model": "legajos.tipodiscapacidad",
+        "pk": 3,
+        "fields": {
+            "tipo": "Discapacidad sensorial"
+        }
+    },
+    {
+        "model": "legajos.tipodiscapacidad",
+        "pk": 4,
+        "fields": {
+            "tipo": "Discapacidad intelectual"
+        }
+    },
+    {
+        "model": "legajos.tipodiscapacidad",
+        "pk": 5,
+        "fields": {
+            "tipo": "Discapacidad múltiple"
+        }
+    },
+    {
+        "model": "legajos.tipodiscapacidad",
+        "pk": 6,
+        "fields": {
+            "tipo": "Otra"
+        }
+    }
+]
