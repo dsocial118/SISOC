@@ -31,7 +31,26 @@ from .models import (
     Genero,
     GeneroPronombre,
     TipoDoc,
-
+    Nacionalidad,
+    TipoDiscapacidad,
+    TipoEnfermedad,
+    CentrosSalud,
+    Frecuencia,
+    ModoContratacion,
+    ActividadRealizada,
+    DuracionTrabajo,
+    AportesJubilacion,
+    TiempoBusquedaLaboral,
+    NoBusquedaLaboral,
+    Nivel,
+    Accion,
+    EstadoRelacion,
+    EstadoDerivacion,
+    VinculoFamiliar,
+    Rechazo,
+    EstadoIntervencion,
+    EstadoLlamado,
+    Importancia,
 )
 
 
@@ -84,3 +103,23 @@ admin.site.register(Sexo)
 admin.site.register(Genero)
 admin.site.register(GeneroPronombre)
 admin.site.register(TipoDoc)
+admin.site.register(Nacionalidad)
+admin.site.register(TipoDiscapacidad)
+admin.site.register(TipoEnfermedad)
+admin.site.register(CentrosSalud)
+admin.site.register(Frecuencia)
+admin.site.register(ModoContratacion)
+admin.site.register(ActividadRealizada)
+admin.site.register(DuracionTrabajo)
+admin.site.register(AportesJubilacion)
+admin.site.register(TiempoBusquedaLaboral)
+admin.site.register(NoBusquedaLaboral)
+admin.site.register(Nivel)
+admin.site.register(Accion)
+admin.site.register(EstadoRelacion)
+admin.site.register(EstadoDerivacion)
+admin.site.register(VinculoFamiliar)
+admin.site.register(Rechazo)
+admin.site.register(EstadoIntervencion)
+admin.site.register(EstadoLlamado)
+admin.site.register(Importancia)
