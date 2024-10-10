@@ -1,0 +1,86 @@
+[
+    {
+        "model": "legajos.nobusquedalaboral",
+        "pk": 1,
+        "fields": {
+            "motivo": "Espero respuesta de un empleador"
+        }
+    },
+    {
+        "model": "legajos.nobusquedalaboral",
+        "pk": 2,
+        "fields": {
+            "motivo": "Espero comienzo de un nuevo trabajo (trabajo estacional)"
+        }
+    },
+    {
+        "model": "legajos.nobusquedalaboral",
+        "pk": 3,
+        "fields": {
+            "motivo": "Soy estudiante/ me estoy capacitando"
+        }
+    },
+    {
+        "model": "legajos.nobusquedalaboral",
+        "pk": 4,
+        "fields": {
+            "motivo": "Por motivos de edad (menor o anciano)"
+        }
+    },
+    {
+        "model": "legajos.nobusquedalaboral",
+        "pk": 5,
+        "fields": {
+            "motivo": "Me dedico a quehaceres del hogar/ cuido personas en el hogar"
+        }
+    },
+    {
+        "model": "legajos.nobusquedalaboral",
+        "pk": 6,
+        "fields": {
+            "motivo": "Soy pensionado/ jubilado"
+        }
+    },
+    {
+        "model": "legajos.nobusquedalaboral",
+        "pk": 7,
+        "fields": {
+            "motivo": "Soy rentista"
+        }
+    },
+    {
+        "model": "legajos.nobusquedalaboral",
+        "pk": 8,
+        "fields": {
+            "motivo": "Soy discapacitado"
+        }
+    },
+    {
+        "model": "legajos.nobusquedalaboral",
+        "pk": 9,
+        "fields": {
+            "motivo": "Estoy enfermo"
+        }
+    },
+    {
+        "model": "legajos.nobusquedalaboral",
+        "pk": 10,
+        "fields": {
+            "motivo": "Creo no poder encontrarlo/ no hay"
+        }
+    },
+    {
+        "model": "legajos.nobusquedalaboral",
+        "pk": 11,
+        "fields": {
+            "motivo": "No tengo dinero para viajar"
+        }
+    },
+    {
+        "model": "legajos.nobusquedalaboral",
+        "pk": 12,
+        "fields": {
+            "motivo": "Otro motivo"
+        }
+    }
+]
