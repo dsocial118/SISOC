@@ -267,3 +267,4 @@ pyrightconfig.json
 # dumps
 docker/mysql/*.sql
 docker/mysql/local-dump.sql
+db.sqlite
