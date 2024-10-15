@@ -1,6 +1,8 @@
+import os
 from typing import Union
 
 from django.db.models import Q
+import requests
 
 from comedores.models import Comedor, Referente
 from legajos.models import LegajoProvincias, LegajoMunicipio, LegajoLocalidad
@@ -101,3 +103,45 @@ class ComedorService:
             referente_instance.save()
 
         return referente_instance
+
+    @staticmethod
+    def send_to_gestionar(comedor: Comedor):
+
+        data = {
+            "Action": "Add",
+            "Properties": {"Locale": "es-ES"},
+            "Rows": [
+                {
+                    "nombre": comedor.nombre,
+                    "comienzo": comedor.comienzo,
+                    "calle": comedor.calle,
+                    "numero": comedor.numero,
+                    "entre_calle_1": comedor.entre_calle_1,
+                    "entre_calle_2": comedor.entre_calle_2,
+                    "provincia": comedor.provincia.nombre,
+                    "municipio": comedor.municipio.nombre,
+                    "localidad": comedor.localidad.nombre,
+                    "partido": comedor.partido,
+                    "barrio": comedor.barrio,
+                    "codigo_postal": comedor.codigo_postal,
+                }
+            ],
+        }
+
+        headers = {
+            "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
+        }
+
+        try:
+            response = requests.post(
+                os.getenv("GESTIONAR_API_CREAR_COMEDOR"),
+                json=data,
+                headers=headers,
+            )
+            response.raise_for_status()
+            response = response.json()
+
+            comedor.gestionar_uid = response["Rows"][0]["ComedorID"]
+            comedor.save()
+        except requests.exceptions.RequestException as e:
+            print(f"Error en la petición POST: {e}")
