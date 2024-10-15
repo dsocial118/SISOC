@@ -14,7 +14,7 @@ DEBUG = os.environ.get("DJANGO_DEBUG", default=False)
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Configuración de rutas de estaticos y  media
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "static_root"
 
@@ -92,7 +92,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 
 # Configuración del paquete de plantillas Crispy
-CRISPY_TEMPLATE_PACK = "bootstrap4"
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 # Configuración de la URLs
 ROOT_URLCONF = "config.urls"
@@ -113,9 +114,12 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.admindocs",
+    #Cotton
+    'django_cotton',
     # Librerías de terceros
     "crispy_forms",
-    "crispy_bootstrap4",
+    # "crispy_bootstrap4",
+    "crispy_bootstrap5",
     "django_extensions",
     "import_export",
     "multiselectfield",
@@ -159,6 +163,17 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
             ],
+            # "loaders": [(
+            #     "django.template.loaders.cached.Loader",
+            #     [
+            #         "django_cotton.cotton_loader.Loader",
+            #         "django.template.loaders.filesystem.Loader",
+            #         "django.template.loaders.app_directories.Loader",
+            #     ],
+            # )],
+            # "builtins": [
+            #     "django_cotton.templatetags.cotton"
+            # ],
         },
     },
 ]
@@ -167,7 +182,7 @@ TEMPLATES = [
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        "NAME": os.getenv("DATABASE_NAME", "default_db_name"),
+        "NAME": os.getenv("DATABASE_NAME", "development"),
         "USER": os.getenv("DATABASE_USER", "default_user"),
         "PASSWORD": os.getenv("DATABASE_PASSWORD", ""),
         "HOST": os.getenv("DATABASE_HOST", "localhost"),
@@ -177,8 +192,16 @@ DATABASES = {
             "charset": "utf8mb4",
         },
         "CONN_MAX_AGE": 300,
+    } 
+} if os.getenv("DATABASE_NAME") == 'production' else {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite",
     }
+
 }
+
+
 
 # Configuracion de logging
 LOGGING = {

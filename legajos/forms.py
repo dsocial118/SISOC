@@ -35,6 +35,24 @@ BOOLEAN_CHOICE = [
 ]
 
 
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleFileField(forms.FileField):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("widget", MultipleFileInput())
+        super().__init__(*args, **kwargs)
+
+    def clean(self, data, initial=None):
+        single_file_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            result = [single_file_clean(d, initial) for d in data]
+        else:
+            result = single_file_clean(data, initial)
+        return result
+
+
 class LegajosForm(forms.ModelForm):
     foto = forms.ImageField(
         required=False,
@@ -476,14 +494,15 @@ class LegajosArchivosForm(forms.ModelForm):
 
 
 class LegajosDerivacionesForm(forms.ModelForm):
-    archivos = forms.FileField(
-        widget=forms.ClearableFileInput(
-            attrs={
-                "multiple": True,
-            }
-        ),
-        required=False,
-    )
+    archivos = MultipleFileField(label="Seleccionar archivos", required=False)
+    # archivos = forms.FileField(
+    #     widget=forms.ClearableFileInput(
+    #         attrs={
+    #             "multiple": True,
+    #         }
+    #     ),
+    #     required=False,
+    # )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
