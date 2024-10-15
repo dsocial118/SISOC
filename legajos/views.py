@@ -12,10 +12,12 @@ from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
+from django.db import models
 from django.db.models import Case, IntegerField, Q, Value, When
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
+from legajos.models import EstadoDerivacion, TipoVivienda, TipoConstruccionVivienda, TipoPisosVivienda, TipoPosesionVivienda, CantidadAmbientes, Inodoro, ContextoCasa, CondicionDe, Gas, TipoTechoVivienda, Agua, Desague
 
 # Paginacion
 from django.views.generic import (
@@ -645,12 +647,18 @@ class LegajosCreateView(PermisosMixin, CreateView):
                 legajo.save()
 
                 # Crear las dimensiones
-                DimensionFamilia.objects.create(fk_legajo_id=legajo.id)
-                DimensionVivienda.objects.create(fk_legajo_id=legajo.id)
-                DimensionSalud.objects.create(fk_legajo_id=legajo.id)
-                DimensionEconomia.objects.create(fk_legajo_id=legajo.id)
-                DimensionEducacion.objects.create(fk_legajo_id=legajo.id)
-                DimensionTrabajo.objects.create(fk_legajo_id=legajo.id)
+                dimensionfamilia = DimensionFamilia.objects.create(fk_legajo_id=legajo.id)
+                print("dimensionfamilia", dimensionfamilia)
+                dimensionvivienda = DimensionVivienda.objects.create(fk_legajo_id=legajo.id)
+                print("dimensionvivienda", dimensionvivienda)
+                dimensiosalud = DimensionSalud.objects.create(fk_legajo_id=legajo.id)
+                print("dimensiosalud", dimensiosalud)
+                dimensioneconomia = DimensionEconomia.objects.create(fk_legajo_id=legajo.id)
+                print("dimensioneconomia", dimensioneconomia)
+                dimensioneducacion = DimensionEducacion.objects.create(fk_legajo_id=legajo.id)
+                print("dimensioneducacion", dimensioneducacion)
+                dimensiontrabajo = DimensionTrabajo.objects.create(fk_legajo_id=legajo.id)
+                print("dimensiontrabajo", dimensiontrabajo)
 
             # Redireccionar según el botón presionado
             if "form_legajos" in self.request.POST:
@@ -1046,10 +1054,10 @@ class LegajosDerivacionesListView(PermisosMixin, ListView):
             model = LegajosDerivaciones.objects.all()
             cache.set("model", model, 60)
 
-        context["pendientes"] = model.filter(estado="Pendiente")
-        context["aceptadas"] = model.filter(estado="Aceptada")
-        context["analisis"] = model.filter(estado="En análisis")
-        context["asesoradas"] = model.filter(estado="Asesoramiento")
+        context["pendientes"] = model.filter(estado = EstadoDerivacion.objects.filter(estado="Pendiente").first())
+        context["aceptadas"] = model.filter(estado=EstadoDerivacion.objects.filter(estado="Aceptada").first())
+        context["analisis"] = model.filter(estado=EstadoDerivacion.objects.filter(estado="En análisis").first())
+        context["asesoradas"] = model.filter(estado=EstadoDerivacion.objects.filter(estado="Asesoramiento").first())
         context["enviadas"] = model.filter(fk_usuario=self.request.user)
         return context
 
@@ -1139,9 +1147,9 @@ class LegajosDerivacionesHistorial(PermisosMixin, ListView):
 
         context["historial"] = historial
         context["legajo"] = legajo
-        context["pendientes"] = historial.filter(estado="Pendiente").count()
-        context["admitidas"] = historial.filter(estado="Aceptada").count()
-        context["rechazadas"] = historial.filter(estado="Rechazada").count()
+        context["pendientes"] = historial.filter(estado=EstadoDerivacion.objects.filter(estado="Pendiente").first()).count()
+        context["admitidas"] = historial.filter(estado=EstadoDerivacion.objects.filter(estado="Aceptada").first()).count()
+        context["rechazadas"] = historial.filter(estado=EstadoDerivacion.objects.filter(estado="Rechazada").first()).count()
         return context
 
 
@@ -1150,7 +1158,7 @@ class LegajosDerivacionesDeleteView(PermisosMixin, DeleteView):
     model = LegajosDerivaciones
 
     def form_valid(self, form):
-        if self.object.estado != "Pendiente":
+        if self.object.estado !=EstadoDerivacion.objects.filter(estado="Pendiente").first():
             messages.error(
                 self.request,
                 "No es posible eliminar una solicitud en estado " + self.object.estado,
@@ -1411,41 +1419,41 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
         # dimension vivienda
 
         fields_mapping_vivienda = {
-            "tipo": "tipo",
-            "material": "material",
-            "pisos": "pisos",
-            "posesion": "posesion",
-            "cant_ambientes": "cant_ambientes",
+            "tipo": TipoVivienda,
+            "material": TipoConstruccionVivienda,
+            "pisos": TipoPisosVivienda,
+            "posesion": TipoPosesionVivienda,
+            "cant_ambientes": CantidadAmbientes,
             "cant_convivientes": "cant_convivientes",
             "cant_menores": "cant_menores",
             "cant_camas": "cant_camas",
             "cant_hogares": "cant_hogares",
             "hay_agua_caliente": "hay_agua_caliente",
             "hay_desmoronamiento": "hay_desmoronamiento",
-            "hay_banio": "hay_banio",
+            "hay_banio": Inodoro,
             "PoseenCelular": "PoseenCelular",
             "PoseenPC": "PoseenPC",
             "Poseeninternet": "Poseeninternet",
-            "ContextoCasa": "ContextoCasa",
-            "CondicionDe": "CondicionDe",
+            "ContextoCasa": ContextoCasa,
+            "CondicionDe": CondicionDe,
             "CantidadAmbientes": "CantidadAmbientes",
-            "gas": "gas",
-            "techos": "techos",
-            "agua": "agua",
-            "desague": "desague",
+            "gas": Gas,
+            "techos": TipoTechoVivienda,
+            "agua": Agua,
+            "desague": Desague,
             "obs_vivienda": "obs_vivienda",
         }
 
-        for field in fields_mapping_vivienda:
+        for field, model in fields_mapping_vivienda.items():
             value = form_multiple.get(field)
 
             if value:
-                setattr(
-                    legajo_dim_vivienda,
-                    fields_mapping_vivienda.get(field, field),
-                    value,
-                )
-
+                # Verifica si el valor del campo es una instancia de un modelo o una ForeignKey
+                if isinstance(model, type) and issubclass(model, models.Model):
+                    instance = model.objects.get(pk=value)
+                    setattr(legajo_dim_vivienda, field, instance)
+                else:
+                    setattr(legajo_dim_vivienda, field, value)
             else:
                 setattr(legajo_dim_vivienda, field, None)
 
