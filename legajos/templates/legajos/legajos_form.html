@@ -1,7 +1,6 @@
-{% extends "includes/base.html" %}
+{% extends "includes/main.html" %}
 {% load crispy_forms_tags %}
-{% load static %}
-;
+{% load static %};
 {% block head %}{% endblock %}
 {% block title %}Legajos{% endblock %}
 {% block titulo-pagina %}Legajos{% endblock %}
@@ -19,14 +18,12 @@
             <li class="breadcrumb-item active">Agregar</li>
         {% endif %}
     </ol>
-{% endblock %}
-;
-{% block menu-adicional %}{% endblock %}
-;
+{% endblock %};
+{% block menu-adicional %}{% endblock %};
 {% block content %}
     <div class="row">
         <div class="col-sm-12">
-            <div class="card card-primary card-outline">
+            <div class="card card-primary card-outline mb-4">
                 <div class="card-body">
                     <div class="bs-stepper">
                         {% if request.resolver_match.url_name == "legajos_editar" %}
@@ -141,7 +138,7 @@
                                       autocomplete="off">
                                     {% csrf_token %}
                                     <div class="card">
-                                        <div class="card-body bg-light">
+                                        <div class="card-body">
                                             <div class="row mt-3">
                                                 <div class="col-sm-3">
                                                     <div class="card">

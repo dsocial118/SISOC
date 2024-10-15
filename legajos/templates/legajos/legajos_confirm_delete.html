@@ -1,6 +1,5 @@
-{% extends "includes/base.html" %};
-{% load static %}
-;
+{% extends "includes/main.html" %};
+{% load static %};
 {% block head %}
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/flag-icon-css@3.5.0/css/flag-icon.min.css" />
@@ -8,10 +7,8 @@
           href="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 {% endblock %}
-{% block title %}Legajo{% endblock %}
-;
-{% block titulo-pagina %}{% endblock %}
-;
+{% block title %}Legajo{% endblock %};
+{% block titulo-pagina %}{% endblock %};
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
         <li class="breadcrumb-item">
@@ -22,10 +19,8 @@
         </li>
         <li class="breadcrumb-item active">Eliminar</li>
     </ol>
-{% endblock %}
-;
-{% block menu-adicional %}{% endblock %}
-;
+{% endblock %};
+{% block menu-adicional %}{% endblock %};
 {% block content %}
     <div class="error-page mt-5 px-3">
         <div class="error-content">
@@ -53,6 +48,5 @@
             </div>
         </div>
     </div>
-{% endblock %}
-;
+{% endblock %};
 {% block customJS %}{% endblock %}
