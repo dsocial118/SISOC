@@ -1,9 +1,7 @@
-{% extends "includes/base.html" %}
+{% extends "includes/main.html" %}
 {% load static %}
-{% block title %}Criterios de vulneravilidad{% endblock %}
-;
-{% block titulo-pagina %}Criterios de vulneravilidad{% endblock %}
-;
+{% block title %}Criterios de vulneravilidad{% endblock %};
+{% block titulo-pagina %}Criterios de vulneravilidad{% endblock %};
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right ">
         <li class="breadcrumb-item">Configuraciones</li>
@@ -11,8 +9,7 @@
             <a href="{% url 'criterios_listar' %}">Criterio</a>
         </li>
     </ol>
-{% endblock %}
-;
+{% endblock %};
 {% load crispy_forms_tags %}
 {% block content %}
     <div class="content">
