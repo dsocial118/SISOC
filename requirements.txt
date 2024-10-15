@@ -6,7 +6,7 @@ cffi==1.17.0
 charset-normalizer==3.3.2
 click==8.1.7
 colorama==0.4.6
-crispy-bootstrap4==2022.1
+crispy-bootstrap5==2024.2
 cryptography==43.0.1
 cssbeautifier==1.15.1
 debugpy==1.8.5
