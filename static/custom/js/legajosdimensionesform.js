@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function () {
   const INCOMPLETO_OPTION = "Incompleto";
   const maxSelections = 3;
 
@@ -22,20 +22,20 @@ document.addEventListener("DOMContentLoaded", function() {
   const ID_OCUPACION = "#container_ocupacion";
   const ID_PLAN_SOCIAL = "#container_plan_social";
 
- // Selecciones múltiples con límite
- var selects = document.querySelectorAll('select[name="areaCurso"], select[name="areaOficio"], select[name="m2m_planes"]');
- selects.forEach(function(select) {
-     select.setAttribute('multiple', 'multiple');
-     select.addEventListener('change', function() {
-         var selectedOptions = Array.from(select.selectedOptions);
-         if (selectedOptions.length > maxSelections) {
-             alert('Solo puedes seleccionar hasta 3 opciones.');
-             selectedOptions[selectedOptions.length - 1].selected = false;
-         }
-     });
- });
+  // Selecciones múltiples con límite
+  var selects = document.querySelectorAll('select[name="areaCurso"], select[name="areaOficio"], select[name="m2m_planes"]');
+  selects.forEach(function (select) {
+    select.setAttribute('multiple', 'multiple');
+    select.addEventListener('change', function () {
+      var selectedOptions = Array.from(select.selectedOptions);
+      if (selectedOptions.length > maxSelections) {
+        alert('Solo puedes seleccionar hasta 3 opciones.');
+        selectedOptions[selectedOptions.length - 1].selected = false;
+      }
+    });
+  });
 
- 
+
   // Formularios
   let estadoNivelForm = document.querySelector('#id_estado_nivel');
   let asisteEscuelaForm = document.querySelector('#id_asiste_escuela');
@@ -47,14 +47,14 @@ document.addEventListener("DOMContentLoaded", function() {
 
   // Estados de formulario
   let asisteEscuelaFormEstados = [
-    { valor: "a", mostrar: [ID_MAX_NIVEL, ID_ESTADO_NIVEL, ID_DATOS_INSTITUCION], ocultar: [ID_INCOMPLETO_FORM, ID_SIN_EDU_FORMAL] },
-    { valor: "b", mostrar: [ID_MAX_NIVEL, ID_ESTADO_NIVEL, ID_INCOMPLETO_FORM, ID_DATOS_INSTITUCION], ocultar: [ID_SIN_EDU_FORMAL] },
-    { valor: "c", mostrar: [ID_SIN_EDU_FORMAL], ocultar: [ID_MAX_NIVEL, ID_ESTADO_NIVEL, ID_INCOMPLETO_FORM, ID_DATOS_INSTITUCION] }
+    { valor: "a", mostrar: [ID_MAX_NIVEL, ID_DATOS_INSTITUCION], ocultar: [ID_ESTADO_NIVEL, ID_INCOMPLETO_FORM, ID_SIN_EDU_FORMAL] },
+    { valor: "b", mostrar: [ID_MAX_NIVEL, ID_ESTADO_NIVEL, ID_DATOS_INSTITUCION], ocultar: [ID_SIN_EDU_FORMAL] },
+    { valor: "c", mostrar: [ID_SIN_EDU_FORMAL], ocultar: [ID_MAX_NIVEL, ID_ESTADO_NIVEL, ID_DATOS_INSTITUCION] }
   ];
 
   let estadoNivelFormEstados = [
-    { valor: INCOMPLETO_OPTION, mostrar: [ID_INCOMPLETO_FORM, ID_SIN_EDU_FORMAL], ocultar: [] },
-    { valor: null, mostrar: [], ocultar: [ID_INCOMPLETO_FORM, ID_SIN_EDU_FORMAL] }
+    { valor: INCOMPLETO_OPTION, mostrar: [], ocultar: [] },
+    { valor: null, mostrar: [], ocultar: [] }
   ];
 
   let realizandoCursoFormEstados = [
@@ -87,7 +87,7 @@ document.addEventListener("DOMContentLoaded", function() {
   FormUtils.manejarCambioMostrarOcultar(asisteEscuelaForm, asisteEscuelaFormEstados);
   FormUtils.manejarCambioMostrarOcultar(estadoNivelForm, estadoNivelFormEstados);
   FormUtils.manejarCambioMostrarOcultar(realizandoCursoForm, realizandoCursoFormEstados);
-  FormUtils.manejarCambioMostrarOcultar(hayBanioForm, hayBanioFormEstados );
+  FormUtils.manejarCambioMostrarOcultar(hayBanioForm, hayBanioFormEstados);
   FormUtils.manejarCambioMostrarOcultar(tieneTrabajoForm, tieneTrabajoFormEstados);
   FormUtils.manejarCambioMostrarOcultar(busquedaLaboralForm, busquedaLaboralFormEstados);
   FormUtils.manejarCambioMostrarOcultar(planSocialForm, planSocialFormEstados);
@@ -99,7 +99,59 @@ document.addEventListener("DOMContentLoaded", function() {
   FormUtils.mostrarOcultar(hayBanioForm.value, hayBanioFormEstados);
   FormUtils.mostrarOcultar(tieneTrabajoForm.value, tieneTrabajoFormEstados);
   FormUtils.mostrarOcultar(busquedaLaboralForm.value, busquedaLaboralFormEstados);
-  FormUtils.mostrarOcultar(planSocialForm.value, planSocialFormEstados)
+  FormUtils.mostrarOcultar(planSocialForm.value, planSocialFormEstados);
+
+  // Manejo de pregunta id_nivelIncompleto, se maneja aparte
+  let preguntasVinculadas = document.querySelectorAll(
+    "#id_asiste_escuela, #id_max_nivel, #id_estado_nivel"
+  );
+
+  function mostrarOcultarPreguntaEducacionIncompleta() {
+    // Calculamos un puntaje acorde al progreso educativo hecho por el encuestado.
+    // Obtenemos los valores de los campos y la multiplicación de esos valores nos da un puntaje
+    // que de pasar cierto límite nos mostrará o no la pregunta.
+    const PUNTAJE_MINIMO = 12;
+    let maxNivelValue = document.querySelector("#id_max_nivel").selectedIndex;
+    let estadoNivelValue =
+      document.querySelector("#id_estado_nivel").selectedIndex;
+    let puntaje = maxNivelValue * estadoNivelValue;
+    if (asisteEscuelaForm.value != "a" && puntaje < PUNTAJE_MINIMO) {
+      FormUtils.mostrar(ID_INCOMPLETO_FORM, true);
+    } else {
+      FormUtils.mostrar(ID_INCOMPLETO_FORM, false);
+    }
+  }
+
+  preguntasVinculadas.forEach((elemento) => {
+    elemento.addEventListener("change", () => {
+      mostrarOcultarPreguntaEducacionIncompleta();
+    });
+  });
+
+  // Llamamos al inicio para dejar correcta su visualización
+  mostrarOcultarPreguntaEducacionIncompleta();
+  // Fin manejo de pregunta id_nivelIncompleto
+
+  // Si asisteEscuelaForm es "a", estadoNivel se oculta y por default queda su valor en "En curso"
+
+  function setEstadoNivelEnCurso() {
+    if (asisteEscuelaForm.value === "a") {
+      estadoNivelForm.selectedIndex = 1;
+    } else {
+      for (let i = 0; i < estadoNivelForm.options.length; i++) {
+        if (estadoNivelForm.options[i].text === "En curso") {
+          estadoNivelForm.remove(i);
+          break;
+        }
+      }
+    }
+  }
+
+  asisteEscuelaForm.addEventListener("change", () => {
+    setEstadoNivelEnCurso();
+  });
+
+  setEstadoNivelEnCurso();
 
   document.getElementById('id_provinciaInstitucion').addEventListener('change', function () {
     var url = ajaxLoadMunicipiosUrl;  // Obtén la URL de la vista
@@ -114,8 +166,8 @@ document.addEventListener("DOMContentLoaded", function() {
         data.forEach(function (municipio) {
           var option = document.createElement('option');
           option.value = municipio.id;
-          option.setAttribute('data-departamento-id', municipio.departamento_id);  // Añadir propiedad personalizada
-          option.textContent = municipio.nombre_region;
+          option.setAttribute('data-departamento-id', municipio.id);  // Añadir propiedad personalizada
+          option.textContent = municipio.nombre;
           municipioSelect.appendChild(option);
         });
       });
