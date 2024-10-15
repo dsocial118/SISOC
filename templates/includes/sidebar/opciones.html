@@ -1,16 +1,13 @@
 {% load static %}
 {% with pagina_actual=request.resolver_match.route %}
-    <div class="user-panel mt-3 pb-3 mb-3 d-flex  align-items-center">
+    {% comment %} <div class="user-panel mt-3 pb-3 mb-3 d-flex">
         <div class="image">
-            <!-- <img src="../../dist/img/user2-160x160.jpg"
-      class="img-circle elevation-2"
-      alt="User Image" /> -->
             {% if request.user.usuarios.imagen %}
-                <img class="user-image img-circle elevation-1 "
+                <img class="img-circle elevation-2 "
                      src="{{ request.user.usuarios.imagen.url }}"
                      alt="User Image" />
             {% else %}
-                <img class="user-image img-circle elevation-1"
+                <img class="img-circle elevation-2"
                      src="{% static 'custom/img/default.png' %}"
                      alt="User Image" />
             {% endif %}
@@ -39,7 +36,7 @@
                 </div>
             </div>
         </form>
-    </div>
+    </div> {% endcomment %}
     {% if perms.Usuarios.programa_Dashboard %}
         <li class="nav-item">
             <a href="{% url 'dashboard' %}"
@@ -60,9 +57,10 @@
         <li class="nav-item  {% if 'configuracion' in pagina_actual %}menu-open{% endif %}">
             <a href="#"
                class="nav-link {% if 'configuracion' in pagina_actual %}active{% endif %}">
-                <i class="nav-icon fas fa-cog"></i>
+               <i class="nav-icon bi bi-speedometer"></i>
                 <p>
-                    Configuración<i class="right fas fa-angle-left"></i>
+                    Configuración
+                    <i class="nav-arrow bi bi-chevron-right"></i>
                 </p>
             </a>
             <ul class="nav nav-treeview">
@@ -152,7 +150,8 @@
                class="nav-link {% if 'administracion' in pagina_actual %}active{% endif %}">
                 <i class="nav-icon fas fa-users"></i>
                 <p>
-                    Administración<i class="right fas fa-angle-left"></i>
+                    Administración
+                    <i class="nav-arrow bi bi-chevron-right"></i>
                 </p>
             </a>
             <ul class="nav nav-treeview">
@@ -188,7 +187,7 @@
             <i class="nav-icon fa fa-address-card"></i>
             <p>
                 Legajos
-                <i class="right fas fa-angle-left"></i>
+                <i class="nav-arrow bi bi-chevron-right"></i>
             </p>
         </a>
         <ul class="nav nav-treeview">

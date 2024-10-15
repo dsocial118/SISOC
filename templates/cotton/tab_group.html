@@ -1,0 +1,40 @@
+<div class="card">
+    <div class="card-header d-flex align-items-center">
+        {{ tab_lister }}
+    </div>
+    <div class="card-body">
+        <div class="tab-content">
+            <!-- Render the content of each tab -->
+            {{ slot }}
+        </div>
+    </div>
+</div>
+
+{% comment %} 
+--------- ANATOMIA ---------
+
+<c-tab-group>
+    <c-slot name="tab_lister">
+        <ul class="flex-shrink-1 nav nav-pills card-title" role="tablist">
+            <c-tab-item class='active' target='dfamilia'>Familia</c-tab-item>
+            <c-tab-item target='dvivienda'>Vivienda</c-tab-item>
+        </ul>
+        <div class="ms-auto">
+            <a href="{% url 'legajosdimensiones_ver' object.id %}" class="btn btn-secondary btn-sm align-right" data-card-widget="collapse">
+                Ver detalles
+                <i class=" ms-2 fas fa-info-circle "></i>
+            </a>
+        </div>
+    </c-slot>
+
+    <c-tab-panel class="show active" id="dfamilia">
+        contenido
+    </c-tab-panel>
+
+    <c-tab-panel id="dvivienda">
+        contenido
+    </c-tab-panel>
+</c-tab-group> 
+
+----------------------------
+{% endcomment %}
