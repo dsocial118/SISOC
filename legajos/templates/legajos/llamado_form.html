@@ -1,4 +1,4 @@
-{% extends "includes/base.html" %}
+{% extends "includes/main.html" %}
 {% load static %}
 {% block title %}Llamados formulario{% endblock %}
 {% block titulo-pagina %}Llamados{% endblock %}
@@ -95,6 +95,5 @@
         var ajaxLoadSubLlamados = "{% url 'ajax_load_subestadosllamados' %}";
         var ajaxLoadLlamadosTipos = "{% url 'ajax_load_tiposllamados' %}";
     </script>
-    <script src="{% static 'custom/js/legajosllamados.js' %}"></script>
 {% endblock %}
 ;

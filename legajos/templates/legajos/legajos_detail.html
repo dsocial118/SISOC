@@ -1,18 +1,15 @@
-{% extends "includes/base.html" %};
-{% load static %}
-;
+{% extends "includes/main.html" %};
+{% load static %};
 {% block head %}
     <!-- Timeline -->
     <link rel="stylesheet" href="{% static 'custom/css/timeline.css' %}" />
 {% endblock %}
-{% block title %}Legajo{% endblock %}
-;
+{% block title %}Legajo{% endblock %};
 {% block titulo-pagina %}
     {{ object.apellido }}, {{ object.nombre }}
     <span class="ml-2 h5">| {{ object.edad }}</span>
     <span class="info-box-icon h5 pl-2"><i class="flag-icon {{ emoji_nacionalidad }}"></i></span>
-{% endblock %}
-;
+{% endblock %};
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right mt-2 mr-2">
         <li class="breadcrumb-item">
@@ -23,12 +20,10 @@
         </li>
         <li class="breadcrumb-item active">Detalle</li>
     </ol>
-{% endblock %}
-;
-{% block menu-adicional %}{% endblock %}
-;
+{% endblock %};
+{% block menu-adicional %}{% endblock %};
 {% block content %}
-    <div class="row justify-content-sm-start justify-content-between d-print-none mx-1 mb-2">
+    <div class="col justify-content-sm-start justify-content-start d-print-none mx-1 mb-2">
         {% if perms.Usuarios.rol_admin %}
             <a href="{% url 'legajos_editar' object.id %}"
                class="btn btn-primary mr-1">Editar</a>
@@ -47,7 +42,7 @@
         {% endif %}
     </div>
     <div class="row">
-        <div class="col-sm-3">
+        <div class="col-sm-4 col-md-4 col-lg-4 col-xl-3 col-xxl-2 d-grid gap-2">
             <div class="card bg-dark p-4">
                 {% if object.foto %}
                     <img class="card-img-top rounded"
@@ -70,7 +65,7 @@
                     </div>
                     <h3 class="card-title font-weight-bold pt-1 mr-3">Datos Personales</h3>
                 </div>
-                <div class="card-body card-comments p-0 pb-1">
+                <div class="card-body card-comments p-2 pb-1">
                     <ul class="nav nav-pills flex-column">
                         <li class="nav-item">
                             <div class="comment-text">
@@ -153,7 +148,7 @@
                           class="badge badge-secondary mt-1">{{ count_familia }}</span>
                 </div>
                 {% if count_familia != 0 %}
-                    <div class="card-body bg-light p-0">
+                    <div class="card-body  p-0">
                         <ul class="users-list">
                             {% for f in familiares_fk1 %}
                                 <li>
@@ -197,7 +192,7 @@
                         <a href="{% url 'grupofamiliar_listar' object.id %}">Ver detalles</a>
                     </div>
                 {% else %}
-                    <div class="card-body bg-light p-0">
+                    <div class="card-body  p-0">
                         <h6 class="text-center text-muted py-3">Sin familiares</h6>
                     </div>
                     <div class="card-footer text-center">
@@ -222,7 +217,7 @@
                           class="badge badge-secondary mt-1">{{ hogar_count_familia }}</span>
                 </div>
                 {% if hogar_count_familia != 0 %}
-                    <div class="card-body bg-light p-0">
+                    <div class="card-body  p-0">
                         <ul class="users-list">
                             {% for f in hogar_familiares_fk1 %}
                                 <li>
@@ -268,7 +263,7 @@
                         <a href="{% url 'grupofamiliar_listar' object.id %}">Ver detalles</a>
                     </div>
                 {% else %}
-                    <div class="card-body bg-light p-0">
+                    <div class="card-body  p-0">
                         <h6 class="text-center text-muted py-3">Sin Conviviente</h6>
                     </div>
                     <div class="card-footer text-center">
@@ -291,7 +286,7 @@
                     </div>
                 </div>
                 {% if files_img %}
-                    <div class="card-body bg-light p-0">
+                    <div class="card-body  p-0">
                         <div id="carouselExampleIndicators"
                              class="carousel slide"
                              data-ride="carousel"
@@ -337,7 +332,7 @@
                         </div>
                     </div>
                 {% else %}
-                    <div class="card-body bg-light p-0">
+                    <div class="card-body  p-0">
                         <h6 class="text-center text-muted py-3">Sin imágenes</h6>
                     </div>
                 {% endif %}
@@ -374,7 +369,7 @@
                 {% endfor %}
             </div>
         {% else %}
-            <div class="card-body bg-light p-0">
+            <div class="card-body">
                 <h6 class="text-center text-muted py-3">Sin archivos</h6>
             </div>
         {% endif %}
@@ -391,9 +386,9 @@
         {% endif %}
     </div>
 </div>
-<div class="col-sm-9">
+<div class="col d-grid">
     <div class="row">
-        <div class="col-12">
+        <div class="col-12 ">
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title font-weight-bold mr-3 pt-1">Alarmas</h3>
@@ -411,7 +406,7 @@
                         </button>
                     </div>
                 </div>
-                <div class="card-body bg-light">
+                <div class="card-body">
                     <div class="row">
                         {% for a in alertas_alta|slice:":4" %}
                             <div class="col-md-3 col-sm-6 col-12">
@@ -557,40 +552,28 @@
             </div>
         </div>
     </div>
-    <div class="row">
+
+<div class="row">
         <div class="col-12">
             <!-- card dimensiones -->
-            <div class="card">
-                <div class="card-header">
-                    <ul class="nav nav-pills card-title justify-content-between">
-                        <li class="nav-item">
-                            <a class="nav-link py-0 active"
-                               href="#dimensionfamilia"
-                               data-toggle="tab">Familia</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link py-0" href="#dimensionvivienda" data-toggle="tab">Vivienda</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link py-0" href="#dimensionsalud" data-toggle="tab">Salud</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link py-0" href="#dimensioneducacion" data-toggle="tab">Educación</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link py-0" href="#dimensioneconomia" data-toggle="tab">Economía</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link py-0" href="#dimensiontrabajo" data-toggle="tab">Trabajo</a>
-                        </li>
+            <c-tab-group>
+                <c-slot name="tab_lister">
+                    <ul class="flex-shrink-1 nav nav-pills card-title" role="tablist">
+                        <c-tab-item class='active' target='dfamilia'>Familia</c-tab-item>
+                        <c-tab-item target='dvivienda'>Vivienda</c-tab-item>
+                        <c-tab-item target='dsalud'>Salud</c-tab-item>
+                        <c-tab-item target='deducacion'>Educación</c-tab-item>
+                        <c-tab-item target='deconomia'>Economía</c-tab-item>
+                        <c-tab-item target='dtrabajo'>Trabajo</c-tab-item>
                     </ul>
-                    <div class="card-tools">
-                        <a href="{% url 'legajosdimensiones_ver' object.id %}" class="ml-3 mr-2">Ver
-                        detalles</a>
-                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                            <i class="fas fa-minus"></i>
-                        </button>
+                    <div class="ms-auto">
+                        <a href="{% url 'legajosdimensiones_ver' object.id %}" class="btn btn-secondary btn-sm align-right" data-card-widget="collapse">
+                            Ver detalles
+                            <i class=" ms-2 fas fa-info-circle "></i>
+                            
+                        </a>
                     </div>
+<<<<<<< HEAD
                 </div>
                 <!-- /.card-header -->
                 <div class="card-body  bg-light">
@@ -894,9 +877,328 @@
                 </div>
                 <!-- /.card-body -->
             </div>
+=======
+                </c-slot>
+
+                <c-tab-panel class="show active" id="dfamilia">
+                    <dl class="row mb-0 ">
+                        <dd class="col-sm-8">
+                            Estado civil
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensionfamilia.estado_civil|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Cantidad de hijos
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensionfamilia.cant_hijos|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            ¿Convive otro adulto responsable? (Padre o apoyo en la
+                            crianza)
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensionfamilia.otro_responsable|yesno:'Sí,No' }}</dt>
+                        <dd class="col-sm-8">
+                            Personas en el hogar embarazadas
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensionfamilia.hay_embarazadas|yesno:'Sí,No' }}</dt>
+                        <dd class="col-sm-8">
+                            Personas en el hogar privados de su libertad
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensionfamilia.hay_priv_libertad|yesno:'Sí,No' }}</dt>
+                        <dd class="col-sm-8">
+                            Personas en el hogar con problemas de salud mental
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensionfamilia.hay_prbl_smental|yesno:'Sí,No' }}</dt>
+                        <dd class="col-sm-8">
+                            Personas en el hogar con enfermedades crónicas
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensionfamilia.hay_enf_cronica|yesno:'Sí,No' }}</dt>
+                        <dd class="col-sm-8">
+                            Personas en el hogar con discapacidad
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensionfamilia.hay_fam_discapacidad|yesno:'Sí,No' }}</dt>
+                        <dd class="col-12 mt-3">
+                            Observaciones
+                        </dd>
+                        <dt class="col-12">{{ dimensionfamilia.obs_familia|default_if_none:"-" }}</dt>
+                    </dl>
+                </c-tab-panel>
+
+                <c-tab-panel id="dvivienda">
+                    <dl class="row mb-0">
+                        <dd class="col-sm-8">
+                            Posesión de la vivienda
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensionvivienda.posesion|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Tipo de vivienda
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensionvivienda.tipo|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Material de la vivienda
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensionvivienda.material|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Material principal de los pisos interiores
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensionvivienda.pisos|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            ¿Cuántas habitaciones tiene el hogar? (sin contar baño/s,
+                            cocina, pasillo/s, lavadero)
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensionvivienda.cant_ambientes|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            ¿Cuántas camas/ colchones tienen?
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensionvivienda.cant_camas|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            ¿Cuantos hogares hay en la vivienda?
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensionvivienda.cant_hogares|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            ¿Cuantas personas viven en la vivienda?
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensionvivienda.cant_convivientes|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            ¿Cuántos de ellos son menores de 18 años?
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensionvivienda.cant_menores|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Baño dentro de la vivienda con descarga
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensionvivienda.hay_banio|yesno:'Sí,No' }}</dt>
+                        <dd class="col-sm-8">
+                            Posee Agua caliente
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensionvivienda.hay_agua_caliente|yesno:'Sí,No' }}</dt>
+                        <dd class="col-sm-8">
+                            Riesgo de desmoronamiento
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensionvivienda.hay_desmoronamiento|yesno:'Sí,No' }}</dt>
+                        <dd class="col-sm-8">
+                            La vivienda está ubicada...
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensionvivienda.ContextoCasa|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Posee PC
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensionvivienda.PoseenPC|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-sm-8">
+                            Posee Internet
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensionvivienda.Poseeninternet|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-sm-8">
+                            Posee Celular
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensionvivienda.PoseenCeludar|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-12 mt-3">
+                            Observaciones
+                        </dd>
+                        <dt class="col-12">{{ dimensionvivienda.obs_vivienda|default_if_none:"-" }}</dt>
+                    </dl>
+                </c-tab-panel>
+
+                <c-tab-panel id="dsalud">
+                    <dl class="row mb-0">
+                        <dd class="col-sm-8">
+                            Centro de Salud en donde se atiende
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensionsalud.lugares_atencion|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Frecuencia de controles médicos
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensionsalud.frec_controles|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Posee alguna enfermedad recurrente o algún diagnóstico de
+                            enfermedad crónic?
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensionsalud.hay_enfermedad|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-sm-8">
+                            Posee cobertura de salud
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensionsalud.hay_obra_social|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-sm-8">
+                            Posee alguna discapacidad
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensionsalud.hay_discapacidad|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-sm-8">
+                            Posee certificado de discapacidad
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensionsalud.hay_cud|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-12 mt-3">
+                            Observaciones
+                        </dd>
+                        <dt class="col-12">{{ dimensionsalud.obs_salud|default_if_none:"-" }}</dt>
+                    </dl>
+                </c-tab-panel>
+
+                <c-tab-panel id="deducacion">
+                    <dl class="row mb-0">
+                        <dd class="col-sm-8">
+                            Asiste a la escuela
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.asiste_escuela|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-sm-8">
+                            Máximo nivel educativo alcanzado
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.max_nivel|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Estado del nivel
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.estado_nivel|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8 ">
+                            Motivo principal por el que no terminaste tus estudios
+                        </dd>
+                        <dt class="col-sm-4">
+                            {{
+                            object.dimensioneducacion.nivelIncompleto|default_if_none:"-" }}
+                        </dt>
+                        <dd class="col-sm-8 ">
+                            Motivo principal por el que no tuviste educación formal
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.sinEduFormal|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Institución
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.institucion|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Gestión
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.gestion|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Ciclo
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.ciclo|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Grado
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.grado|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Turno
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.turno|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Provincia Institucion
+                        </dd>
+                        <dt class="col-sm-4">
+                            {{
+                            object.dimensioneducacion.provinciaInstitucion|default_if_none:"-" }}
+                        </dt>
+                        <dd class="col-sm-8 ">
+                            Municipio Institucion
+                        </dd>
+                        <dt class="col-sm-4">
+                            {{
+                            object.dimensioneducacion.municipioInstitucion|default_if_none:"-" }}
+                        </dt>
+                        <dd class="col-sm-8 ">
+                            Localidad Institucion
+                        </dd>
+                        <dt class="col-sm-4">
+                            {{
+                            object.dimensioneducacion.localidadInstitucion|default_if_none:"-" }}
+                        </dt>
+                        <dd class="col-sm-8 ">
+                            Barrio Institucion
+                        </dd>
+                        <dt class="col-sm-4">
+                            {{
+                            object.dimensioneducacion.barrioInstitucion|default_if_none:"-" }}
+                        </dt>
+                        <dd class="col-sm-8 ">
+                            Calle Institucion
+                        </dd>
+                        <dt class="col-sm-4">
+                            {{
+                            object.dimensioneducacion.calleInstitucion|default_if_none:"-" }}
+                        </dt>
+                        <dd class="col-sm-8 ">
+                            Numero Institucion
+                        </dd>
+                        <dt class="col-sm-4">
+                            {{
+                            object.dimensioneducacion.numeroInstitucion|default_if_none:"-" }}
+                        </dt>
+                        <dd class="col-sm-8 ">
+                            Interes Estudio
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.interesEstudio|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-sm-8 ">
+                            Interes Curso
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.interesCurso|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-sm-8 ">
+                            Actualmente te encontrás haciendo algún curso de capacitación
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.realizandoCurso|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-sm-8 ">
+                            Observaciones
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.obs_educacion|default_if_none:"-" }}</dt>
+                    </dl>
+                </c-tab-panel>
+
+                <c-tab-panel id="deconomia">
+                    <dl class="row mb-0">
+                        <dd class="col-sm-8">
+                            Calificación de Ingresos
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneconomia.ingresos|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            ¿Recibe Plan Social?
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneconomia.recibe_plan|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Planes sociales que recibe
+                        </dd>
+                        <dt class="col-sm-4">
+                            {% if object.dimensioneconomia.m2m_planes.all.count > 0 %}
+                                {{ object.dimensioneconomia.m2m_planes.all|join:', ' }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </dt>
+                        <dd class="col-sm-8">
+                            Miembros de la familia que trabajan o aportan al grupo
+                            conviviente
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneconomia.cant_aportantes|default_if_none:"-" }}</dt>
+                        <dd class="col-12 mt-3">
+                            Observaciones
+                        </dd>
+                        <dt class="col-12">{{ object.dimensioneconomia.obs_economia|default_if_none:"-" }}</dt>
+                    </dl>
+                </c-tab-panel>
+
+                <c-tab-panel id="dtrabajo">
+                    <dl class="row mb-0">
+                        <dd class="col-sm-8">
+                            ¿Actualmente realizás alguna actividad laboral, productiva o comunitaria?
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensiontrabajo.tiene_trabajo|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Ocupación
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensiontrabajo.ocupacion|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Modo de contratación
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensiontrabajo.modo_contratacion|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            ¿Conviviente trabaja?
+                        </dd>
+                        <dt class="col-sm-4">{{ dimensiontrabajo.conviviente_trabaja|default_if_none:"-" }}</dt>
+                        <dd class="col-12 mt-3">
+                            Observaciones
+                        </dd>
+                        <dt class="col-12">{{ dimensiontrabajo.obs_trabajo|default_if_none:"-" }}</dt>
+                    </dl>
+                </c-tab-panel>
+            </c-tab-group>
+>>>>>>> 1b9ef20 ([Refactor]: Componentes reusables y cambio de referencias)
             <!-- /.card dimensiones-->
         </div>
     </div>
+
+
     <div class="row">
         <div class="col-12">
             <div class="card">
@@ -918,7 +1220,7 @@
                         </button>
                     </div>
                 </div>
-                <div class="card-body bg-light">
+                <div class="card-body ">
                     <div class="row">
                         {% if count_media or count_baja %}
                             {% for a in alertas_media|slice:":4" %}
@@ -961,7 +1263,7 @@
                         </div>
                         <h3 class="card-title font-weight-bold">Evolución de riesgos</h3>
                     </div>
-                    <div class="card-body bg-light">
+                    <div class="card-body ">
                         <canvas id="lineChart"
                                 style="min-height: 250px;
                                        height: 250px;
@@ -999,8 +1301,7 @@
     {% endif %}
 </div>
 </div>
-{% endblock %}
-;
+{% endblock %};
 {% block customJS %}
     <script> let datosJson = JSON.parse('{{ datos_json|escapejs }}');</script>
     <script type="text/javascript" src="{% static 'custom/js/timeline.js' %}"></script>
