@@ -17,7 +17,7 @@ from django.db.models import Case, IntegerField, Q, Value, When
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
-from legajos.models import EstadoDerivacion, TipoVivienda, TipoConstruccionVivienda, TipoPisosVivienda, TipoPosesionVivienda, CantidadAmbientes, Inodoro, ContextoCasa, CondicionDe, Gas, TipoTechoVivienda, Agua, Desague
+from legajos.models import EstadoDerivacion, TipoVivienda, TipoConstruccionVivienda, TipoPisosVivienda, TipoPosesionVivienda, CantidadAmbientes, Inodoro, ContextoCasa, CondicionDe, Gas, TipoTechoVivienda, Agua, Desague,CentrosSalud,Frecuencia,EstadoNivelEducativo,AsisteEscuela,InstitucionesEducativas,TipoGestion,NivelEducativo,Grado,Turno,MotivoNivelIncompleto,AreaCurso,ModoContratacion,ActividadRealizada,DuracionTrabajo,AportesJubilacion,TiempoBusquedaLaboral,NoBusquedaLaboral,VinculoFamiliar
 
 # Paginacion
 from django.views.generic import (
@@ -33,8 +33,6 @@ from django.views.generic import (
 from configuraciones.models import Alertas, CategoriaAlertas, Organismos, Programas
 from configuraciones.choices import CHOICE_CIRCUITOS, CHOICE_DIMENSIONES
 from legajos.choices import (
-    CHOICE_ESTADO_DERIVACION,
-    CHOICE_NACIONALIDAD,
     EMOJIS_BANDERAS,
     VINCULO_MAP,
 )
@@ -128,7 +126,6 @@ def load_asentamiento(request):
         )
     return JsonResponse(list(asentamientos.values("id", "nombre")), safe=False)
 
-
 class LegajosReportesListView(ListView):
     template_name = "legajos/legajos_reportes.html"
     model = LegajosDerivaciones
@@ -146,9 +143,14 @@ class LegajosReportesListView(ListView):
             programas = Programas.objects.all().values("id", "nombre")
             cache.set("programas", programas, 60)
 
+        estados = cache.get("estados_derivacion")
+        if not estados:
+            estados = EstadoDerivacion.objects.all().values("id", "estado")
+            cache.set("estados_derivacion", estados, 60)
+
         context["organismos"] = organismos
         context["programas"] = programas
-        context["estados"] = CHOICE_ESTADO_DERIVACION
+        context["estados"] = estados
         return context
 
     def get_queryset(self):
@@ -803,14 +805,14 @@ class LegajosGrupoFamiliarCreateView(CreateView):
         vinculo_data = VINCULO_MAP.get(vinculo)
         if not vinculo_data:
             return messages.error(self.request, "Vinculo inválido.")
-
+        vinculo_instance = VinculoFamiliar.objects.get(vinculo=vinculo_data["vinculo"])
         # crea la relacion de grupo familiar
         legajo_principal = Legajos.objects.get(id=pk)
         try:
             LegajoGrupoFamiliar.objects.create(
                 fk_legajo_1=legajo_principal,
                 fk_legajo_2=nuevo_legajo,
-                vinculo=vinculo_data["vinculo"],
+                vinculo=vinculo_instance,
                 vinculo_inverso=vinculo_data["vinculo_inverso"],
                 conviven=conviven,
                 estado_relacion=estado_relacion,
@@ -825,13 +827,14 @@ class LegajosGrupoFamiliarCreateView(CreateView):
 
         messages.success(self.request, "Familair agregado correctamente.")
         # Redireccionar a la misma página después de realizar la acción con éxito
+        
         return HttpResponseRedirect(self.request.path_info)
 
 
 def busqueda_familiares(request):
 
     res = None
-    busqueda = request.POST.get("busqueda")
+    busqueda = request.POST.get("busqueda", "").strip()
     legajo_principal_id = request.POST.get("id")
     page_number = request.POST.get("page", 1)
 
@@ -870,7 +873,7 @@ def busqueda_familiares(request):
                 "tipo_doc": familiar.tipo_doc,
                 "fecha_nacimiento": familiar.fecha_nacimiento,
                 "sexo": familiar.sexo,
-                # Otros campos que deseas incluir
+                # Otros campos
             }
             for familiar in page_obj
         ]
@@ -881,7 +884,6 @@ def busqueda_familiares(request):
             "has_next": page_obj.has_next(),
             "has_previous": page_obj.has_previous(),
         }
-
     else:
         res = ""
 
@@ -1098,7 +1100,7 @@ class LegajosDerivacionesCreateView(PermisosMixin, CreateView):
 
             programas = Programas.objects.all().exclude(
                 id__in=LegajosDerivaciones.objects.filter(fk_legajo=pk)
-                .exclude(estado__in=["Rechazada", "Finalizada"])
+                .exclude(estado__in=[EstadoDerivacion.objects.filter(estado="Rechazada").first(), EstadoDerivacion.objects.filter(estado="Finalizada").first()])
                 .values_list("fk_programa", flat=True)
             )
 
@@ -1462,8 +1464,8 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
         # dimension salud
 
         fields_mapping_salud = {
-            "lugares_atencion": "lugares_atencion",
-            "frec_controles": "frec_controles",
+            "lugares_atencion": CentrosSalud,
+            "frec_controles": Frecuencia,
             "hay_obra_social": "hay_obra_social",
             "hay_enfermedad": "hay_enfermedad",
             "hay_discapacidad": "hay_discapacidad",
@@ -1475,11 +1477,14 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
             value = form_multiple.get(field)
 
             if value:
-                setattr(
-                    legajo_dim_salud,
-                    fields_mapping_salud.get(field, field),
-                    value,
-                )
+                # Verifica si el valor del campo es una instancia de un modelo o una ForeignKey
+                if isinstance(fields_mapping_salud.get(field), type) and issubclass(
+                    fields_mapping_salud.get(field), models.Model
+                ):
+                    instance = fields_mapping_salud.get(field).objects.get(pk=value)
+                    setattr(legajo_dim_salud, field, instance)
+                else:
+                    setattr(legajo_dim_salud, field, value)
 
             else:
                 setattr(legajo_dim_salud, field, None)
@@ -1489,50 +1494,42 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
         # dimension educacion
 
         fields_mapping_educacion = {
-            "max_nivel": "max_nivel",
-            "estado_nivel": "estado_nivel",
-            "asiste_escuela": "asiste_escuela",
-            "institucion": "institucion",
-            "gestion": "gestion",
-            "ciclo": "ciclo",
-            "grado": "grado",
-            "turno": "turno",
-            "obs_educacion": "obs_educacion",
-            "provinciaInstitucion": "provinciaInstitucion",
-            "localidadInstitucion": "localidadInstitucion",
-            "municipioInstitucion": "municipioInstitucion",
-            "barrioInstitucion": "barrioInstitucion",
-            "calleInstitucion": "calleInstitucion",
-            "numeroInstitucion": "numeroInstitucion",
-            "interesEstudio": "interesEstudio",
-            "interesCurso": "interesCurso",
-            "nivelIncompleto": "nivelIncompleto",
-            "sinEduFormal": "sinEduFormal",
-            "realizandoCurso": "realizandoCurso",
-            "areaCurso": "areaCurso",
-            "interesCapLab": "interesCapLab",
-            "areaOficio": "areaOficio",
-            "oficio": "oficio",
-        }
+        "max_nivel": NivelEducativo,
+        "estado_nivel": EstadoNivelEducativo,
+        "asiste_escuela": AsisteEscuela,
+        "institucion": InstitucionesEducativas,
+        "gestion": TipoGestion,
+        "ciclo": NivelEducativo,
+        "grado": Grado,
+        "turno": Turno,
+        "obs_educacion": "obs_educacion",
+        "provinciaInstitucion": LegajoProvincias,
+        "localidadInstitucion": LegajoLocalidad,
+        "municipioInstitucion": LegajoMunicipio,
+        "barrioInstitucion": "barrioInstitucion",
+        "calleInstitucion": "calleInstitucion",
+        "numeroInstitucion": "numeroInstitucion",
+        "interesEstudio": "interesEstudio",
+        "interesCurso": "interesCurso",
+        "nivelIncompleto": MotivoNivelIncompleto,
+        "sinEduFormal": MotivoNivelIncompleto,
+        "realizandoCurso": "realizandoCurso",
+        "areaCurso": AreaCurso,
+        "interesCapLab": "interesCapLab",
+        "areaOficio": AreaCurso,
+        "oficio": "oficio",
+    }
 
-        for field in fields_mapping_educacion:
+        for field, model in fields_mapping_educacion.items():
             value = form_multiple.get(field)
 
             if value:
-                # TODO: Refactorizar
-                if field == "provinciaInstitucion":
-                    value = LegajoProvincias.objects.get(pk=value) or None
-                elif field == "municipioInstitucion":
-                    value = LegajoMunicipio.objects.get(pk=value) or None
-                elif field == "localidadInstitucion":
-                    value = LegajoLocalidad.objects.get(pk=value) or None
-
-                setattr(
-                    legajo_dim_educacion,
-                    fields_mapping_educacion.get(field, field),
-                    value,
-                )
-
+                # Verifica si el valor del campo es una instancia de un modelo o una ForeignKey
+                if isinstance(model, type) and issubclass(model, models.Model):
+                    instance = model.objects.get(pk=value)
+                    setattr(legajo_dim_educacion, field, instance)
+                else:
+                    setattr(legajo_dim_educacion, field, value)
             else:
                 setattr(legajo_dim_educacion, field, None)
 
@@ -1573,33 +1570,33 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
 
         fields_mapping_trabajo = {
             "tiene_trabajo": "tiene_trabajo",
-            "modo_contratacion": "modo_contratacion",
+            "modo_contratacion": ModoContratacion,
             "ocupacion": "ocupacion",
             "conviviente_trabaja": "conviviente_trabaja",
             "obs_trabajo": "obs_trabajo",
             "horasSemanales": "horasSemanales",
-            "actividadRealizadaComo": "actividadRealizadaComo",
-            "duracionTrabajo": "duracionTrabajo",
-            "aportesJubilacion": "aportesJubilacion",
-            "TiempoBusquedaLaboral": "TiempoBusquedaLaboral",
+            "actividadRealizadaComo": ActividadRealizada,
+            "duracionTrabajo": DuracionTrabajo,
+            "aportesJubilacion": AportesJubilacion,
+            "TiempoBusquedaLaboral": TiempoBusquedaLaboral,
             "busquedaLaboral": "busquedaLaboral",
-            "noBusquedaLaboral": "noBusquedaLaboral",
+            "noBusquedaLaboral": NoBusquedaLaboral,
         }
 
-        for field in fields_mapping_trabajo:
+        for field, model in fields_mapping_trabajo.items():
             value = form_multiple.get(field)
 
             if value:
-                setattr(
-                    legajo_dim_trabajo,
-                    fields_mapping_trabajo.get(field, field),
-                    value,
-                )
-
+                if isinstance(model, type) and issubclass(model, models.Model):
+                    instance = model.objects.get(pk=value)
+                    setattr(legajo_dim_trabajo, field, instance)
+                else:
+                    setattr(legajo_dim_trabajo, field, value)
             else:
                 setattr(legajo_dim_trabajo, field, None)
 
         legajo_dim_trabajo.save()
+            
 
         if "form_step1" in self.request.POST:
             self.object.save()
