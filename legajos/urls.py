@@ -49,6 +49,7 @@ from legajos.views import (
     ProgramasIntervencionesView,
     SubEstadosIntervencionesAJax,
     SubEstadosLlamadosAjax,
+    TipoEstadosLlamadosAjax,
     busqueda_familiares,
     busqueda_hogar,
     load_localidad,

@@ -18,6 +18,8 @@ from .models import (
     DimensionVivienda,
     Intervencion,
     LegajoAlertas,
+    LegajoAsentamientos,
+    LegajoDepartamento,
     LegajoGrupoFamiliar,
     LegajoGrupoHogar,
     LegajoLocalidad,
