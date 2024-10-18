@@ -123,13 +123,14 @@ INSTALLED_APPS = [
     "silk",
     "rest_framework",
     "rest_framework_api_key",
+    "corsheaders,"
     # Aplicaciones propias
     "usuarios",
     "configuraciones",
     "inicio",
     "dashboard",
     "legajos",
-    'legajosprovincias',
+    "legajosprovincias",
 ]
 
 # Definición del middleware utilizado por el proyecto
@@ -148,6 +149,7 @@ MIDDLEWARE = [
     "usuarios.middleware.CustomLoginMiddleware",
     "config.middlewares.xss_protection.XSSProtectionMiddleware",
     "config.middlewares.no_special_characters.NoSpecialCharactersMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
 ]
 
 # Configuración de plantillas
@@ -228,8 +230,11 @@ SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 
-# Configuraicon de Django Rest Framework
+# Configuracion de Django Rest Framework
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
 }
+
+# Configuracion de CORS header
+CORS_ALLOW_ALL_ORIGINS = True
