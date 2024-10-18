@@ -17,7 +17,7 @@ from django.db.models import Case, IntegerField, Q, Value, When
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
-from legajos.models import EstadoDerivacion, TipoVivienda, TipoConstruccionVivienda, TipoPisosVivienda, TipoPosesionVivienda, CantidadAmbientes, Inodoro, ContextoCasa, CondicionDe, Gas, TipoTechoVivienda, Agua, Desague,CentrosSalud,Frecuencia,EstadoNivelEducativo,AsisteEscuela,InstitucionesEducativas,TipoGestion,NivelEducativo,Grado,Turno,MotivoNivelIncompleto,AreaCurso,ModoContratacion,ActividadRealizada,DuracionTrabajo,AportesJubilacion,TiempoBusquedaLaboral,NoBusquedaLaboral,VinculoFamiliar
+from legajos.models import EstadoDerivacion, TipoVivienda, TipoConstruccionVivienda, TipoPisosVivienda, TipoPosesionVivienda, CantidadAmbientes, Inodoro, ContextoCasa, CondicionDe, Gas, TipoTechoVivienda, Agua, Desague,CentrosSalud,Frecuencia,EstadoNivelEducativo,AsisteEscuela,InstitucionesEducativas,TipoGestion,NivelEducativo,Grado,Turno,MotivoNivelIncompleto,AreaCurso,ModoContratacion,ActividadRealizada,DuracionTrabajo,AportesJubilacion,TiempoBusquedaLaboral,NoBusquedaLaboral,VinculoFamiliar, EstadoRelacion
 
 # Paginacion
 from django.views.generic import (
@@ -806,6 +806,9 @@ class LegajosGrupoFamiliarCreateView(CreateView):
         if not vinculo_data:
             return messages.error(self.request, "Vinculo inválido.")
         vinculo_instance = VinculoFamiliar.objects.get(vinculo=vinculo_data["vinculo"])
+        #vinculo_inverso_instance = VinculoFamiliar.objects.get(
+            #vinculo=vinculo_data["vinculo_inverso"])
+        estado_relacion_instance = EstadoRelacion.objects.get(estado=estado_relacion)
         # crea la relacion de grupo familiar
         legajo_principal = Legajos.objects.get(id=pk)
         try:
@@ -815,7 +818,7 @@ class LegajosGrupoFamiliarCreateView(CreateView):
                 vinculo=vinculo_instance,
                 vinculo_inverso=vinculo_data["vinculo_inverso"],
                 conviven=conviven,
-                estado_relacion=estado_relacion,
+                estado_relacion=estado_relacion_instance,
                 cuidador_principal=cuidador_principal,
             )
 
@@ -825,7 +828,7 @@ class LegajosGrupoFamiliarCreateView(CreateView):
                 f"Verifique que no exista un legajo con ese DNI y NÚMERO. Error: {e}",
             )
 
-        messages.success(self.request, "Familair agregado correctamente.")
+        messages.success(self.request, "Familiar agregado correctamente.")
         # Redireccionar a la misma página después de realizar la acción con éxito
         
         return HttpResponseRedirect(self.request.path_info)
@@ -834,9 +837,12 @@ class LegajosGrupoFamiliarCreateView(CreateView):
 def busqueda_familiares(request):
 
     res = None
-    busqueda = request.POST.get("busqueda", "").strip()
+    busqueda = request.POST.get("busqueda", "")
     legajo_principal_id = request.POST.get("id")
     page_number = request.POST.get("page", 1)
+
+    if not legajo_principal_id:
+        return JsonResponse({"error": "ID del legajo principal no proporcionado"}, status=400)
 
     legajos_asociados = LegajoGrupoFamiliar.objects.filter(
         Q(fk_legajo_1_id=legajo_principal_id) | Q(fk_legajo_2_id=legajo_principal_id)
@@ -919,13 +925,15 @@ class CreateGrupoFamiliar(View):
 
         if not vinculo_data:
             return messages.error(self.request, "Vinculo inválido.")
+        vinculo_instance = VinculoFamiliar.objects.get(vinculo=vinculo_data["vinculo"])
+        estado_relacion_instance = EstadoRelacion.objects.get(estado=estado_relacion)
 
         obj = LegajoGrupoFamiliar.objects.create(
             fk_legajo_1_id=fk_legajo_1,
             fk_legajo_2_id=fk_legajo_2,
-            vinculo=vinculo_data["vinculo"],
+            vinculo=vinculo_instance,
             vinculo_inverso=vinculo_data["vinculo_inverso"],
-            estado_relacion=estado_relacion,
+            estado_relacion= estado_relacion_instance,
             conviven=conviven,
             cuidador_principal=cuidador_principal,
         )
@@ -934,7 +942,7 @@ class CreateGrupoFamiliar(View):
             "id": obj.id,
             "fk_legajo_1": obj.fk_legajo_1.id,
             "fk_legajo_2": obj.fk_legajo_2.id,
-            "vinculo": obj.vinculo,
+            "vinculo": obj.vinculo.vinculo,
             "nombre": obj.fk_legajo_2.nombre,
             "apellido": obj.fk_legajo_2.apellido,
             "foto": obj.fk_legajo_2.foto.url if obj.fk_legajo_2.foto else None,
