@@ -17,7 +17,7 @@ from django.db.models import Case, IntegerField, Q, Value, When
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
-from legajos.models import EstadoDerivacion, TipoVivienda, TipoConstruccionVivienda, TipoPisosVivienda, TipoPosesionVivienda, CantidadAmbientes, Inodoro, ContextoCasa, CondicionDe, Gas, TipoTechoVivienda, Agua, Desague,CentrosSalud,Frecuencia,EstadoNivelEducativo,AsisteEscuela,InstitucionesEducativas,TipoGestion,NivelEducativo,Grado,Turno,MotivoNivelIncompleto,AreaCurso,ModoContratacion,ActividadRealizada,DuracionTrabajo,AportesJubilacion,TiempoBusquedaLaboral,NoBusquedaLaboral,VinculoFamiliar, EstadoRelacion
+from legajos.models import EstadoDerivacion, TipoVivienda, TipoConstruccionVivienda, TipoPisosVivienda, TipoPosesionVivienda, CantidadAmbientes, Inodoro, ContextoCasa, CondicionDe, Gas, TipoTechoVivienda, Agua, Desague,CentrosSalud,Frecuencia,EstadoNivelEducativo,AsisteEscuela,InstitucionesEducativas,TipoGestion,NivelEducativo,Grado,Turno,MotivoNivelIncompleto,AreaCurso,ModoContratacion,ActividadRealizada,DuracionTrabajo,AportesJubilacion,TiempoBusquedaLaboral,NoBusquedaLaboral,VinculoFamiliar, EstadoRelacion, Nacionalidad
 
 # Paginacion
 from django.views.generic import (
@@ -925,8 +925,15 @@ class CreateGrupoFamiliar(View):
 
         if not vinculo_data:
             return messages.error(self.request, "Vinculo inválido.")
-        vinculo_instance = VinculoFamiliar.objects.get(vinculo=vinculo_data["vinculo"])
-        estado_relacion_instance = EstadoRelacion.objects.get(estado=estado_relacion)
+        try:
+            vinculo_instance = VinculoFamiliar.objects.get(vinculo=vinculo_data["vinculo"])
+        except VinculoFamiliar.DoesNotExist:
+            return JsonResponse({"error": "VínculoFamiliar no encontrado"}, status=400)
+
+        try:
+            estado_relacion_instance = EstadoRelacion.objects.get(estado=estado_relacion)
+        except EstadoRelacion.DoesNotExist:
+            return JsonResponse({"error": "EstadoRelacion no encontrado"}, status=400)
 
         obj = LegajoGrupoFamiliar.objects.create(
             fk_legajo_1_id=fk_legajo_1,
@@ -1009,7 +1016,7 @@ class LegajosDerivacionesBuscar(PermisosMixin, TemplateView):
 
         barrios = legajos.values_list("barrio")
         circuitos = CHOICE_CIRCUITOS
-        localidad = CHOICE_NACIONALIDAD
+        localidad = Nacionalidad.objects.all().values_list('id', 'nacionalidad')
         mostrar_resultados = False
         mostrar_btn_resetear = False
         query = self.request.GET.get("busqueda")
@@ -1812,7 +1819,6 @@ class IndicesDetalleView(TemplateView):
 
 # region ############################################################### GRUPO Hogar
 
-
 class LegajosGrupoHogarCreateView(CreateView):
     permission_required = ROL_ADMIN
     model = LegajoGrupoHogar
@@ -1890,6 +1896,8 @@ class LegajosGrupoHogarCreateView(CreateView):
         #   return messages.error(self.request, "Vinculo inválido.")
 
         # crea la relacion de grupo familiar
+        estado_relacion_instance = EstadoRelacion.objects.get(estado=estado_relacion)
+
         legajo_principal = Legajos.objects.get(id=pk)
         try:
             LegajoGrupoFamiliar.objects.create(
@@ -1897,7 +1905,7 @@ class LegajosGrupoHogarCreateView(CreateView):
                 fk_legajo_2=nuevo_legajo,
                 #  vinculo=vinculo_data["vinculo"],
                 # vinculo_inverso=vinculo_data["vinculo_inverso"],
-                estado_relacion=estado_relacion,
+                estado_relacion=estado_relacion_instance,
             )
         except Exception as e:
             return messages.error(
@@ -1913,7 +1921,7 @@ class LegajosGrupoHogarCreateView(CreateView):
 def busqueda_hogar(request):
 
     res = None
-    busqueda = request.POST.get("busqueda")
+    busqueda = request.POST.get("busqueda", "")
     legajo_principal_id = request.POST.get("id")
     page_number = request.POST.get("page", 1)
 
@@ -1935,7 +1943,7 @@ def busqueda_hogar(request):
         & (Q(apellido__icontains=busqueda) | Q(documento__icontains=busqueda))
     ).exclude(id__in=legajos_asociados_ids)
 
-    if len(hogares) > 0 and busqueda:
+    if hogares.exists() and busqueda:
         paginator = Paginator(hogares, paginate_by)
         try:
             page_obj = paginator.page(page_number)
@@ -1950,10 +1958,9 @@ def busqueda_hogar(request):
                 "nombre": hogar.nombre,
                 "apellido": hogar.apellido,
                 "documento": hogar.documento,
-                "tipo_doc": hogar.tipo_doc,
+                "tipo_doc": hogar.tipo_doc.tipo if hogar.tipo_doc else None,
                 "fecha_nacimiento": hogar.fecha_nacimiento,
-                "sexo": hogar.sexo,
-                # Otros campos que deseas incluir
+                "sexo": hogar.sexo.sexo if hogar.sexo else None,
             }
             for hogar in page_obj
         ]
@@ -2024,23 +2031,34 @@ class CreateGrupoHogar(View):
         fk_legajo_1 = request.GET.get("fk_legajo_1", None)
         fk_legajo_2 = request.GET.get("fk_legajo_2", None)
         estado_relacion = request.GET.get("estado_relacion", None)
+        conviven = request.GET.get("conviven", None)
+        cuidador_principal = request.GET.get("cuidador_principal", None)
         obj = None
+
+        try:
+            estado_relacion_instance = EstadoRelacion.objects.get(estado=estado_relacion)
+        except EstadoRelacion.DoesNotExist:
+            return JsonResponse({"error": "EstadoRelacion no encontrado"}, status=400)
 
         obj = LegajoGrupoHogar.objects.create(
             fk_legajo_1Hogar_id=fk_legajo_1,
             fk_legajo_2Hogar_id=fk_legajo_2,
-            estado_relacion=estado_relacion,
+            estado_relacion=estado_relacion_instance,
+            conviven=conviven,
+            cuidador_principal=cuidador_principal,
         )
 
         familiar = {
             "id": obj.id,
             "fk_legajo_1": obj.fk_legajo_1Hogar.id,
             "fk_legajo_2": obj.fk_legajo_2Hogar.id,
+            "estado_relacion": obj.estado_relacion.estado,
             "nombre": obj.fk_legajo_2Hogar.nombre,
             "apellido": obj.fk_legajo_2Hogar.apellido,
             "foto": (
                 obj.fk_legajo_2Hogar.foto.url if obj.fk_legajo_2Hogar.foto else None
             ),
+            "cuidador_principal": obj.cuidador_principal,
         }
         data = {
             "tipo_mensaje": "success",
