@@ -413,10 +413,6 @@ class LegajoGrupoHogarForm(forms.ModelForm):
         tipo_doc = cleaned_data.get("tipo_doc")
         documento = cleaned_data.get("documento")
         fecha_nacimiento = cleaned_data.get("fecha_nacimiento")
-        print(
-            fecha_nacimiento > date.today(), "--------------*********-----------------"
-        )
-
         # Validación de campo unico, combinación de DNI + Tipo DNI
         if Legajos.objects.filter(tipo_doc=tipo_doc, documento=documento).exists():
             self.add_error(
