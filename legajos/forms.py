@@ -4,7 +4,7 @@ from django import forms
 from django.core.validators import MaxValueValidator, MinValueValidator
 
 from usuarios.validators import MaxSizeFileValidator
-
+from legajos.models import Nacionalidad,Legajos,VinculoFamiliar,EstadoRelacion
 from .models import (
     DimensionEducacion,
     Legajos,
@@ -329,8 +329,15 @@ class LegajoGrupoFamiliarForm(forms.ModelForm):
 
 
 class NuevoLegajoFamiliarForm(forms.ModelForm):
-    vinculo = forms.ChoiceField(choices=CHOICE_VINCULO_FAMILIAR, required=True)
-    estado_relacion = forms.ChoiceField(choices=CHOICE_ESTADO_RELACION, required=True)
+    vinculo = forms.ModelChoiceField(
+        queryset=VinculoFamiliar.objects.all(),
+        required=True,
+        label="Vínculo Familiar")
+    estado_relacion = forms.ModelChoiceField(
+        queryset=EstadoRelacion.objects.all(),
+        required=True,
+        label="Estado de Relación"
+    )
     conviven = forms.ChoiceField(
         choices=BOOLEAN_CHOICE,required=True )
     cuidador_principal = forms.ChoiceField(choices=BOOLEAN_CHOICE, required=True)
@@ -392,7 +399,16 @@ class NuevoLegajoFamiliarForm(forms.ModelForm):
 
 
 class LegajoGrupoHogarForm(forms.ModelForm):
-    vinculo = forms.ChoiceField(choices=CHOICE_VINCULO_FAMILIAR, required=True)
+    vinculo = forms.ModelChoiceField(
+        queryset=VinculoFamiliar.objects.all(),
+        required=True,
+        label="Vínculo Familiar"
+    )
+    estado_relacion = forms.ModelChoiceField(
+        queryset=EstadoRelacion.objects.all(),
+        required=True,
+        label="Estado de Relación"
+    )
     documento = forms.IntegerField(
         required=False,
         validators=[MinValueValidator(3000000), MaxValueValidator(100000000)],
