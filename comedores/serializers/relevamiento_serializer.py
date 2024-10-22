@@ -6,6 +6,7 @@ from comedores.models import (
 from comedores.services.relevamiento_service import RelevamientoService
 from comedores.utils import format_fecha_django
 
+
 class RelevamientoSerializer(serializers.ModelSerializer):
     def clean(self):
         if "fecha_visita" in self.initial_data:

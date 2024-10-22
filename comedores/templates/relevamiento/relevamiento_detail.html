@@ -736,7 +736,6 @@
             </div>
         </div>
     </div>
-
     <div class="card">
         <div class="card-header">
             <h3 class="card-title font-weight-bold mr-3 pt-1">Observacion</h3>
@@ -748,10 +747,8 @@
         </div>
         <div class="card-body card-comments p-0 pb-1 overflow-hidden">
             <div class="nav nav-pills row my-3">
-                <div class="mx-5">
-                    {{ relevamiento.observacion|default_if_none:'-' }}
-                </div>
+                <div class="mx-5">{{ relevamiento.observacion|default_if_none:'-' }}</div>
             </div>
-    </div>
+        </div>
     </div>
 {% endblock %}
