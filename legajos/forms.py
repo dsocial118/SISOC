@@ -26,9 +26,6 @@ from .models import (
     DimensionTrabajo,
     Intervencion,
     Llamado,
-    CHOICE_VINCULO_FAMILIAR,
-    CHOICE_ESTADO_RELACION,
-    CHOICE_SINO,
 )
 
 BOOLEAN_CHOICE = [
