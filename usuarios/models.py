@@ -6,7 +6,17 @@ from django.urls import reverse
 
 # region------- EXTENSION DEL MODELO USER---------------------------------------------------------------------
 
+class Rol(models.Model):
+    rol = models.CharField(max_length=255)
 
+    def __str__(self):
+        return str(self.rol)
+
+    class Meta:
+        verbose_name = "Rol"
+        verbose_name_plural = "Roles"
+
+      
 # Agrego extrafields telefono y programa
 class Usuarios(models.Model):
     """
@@ -22,6 +32,7 @@ class Usuarios(models.Model):
         blank=True,
     )
     darkmode = models.BooleanField(default=True, null=True, blank=True)
+    rol = models.ForeignKey(Rol, on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         if self.usuario.first_name or self.usuario.last_name:
