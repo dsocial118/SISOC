@@ -1,0 +1,37 @@
+[
+    {
+        "model": "configuraciones.tipodedato",
+        "pk": 1,
+        "fields": {
+            "tipo": ""
+        }
+    },
+    {
+        "model": "configuraciones.tipodedato",
+        "pk": 2,
+        "fields": {
+            "tipo": "Texto"
+        }
+    },
+    {
+        "model": "configuraciones.tipodedato",
+        "pk": 3,
+        "fields": {
+            "tipo": "Fecha"
+        }
+    },
+    {
+        "model": "configuraciones.tipodedato",
+        "pk": 4,
+        "fields": {
+            "tipo": "Número"
+        }
+    },
+    {
+        "model": "configuraciones.tipodedato",
+        "pk": 5,
+        "fields": {
+            "tipo": "Si/No"
+        }
+    }
+]
