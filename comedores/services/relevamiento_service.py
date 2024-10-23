@@ -821,310 +821,336 @@ class RelevamientoService:
 
     @staticmethod
     def send_to_gestionar(relevamiento: Relevamiento):
-
-        compras = RelevamientoService.separate_m2m_string(
-            [
-                field.name
-                for field in FuenteCompras._meta.fields
-                if isinstance(field, models.BooleanField)
-                and getattr(relevamiento.compras, field.name)
-            ]
-        )
-
-        data = {
-            "Action": "Add",
-            "Properties": {"Locale": "es-ES"},
-            "Rows": [
-                {
-                    "Relevamiento id": relevamiento.comedor.gestionar_uid,
-                    "Fecha de visita": format_fecha_gestionar(
-                        relevamiento.fecha_visita
-                    ),
-                    "Nombre Comedor": relevamiento.comedor.nombre,
-                    "Año Inicio act.": relevamiento.comedor.comienzo,
-                    "Calle": relevamiento.comedor.calle,
-                    "Numero": relevamiento.comedor.numero,
-                    "Entre Calle 1": relevamiento.comedor.entre_calle_1,
-                    "Entre Calle 2": relevamiento.comedor.entre_calle_2,
-                    "Barrio": relevamiento.comedor.barrio,
-                    "Cod. Postal": relevamiento.comedor.codigo_postal,
-                    "Localidad": (
-                        relevamiento.comedor.localidad.nombre
-                        if relevamiento.comedor.localidad is not None
-                        else ""
-                    ),
-                    "Municipio": (
-                        relevamiento.comedor.municipio.nombre
-                        if relevamiento.comedor.municipio is not None
-                        else ""
-                    ),
-                    "Partido": relevamiento.comedor.partido,
-                    "Provincia": (
-                        relevamiento.comedor.provincia.nombre
-                        if relevamiento.comedor.provincia is not None
-                        else ""
-                    ),
-                    "Modalidad Prestacion Servicio": (
-                        relevamiento.funcionamiento.modalidad_prestacion.nombre
-                        if relevamiento.funcionamiento.modalidad_prestacion is not None
-                        else ""
-                    ),
-                    "Servicio Organizado por turnos": (
-                        "Y" if relevamiento.funcionamiento.servicio_por_turnos else "N"
-                    ),
-                    "Cantidad Turnos": (
-                        relevamiento.funcionamiento.cantidad_turnos
-                        if relevamiento.funcionamiento.cantidad_turnos is not None
-                        else ""
-                    ),
-                    "Nombre referente": (
-                        relevamiento.comedor.referente.nombre
-                        if relevamiento.comedor.referente is not None
-                        else ""
-                    ),
-                    "Apellido referente": relevamiento.comedor.referente.apellido,
-                    "Mail de referente": relevamiento.comedor.referente.mail,
-                    "Celular de referente": relevamiento.comedor.referente.celular,
-                    "DNI referente": relevamiento.comedor.referente.celular,
-                    "Espacio donde funciona": relevamiento.espacio.tipo_espacio_fisico.nombre,
-                    "Otro espacio": (
-                        relevamiento.espacio.espacio_fisico_otro
-                        if relevamiento.espacio.espacio_fisico_otro is not None
-                        else ""
-                    ),
-                    "Espacio elavoracion alimentos": (
-                        "Y"
-                        if relevamiento.espacio.cocina.espacio_elaboracion_alimentos
-                        else "N"
-                    ),
-                    "Lugar almacenamiento alimentos": (
-                        "Y"
-                        if relevamiento.espacio.cocina.almacenamiento_alimentos_secos
-                        else "N"
-                    ),
-                    "Donde almacenan": "",
-                    "Almacen Frios": (
-                        "Y" if relevamiento.espacio.cocina.heladera else "N"
-                    ),
-                    "AlmacenFreezer": (
-                        "Y" if relevamiento.espacio.cocina.freezer else "N"
-                    ),
-                    "Recipientes residuos organicos": (
-                        "Y"
-                        if relevamiento.espacio.cocina.recipiente_residuos_organicos
-                        else "N"
-                    ),
-                    "Recipientes residuos reciclables": (
-                        "Y"
-                        if relevamiento.espacio.cocina.recipiente_residuos_reciclables
-                        else "N"
-                    ),
-                    "Generacion de residuos diferentes": (
-                        "Y" if relevamiento.espacio.cocina.otros_residuos else "N"
-                    ),
-                    "Espacio residuos diferentes": (
-                        "Y"
-                        if relevamiento.espacio.cocina.recipiente_otros_residuos
-                        else "N"
-                    ),
-                    "Utiliza para cocinar": RelevamientoService.separate_m2m_string(
-                        relevamiento.espacio.cocina.abastecimiento_combustible.all()
-                    ),
-                    "Abastecimiento de agua": (
-                        relevamiento.espacio.cocina.abastecimiento_agua.nombre
-                        if relevamiento.espacio.cocina.abastecimiento_agua is not None
-                        else ""
-                    ),
-                    "Otro Abastecimiento Agua": relevamiento.espacio.cocina.abastecimiento_agua.nombre,
-                    "Instalacion Electrica": (
-                        "Y"
-                        if relevamiento.espacio.cocina.instalacion_electrica
-                        else "N"
-                    ),
-                    "Espacio y equipamiento": (
-                        "Y" if relevamiento.espacio.prestacion.espacio_equipado else "N"
-                    ),
-                    "Sistema de ventilacion": (
-                        "Y"
-                        if relevamiento.espacio.prestacion.tiene_ventilacion
-                        else "N"
-                    ),
-                    "Salidas de emergencia": (
-                        "Y"
-                        if relevamiento.espacio.prestacion.tiene_salida_emergencia
-                        else "N"
-                    ),
-                    "Señalizacion de salidas": (
-                        "Y"
-                        if relevamiento.espacio.prestacion.salida_emergencia_senializada
-                        else "N"
-                    ),
-                    "Elementos Anti incendios": (
-                        "Y"
-                        if relevamiento.espacio.prestacion.tiene_equipacion_incendio
-                        else "N"
-                    ),
-                    "Botiquin primeros auxilios": (
-                        "Y" if relevamiento.espacio.prestacion.tiene_botiquin else "N"
-                    ),
-                    "Tiene buena iluminacion": (
-                        "Y"
-                        if relevamiento.espacio.prestacion.tiene_buena_iluminacion
-                        else "N"
-                    ),
-                    "Posee baños": (
-                        "Y" if relevamiento.espacio.prestacion.tiene_sanitarios else "N"
-                    ),
-                    "Tipo desague inodoro": (
-                        relevamiento.espacio.prestacion.desague_hinodoro.nombre
-                        if relevamiento.espacio.prestacion.desague_hinodoro is not None
-                        else ""
-                    ),
-                    "Buzon de quejas": (
-                        relevamiento.espacio.prestacion.gestion_quejas.nombre
-                        if relevamiento.espacio.prestacion.gestion_quejas is not None
-                        else ""
-                    ),
-                    "Otros Reclamos": (
-                        relevamiento.espacio.prestacion.gestion_quejas_otro
-                        if relevamiento.espacio.prestacion.gestion_quejas_otro
-                        is not None
-                        else ""
-                    ),
-                    "Carteleria informacion": (
-                        "Y"
-                        if relevamiento.espacio.prestacion.informacion_quejas
-                        else "N"
-                    ),
-                    "Frecuencia limpieza": (
-                        relevamiento.espacio.prestacion.frecuencia_limpieza.nombre
-                        if relevamiento.espacio.prestacion.frecuencia_limpieza
-                        is not None
-                        else ""
-                    ),
-                    "Otra frecuencia limpieza": "",
-                    "Cantidad de personas realizan tareas": (
-                        relevamiento.colaboradores.cantidad_colaboradores.nombre
-                        if relevamiento.colaboradores.cantidad_colaboradores is not None
-                        else ""
-                    ),
-                    "Capacitadas manipulacion de alimentos": (
-                        "Y"
-                        if relevamiento.colaboradores.colaboradores_capacitados_alimentos
-                        else "N"
-                    ),
-                    "Recibieron capacitacion": (
-                        "Y"
-                        if relevamiento.colaboradores.colaboradores_recibieron_capacitacion_alimentos
-                        else "N"
-                    ),
-                    "Capacitacion salud y seguridad": (
-                        "Y"
-                        if relevamiento.colaboradores.colaboradores_capacitados_salud_seguridad
-                        else "N"
-                    ),
-                    "Capacitacion preparacion respuesta emergencias": (
-                        "Y"
-                        if relevamiento.colaboradores.colaboradores_recibieron_capacitacion_emergencias
-                        else "N"
-                    ),
-                    "Capacitacion violencia de genero abuso": (
-                        "Y"
-                        if relevamiento.colaboradores.colaboradores_recibieron_capacitacion_violencia
-                        else "N"
-                    ),
-                    "Recibe donaciones particulares": (
-                        "Y"
-                        if relevamiento.recursos.recibe_donaciones_particulares
-                        else "N"
-                    ),
-                    "Frecuencia donaciones particular": (
-                        relevamiento.recursos.frecuencia_donaciones_particulares.nombre
-                        if relevamiento.recursos.frecuencia_donaciones_particulares
-                        is not None
-                        else ""
-                    ),
-                    "Que donaciones particulares recibe": (
-                        relevamiento.recursos.recursos_donaciones_particulares.nombre
-                        if relevamiento.recursos.recursos_donaciones_particulares
-                        is not None
-                        else ""
-                    ),
-                    "Donaciones de Estado Nacional": (
-                        "Y" if relevamiento.recursos.recibe_estado_nacional else "N"
-                    ),
-                    "Frecuencia donacion Estado": (
-                        relevamiento.recursos.frecuencia_estado_nacional.nombre
-                        if relevamiento.recursos.frecuencia_estado_nacional is not None
-                        else ""
-                    ),
-                    "Que donaciones de Estado recibe": (
-                        relevamiento.recursos.recursos_estado_nacional.nombre
-                        if relevamiento.recursos.recursos_estado_nacional is not None
-                        else ""
-                    ),
-                    "Donaciones Estado Provincial": (
-                        "Y" if relevamiento.recursos.recibe_estado_provincial else "N"
-                    ),
-                    "Frecuencia donacion EP": (
-                        relevamiento.recursos.frecuencia_estado_provincial.nombre
-                        if relevamiento.recursos.frecuencia_estado_provincial
-                        is not None
-                        else ""
-                    ),
-                    "Que donaciones recibe EP": (
-                        relevamiento.recursos.recursos_estado_provincial.nombre
-                        if relevamiento.recursos.recursos_estado_provincial is not None
-                        else ""
-                    ),
-                    "Donaciones Estado Municipal": (
-                        "Y" if relevamiento.recursos.recibe_estado_municipal else "N"
-                    ),
-                    "Frencuencia donaciones EM": (
-                        relevamiento.recursos.frecuencia_estado_municipal.nombre
-                        if relevamiento.recursos.frecuencia_estado_municipal is not None
-                        else ""
-                    ),
-                    "Que donaciones recibe EM": (
-                        relevamiento.recursos.recursos_estado_municipal.nombre
-                        if relevamiento.recursos.recursos_estado_municipal is not None
-                        else ""
-                    ),
-                    "Otras donaciones": (
-                        "Y" if relevamiento.recursos.recibe_otros else "N"
-                    ),
-                    "Frecuencia otras donaciones": (
-                        relevamiento.recursos.frecuencia_otros.nombre
-                        if relevamiento.recursos.frecuencia_otros is not None
-                        else ""
-                    ),
-                    "Que recibe otras donaciones": (
-                        relevamiento.recursos.recursos_otros.nombre
-                        if relevamiento.recursos.recursos_otros is not None
-                        else ""
-                    ),
-                    "Lugares compra abastecimiento": compras,
-                    "OBSERVACIONES": (
-                        relevamiento.observacion if relevamiento.observacion else "-"
-                    ),
-                }
-            ],
-        }
-
-        headers = {
-            "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
-        }
-
-        try:
-            response = requests.post(
-                os.getenv("GESTIONAR_API_CREAR_RELEVAMIENTO"),
-                json=data,
-                headers=headers,
+        if relevamiento.gestionar_uid is None:
+            compras = RelevamientoService.separate_m2m_string(
+                [
+                    field.name
+                    for field in FuenteCompras._meta.fields
+                    if isinstance(field, models.BooleanField)
+                    and getattr(relevamiento.compras, field.name)
+                ]
             )
-            response.raise_for_status()
-            response = response.json()
 
-            relevamiento.gestionar_uid = response["Rows"][0]["Id_formularioComedores"]
-            relevamiento.save()
-        except requests.exceptions.RequestException as e:
-            print(f"Error en la petición POST: {e}")
+            data = {
+                "Action": "Add",
+                "Properties": {"Locale": "es-ES"},
+                "Rows": [
+                    {
+                        "Relevamiento id": relevamiento.comedor.gestionar_uid,
+                        "Fecha de visita": format_fecha_gestionar(
+                            relevamiento.fecha_visita
+                        ),
+                        "Nombre Comedor": relevamiento.comedor.nombre,
+                        "Año Inicio act.": relevamiento.comedor.comienzo,
+                        "Calle": relevamiento.comedor.calle,
+                        "Numero": relevamiento.comedor.numero,
+                        "Entre Calle 1": relevamiento.comedor.entre_calle_1,
+                        "Entre Calle 2": relevamiento.comedor.entre_calle_2,
+                        "Barrio": relevamiento.comedor.barrio,
+                        "Cod. Postal": relevamiento.comedor.codigo_postal,
+                        "Localidad": (
+                            relevamiento.comedor.localidad.nombre
+                            if relevamiento.comedor.localidad is not None
+                            else ""
+                        ),
+                        "Municipio": (
+                            relevamiento.comedor.municipio.nombre
+                            if relevamiento.comedor.municipio is not None
+                            else ""
+                        ),
+                        "Partido": relevamiento.comedor.partido,
+                        "Provincia": (
+                            relevamiento.comedor.provincia.nombre
+                            if relevamiento.comedor.provincia is not None
+                            else ""
+                        ),
+                        "Modalidad Prestacion Servicio": (
+                            relevamiento.funcionamiento.modalidad_prestacion.nombre
+                            if relevamiento.funcionamiento.modalidad_prestacion
+                            is not None
+                            else ""
+                        ),
+                        "Servicio Organizado por turnos": (
+                            "Y"
+                            if relevamiento.funcionamiento.servicio_por_turnos
+                            else "N"
+                        ),
+                        "Cantidad Turnos": (
+                            relevamiento.funcionamiento.cantidad_turnos
+                            if relevamiento.funcionamiento.cantidad_turnos is not None
+                            else ""
+                        ),
+                        "Nombre referente": (
+                            relevamiento.comedor.referente.nombre
+                            if relevamiento.comedor.referente is not None
+                            else ""
+                        ),
+                        "Apellido referente": relevamiento.comedor.referente.apellido,
+                        "Mail de referente": relevamiento.comedor.referente.mail,
+                        "Celular de referente": relevamiento.comedor.referente.celular,
+                        "DNI referente": relevamiento.comedor.referente.celular,
+                        "Espacio donde funciona": relevamiento.espacio.tipo_espacio_fisico.nombre,
+                        "Otro espacio": (
+                            relevamiento.espacio.espacio_fisico_otro
+                            if relevamiento.espacio.espacio_fisico_otro is not None
+                            else ""
+                        ),
+                        "Espacio elavoracion alimentos": (
+                            "Y"
+                            if relevamiento.espacio.cocina.espacio_elaboracion_alimentos
+                            else "N"
+                        ),
+                        "Lugar almacenamiento alimentos": (
+                            "Y"
+                            if relevamiento.espacio.cocina.almacenamiento_alimentos_secos
+                            else "N"
+                        ),
+                        "Donde almacenan": "",
+                        "Almacen Frios": (
+                            "Y" if relevamiento.espacio.cocina.heladera else "N"
+                        ),
+                        "AlmacenFreezer": (
+                            "Y" if relevamiento.espacio.cocina.freezer else "N"
+                        ),
+                        "Recipientes residuos organicos": (
+                            "Y"
+                            if relevamiento.espacio.cocina.recipiente_residuos_organicos
+                            else "N"
+                        ),
+                        "Recipientes residuos reciclables": (
+                            "Y"
+                            if relevamiento.espacio.cocina.recipiente_residuos_reciclables
+                            else "N"
+                        ),
+                        "Generacion de residuos diferentes": (
+                            "Y" if relevamiento.espacio.cocina.otros_residuos else "N"
+                        ),
+                        "Espacio residuos diferentes": (
+                            "Y"
+                            if relevamiento.espacio.cocina.recipiente_otros_residuos
+                            else "N"
+                        ),
+                        "Utiliza para cocinar": RelevamientoService.separate_m2m_string(
+                            relevamiento.espacio.cocina.abastecimiento_combustible.all()
+                        ),
+                        "Abastecimiento de agua": (
+                            relevamiento.espacio.cocina.abastecimiento_agua.nombre
+                            if relevamiento.espacio.cocina.abastecimiento_agua
+                            is not None
+                            else ""
+                        ),
+                        "Otro Abastecimiento Agua": relevamiento.espacio.cocina.abastecimiento_agua.nombre,
+                        "Instalacion Electrica": (
+                            "Y"
+                            if relevamiento.espacio.cocina.instalacion_electrica
+                            else "N"
+                        ),
+                        "Espacio y equipamiento": (
+                            "Y"
+                            if relevamiento.espacio.prestacion.espacio_equipado
+                            else "N"
+                        ),
+                        "Sistema de ventilacion": (
+                            "Y"
+                            if relevamiento.espacio.prestacion.tiene_ventilacion
+                            else "N"
+                        ),
+                        "Salidas de emergencia": (
+                            "Y"
+                            if relevamiento.espacio.prestacion.tiene_salida_emergencia
+                            else "N"
+                        ),
+                        "Señalizacion de salidas": (
+                            "Y"
+                            if relevamiento.espacio.prestacion.salida_emergencia_senializada
+                            else "N"
+                        ),
+                        "Elementos Anti incendios": (
+                            "Y"
+                            if relevamiento.espacio.prestacion.tiene_equipacion_incendio
+                            else "N"
+                        ),
+                        "Botiquin primeros auxilios": (
+                            "Y"
+                            if relevamiento.espacio.prestacion.tiene_botiquin
+                            else "N"
+                        ),
+                        "Tiene buena iluminacion": (
+                            "Y"
+                            if relevamiento.espacio.prestacion.tiene_buena_iluminacion
+                            else "N"
+                        ),
+                        "Posee baños": (
+                            "Y"
+                            if relevamiento.espacio.prestacion.tiene_sanitarios
+                            else "N"
+                        ),
+                        "Tipo desague inodoro": (
+                            relevamiento.espacio.prestacion.desague_hinodoro.nombre
+                            if relevamiento.espacio.prestacion.desague_hinodoro
+                            is not None
+                            else ""
+                        ),
+                        "Buzon de quejas": (
+                            relevamiento.espacio.prestacion.gestion_quejas.nombre
+                            if relevamiento.espacio.prestacion.gestion_quejas
+                            is not None
+                            else ""
+                        ),
+                        "Otros Reclamos": (
+                            relevamiento.espacio.prestacion.gestion_quejas_otro
+                            if relevamiento.espacio.prestacion.gestion_quejas_otro
+                            is not None
+                            else ""
+                        ),
+                        "Carteleria informacion": (
+                            "Y"
+                            if relevamiento.espacio.prestacion.informacion_quejas
+                            else "N"
+                        ),
+                        "Frecuencia limpieza": (
+                            relevamiento.espacio.prestacion.frecuencia_limpieza.nombre
+                            if relevamiento.espacio.prestacion.frecuencia_limpieza
+                            is not None
+                            else ""
+                        ),
+                        "Otra frecuencia limpieza": "",
+                        "Cantidad de personas realizan tareas": (
+                            relevamiento.colaboradores.cantidad_colaboradores.nombre
+                            if relevamiento.colaboradores.cantidad_colaboradores
+                            is not None
+                            else ""
+                        ),
+                        "Capacitadas manipulacion de alimentos": (
+                            "Y"
+                            if relevamiento.colaboradores.colaboradores_capacitados_alimentos
+                            else "N"
+                        ),
+                        "Recibieron capacitacion": (
+                            "Y"
+                            if relevamiento.colaboradores.colaboradores_recibieron_capacitacion_alimentos
+                            else "N"
+                        ),
+                        "Capacitacion salud y seguridad": (
+                            "Y"
+                            if relevamiento.colaboradores.colaboradores_capacitados_salud_seguridad
+                            else "N"
+                        ),
+                        "Capacitacion preparacion respuesta emergencias": (
+                            "Y"
+                            if relevamiento.colaboradores.colaboradores_recibieron_capacitacion_emergencias
+                            else "N"
+                        ),
+                        "Capacitacion violencia de genero abuso": (
+                            "Y"
+                            if relevamiento.colaboradores.colaboradores_recibieron_capacitacion_violencia
+                            else "N"
+                        ),
+                        "Recibe donaciones particulares": (
+                            "Y"
+                            if relevamiento.recursos.recibe_donaciones_particulares
+                            else "N"
+                        ),
+                        "Frecuencia donaciones particular": (
+                            relevamiento.recursos.frecuencia_donaciones_particulares.nombre
+                            if relevamiento.recursos.frecuencia_donaciones_particulares
+                            is not None
+                            else ""
+                        ),
+                        "Que donaciones particulares recibe": (
+                            relevamiento.recursos.recursos_donaciones_particulares.nombre
+                            if relevamiento.recursos.recursos_donaciones_particulares
+                            is not None
+                            else ""
+                        ),
+                        "Donaciones de Estado Nacional": (
+                            "Y" if relevamiento.recursos.recibe_estado_nacional else "N"
+                        ),
+                        "Frecuencia donacion Estado": (
+                            relevamiento.recursos.frecuencia_estado_nacional.nombre
+                            if relevamiento.recursos.frecuencia_estado_nacional
+                            is not None
+                            else ""
+                        ),
+                        "Que donaciones de Estado recibe": (
+                            relevamiento.recursos.recursos_estado_nacional.nombre
+                            if relevamiento.recursos.recursos_estado_nacional
+                            is not None
+                            else ""
+                        ),
+                        "Donaciones Estado Provincial": (
+                            "Y"
+                            if relevamiento.recursos.recibe_estado_provincial
+                            else "N"
+                        ),
+                        "Frecuencia donacion EP": (
+                            relevamiento.recursos.frecuencia_estado_provincial.nombre
+                            if relevamiento.recursos.frecuencia_estado_provincial
+                            is not None
+                            else ""
+                        ),
+                        "Que donaciones recibe EP": (
+                            relevamiento.recursos.recursos_estado_provincial.nombre
+                            if relevamiento.recursos.recursos_estado_provincial
+                            is not None
+                            else ""
+                        ),
+                        "Donaciones Estado Municipal": (
+                            "Y"
+                            if relevamiento.recursos.recibe_estado_municipal
+                            else "N"
+                        ),
+                        "Frencuencia donaciones EM": (
+                            relevamiento.recursos.frecuencia_estado_municipal.nombre
+                            if relevamiento.recursos.frecuencia_estado_municipal
+                            is not None
+                            else ""
+                        ),
+                        "Que donaciones recibe EM": (
+                            relevamiento.recursos.recursos_estado_municipal.nombre
+                            if relevamiento.recursos.recursos_estado_municipal
+                            is not None
+                            else ""
+                        ),
+                        "Otras donaciones": (
+                            "Y" if relevamiento.recursos.recibe_otros else "N"
+                        ),
+                        "Frecuencia otras donaciones": (
+                            relevamiento.recursos.frecuencia_otros.nombre
+                            if relevamiento.recursos.frecuencia_otros is not None
+                            else ""
+                        ),
+                        "Que recibe otras donaciones": (
+                            relevamiento.recursos.recursos_otros.nombre
+                            if relevamiento.recursos.recursos_otros is not None
+                            else ""
+                        ),
+                        "Lugares compra abastecimiento": compras,
+                        "OBSERVACIONES": (
+                            relevamiento.observacion
+                            if relevamiento.observacion
+                            else "-"
+                        ),
+                    }
+                ],
+            }
+
+            headers = {
+                "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
+            }
+
+            try:
+                response = requests.post(
+                    os.getenv("GESTIONAR_API_CREAR_RELEVAMIENTO"),
+                    json=data,
+                    headers=headers,
+                )
+                response.raise_for_status()
+                response = response.json()
+
+                relevamiento.gestionar_uid = response["Rows"][0][
+                    "Id_formularioComedores"
+                ]
+                relevamiento.save()
+            except requests.exceptions.RequestException as e:
+                print(f"Error en la petición POST: {e}")
