@@ -1,0 +1,184 @@
+[
+    {
+        "model": "configuraciones.barrio",
+        "pk": 1,
+        "fields": {
+            "barrio": ""
+        }
+    },
+    {
+        "model": "configuraciones.barrio",
+        "pk": 2,
+        "fields": {
+            "barrio": "Altos de San José"
+        }
+    },
+    {
+        "model": "configuraciones.barrio",
+        "pk": 3,
+        "fields": {
+            "barrio": "Bello Horizonte"
+        }
+    },
+    {
+        "model": "configuraciones.barrio",
+        "pk": 4,
+        "fields": {
+            "barrio": "Colegio Máximo"
+        }
+    },
+    {
+        "model": "configuraciones.barrio",
+        "pk": 5,
+        "fields": {
+            "barrio": "Colibrí"
+        }
+    },
+    {
+        "model": "configuraciones.barrio",
+        "pk": 6,
+        "fields": {
+            "barrio": "Constantini"
+        }
+    },
+    {
+        "model": "configuraciones.barrio",
+        "pk": 7,
+        "fields": {
+            "barrio": "Cuartel Segundo Cc."
+        }
+    },
+    {
+        "model": "configuraciones.barrio",
+        "pk": 8,
+        "fields": {
+            "barrio": "Don Alfonso"
+        }
+    },
+    {
+        "model": "configuraciones.barrio",
+        "pk": 9,
+        "fields": {
+            "barrio": "La Gloria"
+        }
+    },
+    {
+        "model": "configuraciones.barrio",
+        "pk": 10,
+        "fields": {
+            "barrio": "La Estrella"
+        }
+    },
+    {
+        "model": "configuraciones.barrio",
+        "pk": 11,
+        "fields": {
+            "barrio": "La Guarida"
+        }
+    },
+    {
+        "model": "configuraciones.barrio",
+        "pk": 12,
+        "fields": {
+            "barrio": "La Manuelita"
+        }
+    },
+    {
+        "model": "configuraciones.barrio",
+        "pk": 13,
+        "fields": {
+            "barrio": "Lomas de Mariló"
+        }
+    },
+    {
+        "model": "configuraciones.barrio",
+        "pk": 14,
+        "fields": {
+            "barrio": "Los Paraísos"
+        }
+    },
+    {
+        "model": "configuraciones.barrio",
+        "pk": 15,
+        "fields": {
+            "barrio": "Los Plátanos"
+        }
+    },
+    {
+        "model": "configuraciones.barrio",
+        "pk": 16,
+        "fields": {
+            "barrio": "Macabi"
+        }
+    },
+    {
+        "model": "configuraciones.barrio",
+        "pk": 17,
+        "fields": {
+            "barrio": "María Rosa Mística"
+        }
+    },
+    {
+        "model": "configuraciones.barrio",
+        "pk": 18,
+        "fields": {
+            "barrio": "Mitre"
+        }
+    },
+    {
+        "model": "configuraciones.barrio",
+        "pk": 19,
+        "fields": {
+            "barrio": "Parque San Miguel"
+        }
+    },
+    {
+        "model": "configuraciones.barrio",
+        "pk": 20,
+        "fields": {
+            "barrio": "Parque San Ignacio"
+        }
+    },
+    {
+        "model": "configuraciones.barrio",
+        "pk": 21,
+        "fields": {
+            "barrio": "Santa Brígida"
+        }
+    },
+    {
+        "model": "configuraciones.barrio",
+        "pk": 22,
+        "fields": {
+            "barrio": "Sarmiento"
+        }
+    },
+    {
+        "model": "configuraciones.barrio",
+        "pk": 23,
+        "fields": {
+            "barrio": "Trujui"
+        }
+    },
+    {
+        "model": "configuraciones.barrio",
+        "pk": 24,
+        "fields": {
+            "barrio": "Santa María"
+        }
+    },
+    {
+        "model": "configuraciones.barrio",
+        "pk": 25,
+        "fields": {
+            "barrio": "San Antonio"
+        }
+    },
+    {
+        "model": "configuraciones.barrio",
+        "pk": 26,
+        "fields": {
+            "barrio": "San Ignacio"
+        }
+    }
+]
