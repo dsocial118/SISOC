@@ -82,23 +82,27 @@ class LegajosProvincias(models.Model):
     
 class Presupuesto (models.Model):
     """Modelo para los presupuestos de los legajos."""
-    provincia = models.ForeignKey(LegajosProvincias, on_delete=models.CASCADE)
-    anio = models.PositiveIntegerField()
+    provincia = models.ForeignKey(LegajosProvincias, on_delete=models.DO_NOTHING)
+    fecha_creacion = models.DateField()
     presupuesto_total = models.PositiveIntegerField()
-    presupuesto_linea_socio_productivo = models.PositiveIntegerField()
+    presupuesto_linea_productivo = models.PositiveIntegerField()
     presupuesto_linea_formativo = models.PositiveIntegerField()
+    presupuesto_linea_social = models.PositiveIntegerField()
+    presupuesto_disponible = models.PositiveIntegerField()
+    presupuesto_revision = models.PositiveIntegerField()
+    presupuesto_aprobado = models.PositiveIntegerField()
     class Meta:
         verbose_name = "Presupuesto"
         verbose_name_plural = "Presupuestos"
 
     def __str__(self):
-        return f"{self.provincia} - {self.anio}"
+        return f"{self.provincia}"
 
 class Proyectos (models.Model):
     """Modelo para los proyectos de los legajos."""
-    provincia = models.ForeignKey(LegajosProvincias, on_delete=models.CASCADE)
+    provincia = models.ForeignKey(LegajosProvincias, on_delete=models.DO_NOTHING)
     proyecto = models.CharField(max_length=50)
-    presupuesto = models.ForeignKey(Presupuesto, on_delete=models.CASCADE)
+    presupuesto = models.ForeignKey(Presupuesto, on_delete=models.DO_NOTHING)
     class Meta:
         verbose_name = "Proyecto"
         verbose_name_plural = "Proyectos"
@@ -108,8 +112,8 @@ class Proyectos (models.Model):
     
 class DocumentacionArchivos (models.Model):
     """Modelo para los archivos de documentación de los legajos."""
-    provincia = models.ForeignKey(LegajosProvincias, on_delete=models.CASCADE)
-    proyecto = models.ForeignKey(Proyectos, on_delete=models.CASCADE)
+    provincia = models.ForeignKey(LegajosProvincias, on_delete=models.DO_NOTHING)
+    proyecto = models.ForeignKey(Proyectos, on_delete=models.DO_NOTHING)
     fecha_creacion = models.DateField()
     fecha_modificacion = models.DateField()
     archivo = models.FileField(upload_to="documentacion/")
@@ -122,14 +126,19 @@ class DocumentacionArchivos (models.Model):
 
 class HistorialPresupuesto (models.Model):
     """Modelo para el historial de los presupuestos de los legajos."""
-    provincia = models.ForeignKey(LegajosProvincias, on_delete=models.CASCADE)
-    anio = models.PositiveIntegerField()
+    provincia = models.ForeignKey(LegajosProvincias, on_delete=models.DO_NOTHING)
+    fecha_creacion = models.DateField()
     presupuesto_total = models.PositiveIntegerField()
-    presupuesto_linea_socio_productivo = models.PositiveIntegerField()
+    presupuesto_linea_productivo = models.PositiveIntegerField()
     presupuesto_linea_formativo = models.PositiveIntegerField()
+    presupuesto_linea_social = models.PositiveIntegerField()
+    presupuesto_disponible = models.PositiveIntegerField()
+    presupuesto_revision = models.PositiveIntegerField()
+    presupuesto_aprobado = models.PositiveIntegerField()
+    usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     class Meta:
         verbose_name = "Historial de Presupuesto"
         verbose_name_plural = "Historial de Presupuestos"
 
     def __str__(self):
-        return f"{self.provincia} - {self.anio}"
+        return f"{self.provincia}"
