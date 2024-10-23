@@ -7,7 +7,6 @@ from comedores.models import Comedor, Observacion, Relevamiento
 from comedores.serializers.comedor_serializer import ComedorSerializer
 from comedores.serializers.relevamiento_serializer import RelevamientoSerializer
 from comedores.serializers.observacion_serializer import ObservacionSerializer
-from comedores.services.relevamiento_service import RelevamientoService
 from comedores.utils import format_serializer_errors, format_fecha_django
 
 

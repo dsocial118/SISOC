@@ -107,41 +107,48 @@ class ComedorService:
     @staticmethod
     def send_to_gestionar(comedor: Comedor):
 
-        data = {
-            "Action": "Add",
-            "Properties": {"Locale": "es-ES"},
-            "Rows": [
-                {
-                    "nombre": comedor.nombre,
-                    "comienzo": comedor.comienzo,
-                    "calle": comedor.calle,
-                    "numero": comedor.numero,
-                    "entre_calle_1": comedor.entre_calle_1,
-                    "entre_calle_2": comedor.entre_calle_2,
-                    "provincia": comedor.provincia.nombre,
-                    "municipio": comedor.municipio.nombre,
-                    "localidad": comedor.localidad.nombre,
-                    "partido": comedor.partido,
-                    "barrio": comedor.barrio,
-                    "codigo_postal": comedor.codigo_postal,
-                }
-            ],
-        }
+        if comedor.gestionar_uid is None:
+            data = {
+                "Action": "Add",
+                "Properties": {"Locale": "es-ES"},
+                "Rows": [
+                    {
+                        "nombre": comedor.nombre,
+                        "comienzo": comedor.comienzo,
+                        "calle": comedor.calle,
+                        "numero": comedor.numero,
+                        "entre_calle_1": comedor.entre_calle_1,
+                        "entre_calle_2": comedor.entre_calle_2,
+                        "provincia": (
+                            comedor.provincia.nombre if comedor.provincia else None
+                        ),
+                        "municipio": (
+                            comedor.municipio.nombre if comedor.municipio else None
+                        ),
+                        "localidad": (
+                            comedor.localidad.nombre if comedor.localidad else None
+                        ),
+                        "partido": comedor.partido,
+                        "barrio": comedor.barrio,
+                        "codigo_postal": comedor.codigo_postal,
+                    }
+                ],
+            }
 
-        headers = {
-            "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
-        }
+            headers = {
+                "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
+            }
 
-        try:
-            response = requests.post(
-                os.getenv("GESTIONAR_API_CREAR_COMEDOR"),
-                json=data,
-                headers=headers,
-            )
-            response.raise_for_status()
-            response = response.json()
+            try:
+                response = requests.post(
+                    os.getenv("GESTIONAR_API_CREAR_COMEDOR"),
+                    json=data,
+                    headers=headers,
+                )
+                response.raise_for_status()
+                response = response.json()
 
-            comedor.gestionar_uid = response["Rows"][0]["ComedorID"]
-            comedor.save()
-        except requests.exceptions.RequestException as e:
-            print(f"Error en la petición POST: {e}")
+                comedor.gestionar_uid = response["Rows"][0]["ComedorID"]
+                comedor.save()
+            except requests.exceptions.RequestException as e:
+                print(f"Error en la petición POST: {e}")
