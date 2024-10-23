@@ -3,7 +3,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import Group, Permission
 from import_export.admin import ImportExportModelAdmin
 
-from .models import Usuarios, User
+from .models import Usuarios, User, Rol
 
 
 class UsuariosInline(admin.StackedInline):
@@ -26,3 +26,4 @@ admin.site.unregister(Group)
 admin.site.register(Group, GroupAdmin)
 admin.site.register(Permission)
 admin.site.register(User, UserAdmin)
+admin.site.register(Rol)
