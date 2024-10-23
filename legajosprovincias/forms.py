@@ -49,7 +49,7 @@ class PresupuestoForm(forms.ModelForm):
         model = Presupuesto
         fields = "__all__"
 
-class PresupuestoGastadoForm(forms.ModelForm):
+class HistorialPresupuestoForm(forms.ModelForm):
     """Formulario para el presupuesto gastado."""
     class Meta:
         model = HistorialPresupuesto
