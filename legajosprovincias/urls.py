@@ -18,7 +18,7 @@ from legajosprovincias.views import (
 )
 
 urlpatterns = [
-    path("legajosprovincias", login_required(LegajosProvinciasListView.as_view()), name="legajosprovincias_listar"),
+    path("legajosprovincias/listar", login_required(LegajosProvinciasListView.as_view()), name="legajosprovincias_listar"),
     path("legajosprovincias/crear", login_required(LegajosProvinciasCreateView.as_view()), name="legajosprovincias_crear"),
     path("legajosprovincias/detalle/<int:pk>", login_required(LegajosProvinciasDetailView.as_view()), name="legajosprovincias_detalle"),
     path("legajosprovincias/editar/<int:pk>", login_required(LegajosProvinciasUpdateView.as_view()), name="legajosprovincias_editar"),

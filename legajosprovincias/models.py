@@ -82,6 +82,7 @@ class LegajosProvincias(models.Model):
     
 class Presupuesto (models.Model):
     """Modelo para los presupuestos de los legajos."""
+    nombre = models.CharField(max_length=200)
     provincia = models.ForeignKey(LegajosProvincias, on_delete=models.DO_NOTHING)
     fecha_creacion = models.DateField()
     presupuesto_total = models.PositiveIntegerField()
@@ -101,14 +102,20 @@ class Presupuesto (models.Model):
 class Proyectos (models.Model):
     """Modelo para los proyectos de los legajos."""
     provincia = models.ForeignKey(LegajosProvincias, on_delete=models.DO_NOTHING)
-    proyecto = models.CharField(max_length=50)
+    proyecto_nombre = models.CharField(max_length=50)
+    proyecto_id = models.CharField(max_length=50)
     presupuesto = models.ForeignKey(Presupuesto, on_delete=models.DO_NOTHING)
+    presupuesto_linea_productivo = models.PositiveIntegerField()
+    presupuesto_linea_formativo = models.PositiveIntegerField()
+    presupuesto_linea_social = models.PositiveIntegerField()
+    fecha_creacion = models.DateField()
+    estado = models.CharField(max_length=50)
     class Meta:
         verbose_name = "Proyecto"
         verbose_name_plural = "Proyectos"
 
     def __str__(self):
-        return f"{self.provincia} - {self.proyecto}"
+        return f"{self.provincia} - {self.proyecto_nombre}"
     
 class DocumentacionArchivos (models.Model):
     """Modelo para los archivos de documentación de los legajos."""

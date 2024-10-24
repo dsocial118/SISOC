@@ -1,0 +1,97 @@
+{% extends "includes/base.html" %}
+{% load static %}
+{% block title %}Legajos Provincias{% endblock %}
+{% block titulo-pagina %}Legajos Provincias{% endblock %};
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right">
+  <li class="breadcrumb-item"><a href="{% url 'legajosprovincias_listar' %}">Legajos Provincias</a></li>
+  <li class="breadcrumb-item active">
+    {%if request.resolver_match.url_name == "legajosprovincias_editar" %}
+    Editar
+    {% else %}
+    Agregar
+    {% endif %}</li>
+</ol>
+{% endblock %};
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="row">
+  <div class="col">
+    <form class="needs-validation" novalidate method="POST">
+      <!-- Security token -->
+      {% csrf_token %}
+      <div class="card card-primary card-outline">
+        <div class="card-header">
+          <h3 class="card-title">
+            {%if request.resolver_match.url_name == "legajosprovincias_editar" %} 
+            Editar
+            {% else %}
+            Agregar
+            {% endif %}
+            Secretaría
+          </h3>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            {{form.nombre| as_crispy_field}}
+            {{form.abreviatura| as_crispy_field}}
+            {{form.poblacion| as_crispy_field}}
+            {{form.porcentaje_pobreza| as_crispy_field}}
+            {{form.poblacion_economicamente_activa| as_crispy_field}}
+            {{form.porcentaje_empleo| as_crispy_field}}
+            {{form.porcentaje_educacion_incompleta_obligatoria| as_crispy_field}}
+            {{form.porcentaje_primaria_incompleta| as_crispy_field}}
+            {{form.porcentaje_secundaria_incompleta| as_crispy_field}}
+            {{form.cantidad_de_beneficiarios_paz| as_crispy_field}}
+            {{form.porcentaje_paz| as_crispy_field}}
+            {{form.cantidad_de_expendientes| as_crispy_field}}
+            {{form.agroindustria_alimentos| as_crispy_field}}
+            {{form.agroindustria_ganaderia| as_crispy_field}}
+            {{form.agroindustria_agricultura_familiar| as_crispy_field}}
+            {{form.agroindustria_pesca| as_crispy_field}}
+            {{form.agroindustria_forestal| as_crispy_field}}
+            {{form.agroindustria_manufactura| as_crispy_field}}
+            {{form.oficios_carpinteria| as_crispy_field}}
+            {{form.oficios_electicista| as_crispy_field}}
+            {{form.oficios_mecanica| as_crispy_field}}
+            {{form.oficios_herreria| as_crispy_field}}
+            {{form.oficios_jardineria| as_crispy_field}}
+            {{form.oficios_gastronomico| as_crispy_field}}
+            {{form.oficios_logistica| as_crispy_field}}
+            {{form.oficios_textil| as_crispy_field}}
+            {{form.oficios_soldador| as_crispy_field}}
+            {{form.oficios_plomeria| as_crispy_field}}
+            {{form.oficios_albanileria| as_crispy_field}}
+            {{form.oficios_panaderia| as_crispy_field}}
+            {{form.oficios_auxiliar_salud| as_crispy_field}}
+            {{form.economia_circular_ener_renovable| as_crispy_field}}
+            {{form.economia_circular_reciclaje| as_crispy_field}}
+            {{form.tecnologia_software_soporte_tecnico| as_crispy_field}}
+            {{form.tecnologia_software_infraestructura_informatica| as_crispy_field}}
+            {{form.tecnologia_software_desarollo_software| as_crispy_field}}
+            {{form.tecnologia_software_instalaciones_tecnicas| as_crispy_field}}
+            {{form.tecnologia_software_infraestructura_digital| as_crispy_field}}
+            {{form.servicios_lamapara| as_crispy_field}}
+            {{form.servicios_transporte| as_crispy_field}}
+            {{form.servicios_cuidados| as_crispy_field}}
+            {{form.servicios_salud| as_crispy_field}}
+            {{form.servicios_educacion| as_crispy_field}}
+            {{form.energia| as_crispy_field}}
+            {{form.mineria| as_crispy_field}}
+            {{form.industria_petroquimica| as_crispy_field}}
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 mx-2">
+        <button type="submit" class="btn btn-primary mr-1">Confirmar</button>
+        <a href="{% url 'legajosprovincias_listar' %}" class="btn btn-secondary">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock content%}
+
+{% block customJS %}
+{% endblock customJS%}
