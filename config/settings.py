@@ -123,7 +123,7 @@ INSTALLED_APPS = [
     "silk",
     "rest_framework",
     "rest_framework_api_key",
-    "corsheaders,"
+    "corsheaders",
     # Aplicaciones propias
     "usuarios",
     "configuraciones",
