@@ -12,14 +12,10 @@ from configuraciones.models import (
     PlanesSociales,
     Programas,
     CategoriaAlertas,
+    Circuito,
 )
-from configuraciones.choices import CHOICE_CIRCUITOS
 
 from usuarios.models import Usuarios, User
-
-#Choices dimension educacion
-#class InstitucionesEducativas(models.TextChoices):
-#Fin de choices educacion
 
 #Modelo para choices de dimension educacion
 
@@ -679,8 +675,11 @@ class Legajos(models.Model):
         max_length=255, null=True, blank=True, verbose_name="Piso/Dpto (optativo)"
     )
     #TODO: choice viene de configuraciones.choices remplazar despues.
-    circuito = models.CharField(
-        max_length=255, choices=CHOICE_CIRCUITOS, null=True, blank=True
+    circuito = models.ForeignKey(
+        Circuito,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
     )
     torrepasillo = models.CharField(
         max_length=255, null=True, blank=True, verbose_name="Torre / Pasillo (optativo)"
