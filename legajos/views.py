@@ -18,7 +18,7 @@ from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from legajos.models import EstadoDerivacion, TipoVivienda, TipoConstruccionVivienda, TipoPisosVivienda, TipoPosesionVivienda, CantidadAmbientes, Inodoro, ContextoCasa, CondicionDe, Gas, TipoTechoVivienda, Agua, Desague,CentrosSalud,Frecuencia,EstadoNivelEducativo,AsisteEscuela,InstitucionesEducativas,TipoGestion,NivelEducativo,Grado,Turno,MotivoNivelIncompleto,AreaCurso,ModoContratacion,ActividadRealizada,DuracionTrabajo,AportesJubilacion,TiempoBusquedaLaboral,NoBusquedaLaboral,VinculoFamiliar, EstadoRelacion, Nacionalidad
-
+from configuraciones.models import Alertas, CategoriaAlertas, Organismos, Programas, Circuito, Dimension
 # Paginacion
 from django.views.generic import (
     CreateView,
@@ -29,9 +29,6 @@ from django.views.generic import (
     UpdateView,
     View,
 )
-
-from configuraciones.models import Alertas, CategoriaAlertas, Organismos, Programas
-from configuraciones.choices import CHOICE_CIRCUITOS, CHOICE_DIMENSIONES
 from legajos.choices import (
     EMOJIS_BANDERAS,
     VINCULO_MAP,
@@ -538,9 +535,9 @@ class LegajosDetailView(DetailView):
             ).distinct()
 
             dimensiones = {
-                key.strip(): value
-                for key, value in CHOICE_DIMENSIONES
-                if key is not None
+                str(dimension.id).strip(): dimension.dimension
+                for dimension in Dimension.objects.all()
+                if dimension.id is not None
             }
             todas_dimensiones = list(dimensiones.keys())
             datos_por_dimension = {
@@ -1015,7 +1012,7 @@ class LegajosDerivacionesBuscar(PermisosMixin, TemplateView):
             cache.set("sin_derivaciones", sin_derivaciones, 60)
 
         barrios = legajos.values_list("barrio")
-        circuitos = CHOICE_CIRCUITOS
+        circuitos = Circuito.objects.all().values_list('id', 'circuito')
         localidad = Nacionalidad.objects.all().values_list('id', 'nacionalidad')
         mostrar_resultados = False
         mostrar_btn_resetear = False
