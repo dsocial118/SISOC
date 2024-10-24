@@ -248,7 +248,9 @@ class Legajos(models.Model):
     fk_asentamiento = models.ForeignKey(
         LegajoAsentamientos, on_delete=models.SET_NULL, null=True, blank=True
     )
-
+    cuil = models.BigIntegerField(null=True, blank=True)
+    _id = models.CharField(max_length=255, null=True, blank=True)
+    cuit = models.BigIntegerField(null=True, blank=True)
     def __str__(self):
         return f"{self.apellido}, {self.nombre}"
 
