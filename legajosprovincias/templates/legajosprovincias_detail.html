@@ -29,101 +29,101 @@
     </div>
   
     <div class="col-12 ">
-      <div class="card">
-        <div class="card-body ">
-          <div class="table-responsive mailbox-messages">
-            <table class="table table-bordered table-striped projects tabladt">
-              <thead>
-                <tr>
-                    <th>Nombre</th>
-                    <th>Fecha</th>
-                    <th>Presupuesto total</th>
-                    <th>Linea Productiva</th>
-                    <th>Linea Formativa</th>
-                    <th>Linea Social</th>
-                    <th>Presupuesto Disponible</th>
-                    <th>Presupuesto en Revision</th>
-                    <th>Presupuesto Aprobado</th>
-                    <th style="width: 12%" class="notexport">
-                    </th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for o in presupuesto %}
-                    <tr>
-                        <td class="">{{ o.nombre }}</td>
-                        <td class="">{{ o.creado|date:'d/m/Y' }}</td>
-                        <td class=""> {{o.presupuesto_total}}</td>
-                        <td class="">{{o.presupuesto_linea_productivo}}</td>
-                        <td class="">{{o.presupuesto_linea_formativo}}</td>
-                        <td class="">{{o.presupuesto_linea_social}}</td>
-                        <td class="">{{o.presupuesto_disponible}}</td>
-                        <td class="">{{o.presupuesto_revision}}</td>
-                        <td class="">{{o.presupuesto_aprobado}}</td>
-                        <td class="project-actions text-right">
-                        <div class="btn-group" role="group">
-                            <a href="{% url 'legajosprovincias_presupuesto_editar' o.id %}" class="btn btn-primary btn-sm">Editar</a>
-                            <a href="{% url 'legajosprovincias_presupuesto_detalle' o.id %}" class="btn btn-secondary btn-sm">Ver</a>
-                            <a href="{% url 'legajosprovincias_presupuesto_borrar' o.id %}" class="btn btn-secondary btn-sm">Borrar</a>
-                        </div>
-                        </td>
-                    </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
+        <div class="card">
+            <div class="card-body ">
+                <div class="table-responsive mailbox-messages">
+                    <table class="table table-bordered table-striped projects tabladt">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Fecha</th>
+                                <th>Presupuesto total</th>
+                                <th>Linea Productiva</th>
+                                <th>Linea Formativa</th>
+                                <th>Linea Social</th>
+                                <th>Presupuesto Disponible</th>
+                                <th>Presupuesto en Revision</th>
+                                <th>Presupuesto Aprobado</th>
+                                <th style="width: 12%" class="notexport">
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for o in presupuesto %}
+                                <tr>
+                                    <td class="">{{ o.nombre }}</td>
+                                    <td class="">{{ o.creado|date:'d/m/Y' }}</td>
+                                    <td class=""> {{o.presupuesto_total}}</td>
+                                    <td class="">{{o.presupuesto_linea_productivo}}</td>
+                                    <td class="">{{o.presupuesto_linea_formativo}}</td>
+                                    <td class="">{{o.presupuesto_linea_social}}</td>
+                                    <td class="">{{o.presupuesto_disponible}}</td>
+                                    <td class="">{{o.presupuesto_revision}}</td>
+                                    <td class="">{{o.presupuesto_aprobado}}</td>
+                                    <td class="project-actions text-right">
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'legajosprovincias_presupuesto_editar' o.id %}" class="btn btn-primary btn-sm">Editar</a>
+                                        <a href="{% url 'legajosprovincias_presupuesto_detalle' o.id %}" class="btn btn-secondary btn-sm">Ver</a>
+                                        <a href="{% url 'legajosprovincias_presupuesto_borrar' o.id %}" class="btn btn-secondary btn-sm">Borrar</a>
+                                    </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
 </div>
 
-<div class="row"></div>
+<div class="row">
     <div class="col-12 my-3 mx-2 d-print-none">
       <a href="{% url 'legajosprovincias_editar' %}" class="btn btn-primary mr-1">Editar Legajo</a>
     </div>
   
     <div class="col-12 ">
-      <div class="card">
-        <div class="card-body ">
-          <div class="table-responsive mailbox-messages">
-            <table class="table table-bordered table-striped projects tabladt">
-              <thead>
-                <tr>
-                    <th>Nombre</th>
-                    <th>Fecha Creacion</th>
-                    <th>Presupuesto</th>
-                    <th>Linea Productiva</th>
-                    <th>Linea Formativa</th>
-                    <th>Linea Social</th>
-                    <th>Presupuesto Disponible</th>
-                    <th>Presupuesto en Revision</th>
-                    <th>Presupuesto Aprobado</th>
-                    <th style="width: 12%" class="notexport">
-                    </th>
-                </tr>
-              </thead>
-              <tbody>
-                    {% for o in proyecto %}
-                    <tr>
-                        <td class="">{{ o.proyect_nombre }}</td>
-                        <td class="">{{ o.fecha_creacion|date:'d/m/Y' }}</td>
-                        <td class=""> {{o.presupuesto}}</td>
-                        <td class="">{{o.presupuesto_linea_productivo}}</td>
-                        <td class="">{{o.presupuesto_linea_formativo}}</td>
-                        <td class="">{{o.presupuesto_linea_social}}</td>
-                        <td class="">{{o.estado}}</td>
-                        <td class="project-actions text-right">
-                        <div class="btn-group" role="group">
-                            <a href="{% url 'legajosprovincias_proyectos_detalle' o.proyecto_id %}" class="btn btn-secondary btn-sm">Ver</a>
-                        </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-              </tbody>
-            </table>
-          </div>
+        <div class="card">
+            <div class="card-body ">
+                <div class="table-responsive mailbox-messages">
+                    <table class="table table-bordered table-striped projects tabladt">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Fecha Creacion</th>
+                                <th>Presupuesto</th>
+                                <th>Linea Productiva</th>
+                                <th>Linea Formativa</th>
+                                <th>Linea Social</th>
+                                <th>Presupuesto Disponible</th>
+                                <th>Presupuesto en Revision</th>
+                                <th>Presupuesto Aprobado</th>
+                                <th style="width: 12%" class="notexport">
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                                {% for o in proyecto %}
+                                <tr>
+                                    <td class="">{{ o.proyect_nombre }}</td>
+                                    <td class="">{{ o.fecha_creacion|date:'d/m/Y' }}</td>
+                                    <td class=""> {{o.presupuesto}}</td>
+                                    <td class="">{{o.presupuesto_linea_productivo}}</td>
+                                    <td class="">{{o.presupuesto_linea_formativo}}</td>
+                                    <td class="">{{o.presupuesto_linea_social}}</td>
+                                    <td class="">{{o.estado}}</td>
+                                    <td class="project-actions text-right">
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'legajosprovincias_proyectos_detalle' o.proyecto_id %}" class="btn btn-secondary btn-sm">Ver</a>
+                                    </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
 </div>
 {% endblock content %}
