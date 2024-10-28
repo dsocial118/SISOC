@@ -805,7 +805,7 @@ class LegajosGrupoFamiliarCreateView(CreateView):
         vinculo_instance = VinculoFamiliar.objects.get(vinculo=vinculo_data["vinculo"])
         #vinculo_inverso_instance = VinculoFamiliar.objects.get(
             #vinculo=vinculo_data["vinculo_inverso"])
-        estado_relacion_instance = EstadoRelacion.objects.get(estado=estado_relacion)
+        estado_relacion_instance = EstadoRelacion.objects.get(pk=estado_relacion)
         # crea la relacion de grupo familiar
         legajo_principal = Legajos.objects.get(id=pk)
         try:
@@ -928,7 +928,7 @@ class CreateGrupoFamiliar(View):
             return JsonResponse({"error": "VínculoFamiliar no encontrado"}, status=400)
 
         try:
-            estado_relacion_instance = EstadoRelacion.objects.get(estado=estado_relacion)
+            estado_relacion_instance = EstadoRelacion.objects.get(pk=estado_relacion)
         except EstadoRelacion.DoesNotExist:
             return JsonResponse({"error": "EstadoRelacion no encontrado"}, status=400)
 
@@ -1893,7 +1893,7 @@ class LegajosGrupoHogarCreateView(CreateView):
         #   return messages.error(self.request, "Vinculo inválido.")
 
         # crea la relacion de grupo familiar
-        estado_relacion_instance = EstadoRelacion.objects.get(estado=estado_relacion)
+        estado_relacion_instance = EstadoRelacion.objects.get(pk=estado_relacion)
 
         legajo_principal = Legajos.objects.get(id=pk)
         try:
@@ -2028,12 +2028,11 @@ class CreateGrupoHogar(View):
         fk_legajo_1 = request.GET.get("fk_legajo_1", None)
         fk_legajo_2 = request.GET.get("fk_legajo_2", None)
         estado_relacion = request.GET.get("estado_relacion", None)
-        conviven = request.GET.get("conviven", None)
-        cuidador_principal = request.GET.get("cuidador_principal", None)
+        
         obj = None
 
         try:
-            estado_relacion_instance = EstadoRelacion.objects.get(estado=estado_relacion)
+            estado_relacion_instance = EstadoRelacion.objects.get(pk=estado_relacion)
         except EstadoRelacion.DoesNotExist:
             return JsonResponse({"error": "EstadoRelacion no encontrado"}, status=400)
 
@@ -2041,8 +2040,6 @@ class CreateGrupoHogar(View):
             fk_legajo_1Hogar_id=fk_legajo_1,
             fk_legajo_2Hogar_id=fk_legajo_2,
             estado_relacion=estado_relacion_instance,
-            conviven=conviven,
-            cuidador_principal=cuidador_principal,
         )
 
         familiar = {
@@ -2055,7 +2052,7 @@ class CreateGrupoHogar(View):
             "foto": (
                 obj.fk_legajo_2Hogar.foto.url if obj.fk_legajo_2Hogar.foto else None
             ),
-            "cuidador_principal": obj.cuidador_principal,
+            
         }
         data = {
             "tipo_mensaje": "success",
