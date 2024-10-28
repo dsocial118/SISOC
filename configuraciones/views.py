@@ -48,7 +48,10 @@ from .forms import (
 
 # region ############################################################### Secretarías
 
+from django.shortcuts import render
 
+def error_500_view(request):
+    return render(request, '500.html')
 class SecretariasListView(PermisosMixin, ListView):
     permission_required = [
         "usuarios.rol_admin",
