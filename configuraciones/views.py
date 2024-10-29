@@ -3,48 +3,20 @@ from django.contrib.messages.views import SuccessMessageMixin
 from django.db.models import Q
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
-from django.views.generic import (
-    CreateView,
-    DeleteView,
-    DetailView,
-    ListView,
-    UpdateView,
-)
+from django.views.generic import (CreateView, DeleteView, DetailView, ListView,
+                                  UpdateView)
 
 from usuarios.mixins import PermisosMixin
 
-from .forms import (
-    Secretarias,
-    SecretariasForm,
-    Subsecretarias,
-    SubsecretariasForm,
-    Organismos,
-    OrganismosForm,
-    Programas,
-    ProgramasForm,
-    PlanesSociales,
-    PlanesSocialesForm,
-    AgentesExternos,
-    AgentesExternosForm,
-    GruposDestinatarios,
-    GruposDestinatariosForm,
-    CategoriaAlertas,
-    CategoriaAlertasForm,
-    Alertas,
-    AlertasForm,
-    Equipos,
-    EquiposForm,
-    Acciones,
-    AccionesForm,
-    Criterios,
-    CriteriosForm,
-    Indices,
-    IndicesForm,
-    IndiceCriterios,
-    IndicesFormset,
-    Vacantes,
-    VacantesForm,
-)
+from .forms import (Acciones, AccionesForm, AgentesExternos,
+                    AgentesExternosForm, Alertas, AlertasForm,
+                    CategoriaAlertas, CategoriaAlertasForm, Criterios,
+                    CriteriosForm, Equipos, EquiposForm, GruposDestinatarios,
+                    GruposDestinatariosForm, IndiceCriterios, Indices,
+                    IndicesForm, IndicesFormset, Organismos, OrganismosForm,
+                    PlanesSociales, PlanesSocialesForm, Programas,
+                    ProgramasForm, Secretarias, SecretariasForm,
+                    Subsecretarias, SubsecretariasForm, Vacantes, VacantesForm)
 
 # region ############################################################### Secretarías
 
