@@ -1,10 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.contrib.auth.views import (
-    LoginView,
-    PasswordChangeView,
-    PasswordResetView,
-)
+from django.contrib.auth.models import Group, User
+from django.contrib.auth.views import LoginView, PasswordChangeView, PasswordResetView
 from django.contrib.messages.views import SuccessMessageMixin
 from django.core.files.base import ContentFile
 from django.db.models import Q
@@ -13,7 +10,6 @@ from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
-from django.contrib.auth.models import Group, User
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -34,7 +30,6 @@ from usuarios.models import Usuarios
 from usuarios.utils import recortar_imagen
 
 from .mixins import PermisosMixin
-
 
 ROL_ADMIN = "usuarios.rol_admin"
 ROL_OBSERVADOR = "usuarios.rol_observador"

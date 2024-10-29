@@ -1,0 +1,30 @@
+[
+    {
+        "model": "legajos.tipoconstruccionvivienda",
+        "pk": 1,
+        "fields": {
+            "tipo": "Material"
+        }
+    },
+    {
+        "model": "legajos.tipoconstruccionvivienda",
+        "pk": 2,
+        "fields": {
+            "tipo": "Mixta (chapa y madera)"
+        }
+    },
+    {
+        "model": "legajos.tipoconstruccionvivienda",
+        "pk": 3,
+        "fields": {
+            "tipo": "Casilla (otros materiales)"
+        }
+    },
+    {
+        "model": "legajos.tipoconstruccionvivienda",
+        "pk": 4,
+        "fields": {
+            "tipo": "Otro"
+        }
+    }
+]
