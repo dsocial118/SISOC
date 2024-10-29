@@ -1,13 +1,12 @@
 {% load static %}
 {% block title %}{% endblock %}
-
 <!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Error 500</title>
-    <style>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Error 500</title>
+        <style>
         /* Estructura y estilos de la página de error */
         body {
             background-color: #2d3e50; /* Fondo oscuro */
@@ -93,27 +92,29 @@
         .btn-search:hover {
             background-color: #e0a800;
         }
-    </style>
-</head>
-<body>
-    <div class="error-page align-items-center">
-        <h2 class="headline ">500</h2>
-        <h3 class="text-danger">
-            <i class="fas fa-exclamation-triangle"></i> ¡Ups! Algo salió mal.
-        </h3>
-        <p>Trabajaremos para solucionarlo de inmediato..</p>
-        <p>Mientras tanto, puede <a href="{% url 'dashboard' %}">volver al inicio</a> o intentar usar el buscador de menú.</p>
-        <form class="search-form" method="GET" action="{% url 'busqueda_menu' %}">
-            <div class="input-group">
-                <input type="text"
-                       name="punto_menu"
-                       class="form-control"
-                       placeholder="Buscar" />
-                <button type="submit" name="submit" class="btn-search">
-                    <i class="fas fa-search"></i>
-                </button>
-            </div>
-        </form>
-    </div>
-</body>
+        </style>
+    </head>
+    <body>
+        <div class="error-page align-items-center">
+            <h2 class="headline ">500</h2>
+            <h3 class="text-danger">
+                <i class="fas fa-exclamation-triangle"></i> ¡Ups! Algo salió mal.
+            </h3>
+            <p>Trabajaremos para solucionarlo de inmediato..</p>
+            <p>
+                Mientras tanto, puede <a href="{% url 'dashboard' %}">volver al inicio</a> o intentar usar el buscador de menú.
+            </p>
+            <form class="search-form" method="GET" action="{% url 'busqueda_menu' %}">
+                <div class="input-group">
+                    <input type="text"
+                           name="punto_menu"
+                           class="form-control"
+                           placeholder="Buscar" />
+                    <button type="submit" name="submit" class="btn-search">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </body>
 </html>
