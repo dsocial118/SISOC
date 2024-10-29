@@ -1,0 +1,30 @@
+[
+    {
+        "model": "configuraciones.impacto",
+        "pk": 1,
+        "fields": {
+            "impacto": ""
+        }
+    },
+    {
+        "model": "configuraciones.impacto",
+        "pk": 2,
+        "fields": {
+            "impacto": "BAJO"
+        }
+    },
+    {
+        "model": "configuraciones.impacto",
+        "pk": 3,
+        "fields": {
+            "impacto": "MEDIO"
+        }
+    },
+    {
+        "model": "configuraciones.impacto",
+        "pk": 4,
+        "fields": {
+            "impacto": "ALTO"
+        }
+    }
+]

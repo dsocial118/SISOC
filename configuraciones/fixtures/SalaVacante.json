@@ -1,0 +1,30 @@
+[
+    {
+        "model": "configuraciones.salavacante",
+        "pk": 1,
+        "fields": {
+            "sala": ""
+        }
+    },
+    {
+        "model": "configuraciones.salavacante",
+        "pk": 2,
+        "fields": {
+            "sala": "Bebes"
+        }
+    },
+    {
+        "model": "configuraciones.salavacante",
+        "pk": 3,
+        "fields": {
+            "sala": "2 años"
+        }
+    },
+    {
+        "model": "configuraciones.salavacante",
+        "pk": 4,
+        "fields": {
+            "sala": "3 años"
+        }
+    }
+]

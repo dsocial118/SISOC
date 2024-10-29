@@ -1,0 +1,23 @@
+[
+    {
+        "model": "legajos.estadoniveleducativo",
+        "pk": 1,
+        "fields": {
+            "estado": "En curso"
+        }
+    },
+    {
+        "model": "legajos.estadoniveleducativo",
+        "pk": 2,
+        "fields": {
+            "estado": "Incompleto"
+        }
+    },
+    {
+        "model": "legajos.estadoniveleducativo",
+        "pk": 3,
+        "fields": {
+            "estado": "Completo"
+        }
+    }
+]

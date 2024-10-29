@@ -47,9 +47,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Estados de formulario
   let asisteEscuelaFormEstados = [
-    { valor: "a", mostrar: [ID_MAX_NIVEL, ID_DATOS_INSTITUCION], ocultar: [ID_ESTADO_NIVEL, ID_INCOMPLETO_FORM, ID_SIN_EDU_FORMAL] },
-    { valor: "b", mostrar: [ID_MAX_NIVEL, ID_ESTADO_NIVEL, ID_DATOS_INSTITUCION], ocultar: [ID_SIN_EDU_FORMAL] },
-    { valor: "c", mostrar: [ID_SIN_EDU_FORMAL], ocultar: [ID_MAX_NIVEL, ID_ESTADO_NIVEL, ID_DATOS_INSTITUCION] }
+    { valor: "1", mostrar: [ID_MAX_NIVEL, ID_DATOS_INSTITUCION], ocultar: [ID_ESTADO_NIVEL, ID_INCOMPLETO_FORM, ID_SIN_EDU_FORMAL] },
+    { valor: "2", mostrar: [ID_MAX_NIVEL, ID_ESTADO_NIVEL, ID_DATOS_INSTITUCION], ocultar: [ID_SIN_EDU_FORMAL] },
+    { valor: "3", mostrar: [ID_SIN_EDU_FORMAL], ocultar: [ID_MAX_NIVEL, ID_ESTADO_NIVEL, ID_DATOS_INSTITUCION] }
   ];
 
   let estadoNivelFormEstados = [
@@ -63,8 +63,8 @@ document.addEventListener("DOMContentLoaded", function () {
   ];
 
   let hayBanioFormEstados = [
-    { valor: 'No tiene inodoro', mostrar: [], ocultar: [ID_DESAGUE_BANIO] },
-    { valor: 'No tiene baño', mostrar: [], ocultar: [ID_DESAGUE_BANIO] },
+    { valor: '3', mostrar: [], ocultar: [ID_DESAGUE_BANIO] },
+    { valor: '4', mostrar: [], ocultar: [ID_DESAGUE_BANIO] },
     { valor: null, mostrar: [ID_DESAGUE_BANIO], ocultar: [] }
   ];
 
@@ -115,7 +115,7 @@ document.addEventListener("DOMContentLoaded", function () {
     let estadoNivelValue =
       document.querySelector("#id_estado_nivel").selectedIndex;
     let puntaje = maxNivelValue * estadoNivelValue;
-    if (asisteEscuelaForm.value != "a" && puntaje < PUNTAJE_MINIMO) {
+    if (asisteEscuelaForm.value != "1" && puntaje < PUNTAJE_MINIMO) {
       FormUtils.mostrar(ID_INCOMPLETO_FORM, true);
     } else {
       FormUtils.mostrar(ID_INCOMPLETO_FORM, false);
@@ -135,7 +135,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Si asisteEscuelaForm es "a", estadoNivel se oculta y por default queda su valor en "En curso"
 
   function setEstadoNivelEnCurso() {
-    if (asisteEscuelaForm.value === "a") {
+    if (asisteEscuelaForm.value === "1") {
       estadoNivelForm.selectedIndex = 1;
     } else {
       for (let i = 0; i < estadoNivelForm.options.length; i++) {

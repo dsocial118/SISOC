@@ -1,0 +1,37 @@
+[
+    {
+        "model": "legajos.contextocasa",
+        "pk": 1,
+        "fields": {
+            "contexto": "En una zona inundable (en el último año)"
+        }
+    },
+    {
+        "model": "legajos.contextocasa",
+        "pk": 2,
+        "fields": {
+            "contexto": "Cerca de basurales (a 3 cuadras o menos)"
+        }
+    },
+    {
+        "model": "legajos.contextocasa",
+        "pk": 3,
+        "fields": {
+            "contexto": "En una cuadra con alumbrado público"
+        }
+    },
+    {
+        "model": "legajos.contextocasa",
+        "pk": 4,
+        "fields": {
+            "contexto": "En una cuadra pavimentada o empedrada"
+        }
+    },
+    {
+        "model": "legajos.contextocasa",
+        "pk": 5,
+        "fields": {
+            "contexto": "En una cuadra con servicio regular de recolección de residuos"
+        }
+    }
+]
