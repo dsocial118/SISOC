@@ -1,0 +1,44 @@
+[
+    {
+        "model": "legajos.tipoenfermedad",
+        "pk": 1,
+        "fields": {
+            "tipo": "Metabólica"
+        }
+    },
+    {
+        "model": "legajos.tipoenfermedad",
+        "pk": 2,
+        "fields": {
+            "tipo": "Cardíaca"
+        }
+    },
+    {
+        "model": "legajos.tipoenfermedad",
+        "pk": 3,
+        "fields": {
+            "tipo": "Respiratoria"
+        }
+    },
+    {
+        "model": "legajos.tipoenfermedad",
+        "pk": 4,
+        "fields": {
+            "tipo": "Cerebro Vascular"
+        }
+    },
+    {
+        "model": "legajos.tipoenfermedad",
+        "pk": 5,
+        "fields": {
+            "tipo": "Tumoral"
+        }
+    },
+    {
+        "model": "legajos.tipoenfermedad",
+        "pk": 6,
+        "fields": {
+            "tipo": "Otra"
+        }
+    }
+]

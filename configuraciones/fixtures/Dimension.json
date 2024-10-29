@@ -1,0 +1,51 @@
+[
+    {
+        "model": "configuraciones.dimension",
+        "pk": 1,
+        "fields": {
+            "dimension": ""
+        }
+    },
+    {
+        "model": "configuraciones.dimension",
+        "pk": 2,
+        "fields": {
+            "dimension": "Familia"
+        }
+    },
+    {
+        "model": "configuraciones.dimension",
+        "pk": 3,
+        "fields": {
+            "dimension": "Vivienda"
+        }
+    },
+    {
+        "model": "configuraciones.dimension",
+        "pk": 4,
+        "fields": {
+            "dimension": "Salud"
+        }
+    },
+    {
+        "model": "configuraciones.dimension",
+        "pk": 5,
+        "fields": {
+            "dimension": "Economía"
+        }
+    },
+    {
+        "model": "configuraciones.dimension",
+        "pk": 6,
+        "fields": {
+            "dimension": "Educación"
+        }
+    },
+    {
+        "model": "configuraciones.dimension",
+        "pk": 7,
+        "fields": {
+            "dimension": "Trabajo"
+        }
+    }
+]

@@ -1,24 +1,24 @@
 from django import forms  # pylint: disable=too-many-lines
 from django.forms.models import inlineformset_factory
 
-from configuraciones.choices import CHOICE_CRITERIO_ALERTA
+from configuraciones.models import CriterioAlerta
 
 from .models import (
-    Secretarias,
-    Subsecretarias,
-    Programas,
-    Organismos,
-    PlanesSociales,
-    AgentesExternos,
-    GruposDestinatarios,
-    CategoriaAlertas,
-    Alertas,
-    Equipos,
     Acciones,
+    AgentesExternos,
+    Alertas,
+    CategoriaAlertas,
     Criterios,
-    Vacantes,
+    Equipos,
+    GruposDestinatarios,
     IndiceCriterios,
     Indices,
+    Organismos,
+    PlanesSociales,
+    Programas,
+    Secretarias,
+    Subsecretarias,
+    Vacantes,
 )
 
 
@@ -175,9 +175,17 @@ class AlertasForm(forms.ModelForm):
         exclude = ()
         widgets = {
             "estado": forms.Select(choices=[(True, "Activo"), (False, "Inactivo")]),
-            "gravedad": forms.Select(choices=CHOICE_CRITERIO_ALERTA),
+            "gravedad": forms.Select(),
         }
         labels = {"fk_categoria": "Categoría"}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["gravedad"].queryset = CriterioAlerta.objects.all()
+        self.fields["gravedad"].widget.choices = [
+            (criterio.id, criterio.criterio)
+            for criterio in CriterioAlerta.objects.all()
+        ]
 
 
 class EquiposForm(forms.ModelForm):

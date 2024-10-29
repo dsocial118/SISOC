@@ -1,0 +1,58 @@
+[
+    {
+        "model": "legajos.tipoayudahogar",
+        "pk": 1,
+        "fields": {
+            "tipo": "Comida/vianda de comedor comunitario"
+        }
+    },
+    {
+        "model": "legajos.tipoayudahogar",
+        "pk": 2,
+        "fields": {
+            "tipo": "Merienda o desayuno de un merendero / comedor comunitario"
+        }
+    },
+    {
+        "model": "legajos.tipoayudahogar",
+        "pk": 3,
+        "fields": {
+            "tipo": "Comida/ vianda de comedor escolar"
+        }
+    },
+    {
+        "model": "legajos.tipoayudahogar",
+        "pk": 4,
+        "fields": {
+            "tipo": "Merienda o desayuno de un comedor escolar"
+        }
+    },
+    {
+        "model": "legajos.tipoayudahogar",
+        "pk": 5,
+        "fields": {
+            "tipo": "Libros y/o útiles escolares"
+        }
+    },
+    {
+        "model": "legajos.tipoayudahogar",
+        "pk": 6,
+        "fields": {
+            "tipo": "Comida/vianda de comedor comunitario"
+        }
+    },
+    {
+        "model": "legajos.tipoayudahogar",
+        "pk": 7,
+        "fields": {
+            "tipo": "Ropa"
+        }
+    },
+    {
+        "model": "legajos.tipoayudahogar",
+        "pk": 8,
+        "fields": {
+            "tipo": "Medicamentos"
+        }
+    }
+]
