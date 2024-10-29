@@ -6,6 +6,7 @@ from django.urls import reverse
 
 # region------- EXTENSION DEL MODELO USER---------------------------------------------------------------------
 
+
 class Rol(models.Model):
     rol = models.CharField(max_length=255)
 
@@ -16,7 +17,7 @@ class Rol(models.Model):
         verbose_name = "Rol"
         verbose_name_plural = "Roles"
 
-      
+
 # Agrego extrafields telefono y programa
 class Usuarios(models.Model):
     """

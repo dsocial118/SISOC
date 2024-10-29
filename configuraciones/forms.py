@@ -181,8 +181,11 @@ class AlertasForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['gravedad'].queryset = CriterioAlerta.objects.all()
-        self.fields['gravedad'].widget.choices = [(criterio.id, criterio.criterio) for criterio in CriterioAlerta.objects.all()]
+        self.fields["gravedad"].queryset = CriterioAlerta.objects.all()
+        self.fields["gravedad"].widget.choices = [
+            (criterio.id, criterio.criterio)
+            for criterio in CriterioAlerta.objects.all()
+        ]
 
 
 class EquiposForm(forms.ModelForm):
