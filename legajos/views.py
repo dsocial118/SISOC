@@ -1,9 +1,8 @@
 import calendar  # pylint: disable=too-many-lines
 import json
-import logging
-
 # Configurar el locale para usar el idioma español
 import locale
+import logging
 from datetime import date, datetime, timedelta
 
 from django.contrib import messages
@@ -11,114 +10,50 @@ from django.contrib.messages.views import SuccessMessageMixin
 from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-from django.db import transaction
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Case, IntegerField, Q, Value, When
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
-from legajos.models import (
-    EstadoDerivacion,
-    TipoVivienda,
-    TipoConstruccionVivienda,
-    TipoPisosVivienda,
-    TipoPosesionVivienda,
-    CantidadAmbientes,
-    Inodoro,
-    ContextoCasa,
-    CondicionDe,
-    Gas,
-    TipoTechoVivienda,
-    Agua,
-    Desague,
-    CentrosSalud,
-    Frecuencia,
-    EstadoNivelEducativo,
-    AsisteEscuela,
-    InstitucionesEducativas,
-    TipoGestion,
-    NivelEducativo,
-    Grado,
-    Turno,
-    MotivoNivelIncompleto,
-    AreaCurso,
-    ModoContratacion,
-    ActividadRealizada,
-    DuracionTrabajo,
-    AportesJubilacion,
-    TiempoBusquedaLaboral,
-    NoBusquedaLaboral,
-    VinculoFamiliar,
-    EstadoRelacion,
-    Nacionalidad,
-)
-from configuraciones.models import (
-    Alertas,
-    CategoriaAlertas,
-    Organismos,
-    Programas,
-    Circuito,
-    Dimension,
-)
-
 # Paginacion
-from django.views.generic import (
-    CreateView,
-    DeleteView,
-    DetailView,
-    ListView,
-    TemplateView,
-    UpdateView,
-    View,
-)
-from legajos.choices import (
-    EMOJIS_BANDERAS,
-)
-from legajos.forms import (
-    DimensionEducacionForm,
-    DimensionSaludForm,
-    DimensionViviendaForm,
-    LegajoGrupoHogarForm,
-    LegajosAlertasForm,
-    LegajosArchivosForm,
-    LegajosDerivacionesForm,
-    DimensionFamiliaForm,
-    DimensionEconomiaForm,
-    DimensionTrabajoForm,
-    LegajosForm,
-    LegajosUpdateForm,
-    NuevoLegajoFamiliarForm,
-    IntervencionForm,
-    LlamadoForm,
-)
-from legajos.models import (
-    DimensionFamilia,
-    DimensionVivienda,
-    DimensionSalud,
-    DimensionEconomia,
-    DimensionEducacion,
-    DimensionTrabajo,
-    HistorialLegajoAlertas,
-    LegajosDerivaciones,
-    Legajos,
-    LegajoGrupoFamiliar,
-    LegajoAlertas,
-    LegajoGrupoHogar,
-    LegajosArchivos,
-    LegajoProvincias,
-    LegajoLocalidad,
-    LegajoMunicipio,
-    LegajoDepartamento,
-    LegajoAsentamientos,
-    Intervencion,
-    Llamado,
-    SubTipoLlamado,
-    SubIntervencion,
-    TipoLlamado,
-)
+from django.views.generic import (CreateView, DeleteView, DetailView, ListView,
+                                  TemplateView, UpdateView, View)
+
+from configuraciones.models import (Alertas, CategoriaAlertas, Circuito,
+                                    Dimension, Organismos, Programas)
+from legajos.choices import EMOJIS_BANDERAS
+from legajos.forms import (DimensionEconomiaForm, DimensionEducacionForm,
+                           DimensionFamiliaForm, DimensionSaludForm,
+                           DimensionTrabajoForm, DimensionViviendaForm,
+                           IntervencionForm, LegajoGrupoHogarForm,
+                           LegajosAlertasForm, LegajosArchivosForm,
+                           LegajosDerivacionesForm, LegajosForm,
+                           LegajosUpdateForm, LlamadoForm,
+                           NuevoLegajoFamiliarForm)
+from legajos.models import (ActividadRealizada, Agua, AportesJubilacion,
+                            AreaCurso, AsisteEscuela, CantidadAmbientes,
+                            CentrosSalud, CondicionDe, ContextoCasa, Desague,
+                            DimensionEconomia, DimensionEducacion,
+                            DimensionFamilia, DimensionSalud, DimensionTrabajo,
+                            DimensionVivienda, DuracionTrabajo,
+                            EstadoDerivacion, EstadoNivelEducativo,
+                            EstadoRelacion, Frecuencia, Gas, Grado,
+                            HistorialLegajoAlertas, Inodoro,
+                            InstitucionesEducativas, Intervencion,
+                            LegajoAlertas, LegajoAsentamientos,
+                            LegajoDepartamento, LegajoGrupoFamiliar,
+                            LegajoGrupoHogar, LegajoLocalidad, LegajoMunicipio,
+                            LegajoProvincias, Legajos, LegajosArchivos,
+                            LegajosDerivaciones, Llamado, ModoContratacion,
+                            MotivoNivelIncompleto, Nacionalidad,
+                            NivelEducativo, NoBusquedaLaboral, SubIntervencion,
+                            SubTipoLlamado, TiempoBusquedaLaboral,
+                            TipoConstruccionVivienda, TipoGestion, TipoLlamado,
+                            TipoPisosVivienda, TipoPosesionVivienda,
+                            TipoTechoVivienda, TipoVivienda, Turno,
+                            VinculoFamiliar)
 from usuarios.mixins import PermisosMixin
 from usuarios.utils import recortar_imagen
-
 
 locale.setlocale(locale.LC_ALL, "es_AR.UTF-8")
 
