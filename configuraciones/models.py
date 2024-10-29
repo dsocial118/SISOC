@@ -6,6 +6,7 @@ from usuarios.models import Usuarios
 
 # -------------------------------CONFIGURACIONES GENERALES (se usan en todo el proyecto)--------------------------------------
 
+
 # Modelos para los choices de los formularios
 class TipoOrganismo(models.Model):
     tipo = models.CharField(max_length=255)
@@ -138,7 +139,8 @@ class CriterioAlerta(models.Model):
         verbose_name = "Criterio de Alerta"
         verbose_name_plural = "Criterios de Alerta"
 
-#Fin de los modelos para los choices de los formularios
+
+# Fin de los modelos para los choices de los formularios
 class Secretarias(models.Model):
     nombre = models.CharField(max_length=255, unique=True)
     observaciones = models.CharField(max_length=500, null=True, blank=True)
@@ -207,12 +209,16 @@ class Programas(models.Model):
 
 class Organismos(models.Model):
     nombre = models.CharField(max_length=255, unique=True)
-    tipo = models.ForeignKey(TipoOrganismo, on_delete=models.CASCADE, null=True, blank=True)
+    tipo = models.ForeignKey(
+        TipoOrganismo, on_delete=models.CASCADE, null=True, blank=True
+    )
     calle = models.CharField(max_length=255, null=True, blank=True)
     altura = models.IntegerField(null=True, blank=True)
     piso = models.CharField(max_length=255, null=True, blank=True)
     barrio = models.ForeignKey(Barrio, on_delete=models.CASCADE, null=True, blank=True)
-    localidad = models.ForeignKey(Localidad, on_delete=models.CASCADE, null=True, blank=True)
+    localidad = models.ForeignKey(
+        Localidad, on_delete=models.CASCADE, null=True, blank=True
+    )
     telefono = models.IntegerField(null=True, blank=True)
     email = models.EmailField(null=True, blank=True)
     estado = models.BooleanField(default=True)
@@ -235,7 +241,9 @@ class Organismos(models.Model):
 
 class PlanesSociales(models.Model):
     nombre = models.CharField(max_length=255, unique=True)
-    jurisdiccion = models.ForeignKey(Jurisdiccion, on_delete=models.CASCADE, null=True, blank=True)
+    jurisdiccion = models.ForeignKey(
+        Jurisdiccion, on_delete=models.CASCADE, null=True, blank=True
+    )
     estado = models.BooleanField(default=True)
     observaciones = models.CharField(max_length=500, null=True, blank=True)
 
@@ -363,7 +371,9 @@ class CategoriaAlertas(models.Model):
     """
 
     nombre = models.CharField(max_length=255, unique=True)
-    dimension = models.ForeignKey(Dimension, on_delete=models.CASCADE, null=True, blank=True)
+    dimension = models.ForeignKey(
+        Dimension, on_delete=models.CASCADE, null=True, blank=True
+    )
     estado = models.BooleanField(default=True)
 
     def __str__(self):
@@ -446,7 +456,7 @@ class Acciones(models.Model):
         null=True,
         blank=True,
         default=None,
-        verbose_name="Dimensión"
+        verbose_name="Dimensión",
     )
     observaciones = models.CharField(max_length=500, null=True, blank=True)
 
@@ -477,7 +487,7 @@ class Criterios(models.Model):
         null=True,
         blank=True,
         default=None,
-        verbose_name="Dimensión"
+        verbose_name="Dimensión",
     )
     fk_sujeto = models.ForeignKey(Sujetos, on_delete=models.CASCADE)
     permite_potencial = models.BooleanField(default=False)

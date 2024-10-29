@@ -17,7 +17,8 @@ from configuraciones.models import (
 
 from usuarios.models import Usuarios, User
 
-#Modelo para choices de dimension educacion
+# Modelo para choices de dimension educacion
+
 
 class NivelEducativo(models.Model):
     nivel = models.CharField(max_length=255)
@@ -29,6 +30,7 @@ class NivelEducativo(models.Model):
         verbose_name = "Nivel Educativo"
         verbose_name_plural = "Niveles Educativos"
 
+
 class EstadoNivelEducativo(models.Model):
     estado = models.CharField(max_length=255)
 
@@ -38,6 +40,7 @@ class EstadoNivelEducativo(models.Model):
     class Meta:
         verbose_name = "Estado Nivel Educativo"
         verbose_name_plural = "Estados Niveles Educativos"
+
 
 class AsisteEscuela(models.Model):
     asiste = models.CharField(max_length=255)
@@ -49,6 +52,7 @@ class AsisteEscuela(models.Model):
         verbose_name = "Asiste Escuela"
         verbose_name_plural = "Asiste Escuelas"
 
+
 class EstadoEducativo(models.Model):
     estado = models.CharField(max_length=255)
 
@@ -58,6 +62,7 @@ class EstadoEducativo(models.Model):
     class Meta:
         verbose_name = "Estado Educativo"
         verbose_name_plural = "Estados Educativos"
+
 
 class MotivoNivelIncompleto(models.Model):
     motivo = models.CharField(max_length=255)
@@ -69,6 +74,7 @@ class MotivoNivelIncompleto(models.Model):
         verbose_name = "Motivo Nivel Incompleto"
         verbose_name_plural = "Motivos Niveles Incompletos"
 
+
 class AreaCurso(models.Model):
     area = models.CharField(max_length=255)
 
@@ -78,6 +84,7 @@ class AreaCurso(models.Model):
     class Meta:
         verbose_name = "Area Curso"
         verbose_name_plural = "Areas Cursos"
+
 
 class TipoGestion(models.Model):
     gestion = models.CharField(max_length=255)
@@ -89,6 +96,7 @@ class TipoGestion(models.Model):
         verbose_name = "Tipo Gestion"
         verbose_name_plural = "Tipos Gestion"
 
+
 class Grado(models.Model):
     grado = models.CharField(max_length=255)
 
@@ -98,6 +106,7 @@ class Grado(models.Model):
     class Meta:
         verbose_name = "Grado"
         verbose_name_plural = "Grados"
+
 
 class Turno(models.Model):
     turno = models.CharField(max_length=255)
@@ -109,9 +118,12 @@ class Turno(models.Model):
         verbose_name = "Turno"
         verbose_name_plural = "Turnos"
 
+
 # TODO : Crear choices para instituciones educativas
 class InstitucionesEducativas(models.Model):
-    institucion = models.CharField(max_length=255,)
+    institucion = models.CharField(
+        max_length=255,
+    )
 
     def __str__(self):
         return str(self.institucion)
@@ -120,9 +132,11 @@ class InstitucionesEducativas(models.Model):
         verbose_name = "Institucion Educativa"
         verbose_name_plural = "Instituciones Educativas"
 
-#Fin de modelo para choices de dimension educacion
 
-#Modelo para choices de dimension Vivienda
+# Fin de modelo para choices de dimension educacion
+
+# Modelo para choices de dimension Vivienda
+
 
 class CantidadAmbientes(models.Model):
     cantidad = models.CharField(max_length=255)
@@ -166,6 +180,7 @@ class TipoAyudaHogar(models.Model):
     class Meta:
         verbose_name = "Tipo de Ayuda al Hogar"
         verbose_name_plural = "Tipos de Ayuda al Hogar"
+
 
 class TipoVivienda(models.Model):
     tipo = models.CharField(max_length=255)
@@ -276,9 +291,11 @@ class TipoEstadoVivienda(models.Model):
         verbose_name = "Tipo de Estado de Vivienda"
         verbose_name_plural = "Tipos de Estado de Vivienda"
 
-#Fin de modelo para choices de dimension Vivienda
 
-#Modelo para choices de datos personales
+# Fin de modelo para choices de dimension Vivienda
+
+
+# Modelo para choices de datos personales
 class EstadoCivil(models.Model):
     estado = models.CharField(max_length=20)
 
@@ -288,6 +305,7 @@ class EstadoCivil(models.Model):
     class Meta:
         verbose_name = "Estado Civil"
         verbose_name_plural = "Estados Civiles"
+
 
 class Sexo(models.Model):
     sexo = models.CharField(max_length=10)
@@ -299,6 +317,7 @@ class Sexo(models.Model):
         verbose_name = "Sexo"
         verbose_name_plural = "Sexos"
 
+
 class Genero(models.Model):
     genero = models.CharField(max_length=20)
 
@@ -308,6 +327,7 @@ class Genero(models.Model):
     class Meta:
         verbose_name = "Género"
         verbose_name_plural = "Géneros"
+
 
 class GeneroPronombre(models.Model):
     pronombre = models.CharField(max_length=10)
@@ -319,6 +339,7 @@ class GeneroPronombre(models.Model):
         verbose_name = "Género Pronombre"
         verbose_name_plural = "Géneros Pronombres"
 
+
 class TipoDoc(models.Model):
     tipo = models.CharField(max_length=20)
 
@@ -328,6 +349,7 @@ class TipoDoc(models.Model):
     class Meta:
         verbose_name = "Tipo de Documento"
         verbose_name_plural = "Tipos de Documentos"
+
 
 class Nacionalidad(models.Model):
     nacionalidad = models.CharField(max_length=50)
@@ -339,8 +361,10 @@ class Nacionalidad(models.Model):
         verbose_name = "Nacionalidad"
         verbose_name_plural = "Nacionalidades"
 
-#fin de modelo para choices de datos personales
-#Modelo para choices de dimension trabajo y salud
+
+# fin de modelo para choices de datos personales
+# Modelo para choices de dimension trabajo y salud
+
 
 class TipoDiscapacidad(models.Model):
     tipo = models.CharField(max_length=255)
@@ -352,6 +376,7 @@ class TipoDiscapacidad(models.Model):
         verbose_name = "Tipo de Discapacidad"
         verbose_name_plural = "Tipos de Discapacidad"
 
+
 class TipoEnfermedad(models.Model):
     tipo = models.CharField(max_length=255)
 
@@ -361,6 +386,7 @@ class TipoEnfermedad(models.Model):
     class Meta:
         verbose_name = "Tipo de Enfermedad"
         verbose_name_plural = "Tipos de Enfermedad"
+
 
 class CentrosSalud(models.Model):
     centro = models.CharField(max_length=255)
@@ -372,6 +398,7 @@ class CentrosSalud(models.Model):
         verbose_name = "Centro de Salud"
         verbose_name_plural = "Centros de Salud"
 
+
 class Frecuencia(models.Model):
     frecuencia = models.CharField(max_length=255)
 
@@ -381,6 +408,7 @@ class Frecuencia(models.Model):
     class Meta:
         verbose_name = "Frecuencia"
         verbose_name_plural = "Frecuencias"
+
 
 class ModoContratacion(models.Model):
     modo = models.CharField(max_length=255)
@@ -392,6 +420,7 @@ class ModoContratacion(models.Model):
         verbose_name = "Modo de Contratación"
         verbose_name_plural = "Modos de Contratación"
 
+
 class ActividadRealizada(models.Model):
     actividad = models.CharField(max_length=255)
 
@@ -401,6 +430,7 @@ class ActividadRealizada(models.Model):
     class Meta:
         verbose_name = "Actividad Realizada"
         verbose_name_plural = "Actividades Realizadas"
+
 
 class DuracionTrabajo(models.Model):
     duracion = models.CharField(max_length=255)
@@ -412,6 +442,7 @@ class DuracionTrabajo(models.Model):
         verbose_name = "Duración del Trabajo"
         verbose_name_plural = "Duraciones del Trabajo"
 
+
 class AportesJubilacion(models.Model):
     aporte = models.CharField(max_length=255)
 
@@ -421,6 +452,7 @@ class AportesJubilacion(models.Model):
     class Meta:
         verbose_name = "Aporte Jubilación"
         verbose_name_plural = "Aportes Jubilación"
+
 
 class TiempoBusquedaLaboral(models.Model):
     tiempo = models.CharField(max_length=255)
@@ -432,6 +464,7 @@ class TiempoBusquedaLaboral(models.Model):
         verbose_name = "Tiempo de Búsqueda Laboral"
         verbose_name_plural = "Tiempos de Búsqueda Laboral"
 
+
 class NoBusquedaLaboral(models.Model):
     motivo = models.CharField(max_length=255)
 
@@ -441,6 +474,7 @@ class NoBusquedaLaboral(models.Model):
     class Meta:
         verbose_name = "Motivo de No Búsqueda Laboral"
         verbose_name_plural = "Motivos de No Búsqueda Laboral"
+
 
 class Nivel(models.Model):
     nivel = models.CharField(max_length=255)
@@ -452,6 +486,7 @@ class Nivel(models.Model):
         verbose_name = "Nivel"
         verbose_name_plural = "Niveles"
 
+
 class Accion(models.Model):
     accion = models.CharField(max_length=255)
 
@@ -461,6 +496,7 @@ class Accion(models.Model):
     class Meta:
         verbose_name = "Acción"
         verbose_name_plural = "Acciones"
+
 
 class EstadoRelacion(models.Model):
     estado = models.CharField(max_length=255)
@@ -472,6 +508,7 @@ class EstadoRelacion(models.Model):
         verbose_name = "Estado de Relación"
         verbose_name_plural = "Estados de Relación"
 
+
 class EstadoDerivacion(models.Model):
     estado = models.CharField(max_length=255)
 
@@ -481,6 +518,7 @@ class EstadoDerivacion(models.Model):
     class Meta:
         verbose_name = "Estado de Derivación"
         verbose_name_plural = "Estados de Derivación"
+
 
 class VinculoFamiliar(models.Model):
     vinculo = models.CharField(max_length=255)
@@ -492,6 +530,7 @@ class VinculoFamiliar(models.Model):
         verbose_name = "Vínculo Familiar"
         verbose_name_plural = "Vínculos Familiares"
 
+
 class Rechazo(models.Model):
     motivo = models.CharField(max_length=255)
 
@@ -501,6 +540,7 @@ class Rechazo(models.Model):
     class Meta:
         verbose_name = "Motivo de Rechazo"
         verbose_name_plural = "Motivos de Rechazo"
+
 
 class EstadoIntervencion(models.Model):
     estado = models.CharField(max_length=255)
@@ -512,6 +552,7 @@ class EstadoIntervencion(models.Model):
         verbose_name = "Estado de Intervención"
         verbose_name_plural = "Estados de Intervención"
 
+
 class EstadoLlamado(models.Model):
     estado = models.CharField(max_length=255)
 
@@ -521,6 +562,7 @@ class EstadoLlamado(models.Model):
     class Meta:
         verbose_name = "Estado de Llamado"
         verbose_name_plural = "Estados de Llamado"
+
 
 class Importancia(models.Model):
     importancia = models.CharField(max_length=255)
@@ -532,7 +574,9 @@ class Importancia(models.Model):
         verbose_name = "Importancia"
         verbose_name_plural = "Importancias"
 
-#fin de modelo para choices de dimension trabajo y salud
+
+# fin de modelo para choices de dimension trabajo y salud
+
 
 class LegajoProvincias(models.Model):
     """
@@ -656,16 +700,10 @@ class Legajos(models.Model):
         null=True,
     )
     nacionalidad = models.ForeignKey(
-        Nacionalidad,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
+        Nacionalidad, on_delete=models.SET_NULL, null=True, blank=True
     )
     estado_civil = models.ForeignKey(
-        EstadoCivil,
-        on_delete=models.SET_NULL,
-        null=True, 
-        blank=True
+        EstadoCivil, on_delete=models.SET_NULL, null=True, blank=True
     )
     calle = models.CharField(max_length=255, null=True, blank=True)
     altura = models.IntegerField(null=True, blank=True)
@@ -674,12 +712,9 @@ class Legajos(models.Model):
     pisodpto = models.CharField(
         max_length=255, null=True, blank=True, verbose_name="Piso/Dpto (optativo)"
     )
-    #TODO: choice viene de configuraciones.choices remplazar despues.
+    # TODO: choice viene de configuraciones.choices remplazar despues.
     circuito = models.ForeignKey(
-        Circuito,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
+        Circuito, on_delete=models.SET_NULL, null=True, blank=True
     )
     torrepasillo = models.CharField(
         max_length=255, null=True, blank=True, verbose_name="Torre / Pasillo (optativo)"
@@ -831,17 +866,11 @@ class LegajoGrupoFamiliar(models.Model):
         Legajos, related_name="fk_legajo2", on_delete=models.CASCADE
     )
     vinculo = models.ForeignKey(
-        VinculoFamiliar,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
+        VinculoFamiliar, on_delete=models.SET_NULL, null=True, blank=True
     )
     vinculo_inverso = models.CharField(max_length=255, blank=True, null=True)
     estado_relacion = models.ForeignKey(
-        EstadoRelacion,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
+        EstadoRelacion, on_delete=models.SET_NULL, null=True, blank=True
     )
     conviven = models.BooleanField(null=True, blank=True)
     cuidador_principal = models.BooleanField(null=True, blank=True)
@@ -984,7 +1013,7 @@ class DimensionVivienda(models.Model):
         verbose_name="¿Cuantos hogares hay en la vivienda?", null=True, blank=True
     )
     obs_vivienda = models.CharField(
-        verbose_name="Observaciones", max_length=500, blank=True,null=True
+        verbose_name="Observaciones", max_length=500, blank=True, null=True
     )
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
@@ -1147,7 +1176,7 @@ class DimensionEducacion(models.Model):
         blank=True,
     )
 
-    #TODO: Crear choices para instituciones educativas
+    # TODO: Crear choices para instituciones educativas
     institucion = models.ForeignKey(
         InstitucionesEducativas,
         verbose_name="Escuela",
@@ -1160,27 +1189,18 @@ class DimensionEducacion(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name='Tipo de gestión'
+        verbose_name="Tipo de gestión",
     )
     ciclo = models.ForeignKey(
         NivelEducativo,
         on_delete=models.SET_NULL,
-        null=True, 
+        null=True,
         blank=True,
         related_name="ciclo_dimension",
     )
-    grado = models.ForeignKey(
-        Grado,
-        on_delete=models.SET_NULL,
-        null=True, 
-        blank=True
-    )
+    grado = models.ForeignKey(Grado, on_delete=models.SET_NULL, null=True, blank=True)
     turno = models.ForeignKey(
-        Turno,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        verbose_name='Turno'
+        Turno, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Turno"
     )
     obs_educacion = models.CharField(
         max_length=500, verbose_name="Observaciones", null=True, blank=True
@@ -1338,10 +1358,7 @@ class DimensionEconomia(models.Model):
 class DimensionTrabajo(models.Model):
     fk_legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
     modo_contratacion = models.ForeignKey(
-        ModoContratacion,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
+        ModoContratacion, on_delete=models.SET_NULL, null=True, blank=True
     )
     ocupacion = models.CharField(max_length=255, null=True, blank=True)
     obs_trabajo = models.CharField(
@@ -1532,23 +1549,20 @@ class LegajosDerivaciones(models.Model):
     detalles = models.CharField(max_length=500, null=True, blank=True)
     fk_usuario = models.ForeignKey(User, on_delete=models.CASCADE)
     importancia = models.ForeignKey(
-        Importancia,
+        Importancia, on_delete=models.SET_NULL, null=True, blank=True, default="Alta"
+    )
+    estado = models.ForeignKey(
+        EstadoDerivacion,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        default="Alta"
-    )
-    estado = models.ForeignKey(
-    EstadoDerivacion,
-    on_delete=models.SET_NULL,
-    null=True,
-    blank=True,
-    default="Pendiente"
+        default="Pendiente",
     )
     m2m_alertas = models.ManyToManyField(CategoriaAlertas, blank=True)
     archivos = models.FileField(upload_to="legajos/archivos", null=True, blank=True)
     motivo_rechazo = models.ForeignKey(
-        Rechazo, on_delete=models.SET_NULL, null=True, blank=True)
+        Rechazo, on_delete=models.SET_NULL, null=True, blank=True
+    )
     obs_rechazo = models.CharField(max_length=500, null=True, blank=True)
     fecha_rechazo = models.DateField(null=True, blank=True)
     fecha_creado = models.DateField(auto_now_add=True, null=True, blank=True)
@@ -1598,10 +1612,7 @@ class LegajoGrupoHogar(models.Model):
         Legajos, on_delete=models.CASCADE, related_name="hogar_2"
     )
     estado_relacion = models.ForeignKey(
-        EstadoRelacion,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
+        EstadoRelacion, on_delete=models.SET_NULL, null=True, blank=True
     )
 
     def __str__(self):
@@ -1642,10 +1653,7 @@ class SubIntervencion(models.Model):
 
     nombre = models.CharField(max_length=255)
     fk_subintervencion = models.ForeignKey(
-        TipoIntervencion,
-        on_delete=models.SET_NULL,
-        default=1, 
-        null=True
+        TipoIntervencion, on_delete=models.SET_NULL, default=1, null=True
     )
 
     def __str__(self):

@@ -125,6 +125,7 @@ class AlertasAdmin(admin.ModelAdmin):
     search_fields = ["nombre"]
     ordering = ["nombre"]
 
+
 admin.site.register(TipoOrganismo)
 admin.site.register(SalaVacante)
 admin.site.register(TurnoVacante)

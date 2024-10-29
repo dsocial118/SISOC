@@ -66,7 +66,11 @@ def obtener_legajos_counts():
                 ),
                 sin_aceptadas=Count(
                     "id",
-                    filter=~Q(legajosderivaciones__estado= EstadoDerivacion.objects.filter(estado="Aceptada").first()),
+                    filter=~Q(
+                        legajosderivaciones__estado=EstadoDerivacion.objects.filter(
+                            estado="Aceptada"
+                        ).first()
+                    ),
                     distinct=True,
                 ),
                 adolescente_riesgo=Count(
@@ -74,7 +78,11 @@ def obtener_legajos_counts():
                 ),
                 adolescente_sin_derivacion_aceptada=Count(
                     "id",
-                    filter=~Q(legajosderivaciones__estado=EstadoDerivacion.objects.filter(estado="Aceptada").first()),
+                    filter=~Q(
+                        legajosderivaciones__estado=EstadoDerivacion.objects.filter(
+                            estado="Aceptada"
+                        ).first()
+                    ),
                     distinct=True,
                 ),
             )
@@ -177,7 +185,13 @@ def calcular_porcentaje_respecto_a_poblacion(cantidad_legajos):
 
 
 def deriv_pendientes():
-    return LegajosDerivaciones.objects.filter(estado = EstadoDerivacion.objects.filter(estado="Pendiente").first()).distinct().count()
+    return (
+        LegajosDerivaciones.objects.filter(
+            estado=EstadoDerivacion.objects.filter(estado="Pendiente").first()
+        )
+        .distinct()
+        .count()
+    )
 
 
 def contar_legajos_embarazados():
@@ -188,7 +202,10 @@ def contar_legajos_embarazados():
 def contar_embarazos_sin_derivacion_aceptada():
     legajos_con_alerta_embarazo = obtener_legajos_con_alerta_embarazo()
     return legajos_con_alerta_embarazo.exclude(
-        legajosderivaciones__estado=EstadoDerivacion.objects.filter(estado="Aceptada").first()).count()
+        legajosderivaciones__estado=EstadoDerivacion.objects.filter(
+            estado="Aceptada"
+        ).first()
+    ).count()
 
 
 def contar_embarazos_en_riesgo():

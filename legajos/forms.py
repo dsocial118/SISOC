@@ -4,7 +4,7 @@ from django import forms
 from django.core.validators import MaxValueValidator, MinValueValidator
 
 from usuarios.validators import MaxSizeFileValidator
-from legajos.models import Nacionalidad,Legajos,VinculoFamiliar,EstadoRelacion
+from legajos.models import Nacionalidad, Legajos, VinculoFamiliar, EstadoRelacion
 from .models import (
     DimensionEducacion,
     Legajos,
@@ -327,16 +327,12 @@ class LegajoGrupoFamiliarForm(forms.ModelForm):
 
 class NuevoLegajoFamiliarForm(forms.ModelForm):
     vinculo = forms.ModelChoiceField(
-        queryset=VinculoFamiliar.objects.all(),
-        required=True,
-        label="Vínculo Familiar")
-    estado_relacion = forms.ModelChoiceField(
-        queryset=EstadoRelacion.objects.all(),
-        required=True,
-        label="Estado de Relación"
+        queryset=VinculoFamiliar.objects.all(), required=True, label="Vínculo Familiar"
     )
-    conviven = forms.ChoiceField(
-        choices=BOOLEAN_CHOICE,required=True )
+    estado_relacion = forms.ModelChoiceField(
+        queryset=EstadoRelacion.objects.all(), required=True, label="Estado de Relación"
+    )
+    conviven = forms.ChoiceField(choices=BOOLEAN_CHOICE, required=True)
     cuidador_principal = forms.ChoiceField(choices=BOOLEAN_CHOICE, required=True)
     documento = forms.IntegerField(
         required=False,
@@ -397,14 +393,10 @@ class NuevoLegajoFamiliarForm(forms.ModelForm):
 
 class LegajoGrupoHogarForm(forms.ModelForm):
     vinculo = forms.ModelChoiceField(
-        queryset=VinculoFamiliar.objects.all(),
-        required=True,
-        label="Vínculo Familiar"
+        queryset=VinculoFamiliar.objects.all(), required=True, label="Vínculo Familiar"
     )
     estado_relacion = forms.ModelChoiceField(
-        queryset=EstadoRelacion.objects.all(),
-        required=True,
-        label="Estado de Relación"
+        queryset=EstadoRelacion.objects.all(), required=True, label="Estado de Relación"
     )
     documento = forms.IntegerField(
         required=False,
@@ -544,15 +536,22 @@ class DimensionFamiliaForm(forms.ModelForm):
 
 class DimensionViviendaForm(forms.ModelForm):
     hay_desmoronamiento = forms.ChoiceField(
-        choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿Existe riesgo de desmoronamiento?")
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿Existe riesgo de desmoronamiento?",
+    )
     PoseenCelular = forms.ChoiceField(
-        choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿Poseen celular?")
+        choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿Poseen celular?"
+    )
     PoseenPC = forms.ChoiceField(
-        choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿Poseen PC?")
+        choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿Poseen PC?"
+    )
     Poseeninternet = forms.ChoiceField(
-        choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿Poseen internet?")
+        choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿Poseen internet?"
+    )
     hay_agua_caliente = forms.ChoiceField(
-        choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿Tienen agua caliente?")
+        choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿Tienen agua caliente?"
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -615,19 +614,27 @@ class DimensionEducacionForm(forms.ModelForm):
         queryset=LegajoLocalidad.objects.none(),
     )
     interesCapLab = forms.ChoiceField(
-        choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿Tenés interés en realizar cursos de capacitación laboral?"
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿Tenés interés en realizar cursos de capacitación laboral?",
     )
     realizandoCurso = forms.ChoiceField(
-        choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿Actualmente te encontrás haciendo algún curso de capacitación?"
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿Actualmente te encontrás haciendo algún curso de capacitación?",
     )
     oficio = forms.ChoiceField(
-        choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿Tenés conocimiento de algún oficio?"
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿Tenés conocimiento de algún oficio?",
     )
     interesEstudio = forms.ChoiceField(
         choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿Tenés interés en estudiar?"
     )
     interesCurso = forms.ChoiceField(
-        choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿Tenés interés en realizar algún curso?"
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿Tenés interés en realizar algún curso?",
     )
 
     def __init__(self, *args, **kwargs):
@@ -726,12 +733,20 @@ class DimensionEconomiaForm(forms.ModelForm):
 
 
 class DimensionTrabajoForm(forms.ModelForm):
-    busquedaLaboral= forms.ChoiceField(
-        choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿Buscaste trabajo en los últimos 30 días?")
-    conviviente_trabaja= forms.ChoiceField(
-        choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿Conviviente trabaja?")
-    tiene_trabajo= forms.ChoiceField(
-        choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿Actualmente realizás alguna actividad laboral, productiva o comunitaria?")
+    busquedaLaboral = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿Buscaste trabajo en los últimos 30 días?",
+    )
+    conviviente_trabaja = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿Conviviente trabaja?"
+    )
+    tiene_trabajo = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿Actualmente realizás alguna actividad laboral, productiva o comunitaria?",
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["fk_legajo"].widget = forms.HiddenInput()
