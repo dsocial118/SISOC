@@ -5,8 +5,7 @@ from django.db import connection
 from django.db.models import Count, Q
 
 from configuraciones.models import Alertas
-from legajos.models import (EstadoDerivacion, LegajoAlertas, Legajos,
-                            LegajosDerivaciones)
+from legajos.models import LegajoAlertas, Legajos, LegajosDerivaciones, EstadoDerivacion
 
 # FIXME: Este modulo puede ser optimizado mas aun
 

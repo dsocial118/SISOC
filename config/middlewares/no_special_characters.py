@@ -1,7 +1,6 @@
 import re
-
-from django.contrib import messages
 from django.shortcuts import redirect
+from django.contrib import messages
 
 
 class NoSpecialCharactersMiddleware:
