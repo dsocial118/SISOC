@@ -1,6 +1,6 @@
 from rest_framework import viewsets
-from anexos.models import AnexoSocioProductivo
-from anexos.serializers import AnexoSocioProductivoSerializer
+from provincias.models import AnexoSocioProductivo
+from provincias.serializers import AnexoSocioProductivoSerializer
 
 
 class AnexoSocioProductivoViewSet(viewsets.ModelViewSet):

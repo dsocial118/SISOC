@@ -1,6 +1,6 @@
 from django.urls import include, path
 
-from anexos.urls import api_urls, web_urls
+from provincias.urls import api_urls, web_urls
 
 urlpatterns = [
     path("", include(api_urls)),

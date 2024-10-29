@@ -1,6 +1,6 @@
 from django.urls import path
 
-from anexos.views.api_views import AnexoSocioProductivoViewSet
+from provincias.views.api_views import AnexoSocioProductivoViewSet
 
 urlpatterns = [
     path(
