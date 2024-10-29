@@ -851,7 +851,7 @@ class LegajosGrupoFamiliarCreateView(CreateView):
             )
 
         # Crea el objeto LegajoGrupoFamiliar con los valores del formulario
-        vinculo_data = VINCULO_MAP.get(vinculo)
+        vinculo_data = VinculoFamiliar.get(vinculo)
         if not vinculo_data:
             return messages.error(self.request, "Vinculo inválido.")
         vinculo_instance = VinculoFamiliar.objects.get(vinculo=vinculo_data["vinculo"])
@@ -972,7 +972,7 @@ class CreateGrupoFamiliar(View):
         conviven = request.GET.get("conviven", None)
         cuidador_principal = request.GET.get("cuidador_principal", None)
         obj = None
-        vinculo_data = VINCULO_MAP.get(vinculo)
+        vinculo_data = VinculoFamiliar.get(vinculo)
 
         if not vinculo_data:
             return messages.error(self.request, "Vinculo inválido.")
@@ -1964,11 +1964,6 @@ class LegajosGrupoHogarCreateView(CreateView):
                 self.request,
                 f"Verifique que no exista un legajo con ese DNI y NÚMERO. Error: {e}",
             )
-
-        # Crea el objeto LegajoGrupoFamiliar con los valores del formulario
-        # vinculo_data = VINCULO_MAP.get(vinculo)
-        # if not vinculo_data:
-        #   return messages.error(self.request, "Vinculo inválido.")
 
         # crea la relacion de grupo familiar
         estado_relacion_instance = EstadoRelacion.objects.get(pk=estado_relacion)

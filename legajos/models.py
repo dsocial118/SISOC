@@ -4,7 +4,6 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.urls import reverse
-from multiselectfield import MultiSelectField
 
 from configuraciones.models import (
     Alertas,
