@@ -4,18 +4,10 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.urls import reverse
-from multiselectfield import MultiSelectField
 
-from configuraciones.models import (
-    Alertas,
-    Organismos,
-    PlanesSociales,
-    Programas,
-    CategoriaAlertas,
-    Circuito,
-)
-
-from usuarios.models import Usuarios, User
+from configuraciones.models import (Alertas, CategoriaAlertas, Circuito,
+                                    Organismos, PlanesSociales, Programas)
+from usuarios.models import User, Usuarios
 
 # Modelo para choices de dimension educacion
 
