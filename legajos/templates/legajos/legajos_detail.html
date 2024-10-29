@@ -640,72 +640,72 @@
                                 <dd class="col-sm-8">
                                     Posesión de la vivienda
                                 </dd>
-                                <dt class="col-sm-4">{{ dimensionvivienda.posesion|default_if_none:"-" }}</dt>
+                                <dt class="col-sm-4">{{ object.dimensionvivienda.posesion|default_if_none:"-" }}</dt>
                                 <dd class="col-sm-8">
                                     Tipo de vivienda
                                 </dd>
-                                <dt class="col-sm-4">{{ dimensionvivienda.tipo|default_if_none:"-" }}</dt>
+                                <dt class="col-sm-4">{{ object.dimensionvivienda.tipo|default_if_none:"-" }}</dt>
                                 <dd class="col-sm-8">
                                     Material de la vivienda
                                 </dd>
-                                <dt class="col-sm-4">{{ dimensionvivienda.material|default_if_none:"-" }}</dt>
+                                <dt class="col-sm-4">{{ object.dimensionvivienda.material|default_if_none:"-" }}</dt>
                                 <dd class="col-sm-8">
                                     Material principal de los pisos interiores
                                 </dd>
-                                <dt class="col-sm-4">{{ dimensionvivienda.pisos|default_if_none:"-" }}</dt>
+                                <dt class="col-sm-4">{{ object.dimensionvivienda.pisos|default_if_none:"-" }}</dt>
                                 <dd class="col-sm-8">
                                     ¿Cuántas habitaciones tiene el hogar? (sin contar baño/s,
                                     cocina, pasillo/s, lavadero)
                                 </dd>
-                                <dt class="col-sm-4">{{ dimensionvivienda.cant_ambientes|default_if_none:"-" }}</dt>
+                                <dt class="col-sm-4">{{ object.dimensionvivienda.cant_ambientes|default_if_none:"-" }}</dt>
                                 <dd class="col-sm-8">
                                     ¿Cuántas camas/ colchones tienen?
                                 </dd>
-                                <dt class="col-sm-4">{{ dimensionvivienda.cant_camas|default_if_none:"-" }}</dt>
+                                <dt class="col-sm-4">{{ object.dimensionvivienda.cant_camas|default_if_none:"-" }}</dt>
                                 <dd class="col-sm-8">
                                     ¿Cuantos hogares hay en la vivienda?
                                 </dd>
-                                <dt class="col-sm-4">{{ dimensionvivienda.cant_hogares|default_if_none:"-" }}</dt>
+                                <dt class="col-sm-4">{{ object.dimensionvivienda.cant_hogares|default_if_none:"-" }}</dt>
                                 <dd class="col-sm-8">
                                     ¿Cuantas personas viven en la vivienda?
                                 </dd>
-                                <dt class="col-sm-4">{{ dimensionvivienda.cant_convivientes|default_if_none:"-" }}</dt>
+                                <dt class="col-sm-4">{{ object.dimensionvivienda.cant_convivientes|default_if_none:"-" }}</dt>
                                 <dd class="col-sm-8">
                                     ¿Cuántos de ellos son menores de 18 años?
                                 </dd>
-                                <dt class="col-sm-4">{{ dimensionvivienda.cant_menores|default_if_none:"-" }}</dt>
+                                <dt class="col-sm-4">{{ object.dimensionvivienda.cant_menores|default_if_none:"-" }}</dt>
                                 <dd class="col-sm-8">
                                     Baño dentro de la vivienda con descarga
                                 </dd>
-                                <dt class="col-sm-4">{{ dimensionvivienda.hay_banio|yesno:'Sí,No' }}</dt>
+                                <dt class="col-sm-4">{{ object.dimensionvivienda.hay_banio|default_if_none:"-" }}</dt>
                                 <dd class="col-sm-8">
                                     Posee Agua caliente
                                 </dd>
-                                <dt class="col-sm-4">{{ dimensionvivienda.hay_agua_caliente|yesno:'Sí,No' }}</dt>
+                                <dt class="col-sm-4">{{ object.dimensionvivienda.hay_agua_caliente|yesno:'Sí,No' }}</dt>
                                 <dd class="col-sm-8">
                                     Riesgo de desmoronamiento
                                 </dd>
-                                <dt class="col-sm-4">{{ dimensionvivienda.hay_desmoronamiento|yesno:'Sí,No' }}</dt>
+                                <dt class="col-sm-4">{{ object.dimensionvivienda.hay_desmoronamiento|yesno:'Sí,No' }}</dt>
                                 <dd class="col-sm-8">
                                     La vivienda está ubicada...
                                 </dd>
-                                <dt class="col-sm-4">{{ dimensionvivienda.ContextoCasa|default_if_none:"-" }}</dt>
+                                <dt class="col-sm-4">{{ object.dimensionvivienda.ContextoCasa|default_if_none:"-" }}</dt>
                                 <dd class="col-sm-8">
                                     Posee PC
                                 </dd>
-                                <dt class="col-sm-4">{{ dimensionvivienda.PoseenPC|yesno:'Sí,No,-' }}</dt>
+                                <dt class="col-sm-4">{{ object.dimensionvivienda.PoseenPC|yesno:'Sí,No,-' }}</dt>
                                 <dd class="col-sm-8">
                                     Posee Internet
                                 </dd>
-                                <dt class="col-sm-4">{{ dimensionvivienda.Poseeninternet|yesno:'Sí,No,-' }}</dt>
+                                <dt class="col-sm-4">{{ object.dimensionvivienda.Poseeninternet|yesno:'Sí,No,-' }}</dt>
                                 <dd class="col-sm-8">
                                     Posee Celular
                                 </dd>
-                                <dt class="col-sm-4">{{ dimensionvivienda.PoseenCeludar|yesno:'Sí,No,-' }}</dt>
+                                <dt class="col-sm-4">{{ object.dimensionvivienda.PoseenCelular|yesno:'Sí,No,-' }}</dt>
                                 <dd class="col-12 mt-3">
                                     Observaciones
                                 </dd>
-                                <dt class="col-12">{{ dimensionvivienda.obs_vivienda|default_if_none:"-" }}</dt>
+                                <dt class="col-12">{{ object.dimensionvivienda.obs_vivienda|default_if_none:"-" }}</dt>
                             </dl>
                             <!-- ./dimension vivienda -->
                         </div>
@@ -715,32 +715,32 @@
                                 <dd class="col-sm-8">
                                     Centro de Salud en donde se atiende
                                 </dd>
-                                <dt class="col-sm-4">{{ dimensionsalud.lugares_atencion|default_if_none:"-" }}</dt>
+                                <dt class="col-sm-4">{{ object.dimensionsalud.lugares_atencion|default_if_none:"-" }}</dt>
                                 <dd class="col-sm-8">
                                     Frecuencia de controles médicos
                                 </dd>
-                                <dt class="col-sm-4">{{ dimensionsalud.frec_controles|default_if_none:"-" }}</dt>
+                                <dt class="col-sm-4">{{ object.dimensionsalud.frec_controles|default_if_none:"-" }}</dt>
                                 <dd class="col-sm-8">
                                     Posee alguna enfermedad recurrente o algún diagnóstico de
                                     enfermedad crónic?
                                 </dd>
-                                <dt class="col-sm-4">{{ dimensionsalud.hay_enfermedad|yesno:'Sí,No,-' }}</dt>
+                                <dt class="col-sm-4">{{ object.dimensionsalud.hay_enfermedad|yesno:'Sí,No,-' }}</dt>
                                 <dd class="col-sm-8">
                                     Posee cobertura de salud
                                 </dd>
-                                <dt class="col-sm-4">{{ dimensionsalud.hay_obra_social|yesno:'Sí,No,-' }}</dt>
+                                <dt class="col-sm-4">{{ object.dimensionsalud.hay_obra_social|yesno:'Sí,No,-' }}</dt>
                                 <dd class="col-sm-8">
                                     Posee alguna discapacidad
                                 </dd>
-                                <dt class="col-sm-4">{{ dimensionsalud.hay_discapacidad|yesno:'Sí,No,-' }}</dt>
+                                <dt class="col-sm-4">{{ object.dimensionsalud.hay_discapacidad|yesno:'Sí,No,-' }}</dt>
                                 <dd class="col-sm-8">
                                     Posee certificado de discapacidad
                                 </dd>
-                                <dt class="col-sm-4">{{ dimensionsalud.hay_cud|yesno:'Sí,No,-' }}</dt>
+                                <dt class="col-sm-4">{{ object.dimensionsalud.hay_cud|yesno:'Sí,No,-' }}</dt>
                                 <dd class="col-12 mt-3">
                                     Observaciones
                                 </dd>
-                                <dt class="col-12">{{ dimensionsalud.obs_salud|default_if_none:"-" }}</dt>
+                                <dt class="col-12">{{ object.dimensionsalud.obs_salud|default_if_none:"-" }}</dt>
                             </dl>
                             <!-- ./dimension salud -->
                         </div>

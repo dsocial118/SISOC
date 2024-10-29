@@ -1,0 +1,156 @@
+[
+    {
+        "model": "legajos.centrossalud",
+        "pk": 1,
+        "fields": {
+            "centro": "20 de Julio"
+        }
+    },
+    {
+        "model": "legajos.centrossalud",
+        "pk": 2,
+        "fields": {
+            "centro": "29 de Septiembre"
+        }
+    },
+    {
+        "model": "legajos.centrossalud",
+        "pk": 3,
+        "fields": {
+            "centro": "Ana Teresa Barthalot"
+        }
+    },
+    {
+        "model": "legajos.centrossalud",
+        "pk": 4,
+        "fields": {
+            "centro": "C.I.C Maria Lobato"
+        }
+    },
+    {
+        "model": "legajos.centrossalud",
+        "pk": 5,
+        "fields": {
+            "centro": "Camila Rolón"
+        }
+    },
+    {
+        "model": "legajos.centrossalud",
+        "pk": 6,
+        "fields": {
+            "centro": "Cándido Castello"
+        }
+    },
+    {
+        "model": "legajos.centrossalud",
+        "pk": 7,
+        "fields": {
+            "centro": "Rodolfo Podestá"
+        }
+    },
+    {
+        "model": "legajos.centrossalud",
+        "pk": 8,
+        "fields": {
+            "centro": "Cura Brochero"
+        }
+    },
+    {
+        "model": "legajos.centrossalud",
+        "pk": 9,
+        "fields": {
+            "centro": "Alberto Sabin"
+        }
+    },
+    {
+        "model": "legajos.centrossalud",
+        "pk": 10,
+        "fields": {
+            "centro": "Federico Leloir"
+        }
+    },
+    {
+        "model": "legajos.centrossalud",
+        "pk": 11,
+        "fields": {
+            "centro": "Suárez París"
+        }
+    },
+    {
+        "model": "legajos.centrossalud",
+        "pk": 12,
+        "fields": {
+            "centro": "Raúl Matera"
+        }
+    },
+    {
+        "model": "legajos.centrossalud",
+        "pk": 13,
+        "fields": {
+            "centro": "René Favaloro"
+        }
+    },
+    {
+        "model": "legajos.centrossalud",
+        "pk": 14,
+        "fields": {
+            "centro": "Marta Antoniazzi"
+        }
+    },
+    {
+        "model": "legajos.centrossalud",
+        "pk": 15,
+        "fields": {
+            "centro": "Padre Mora"
+        }
+    },
+    {
+        "model": "legajos.centrossalud",
+        "pk": 16,
+        "fields": {
+            "centro": "Pte. Perón"
+        }
+    },
+    {
+        "model": "legajos.centrossalud",
+        "pk": 17,
+        "fields": {
+            "centro": "Ramón Castillo"
+        }
+    },
+    {
+        "model": "legajos.centrossalud",
+        "pk": 18,
+        "fields": {
+            "centro": "San Miguel Oeste"
+        }
+    },
+    {
+        "model": "legajos.centrossalud",
+        "pk": 19,
+        "fields": {
+            "centro": "U.F.O /Manuelita"
+        }
+    },
+    {
+        "model": "legajos.centrossalud",
+        "pk": 20,
+        "fields": {
+            "centro": "Hospital Público"
+        }
+    },
+    {
+        "model": "legajos.centrossalud",
+        "pk": 21,
+        "fields": {
+            "centro": "Clínica Privada o Sanatorio"
+        }
+    },
+    {
+        "model": "legajos.centrossalud",
+        "pk": 22,
+        "fields": {
+            "centro": "No asiste a instituciones de salud"
+        }
+    }
+]

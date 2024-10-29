@@ -1,0 +1,16 @@
+[
+    {
+        "model": "legajos.accion",
+        "pk": 1,
+        "fields": {
+            "accion": "ALTA"
+        }
+    },
+    {
+        "model": "legajos.accion",
+        "pk": 2,
+        "fields": {
+            "accion": "BAJA"
+        }
+    }
+]

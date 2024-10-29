@@ -1,0 +1,30 @@
+[
+    {
+        "model": "usuarios.rol",
+        "pk": 1,
+        "fields": {
+            "rol": "Observador"
+        }
+    },
+    {
+        "model": "usuarios.rol",
+        "pk": 2,
+        "fields": {
+            "rol": "Consultante"
+        }
+    },
+    {
+        "model": "usuarios.rol",
+        "pk": 3,
+        "fields": {
+            "rol": "Director"
+        }
+    },
+    {
+        "model": "usuarios.rol",
+        "pk": 4,
+        "fields": {
+            "rol": "Administrador"
+        }
+    }
+]
