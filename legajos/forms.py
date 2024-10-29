@@ -3,30 +3,16 @@ from datetime import date
 from django import forms
 from django.core.validators import MaxValueValidator, MinValueValidator
 
+from legajos.models import EstadoRelacion, Legajos, VinculoFamiliar
 from usuarios.validators import MaxSizeFileValidator
-from legajos.models import Legajos, VinculoFamiliar, EstadoRelacion
-from .models import (
-    DimensionEducacion,
-    Legajos,
-    LegajoProvincias,
-    LegajoMunicipio,
-    LegajoLocalidad,
-    LegajoDepartamento,
-    LegajoAsentamientos,
-    LegajoGrupoFamiliar,
-    LegajoGrupoHogar,
-    CategoriaAlertas,
-    LegajoAlertas,
-    LegajosArchivos,
-    LegajosDerivaciones,
-    DimensionFamilia,
-    DimensionVivienda,
-    DimensionSalud,
-    DimensionEconomia,
-    DimensionTrabajo,
-    Intervencion,
-    Llamado,
-)
+
+from .models import (CategoriaAlertas, DimensionEconomia, DimensionEducacion,
+                     DimensionFamilia, DimensionSalud, DimensionTrabajo,
+                     DimensionVivienda, Intervencion, LegajoAlertas,
+                     LegajoAsentamientos, LegajoDepartamento,
+                     LegajoGrupoFamiliar, LegajoGrupoHogar, LegajoLocalidad,
+                     LegajoMunicipio, LegajoProvincias, Legajos,
+                     LegajosArchivos, LegajosDerivaciones, Llamado)
 
 BOOLEAN_CHOICE = [
     (False, "No"),
