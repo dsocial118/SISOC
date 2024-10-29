@@ -131,7 +131,7 @@ INSTALLED_APPS = [
     "dashboard",
     "legajos",
     "comedores",
-    "anexos",
+    "provincias",
 ]
 
 # Definición del middleware utilizado por el proyecto
