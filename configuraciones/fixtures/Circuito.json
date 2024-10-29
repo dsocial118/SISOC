@@ -1,0 +1,58 @@
+[
+    {
+        "model": "configuraciones.circuito",
+        "pk": 1,
+        "fields": {
+            "circuito": ""
+        }
+    },
+    {
+        "model": "configuraciones.circuito",
+        "pk": 2,
+        "fields": {
+            "circuito": "0397A"
+        }
+    },
+    {
+        "model": "configuraciones.circuito",
+        "pk": 3,
+        "fields": {
+            "circuito": "0397B"
+        }
+    },
+    {
+        "model": "configuraciones.circuito",
+        "pk": 4,
+        "fields": {
+            "circuito": "0397C"
+        }
+    },
+    {
+        "model": "configuraciones.circuito",
+        "pk": 5,
+        "fields": {
+            "circuito": "0397"
+        }
+    },
+    {
+        "model": "configuraciones.circuito",
+        "pk": 6,
+        "fields": {
+            "circuito": "0400"
+        }
+    },
+    {
+        "model": "configuraciones.circuito",
+        "pk": 7,
+        "fields": {
+            "circuito": "0401A"
+        }
+    },
+    {
+        "model": "configuraciones.circuito",
+        "pk": 8,
+        "fields": {
+            "circuito": "0401"
+        }
+    }
+]

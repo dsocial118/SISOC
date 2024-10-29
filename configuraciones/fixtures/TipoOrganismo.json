@@ -1,0 +1,65 @@
+[
+    {
+        "model": "configuraciones.tipoorganismo",
+        "pk": 1,
+        "fields": {
+            "tipo": ""
+        }
+    },
+    {
+        "model": "configuraciones.tipoorganismo",
+        "pk": 2,
+        "fields": {
+            "tipo": "Hospital"
+        }
+    },
+    {
+        "model": "configuraciones.tipoorganismo",
+        "pk": 3,
+        "fields": {
+            "tipo": "CAP"
+        }
+    },
+    {
+        "model": "configuraciones.tipoorganismo",
+        "pk": 4,
+        "fields": {
+            "tipo": "Escuela"
+        }
+    },
+    {
+        "model": "configuraciones.tipoorganismo",
+        "pk": 5,
+        "fields": {
+            "tipo": "Club Barrial"
+        }
+    },
+    {
+        "model": "configuraciones.tipoorganismo",
+        "pk": 6,
+        "fields": {
+            "tipo": "ONG/Agrupación Comunitaria"
+        }
+    },
+    {
+        "model": "configuraciones.tipoorganismo",
+        "pk": 7,
+        "fields": {
+            "tipo": "Organismo Municipal"
+        }
+    },
+    {
+        "model": "configuraciones.tipoorganismo",
+        "pk": 8,
+        "fields": {
+            "tipo": "Organismo Provincial"
+        }
+    },
+    {
+        "model": "configuraciones.tipoorganismo",
+        "pk": 9,
+        "fields": {
+            "tipo": "Organismo Nacional"
+        }
+    }
+]

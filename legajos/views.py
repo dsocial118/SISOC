@@ -11,7 +11,7 @@ from django.contrib.messages.views import SuccessMessageMixin
 from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-from django.db import transaction
+from django.db import models, transaction
 from django.db.models import Case, IntegerField, Q, Value, When
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
@@ -28,14 +28,15 @@ from django.views.generic import (
     View,
 )
 
-from configuraciones.choices import CHOICE_CIRCUITOS, CHOICE_DIMENSIONES
-from configuraciones.models import Alertas, CategoriaAlertas, Organismos, Programas
-from legajos.choices import (
-    CHOICE_ESTADO_DERIVACION,
-    CHOICE_NACIONALIDAD,
-    EMOJIS_BANDERAS,
-    VINCULO_MAP,
+from configuraciones.models import (
+    Alertas,
+    CategoriaAlertas,
+    Circuito,
+    Dimension,
+    Organismos,
+    Programas,
 )
+from legajos.choices import EMOJIS_BANDERAS
 from legajos.forms import (
     DimensionEconomiaForm,
     DimensionEducacionForm,
@@ -54,29 +55,62 @@ from legajos.forms import (
     NuevoLegajoFamiliarForm,
 )
 from legajos.models import (
+    ActividadRealizada,
+    Agua,
+    AportesJubilacion,
+    AreaCurso,
+    AsisteEscuela,
+    CantidadAmbientes,
+    CentrosSalud,
+    CondicionDe,
+    ContextoCasa,
+    Desague,
     DimensionEconomia,
     DimensionEducacion,
     DimensionFamilia,
     DimensionSalud,
     DimensionTrabajo,
     DimensionVivienda,
+    DuracionTrabajo,
+    EstadoDerivacion,
+    EstadoNivelEducativo,
+    EstadoRelacion,
+    Frecuencia,
+    Gas,
+    Grado,
     HistorialLegajoAlertas,
+    Inodoro,
+    InstitucionesEducativas,
     Intervencion,
     LegajoAlertas,
+    LegajoAsentamientos,
+    LegajoDepartamento,
     LegajoGrupoFamiliar,
     LegajoGrupoHogar,
     LegajoLocalidad,
     LegajoMunicipio,
-    LegajoDepartamento,
-    LegajoAsentamientos,
     LegajoProvincias,
     Legajos,
     LegajosArchivos,
     LegajosDerivaciones,
     Llamado,
+    ModoContratacion,
+    MotivoNivelIncompleto,
+    Nacionalidad,
+    NivelEducativo,
+    NoBusquedaLaboral,
     SubIntervencion,
     SubTipoLlamado,
+    TiempoBusquedaLaboral,
+    TipoConstruccionVivienda,
+    TipoGestion,
     TipoLlamado,
+    TipoPisosVivienda,
+    TipoPosesionVivienda,
+    TipoTechoVivienda,
+    TipoVivienda,
+    Turno,
+    VinculoFamiliar,
 )
 from usuarios.mixins import PermisosMixin
 from usuarios.utils import recortar_imagen
@@ -143,9 +177,14 @@ class LegajosReportesListView(ListView):
             programas = Programas.objects.all().values("id", "nombre")
             cache.set("programas", programas, 60)
 
+        estados = cache.get("estados_derivacion")
+        if not estados:
+            estados = EstadoDerivacion.objects.all().values("id", "estado")
+            cache.set("estados_derivacion", estados, 60)
+
         context["organismos"] = organismos
         context["programas"] = programas
-        context["estados"] = CHOICE_ESTADO_DERIVACION
+        context["estados"] = estados
         return context
 
     def get_queryset(self):
@@ -419,7 +458,7 @@ class LegajosDetailView(DetailView):
                     "ContextoCasa",
                     "PoseenPC",
                     "Poseeninternet",
-                    "PoseenCeludar",
+                    "PoseenCelular",
                     "obs_vivienda",
                 )
                 .first()
@@ -533,9 +572,9 @@ class LegajosDetailView(DetailView):
             ).distinct()
 
             dimensiones = {
-                key.strip(): value
-                for key, value in CHOICE_DIMENSIONES
-                if key is not None
+                str(dimension.id).strip(): dimension.dimension
+                for dimension in Dimension.objects.all()
+                if dimension.id is not None
             }
             todas_dimensiones = list(dimensiones.keys())
             datos_por_dimension = {
@@ -644,12 +683,28 @@ class LegajosCreateView(PermisosMixin, CreateView):
                 legajo.save()
 
                 # Crear las dimensiones
-                DimensionFamilia.objects.create(fk_legajo_id=legajo.id)
-                DimensionVivienda.objects.create(fk_legajo_id=legajo.id)
-                DimensionSalud.objects.create(fk_legajo_id=legajo.id)
-                DimensionEconomia.objects.create(fk_legajo_id=legajo.id)
-                DimensionEducacion.objects.create(fk_legajo_id=legajo.id)
-                DimensionTrabajo.objects.create(fk_legajo_id=legajo.id)
+                dimensionfamilia = DimensionFamilia.objects.create(
+                    fk_legajo_id=legajo.id
+                )
+                print("dimensionfamilia", dimensionfamilia)
+                dimensionvivienda = DimensionVivienda.objects.create(
+                    fk_legajo_id=legajo.id
+                )
+                print("dimensionvivienda", dimensionvivienda)
+                dimensiosalud = DimensionSalud.objects.create(fk_legajo_id=legajo.id)
+                print("dimensiosalud", dimensiosalud)
+                dimensioneconomia = DimensionEconomia.objects.create(
+                    fk_legajo_id=legajo.id
+                )
+                print("dimensioneconomia", dimensioneconomia)
+                dimensioneducacion = DimensionEducacion.objects.create(
+                    fk_legajo_id=legajo.id
+                )
+                print("dimensioneducacion", dimensioneducacion)
+                dimensiontrabajo = DimensionTrabajo.objects.create(
+                    fk_legajo_id=legajo.id
+                )
+                print("dimensiontrabajo", dimensiontrabajo)
 
             # Redireccionar según el botón presionado
             if "form_legajos" in self.request.POST:
@@ -791,20 +846,23 @@ class LegajosGrupoFamiliarCreateView(CreateView):
             )
 
         # Crea el objeto LegajoGrupoFamiliar con los valores del formulario
-        vinculo_data = VINCULO_MAP.get(vinculo)
+        vinculo_data = VinculoFamiliar.get(vinculo)
         if not vinculo_data:
             return messages.error(self.request, "Vinculo inválido.")
-
+        vinculo_instance = VinculoFamiliar.objects.get(vinculo=vinculo_data["vinculo"])
+        # vinculo_inverso_instance = VinculoFamiliar.objects.get(
+        # vinculo=vinculo_data["vinculo_inverso"])
+        estado_relacion_instance = EstadoRelacion.objects.get(pk=estado_relacion)
         # crea la relacion de grupo familiar
         legajo_principal = Legajos.objects.get(id=pk)
         try:
             LegajoGrupoFamiliar.objects.create(
                 fk_legajo_1=legajo_principal,
                 fk_legajo_2=nuevo_legajo,
-                vinculo=vinculo_data["vinculo"],
+                vinculo=vinculo_instance,
                 vinculo_inverso=vinculo_data["vinculo_inverso"],
                 conviven=conviven,
-                estado_relacion=estado_relacion,
+                estado_relacion=estado_relacion_instance,
                 cuidador_principal=cuidador_principal,
             )
 
@@ -814,17 +872,23 @@ class LegajosGrupoFamiliarCreateView(CreateView):
                 f"Verifique que no exista un legajo con ese DNI y NÚMERO. Error: {e}",
             )
 
-        messages.success(self.request, "Familair agregado correctamente.")
+        messages.success(self.request, "Familiar agregado correctamente.")
         # Redireccionar a la misma página después de realizar la acción con éxito
+
         return HttpResponseRedirect(self.request.path_info)
 
 
 def busqueda_familiares(request):
 
     res = None
-    busqueda = request.POST.get("busqueda")
+    busqueda = request.POST.get("busqueda", "")
     legajo_principal_id = request.POST.get("id")
     page_number = request.POST.get("page", 1)
+
+    if not legajo_principal_id:
+        return JsonResponse(
+            {"error": "ID del legajo principal no proporcionado"}, status=400
+        )
 
     legajos_asociados = LegajoGrupoFamiliar.objects.filter(
         Q(fk_legajo_1_id=legajo_principal_id) | Q(fk_legajo_2_id=legajo_principal_id)
@@ -861,7 +925,7 @@ def busqueda_familiares(request):
                 "tipo_doc": familiar.tipo_doc,
                 "fecha_nacimiento": familiar.fecha_nacimiento,
                 "sexo": familiar.sexo,
-                # Otros campos que deseas incluir
+                # Otros campos
             }
             for familiar in page_obj
         ]
@@ -872,7 +936,6 @@ def busqueda_familiares(request):
             "has_next": page_obj.has_next(),
             "has_previous": page_obj.has_previous(),
         }
-
     else:
         res = ""
 
@@ -904,17 +967,28 @@ class CreateGrupoFamiliar(View):
         conviven = request.GET.get("conviven", None)
         cuidador_principal = request.GET.get("cuidador_principal", None)
         obj = None
-        vinculo_data = VINCULO_MAP.get(vinculo)
+        vinculo_data = VinculoFamiliar.get(vinculo)
 
         if not vinculo_data:
             return messages.error(self.request, "Vinculo inválido.")
+        try:
+            vinculo_instance = VinculoFamiliar.objects.get(
+                vinculo=vinculo_data["vinculo"]
+            )
+        except VinculoFamiliar.DoesNotExist:
+            return JsonResponse({"error": "VínculoFamiliar no encontrado"}, status=400)
+
+        try:
+            estado_relacion_instance = EstadoRelacion.objects.get(pk=estado_relacion)
+        except EstadoRelacion.DoesNotExist:
+            return JsonResponse({"error": "EstadoRelacion no encontrado"}, status=400)
 
         obj = LegajoGrupoFamiliar.objects.create(
             fk_legajo_1_id=fk_legajo_1,
             fk_legajo_2_id=fk_legajo_2,
-            vinculo=vinculo_data["vinculo"],
+            vinculo=vinculo_instance,
             vinculo_inverso=vinculo_data["vinculo_inverso"],
-            estado_relacion=estado_relacion,
+            estado_relacion=estado_relacion_instance,
             conviven=conviven,
             cuidador_principal=cuidador_principal,
         )
@@ -923,7 +997,7 @@ class CreateGrupoFamiliar(View):
             "id": obj.id,
             "fk_legajo_1": obj.fk_legajo_1.id,
             "fk_legajo_2": obj.fk_legajo_2.id,
-            "vinculo": obj.vinculo,
+            "vinculo": obj.vinculo.vinculo,
             "nombre": obj.fk_legajo_2.nombre,
             "apellido": obj.fk_legajo_2.apellido,
             "foto": obj.fk_legajo_2.foto.url if obj.fk_legajo_2.foto else None,
@@ -989,8 +1063,8 @@ class LegajosDerivacionesBuscar(PermisosMixin, TemplateView):
             cache.set("sin_derivaciones", sin_derivaciones, 60)
 
         barrios = legajos.values_list("barrio")
-        circuitos = CHOICE_CIRCUITOS
-        localidad = CHOICE_NACIONALIDAD
+        circuitos = Circuito.objects.all().values_list("id", "circuito")
+        localidad = Nacionalidad.objects.all().values_list("id", "nacionalidad")
         mostrar_resultados = False
         mostrar_btn_resetear = False
         query = self.request.GET.get("busqueda")
@@ -1045,10 +1119,18 @@ class LegajosDerivacionesListView(PermisosMixin, ListView):
             model = LegajosDerivaciones.objects.all()
             cache.set("model", model, 60)
 
-        context["pendientes"] = model.filter(estado="Pendiente")
-        context["aceptadas"] = model.filter(estado="Aceptada")
-        context["analisis"] = model.filter(estado="En análisis")
-        context["asesoradas"] = model.filter(estado="Asesoramiento")
+        context["pendientes"] = model.filter(
+            estado=EstadoDerivacion.objects.filter(estado="Pendiente").first()
+        )
+        context["aceptadas"] = model.filter(
+            estado=EstadoDerivacion.objects.filter(estado="Aceptada").first()
+        )
+        context["analisis"] = model.filter(
+            estado=EstadoDerivacion.objects.filter(estado="En análisis").first()
+        )
+        context["asesoradas"] = model.filter(
+            estado=EstadoDerivacion.objects.filter(estado="Asesoramiento").first()
+        )
         context["enviadas"] = model.filter(fk_usuario=self.request.user)
         return context
 
@@ -1089,7 +1171,12 @@ class LegajosDerivacionesCreateView(PermisosMixin, CreateView):
 
             programas = Programas.objects.all().exclude(
                 id__in=LegajosDerivaciones.objects.filter(fk_legajo=pk)
-                .exclude(estado__in=["Rechazada", "Finalizada"])
+                .exclude(
+                    estado__in=[
+                        EstadoDerivacion.objects.filter(estado="Rechazada").first(),
+                        EstadoDerivacion.objects.filter(estado="Finalizada").first(),
+                    ]
+                )
                 .values_list("fk_programa", flat=True)
             )
 
@@ -1138,9 +1225,15 @@ class LegajosDerivacionesHistorial(PermisosMixin, ListView):
 
         context["historial"] = historial
         context["legajo"] = legajo
-        context["pendientes"] = historial.filter(estado="Pendiente").count()
-        context["admitidas"] = historial.filter(estado="Aceptada").count()
-        context["rechazadas"] = historial.filter(estado="Rechazada").count()
+        context["pendientes"] = historial.filter(
+            estado=EstadoDerivacion.objects.filter(estado="Pendiente").first()
+        ).count()
+        context["admitidas"] = historial.filter(
+            estado=EstadoDerivacion.objects.filter(estado="Aceptada").first()
+        ).count()
+        context["rechazadas"] = historial.filter(
+            estado=EstadoDerivacion.objects.filter(estado="Rechazada").first()
+        ).count()
         return context
 
 
@@ -1149,7 +1242,10 @@ class LegajosDerivacionesDeleteView(PermisosMixin, DeleteView):
     model = LegajosDerivaciones
 
     def form_valid(self, form):
-        if self.object.estado != "Pendiente":
+        if (
+            self.object.estado
+            != EstadoDerivacion.objects.filter(estado="Pendiente").first()
+        ):
             messages.error(
                 self.request,
                 "No es posible eliminar una solicitud en estado " + self.object.estado,
@@ -1410,41 +1506,41 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
         # dimension vivienda
 
         fields_mapping_vivienda = {
-            "tipo": "tipo",
-            "material": "material",
-            "pisos": "pisos",
-            "posesion": "posesion",
-            "cant_ambientes": "cant_ambientes",
+            "tipo": TipoVivienda,
+            "material": TipoConstruccionVivienda,
+            "pisos": TipoPisosVivienda,
+            "posesion": TipoPosesionVivienda,
+            "cant_ambientes": CantidadAmbientes,
             "cant_convivientes": "cant_convivientes",
             "cant_menores": "cant_menores",
             "cant_camas": "cant_camas",
             "cant_hogares": "cant_hogares",
             "hay_agua_caliente": "hay_agua_caliente",
             "hay_desmoronamiento": "hay_desmoronamiento",
-            "hay_banio": "hay_banio",
-            "PoseenCeludar": "PoseenCeludar",
+            "hay_banio": Inodoro,
+            "PoseenCelular": "PoseenCelular",
             "PoseenPC": "PoseenPC",
             "Poseeninternet": "Poseeninternet",
-            "ContextoCasa": "ContextoCasa",
-            "CondicionDe": "CondicionDe",
+            "ContextoCasa": ContextoCasa,
+            "CondicionDe": CondicionDe,
             "CantidadAmbientes": "CantidadAmbientes",
-            "gas": "gas",
-            "techos": "techos",
-            "agua": "agua",
-            "desague": "desague",
+            "gas": Gas,
+            "techos": TipoTechoVivienda,
+            "agua": Agua,
+            "desague": Desague,
             "obs_vivienda": "obs_vivienda",
         }
 
-        for field in fields_mapping_vivienda:
+        for field, model in fields_mapping_vivienda.items():
             value = form_multiple.get(field)
 
             if value:
-                setattr(
-                    legajo_dim_vivienda,
-                    fields_mapping_vivienda.get(field, field),
-                    value,
-                )
-
+                # Verifica si el valor del campo es una instancia de un modelo o una ForeignKey
+                if isinstance(model, type) and issubclass(model, models.Model):
+                    instance = model.objects.get(pk=value)
+                    setattr(legajo_dim_vivienda, field, instance)
+                else:
+                    setattr(legajo_dim_vivienda, field, value)
             else:
                 setattr(legajo_dim_vivienda, field, None)
 
@@ -1453,8 +1549,8 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
         # dimension salud
 
         fields_mapping_salud = {
-            "lugares_atencion": "lugares_atencion",
-            "frec_controles": "frec_controles",
+            "lugares_atencion": CentrosSalud,
+            "frec_controles": Frecuencia,
             "hay_obra_social": "hay_obra_social",
             "hay_enfermedad": "hay_enfermedad",
             "hay_discapacidad": "hay_discapacidad",
@@ -1466,11 +1562,14 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
             value = form_multiple.get(field)
 
             if value:
-                setattr(
-                    legajo_dim_salud,
-                    fields_mapping_salud.get(field, field),
-                    value,
-                )
+                # Verifica si el valor del campo es una instancia de un modelo o una ForeignKey
+                if isinstance(fields_mapping_salud.get(field), type) and issubclass(
+                    fields_mapping_salud.get(field), models.Model
+                ):
+                    instance = fields_mapping_salud.get(field).objects.get(pk=value)
+                    setattr(legajo_dim_salud, field, instance)
+                else:
+                    setattr(legajo_dim_salud, field, value)
 
             else:
                 setattr(legajo_dim_salud, field, None)
@@ -1480,50 +1579,42 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
         # dimension educacion
 
         fields_mapping_educacion = {
-            "max_nivel": "max_nivel",
-            "estado_nivel": "estado_nivel",
-            "asiste_escuela": "asiste_escuela",
-            "institucion": "institucion",
-            "gestion": "gestion",
-            "ciclo": "ciclo",
-            "grado": "grado",
-            "turno": "turno",
+            "max_nivel": NivelEducativo,
+            "estado_nivel": EstadoNivelEducativo,
+            "asiste_escuela": AsisteEscuela,
+            "institucion": InstitucionesEducativas,
+            "gestion": TipoGestion,
+            "ciclo": NivelEducativo,
+            "grado": Grado,
+            "turno": Turno,
             "obs_educacion": "obs_educacion",
-            "provinciaInstitucion": "provinciaInstitucion",
-            "localidadInstitucion": "localidadInstitucion",
-            "municipioInstitucion": "municipioInstitucion",
+            "provinciaInstitucion": LegajoProvincias,
+            "localidadInstitucion": LegajoLocalidad,
+            "municipioInstitucion": LegajoMunicipio,
             "barrioInstitucion": "barrioInstitucion",
             "calleInstitucion": "calleInstitucion",
             "numeroInstitucion": "numeroInstitucion",
             "interesEstudio": "interesEstudio",
             "interesCurso": "interesCurso",
-            "nivelIncompleto": "nivelIncompleto",
-            "sinEduFormal": "sinEduFormal",
+            "nivelIncompleto": MotivoNivelIncompleto,
+            "sinEduFormal": MotivoNivelIncompleto,
             "realizandoCurso": "realizandoCurso",
-            "areaCurso": "areaCurso",
+            "areaCurso": AreaCurso,
             "interesCapLab": "interesCapLab",
-            "areaOficio": "areaOficio",
+            "areaOficio": AreaCurso,
             "oficio": "oficio",
         }
 
-        for field in fields_mapping_educacion:
+        for field, model in fields_mapping_educacion.items():
             value = form_multiple.get(field)
 
             if value:
-                # TODO: Refactorizar
-                if field == "provinciaInstitucion":
-                    value = LegajoProvincias.objects.get(pk=value) or None
-                elif field == "municipioInstitucion":
-                    value = LegajoMunicipio.objects.get(pk=value) or None
-                elif field == "localidadInstitucion":
-                    value = LegajoLocalidad.objects.get(pk=value) or None
-
-                setattr(
-                    legajo_dim_educacion,
-                    fields_mapping_educacion.get(field, field),
-                    value,
-                )
-
+                # Verifica si el valor del campo es una instancia de un modelo o una ForeignKey
+                if isinstance(model, type) and issubclass(model, models.Model):
+                    instance = model.objects.get(pk=value)
+                    setattr(legajo_dim_educacion, field, instance)
+                else:
+                    setattr(legajo_dim_educacion, field, value)
             else:
                 setattr(legajo_dim_educacion, field, None)
 
@@ -1564,29 +1655,28 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
 
         fields_mapping_trabajo = {
             "tiene_trabajo": "tiene_trabajo",
-            "modo_contratacion": "modo_contratacion",
+            "modo_contratacion": ModoContratacion,
             "ocupacion": "ocupacion",
             "conviviente_trabaja": "conviviente_trabaja",
             "obs_trabajo": "obs_trabajo",
             "horasSemanales": "horasSemanales",
-            "actividadRealizadaComo": "actividadRealizadaComo",
-            "duracionTrabajo": "duracionTrabajo",
-            "aportesJubilacion": "aportesJubilacion",
-            "TiempoBusquedaLaboral": "TiempoBusquedaLaboral",
+            "actividadRealizadaComo": ActividadRealizada,
+            "duracionTrabajo": DuracionTrabajo,
+            "aportesJubilacion": AportesJubilacion,
+            "TiempoBusquedaLaboral": TiempoBusquedaLaboral,
             "busquedaLaboral": "busquedaLaboral",
-            "noBusquedaLaboral": "noBusquedaLaboral",
+            "noBusquedaLaboral": NoBusquedaLaboral,
         }
 
-        for field in fields_mapping_trabajo:
+        for field, model in fields_mapping_trabajo.items():
             value = form_multiple.get(field)
 
             if value:
-                setattr(
-                    legajo_dim_trabajo,
-                    fields_mapping_trabajo.get(field, field),
-                    value,
-                )
-
+                if isinstance(model, type) and issubclass(model, models.Model):
+                    instance = model.objects.get(pk=value)
+                    setattr(legajo_dim_trabajo, field, instance)
+                else:
+                    setattr(legajo_dim_trabajo, field, value)
             else:
                 setattr(legajo_dim_trabajo, field, None)
 
@@ -1870,12 +1960,9 @@ class LegajosGrupoHogarCreateView(CreateView):
                 f"Verifique que no exista un legajo con ese DNI y NÚMERO. Error: {e}",
             )
 
-        # Crea el objeto LegajoGrupoFamiliar con los valores del formulario
-        # vinculo_data = VINCULO_MAP.get(vinculo)
-        # if not vinculo_data:
-        #   return messages.error(self.request, "Vinculo inválido.")
-
         # crea la relacion de grupo familiar
+        estado_relacion_instance = EstadoRelacion.objects.get(pk=estado_relacion)
+
         legajo_principal = Legajos.objects.get(id=pk)
         try:
             LegajoGrupoFamiliar.objects.create(
@@ -1883,7 +1970,7 @@ class LegajosGrupoHogarCreateView(CreateView):
                 fk_legajo_2=nuevo_legajo,
                 #  vinculo=vinculo_data["vinculo"],
                 # vinculo_inverso=vinculo_data["vinculo_inverso"],
-                estado_relacion=estado_relacion,
+                estado_relacion=estado_relacion_instance,
             )
         except Exception as e:
             return messages.error(
@@ -1899,7 +1986,7 @@ class LegajosGrupoHogarCreateView(CreateView):
 def busqueda_hogar(request):
 
     res = None
-    busqueda = request.POST.get("busqueda")
+    busqueda = request.POST.get("busqueda", "")
     legajo_principal_id = request.POST.get("id")
     page_number = request.POST.get("page", 1)
 
@@ -1921,7 +2008,7 @@ def busqueda_hogar(request):
         & (Q(apellido__icontains=busqueda) | Q(documento__icontains=busqueda))
     ).exclude(id__in=legajos_asociados_ids)
 
-    if len(hogares) > 0 and busqueda:
+    if hogares.exists() and busqueda:
         paginator = Paginator(hogares, paginate_by)
         try:
             page_obj = paginator.page(page_number)
@@ -1936,10 +2023,9 @@ def busqueda_hogar(request):
                 "nombre": hogar.nombre,
                 "apellido": hogar.apellido,
                 "documento": hogar.documento,
-                "tipo_doc": hogar.tipo_doc,
+                "tipo_doc": hogar.tipo_doc.tipo if hogar.tipo_doc else None,
                 "fecha_nacimiento": hogar.fecha_nacimiento,
-                "sexo": hogar.sexo,
-                # Otros campos que deseas incluir
+                "sexo": hogar.sexo.sexo if hogar.sexo else None,
             }
             for hogar in page_obj
         ]
@@ -2010,18 +2096,25 @@ class CreateGrupoHogar(View):
         fk_legajo_1 = request.GET.get("fk_legajo_1", None)
         fk_legajo_2 = request.GET.get("fk_legajo_2", None)
         estado_relacion = request.GET.get("estado_relacion", None)
+
         obj = None
+
+        try:
+            estado_relacion_instance = EstadoRelacion.objects.get(pk=estado_relacion)
+        except EstadoRelacion.DoesNotExist:
+            return JsonResponse({"error": "EstadoRelacion no encontrado"}, status=400)
 
         obj = LegajoGrupoHogar.objects.create(
             fk_legajo_1Hogar_id=fk_legajo_1,
             fk_legajo_2Hogar_id=fk_legajo_2,
-            estado_relacion=estado_relacion,
+            estado_relacion=estado_relacion_instance,
         )
 
         familiar = {
             "id": obj.id,
             "fk_legajo_1": obj.fk_legajo_1Hogar.id,
             "fk_legajo_2": obj.fk_legajo_2Hogar.id,
+            "estado_relacion": obj.estado_relacion.estado,
             "nombre": obj.fk_legajo_2Hogar.nombre,
             "apellido": obj.fk_legajo_2Hogar.apellido,
             "foto": (

@@ -52,10 +52,10 @@ from legajos.views import (
     TipoEstadosLlamadosAjax,
     busqueda_familiares,
     busqueda_hogar,
+    load_asentamiento,
+    load_departamento,
     load_localidad,
     load_municipios,
-    load_departamento,
-    load_asentamiento,
 )
 
 urlpatterns = [

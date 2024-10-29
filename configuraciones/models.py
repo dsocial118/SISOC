@@ -4,17 +4,143 @@ from django.urls import reverse
 
 from usuarios.models import Usuarios
 
-from .choices import (
-    CHOICE_BARRIOS,
-    CHOICE_DIMENSIONES,
-    CHOICE_JURISDICCION,
-    CHOICE_LOCALIDAD,
-    CHOICE_TIPO_ORGANISMO,
-)
-
 # -------------------------------CONFIGURACIONES GENERALES (se usan en todo el proyecto)--------------------------------------
 
 
+# Modelos para los choices de los formularios
+class TipoOrganismo(models.Model):
+    tipo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.tipo)
+
+    class Meta:
+        verbose_name = "Tipo de Organismo"
+        verbose_name_plural = "Tipos de Organismos"
+
+
+class SalaVacante(models.Model):
+    sala = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.sala)
+
+    class Meta:
+        verbose_name = "Sala Vacante"
+        verbose_name_plural = "Salas Vacantes"
+
+
+class TurnoVacante(models.Model):
+    turno = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.turno)
+
+    class Meta:
+        verbose_name = "Turno Vacante"
+        verbose_name_plural = "Turnos Vacantes"
+
+
+class Jurisdiccion(models.Model):
+    jurisdiccion = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.jurisdiccion)
+
+    class Meta:
+        verbose_name = "Jurisdicción"
+        verbose_name_plural = "Jurisdicciones"
+
+
+class Circuito(models.Model):
+    circuito = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.circuito)
+
+    class Meta:
+        verbose_name = "Circuito"
+        verbose_name_plural = "Circuitos"
+
+
+class Localidad(models.Model):
+    localidad = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.localidad)
+
+    class Meta:
+        verbose_name = "Localidad"
+        verbose_name_plural = "Localidades"
+
+
+class Barrio(models.Model):
+    barrio = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.barrio)
+
+    class Meta:
+        verbose_name = "Barrio"
+        verbose_name_plural = "Barrios"
+
+
+class Impacto(models.Model):
+    impacto = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.impacto)
+
+    class Meta:
+        verbose_name = "Impacto"
+        verbose_name_plural = "Impactos"
+
+
+class Dimension(models.Model):
+    dimension = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.dimension)
+
+    class Meta:
+        verbose_name = "Dimensión"
+        verbose_name_plural = "Dimensiones"
+
+
+class TipoDeDato(models.Model):
+    tipo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.tipo)
+
+    class Meta:
+        verbose_name = "Tipo de Dato"
+        verbose_name_plural = "Tipos de Datos"
+
+
+class TipoDeFormulario(models.Model):
+    tipo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.tipo)
+
+    class Meta:
+        verbose_name = "Tipo de Formulario"
+        verbose_name_plural = "Tipos de Formularios"
+
+
+class CriterioAlerta(models.Model):
+    criterio = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.criterio)
+
+    class Meta:
+        verbose_name = "Criterio de Alerta"
+        verbose_name_plural = "Criterios de Alerta"
+
+
+# Fin de los modelos para los choices de los formularios
 class Secretarias(models.Model):
     nombre = models.CharField(max_length=255, unique=True)
     observaciones = models.CharField(max_length=500, null=True, blank=True)
@@ -83,15 +209,15 @@ class Programas(models.Model):
 
 class Organismos(models.Model):
     nombre = models.CharField(max_length=255, unique=True)
-    tipo = models.CharField(max_length=255, choices=CHOICE_TIPO_ORGANISMO)
+    tipo = models.ForeignKey(
+        TipoOrganismo, on_delete=models.CASCADE, null=True, blank=True
+    )
     calle = models.CharField(max_length=255, null=True, blank=True)
     altura = models.IntegerField(null=True, blank=True)
     piso = models.CharField(max_length=255, null=True, blank=True)
-    barrio = models.CharField(
-        max_length=255, choices=CHOICE_BARRIOS, null=True, blank=True
-    )
-    localidad = models.CharField(
-        max_length=255, choices=CHOICE_LOCALIDAD, null=True, blank=True
+    barrio = models.ForeignKey(Barrio, on_delete=models.CASCADE, null=True, blank=True)
+    localidad = models.ForeignKey(
+        Localidad, on_delete=models.CASCADE, null=True, blank=True
     )
     telefono = models.IntegerField(null=True, blank=True)
     email = models.EmailField(null=True, blank=True)
@@ -115,7 +241,9 @@ class Organismos(models.Model):
 
 class PlanesSociales(models.Model):
     nombre = models.CharField(max_length=255, unique=True)
-    jurisdiccion = models.CharField(max_length=255, choices=CHOICE_JURISDICCION)
+    jurisdiccion = models.ForeignKey(
+        Jurisdiccion, on_delete=models.CASCADE, null=True, blank=True
+    )
     estado = models.BooleanField(default=True)
     observaciones = models.CharField(max_length=500, null=True, blank=True)
 
@@ -243,8 +371,8 @@ class CategoriaAlertas(models.Model):
     """
 
     nombre = models.CharField(max_length=255, unique=True)
-    dimension = models.CharField(
-        max_length=255, choices=CHOICE_DIMENSIONES, null=True, blank=True
+    dimension = models.ForeignKey(
+        Dimension, on_delete=models.CASCADE, null=True, blank=True
     )
     estado = models.BooleanField(default=True)
 
@@ -322,8 +450,13 @@ class Acciones(models.Model):
     """
 
     nombre = models.CharField(max_length=255, unique=True)
-    dimension = models.CharField(
-        max_length=255, choices=CHOICE_DIMENSIONES, default="Desconocida"
+    dimension = models.ForeignKey(
+        Dimension,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        default=None,
+        verbose_name="Dimensión",
     )
     observaciones = models.CharField(max_length=500, null=True, blank=True)
 
@@ -348,8 +481,13 @@ class Criterios(models.Model):
     """
 
     nombre = models.CharField(max_length=255, unique=True)
-    dimension = models.CharField(
-        max_length=255, choices=CHOICE_DIMENSIONES, default="Desconocida"
+    dimension = models.ForeignKey(
+        Dimension,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        default=None,
+        verbose_name="Dimensión",
     )
     fk_sujeto = models.ForeignKey(Sujetos, on_delete=models.CASCADE)
     permite_potencial = models.BooleanField(default=False)
