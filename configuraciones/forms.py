@@ -1,12 +1,25 @@
 from django import forms  # pylint: disable=too-many-lines
 from django.forms.models import inlineformset_factory
-
 from configuraciones.models import CriterioAlerta
 
-from .models import (Acciones, AgentesExternos, Alertas, CategoriaAlertas,
-                     Criterios, Equipos, GruposDestinatarios, IndiceCriterios,
-                     Indices, Organismos, PlanesSociales, Programas,
-                     Secretarias, Subsecretarias, Vacantes)
+
+from .models import (
+    Secretarias,
+    Subsecretarias,
+    Programas,
+    Organismos,
+    PlanesSociales,
+    AgentesExternos,
+    GruposDestinatarios,
+    CategoriaAlertas,
+    Alertas,
+    Equipos,
+    Acciones,
+    Criterios,
+    Vacantes,
+    IndiceCriterios,
+    Indices,
+)
 
 
 class SecretariasForm(forms.ModelForm):

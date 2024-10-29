@@ -2,8 +2,7 @@ import re
 
 import django
 from django.core.exceptions import ValidationError
-from django.utils.translation import gettext
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext, ugettext as _
 
 django.utils.translation.ugettext = gettext
 

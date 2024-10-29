@@ -3,7 +3,7 @@ import logging
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from .models import HistorialLegajoAlertas, LegajoAlertas
+from .models import LegajoAlertas, HistorialLegajoAlertas
 
 # guardado de log de usuarios
 logger = logging.getLogger("django")
