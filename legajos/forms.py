@@ -6,13 +6,28 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from legajos.models import EstadoRelacion, Legajos, VinculoFamiliar
 from usuarios.validators import MaxSizeFileValidator
 
-from .models import (CategoriaAlertas, DimensionEconomia, DimensionEducacion,
-                     DimensionFamilia, DimensionSalud, DimensionTrabajo,
-                     DimensionVivienda, Intervencion, LegajoAlertas,
-                     LegajoAsentamientos, LegajoDepartamento,
-                     LegajoGrupoFamiliar, LegajoGrupoHogar, LegajoLocalidad,
-                     LegajoMunicipio, LegajoProvincias, Legajos,
-                     LegajosArchivos, LegajosDerivaciones, Llamado)
+from .models import (
+    CategoriaAlertas,
+    DimensionEconomia,
+    DimensionEducacion,
+    DimensionFamilia,
+    DimensionSalud,
+    DimensionTrabajo,
+    DimensionVivienda,
+    Intervencion,
+    LegajoAlertas,
+    LegajoAsentamientos,
+    LegajoDepartamento,
+    LegajoGrupoFamiliar,
+    LegajoGrupoHogar,
+    LegajoLocalidad,
+    LegajoMunicipio,
+    LegajoProvincias,
+    Legajos,
+    LegajosArchivos,
+    LegajosDerivaciones,
+    Llamado,
+)
 
 BOOLEAN_CHOICE = [
     (False, "No"),

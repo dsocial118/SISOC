@@ -4,13 +4,23 @@ from django.contrib.auth.views import LogoutView
 from django.urls import path
 
 from usuarios.forms import MySetPasswordFormm
-from usuarios.views import (GruposCreateView, GruposDeleteView,
-                            GruposDetailView, GruposListView, GruposUpdateView,
-                            PerfilChangePassView, PerfilUpdateView,
-                            UsuariosCreateView, UsuariosDeleteView,
-                            UsuariosDetailView, UsuariosListView,
-                            UsuariosLoginView, UsuariosResetPassView,
-                            UsuariosUpdateView, set_dark_mode)
+from usuarios.views import (
+    GruposCreateView,
+    GruposDeleteView,
+    GruposDetailView,
+    GruposListView,
+    GruposUpdateView,
+    PerfilChangePassView,
+    PerfilUpdateView,
+    UsuariosCreateView,
+    UsuariosDeleteView,
+    UsuariosDetailView,
+    UsuariosListView,
+    UsuariosLoginView,
+    UsuariosResetPassView,
+    UsuariosUpdateView,
+    set_dark_mode,
+)
 
 urlpatterns = [
     path("", UsuariosLoginView.as_view(), name="login"),

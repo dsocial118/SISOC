@@ -1,7 +1,11 @@
 from django import forms
-from django.contrib.auth.forms import (PasswordChangeForm, PasswordResetForm,
-                                       SetPasswordForm, UserChangeForm,
-                                       UserCreationForm)
+from django.contrib.auth.forms import (
+    PasswordChangeForm,
+    PasswordResetForm,
+    SetPasswordForm,
+    UserChangeForm,
+    UserCreationForm,
+)
 from django.contrib.auth.models import Group, Permission, User
 from django.core.validators import MaxValueValidator, MinValueValidator
 
