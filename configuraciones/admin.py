@@ -1,12 +1,27 @@
 from django.contrib import admin
 
-from configuraciones.models import (Alertas, Barrio, CategoriaAlertas,
-                                    Circuito, CriterioAlerta, Dimension,
-                                    Equipos, Impacto, Jurisdiccion, Localidad,
-                                    Organismos, PlanesSociales, Programas,
-                                    SalaVacante, Secretarias, Subsecretarias,
-                                    TipoDeDato, TipoDeFormulario,
-                                    TipoOrganismo, TurnoVacante)
+from configuraciones.models import (
+    Alertas,
+    Barrio,
+    CategoriaAlertas,
+    Circuito,
+    CriterioAlerta,
+    Dimension,
+    Equipos,
+    Impacto,
+    Jurisdiccion,
+    Localidad,
+    Organismos,
+    PlanesSociales,
+    Programas,
+    SalaVacante,
+    Secretarias,
+    Subsecretarias,
+    TipoDeDato,
+    TipoDeFormulario,
+    TipoOrganismo,
+    TurnoVacante,
+)
 
 
 @admin.register(Secretarias)

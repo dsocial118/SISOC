@@ -3,10 +3,23 @@ from django.forms.models import inlineformset_factory
 
 from configuraciones.models import CriterioAlerta
 
-from .models import (Acciones, AgentesExternos, Alertas, CategoriaAlertas,
-                     Criterios, Equipos, GruposDestinatarios, IndiceCriterios,
-                     Indices, Organismos, PlanesSociales, Programas,
-                     Secretarias, Subsecretarias, Vacantes)
+from .models import (
+    Acciones,
+    AgentesExternos,
+    Alertas,
+    CategoriaAlertas,
+    Criterios,
+    Equipos,
+    GruposDestinatarios,
+    IndiceCriterios,
+    Indices,
+    Organismos,
+    PlanesSociales,
+    Programas,
+    Secretarias,
+    Subsecretarias,
+    Vacantes,
+)
 
 
 class SecretariasForm(forms.ModelForm):
