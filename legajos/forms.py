@@ -4,7 +4,7 @@ from django import forms
 from django.core.validators import MaxValueValidator, MinValueValidator
 
 from usuarios.validators import MaxSizeFileValidator
-from legajos.models import Nacionalidad, Legajos, VinculoFamiliar, EstadoRelacion
+from legajos.models import Legajos, VinculoFamiliar, EstadoRelacion
 from .models import (
     DimensionEducacion,
     Legajos,
