@@ -2,13 +2,25 @@ from django.contrib import admin
 
 from configuraciones.models import (
     Alertas,
+    Barrio,
     CategoriaAlertas,
+    Circuito,
+    CriterioAlerta,
+    Dimension,
     Equipos,
+    Impacto,
+    Jurisdiccion,
+    Localidad,
     Organismos,
     PlanesSociales,
     Programas,
+    SalaVacante,
     Secretarias,
     Subsecretarias,
+    TipoDeDato,
+    TipoDeFormulario,
+    TipoOrganismo,
+    TurnoVacante,
 )
 
 
@@ -112,3 +124,17 @@ class AlertasAdmin(admin.ModelAdmin):
     )
     search_fields = ["nombre"]
     ordering = ["nombre"]
+
+
+admin.site.register(TipoOrganismo)
+admin.site.register(SalaVacante)
+admin.site.register(TurnoVacante)
+admin.site.register(Jurisdiccion)
+admin.site.register(Circuito)
+admin.site.register(Localidad)
+admin.site.register(Barrio)
+admin.site.register(Impacto)
+admin.site.register(Dimension)
+admin.site.register(TipoDeDato)
+admin.site.register(TipoDeFormulario)
+admin.site.register(CriterioAlerta)

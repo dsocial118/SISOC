@@ -5,6 +5,11 @@ from django.urls import path
 
 from usuarios.forms import MySetPasswordFormm
 from usuarios.views import (
+    GruposCreateView,
+    GruposDeleteView,
+    GruposDetailView,
+    GruposListView,
+    GruposUpdateView,
     PerfilChangePassView,
     PerfilUpdateView,
     UsuariosCreateView,

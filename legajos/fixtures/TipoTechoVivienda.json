@@ -1,0 +1,65 @@
+[
+    {
+        "model": "legajos.tipotechovivienda",
+        "pk": 1,
+        "fields": {
+            "tipo": "Cubierta asfáltica o membrana"
+        }
+    },
+    {
+        "model": "legajos.tipotechovivienda",
+        "pk": 2,
+        "fields": {
+            "tipo": "Baldosa o losa (sin cubierta)"
+        }
+    },
+    {
+        "model": "legajos.tipotechovivienda",
+        "pk": 3,
+        "fields": {
+            "tipo": "Pizarra o teja"
+        }
+    },
+    {
+        "model": "legajos.tipotechovivienda",
+        "pk": 4,
+        "fields": {
+            "tipo": "Chapa de metal (sin cubierta)"
+        }
+    },
+    {
+        "model": "legajos.tipotechovivienda",
+        "pk": 5,
+        "fields": {
+            "tipo": "Chapa de fibrocemento o plástico"
+        }
+    },
+    {
+        "model": "legajos.tipotechovivienda",
+        "pk": 6,
+        "fields": {
+            "tipo": "Chapa de cartón"
+        }
+    },
+    {
+        "model": "legajos.tipotechovivienda",
+        "pk": 7,
+        "fields": {
+            "tipo": "Caña, palma, tabla o paja con o sin barro"
+        }
+    },
+    {
+        "model": "legajos.tipotechovivienda",
+        "pk": 8,
+        "fields": {
+            "tipo": "Otro"
+        }
+    },
+    {
+        "model": "legajos.tipotechovivienda",
+        "pk": 9,
+        "fields": {
+            "tipo": "Ns/Nc"
+        }
+    }
+]

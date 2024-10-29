@@ -1,0 +1,16 @@
+[
+    {
+        "model": "legajos.estadollamado",
+        "pk": 1,
+        "fields": {
+            "estado": "En proceso"
+        }
+    },
+    {
+        "model": "legajos.estadollamado",
+        "pk": 2,
+        "fields": {
+            "estado": "Finalizada"
+        }
+    }
+]

@@ -4,57 +4,577 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.urls import reverse
-from multiselectfield import MultiSelectField
 
 from configuraciones.choices import CHOICE_CIRCUITOS
 from configuraciones.models import (
     Alertas,
     CategoriaAlertas,
+    Circuito,
     Organismos,
     PlanesSociales,
     Programas,
 )
-from legajos.choices import (
-    CHOICE_ACTIVIDAD_REALIZADA,
-    CHOICE_AGUA,
-    CHOICE_APORTES_JUBILACION,
-    CHOICE_AREA_CURSO,
-    CHOICE_ASISTE_ESCUELA,
-    CHOICE_CANTIDADAMBIENTES,
-    CHOICE_CENTROS_SALUD,
-    CHOICE_CONDICIONDE,
-    CHOICE_CONTEXTOCASA,
-    CHOICE_DESAGUE,
-    CHOICE_DURACION_TRABAJO,
-    CHOICE_ESTADO_CIVIL,
-    CHOICE_ESTADO_DERIVACION,
-    CHOICE_ESTADO_NIVEL_EDUCATIVO,
-    CHOICE_ESTADO_RELACION,
-    CHOICE_FRECUENCIA,
-    CHOICE_GAS,
-    CHOICE_GRADO,
-    CHOICE_IMPORTANCIA,
-    CHOICE_INODORO,
-    CHOICE_INSTITUCIONES_EDUCATIVAS,
-    CHOICE_MODO_CONTRATACION,
-    CHOICE_MOTIVO_NIVEL_INCOMPLETO,
-    CHOICE_NACIONALIDAD,
-    CHOICE_NIVEL_EDUCATIVO,
-    CHOICE_NO_BUSQUEDA_LABORAL,
-    CHOICE_RECHAZO,
-    CHOICE_SEXO,
-    CHOICE_SINO,
-    CHOICE_TIEMPO_BUSQUEDA_LABORAL,
-    CHOICE_TIPO_CONSTRUCCION_VIVIENDA,
-    CHOICE_TIPO_DOC,
-    CHOICE_TIPO_GESTION,
-    CHOICE_TIPO_PISOS_VIVIENDA,
-    CHOICE_TIPO_TECHO_VIVIENDA,
-    CHOICE_TIPO_VIVIENDA,
-    CHOICE_TURNO,
-    CHOICE_VINCULO_FAMILIAR,
-)
 from usuarios.models import User, Usuarios
+
+# Modelo para choices de dimension educacion
+
+
+class NivelEducativo(models.Model):
+    nivel = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.nivel)
+
+    class Meta:
+        verbose_name = "Nivel Educativo"
+        verbose_name_plural = "Niveles Educativos"
+
+
+class EstadoNivelEducativo(models.Model):
+    estado = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.estado)
+
+    class Meta:
+        verbose_name = "Estado Nivel Educativo"
+        verbose_name_plural = "Estados Niveles Educativos"
+
+
+class AsisteEscuela(models.Model):
+    asiste = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.asiste)
+
+    class Meta:
+        verbose_name = "Asiste Escuela"
+        verbose_name_plural = "Asiste Escuelas"
+
+
+class EstadoEducativo(models.Model):
+    estado = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.estado)
+
+    class Meta:
+        verbose_name = "Estado Educativo"
+        verbose_name_plural = "Estados Educativos"
+
+
+class MotivoNivelIncompleto(models.Model):
+    motivo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.motivo)
+
+    class Meta:
+        verbose_name = "Motivo Nivel Incompleto"
+        verbose_name_plural = "Motivos Niveles Incompletos"
+
+
+class AreaCurso(models.Model):
+    area = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.area)
+
+    class Meta:
+        verbose_name = "Area Curso"
+        verbose_name_plural = "Areas Cursos"
+
+
+class TipoGestion(models.Model):
+    gestion = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.gestion)
+
+    class Meta:
+        verbose_name = "Tipo Gestion"
+        verbose_name_plural = "Tipos Gestion"
+
+
+class Grado(models.Model):
+    grado = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.grado)
+
+    class Meta:
+        verbose_name = "Grado"
+        verbose_name_plural = "Grados"
+
+
+class Turno(models.Model):
+    turno = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.turno)
+
+    class Meta:
+        verbose_name = "Turno"
+        verbose_name_plural = "Turnos"
+
+
+# TODO : Crear choices para instituciones educativas
+class InstitucionesEducativas(models.Model):
+    institucion = models.CharField(
+        max_length=255,
+    )
+
+    def __str__(self):
+        return str(self.institucion)
+
+    class Meta:
+        verbose_name = "Institucion Educativa"
+        verbose_name_plural = "Instituciones Educativas"
+
+
+# Fin de modelo para choices de dimension educacion
+
+# Modelo para choices de dimension Vivienda
+
+
+class CantidadAmbientes(models.Model):
+    cantidad = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.cantidad)
+
+    class Meta:
+        verbose_name = "Cantidad de Ambientes"
+        verbose_name_plural = "Cantidades de Ambientes"
+
+
+class CondicionDe(models.Model):
+    condicion = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.condicion)
+
+    class Meta:
+        verbose_name = "Condición de"
+        verbose_name_plural = "Condiciones de"
+
+
+class ContextoCasa(models.Model):
+    contexto = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.contexto)
+
+    class Meta:
+        verbose_name = "Contexto de Casa"
+        verbose_name_plural = "Contextos de Casa"
+
+
+class TipoAyudaHogar(models.Model):
+    tipo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.tipo)
+
+    class Meta:
+        verbose_name = "Tipo de Ayuda al Hogar"
+        verbose_name_plural = "Tipos de Ayuda al Hogar"
+
+
+class TipoVivienda(models.Model):
+    tipo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.tipo)
+
+    class Meta:
+        verbose_name = "Tipo de Vivienda"
+        verbose_name_plural = "Tipos de Vivienda"
+
+
+class TipoPosesionVivienda(models.Model):
+    tipo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.tipo)
+
+    class Meta:
+        verbose_name = "Tipo de Posesión de Vivienda"
+        verbose_name_plural = "Tipos de Posesión de Vivienda"
+
+
+class TipoPisosVivienda(models.Model):
+    tipo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.tipo)
+
+    class Meta:
+        verbose_name = "Tipo de Pisos de Vivienda"
+        verbose_name_plural = "Tipos de Pisos de Vivienda"
+
+
+class TipoTechoVivienda(models.Model):
+    tipo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.tipo)
+
+    class Meta:
+        verbose_name = "Tipo de Techo de Vivienda"
+        verbose_name_plural = "Tipos de Techo de Vivienda"
+
+
+class Agua(models.Model):
+    tipo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.tipo)
+
+    class Meta:
+        verbose_name = "Agua"
+        verbose_name_plural = "Aguas"
+
+
+class Desague(models.Model):
+    tipo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.tipo)
+
+    class Meta:
+        verbose_name = "Desagüe"
+        verbose_name_plural = "Desagües"
+
+
+class Inodoro(models.Model):
+    tipo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.tipo)
+
+    class Meta:
+        verbose_name = "Inodoro"
+        verbose_name_plural = "Inodoros"
+
+
+class Gas(models.Model):
+    tipo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.tipo)
+
+    class Meta:
+        verbose_name = "Gas"
+        verbose_name_plural = "Gases"
+
+
+class TipoConstruccionVivienda(models.Model):
+    tipo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.tipo)
+
+    class Meta:
+        verbose_name = "Tipo de Construcción de Vivienda"
+        verbose_name_plural = "Tipos de Construcción de Vivienda"
+
+
+class TipoEstadoVivienda(models.Model):
+    tipo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.tipo)
+
+    class Meta:
+        verbose_name = "Tipo de Estado de Vivienda"
+        verbose_name_plural = "Tipos de Estado de Vivienda"
+
+
+# Fin de modelo para choices de dimension Vivienda
+
+
+# Modelo para choices de datos personales
+class EstadoCivil(models.Model):
+    estado = models.CharField(max_length=20)
+
+    def __str__(self):
+        return str(self.estado)
+
+    class Meta:
+        verbose_name = "Estado Civil"
+        verbose_name_plural = "Estados Civiles"
+
+
+class Sexo(models.Model):
+    sexo = models.CharField(max_length=10)
+
+    def __str__(self):
+        return str(self.sexo)
+
+    class Meta:
+        verbose_name = "Sexo"
+        verbose_name_plural = "Sexos"
+
+
+class Genero(models.Model):
+    genero = models.CharField(max_length=20)
+
+    def __str__(self):
+        return str(self.genero)
+
+    class Meta:
+        verbose_name = "Género"
+        verbose_name_plural = "Géneros"
+
+
+class GeneroPronombre(models.Model):
+    pronombre = models.CharField(max_length=10)
+
+    def __str__(self):
+        return str(self.pronombre)
+
+    class Meta:
+        verbose_name = "Género Pronombre"
+        verbose_name_plural = "Géneros Pronombres"
+
+
+class TipoDoc(models.Model):
+    tipo = models.CharField(max_length=20)
+
+    def __str__(self):
+        return str(self.tipo)
+
+    class Meta:
+        verbose_name = "Tipo de Documento"
+        verbose_name_plural = "Tipos de Documentos"
+
+
+class Nacionalidad(models.Model):
+    nacionalidad = models.CharField(max_length=50)
+
+    def __str__(self):
+        return str(self.nacionalidad)
+
+    class Meta:
+        verbose_name = "Nacionalidad"
+        verbose_name_plural = "Nacionalidades"
+
+
+# fin de modelo para choices de datos personales
+# Modelo para choices de dimension trabajo y salud
+
+
+class TipoDiscapacidad(models.Model):
+    tipo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.tipo)
+
+    class Meta:
+        verbose_name = "Tipo de Discapacidad"
+        verbose_name_plural = "Tipos de Discapacidad"
+
+
+class TipoEnfermedad(models.Model):
+    tipo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.tipo)
+
+    class Meta:
+        verbose_name = "Tipo de Enfermedad"
+        verbose_name_plural = "Tipos de Enfermedad"
+
+
+class CentrosSalud(models.Model):
+    centro = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.centro)
+
+    class Meta:
+        verbose_name = "Centro de Salud"
+        verbose_name_plural = "Centros de Salud"
+
+
+class Frecuencia(models.Model):
+    frecuencia = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.frecuencia)
+
+    class Meta:
+        verbose_name = "Frecuencia"
+        verbose_name_plural = "Frecuencias"
+
+
+class ModoContratacion(models.Model):
+    modo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.modo)
+
+    class Meta:
+        verbose_name = "Modo de Contratación"
+        verbose_name_plural = "Modos de Contratación"
+
+
+class ActividadRealizada(models.Model):
+    actividad = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.actividad)
+
+    class Meta:
+        verbose_name = "Actividad Realizada"
+        verbose_name_plural = "Actividades Realizadas"
+
+
+class DuracionTrabajo(models.Model):
+    duracion = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.duracion)
+
+    class Meta:
+        verbose_name = "Duración del Trabajo"
+        verbose_name_plural = "Duraciones del Trabajo"
+
+
+class AportesJubilacion(models.Model):
+    aporte = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.aporte)
+
+    class Meta:
+        verbose_name = "Aporte Jubilación"
+        verbose_name_plural = "Aportes Jubilación"
+
+
+class TiempoBusquedaLaboral(models.Model):
+    tiempo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.tiempo)
+
+    class Meta:
+        verbose_name = "Tiempo de Búsqueda Laboral"
+        verbose_name_plural = "Tiempos de Búsqueda Laboral"
+
+
+class NoBusquedaLaboral(models.Model):
+    motivo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.motivo)
+
+    class Meta:
+        verbose_name = "Motivo de No Búsqueda Laboral"
+        verbose_name_plural = "Motivos de No Búsqueda Laboral"
+
+
+class Nivel(models.Model):
+    nivel = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.nivel)
+
+    class Meta:
+        verbose_name = "Nivel"
+        verbose_name_plural = "Niveles"
+
+
+class Accion(models.Model):
+    accion = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.accion)
+
+    class Meta:
+        verbose_name = "Acción"
+        verbose_name_plural = "Acciones"
+
+
+class EstadoRelacion(models.Model):
+    estado = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.estado)
+
+    class Meta:
+        verbose_name = "Estado de Relación"
+        verbose_name_plural = "Estados de Relación"
+
+
+class EstadoDerivacion(models.Model):
+    estado = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.estado)
+
+    class Meta:
+        verbose_name = "Estado de Derivación"
+        verbose_name_plural = "Estados de Derivación"
+
+
+class VinculoFamiliar(models.Model):
+    vinculo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.vinculo)
+
+    class Meta:
+        verbose_name = "Vínculo Familiar"
+        verbose_name_plural = "Vínculos Familiares"
+
+
+class Rechazo(models.Model):
+    motivo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.motivo)
+
+    class Meta:
+        verbose_name = "Motivo de Rechazo"
+        verbose_name_plural = "Motivos de Rechazo"
+
+
+class EstadoIntervencion(models.Model):
+    estado = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.estado)
+
+    class Meta:
+        verbose_name = "Estado de Intervención"
+        verbose_name_plural = "Estados de Intervención"
+
+
+class EstadoLlamado(models.Model):
+    estado = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.estado)
+
+    class Meta:
+        verbose_name = "Estado de Llamado"
+        verbose_name_plural = "Estados de Llamado"
+
+
+class Importancia(models.Model):
+    importancia = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.importancia)
+
+    class Meta:
+        verbose_name = "Importancia"
+        verbose_name_plural = "Importancias"
+
+
+# fin de modelo para choices de dimension trabajo y salud
 
 
 class LegajoProvincias(models.Model):
@@ -161,10 +681,10 @@ class Legajos(models.Model):
     apellido = models.CharField(max_length=255)
     nombre = models.CharField(max_length=255)
     fecha_nacimiento = models.DateField()
-    tipo_doc = models.CharField(
-        max_length=255,
-        choices=CHOICE_TIPO_DOC,
+    tipo_doc = models.ForeignKey(
+        TipoDoc,
         verbose_name="Tipo documento",
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
@@ -173,12 +693,16 @@ class Legajos(models.Model):
         null=True,
         blank=True,
     )
-    sexo = models.CharField(max_length=255, choices=CHOICE_SEXO)
-    nacionalidad = models.CharField(
-        max_length=255, choices=CHOICE_NACIONALIDAD, null=True, blank=True
+    sexo = models.ForeignKey(
+        Sexo,
+        on_delete=models.SET_NULL,
+        null=True,
     )
-    estado_civil = models.CharField(
-        max_length=255, choices=CHOICE_ESTADO_CIVIL, null=True, blank=True
+    nacionalidad = models.ForeignKey(
+        Nacionalidad, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    estado_civil = models.ForeignKey(
+        EstadoCivil, on_delete=models.SET_NULL, null=True, blank=True
     )
     calle = models.CharField(max_length=255, null=True, blank=True)
     altura = models.IntegerField(null=True, blank=True)
@@ -187,8 +711,9 @@ class Legajos(models.Model):
     pisodpto = models.CharField(
         max_length=255, null=True, blank=True, verbose_name="Piso/Dpto (optativo)"
     )
-    circuito = models.CharField(
-        max_length=255, choices=CHOICE_CIRCUITOS, null=True, blank=True
+    # TODO: choice viene de configuraciones.choices remplazar despues.
+    circuito = models.ForeignKey(
+        Circuito, on_delete=models.SET_NULL, null=True, blank=True
     )
     torrepasillo = models.CharField(
         max_length=255, null=True, blank=True, verbose_name="Torre / Pasillo (optativo)"
@@ -251,6 +776,7 @@ class Legajos(models.Model):
     cuil = models.BigIntegerField(null=True, blank=True)
     _id = models.CharField(max_length=255, null=True, blank=True)
     cuit = models.BigIntegerField(null=True, blank=True)
+
     def __str__(self):
         return f"{self.apellido}, {self.nombre}"
 
@@ -341,12 +867,16 @@ class LegajoGrupoFamiliar(models.Model):
     fk_legajo_2 = models.ForeignKey(
         Legajos, related_name="fk_legajo2", on_delete=models.CASCADE
     )
-    vinculo = models.CharField(max_length=255, choices=CHOICE_VINCULO_FAMILIAR)
-    vinculo_inverso = models.CharField(max_length=255, null=True, blank=True)
-    estado_relacion = models.CharField(max_length=255, choices=CHOICE_ESTADO_RELACION)
-    conviven = models.CharField(max_length=255, choices=CHOICE_SINO)
-    cuidador_principal = models.CharField(max_length=255, choices=CHOICE_SINO)
-    observaciones = models.CharField(max_length=500, null=True, blank=True)
+    vinculo = models.ForeignKey(
+        VinculoFamiliar, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    vinculo_inverso = models.CharField(max_length=255, blank=True, null=True)
+    estado_relacion = models.ForeignKey(
+        EstadoRelacion, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    conviven = models.BooleanField(null=True, blank=True)
+    cuidador_principal = models.BooleanField(null=True, blank=True)
+    observaciones = models.CharField(max_length=500, blank=True, null=True)
 
     def __str__(self):
         return f"Legajo: {self.fk_legajo_1} - Familiar: {self.fk_legajo_2} - Vínculo: {self.vinculo}"
@@ -409,7 +939,7 @@ class DimensionFamilia(models.Model):
         blank=True,
     )
     obs_familia = models.CharField(
-        verbose_name="Observaciones", max_length=500, null=True, blank=True
+        verbose_name="Observaciones", max_length=500, blank=True, null=True
     )
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
@@ -439,37 +969,33 @@ class DimensionVivienda(models.Model):
     """
 
     fk_legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
-    tipo = models.CharField(
-        verbose_name="Dirías que tu vivienda es…  ",
-        max_length=255,
-        choices=CHOICE_TIPO_VIVIENDA,
+    tipo = models.ForeignKey(
+        TipoVivienda,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
-    material = models.CharField(
-        verbose_name="Material principal de la vivienda",
-        max_length=255,
-        choices=CHOICE_TIPO_CONSTRUCCION_VIVIENDA,
+    material = models.ForeignKey(
+        TipoConstruccionVivienda,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
-    pisos = models.CharField(
-        verbose_name="Material principal de los pisos",
-        max_length=255,
-        choices=CHOICE_TIPO_PISOS_VIVIENDA,
+    pisos = models.ForeignKey(
+        TipoPisosVivienda,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
-    posesion = models.CharField(
-        verbose_name="Tipo de posesión",
-        max_length=255,
-        choices=CHOICE_CONDICIONDE,
+    posesion = models.ForeignKey(
+        TipoPosesionVivienda,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
-    cant_ambientes = models.SmallIntegerField(
-        verbose_name="¿Cuántos ambientes tiene la vivienda? (Sin contar baño ni cocina)",
-        choices=CHOICE_CANTIDADAMBIENTES,
+    cant_ambientes = models.ForeignKey(
+        CantidadAmbientes,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
@@ -489,90 +1015,69 @@ class DimensionVivienda(models.Model):
         verbose_name="¿Cuantos hogares hay en la vivienda?", null=True, blank=True
     )
     obs_vivienda = models.CharField(
-        verbose_name="Observaciones", max_length=500, null=True, blank=True
+        verbose_name="Observaciones", max_length=500, blank=True, null=True
     )
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
     # Nuevos campos
 
-    ContextoCasa = models.CharField(
-        verbose_name="La vivienda está ubicada...",
-        max_length=255,
-        choices=CHOICE_CONTEXTOCASA,
+    ContextoCasa = models.ForeignKey(
+        ContextoCasa,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
-    gas = models.CharField(
-        verbose_name="¿Qué utilizan principalmente para cocinar?",
-        max_length=255,
-        choices=CHOICE_GAS,
+    gas = models.ForeignKey(
+        Gas,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
-    techos = models.CharField(
-        verbose_name="¿Cuál es el material predominante de la cubierta exterior del techo de la vivienda?",
-        max_length=255,
-        choices=CHOICE_TIPO_TECHO_VIVIENDA,
+    techos = models.ForeignKey(
+        TipoTechoVivienda,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
-    agua = models.CharField(
-        verbose_name="El agua que usan para beber y cocinar proviene de…",
-        max_length=255,
-        choices=CHOICE_AGUA,
+    agua = models.ForeignKey(
+        Agua,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
-    desague = models.CharField(
-        verbose_name="El desagüe del inodoro es…",
-        max_length=255,
-        choices=CHOICE_DESAGUE,
+    desague = models.ForeignKey(
+        Desague,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
 
     # Migraciones para fix de DAD-106
-    hay_banio = models.CharField(
-        verbose_name="El baño tiene…",
-        max_length=255,
-        choices=CHOICE_INODORO,
+    hay_banio = models.ForeignKey(
+        Inodoro,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
-    hay_desmoronamiento = models.CharField(
+    hay_desmoronamiento = models.BooleanField(
         verbose_name="Existe riesgo de desmoronamiento?",
-        max_length=255,
-        choices=CHOICE_SINO,
-        null=True,
-        blank=True,
+        default=False,
     )
-    PoseenCeludar = models.CharField(
+    PoseenCelular = models.BooleanField(
         verbose_name="¿En tu hogar cuentan con Teléfonos celulares?",
-        max_length=255,
-        choices=CHOICE_SINO,
-        null=True,
-        blank=True,
+        default=False,
     )
-    PoseenPC = models.CharField(
+    PoseenPC = models.BooleanField(
         verbose_name="¿En tu hogar cuentan con Computadoras? (de escritorio / laptop / tablet) ",
-        max_length=255,
-        choices=CHOICE_SINO,
-        null=True,
-        blank=True,
+        default=False,
     )
-    Poseeninternet = models.CharField(
+    Poseeninternet = models.BooleanField(
         verbose_name="En tu hogar cuentan con Internet (a través del celular o por conexión en la vivienda - wifi)",
-        max_length=255,
-        choices=CHOICE_SINO,
-        null=True,
-        blank=True,
+        default=False,
     )
-    hay_agua_caliente = models.CharField(
+    hay_agua_caliente = models.BooleanField(
         verbose_name="¿Posee Agua caliente?",
-        max_length=255,
-        choices=CHOICE_SINO,
-        null=True,
-        blank=True,
+        default=False,
     )
 
     def save(self, *args, **kwargs):
@@ -601,17 +1106,17 @@ class DimensionSalud(models.Model):
     """
 
     fk_legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
-    lugares_atencion = models.CharField(
+    lugares_atencion = models.ForeignKey(
+        CentrosSalud,
         verbose_name="Centro de Salud en donde se atiende",
-        max_length=255,
-        choices=CHOICE_CENTROS_SALUD,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
-    frec_controles = models.CharField(
+    frec_controles = models.ForeignKey(
+        Frecuencia,
         verbose_name="¿Con qué frecuencia realiza controles médicos?",
-        max_length=255,
-        choices=CHOICE_FRECUENCIA,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
@@ -630,7 +1135,7 @@ class DimensionSalud(models.Model):
         verbose_name="¿Posee certificado de discapacidad?", null=True, blank=True
     )
     obs_salud = models.CharField(
-        verbose_name="Observaciones", max_length=500, null=True, blank=True
+        verbose_name="Observaciones", max_length=500, blank=True, null=True
     )
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
@@ -650,50 +1155,54 @@ class DimensionSalud(models.Model):
 
 class DimensionEducacion(models.Model):
     fk_legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
-    max_nivel = models.CharField(
+    max_nivel = models.ForeignKey(
+        NivelEducativo,
         verbose_name="Máximo nivel educativo alcanzado",
-        max_length=255,
-        choices=CHOICE_NIVEL_EDUCATIVO,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        related_name="max_nivel_dimension",
     )
-    estado_nivel = models.CharField(
+    estado_nivel = models.ForeignKey(
+        EstadoNivelEducativo,
         verbose_name="Estado del nivel",
-        max_length=255,
-        choices=CHOICE_ESTADO_NIVEL_EDUCATIVO,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
-    asiste_escuela = models.CharField(
+    asiste_escuela = models.ForeignKey(
+        AsisteEscuela,
         verbose_name="¿Asistís o asististe alguna vez a algún establecimiento educativo?",
-        max_length=255,
-        choices=CHOICE_ASISTE_ESCUELA,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
 
-    institucion = models.CharField(
+    # TODO: Crear choices para instituciones educativas
+    institucion = models.ForeignKey(
+        InstitucionesEducativas,
         verbose_name="Escuela",
-        max_length=255,
-        choices=CHOICE_INSTITUCIONES_EDUCATIVAS,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
-    gestion = models.CharField(
-        verbose_name="Gestión",
-        max_length=255,
-        choices=CHOICE_TIPO_GESTION,
+    gestion = models.ForeignKey(
+        TipoGestion,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        verbose_name="Tipo de gestión",
     )
-    ciclo = models.CharField(
-        max_length=255, choices=CHOICE_NIVEL_EDUCATIVO, null=True, blank=True
+    ciclo = models.ForeignKey(
+        NivelEducativo,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="ciclo_dimension",
     )
-    grado = models.CharField(
-        max_length=255, choices=CHOICE_GRADO, null=True, blank=True
-    )
-    turno = models.CharField(
-        max_length=255, choices=CHOICE_TURNO, null=True, blank=True
+    grado = models.ForeignKey(Grado, on_delete=models.SET_NULL, null=True, blank=True)
+    turno = models.ForeignKey(
+        Turno, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Turno"
     )
     obs_educacion = models.CharField(
         max_length=500, verbose_name="Observaciones", null=True, blank=True
@@ -734,70 +1243,59 @@ class DimensionEducacion(models.Model):
     numeroInstitucion = models.CharField(
         verbose_name="Número", max_length=255, null=True, blank=True
     )
-    nivelIncompleto = models.CharField(
+    nivelIncompleto = models.ForeignKey(
+        MotivoNivelIncompleto,
         verbose_name="¿Cuál fue el motivo principal por el que no terminaste tus estudios?",
-        max_length=255,
-        choices=CHOICE_MOTIVO_NIVEL_INCOMPLETO,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        related_name="nivel_incompleto_dimension",
     )
-    sinEduFormal = models.CharField(
+    sinEduFormal = models.ForeignKey(
+        MotivoNivelIncompleto,
         verbose_name="¿Cuál fue el motivo principal por el que nunca asististe a un establecimiento educativo?",
-        max_length=255,
-        choices=CHOICE_MOTIVO_NIVEL_INCOMPLETO,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        related_name="sin_edu_formal_dimension",
     )
-    realizandoCurso = models.CharField(
+    realizandoCurso = models.BooleanField(
         verbose_name="¿Actualmente te encontrás haciendo algún curso de capacitación?",
-        max_length=255,
-        choices=CHOICE_SINO,
-        null=True,
-        blank=True,
+        default=False,
     )
-    areaCurso = MultiSelectField(
-        choices=CHOICE_AREA_CURSO,
+    areaCurso = models.ForeignKey(
+        AreaCurso,
         verbose_name="¿En qué áreas?",
-        max_length=255,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        related_name="area_curso_dimension",
     )
-    interesCapLab = models.CharField(
+    interesCapLab = models.BooleanField(
         verbose_name="¿Tenés interés en realizar cursos de capacitación laboral?",
-        max_length=255,
-        choices=CHOICE_SINO,
-        null=True,
-        blank=True,
+        default=False,
     )
-    oficio = models.CharField(
+    oficio = models.BooleanField(
         verbose_name="¿Tenés conocimiento de algún oficio?",
-        max_length=255,
-        choices=CHOICE_SINO,
-        null=True,
-        blank=True,
+        default=False,
     )
-    areaOficio = MultiSelectField(
-        choices=CHOICE_AREA_CURSO,
+    areaOficio = models.ForeignKey(
+        AreaCurso,
         verbose_name="¿En qué áreas?",
-        max_length=255,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        related_name="area_oficio_dimension",
     )
 
     # Migraciones para fix de DAD-118
-    interesEstudio = models.CharField(
+    interesEstudio = models.BooleanField(
         verbose_name="¿Le interesa estudiar?",
-        max_length=255,
-        choices=CHOICE_SINO,
-        null=True,
-        blank=True,
+        default=False,
     )
-    interesCurso = models.CharField(
+    interesCurso = models.BooleanField(
         verbose_name="¿le interesa algun curso?",
-        max_length=255,
-        choices=CHOICE_SINO,
-        null=True,
-        blank=True,
+        default=False,
     )
 
     def __str__(self):
@@ -836,12 +1334,9 @@ class DimensionEconomia(models.Model):
     ingresos = models.PositiveIntegerField(
         verbose_name="Ingresos Mensuales ", null=True, blank=True
     )
-    recibe_plan = models.CharField(
+    recibe_plan = models.BooleanField(
         verbose_name="¿Recibe planes sociales?",
-        max_length=255,
-        choices=CHOICE_SINO,
-        null=True,
-        blank=True,
+        default=False,
     )
 
     def save(self, *args, **kwargs):
@@ -864,8 +1359,8 @@ class DimensionEconomia(models.Model):
 
 class DimensionTrabajo(models.Model):
     fk_legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
-    modo_contratacion = models.CharField(
-        max_length=255, choices=CHOICE_MODO_CONTRATACION, null=True, blank=True
+    modo_contratacion = models.ForeignKey(
+        ModoContratacion, on_delete=models.SET_NULL, null=True, blank=True
     )
     ocupacion = models.CharField(max_length=255, null=True, blank=True)
     obs_trabajo = models.CharField(
@@ -884,61 +1379,55 @@ class DimensionTrabajo(models.Model):
         null=True,
         blank=True,
     )
-    actividadRealizadaComo = models.CharField(
+    actividadRealizadaComo = models.ForeignKey(
+        ActividadRealizada,
         verbose_name="Esa actividad la realizás como…",
-        max_length=255,
-        choices=CHOICE_ACTIVIDAD_REALIZADA,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
-    duracionTrabajo = models.CharField(
+    duracionTrabajo = models.ForeignKey(
+        DuracionTrabajo,
         verbose_name="¿Este trabajo es…",
-        max_length=255,
-        choices=CHOICE_DURACION_TRABAJO,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
-    aportesJubilacion = models.CharField(
+    aportesJubilacion = models.ForeignKey(
+        AportesJubilacion,
         verbose_name="Por ese trabajo, ¿te descuentan jubilación o aportas vos mismo?",
-        max_length=255,
-        choices=CHOICE_APORTES_JUBILACION,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
-    TiempoBusquedaLaboral = models.CharField(
+    TiempoBusquedaLaboral = models.ForeignKey(
+        TiempoBusquedaLaboral,
         verbose_name="¿Cuánto hace que buscás trabajo?",
-        max_length=255,
-        choices=CHOICE_TIEMPO_BUSQUEDA_LABORAL,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
-    busquedaLaboral = models.CharField(
+    busquedaLaboral = models.BooleanField(
         verbose_name="¿Buscaste trabajo en los últimos 30 días?",
-        max_length=255,
-        choices=CHOICE_SINO,
         null=True,
         blank=True,
     )
-    noBusquedaLaboral = models.CharField(
+    noBusquedaLaboral = models.ForeignKey(
+        NoBusquedaLaboral,
         verbose_name="¿Por qué motivo no buscaste trabajo? (Indicá el motivo principal)",
-        max_length=255,
-        choices=CHOICE_NO_BUSQUEDA_LABORAL,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
 
     # Migraciones para fix de DAD-128
-    conviviente_trabaja = models.CharField(
+    conviviente_trabaja = models.BooleanField(
         verbose_name="¿Conviviente trabaja?",
-        max_length=255,
-        choices=CHOICE_SINO,
         null=True,
         blank=True,
     )
-    tiene_trabajo = models.CharField(
+    tiene_trabajo = models.BooleanField(
         verbose_name="¿Actualmente realizás alguna actividad laboral, productiva o comunitaria?",
-        max_length=255,
-        choices=CHOICE_SINO,
         null=True,
         blank=True,
     )
@@ -1061,15 +1550,21 @@ class LegajosDerivaciones(models.Model):
     )
     detalles = models.CharField(max_length=500, null=True, blank=True)
     fk_usuario = models.ForeignKey(User, on_delete=models.CASCADE)
-    importancia = models.CharField(
-        max_length=15, choices=CHOICE_IMPORTANCIA, default="Alta"
+    importancia = models.ForeignKey(
+        Importancia, on_delete=models.SET_NULL, null=True, blank=True, default="Alta"
     )
-    estado = models.CharField(
-        max_length=15, choices=CHOICE_ESTADO_DERIVACION, default="Pendiente"
+    estado = models.ForeignKey(
+        EstadoDerivacion,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        default="Pendiente",
     )
     m2m_alertas = models.ManyToManyField(CategoriaAlertas, blank=True)
     archivos = models.FileField(upload_to="legajos/archivos", null=True, blank=True)
-    motivo_rechazo = models.CharField(max_length=255, choices=CHOICE_RECHAZO)
+    motivo_rechazo = models.ForeignKey(
+        Rechazo, on_delete=models.SET_NULL, null=True, blank=True
+    )
     obs_rechazo = models.CharField(max_length=500, null=True, blank=True)
     fecha_rechazo = models.DateField(null=True, blank=True)
     fecha_creado = models.DateField(auto_now_add=True, null=True, blank=True)
@@ -1118,7 +1613,9 @@ class LegajoGrupoHogar(models.Model):
     fk_legajo_2Hogar = models.ForeignKey(
         Legajos, on_delete=models.CASCADE, related_name="hogar_2"
     )
-    estado_relacion = models.CharField(max_length=255, choices=CHOICE_ESTADO_RELACION)
+    estado_relacion = models.ForeignKey(
+        EstadoRelacion, on_delete=models.SET_NULL, null=True, blank=True
+    )
 
     def __str__(self):
         return f"Legajo: {self.fk_legajo_1Hogar} - Hogar: {self.fk_legajo_2Hogar}"
