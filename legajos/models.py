@@ -5,7 +5,6 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.urls import reverse
 
-from configuraciones.choices import CHOICE_CIRCUITOS
 from configuraciones.models import (
     Alertas,
     CategoriaAlertas,
