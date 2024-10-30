@@ -434,6 +434,7 @@ class LineaDeAccion(models.Model):
     comercializacion_apoyo_tecnologico = models.BooleanField(default=False)
     comercializacion_habilidades_blandas = models.BooleanField(default=False)
     comercializacion_desarrollo_local = models.BooleanField(default=False)
+    comercializacion_fortalecimiento_unidades = models.BooleanField(default=False)
 
     circular_fortalecimiento = models.BooleanField(default=False)
     circular_practicas_sostenibles = models.BooleanField(default=False)
@@ -573,32 +574,7 @@ class DiagnosticoPersona(AbstractDiagnostico):
         verbose_name_plural = "Diagnósticos de Personas"
 
 
-class AbstractAnexo(models.Model):
-    fecha_creacion = models.DateTimeField(auto_now=True)
-    fecha_modificacion = models.DateTimeField(auto_now=True)
-    creador = models.ForeignKey(
-        Usuarios, on_delete=models.PROTECT, related_name="creador"
-    )
-    modificador = models.ForeignKey(
-        Usuarios,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name="modificador",
-    )
-    estado = models.ForeignKey(EstadoSolicitud, on_delete=models.PROTECT)
-
-    def save(self, *args, **kwargs):
-        self.fecha_ultima_modificacion = timezone.now()
-        if "usuario" in kwargs:  # Define el modificador si es pasado como argumento
-            self.modificador = kwargs.pop("usuario")
-        super().save(*args, **kwargs)
-
-    class Meta:
-        abstract = True
-
-
-class AnexoSocioProductivo(AbstractAnexo):
+class AnexoSocioProductivo(models.Model):
     PERSONERIA_CHOICES = (("ORGANIZACION", "Organización"), ("PERSONA", "Persona"))
     personeria = models.CharField(max_length=255, choices=PERSONERIA_CHOICES)
     organizacion = models.ForeignKey(PersoneriaOrganizacion, on_delete=models.PROTECT)
@@ -607,6 +583,8 @@ class AnexoSocioProductivo(AbstractAnexo):
     linea_de_accion = models.ForeignKey(LineaDeAccion, on_delete=models.PROTECT)
 
     media = models.FileField(upload_to="anexos/socioproductivos/")
+
+    documentacion = models.FileField(upload_to="anexos/socioproductivos/")
 
     diagnostico_organizacion = models.ForeignKey(
         DiagnosticoOrganizacion, on_delete=models.PROTECT
@@ -633,3 +611,53 @@ class AnexoSocioProductivo(AbstractAnexo):
     class Meta:
         verbose_name = "Anexo socio productivo"
         verbose_name_plural = "Anexos socio productivo"
+
+
+class AnexoFormacion(models.Model):
+    pass  # TODO:
+
+
+class Proyecto(models.Model):
+    fecha_creacion = models.DateTimeField(auto_now=True)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
+    creador = models.ForeignKey(
+        Usuarios, on_delete=models.PROTECT, related_name="creador"
+    )
+    modificador = models.ForeignKey(
+        Usuarios,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="modificador",
+    )
+    estado = models.ForeignKey(EstadoSolicitud, on_delete=models.PROTECT)
+
+    TIPO_ANEXO_CHOICES = (
+        ("SOCIO_PRODUCTIVO", "Socio Productivo"),
+        ("FORMACION", "Formación"),
+    )
+    tipo_anexo = models.CharField(max_length=255, choices=TIPO_ANEXO_CHOICES)
+    anexo_socio_productivo = models.ForeignKey(
+        AnexoSocioProductivo, on_delete=models.PROTECT, null=True, blank=True
+    )
+    anexo_formacion = models.ForeignKey(
+        AnexoFormacion, on_delete=models.PROTECT, null=True, blank=True
+    )
+
+    @property
+    def presupuesto_total(self):
+        pass  # TODO:
+
+    def clean(self):
+        if (
+            self.tipo_anexo == "SOCIO_PRODUCTIVO" and not self.anexo_socio_productivo
+        ) or (self.tipo_anexo == "FORMACION" and not self.anexo_formacion):
+            raise ValidationError("Debe completar el anexo.")
+
+        return super().clean()
+
+    def save(self, *args, **kwargs):
+        self.fecha_ultima_modificacion = timezone.now()
+        if "usuario" in kwargs:  # Define el modificador si es pasado como argumento
+            self.modificador = kwargs.pop("usuario")
+        super().save(*args, **kwargs)
