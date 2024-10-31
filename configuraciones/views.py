@@ -11,6 +11,8 @@ from django.views.generic import (
     UpdateView,
 )
 
+from django.shortcuts import render
+
 from usuarios.mixins import PermisosMixin
 
 from .forms import (
@@ -47,6 +49,10 @@ from .forms import (
 )
 
 # region ############################################################### Secretarías
+
+
+def error_500_view(request):
+    return render(request, "500.html")
 
 
 class SecretariasListView(PermisosMixin, ListView):
