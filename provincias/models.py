@@ -353,7 +353,7 @@ class AbstractPersoneria(models.Model):
     proyecto_costo = models.PositiveBigIntegerField()
 
     pertenece_comunidad_indigena = models.BooleanField(default=False)
-    comunidad_indigena = models.CharField(max_length=255)
+    comunidad_indigena = models.CharField(max_length=255, blank=True, null=True)
 
     def clean(self):
         if self.pertenece_comunidad_indigena and self.comunidad_indigena == "":
@@ -512,7 +512,23 @@ class AbstractDiagnostico(models.Model):
         MedioPlanificacion, on_delete=models.PROTECT
     )
     canales_ventas = models.ManyToManyField(CanalesVentas)
-    # 12
+    ventas_destinadas_turismo = models.BooleanField(default=False)
+
+    # Bloque 5
+    recicladores_urbanos = models.BooleanField(default=False)
+    recicladores_equipados = models.BooleanField(default=False)
+    clasificacion_residuos = models.BooleanField(default=False)
+    destino_materiales_recuperados = models.ManyToManyField(
+        DestinoMaterialesRecuperados
+    )
+    optimizacion_recursos = models.BooleanField(default=False)
+    modalidad_ciclo_productivo = models.ForeignKey(
+        ModalidadCicloProductivo, on_delete=models.PROTECT
+    )
+    financiamiento_sostenible = models.BooleanField(default=False)
+    estrategia_comercializacion = models.BooleanField(default=False)
+    tecnologias_mejorar_eficiencia = models.BooleanField(default=False)
+    tecnologias_cuales = models.CharField(max_length=255)
 
     class Meta:
         abstract = True
