@@ -4,6 +4,7 @@ import time
 
 import pymysql
 
+from dotenv import load_dotenv
 
 def wait_for_mysql():
     host = os.getenv("DATABASE_HOST", "mysql")
@@ -13,11 +14,12 @@ def wait_for_mysql():
     while True:
         try:
             conn = pymysql.connect(
-                host=host, port=port, user="root", password="root1-password2"
+                host=host, port=port, user=os.getenv("DATABASE_USER", "root"), password=os.getenv("DATABASE_PASSWORD", "")
             )
             conn.close()
             break
-        except pymysql.MySQLError:
+        except pymysql.MySQLError as e:
+            print(f"Falló la conexión: {e}")
             time.sleep(5)
 
     # Añade un delay para asegurar que el dump de MySQL se procese completamente
@@ -27,7 +29,7 @@ def wait_for_mysql():
 
 def run_django_commands():
     # subprocess.run(["python", "manage.py", "makemigrations"])
-    subprocess.run(["python", "manage.py", "migrate", "--noinput"])
+    subprocess.run(["python3", "manage.py", "migrate", "--noinput"])
     load_fixtures()
     # subprocess.run(["python", "manage.py", "create_local_superuser"])
     # subprocess.run(["python", "manage.py", "runserver", "0.0.0.0:8000"])
@@ -40,7 +42,7 @@ def load_fixtures():
             for file in os.listdir(fixtures_dir):
                 if file.endswith(".json"):
                     fixture_path = os.path.join(fixtures_dir, file)
-                    subprocess.run(["python", "manage.py", "loaddata", fixture_path])
+                    subprocess.run(["python3", "manage.py", "loaddata", fixture_path])
                     # Carga todos los fixtures .json que esten en SISOC/$APP/fixtures
 
 
