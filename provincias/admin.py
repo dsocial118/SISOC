@@ -1,6 +1,5 @@
 from django.contrib import admin
 from provincias.models import (
-    EstadoSolicitud,
     Rubro,
     Objetivo,
     TipoActividad,
@@ -34,7 +33,6 @@ from provincias.models import (
 )
 
 # Registrar todos los modelos en el admin de Django
-admin.site.register(EstadoSolicitud)
 admin.site.register(Rubro)
 admin.site.register(Objetivo)
 admin.site.register(TipoActividad)

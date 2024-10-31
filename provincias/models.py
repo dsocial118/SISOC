@@ -6,17 +6,6 @@ from legajos.models import LegajoProvincias
 from usuarios.models import Usuarios
 
 
-class EstadoSolicitud(models.Model):
-    nombre = models.CharField(max_length=255)
-
-    def __str__(self):
-        return str(self.nombre)
-
-    class Meta:
-        verbose_name = "Estado de Solicitud"
-        verbose_name_plural = "Estados de Solicitud"
-
-
 class Rubro(models.Model):
     nombre = models.CharField(max_length=255)
 
@@ -523,6 +512,7 @@ class AbstractDiagnostico(models.Model):
         MedioPlanificacion, on_delete=models.PROTECT
     )
     canales_ventas = models.ManyToManyField(CanalesVentas)
+    # 12
 
     class Meta:
         abstract = True
@@ -587,7 +577,7 @@ class Proyecto(models.Model):
         blank=True,
         related_name="modificador",
     )
-    estado = models.ForeignKey(EstadoSolicitud, on_delete=models.PROTECT)
+    estado = models.CharField(max_length=255, blank=True, default="Pendiente")
 
     TIPO_ANEXO_CHOICES = (
         ("SOCIO_PRODUCTIVO", "Socio Productivo"),
@@ -604,6 +594,20 @@ class Proyecto(models.Model):
         if "usuario" in kwargs:  # Define el modificador si es pasado como argumento
             self.modificador = kwargs.pop("usuario")
         super().save(*args, **kwargs)
+
+
+class Observacion(models.Model):
+    proyecto = models.ForeignKey(
+        Proyecto, on_delete=models.PROTECT, null=True, blank=True
+    )
+    observacion = models.TextField()
+
+    def __str__(self):
+        return str(self.observacion)
+
+    class Meta:
+        verbose_name = "Observación"
+        verbose_name_plural = "Observaciones"
 
 
 class AnexoSocioProductivo(models.Model):
