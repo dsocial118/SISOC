@@ -574,7 +574,42 @@ class DiagnosticoPersona(AbstractDiagnostico):
         verbose_name_plural = "Diagnósticos de Personas"
 
 
+class Proyecto(models.Model):
+    fecha_creacion = models.DateTimeField(auto_now=True)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
+    creador = models.ForeignKey(
+        Usuarios, on_delete=models.PROTECT, related_name="creador"
+    )
+    modificador = models.ForeignKey(
+        Usuarios,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="modificador",
+    )
+    estado = models.ForeignKey(EstadoSolicitud, on_delete=models.PROTECT)
+
+    TIPO_ANEXO_CHOICES = (
+        ("SOCIO_PRODUCTIVO", "Socio Productivo"),
+        ("FORMACION", "Formación"),
+    )
+    tipo_anexo = models.CharField(max_length=255, choices=TIPO_ANEXO_CHOICES)
+
+    @property
+    def presupuesto_total(self):
+        pass  # TODO:
+
+    def save(self, *args, **kwargs):
+        self.fecha_ultima_modificacion = timezone.now()
+        if "usuario" in kwargs:  # Define el modificador si es pasado como argumento
+            self.modificador = kwargs.pop("usuario")
+        super().save(*args, **kwargs)
+
+
 class AnexoSocioProductivo(models.Model):
+    proyecto = models.ForeignKey(
+        Proyecto, on_delete=models.PROTECT, null=True, blank=True
+    )
     PERSONERIA_CHOICES = (("ORGANIZACION", "Organización"), ("PERSONA", "Persona"))
     personeria = models.CharField(max_length=255, choices=PERSONERIA_CHOICES)
     organizacion = models.ForeignKey(PersoneriaOrganizacion, on_delete=models.PROTECT)
@@ -614,50 +649,6 @@ class AnexoSocioProductivo(models.Model):
 
 
 class AnexoFormacion(models.Model):
-    pass  # TODO:
-
-
-class Proyecto(models.Model):
-    fecha_creacion = models.DateTimeField(auto_now=True)
-    fecha_modificacion = models.DateTimeField(auto_now=True)
-    creador = models.ForeignKey(
-        Usuarios, on_delete=models.PROTECT, related_name="creador"
+    proyecto = models.ForeignKey(
+        Proyecto, on_delete=models.PROTECT, null=True, blank=True
     )
-    modificador = models.ForeignKey(
-        Usuarios,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name="modificador",
-    )
-    estado = models.ForeignKey(EstadoSolicitud, on_delete=models.PROTECT)
-
-    TIPO_ANEXO_CHOICES = (
-        ("SOCIO_PRODUCTIVO", "Socio Productivo"),
-        ("FORMACION", "Formación"),
-    )
-    tipo_anexo = models.CharField(max_length=255, choices=TIPO_ANEXO_CHOICES)
-    anexo_socio_productivo = models.ForeignKey(
-        AnexoSocioProductivo, on_delete=models.PROTECT, null=True, blank=True
-    )
-    anexo_formacion = models.ForeignKey(
-        AnexoFormacion, on_delete=models.PROTECT, null=True, blank=True
-    )
-
-    @property
-    def presupuesto_total(self):
-        pass  # TODO:
-
-    def clean(self):
-        if (
-            self.tipo_anexo == "SOCIO_PRODUCTIVO" and not self.anexo_socio_productivo
-        ) or (self.tipo_anexo == "FORMACION" and not self.anexo_formacion):
-            raise ValidationError("Debe completar el anexo.")
-
-        return super().clean()
-
-    def save(self, *args, **kwargs):
-        self.fecha_ultima_modificacion = timezone.now()
-        if "usuario" in kwargs:  # Define el modificador si es pasado como argumento
-            self.modificador = kwargs.pop("usuario")
-        super().save(*args, **kwargs)
