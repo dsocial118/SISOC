@@ -388,6 +388,9 @@ class PersoneriaOrganizacion(AbstractPersoneria):
         related_name="organizacion_tipo_actividad",
     )
 
+    def __str__(self) -> str:
+        return str(self.nombre)
+
     class Meta:
         verbose_name = "Organización"
         verbose_name_plural = "Organizaciones"
@@ -407,6 +410,9 @@ class PersoneriaPersona(AbstractPersoneria):
         on_delete=models.PROTECT,
         related_name="persona_tipo_actividad",
     )
+
+    def __str__(self) -> str:
+        return str(self.nobre_completo)
 
     class Meta:
         verbose_name = "Persona"
@@ -477,8 +483,10 @@ class AbstractDiagnostico(models.Model):
 
     # Bloque 3: Conectividad
     internet = models.BooleanField(default=False)
-    tipo_internet = models.ForeignKey(TipoInternet, on_delete=models.PROTECT)
-    dispositivos_conectados = models.PositiveBigIntegerField()
+    tipo_internet = models.ForeignKey(
+        TipoInternet, on_delete=models.PROTECT, blank=True, null=True
+    )
+    dispositivos_conectados = models.PositiveBigIntegerField(blank=True, null=True)
     computadora = models.BooleanField(default=False)
     tipo_dispositivos_moviles = models.ManyToManyField(TipoDispositivosMoviles)
     plataforma_comunicacion = models.ManyToManyField(PlataformaComunicacion)
@@ -528,7 +536,27 @@ class AbstractDiagnostico(models.Model):
     financiamiento_sostenible = models.BooleanField(default=False)
     estrategia_comercializacion = models.BooleanField(default=False)
     tecnologias_mejorar_eficiencia = models.BooleanField(default=False)
-    tecnologias_cuales = models.CharField(max_length=255)
+    tecnologias_cuales = models.CharField(max_length=255, blank=True, null=True)
+
+    def clean(self) -> None:
+        if self.internet and (
+            not self.tipo_internet or not self.dispositivos_conectados
+        ):
+            raise ValidationError("Debe completar los datos relacionados al internet.")
+
+        if self.banco and not self.banco_nombre:
+            raise ValidationError("Debe completar el nombre del banco.")
+
+        if self.financiamiento and not self.financiamiento_nombre:
+            raise ValidationError("Debe completar el nombre del financiamiento.")
+
+        if self.redes_sociales and not self.redes_sociales_cuales:
+            raise ValidationError("Debe completar las redes sociales utilizadas.")
+
+        if self.tecnologias_mejorar_eficiencia and not self.tecnologias_cuales:
+            raise ValidationError("Debe completar las tecnologías utilizadas.")
+
+        return super().clean()
 
     class Meta:
         abstract = True
@@ -595,6 +623,8 @@ class Proyecto(models.Model):
     )
     estado = models.CharField(max_length=255, blank=True, default="Pendiente")
 
+    nombre = models.CharField(max_length=255, null=True)
+
     TIPO_ANEXO_CHOICES = (
         ("SOCIO_PRODUCTIVO", "Socio Productivo"),
         ("FORMACION", "Formación"),
@@ -610,6 +640,9 @@ class Proyecto(models.Model):
         if "usuario" in kwargs:  # Define el modificador si es pasado como argumento
             self.modificador = kwargs.pop("usuario")
         super().save(*args, **kwargs)
+
+    def __str__(self) -> str:
+        return str(self.nombre)
 
 
 class Observacion(models.Model):
@@ -632,8 +665,12 @@ class AnexoSocioProductivo(models.Model):
     )
     PERSONERIA_CHOICES = (("ORGANIZACION", "Organización"), ("PERSONA", "Persona"))
     personeria = models.CharField(max_length=255, choices=PERSONERIA_CHOICES)
-    organizacion = models.ForeignKey(PersoneriaOrganizacion, on_delete=models.PROTECT)
-    persona = models.ForeignKey(PersoneriaPersona, on_delete=models.PROTECT)
+    organizacion = models.ForeignKey(
+        PersoneriaOrganizacion, on_delete=models.PROTECT, blank=True, null=True
+    )
+    persona = models.ForeignKey(
+        PersoneriaPersona, on_delete=models.PROTECT, blank=True, null=True
+    )
 
     linea_de_accion = models.ForeignKey(LineaDeAccion, on_delete=models.PROTECT)
 
@@ -642,10 +679,10 @@ class AnexoSocioProductivo(models.Model):
     documentacion = models.FileField(upload_to="anexos/socioproductivos/")
 
     diagnostico_organizacion = models.ForeignKey(
-        DiagnosticoOrganizacion, on_delete=models.PROTECT
+        DiagnosticoOrganizacion, on_delete=models.PROTECT, blank=True, null=True
     )
     diagnostico_persona = models.ForeignKey(
-        DiagnosticoPersona, on_delete=models.PROTECT
+        DiagnosticoPersona, on_delete=models.PROTECT, blank=True, null=True
     )
 
     def clean(self):
@@ -662,6 +699,9 @@ class AnexoSocioProductivo(models.Model):
             raise ValidationError("Debe completar una el diagnostico para el anexo.")
 
         return super().clean()
+
+    def __str__(self) -> str:
+        return str(f"{self.id} - {self.proyecto} - {self.organizacion or self.persona}")
 
     class Meta:
         verbose_name = "Anexo socio productivo"
