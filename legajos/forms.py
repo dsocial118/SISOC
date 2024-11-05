@@ -543,19 +543,27 @@ class DimensionViviendaForm(forms.ModelForm):
         required=False,
     )
     PoseenCelular = forms.ChoiceField(
-        choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿En tu hogar cuentan con Teléfonos celulares?",
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿En tu hogar cuentan con Teléfonos celulares?",
         required=False,
     )
     PoseenPC = forms.ChoiceField(
-        choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿En tu hogar cuentan con Computadoras? (de escritorio / laptop / tablet) ?",
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿En tu hogar cuentan con Computadoras? (de escritorio / laptop / tablet) ?",
         required=False,
     )
     Poseeninternet = forms.ChoiceField(
-        choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿En tu hogar cuentan con Internet (a través del celular o por conexión en la vivienda - wifi)?",
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿En tu hogar cuentan con Internet (a través del celular o por conexión en la vivienda - wifi)?",
         required=False,
     )
     hay_agua_caliente = forms.ChoiceField(
-        choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿Tienen agua caliente?",
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿Tienen agua caliente?",
         required=False,
     )
 
@@ -567,22 +575,22 @@ class DimensionViviendaForm(forms.ModelForm):
         model = DimensionVivienda
         fields = "__all__"
         labels = {
-            'posesion': 'Posesión de la vivienda',
-            'tipo': 'Tipo de vivienda',
-            'material': 'Material de construcción',
-            'pisos': 'Material principal de los pisos interiores',
-            'cant_ambientes': '¿Cuántas habitaciones tiene el hogar? (sin contar baño/s, cocina,pasillo/s, lavadero)',
-            'cant_convivientes': '¿Cuantas personas viven en la vivienda?',
-            'cant_menores': '¿Cuántos de ellos son menores de 18 años?',
-            'cant_camas': '¿Cuántas camas/ colchones tienen?',
-            'cant_hogares': '¿Cuantos hogares hay en la vivienda?',
-            'obs_vivienda': 'Observaciones',
-            'ContextoCasa': 'La vivienda está ubicada...',
-            'gas': '¿Que utilizan principalmente para cocinar?',
-            'techos': 'Material de la cubierta exterior de la vivienda',
-            'agua': 'El agua que utilizan para cocinar proviene de...',
-            'desague': 'El desagüe del inodoro es...',
-            'hay_banio': 'Baño dentro de la vivienda con descarga',
+            "posesion": "Posesión de la vivienda",
+            "tipo": "Tipo de vivienda",
+            "material": "Material de construcción",
+            "pisos": "Material principal de los pisos interiores",
+            "cant_ambientes": "¿Cuántas habitaciones tiene el hogar? (sin contar baño/s, cocina,pasillo/s, lavadero)",
+            "cant_convivientes": "¿Cuantas personas viven en la vivienda?",
+            "cant_menores": "¿Cuántos de ellos son menores de 18 años?",
+            "cant_camas": "¿Cuántas camas/ colchones tienen?",
+            "cant_hogares": "¿Cuantos hogares hay en la vivienda?",
+            "obs_vivienda": "Observaciones",
+            "ContextoCasa": "La vivienda está ubicada...",
+            "gas": "¿Que utilizan principalmente para cocinar?",
+            "techos": "Material de la cubierta exterior de la vivienda",
+            "agua": "El agua que utilizan para cocinar proviene de...",
+            "desague": "El desagüe del inodoro es...",
+            "hay_banio": "Baño dentro de la vivienda con descarga",
         }
         widgets = {
             "obs_vivienda": forms.Textarea(
@@ -591,7 +599,6 @@ class DimensionViviendaForm(forms.ModelForm):
                     "rows": 3,
                 }
             ),
-          
         }
 
     # <!-- ./Nuevos campos vivienda Form Editar o cargar -->
