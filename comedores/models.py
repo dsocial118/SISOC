@@ -429,6 +429,43 @@ class FuenteRecursos(models.Model):
         null=True,
     )
 
+    def clean(self) -> None:
+        if self.recibe_donaciones_particulares and (
+            not self.frecuencia_donaciones_particulares
+            or not self.recursos_donaciones_particulares
+        ):
+            raise ValueError(
+                "Si recibe donaciones particulares, debe completar la frecuencia y el tipo de recurso"
+            )
+
+        if self.recibe_estado_nacional and (
+            not self.frecuencia_estado_nacional or not self.recursos_estado_nacional
+        ):
+            raise ValueError(
+                "Si recibe del estado nacional, debe completar la frecuencia y el tipo de recurso"
+            )
+
+        if self.recibe_estado_provincial and (
+            not self.frecuencia_estado_provincial or not self.recursos_estado_provincial
+        ):
+            raise ValueError(
+                "Si recibe del estado provincial, debe completar la frecuencia y el tipo de recurso"
+            )
+
+        if self.recibe_estado_municipal and (
+            not self.frecuencia_estado_municipal or not self.recursos_estado_municipal
+        ):
+            raise ValueError(
+                "Si recibe del estado municipal, debe completar la frecuencia y el tipo de recurso"
+            )
+
+        if self.recibe_otros and (not self.frecuencia_otros or not self.recursos_otros):
+            raise ValueError(
+                "Si recibe otros recursos, debe completar la frecuencia y el tipo de recurso"
+            )
+
+        return super().clean()
+
     class Meta:
         verbose_name = "Fuente de recursos"
         verbose_name_plural = "Fuentes de recursos"
