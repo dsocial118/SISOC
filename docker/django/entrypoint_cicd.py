@@ -6,6 +6,7 @@ import pymysql
 
 from dotenv import load_dotenv
 
+
 def wait_for_mysql():
     host = os.getenv("DATABASE_HOST", "mysql")
     port = int(os.getenv("DATABASE_PORT", 3307))
@@ -14,7 +15,10 @@ def wait_for_mysql():
     while True:
         try:
             conn = pymysql.connect(
-                host=host, port=port, user=os.getenv("DATABASE_USER", "root"), password=os.getenv("DATABASE_PASSWORD", "")
+                host=host,
+                port=port,
+                user=os.getenv("DATABASE_USER", "root"),
+                password=os.getenv("DATABASE_PASSWORD", ""),
             )
             conn.close()
             break
