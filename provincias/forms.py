@@ -4,4 +4,4 @@ from .models import Proyecto
 class ProyectoForm(forms.ModelForm):
     class Meta:
         model = Proyecto
-        fields = ['creador', 'estado', 'tipo_anexo']
+        fields = ['tipo_anexo', 'nombre']
