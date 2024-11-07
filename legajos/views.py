@@ -855,24 +855,20 @@ class LegajosGrupoFamiliarCreateView(CreateView):
                 fk_legajo_1=legajo_principal,
                 fk_legajo_2=nuevo_legajo,
                 vinculo=vinculo_instance,
-                vinculo_inverso=vinculo_instance.vinculo_inverso,
+                vinculo_inverso=vinculo_instance.inverso,
                 estado_relacion=estado_relacion_instance,
                 conviven=conviven,
                 cuidador_principal=cuidador_principal,
             )
 
         except Exception as e:
-            return messages.error(
+            messages.error(
                 self.request, f"Error al crear el familiar. Error: {e}"
             )
+            return redirect(self.request.path_info)
 
         messages.success(self.request, "Familiar agregado correctamente.")
-        # Redireccionar a la misma página después de realizar la acción con éxito
         return HttpResponseRedirect(self.request.path_info)
-    
-    def form_invalid(self, form):
-        messages.error(self.request, "Formulario inválido. Por favor, revisa los datos ingresados.")
-        return self.render_to_response(self.get_context_data(form=form))
 
 def busqueda_familiares(request):
 
@@ -963,17 +959,11 @@ class CreateGrupoFamiliar(View):
         conviven = request.GET.get("conviven", None)
         cuidador_principal = request.GET.get("cuidador_principal", None)
         obj = None
-        vinculo_data = VinculoFamiliar.get(vinculo)
+        vinculo_instance = VinculoFamiliar.objects.get(pk=vinculo)
 
-        if not vinculo_data:
+
+        if not vinculo_instance:
             return messages.error(self.request, "Vinculo inválido.")
-        try:
-            vinculo_instance = VinculoFamiliar.objects.get(
-                vinculo=vinculo_data["vinculo"]
-            )
-        except VinculoFamiliar.DoesNotExist:
-            return JsonResponse({"error": "VínculoFamiliar no encontrado"}, status=400)
-
         try:
             estado_relacion_instance = EstadoRelacion.objects.get(pk=estado_relacion)
         except EstadoRelacion.DoesNotExist:
@@ -983,7 +973,7 @@ class CreateGrupoFamiliar(View):
             fk_legajo_1_id=fk_legajo_1,
             fk_legajo_2_id=fk_legajo_2,
             vinculo=vinculo_instance,
-            vinculo_inverso=vinculo_data["vinculo_inverso"],
+            vinculo_inverso=vinculo_instance.inverso,
             estado_relacion=estado_relacion_instance,
             conviven=conviven,
             cuidador_principal=cuidador_principal,
