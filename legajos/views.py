@@ -846,7 +846,7 @@ class LegajosGrupoFamiliarCreateView(CreateView):
             )
 
         # Crea el objeto LegajoGrupoFamiliar con los valores del formulario
-        
+
         try:
             vinculo_instance = VinculoFamiliar.objects.get(vinculo=vinculo)
             estado_relacion_instance = EstadoRelacion.objects.get(pk=estado_relacion)
@@ -862,13 +862,12 @@ class LegajosGrupoFamiliarCreateView(CreateView):
             )
 
         except Exception as e:
-            messages.error(
-                self.request, f"Error al crear el familiar. Error: {e}"
-            )
+            messages.error(self.request, f"Error al crear el familiar. Error: {e}")
             return redirect(self.request.path_info)
 
         messages.success(self.request, "Familiar agregado correctamente.")
         return HttpResponseRedirect(self.request.path_info)
+
 
 def busqueda_familiares(request):
 
@@ -960,7 +959,6 @@ class CreateGrupoFamiliar(View):
         cuidador_principal = request.GET.get("cuidador_principal", None)
         obj = None
         vinculo_instance = VinculoFamiliar.objects.get(pk=vinculo)
-
 
         if not vinculo_instance:
             return messages.error(self.request, "Vinculo inválido.")
