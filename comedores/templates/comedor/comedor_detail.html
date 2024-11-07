@@ -5,7 +5,7 @@
 ;
 {% block titulo-pagina %}
     {{ comedor.nombre }}
-    <span class="ml-2 h5">| {{ comedor.provincia__nombre }}, {{ comedor.municipio__nombre }}, {{ comedor.localidad__nombre }}</span>
+    <span class="ml-2 h5">| {{ comedor.provincia__nombre|default_if_none:"-" }}, {{ comedor.municipio__nombre|default_if_none:"-" }}, {{ comedor.localidad__nombre|default_if_none:"-" }}</span>
 {% endblock %}
 ;
 {% block breadcrumb %}
@@ -50,7 +50,7 @@
                 <div class="nav-item col-4 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center">
                         Provincia
-                        <span class="username">{{ comedor.provincia__nombre }}</span>
+                        <span class="username">{{ comedor.provincia__nombre|default_if_none:"-" }}</span>
                     </div>
                 </div>
             </div>
@@ -58,19 +58,19 @@
                 <div class="nav-item col-4 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center">
                         Municipio
-                        <span class="username">{{ comedor.municipio__nombre }}</span>
+                        <span class="username">{{ comedor.municipio__nombre|default_if_none:"-" }}</span>
                     </div>
                 </div>
                 <div class="nav-item col-4 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center">
                         Localidad
-                        <span class="username">{{ comedor.localidad__nombre }}</span>
+                        <span class="username">{{ comedor.localidad__nombre|default_if_none:"-" }}</span>
                     </div>
                 </div>
                 <div class="nav-item col-4 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center">
                         Partido
-                        <span class="username">{{ comedor.partido }}</span>
+                        <span class="username">{{ comedor.partido|default_if_none:"-" }}</span>
                     </div>
                 </div>
             </div>
@@ -78,7 +78,7 @@
                 <div class="nav-item col-2">
                     <div class="comment-text comment-text d-flex flex-column align-items-center">
                         Barrio
-                        <span class="username">{{ comedor.barrio }}</span>
+                        <span class="username">{{ comedor.barrio|default_if_none:"-" }}</span>
                     </div>
                 </div>
                 <div class="nav-item col-2">
