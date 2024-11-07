@@ -141,9 +141,24 @@
                                       autocomplete="off">
                                     {% csrf_token %}
                                     <div class="card">
-                                        <div class="card-body bg-light">
-                                            <div class="row mt-3">
-                                                <div class="col-sm-3">
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-8">
+                                                    <div class="row">
+                                                        <div class="col-sm-6">{{ form.nombre| as_crispy_field }}</div>
+                                                        <div class="col-sm-6">{{ form.apellido| as_crispy_field }}</div>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col-sm-4">{{ form.tipo_doc| as_crispy_field }}</div>
+                                                        <div class="col-sm-4">{{ form.documento| as_crispy_field }}</div>
+                                                        <div class="col-sm-4">{{ form.sexo| as_crispy_field }}</div>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col-sm-6">{{ form.fecha_nacimiento| as_crispy_field }}</div>
+                                                        <div class="col-sm-6">{{ form.nacionalidad| as_crispy_field }}</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-12 col-md-4">
                                                     <div class="card">
                                                         <div class="card-header box-profile">
                                                             <div class="text-center">
@@ -183,47 +198,41 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div class="col-sm-9 px-0 px-sm-2">
-                                                    <div class="form-row">
-                                                        <div class="form-group col-sm-6">{{ form.nombre| as_crispy_field }}</div>
-                                                        <div class="form-group col-sm-6">{{ form.apellido| as_crispy_field }}</div>
-                                                        <div class="form-group col-sm-3">{{ form.tipo_doc| as_crispy_field }}</div>
-                                                        <div class="form-group col-sm-3">{{ form.documento| as_crispy_field }}</div>
-                                                        <div class="form-group col-sm-3">{{ form.sexo| as_crispy_field }}</div>
-                                                        <div class="form-group col-sm-3">{{ form.fecha_nacimiento| as_crispy_field }}</div>
-                                                        <div class="form-group col-sm-3">{{ form.nacionalidad| as_crispy_field }}</div>
-                                                        <div class="form-group col-sm-3">{{ form.estado_civil| as_crispy_field }}</div>
-                                                        <div class="form-group col-sm-3">{{ form.telefono| as_crispy_field }}</div>
-                                                        <div class="form-group col-sm-3">{{ form.telefonoalt| as_crispy_field }}</div>
-                                                        <div class="form-group col-sm-4">{{ form.email| as_crispy_field }}</div>
-                                                        <div class="form-group col-sm-4">{{ form.fk_provincia| as_crispy_field }}</div>
-                                                        <div class="form-group col-sm-4">{{ form.fk_municipio| as_crispy_field }}</div>
-                                                        <div class="form-group col-sm-4">{{ form.fk_departamento| as_crispy_field }}</div>
-                                                        <div class="form-group col-sm-4">{{ form.fk_localidad| as_crispy_field }}</div>
-                                                        <div class="form-group col-sm-4">{{ form.fk_asentamiento| as_crispy_field }}</div>
-                                                        <div class="form-group col-sm-4">{{ form.calle| as_crispy_field }}</div>
-                                                        <div class="form-group col-sm-4">{{ form.altura| as_crispy_field }}</div>
-                                                        <div class="form-group col-sm-4">{{ form.longitud| as_crispy_field }}</div>
-                                                        <div class="form-group col-sm-4">{{ form.latitud| as_crispy_field }}</div>
-                                                        <div class="form-group col-sm-4">{{ form.pisodpto| as_crispy_field }}</div>
-                                                        <div class="form-group col-sm-4">{{ form.torrepasillo| as_crispy_field }}</div>
-                                                        <div class="form-group col-sm-4">{{ form.escaleramanzana| as_crispy_field }}</div>
-                                                        <div class="form-group col-sm-4">{{ form.circuito| as_crispy_field }}</div>
-                                                        <div class="form-group col-sm-4">{{ form.codigopostal| as_crispy_field }}</div>
-                                                        <div class="form-group col-4 {% if request.resolver_match.url_name != 'legajos_editar' %}d-none{% endif %}">
-                                                            {{ form.estado| as_crispy_field }}
-                                                        </div>
-                                                        <div class="form-group col-12">{{ form.observaciones|as_crispy_field }}</div>
-                                                    </div>
-                                                </div>
-                                                <input type="file"
-                                                       name="foto"
-                                                       id="id_foto"
-                                                       class="input-file"
-                                                       id="id_foto"
-                                                       accept="image/*"
-                                                       hidden />
                                             </div>
+                                            <div class="col-sm-9 px-0 px-sm-2">
+                                                <div class="form-row">
+                                                    <!-- {{ form.nacionalidad| as_crispy_field }} -->
+                                                    {{ form.estado_civil| as_crispy_field }}
+                                                    {{ form.telefono| as_crispy_field }}
+                                                    {{ form.telefonoalt| as_crispy_field }}
+                                                    {{ form.email| as_crispy_field }}
+                                                    {{ form.fk_provincia| as_crispy_field }}
+                                                    {{ form.fk_municipio| as_crispy_field }}
+                                                    {{ form.fk_departamento| as_crispy_field }}
+                                                    {{ form.fk_localidad| as_crispy_field }}
+                                                    {{ form.fk_asentamiento| as_crispy_field }}
+                                                    {{ form.calle| as_crispy_field }}
+                                                    {{ form.altura| as_crispy_field }}
+                                                    {{ form.longitud| as_crispy_field }}
+                                                    {{ form.latitud| as_crispy_field }}
+                                                    {{ form.pisodpto| as_crispy_field }}
+                                                    {{ form.torrepasillo| as_crispy_field }}
+                                                    {{ form.escaleramanzana| as_crispy_field }}
+                                                    {{ form.circuito| as_crispy_field }}
+                                                    {{ form.codigopostal| as_crispy_field }}
+                                                    <div class="form-group col-4 {% if request.resolver_match.url_name != 'legajos_editar' %}d-none{% endif %}">
+                                                        {{ form.estado| as_crispy_field }}
+                                                    </div>
+                                                    <div class="form-group col-12">{{ form.observaciones|as_crispy_field }}</div>
+                                                </div>
+                                            </div>
+                                            <input type="file"
+                                                   name="foto"
+                                                   id="id_foto"
+                                                   class="input-file"
+                                                   id="id_foto"
+                                                   accept="image/*"
+                                                   hidden />
                                         </div>
                                     </div>
                                     <!-- botones del pie -->
