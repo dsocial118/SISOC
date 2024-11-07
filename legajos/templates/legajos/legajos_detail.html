@@ -681,11 +681,11 @@
                                 <dd class="col-sm-8">
                                     Posee Agua caliente
                                 </dd>
-                                <dt class="col-sm-4">{{ object.dimensionvivienda.hay_agua_caliente|yesno:'Sí,No' }}</dt>
+                                <dt class="col-sm-4">{{ object.dimensionvivienda.hay_agua_caliente|yesno:'Sí,No,-' }}</dt>
                                 <dd class="col-sm-8">
                                     Riesgo de desmoronamiento
                                 </dd>
-                                <dt class="col-sm-4">{{ object.dimensionvivienda.hay_desmoronamiento|yesno:'Sí,No' }}</dt>
+                                <dt class="col-sm-4">{{ object.dimensionvivienda.hay_desmoronamiento|yesno:'Sí,No,-' }}</dt>
                                 <dd class="col-sm-8">
                                     La vivienda está ubicada...
                                 </dd>
@@ -840,7 +840,7 @@
                                 <dd class="col-sm-8">
                                     ¿Recibe Plan Social?
                                 </dd>
-                                <dt class="col-sm-4">{{ object.dimensioneconomia.recibe_plan|default_if_none:"-" }}</dt>
+                                <dt class="col-sm-4">{{ object.dimensioneconomia.recibe_plan|yesno:'Sí,No,-' }}</dt>
                                 <dd class="col-sm-8">
                                     Planes sociales que recibe
                                 </dd>
@@ -869,19 +869,19 @@
                                 <dd class="col-sm-8">
                                     ¿Actualmente realizás alguna actividad laboral, productiva o comunitaria?
                                 </dd>
-                                <dt class="col-sm-4">{{ dimensiontrabajo.tiene_trabajo|default_if_none:"-" }}</dt>
+                                <dt class="col-sm-4">{{ dimensiontrabajo.tiene_trabajo|yesno:'Sí,No,-' }}</dt>
                                 <dd class="col-sm-8">
                                     Ocupación
                                 </dd>
-                                <dt class="col-sm-4">{{ dimensiontrabajo.ocupacion|default_if_none:"-" }}</dt>
+                                <dt class="col-sm-4">{{ object.dimensiontrabajo.ocupacion|default_if_none:"-" }}</dt>
                                 <dd class="col-sm-8">
                                     Modo de contratación
                                 </dd>
-                                <dt class="col-sm-4">{{ dimensiontrabajo.modo_contratacion|default_if_none:"-" }}</dt>
+                                <dt class="col-sm-4">{{ object.dimensiontrabajo.modo_contratacion|default_if_none:"-" }}</dt>
                                 <dd class="col-sm-8">
                                     ¿Conviviente trabaja?
                                 </dd>
-                                <dt class="col-sm-4">{{ dimensiontrabajo.conviviente_trabaja|default_if_none:"-" }}</dt>
+                                <dt class="col-sm-4">{{ dimensiontrabajo.conviviente_trabaja|yesno:'Sí,No,-' }}</dt>
                                 <dd class="col-12 mt-3">
                                     Observaciones
                                 </dd>
