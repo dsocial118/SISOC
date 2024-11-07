@@ -33,7 +33,6 @@ class ComedorService:
                 | Q(localidad__nombre=query)
                 | Q(referente__nombre=query)
                 | Q(referente__apellido=query)
-                | Q(referente__celular=query)
             )
         return queryset
 
