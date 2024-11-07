@@ -3,70 +3,82 @@
         "model": "legajos.vinculofamiliar",
         "pk": 1,
         "fields": {
-            "vinculo": "Padre"
+            "vinculo": "Padre",
+            "inverso": "Hijo/a"
         }
     },
     {
         "model": "legajos.vinculofamiliar",
         "pk": 2,
         "fields": {
-            "vinculo": "Madre"
+            "vinculo": "Madre",
+            "inverso": "Hijo/a"
         }
     },
     {
         "model": "legajos.vinculofamiliar",
         "pk": 3,
         "fields": {
-            "vinculo": "Hijo/a"
+            "vinculo": "Hijo/a",
+            "inverso": "Padre/Madre"
         }
     },
     {
         "model": "legajos.vinculofamiliar",
         "pk": 4,
         "fields": {
-            "vinculo": "Hermano/a"
+            "vinculo": "Hermano/a",
+            "inverso": "Hermano/a"
+
         }
     },
     {
         "model": "legajos.vinculofamiliar",
         "pk": 5,
         "fields": {
-            "vinculo": "Abuelo/a"
+            "vinculo": "Abuelo/a",
+            "inverso": "Nieto/a"
         }
     },
     {
         "model": "legajos.vinculofamiliar",
         "pk": 6,
         "fields": {
-            "vinculo": "Nieto/a"
+            "vinculo": "Nieto/a",
+            "inverso": "Abuelo/a"
         }
     },
     {
         "model": "legajos.vinculofamiliar",
         "pk": 7,
         "fields": {
-            "vinculo": "Tío/a"
+            "vinculo": "Tío/a",
+            "inverso": "Sobrino/a"
         }
     },
     {
         "model": "legajos.vinculofamiliar",
         "pk": 8,
         "fields": {
-            "vinculo": "Sobrino/a"
+            "vinculo": "Sobrino/a",
+            "inverso": "Tío/a"
         }
     },
     {
         "model": "legajos.vinculofamiliar",
         "pk": 9,
         "fields": {
-            "vinculo": "Pareja"
+            "vinculo": "Pareja",
+            "inverso": "Pareja"
         }
     },
     {
         "model": "legajos.vinculofamiliar",
         "pk": 10,
         "fields": {
-            "vinculo": "Otro"
+            "vinculo": "Otro",
+            "inverso": "Otro"
         }
     }
+  
 ]
