@@ -2,6 +2,7 @@ from django.db import models
 from django.forms import ValidationError
 from django.utils import timezone
 
+
 from legajos.models import LegajoProvincias
 from usuarios.models import Usuarios
 
@@ -15,6 +16,17 @@ class Rubro(models.Model):
     class Meta:
         verbose_name = "Rubro"
         verbose_name_plural = "Rubros"
+
+
+class TipoPersonaJuridica(models.Model):
+    nombre = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        verbose_name = "Tipo de Persona Jurídica"
+        verbose_name_plural = "Tipos de Personas Jurídicas"
 
 
 class Objetivo(models.Model):
@@ -337,26 +349,47 @@ class ModalidadCicloProductivo(models.Model):
 
 
 class AbstractPersoneria(models.Model):
-    direccion = models.CharField(max_length=255)
-    localidad = models.CharField(max_length=255)
-    codigo_postal = models.PositiveBigIntegerField()
-    provincia = models.ForeignKey(LegajoProvincias, on_delete=models.PROTECT)
+    # Ubicacion
+    direccion = models.CharField(max_length=255, verbose_name="Dirección")
+    localidad = models.CharField(max_length=255, verbose_name="Localidad")
+    codigo_postal = models.PositiveBigIntegerField(verbose_name="Codigo postal")
+    provincia = models.ForeignKey(
+        LegajoProvincias, on_delete=models.PROTECT, verbose_name="Provincia"
+    )
 
-    proyecto_nombre = models.CharField(max_length=255)
+    # Datos del proyecto
+    proyecto_nombre = models.CharField(
+        max_length=255, verbose_name="Nombre del Proyecto"
+    )
     proyecto_tipo_actividad = models.ForeignKey(
         TipoActividad,
         on_delete=models.PROTECT,
         related_name="personeria_tipo_actividad",
+        verbose_name="Tipo de Actividad del Proyecto",
     )
-    proyecto_rubro = models.ForeignKey(Rubro, on_delete=models.PROTECT)
-    proyecto_objetivo = models.ForeignKey(Objetivo, on_delete=models.PROTECT)
-    proyecto_costo = models.PositiveBigIntegerField()
-
-    pertenece_comunidad_indigena = models.BooleanField(default=False)
-    comunidad_indigena = models.CharField(max_length=255, blank=True, null=True)
+    proyecto_rubro = models.ForeignKey(
+        Rubro, on_delete=models.PROTECT, verbose_name="Rubro del Proyecto"
+    )
+    proyecto_objetivo = models.ForeignKey(
+        Objetivo, on_delete=models.PROTECT, verbose_name="Objetivo del Proyecto"
+    )
+    proyecto_costo = models.PositiveBigIntegerField(verbose_name="Costo del Proyecto")
+    proyecto_pertenece_comunidad_indigena = models.BooleanField(
+        default=False, verbose_name="¿El proyecto pertenece a una comunidad indigena?"
+    )
+    proyecto_comunidad_indigena = models.CharField(
+        max_length=255, blank=True, null=True
+    )
+    proyecto_practicas_regenerativas = models.BooleanField(
+        default=False,
+        verbose_name="¿El proyecto esta vinculado a prácticas regenerativas/agroecológicas",
+    )
 
     def clean(self):
-        if self.pertenece_comunidad_indigena and self.comunidad_indigena == "":
+        if (
+            self.proyecto_pertenece_comunidad_indigena
+            and self.proyecto_comunidad_indigena == ""
+        ):
             raise ValidationError("Debe aclarar a que comunidad indigena pertenece.")
         return super().clean()
 
@@ -364,23 +397,29 @@ class AbstractPersoneria(models.Model):
         abstract = True
 
 
-class PersoneriaOrganizacion(AbstractPersoneria):
-    nombre = models.CharField(max_length=255)
-    tipo = models.CharField(max_length=255)
-    fecha_creacion = models.DateField()
-    numero_personeria_juridica = models.CharField(max_length=255)
-    fecha_otorgamiento = models.DateField()
-    cuit = models.PositiveBigIntegerField()
-    domicilio_legal = models.CharField(max_length=255)
-    mail = models.EmailField()
-    telefono = models.PositiveBigIntegerField()
+class PersonaJuridica(AbstractPersoneria):
+    nombre = models.CharField(max_length=255, verbose_name="Nombre de la Organización")
+    tipo = models.ForeignKey(
+        TipoPersonaJuridica,
+        on_delete=models.PROTECT,
+        verbose_name="Tipo de Organización",
+    )
+    fecha_creacion = models.DateField(verbose_name="Fecha de Creación")
+    numero_personeria_juridica = models.CharField(
+        max_length=255, verbose_name="Número de Personería Jurídica"
+    )
+    fecha_otorgamiento = models.DateField(verbose_name="Fecha de otorgamiento")
+    cuit = models.PositiveBigIntegerField(verbose_name="CUIT")
+    domicilio_legal = models.CharField(
+        max_length=255, verbose_name="Domicilio Legal y Electrónico"
+    )
 
-    autoridad_nombre_completo = models.CharField(max_length=255)
-    autoridad_dni = models.PositiveBigIntegerField()
-    autoridad_cuit = models.PositiveBigIntegerField()
-    autoridad_rol = models.CharField(max_length=255)
-
-    practicas_regenerativas = models.BooleanField(default=False)
+    autoridad_nombre_completo = models.CharField(
+        max_length=255, verbose_name="Nombre completo de la autoridad"
+    )
+    autoridad_dni = models.PositiveBigIntegerField(verbose_name="DNI de la autoridad")
+    autoridad_cuit = models.PositiveBigIntegerField(verbose_name="CUIT de la autoridad")
+    autoridad_rol = models.CharField(max_length=255, verbose_name="Rol de la autoridad")
 
     proyecto_tipo_actividad = models.ForeignKey(
         TipoActividad,
@@ -396,14 +435,14 @@ class PersoneriaOrganizacion(AbstractPersoneria):
         verbose_name_plural = "Organizaciones"
 
 
-class PersoneriaPersona(AbstractPersoneria):
-    nobre_completo = models.CharField(max_length=255)
-    dni = models.PositiveBigIntegerField()
-    fecha_nacimiento = models.DateField()
-    cuil = models.PositiveBigIntegerField()
-    domicilio_real = models.CharField(max_length=255)
-    mail = models.EmailField()
-    telefono = models.PositiveBigIntegerField()
+class PersonaFisica(AbstractPersoneria):
+    nombre_completo = models.CharField(max_length=255, verbose_name="Nombre completo")
+    dni = models.PositiveBigIntegerField(verbose_name="DNI")
+    fecha_nacimiento = models.DateField(verbose_name="Fecha de nacimiento")
+    cuil = models.PositiveBigIntegerField(verbose_name="CUIL")
+    domicilio_real = models.CharField(max_length=255, verbose_name="Domicilio real")
+    mail = models.EmailField(verbose_name="Correo electrónico")
+    telefono = models.PositiveBigIntegerField(verbose_name="Teléfono")
 
     proyecto_tipo_actividad = models.ForeignKey(
         TipoActividad,
@@ -412,7 +451,7 @@ class PersoneriaPersona(AbstractPersoneria):
     )
 
     def __str__(self) -> str:
-        return str(self.nobre_completo)
+        return str(self.nombre_completo)
 
     class Meta:
         verbose_name = "Persona"
@@ -420,23 +459,58 @@ class PersoneriaPersona(AbstractPersoneria):
 
 
 class LineaDeAccion(models.Model):
-    produccion_apoyo_tecnico = models.BooleanField(default=False)
-    produccion_maquinaria = models.BooleanField(default=False)
-    produccion_tecnologias = models.BooleanField(default=False)
-    produccion_entrega = models.BooleanField(default=False)
+    # Fortalecimiento Productivo
+    produccion_apoyo_tecnico = models.BooleanField(
+        default=False, verbose_name="Apoyo técnico para mejorar competitividad"
+    )
+    produccion_maquinaria = models.BooleanField(
+        default=False, verbose_name="Acceso a máquinas, herramientas e insumos"
+    )
+    produccion_tecnologias = models.BooleanField(
+        default=False, verbose_name="Incorporación de nuevas tecnologías"
+    )
+    produccion_entrega = models.BooleanField(
+        default=False, verbose_name="Entrega directa según stock"
+    )
 
-    comercializacion_fortalecimiento_institucional = models.BooleanField(default=False)
-    comercializacion_apoyo_tecnologico = models.BooleanField(default=False)
-    comercializacion_habilidades_blandas = models.BooleanField(default=False)
-    comercializacion_desarrollo_local = models.BooleanField(default=False)
-    comercializacion_fortalecimiento_unidades = models.BooleanField(default=False)
+    # Comercialización
+    comercializacion_fortalecimiento_institucional = models.BooleanField(
+        default=False, verbose_name="Fortalecimiento Institucional"
+    )
+    comercializacion_apoyo_tecnologico = models.BooleanField(
+        default=False, verbose_name="Apoyo Tecnológico"
+    )
+    comercializacion_habilidades_blandas = models.BooleanField(
+        default=False, verbose_name="Habilidades Blandas para la Comercialización"
+    )
+    comercializacion_fortalecimiento_unidades = models.BooleanField(
+        default=False,
+        verbose_name="Fortalecimiento de la Comercialización de Unidades Productivas",
+    )
 
-    circular_fortalecimiento = models.BooleanField(default=False)
-    circular_practicas_sostenibles = models.BooleanField(default=False)
-    circular_materiales_reciclados = models.BooleanField(default=False)
-    circular_reduccion_residuos = models.BooleanField(default=False)
+    # Economia circular
+    circular_fortalecimiento = models.BooleanField(
+        default=False,
+        verbose_name="Fortalecimiento a recuperadores de base, organizaciones y sistemas locales de reciclado",
+    )
+    circular_practicas_sostenibles = models.BooleanField(
+        default=False, verbose_name="Implementación de prácticas sostenibles"
+    )
+    circular_materiales_reciclados = models.BooleanField(
+        default=False, verbose_name="Uso de materiales reciclados"
+    )
+    circular_reduccion_residuos = models.BooleanField(
+        default=False, verbose_name="Reducción de residuos"
+    )
 
-    fundamentacion = models.TextField()
+    fundamentacion = models.TextField(verbose_name="Fundamentos del proyecto")
+
+    destinatarios_directos = models.FileField(
+        upload_to="destinatarios_directos/", verbose_name="Destinatarios directos"
+    )
+    destinatarios_indirectos = models.PositiveBigIntegerField(
+        verbose_name="Destinatarios indirectos"
+    )
 
     @property
     def cantidad_destinatarios_directos(self):
@@ -451,92 +525,174 @@ class Presupuesto(models.Model):
     cantidad_producto = models.PositiveBigIntegerField()
     costo_unitario = models.PositiveBigIntegerField()
 
-    destinatarios_indirectos = models.PositiveBigIntegerField()
-
     @property
     def costo_total(self):
         return self.cantidad_producto * self.costo_unitario
 
 
-class DestinatarioDirecto(models.Model):
-    linea_de_accion = models.ForeignKey(
-        LineaDeAccion, on_delete=models.CASCADE, related_name="destinatarios"
-    )
-    nombre = models.CharField(max_length=255)
-    apellido = models.CharField(max_length=255)
-    dni = models.PositiveBigIntegerField()
-
-
 class AbstractDiagnostico(models.Model):
     # Bloque 2: Estructura economica
-    tipo_actividad = models.ManyToManyField(TipoActividad)
-    rubro = models.ForeignKey(Rubro, on_delete=models.PROTECT)
-    banco = models.BooleanField(default=False)
-    banco_nombre = models.CharField(max_length=255, blank=True, null=True)
-    cuenta_digital = models.BooleanField(default=False)
-    financiamiento = models.BooleanField(default=False)
-    financiamiento_nombre = models.CharField(max_length=255, blank=True, null=True)
-    tipo_inmueble = models.ForeignKey(TipoInmueble, on_delete=models.PROTECT)
-    ingresos_mensuales = models.PositiveBigIntegerField()
-    egresos_mensuales = models.PositiveBigIntegerField()
-    ganancias_mensuales = models.PositiveBigIntegerField()
+    tipo_actividad = models.ManyToManyField(
+        TipoActividad, verbose_name="Tipo de actividad"
+    )
+    rubro = models.ForeignKey(
+        Rubro, on_delete=models.PROTECT, verbose_name="Rubro de la organización"
+    )
+    banco = models.BooleanField(default=False, verbose_name="¿Opera con algún banco?")
+    banco_nombre = models.CharField(
+        max_length=255, blank=True, null=True, verbose_name="¿Cual banco?"
+    )
+    cuenta_digital = models.BooleanField(
+        default=False, verbose_name="¿Tiene alguna cuenta digital?"
+    )
+    financiamiento = models.BooleanField(
+        default=False, verbose_name="¿Posee otras fuentes de financiamiento y/o apoyo?"
+    )
+    financiamiento_nombre = models.CharField(
+        max_length=255, blank=True, null=True, verbose_name="¿Cual financiamiento?"
+    )
+    tipo_inmueble = models.ForeignKey(
+        TipoInmueble,
+        on_delete=models.PROTECT,
+        verbose_name="El inmueble afectado a la actividad es de tipo",
+    )
+    ingresos_mensuales = models.PositiveBigIntegerField(
+        verbose_name="Ingresos promedios mensuales"
+    )
+    egresos_mensuales = models.PositiveBigIntegerField(
+        verbose_name="Egresos promedios mensuales"
+    )
+    ganancias_mensuales = models.PositiveBigIntegerField(
+        verbose_name="Excede o ganancias (ventas - costo del mes)"
+    )
 
     # Bloque 3: Conectividad
-    internet = models.BooleanField(default=False)
-    tipo_internet = models.ForeignKey(
-        TipoInternet, on_delete=models.PROTECT, blank=True, null=True
+    internet = models.BooleanField(
+        default=False, verbose_name="¿Cuenta con acceso a internet?"
     )
-    dispositivos_conectados = models.PositiveBigIntegerField(blank=True, null=True)
-    computadora = models.BooleanField(default=False)
-    tipo_dispositivos_moviles = models.ManyToManyField(TipoDispositivosMoviles)
-    plataforma_comunicacion = models.ManyToManyField(PlataformaComunicacion)
-    redes_sociales = models.BooleanField(default=False)
-    redes_sociales_cuales = models.ManyToManyField(RedSocial)
+    tipo_internet = models.ForeignKey(
+        TipoInternet,
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+        verbose_name="Tipo de acceso a internet",
+    )
+    dispositivos_conectados = models.PositiveBigIntegerField(
+        blank=True, null=True, verbose_name="Número de dispositivos conectados"
+    )
+    tipo_dispositivos_moviles = models.ManyToManyField(
+        TipoDispositivosMoviles,
+        verbose_name="Tipo de dispositivos móviles",
+    )
+    plataforma_comunicacion = models.ManyToManyField(
+        PlataformaComunicacion, verbose_name="Plataformas de comunicación utilizadas"
+    )
+    redes_sociales = models.ManyToManyField(
+        RedSocial, verbose_name="Uso de redes sociales"
+    )
 
     # Bloque 4: Comercializacion
-    comprador = models.ForeignKey(Comprador, on_delete=models.PROTECT)
-    cantidad_clientes = models.ForeignKey(CantidadClientes, on_delete=models.PROTECT)
+    comprador = models.ForeignKey(
+        Comprador, on_delete=models.PROTECT, verbose_name="¿A quién le vende?"
+    )
+    cantidad_clientes = models.ForeignKey(
+        CantidadClientes,
+        on_delete=models.PROTECT,
+        verbose_name="¿Cuántos clientes tiene?",
+    )
     lugar_comercializacion = models.ForeignKey(
-        LugarComercializacion, on_delete=models.PROTECT
+        LugarComercializacion, on_delete=models.PROTECT, verbose_name="¿Dónde vende?"
     )
     modalidad_comercializacion = models.ForeignKey(
-        ModalidadComercializacion, on_delete=models.PROTECT
+        ModalidadComercializacion,
+        on_delete=models.PROTECT,
+        verbose_name="¿Cómo realiza sus ventas o produccion?",
     )
-    fijacion_precios = models.ForeignKey(FijacionPrecios, on_delete=models.PROTECT)
+    fijacion_precios = models.ForeignKey(
+        FijacionPrecios,
+        on_delete=models.PROTECT,
+        verbose_name="¿Cómo fija los precios de venta?",
+    )
     cantidad_competidores = models.ForeignKey(
-        CantidadCompetidores, on_delete=models.PROTECT
+        CantidadCompetidores,
+        on_delete=models.PROTECT,
+        verbose_name="Cuántos competidores tiene en su radio de venta? ",
     )
     conocimiento_competidores = models.ForeignKey(
-        ConocimientoCompetidores, on_delete=models.PROTECT
+        ConocimientoCompetidores,
+        on_delete=models.PROTECT,
+        verbose_name="¿Conoce a sus competidores?",
     )
     interactua_compentidores = models.ForeignKey(
-        InteractuaCompetidores, on_delete=models.PROTECT
+        InteractuaCompetidores,
+        on_delete=models.PROTECT,
+        verbose_name="¿Interactúa con sus competidores?",
     )
-    modalidad_compras = models.ForeignKey(ModalidadCompras, on_delete=models.PROTECT)
+    modalidad_compras = models.ForeignKey(
+        ModalidadCompras,
+        on_delete=models.PROTECT,
+        verbose_name="¿Cómo compra habitualmente?",
+    )
     plazo_compra_credito = models.ForeignKey(
-        PlazoCompraCredito, on_delete=models.PROTECT
+        PlazoCompraCredito,
+        on_delete=models.PROTECT,
+        verbose_name="Si compra a crédito, ¿qué plazo tiene para pagar?",
     )
     medio_planificacion = models.ForeignKey(
-        MedioPlanificacion, on_delete=models.PROTECT
+        MedioPlanificacion,
+        on_delete=models.PROTECT,
+        verbose_name="¿A través de qué medio planifica su administración?",
     )
-    canales_ventas = models.ManyToManyField(CanalesVentas)
-    ventas_destinadas_turismo = models.BooleanField(default=False)
+    canales_ventas = models.ManyToManyField(
+        CanalesVentas, verbose_name="Canales de venta"
+    )
+    ventas_destinadas_turismo = models.BooleanField(
+        default=False, verbose_name="¿Sus ventas suelen estar destinadas al turismo?"
+    )
 
     # Bloque 5
-    recicladores_urbanos = models.BooleanField(default=False)
-    recicladores_equipados = models.BooleanField(default=False)
-    clasificacion_residuos = models.BooleanField(default=False)
+    recicladores_urbanos = models.BooleanField(
+        default=False,
+        verbose_name="¿El proyecto incluye activamente a recicladores urbanos organizados en cooperativas o asociaciones?",
+    )
+    recicladores_equipados = models.BooleanField(
+        default=False,
+        verbose_name="¿Los recicladores urbanos cuentan con elementos de protección personal adecuados, condiciones laborales adecuadas como salarios dignos y horarios razonables?",
+    )
+    clasificacion_residuos = models.BooleanField(
+        default=False,
+        verbose_name="¿Existe un sistema de separación y clasificación de residuos desde el origen, en el proyecto de referencia?",
+    )
     destino_materiales_recuperados = models.ManyToManyField(
-        DestinoMaterialesRecuperados
+        DestinoMaterialesRecuperados,
+        verbose_name="¿Cuál es el destino de los materiales recuperados?",
     )
-    optimizacion_recursos = models.BooleanField(default=False)
+    optimizacion_recursos = models.BooleanField(
+        default=False,
+        verbose_name="¿El proyecto optimiza el uso de los recursos, promoviendo la reducción del consumo de materiales?",
+    )
     modalidad_ciclo_productivo = models.ForeignKey(
-        ModalidadCicloProductivo, on_delete=models.PROTECT
+        ModalidadCicloProductivo,
+        on_delete=models.PROTECT,
+        verbose_name="¿El ciclo productivo es lineal o circular (se reintroducen los lateriales en la cadena productiva)?",
     )
-    financiamiento_sostenible = models.BooleanField(default=False)
-    estrategia_comercializacion = models.BooleanField(default=False)
-    tecnologias_mejorar_eficiencia = models.BooleanField(default=False)
-    tecnologias_cuales = models.CharField(max_length=255, blank=True, null=True)
+    financiamiento_sostenible = models.BooleanField(
+        default=False,
+        verbose_name="¿El proyecto cuenta con fuentes de financiamiento sostenibles?",
+    )
+    estrategia_comercializacion = models.BooleanField(
+        default=False, verbose_name="¿Poseen estrategias de comercialización?"
+    )
+    tecnologias_mejorar_eficiencia = models.BooleanField(
+        default=False,
+        verbose_name="¿Se utilizan tecnologías para mejorar la eficiencia en la recolección, clasificación y reciclaje de materiales y los recicladores tienen acceso a plataformas digitales?",
+    )
+    tecnologias_cuales = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="¿Cuáles tecnologias se utilizan?",
+    )
 
     def clean(self) -> None:
         if self.internet and (
@@ -550,9 +706,6 @@ class AbstractDiagnostico(models.Model):
         if self.financiamiento and not self.financiamiento_nombre:
             raise ValidationError("Debe completar el nombre del financiamiento.")
 
-        if self.redes_sociales and not self.redes_sociales_cuales:
-            raise ValidationError("Debe completar las redes sociales utilizadas.")
-
         if self.tecnologias_mejorar_eficiencia and not self.tecnologias_cuales:
             raise ValidationError("Debe completar las tecnologías utilizadas.")
 
@@ -562,41 +715,70 @@ class AbstractDiagnostico(models.Model):
         abstract = True
 
 
-class DiagnosticoOrganizacion(AbstractDiagnostico):
+class DiagnosticoJuridica(AbstractDiagnostico):
     # Bloque 1: Contexto general
-    mision_vision = models.TextField()
-    tipo_comunidad = models.ManyToManyField(TipoComunidad)
-    cantidad_integrantes = models.ForeignKey(
-        CantidadIntegrantes, on_delete=models.PROTECT
+    mision_vision = models.TextField(verbose_name="Misión y visión de la organización")
+    tipo_comunidad = models.ManyToManyField(
+        TipoComunidad, verbose_name="Tipo de comunidad donde opera la institucion"
     )
-    genero_mayoria = models.ForeignKey(Genero, on_delete=models.PROTECT)
-    composicion_equipo = models.CharField(max_length=255)
-    directorio = models.BooleanField(default=False)
-    personal_tecnico = models.BooleanField(default=False)
-    personal_especializado = models.BooleanField(default=False)
+    cantidad_integrantes = models.ForeignKey(
+        CantidadIntegrantes,
+        on_delete=models.PROTECT,
+        verbose_name="Cantidad de integrantes de su organizacion",
+    )
+    genero_mayoria = models.ForeignKey(
+        Genero, on_delete=models.PROTECT, verbose_name="Géneros de la mayoria"
+    )
+    composicion_equipo = models.CharField(
+        max_length=255, verbose_name="Composición de su equipo de trabajo"
+    )
 
     class Meta:
         verbose_name = "Diagnóstico de Organización"
         verbose_name_plural = "Diagnósticos de Organizaciones"
 
 
-class DiagnosticoPersona(AbstractDiagnostico):
+class DiagnosticoFisica(AbstractDiagnostico):
     # Bloque 1: Contexto general
-    estudios_alcanzados = models.ManyToManyField(EstudiosAlcanzados)
-    ocupacion = models.ForeignKey(TipoOcupacion, on_delete=models.PROTECT)
+    estudios_alcanzados = models.ManyToManyField(
+        EstudiosAlcanzados, verbose_name="Nivel de estudios alcanzados"
+    )
+    ocupacion = models.ForeignKey(
+        TipoOcupacion, on_delete=models.PROTECT, verbose_name="Ocupación"
+    )
     ocupacion_condicion = models.ForeignKey(
-        CondicionOcupacion, on_delete=models.PROTECT
+        CondicionOcupacion,
+        on_delete=models.PROTECT,
+        verbose_name="Condición de tu actividad",
     )
-    ocupacion_sosten_hogar = models.BooleanField(default=False)
+    ocupacion_sosten_hogar = models.BooleanField(
+        default=False, verbose_name="¿Es esta actividad el principal sostén del hogar?"
+    )
     ocupacion_horas_semanales = models.ForeignKey(
-        OcupacionHorasSemanales, on_delete=models.PROTECT
+        OcupacionHorasSemanales,
+        on_delete=models.PROTECT,
+        verbose_name="Cuántas horas semanales le dedica a la actividad",
     )
-    beneficiario_social = models.BooleanField(default=False)
-    beneficio_social = models.CharField(max_length=255)
-    familia_adultos = models.PositiveBigIntegerField()
-    familia_menores = models.PositiveBigIntegerField()
+    beneficiario_social = models.BooleanField(
+        default=False,
+        verbose_name="¿Es beneficiario de algún programa social nacional y/o provincial?",
+    )
+    beneficio_social = models.CharField(
+        max_length=255, blank=True, null=True, verbose_name="¿Cuál?"
+    )
+    familia_adultos = models.PositiveBigIntegerField(
+        verbose_name="Cantidad de adultos en el grupo familiar"
+    )
+    familia_menores = models.PositiveBigIntegerField(
+        verbose_name="Cantidad de menores en el grupo familiar"
+    )
+    familia_trabajadores = models.PositiveBigIntegerField(
+        verbose_name="Cantidad de personas que trabajan en el grupo familiar"
+    )
     familia_ingreso_promedio = models.ForeignKey(
-        IngresoPromedioFamiliar, on_delete=models.PROTECT
+        IngresoPromedioFamiliar,
+        on_delete=models.PROTECT,
+        verbose_name="Ingreso promedio familiar",
     )
 
     @property
@@ -633,7 +815,14 @@ class Proyecto(models.Model):
 
     @property
     def presupuesto_total(self):
-        pass  # TODO:
+        total = (
+            Presupuesto.objects.filter(
+                linea_de_accion__anexosocioproductivo__proyecto=self
+            )
+            .aggregate(total=models.Sum("costo_total"))
+            .get("total", 0)
+        )
+        return total or 0
 
     def save(self, *args, **kwargs):
         self.fecha_ultima_modificacion = timezone.now()
@@ -660,48 +849,81 @@ class Observacion(models.Model):
 
 
 class AnexoSocioProductivo(models.Model):
+    # Proyecto y personeria
     proyecto = models.ForeignKey(
         Proyecto, on_delete=models.PROTECT, null=True, blank=True
     )
-    PERSONERIA_CHOICES = (("ORGANIZACION", "Organización"), ("PERSONA", "Persona"))
-    personeria = models.CharField(max_length=255, choices=PERSONERIA_CHOICES)
-    organizacion = models.ForeignKey(
-        PersoneriaOrganizacion, on_delete=models.PROTECT, blank=True, null=True
+    PERSONERIA_CHOICES = (("JURIDICA", "Organización"), ("FISICA", "Persona"))
+    personeria = models.CharField(
+        max_length=255,
+        choices=PERSONERIA_CHOICES,
+        verbose_name="¿Persona fisica o persona juridica?",
     )
-    persona = models.ForeignKey(
-        PersoneriaPersona, on_delete=models.PROTECT, blank=True, null=True
+    juridica = models.ForeignKey(
+        PersonaJuridica, on_delete=models.PROTECT, blank=True, null=True
+    )
+    fisica = models.ForeignKey(
+        PersonaFisica, on_delete=models.PROTECT, blank=True, null=True
     )
 
     linea_de_accion = models.ForeignKey(LineaDeAccion, on_delete=models.PROTECT)
 
-    media = models.FileField(upload_to="anexos/socioproductivos/")
-
-    documentacion = models.FileField(upload_to="anexos/socioproductivos/")
-
-    diagnostico_organizacion = models.ForeignKey(
-        DiagnosticoOrganizacion, on_delete=models.PROTECT, blank=True, null=True
+    # Diagnostico
+    diagnostico_juridica = models.ForeignKey(
+        DiagnosticoJuridica, on_delete=models.PROTECT, blank=True, null=True
     )
-    diagnostico_persona = models.ForeignKey(
-        DiagnosticoPersona, on_delete=models.PROTECT, blank=True, null=True
+    diagnostico_fisica = models.ForeignKey(
+        DiagnosticoFisica, on_delete=models.PROTECT, blank=True, null=True
+    )
+
+    # Documentacion respecto de organizaciones no gubernamentales
+    acta_constitutiva = models.FileField(
+        upload_to="anexos/socioproductivos/actas_constitutivas/",
+        verbose_name="Acta constitutiva",
+    )
+    estatuto = models.FileField(
+        upload_to="anexos/socioproductivos/estatutos/", verbose_name="Estatuto"
+    )
+    personeria_juridica = models.FileField(
+        upload_to="anexos/socioproductivos/personerias_juridicas/",
+        verbose_name="Personería jurídica",
+    )
+    designacion_autoridades = models.FileField(
+        upload_to="anexos/socioproductivos/designaciones_autoridades/",
+        verbose_name="Designación de autoridades",
+    )
+    autorizacion_gestionar = models.FileField(
+        upload_to="anexos/socioproductivos/autorizaciones_gestionar/",
+        verbose_name="Autorización a gestionar",
+    )
+
+    # Documentacion respecto de organizaciones gubernamentales
+    designacion_intendente = models.FileField(
+        upload_to="anexos/socioproductivos/designaciones_indentendes/",
+        verbose_name="Designación del intendente",
+    )
+
+    media = models.FileField(
+        upload_to="anexos/socioproductivos/", verbose_name="Contenido multimedia"
     )
 
     def clean(self):
-        if (self.personeria == "ORGANIZACION" and not self.organizacion) or (
-            self.personeria == "PERSONA" and not self.persona
+        if (self.personeria == "JURIDICA" and not self.juridica) or (
+            self.personeria == "FISICA" and not self.fisica
         ):
             raise ValidationError(
-                "Debe completar una organización o una persona para el anexo."
+                "Debe completar una organización o una persona segun corresponda."
             )
 
-        if (
-            self.personeria == "ORGANIZACION" and not self.diagnostico_organizacion
-        ) or (self.personeria == "PERSONA" and not self.diagnostico_persona):
+        if (self.personeria == "JURIDICA" and not self.diagnostico_juridica) or (
+            self.personeria == "FISICA" and not self.diagnostico_fisica
+        ):
             raise ValidationError("Debe completar una el diagnostico para el anexo.")
 
         return super().clean()
 
     def __str__(self) -> str:
-        return str(f"{self.id} - {self.proyecto} - {self.organizacion or self.persona}")
+        return str(f"{self.id} - {self.proyecto} - {self.juridica or self.fisica}")
 
     class Meta:
         verbose_name = "Anexo socio productivo"

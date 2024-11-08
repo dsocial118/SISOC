@@ -1,6 +1,7 @@
 from django.contrib import admin
 from provincias.models import (
     Rubro,
+    TipoPersonaJuridica,
     Objetivo,
     TipoActividad,
     TipoComunidad,
@@ -32,19 +33,19 @@ from provincias.models import (
     ModalidadCicloProductivo,
     Proyecto,
     AnexoSocioProductivo,
-    PersoneriaOrganizacion,
-    PersoneriaPersona,
+    PersonaJuridica,
+    PersonaFisica,
     LineaDeAccion,
     Presupuesto,
-    DestinatarioDirecto,
-    DiagnosticoOrganizacion,
-    DiagnosticoPersona,
+    DiagnosticoJuridica,
+    DiagnosticoFisica,
     Observacion,
     AnexoFormacion,
 )
 
 # Registrar todos los modelos en el admin de Django
 admin.site.register(Rubro)
+admin.site.register(TipoPersonaJuridica)
 admin.site.register(Objetivo)
 admin.site.register(TipoActividad)
 admin.site.register(TipoComunidad)
@@ -76,12 +77,11 @@ admin.site.register(DestinoMaterialesRecuperados)
 admin.site.register(ModalidadCicloProductivo)
 admin.site.register(Proyecto)
 admin.site.register(AnexoSocioProductivo)
-admin.site.register(PersoneriaOrganizacion)
-admin.site.register(PersoneriaPersona)
+admin.site.register(PersonaJuridica)
+admin.site.register(PersonaFisica)
 admin.site.register(LineaDeAccion)
 admin.site.register(Presupuesto)
-admin.site.register(DestinatarioDirecto)
-admin.site.register(DiagnosticoOrganizacion)
-admin.site.register(DiagnosticoPersona)
+admin.site.register(DiagnosticoJuridica)
+admin.site.register(DiagnosticoFisica)
 admin.site.register(Observacion)
 admin.site.register(AnexoFormacion)

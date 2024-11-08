@@ -1,23 +1,23 @@
 from rest_framework import serializers
 from .models import (
     AnexoSocioProductivo,
-    PersoneriaOrganizacion,
-    PersoneriaPersona,
+    PersonaJuridica,
+    PersonaFisica,
     LineaDeAccion,
-    DiagnosticoOrganizacion,
-    DiagnosticoPersona,
+    DiagnosticoJuridica,
+    DiagnosticoFisica,
 )
 
 
 class PersoneriaOrganizacionSerializer(serializers.ModelSerializer):
     class Meta:
-        model = PersoneriaOrganizacion
+        model = PersonaJuridica
         fields = "__all__"
 
 
 class PersoneriaPersonaSerializer(serializers.ModelSerializer):
     class Meta:
-        model = PersoneriaPersona
+        model = PersonaFisica
         fields = "__all__"
 
 
@@ -29,13 +29,13 @@ class LineaDeAccionSerializer(serializers.ModelSerializer):
 
 class DiagnosticoOrganizacionSerializer(serializers.ModelSerializer):
     class Meta:
-        model = DiagnosticoOrganizacion
+        model = DiagnosticoJuridica
         fields = "__all__"
 
 
 class DiagnosticoPersonaSerializer(serializers.ModelSerializer):
     class Meta:
-        model = DiagnosticoPersona
+        model = DiagnosticoFisica
         fields = "__all__"
 
 
