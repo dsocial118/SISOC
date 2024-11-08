@@ -853,7 +853,10 @@ class AnexoSocioProductivo(models.Model):
     proyecto = models.ForeignKey(
         Proyecto, on_delete=models.PROTECT, null=True, blank=True
     )
-    PERSONERIA_CHOICES = (("JURIDICA", "Organización"), ("FISICA", "Persona"))
+    PERSONERIA_CHOICES = (
+        ("JURIDICA", "Persona Juridica"),
+        ("FISICA", "Persona Fisica"),
+    )
     personeria = models.CharField(
         max_length=255,
         choices=PERSONERIA_CHOICES,
