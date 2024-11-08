@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import (
     AnexoFormacion,
     AnexoSocioProductivo,
+    Observacion,
     PersonaJuridica,
     PersonaFisica,
     LineaDeAccion,
@@ -10,6 +11,12 @@ from .models import (
     Presupuesto,
     Proyecto,
 )
+
+
+class ObservacionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Observacion
+        fields = "__all__"
 
 
 class PersonaJuridicaSerializer(serializers.ModelSerializer):
@@ -133,6 +140,7 @@ class AnexoFormacionSerializer(serializers.ModelSerializer):
 class ProyectoSerializer(serializers.ModelSerializer):
     anexos_socioproductivos = AnexoSocioProductivoSerializer(many=True, read_only=True)
     anexos_formaciones = AnexoFormacionSerializer(many=True, read_only=True)
+    observaciones = ObservacionSerializer(many=True, read_only=True)
 
     class Meta:
         model = Proyecto

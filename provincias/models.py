@@ -838,9 +838,10 @@ class Proyecto(models.Model):
 
 class Observacion(models.Model):
     proyecto = models.ForeignKey(
-        Proyecto, on_delete=models.PROTECT, null=True, blank=True
+        Proyecto, on_delete=models.PROTECT, related_name="observaciones"
     )
     observacion = models.TextField()
+    fecha_creacion = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return str(self.observacion)
