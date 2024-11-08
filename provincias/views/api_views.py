@@ -1,8 +1,8 @@
 from rest_framework import viewsets
-from provincias.models import AnexoSocioProductivo
-from provincias.serializers import AnexoSocioProductivoSerializer
+from provincias.models import Proyecto
+from provincias.serializers import ProyectoSerializer
 
 
-class AnexoSocioProductivoViewSet(viewsets.ModelViewSet):
-    queryset = AnexoSocioProductivo.objects.all()
-    serializer_class = AnexoSocioProductivoSerializer
+class ProyectoViewSet(viewsets.ModelViewSet):
+    queryset = Proyecto.objects.all()
+    serializer_class = ProyectoSerializer

@@ -518,7 +518,9 @@ class LineaDeAccion(models.Model):
 
 
 class Presupuesto(models.Model):
-    linea_de_accion = models.ForeignKey(LineaDeAccion, on_delete=models.PROTECT)
+    linea_de_accion = models.ForeignKey(
+        LineaDeAccion, on_delete=models.PROTECT, related_name="presupuestos"
+    )
     tipo_actividad = models.CharField(max_length=255)
     tipo_producto = models.CharField(max_length=255)
     nombre_producto = models.CharField(max_length=255)
@@ -616,7 +618,7 @@ class AbstractDiagnostico(models.Model):
     cantidad_competidores = models.ForeignKey(
         CantidadCompetidores,
         on_delete=models.PROTECT,
-        verbose_name="Cuántos competidores tiene en su radio de venta? ",
+        verbose_name="Cuántos competidores tiene en su radio de venta?",
     )
     conocimiento_competidores = models.ForeignKey(
         ConocimientoCompetidores,
@@ -851,7 +853,9 @@ class Observacion(models.Model):
 class AnexoSocioProductivo(models.Model):
     # Proyecto y personeria
     proyecto = models.ForeignKey(
-        Proyecto, on_delete=models.PROTECT, null=True, blank=True
+        Proyecto,
+        on_delete=models.PROTECT,
+        related_name="anexos_socioproductivos",
     )
     PERSONERIA_CHOICES = (
         ("JURIDICA", "Persona Juridica"),
@@ -935,5 +939,5 @@ class AnexoSocioProductivo(models.Model):
 
 class AnexoFormacion(models.Model):
     proyecto = models.ForeignKey(
-        Proyecto, on_delete=models.PROTECT, null=True, blank=True
+        Proyecto, on_delete=models.PROTECT, related_name="anexos_formaciones"
     )
