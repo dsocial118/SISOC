@@ -1,16 +1,16 @@
 from django.urls import path
 
-from provincias.views.api_views import AnexoSocioProductivoViewSet
+from provincias.views.api_views import ProyectoViewSet
 
 urlpatterns = [
     path(
-        "api/anexos-socioproductivos/",
-        AnexoSocioProductivoViewSet.as_view({"get": "list"}),
+        "api/proyecto/",
+        ProyectoViewSet.as_view({"get": "list"}),
         name="anexos_socioproductivos_list",
     ),
     path(
-        "api/anexos_socioproductivos/<int:pk>/",
-        AnexoSocioProductivoViewSet.as_view(
+        "api/proyecto/<int:pk>/",
+        ProyectoViewSet.as_view(
             {
                 "get": "retrieve",
                 "patch": "partial_update",
