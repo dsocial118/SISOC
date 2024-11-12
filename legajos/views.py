@@ -32,11 +32,11 @@ from configuraciones.models import (
     CategoriaAlertas,
     Circuito,
     Dimension,
-    Asentamientos,
+    Asentamiento,
     Departamento,
     Localidad,
     Municipio,
-    Provincias,
+    Provincia,
     Organismos,
     Programas,
 )
@@ -151,9 +151,9 @@ def load_asentamiento(request):
     departamento_id = request.GET.get("departamento_id")
 
     if municipio_id:
-        asentamientos = Asentamientos.objects.filter(fk_localidad=municipio_id)
+        asentamientos = Asentamiento.objects.filter(fk_localidad=municipio_id)
     else:
-        asentamientos = Asentamientos.objects.filter(fk_departamento=departamento_id)
+        asentamientos = Asentamiento.objects.filter(fk_departamento=departamento_id)
     return JsonResponse(list(asentamientos.values("id", "nombre")), safe=False)
 
 
@@ -1585,7 +1585,7 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
             "grado": Grado,
             "turno": Turno,
             "obs_educacion": "obs_educacion",
-            "provinciaInstitucion": Provincias,
+            "provinciaInstitucion": Provincia,
             "localidadInstitucion": Localidad,
             "municipioInstitucion": Municipio,
             "barrioInstitucion": "barrioInstitucion",

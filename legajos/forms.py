@@ -4,11 +4,11 @@ from django import forms
 from django.core.validators import MaxValueValidator, MinValueValidator
 
 from ..configuraciones.models import (
-    Asentamientos,
+    Asentamiento,
     Departamento,
     Localidad,
     Municipio,
-    Provincias,
+    Provincia,
 )
 from legajos.models import EstadoRelacion, Legajos, VinculoFamiliar
 from usuarios.validators import MaxSizeFileValidator
@@ -51,7 +51,7 @@ class LegajosForm(forms.ModelForm):
     fk_provincia = forms.ModelChoiceField(
         required=False,
         label="Provincia",
-        queryset=Provincias.objects.all(),
+        queryset=Provincia.objects.all(),
     )
     fk_municipio = forms.ModelChoiceField(
         required=False,
@@ -71,18 +71,18 @@ class LegajosForm(forms.ModelForm):
     fk_asentamiento = forms.ModelChoiceField(
         required=False,
         label="Asentamiento",
-        queryset=Asentamientos.objects.none(),
+        queryset=Asentamiento.objects.none(),
     )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Configurar el queryset del campo 'fk_provincia' para cargar solo las provincias
-        self.fields["fk_provincia"].queryset = Provincias.objects.all()
+        self.fields["fk_provincia"].queryset = Provincia.objects.all()
         # Configurar los querysets de los campos 'fk_municipio' y 'fk_localidad' para que estén vacíos inicialmente
         self.fields["fk_municipio"].queryset = Municipio.objects.none()
         self.fields["fk_localidad"].queryset = Localidad.objects.none()
         self.fields["fk_departamento"].queryset = Departamento.objects.none()
-        self.fields["fk_asentamiento"].queryset = Asentamientos.objects.none()
+        self.fields["fk_asentamiento"].queryset = Asentamiento.objects.none()
         # Actualizar los querysets si los datos están presentes en el formulario
         if "fk_municipio" in self.data:
             try:
@@ -118,11 +118,11 @@ class LegajosForm(forms.ModelForm):
         if "fk_asentamiento" in self.data:
             try:
                 asentameinto_id = int(self.data.get("fk_asentamiento"))
-                self.fields["fk_asentamiento"].queryset = Asentamientos.objects.filter(
+                self.fields["fk_asentamiento"].queryset = Asentamiento.objects.filter(
                     id=asentameinto_id
                 ).order_by("nombre")
             except (ValueError, TypeError):
-                self.fields["fk_asentamiento"].queryset = Asentamientos.objects.none()
+                self.fields["fk_asentamiento"].queryset = Asentamiento.objects.none()
 
     def clean(self):
         cleaned_data = super().clean()
@@ -212,7 +212,7 @@ class LegajosUpdateForm(forms.ModelForm):
     fk_provincia = forms.ModelChoiceField(
         required=True,
         label="Provincia",
-        queryset=Provincias.objects.all(),
+        queryset=Provincia.objects.all(),
     )
     fk_municipio = forms.ModelChoiceField(
         required=False,
@@ -232,12 +232,12 @@ class LegajosUpdateForm(forms.ModelForm):
     fk_asentamiento = forms.ModelChoiceField(
         required=False,
         label="Asentamiento",
-        queryset=Asentamientos.objects.all(),
+        queryset=Asentamiento.objects.all(),
     )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["fk_provincia"].queryset = Provincias.objects.all()
+        self.fields["fk_provincia"].queryset = Provincia.objects.all()
         if self.instance and self.instance.pk:
             municipio_actual = self.instance.fk_municipio
             localidad_actual = self.instance.fk_localidad
@@ -602,7 +602,7 @@ class DimensionSaludForm(forms.ModelForm):
 class DimensionEducacionForm(forms.ModelForm):
     provinciaInstitucion = forms.ModelChoiceField(
         label="Provincia",
-        queryset=Provincias.objects.all(),
+        queryset=Provincia.objects.all(),
     )
     municipioInstitucion = forms.ModelChoiceField(
         label="Municipio",
@@ -641,7 +641,7 @@ class DimensionEducacionForm(forms.ModelForm):
         self.fields["fk_legajo"].widget = forms.HiddenInput()
 
         # Configurar el queryset del campo 'provinciaInstitucion' para cargar solo las provincias
-        self.fields["provinciaInstitucion"].queryset = Provincias.objects.all()
+        self.fields["provinciaInstitucion"].queryset = Provincia.objects.all()
         # Configurar los querysets de los campos 'municipioInstitucion' y 'localidadInstitucion' para que estén vacíos inicialmente
         self.fields["municipioInstitucion"].queryset = Municipio.objects.none()
         self.fields["localidadInstitucion"].queryset = Localidad.objects.none()

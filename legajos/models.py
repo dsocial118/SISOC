@@ -13,11 +13,11 @@ from configuraciones.models import (
     PlanesSociales,
     Programas,
 )
-from configuraciones.models import Provincias
+from configuraciones.models import Provincia
 from configuraciones.models import Municipio
 from configuraciones.models import Departamento
 from configuraciones.models import Localidad
-from configuraciones.models import Asentamientos
+from configuraciones.models import Asentamiento
 from usuarios.models import User, Usuarios
 
 # Modelo para choices de dimension educacion
@@ -668,7 +668,7 @@ class Legajos(models.Model):
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
     fk_provincia = models.ForeignKey(
-        Provincias, on_delete=models.SET_NULL, null=True, blank=True
+        Provincia, on_delete=models.SET_NULL, null=True, blank=True
     )
     fk_municipio = models.ForeignKey(
         Municipio, on_delete=models.SET_NULL, null=True, blank=True
@@ -680,7 +680,7 @@ class Legajos(models.Model):
         Departamento, on_delete=models.SET_NULL, null=True, blank=True
     )
     fk_asentamiento = models.ForeignKey(
-        Asentamientos, on_delete=models.SET_NULL, null=True, blank=True
+        Asentamiento, on_delete=models.SET_NULL, null=True, blank=True
     )
     cuil = models.BigIntegerField(null=True, blank=True)
     _id = models.CharField(max_length=255, null=True, blank=True)
@@ -1123,7 +1123,7 @@ class DimensionEducacion(models.Model):
     )
     # Nuevos campos dimencion estudio
     provinciaInstitucion = models.ForeignKey(
-        Provincias,
+        Provincia,
         on_delete=models.SET_NULL,
         verbose_name="Provincia de la institucion",
         null=True,

@@ -5,7 +5,7 @@ from django.db.models import Q
 import requests
 
 from comedores.models import Comedor, Referente
-from configuraciones.models import Municipio, Provincias
+from configuraciones.models import Municipio, Provincia
 from configuraciones.models import Localidad
 
 
@@ -67,7 +67,7 @@ class ComedorService:
     @staticmethod
     def get_ubicaciones_ids(data):
         if "provincia" in data:
-            provincia_obj = Provincias.objects.filter(
+            provincia_obj = Provincia.objects.filter(
                 nombre__iexact=data["provincia"]
             ).first()
             data["provincia"] = provincia_obj.id if provincia_obj else None
