@@ -624,3 +624,98 @@ class Vacantes(models.Model):
 
     def get_absolute_url(self):
         return reverse("vacantes_ver", kwargs={"pk": self.pk})
+
+
+class Provincias(models.Model):
+    """
+    Guardado de las provincias de los vecinos y vecinas registrados.
+    """
+
+    nombre = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        ordering = ["id"]
+        verbose_name = "Provincia"
+        verbose_name_plural = "Provincia"
+
+
+class Municipio(models.Model):
+    """
+    Guardado de los municipios de los vecinos y vecinas registrados.
+    """
+
+    nombre = models.CharField(max_length=255)
+    fk_provincia = models.ForeignKey(
+        Provincias, on_delete=models.SET_NULL, null=True, blank=True
+    )
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        ordering = ["id"]
+        verbose_name = "Municipio"
+        verbose_name_plural = "Municipio"
+
+
+class Departamento(models.Model):
+    nombre = models.CharField(max_length=255)
+    fk_provincia = models.ForeignKey(
+        Provincias, on_delete=models.SET_NULL, null=True, blank=True
+    )
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        ordering = ["id"]
+        verbose_name = "Departamento"
+        verbose_name_plural = "Departamento"
+
+
+class Localidad(models.Model):
+    """
+    Guardado de las localidades de los vecinos y vecinas registrados.
+    """
+
+    nombre = models.CharField(max_length=255)
+    fk_municipio = models.ForeignKey(
+        Municipio, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    fk_departamento = models.ForeignKey(
+        Departamento, on_delete=models.SET_NULL, null=True, blank=True
+    )
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        verbose_name = "Localidad"
+        verbose_name_plural = "Localidad"
+
+
+class Asentamientos(models.Model):
+    """
+    Guardado de los asentamientos de los vecinos y vecinas registrados.
+    """
+
+    nombre = models.CharField(max_length=255)
+    fk_departamento = models.ForeignKey(
+        Departamento, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    fk_municipio = models.ForeignKey(
+        Municipio, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    fk_localidad = models.ForeignKey(
+        Localidad, on_delete=models.SET_NULL, null=True, blank=True
+    )
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        verbose_name = "Asentamiento"
+        verbose_name_plural = "Asentamientos"

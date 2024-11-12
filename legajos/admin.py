@@ -1,5 +1,7 @@
 from django.contrib import admin
 
+from ..configuraciones.models import Localidad, Municipio, Provincias
+
 from .models import (
     Accion,
     ActividadRealizada,
@@ -27,9 +29,6 @@ from .models import (
     Grado,
     Importancia,
     Inodoro,
-    LegajoLocalidad,
-    LegajoMunicipio,
-    LegajoProvincias,
     ModoContratacion,
     MotivoNivelIncompleto,
     Nacionalidad,
@@ -55,21 +54,21 @@ from .models import (
 )
 
 
-@admin.register(LegajoProvincias)
+@admin.register(Provincias)
 class LegajoProvinciasAdmin(admin.ModelAdmin):
     list_display = ("nombre",)
     search_fields = ["nombre"]
     ordering = ["nombre"]
 
 
-@admin.register(LegajoMunicipio)
+@admin.register(Municipio)
 class LegajoMunicipioAdmin(admin.ModelAdmin):
     list_display = ("nombre",)
     search_fields = ["nombre"]
     ordering = ["nombre"]
 
 
-@admin.register(LegajoLocalidad)
+@admin.register(Localidad)
 class LegajoLocalidadAdmin(admin.ModelAdmin):
     list_display = ("nombre",)
     search_fields = ["nombre"]

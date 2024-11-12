@@ -2,7 +2,8 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
 
-from legajos.models import LegajoLocalidad, LegajoMunicipio, LegajoProvincias
+from configuraciones.models import Municipio, Provincias
+from configuraciones.models import Localidad
 
 
 class TipoModalidadPrestacion(models.Model):
@@ -626,15 +627,9 @@ class Comedor(models.Model):
     numero = models.PositiveIntegerField()
     entre_calle_1 = models.CharField(max_length=255, blank=True, null=True)
     entre_calle_2 = models.CharField(max_length=255, blank=True, null=True)
-    provincia = models.ForeignKey(
-        to=LegajoProvincias, on_delete=models.PROTECT, null=True
-    )
-    municipio = models.ForeignKey(
-        to=LegajoMunicipio, on_delete=models.PROTECT, null=True
-    )
-    localidad = models.ForeignKey(
-        to=LegajoLocalidad, on_delete=models.PROTECT, null=True
-    )
+    provincia = models.ForeignKey(to=Provincias, on_delete=models.PROTECT, null=True)
+    municipio = models.ForeignKey(to=Municipio, on_delete=models.PROTECT, null=True)
+    localidad = models.ForeignKey(to=Localidad, on_delete=models.PROTECT, null=True)
     partido = models.CharField(max_length=255, null=True)
     barrio = models.CharField(max_length=255, null=True)
     codigo_postal = models.IntegerField(
