@@ -63,17 +63,6 @@ class Circuito(models.Model):
         verbose_name_plural = "Circuitos"
 
 
-class Localidad(models.Model):
-    localidad = models.CharField(max_length=255)
-
-    def __str__(self):
-        return str(self.localidad)
-
-    class Meta:
-        verbose_name = "Localidad"
-        verbose_name_plural = "Localidades"
-
-
 class Barrio(models.Model):
     barrio = models.CharField(max_length=255)
 
