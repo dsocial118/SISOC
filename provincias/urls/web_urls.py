@@ -6,4 +6,6 @@ urlpatterns = [
     path('proyectos/create/', ProyectoCreateView.as_view(), name='proyecto_create'),
     path('proyectos/<int:pk>/update/', ProyectoUpdateView.as_view(), name='proyecto_update'),
     path('proyectos/<int:pk>/delete/', ProyectoDeleteView.as_view(), name='proyecto_delete'),
+    path('socio_productivo/create/', ProyectoCreateView.as_view(), name='socio_productivo_create'),
+    path('formacion/create/', ProyectoCreateView.as_view(), name='formacion_create'),
 ]

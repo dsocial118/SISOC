@@ -796,7 +796,7 @@ class Proyecto(models.Model):
     fecha_creacion = models.DateTimeField(auto_now=True)
     fecha_modificacion = models.DateTimeField(auto_now=True)
     creador = models.ForeignKey(
-        Usuarios, on_delete=models.PROTECT, related_name="creador"
+        Usuarios, on_delete=models.PROTECT, related_name="creador", blank=True
     )
     modificador = models.ForeignKey(
         Usuarios,
