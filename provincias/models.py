@@ -3,7 +3,7 @@ from django.forms import ValidationError
 from django.utils import timezone
 
 
-from configuraciones.models import Provincias
+from configuraciones.models import Provincia
 from usuarios.models import Usuarios
 
 
@@ -354,7 +354,7 @@ class AbstractPersoneria(models.Model):
     localidad = models.CharField(max_length=255, verbose_name="Localidad")
     codigo_postal = models.PositiveBigIntegerField(verbose_name="Codigo postal")
     provincia = models.ForeignKey(
-        Provincias, on_delete=models.PROTECT, verbose_name="Provincia"
+        Provincia, on_delete=models.PROTECT, verbose_name="Provincia"
     )
 
     # Datos del proyecto
@@ -815,7 +815,7 @@ class Proyecto(models.Model):
     )
     tipo_anexo = models.CharField(max_length=255, choices=TIPO_ANEXO_CHOICES)
 
-    provincia = models.ForeignKey(Provincias, on_delete=models.PROTECT, blank=True)
+    provincia = models.ForeignKey(Provincia, on_delete=models.PROTECT, blank=True)
 
     @property
     def presupuesto_total(self):

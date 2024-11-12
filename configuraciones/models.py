@@ -626,7 +626,7 @@ class Vacantes(models.Model):
         return reverse("vacantes_ver", kwargs={"pk": self.pk})
 
 
-class Provincias(models.Model):
+class Provincia(models.Model):
     """
     Guardado de las provincias de los vecinos y vecinas registrados.
     """
@@ -649,7 +649,7 @@ class Municipio(models.Model):
 
     nombre = models.CharField(max_length=255)
     fk_provincia = models.ForeignKey(
-        Provincias, on_delete=models.SET_NULL, null=True, blank=True
+        Provincia, on_delete=models.SET_NULL, null=True, blank=True
     )
 
     def __str__(self):
@@ -664,7 +664,7 @@ class Municipio(models.Model):
 class Departamento(models.Model):
     nombre = models.CharField(max_length=255)
     fk_provincia = models.ForeignKey(
-        Provincias, on_delete=models.SET_NULL, null=True, blank=True
+        Provincia, on_delete=models.SET_NULL, null=True, blank=True
     )
 
     def __str__(self):
@@ -697,7 +697,7 @@ class Localidad(models.Model):
         verbose_name_plural = "Localidad"
 
 
-class Asentamientos(models.Model):
+class Asentamiento(models.Model):
     """
     Guardado de los asentamientos de los vecinos y vecinas registrados.
     """

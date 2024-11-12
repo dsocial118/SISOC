@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from ..configuraciones.models import Localidad, Municipio, Provincias
+from ..configuraciones.models import Localidad, Municipio, Provincia
 
 from .models import (
     Accion,
@@ -54,7 +54,7 @@ from .models import (
 )
 
 
-@admin.register(Provincias)
+@admin.register(Provincia)
 class LegajoProvinciasAdmin(admin.ModelAdmin):
     list_display = ("nombre",)
     search_fields = ["nombre"]
