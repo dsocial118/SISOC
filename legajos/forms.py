@@ -3,7 +3,7 @@ from datetime import date
 from django import forms
 from django.core.validators import MaxValueValidator, MinValueValidator
 
-from ..configuraciones.models import (
+from configuraciones.models import (
     Asentamiento,
     Departamento,
     Localidad,

@@ -815,7 +815,9 @@ class Proyecto(models.Model):
     )
     tipo_anexo = models.CharField(max_length=255, choices=TIPO_ANEXO_CHOICES)
 
-    provincia = models.ForeignKey(Provincia, on_delete=models.PROTECT, blank=True)
+    provincia = models.ForeignKey(
+        Provincia, on_delete=models.PROTECT, blank=True, null=True
+    )
 
     @property
     def presupuesto_total(self):
@@ -830,6 +832,9 @@ class Proyecto(models.Model):
 
     def save(self, *args, **kwargs):
         self.update_modificador(kwargs)
+
+        self.provincia = Provincia.objects.get(nombre=self.creador.provincia)
+
         super().save(*args, **kwargs)
 
     def update_modificador(self, kwargs):
