@@ -1,6 +1,6 @@
 from django.urls import path
 
-from provincias.views.api_views import ProyectoViewSet
+from provincias.views.api_views import ProyectoViewSet, ProyectoSubsanarView
 
 urlpatterns = [
     path(
@@ -17,5 +17,10 @@ urlpatterns = [
             }
         ),
         name="anexos_socioproductivos_detail",
+    ),
+    path(
+        "api/proyecto/subsanar/<int:pk>/",
+        ProyectoSubsanarView.as_view(),
+        name="proyecto_subsanar",
     ),
 ]
