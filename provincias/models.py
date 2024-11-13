@@ -833,7 +833,11 @@ class Proyecto(models.Model):
     def save(self, *args, **kwargs):
         self.update_modificador(kwargs)
 
-        self.provincia = Provincia.objects.get(nombre=self.creador.provincia)
+        self.provincia = (
+            Provincia.objects.get(nombre=self.creador.provincia)
+            if self.creador.provincia
+            else None
+        )
 
         super().save(*args, **kwargs)
 
