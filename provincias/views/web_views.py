@@ -30,7 +30,7 @@ class ProyectoListView(ListView):
 class ProyectoUpdateView(UpdateView):
     model = Proyecto
     form_class = ProyectoForm
-    template_name = 'proyecto_form.html'
+    template_name = "proyecto_form.html"  # FIXME:
 
 class ProyectoDeleteView(DeleteView):
     model = Proyecto
