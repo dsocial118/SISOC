@@ -1,5 +1,5 @@
 from django.urls import path
-from provincias.views.web_views import ProyectoCreateView, ProyectoListView, ProyectoUpdateView, ProyectoDeleteView, AnexoSocioProductivoCreateView, DatosProyectoCreateView
+from provincias.views.web_views import ProyectoCreateView, ProyectoListView, ProyectoUpdateView, ProyectoDeleteView, AnexoSocioProductivoCreateView
 
 urlpatterns = [
     path('proyectos/', ProyectoListView.as_view(), name='proyecto_list'),
@@ -8,6 +8,6 @@ urlpatterns = [
     path('proyectos/<int:pk>/delete/', ProyectoDeleteView.as_view(), name='proyecto_delete'),
     path('socio_productivo/create/', ProyectoCreateView.as_view(), name='socio_productivo_create'),
     path('formacion/create/', ProyectoCreateView.as_view(), name='formacion_create'),
-    path('anexos/nuevo/', AnexoSocioProductivoCreateView.as_view(), name='anexo_create'),
-    path('datos_proyecto/nuevo/', DatosProyectoCreateView.as_view(), name='datos_proyecto_create'),
+    path('anexos/nuevo/', AnexoSocioProductivoCreateView.as_view(), name='anexo_create'), #con esta ruta manejo el anexo socio productivo, 
+    #path('datos_proyecto/nuevo/', DatosProyectoCreateView.as_view(), name='datos_proyecto_create'),
 ]

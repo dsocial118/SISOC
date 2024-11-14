@@ -1,0 +1,52 @@
+{% extends "includes/base.html" %}
+{% load static crispy_forms_tags %}
+
+{% block title %}Datos del Proyecto{% endblock %}
+{% block titulo-pagina %}Datos del Proyecto{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right px-3">
+        <li class="breadcrumb-item">
+            <a href="{% url 'proyecto_list' %}">Proyectos</a>
+        </li>
+        <li class="breadcrumb-item active">Agregar Datos del Proyecto</li>
+    </ol>
+{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card card-primary card-outline">
+                <div class="bs-stepper">
+                    <div class="card-header mb-3">
+                        <h3 class="card-title">Agregar Datos del Proyecto</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-row justify-content-center">
+                            <form method="post" enctype="multipart/form-data" class="w-100">
+                                {% csrf_token %}
+                                <div class="form-group row">
+                                    <div class="col-6">{{ form.proyecto_nombre|as_crispy_field }}</div>
+                                    <div class="col-6">{{ form.proyecto_tipo_actividad|as_crispy_field }}</div>
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col-6">{{ form.proyecto_rubro|as_crispy_field }}</div>
+                                    <div class="col-6">{{ form.proyecto_objetivo|as_crispy_field }}</div>
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col-6">{{ form.proyecto_costo|as_crispy_field }}</div>
+                                    <div class="col-6">{{ form.proyecto_pertenece_comunidad_indigena|as_crispy_field }}</div>
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col-6">{{ form.proyecto_comunidad_indigena|as_crispy_field }}</div>
+                                    <div class="col-6">{{ form.proyecto_practicas_regenerativas|as_crispy_field }}</div>
+                                </div>
+                                <button class="btn btn-primary mx-1" type="submit">Guardar</button>
+                                <a href="{% url 'proyecto_list' %}" class="btn btn-secondary">Cancelar</a>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
