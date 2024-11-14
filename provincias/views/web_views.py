@@ -2,7 +2,14 @@ from django.urls import reverse_lazy
 from django.views.generic import CreateView, ListView, UpdateView, DeleteView
 from django.shortcuts import redirect
 from provincias.models import Proyecto, AnexoSocioProductivo, AbstractPersoneria
-from provincias.forms import ProyectoForm, AnexoSocioProductivoForm, DatosProyectoForm, PersonaJuridicaForm, PersonaFisicaForm
+from provincias.forms import (
+    LineaDeAccionForm,
+    ProyectoForm,
+    AnexoSocioProductivoForm,
+    PersonaJuridicaForm,
+    PersonaJuridicaForm,
+    PersonaFisicaForm,
+)
 from usuarios.models import Usuarios
 
 class ProyectoCreateView(CreateView):
@@ -36,6 +43,7 @@ class ProyectoDeleteView(DeleteView):
     model = Proyecto
     template_name = 'proyecto_confirm_delete.html'
     success_url = reverse_lazy('proyecto_list')
+
 class AnexoSocioProductivoCreateView(CreateView):
     model = AnexoSocioProductivo
     form_class = AnexoSocioProductivoForm
@@ -47,9 +55,13 @@ class AnexoSocioProductivoCreateView(CreateView):
         if self.request.POST:
             context['juridica_form'] = PersonaJuridicaForm(self.request.POST)
             context['fisica_form'] = PersonaFisicaForm(self.request.POST)
+            context["persona_juridica_form"] = PersonaJuridicaForm(self.request.POST)
+            context["linea_de_accion_form"] = LineaDeAccionForm(self.request.POST)
         else:
             context['juridica_form'] = PersonaJuridicaForm()
             context['fisica_form'] = PersonaFisicaForm()
+            context["persona_juridica_form"] = PersonaJuridicaForm()
+            context["linea_de_accion_form"] = LineaDeAccionForm()
         return context
 
     def form_valid(self, form):
@@ -64,11 +76,4 @@ class AnexoSocioProductivoCreateView(CreateView):
             form.instance.persona_fisica = fisica
         else:
             return self.form_invalid(form)
-        response = super().form_valid(form)
-        return redirect('datos_proyecto_create')
-
-class DatosProyectoCreateView(CreateView):
-    model = AbstractPersoneria
-    form_class = DatosProyectoForm
-    template_name = 'datos_proyecto_form.html'
-    success_url = reverse_lazy('proyecto_list')  # Cambia esto según tu flujo
+        return super().form_valid(form)

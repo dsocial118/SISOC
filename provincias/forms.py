@@ -1,5 +1,11 @@
 from django import forms
-from .models import AnexoSocioProductivo, TipoPersonaJuridica, Proyecto, PersonaJuridica, PersonaFisica, AbstractPersoneria
+from .models import (
+    AnexoSocioProductivo,
+    LineaDeAccion,
+    Proyecto,
+    PersonaJuridica,
+    PersonaFisica,
+)
 
 class ProyectoForm(forms.ModelForm):
     class Meta:
@@ -9,24 +15,7 @@ class ProyectoForm(forms.ModelForm):
 class PersonaJuridicaForm(forms.ModelForm):
     class Meta:
         model = PersonaJuridica
-        fields = [
-            'direccion',
-            'localidad',
-            'codigo_postal',
-            'provincia',
-            'nombre',
-            'tipo',
-            'fecha_creacion',
-            'numero_personeria_juridica',
-            'fecha_otorgamiento',
-            'cuit',
-            'domicilio_legal',
-            'autoridad_nombre_completo',
-            'autoridad_dni',
-            'autoridad_cuit',
-            'autoridad_rol',
-            'proyecto_tipo_actividad',
-        ]
+        fields = "__all__"
         widgets = {
             'direccion': forms.TextInput(attrs={'required': False}),
             'localidad': forms.TextInput(attrs={'required': False}),
@@ -48,19 +37,7 @@ class PersonaJuridicaForm(forms.ModelForm):
 class PersonaFisicaForm(forms.ModelForm):
     class Meta:
         model = PersonaFisica
-        fields = [
-            'direccion',
-            'localidad',
-            'codigo_postal',
-            'provincia',
-            'nombre_completo',
-            'dni',
-            'fecha_nacimiento',
-            'cuil',
-            'domicilio_real',
-            'mail',
-            'telefono'
-        ]
+        fields = "__all__"
         widgets = {
             'direccion': forms.TextInput(attrs={'required': False}),
             'localidad': forms.TextInput(attrs={'required': False}),
@@ -85,22 +62,10 @@ class AnexoSocioProductivoForm(forms.ModelForm):
 
     class Meta:
         model = AnexoSocioProductivo
-        fields = ['proyecto', 'personeria', 'linea_de_accion', 'acta_constitutiva', 'estatuto', 'personeria_juridica', 'designacion_autoridades', 'autorizacion_gestionar', 'designacion_intendente', 'media']
+        fields = "__all__"
 
-class DatosProyectoForm(forms.ModelForm):
+
+class LineaDeAccionForm(forms.ModelForm):
     class Meta:
-        model = AbstractPersoneria
-        fields = [
-            'direccion',
-            'localidad',
-            'codigo_postal',
-            'provincia',
-            'proyecto_nombre',
-            'proyecto_tipo_actividad',
-            'proyecto_rubro',
-            'proyecto_objetivo',
-            'proyecto_costo',
-            'proyecto_pertenece_comunidad_indigena',
-            'proyecto_comunidad_indigena',
-            'proyecto_practicas_regenerativas'
-        ]    
+        model = LineaDeAccion
+        fields = "__all__"
