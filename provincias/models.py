@@ -3,7 +3,7 @@ from django.forms import ValidationError
 from django.utils import timezone
 
 
-from legajos.models import LegajoProvincias
+from configuraciones.models import Provincia
 from usuarios.models import Usuarios
 
 
@@ -354,7 +354,7 @@ class AbstractPersoneria(models.Model):
     localidad = models.CharField(max_length=255, verbose_name="Localidad")
     codigo_postal = models.PositiveBigIntegerField(verbose_name="Codigo postal")
     provincia = models.ForeignKey(
-        LegajoProvincias, on_delete=models.PROTECT, verbose_name="Provincia"
+        Provincia, on_delete=models.PROTECT, verbose_name="Provincia"
     )
 
     # Datos del proyecto
@@ -815,6 +815,10 @@ class Proyecto(models.Model):
     )
     tipo_anexo = models.CharField(max_length=255, choices=TIPO_ANEXO_CHOICES)
 
+    provincia = models.ForeignKey(
+        Provincia, on_delete=models.PROTECT, blank=True, null=True
+    )
+
     @property
     def presupuesto_total(self):
         total = (
@@ -827,10 +831,20 @@ class Proyecto(models.Model):
         return total or 0
 
     def save(self, *args, **kwargs):
+        self.update_modificador(kwargs)
+
+        self.provincia = (
+            Provincia.objects.get(nombre=self.creador.provincia)
+            if self.creador.provincia
+            else None
+        )
+
+        super().save(*args, **kwargs)
+
+    def update_modificador(self, kwargs):
         self.fecha_ultima_modificacion = timezone.now()
         if "usuario" in kwargs:  # Define el modificador si es pasado como argumento
             self.modificador = kwargs.pop("usuario")
-        super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         return str(self.nombre)

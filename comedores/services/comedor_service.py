@@ -5,7 +5,8 @@ from django.db.models import Q
 import requests
 
 from comedores.models import Comedor, Referente
-from legajos.models import LegajoProvincias, LegajoMunicipio, LegajoLocalidad
+from configuraciones.models import Municipio, Provincia
+from configuraciones.models import Localidad
 
 
 class ComedorService:
@@ -66,19 +67,19 @@ class ComedorService:
     @staticmethod
     def get_ubicaciones_ids(data):
         if "provincia" in data:
-            provincia_obj = LegajoProvincias.objects.filter(
+            provincia_obj = Provincia.objects.filter(
                 nombre__iexact=data["provincia"]
             ).first()
             data["provincia"] = provincia_obj.id if provincia_obj else None
 
         if "municipio" in data:
-            municipio_obj = LegajoMunicipio.objects.filter(
+            municipio_obj = Municipio.objects.filter(
                 nombre__iexact=data["municipio"]
             ).first()
             data["municipio"] = municipio_obj.id if municipio_obj else None
 
         if "localidad" in data:
-            localidad_obj = LegajoLocalidad.objects.filter(
+            localidad_obj = Localidad.objects.filter(
                 nombre__iexact=data["localidad"]
             ).first()
             data["localidad"] = localidad_obj.id if localidad_obj else None

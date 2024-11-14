@@ -33,6 +33,7 @@ class Usuarios(models.Model):
     )
     darkmode = models.BooleanField(default=True, null=True, blank=True)
     rol = models.ForeignKey(Rol, on_delete=models.SET_NULL, null=True, blank=True)
+    provincia = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         if self.usuario.first_name or self.usuario.last_name:

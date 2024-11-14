@@ -1,7 +1,8 @@
 from django import forms
 
 from comedores.models import Comedor, Referente
-from legajos.models import LegajoLocalidad, LegajoMunicipio, LegajoProvincias
+from configuraciones.models import Municipio, Provincia
+from configuraciones.models import Localidad
 
 
 class ReferenteForm(forms.ModelForm):
@@ -17,36 +18,34 @@ class ComedorForm(forms.ModelForm):
         self.popular_campos_ubicacion()
 
     def popular_campos_ubicacion(self):
-        provincia = LegajoProvincias.objects.filter(
+        provincia = Provincia.objects.filter(
             pk=self.data.get("provincia")
         ).first() or getattr(self.instance, "provincia", None)
-        municipio = LegajoMunicipio.objects.filter(
+        municipio = Municipio.objects.filter(
             pk=self.data.get("municipio")
         ).first() or getattr(self.instance, "municipio", None)
-        localidad = LegajoLocalidad.objects.filter(
+        localidad = Localidad.objects.filter(
             pk=self.data.get("localidad")
         ).first() or getattr(self.instance, "localidad", None)
 
         if provincia:
-            self.fields["provincia"].initial = LegajoProvincias.objects.get(
-                id=provincia.id
-            )
-            self.fields["provincia"].queryset = LegajoProvincias.objects.all()
-            self.fields["municipio"].queryset = LegajoMunicipio.objects.filter(
+            self.fields["provincia"].initial = Provincia.objects.get(id=provincia.id)
+            self.fields["provincia"].queryset = Provincia.objects.all()
+            self.fields["municipio"].queryset = Municipio.objects.filter(
                 fk_provincia=provincia
             )
         else:
-            self.fields["provincia"].queryset = LegajoProvincias.objects.all()
+            self.fields["provincia"].queryset = Provincia.objects.all()
             self.fields["municipio"].queryset = (
-                LegajoMunicipio.objects.none()
+                Municipio.objects.none()
             )  # Evitar la carga total de las instancias
             self.fields["localidad"].queryset = (
-                LegajoLocalidad.objects.none()
+                Localidad.objects.none()
             )  # Evitar la carga total de las instancias
 
         if municipio:
             self.fields["municipio"].initial = municipio
-            self.fields["localidad"].queryset = LegajoLocalidad.objects.filter(
+            self.fields["localidad"].queryset = Localidad.objects.filter(
                 fk_municipio=municipio
             )
 
