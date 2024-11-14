@@ -32,6 +32,11 @@ from configuraciones.models import (
     CategoriaAlertas,
     Circuito,
     Dimension,
+    Asentamiento,
+    Departamento,
+    Localidad,
+    Municipio,
+    Provincia,
     Organismos,
     Programas,
 )
@@ -82,13 +87,8 @@ from legajos.models import (
     InstitucionesEducativas,
     Intervencion,
     LegajoAlertas,
-    LegajoAsentamientos,
-    LegajoDepartamento,
     LegajoGrupoFamiliar,
     LegajoGrupoHogar,
-    LegajoLocalidad,
-    LegajoMunicipio,
-    LegajoProvincias,
     Legajos,
     LegajosArchivos,
     LegajosDerivaciones,
@@ -125,7 +125,7 @@ ROL_ADMIN = "usuarios.rol_admin"
 
 def load_municipios(request):
     provincia_id = request.GET.get("provincia_id")
-    municipios = LegajoMunicipio.objects.filter(fk_provincia=provincia_id)
+    municipios = Municipio.objects.filter(fk_provincia=provincia_id)
     return JsonResponse(list(municipios.values("id", "nombre")), safe=False)
 
 
@@ -134,15 +134,15 @@ def load_localidad(request):
     departamento_id = request.GET.get("departamento_id")
 
     if municipio_id:
-        localidades = LegajoLocalidad.objects.filter(fk_municipio=municipio_id)
+        localidades = Localidad.objects.filter(fk_municipio=municipio_id)
     else:
-        localidades = LegajoLocalidad.objects.filter(fk_departamento=departamento_id)
+        localidades = Localidad.objects.filter(fk_departamento=departamento_id)
     return JsonResponse(list(localidades.values("id", "nombre")), safe=False)
 
 
 def load_departamento(request):
     provincia_id = request.GET.get("provincia_id")
-    departamentos = LegajoDepartamento.objects.filter(fk_provincia=provincia_id)
+    departamentos = Departamento.objects.filter(fk_provincia=provincia_id)
     return JsonResponse(list(departamentos.values("id", "nombre")), safe=False)
 
 
@@ -151,11 +151,9 @@ def load_asentamiento(request):
     departamento_id = request.GET.get("departamento_id")
 
     if municipio_id:
-        asentamientos = LegajoAsentamientos.objects.filter(fk_localidad=municipio_id)
+        asentamientos = Asentamiento.objects.filter(fk_localidad=municipio_id)
     else:
-        asentamientos = LegajoAsentamientos.objects.filter(
-            fk_departamento=departamento_id
-        )
+        asentamientos = Asentamiento.objects.filter(fk_departamento=departamento_id)
     return JsonResponse(list(asentamientos.values("id", "nombre")), safe=False)
 
 
@@ -1587,9 +1585,9 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
             "grado": Grado,
             "turno": Turno,
             "obs_educacion": "obs_educacion",
-            "provinciaInstitucion": LegajoProvincias,
-            "localidadInstitucion": LegajoLocalidad,
-            "municipioInstitucion": LegajoMunicipio,
+            "provinciaInstitucion": Provincia,
+            "localidadInstitucion": Localidad,
+            "municipioInstitucion": Municipio,
             "barrioInstitucion": "barrioInstitucion",
             "calleInstitucion": "calleInstitucion",
             "numeroInstitucion": "numeroInstitucion",
