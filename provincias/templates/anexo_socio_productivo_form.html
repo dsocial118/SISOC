@@ -24,50 +24,86 @@
                         <div class="form-row justify-content-center">
                             <form method="post" enctype="multipart/form-data" class="w-100">
                                 {% csrf_token %}
-                                {{ form.tipo_persona|as_crispy_field }}
-                                <div class="juridica-field" style="display: none;">
+                                {% if step == '1' %}
+                                    {{ form.tipo_persona|as_crispy_field }}
+                                    <div class="juridica-field" style="display: none;">
+                                        <div class="form-group row">
+                                            <div class="col-6">{{ juridica_form.nombre|as_crispy_field }}</div>
+                                            <div class="col-6">{{ juridica_form.tipo|as_crispy_field }}</div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <div class="col-6">{{ juridica_form.fecha_creacion|as_crispy_field }}</div>
+                                            <div class="col-6">{{ juridica_form.numero_personeria_juridica|as_crispy_field }}</div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <div class="col-6">{{ juridica_form.fecha_otorgamiento|as_crispy_field }}</div>
+                                            <div class="col-6">{{ juridica_form.cuit|as_crispy_field }}</div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <div class="col-12">{{ juridica_form.domicilio_legal|as_crispy_field }}</div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <div class="col-4">{{ juridica_form.autoridad_nombre_completo|as_crispy_field }}</div>
+                                            <div class="col-4">{{ juridica_form.autoridad_dni|as_crispy_field }}</div>
+                                            <div class="col-4">{{ juridica_form.autoridad_cuit|as_crispy_field }}</div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <div class="col-12">{{ juridica_form.autoridad_rol|as_crispy_field }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="humana-field" style="display: none;">
+                                        <div class="form-group row">
+                                            <div class="col-6">{{ fisica_form.nombre_completo|as_crispy_field }}</div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <div class="col-6">{{ fisica_form.dni|as_crispy_field }}</div>
+                                            <div class="col-6">{{ fisica_form.fecha_nacimiento|as_crispy_field }}</div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <div class="col-6">{{ fisica_form.cuil|as_crispy_field }}</div>
+                                            <div class="col-6">{{ fisica_form.domicilio_real|as_crispy_field }}</div>
+                                        </div>
+                                        <div class="form-group row">
+                                            <div class="col-6">{{ fisica_form.mail|as_crispy_field }}</div>
+                                            <div class="col-6">{{ fisica_form.telefono|as_crispy_field }}</div>
+                                        </div>
+                                    </div>
+                                {% elif step == '2' %}
                                     <div class="form-group row">
-                                        <div class="col-6">{{ juridica_form.nombre|as_crispy_field }}</div>
-                                        <div class="col-6">{{ juridica_form.tipo|as_crispy_field }}</div>
+                                        <div class="col-6">{{ datos_proyecto_form.proyecto_nombre|as_crispy_field }}</div>
+                                        <div class="col-6">{{ datos_proyecto_form.proyecto_tipo_actividad|as_crispy_field }}</div>
                                     </div>
                                     <div class="form-group row">
-                                        <div class="col-6">{{ juridica_form.fecha_creacion|as_crispy_field }}</div>
-                                        <div class="col-6">{{ juridica_form.numero_personeria_juridica|as_crispy_field }}</div>
+                                        <div class="col-6">{{ datos_proyecto_form.proyecto_rubro|as_crispy_field }}</div>
+                                        <div class="col-6">{{ datos_proyecto_form.proyecto_objetivo|as_crispy_field }}</div>
                                     </div>
                                     <div class="form-group row">
-                                        <div class="col-6">{{ juridica_form.fecha_otorgamiento|as_crispy_field }}</div>
-                                        <div class="col-6">{{ juridica_form.cuit|as_crispy_field }}</div>
+                                        <div class="col-6">{{ datos_proyecto_form.proyecto_costo|as_crispy_field }}</div>
+                                        <div class="col-6">{{ datos_proyecto_form.proyecto_pertenece_comunidad_indigena|as_crispy_field }}</div>
                                     </div>
                                     <div class="form-group row">
-                                        <div class="col-12">{{ juridica_form.domicilio_legal|as_crispy_field }}</div>
+                                        <div class="col-6">{{ datos_proyecto_form.proyecto_comunidad_indigena|as_crispy_field }}</div>
+                                        <div class="col-6">{{ datos_proyecto_form.proyecto_practicas_regenerativas|as_crispy_field }}</div>
+                                    </div>
+                                {% elif step == '3' %}
+                                    <div class="form-group row">
+                                        <div class="col-12">{{ linea_de_accion_form.fortalecimiento_productivo|as_crispy_field }}</div>
                                     </div>
                                     <div class="form-group row">
-                                        <div class="col-4">{{ juridica_form.autoridad_nombre_completo|as_crispy_field }}</div>
-                                        <div class="col-4">{{ juridica_form.autoridad_dni|as_crispy_field }}</div>
-                                        <div class="col-4">{{ juridica_form.autoridad_cuit|as_crispy_field }}</div>
+                                        <div class="col-12">{{ linea_de_accion_form.comercializacion|as_crispy_field }}</div>
                                     </div>
                                     <div class="form-group row">
-                                        <div class="col-12">{{ juridica_form.autoridad_rol|as_crispy_field }}</div>
-                                    </div>
-                                </div>
-                                <div class="humana-field" style="display: none;">
-                                    <div class="form-group row">
-                                        <div class="col-6">{{ fisica_form.nombre_completo|as_crispy_field }}</div>
+                                        <div class="col-12">{{ linea_de_accion_form.economia_circular|as_crispy_field }}</div>
                                     </div>
                                     <div class="form-group row">
-                                        <div class="col-6">{{ fisica_form.dni|as_crispy_field }}</div>
-                                        <div class="col-6">{{ fisica_form.fecha_nacimiento|as_crispy_field }}</div>
+                                        <div class="col-12">{{ linea_de_accion_form.fundamentacion|as_crispy_field }}</div>
                                     </div>
                                     <div class="form-group row">
-                                        <div class="col-6">{{ fisica_form.cuil|as_crispy_field }}</div>
-                                        <div class="col-6">{{ fisica_form.domicilio_real|as_crispy_field }}</div>
+                                        <div class="col-6">{{ linea_de_accion_form.destinatarios_directos|as_crispy_field }}</div>
+                                        <div class="col-6">{{ linea_de_accion_form.destinatarios_indirectos|as_crispy_field }}</div>
                                     </div>
-                                    <div class="form-group row">
-                                        <div class="col-6">{{ fisica_form.mail|as_crispy_field }}</div>
-                                        <div class="col-6">{{ fisica_form.telefono|as_crispy_field }}</div>
-                                    </div>
-                                </div>
-                                <button class="btn btn-primary mx-1" type="submit">Guardar</button>
+                                {% endif %}
+                                <button id="continueButton" class="btn btn-primary mx-1" type="button">Continuar</button>
                                 <a href="{% url 'proyecto_list' %}" class="btn btn-secondary">Cancelar</a>
                             </form>
                         </div>
