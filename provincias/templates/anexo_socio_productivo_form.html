@@ -1,6 +1,5 @@
 {% extends "includes/base.html" %}
 {% load static crispy_forms_tags %}
-
 {% block title %}Anexo Socio Productivo{% endblock %}
 {% block titulo-pagina %}Anexo Socio Productivo{% endblock %}
 {% block breadcrumb %}
@@ -11,7 +10,6 @@
         <li class="breadcrumb-item active">Agregar Anexo Socio Productivo</li>
     </ol>
 {% endblock %}
-
 {% block content %}
     <div class="row">
         <div class="col-12">
@@ -22,9 +20,38 @@
                     </div>
                     <div class="card-body">
                         <div class="form-row justify-content-center">
+                            <div class="bs-stepper-header" role="tablist">
+                                <div class="step active">
+                                    <button type="button" class="step-trigger" role="tab">
+                                        <span class="bs-stepper-circle">1</span>
+                                        <span class="bs-stepper-label">Personeria</span>
+                                    </button>
+                                </div>
+                                <div class="line"></div>
+                                <div class="step">
+                                    <button type="button" class="step-trigger" role="tab">
+                                        <span class="bs-stepper-circle">2</span>
+                                        <span class="bs-stepper-label">Datos del proyecto</span>
+                                    </button>
+                                </div>
+                                <div class="line"></div>
+                                <div class="step">
+                                    <button type="button" class="step-trigger" role="tab">
+                                        <span class="bs-stepper-circle">3</span>
+                                        <span class="bs-stepper-label">Lineas de accion y presupuesto</span>
+                                    </button>
+                                </div>
+                                <div class="line"></div>
+                                <div class="step">
+                                    <button type="button" class="step-trigger" role="tab">
+                                        <span class="bs-stepper-circle">4</span>
+                                        <span class="bs-stepper-label">Documentacion obligatoria</span>
+                                    </button>
+                                </div>
+                            </div>
                             <form method="post" enctype="multipart/form-data" class="w-100">
                                 {% csrf_token %}
-                                {% if step == '1' %}
+                                <div id="step_1" class="step-content">
                                     {{ form.tipo_persona|as_crispy_field }}
                                     <div class="juridica-field" style="display: none;">
                                         <div class="form-group row">
@@ -68,41 +95,16 @@
                                             <div class="col-6">{{ fisica_form.telefono|as_crispy_field }}</div>
                                         </div>
                                     </div>
-                                {% elif step == '2' %}
-                                    <div class="form-group row">
-                                        <div class="col-6">{{ datos_proyecto_form.proyecto_nombre|as_crispy_field }}</div>
-                                        <div class="col-6">{{ datos_proyecto_form.proyecto_tipo_actividad|as_crispy_field }}</div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <div class="col-6">{{ datos_proyecto_form.proyecto_rubro|as_crispy_field }}</div>
-                                        <div class="col-6">{{ datos_proyecto_form.proyecto_objetivo|as_crispy_field }}</div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <div class="col-6">{{ datos_proyecto_form.proyecto_costo|as_crispy_field }}</div>
-                                        <div class="col-6">{{ datos_proyecto_form.proyecto_pertenece_comunidad_indigena|as_crispy_field }}</div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <div class="col-6">{{ datos_proyecto_form.proyecto_comunidad_indigena|as_crispy_field }}</div>
-                                        <div class="col-6">{{ datos_proyecto_form.proyecto_practicas_regenerativas|as_crispy_field }}</div>
-                                    </div>
-                                {% elif step == '3' %}
-                                    <div class="form-group row">
-                                        <div class="col-12">{{ linea_de_accion_form.fortalecimiento_productivo|as_crispy_field }}</div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <div class="col-12">{{ linea_de_accion_form.comercializacion|as_crispy_field }}</div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <div class="col-12">{{ linea_de_accion_form.economia_circular|as_crispy_field }}</div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <div class="col-12">{{ linea_de_accion_form.fundamentacion|as_crispy_field }}</div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <div class="col-6">{{ linea_de_accion_form.destinatarios_directos|as_crispy_field }}</div>
-                                        <div class="col-6">{{ linea_de_accion_form.destinatarios_indirectos|as_crispy_field }}</div>
-                                    </div>
-                                {% endif %}
+                                </div>
+                                <div id="step_2" class="step-content" style="display: none;">
+                                    ESTE ES EL STEP DOS
+                                </div>
+                                <div id="step_3" class="step-content" style="display: none;">
+                                    TREEEES
+                                </div>
+                                <div id="step_4" class="step-content" style="display: none;">
+                                    TEPUSE
+                                </div>
                                 <button id="continueButton" class="btn btn-primary mx-1" type="button">Continuar</button>
                                 <a href="{% url 'proyecto_list' %}" class="btn btn-secondary">Cancelar</a>
                             </form>
@@ -113,7 +115,6 @@
         </div>
     </div>
 {% endblock %}
-
 {% block customJS %}
-  <script src="{% static 'custom/js/anexo_form.js' %}"></script>
+    <script src="{% static 'custom/js/anexo_form.js' %}"></script>
 {% endblock %}
