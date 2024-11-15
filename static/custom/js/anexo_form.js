@@ -69,6 +69,77 @@ document.addEventListener("DOMContentLoaded", function () {
     // Personeria
     tipoPersonaFields.forEach(field => field.addEventListener("change", toggleFields));
     toggleFields();
+
+    // Presupuesto
+    document.getElementById('formularioModal').addEventListener('submit', function(event) {
+        event.preventDefault();
+    
+        const tipo_actividad = document.getElementById('tipo_actividad').value;
+        const bienes = document.getElementById('bienes').value;
+        const nombre = document.getElementById('nombre').value;
+        const cantidad = document.getElementById('cantidad').value;
+        const costo = document.getElementById('costo').value;
+
+    
+        const modal = bootstrap.Modal.getInstance(document.getElementById('exampleModal'));
+        
+        const opcionesBienesServicios = {
+            "1": ["Asistencia técnica específica a través de RRHH"],
+            "2": ["Máquinas", "Herramientas", "Insumos"],
+            "3": ["Máquinas", "Herramientas", "Conectividad"],
+            "4": ["Entrega directa textiles"],
+            "5": [
+                "Asesoría Contable y Asesoría Jurídica",
+                "Asesoría en Administración y Costos",
+                "Asesoría y acompañamiento en diseño e inscripción de marca",
+                "Asistencia en la confección de documentación y certificación de productos"
+            ],
+            "6": [
+                "Asesoría en redes sociales y Plataformas de Venta",
+                "Asesoría en Marketing digital (Foto Producto - Diseño de Catálogos online)"
+            ],
+            "7": [
+                "Acompañamiento en técnicas de venta y oratoria",
+                "Acompañamiento en armado de stands y vidrieras"
+            ],
+            "8": ["Acceso a nuevos mercados", "Participación en ferias y mercados"],
+            "9": ["Equipamiento", "Insumos", "Gastos operativos", "Recursos humanos"],
+            "10": [
+                "Máquinas, Herramientas y Equipamiento",
+                "Insumos e Indumentaria",
+                "Asistencia técnica",
+                "Transporte",
+                "Infraestructura y equipamiento"
+            ],
+            "11": [],
+            "12": [],
+            "13": []
+        };
+        document.getElementById('tipo_actividad').addEventListener('change', function() {
+            const tipoActividadSeleccionada = this.value;
+            const bienesSelect = document.getElementById('bienes');
+        
+            // Limpiar las opciones actuales
+            bienesSelect.innerHTML = '<option selected></option>';
+        
+            // Obtener las opciones de bienes/servicios correspondientes
+            const opciones = opcionesBienesServicios[tipoActividadSeleccionada];
+        
+            // Verificar si hay opciones disponibles
+            if (opciones && opciones.length > 0) {
+                // Añadir cada opción al select de bienes
+                opciones.forEach(opcion => {
+                    const optionElement = document.createElement('option');
+                    optionElement.value = opcion;
+                    optionElement.textContent = opcion;
+                    bienesSelect.appendChild(optionElement);
+                });
+            }
+        });
+        
+        modal.hide();
+        
+    });
 });
 
 
