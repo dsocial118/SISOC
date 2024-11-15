@@ -1,12 +1,11 @@
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, ListView, UpdateView, DeleteView
 from django.shortcuts import redirect
-from provincias.models import Proyecto, AnexoSocioProductivo, AbstractPersoneria
+from provincias.models import Proyecto, AnexoSocioProductivo
 from provincias.forms import (
     LineaDeAccionForm,
     ProyectoForm,
     AnexoSocioProductivoForm,
-    PersonaJuridicaForm,
     PersonaJuridicaForm,
     PersonaFisicaForm,
 )
