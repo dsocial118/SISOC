@@ -134,18 +134,122 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div id="step_3" class="step-content" style="display: none;">TREEEES</div>
-                                <div id="step_4" class="step-content" style="display: none;">TEPUSE</div>
-                                <button id="continueButton" class="btn btn-primary mx-1" type="button">Continuar</button>
-                                    <a href="{% url 'proyecto_list' %}" class="btn btn-secondary">Cancelar</a>
-                                </form>
+                                <div id="step_3" class="step-content" style="display: none;">
+                                    <div class="form-group row">
+                                        <div class="col-6">{{ linea_de_accion_form.produccion_apoyo_tecnico|as_crispy_field }}</div>
+                                        <div class="col-6">{{ linea_de_accion_form.produccion_maquinaria|as_crispy_field }}</div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-6">{{ linea_de_accion_form.produccion_tecnologias|as_crispy_field }}</div>
+                                        <div class="col-6">{{ linea_de_accion_form.produccion_entrega|as_crispy_field }}</div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-6">{{ linea_de_accion_form.comercializacion_fortalecimiento_institucional|as_crispy_field }}</div>
+                                        <div class="col-6">{{ linea_de_accion_form.comercializacion_apoyo_tecnologico|as_crispy_field }}</div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-6">{{ linea_de_accion_form.comercializacion_habilidades_blandas|as_crispy_field }}</div>
+                                        <div class="col-6">{{ linea_de_accion_form.comercializacion_fortalecimiento_unidades|as_crispy_field }}</div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-6">{{ linea_de_accion_form.circular_fortalecimiento|as_crispy_field }}</div>
+                                        <div class="col-6">{{ linea_de_accion_form.circular_practicas_sostenibles|as_crispy_field }}</div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-6">{{ linea_de_accion_form.circular_materiales_reciclados|as_crispy_field }}</div>
+                                        <div class="col-6">{{ linea_de_accion_form.circular_reduccion_residuos|as_crispy_field }}</div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-12">{{ linea_de_accion_form.fundamentacion|as_crispy_field }}</div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-6">{{ linea_de_accion_form.destinatarios_directos|as_crispy_field }}</div>
+                                        <div class="col-6">{{ linea_de_accion_form.destinatarios_indirectos|as_crispy_field }}</div>
+                                    </div>
+                                    <table class="table table-bordered table-striped projects">
+                                        <thead>
+                                            <tr>
+                                                <th>TIPO DE ACTIVIDAD PRODUCTIVA</th>
+                                                <th>TIPO DE BIENES/SERVICIOS</th>
+                                                <th>NOMBRE DEL PRODUCTO O SERVICIO</th>
+                                                <th>CANTIDAD A ADQUIRIR</th>
+                                                <th>COSTO UNITARIO TOTAL</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr id="presupuestos"></tr>
+                                        </tbody>
+                                    </table>
+                                    <button type="button"
+                                            class="btn btn-primary"
+                                            data-toggle="modal"
+                                            data-target="#formModal">Abrir Modal</button>
+                                    <div class="modal fade"
+                                         id="formModal"
+                                         tabindex="-1"
+                                         role="dialog"
+                                         aria-labelledby="formModalLabel"
+                                         aria-hidden="true">
+                                        <div class="modal-dialog" role="document">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="formModalLabel">Agregar Stock</h5>
+                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <!-- Formulario -->
+                                                    <form id="modalForm">
+                                                        <div class="form-group">
+                                                            <label for="tipo_actividad">TIPO DE ACTIVIDAD PRODUCTIVA</label>
+                                                            <select name="tipo_actividad" class="form-control" id="tipo_actividad" required>
+                                                                <option selected></option>
+                                                                <option value="1"> Apoyo técnico para mejorar competitividad </option>
+                                                                <option value="2"> Acceso a máquinas, herramientas e insumos</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="bienes">TIPO DE BIENES/SERVICIO</label>
+                                                            <select name="bienes" class="form-control" id="bienes" required>
+                                                                <option selected></option>
+                                                                <option value="1">Asistencia técnica específica a través de RRHH</option>
+                                                                <option value="2">maquinas</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="nombre">NOMBRE DEL PRODUCTO O SERVICIO</label>
+                                                            <input type="text" class="form-control" id="nombre" name="nombre" required >
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="cantidad">CANTIDAD A ADQUIRIR</label>
+                                                            <input type="text" class="form-control" id="cantidad" name="cantidad" required>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="costo">COSTO UNITARIO TOTAL</label>
+                                                            <input type="text" class="form-control" id="costo" name="costo" required>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                                                    <button type="button" class="btn btn-primary" id="submitForm">Enviar</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                            <div id="step_4" class="step-content" style="display: none;">TEPUSE</div>
+                            <button id="continueButton" class="btn btn-primary mx-1" type="button">Continuar</button>
+                            <a href="{% url 'proyecto_list' %}" class="btn btn-secondary">Cancelar</a>
+                        </form>
                     </div>
                 </div>
             </div>
         </div>
-    {% endblock %}
-    {% block customJS %}
-        <script src="{% static 'custom/js/anexo_form.js' %}"></script>
-    {% endblock %}
+    </div>
+{% endblock %}
+{% block customJS %}
+    <script src="{% static 'custom/js/anexo_form.js' %}"></script>
+{% endblock %}
