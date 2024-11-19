@@ -11,6 +11,15 @@ class Diccionario {
         return elementoConId;
     }
 
+    Editar(id, nuevosDatos) {
+        const elemento = this.datos.find(elemento => elemento.id === id); // Encuentra el elemento
+        if (elemento) {
+            Object.assign(elemento, nuevosDatos); // Actualiza solo las propiedades especificadas
+            return elemento; // Devuelve el elemento actualizado
+        }
+        return null; // Si no se encuentra, devuelve null
+    }
+
     Eliminar(id) {
         const index = this.datos.findIndex(elemento => elemento.id === id);
         if (index !== -1) {
@@ -118,6 +127,11 @@ document.getElementById('presupuesto_select_tipo_actividad').addEventListener('c
 
 const Proyectos = new Diccionario();
 
+function eliminarEntrada(id) {
+    Proyectos.Eliminar(id);
+    actualizarTabla();
+}
+
 function actualizarTabla() {
     console.log(Proyectos.ObtenerTodos());
     const tablaCuerpo = document.getElementById('presupuestos');
@@ -151,8 +165,7 @@ function actualizarTabla() {
         deleteButton.textContent = 'Eliminar';
         deleteButton.classList.add('btn', 'btn-danger');
         deleteButton.addEventListener('click', function () {
-            Proyectos.Eliminar(proyecto.id);
-            actualizarTabla();
+            eliminarEntrada(proyecto.id);
         });
         cellAcciones.appendChild(deleteButton);
         newRow.appendChild(cellAcciones);
