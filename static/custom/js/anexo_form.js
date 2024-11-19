@@ -1,4 +1,4 @@
-class Diccionario {
+class Presupuesto {
     constructor() {
         this.datos = [];
         this.ultimoId = 0;
@@ -125,7 +125,7 @@ document.getElementById('presupuesto_select_tipo_actividad').addEventListener('c
     bienesSelect.value = '';
 });
 
-const Proyectos = new Diccionario();
+const Proyectos = new Presupuesto();
 
 function eliminarEntrada(id) {
     Proyectos.Eliminar(id);
