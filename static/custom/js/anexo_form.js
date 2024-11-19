@@ -66,7 +66,8 @@ document.addEventListener("DOMContentLoaded", function () {
         document.querySelectorAll('.step-content').forEach((content, index) => {
             if (index + 1 === stepIndex) {
                 content.style.display = 'block'; 
-                content.style.display = 'none'; 
+            } else {
+                content.style.display = 'none';
             }
         });
     }
@@ -164,7 +165,8 @@ function actualizarTabla() {
         deleteButton.textContent = 'Eliminar';
         deleteButton.classList.add('btn', 'btn-danger');
         deleteButton.addEventListener('click', function () {
-            eliminarEntrada(proyecto.id);
+            Proyectos.Eliminar(proyecto.id);
+            actualizarTabla();
         });
         cellAcciones.appendChild(deleteButton);
         newRow.appendChild(cellAcciones);
