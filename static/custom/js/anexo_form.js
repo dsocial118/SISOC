@@ -96,6 +96,34 @@ document.getElementById('submitForm').addEventListener('click', function () {
     const cantidad = document.getElementById('presupuesto_cantidad').value;
     const costo = document.getElementById('presupuesto_costo').value;
 
+    // Crear una nueva fila
+    const newRow = document.createElement('tr');
+
+    // Crear celdas y agregarles el contenido
+    const cellTipoActividad = document.createElement('td');
+    cellTipoActividad.textContent = tipo_actividad;
+    newRow.appendChild(cellTipoActividad);
+
+    const cellBienes = document.createElement('td');
+    cellBienes.textContent = bienes;
+    newRow.appendChild(cellBienes);
+
+    const cellNombre = document.createElement('td');
+    cellNombre.textContent = nombre;
+    newRow.appendChild(cellNombre);
+
+    const cellCantidad = document.createElement('td');
+    cellCantidad.textContent = cantidad;
+    newRow.appendChild(cellCantidad);
+
+    const cellCosto = document.createElement('td');
+    cellCosto.textContent = costo;
+    newRow.appendChild(cellCosto);
+
+    // Agregar la nueva fila al cuerpo de la tabla
+    document.getElementById('presupuestos').appendChild(newRow);
+
+
     // TODO: Aca hay que hacer que se creen filas con la informacoin del form
 
 
