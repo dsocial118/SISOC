@@ -12,12 +12,12 @@ class Diccionario {
     }
 
     Editar(id, nuevosDatos) {
-        const elemento = this.datos.find(elemento => elemento.id === id); // Encuentra el elemento
+        const elemento = this.datos.find(elemento => elemento.id === id); 
         if (elemento) {
-            Object.assign(elemento, nuevosDatos); // Actualiza solo las propiedades especificadas
-            return elemento; // Devuelve el elemento actualizado
+            Object.assign(elemento, nuevosDatos); 
+            return elemento; 
         }
-        return null; // Si no se encuentra, devuelve null
+        return null; 
     }
 
     Eliminar(id) {
@@ -65,9 +65,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
         document.querySelectorAll('.step-content').forEach((content, index) => {
             if (index + 1 === stepIndex) {
-                content.style.display = 'block'; // Mostrar contenido correspondiente
-            } else {
-                content.style.display = 'none'; // Ocultar otros contenidos
+                content.style.display = 'block'; 
+                content.style.display = 'none'; 
             }
         });
     }
@@ -135,7 +134,7 @@ function eliminarEntrada(id) {
 function actualizarTabla() {
     console.log(Proyectos.ObtenerTodos());
     const tablaCuerpo = document.getElementById('presupuestos');
-    tablaCuerpo.innerHTML = ''; // Limpiar la tabla
+    tablaCuerpo.innerHTML = ''; 
 
     Proyectos.ObtenerTodos().forEach(proyecto => {
         const newRow = document.createElement('tr');
