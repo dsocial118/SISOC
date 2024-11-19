@@ -274,7 +274,15 @@
                                     </div>
                                 </div>
                             </div>
-                            <div id="step_4" class="step-content" style="display: none;">TEPUSE</div>
+                            <div id="step_4" class="step-content" style="display: none;">
+                                <div class="form-group row">
+                                    <div class="col-6 d-flex justify-content-center">{{ form.acta_constitutiva|as_crispy_field }}</div>
+                                    <div class="col-6 d-flex justify-content-center">{{ form.estatuto|as_crispy_field }}</div>
+                                    <div class="col-4 d-flex justify-content-center">{{ form.personeria_juridica|as_crispy_field }}</div>
+                                    <div class="col-4 d-flex justify-content-center">{{ form.designacion_autoridades|as_crispy_field }}</div>
+                                    <div class="col-4 d-flex justify-content-center">{{ form.autorizacion_gestionar|as_crispy_field }}</div>
+                                </div>
+                            </div>
                             <div class="mt-3">
                                 <button id="continueButton" class="btn btn-primary mx-1" type="button">Continuar</button>
                                 <a href="{% url 'proyecto_list' %}" class="btn btn-secondary">Cancelar</a>
