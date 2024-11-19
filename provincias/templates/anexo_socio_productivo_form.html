@@ -136,35 +136,33 @@
                                 </div>
                                 <div id="step_3" class="step-content" style="display: none;">
                                     <div class="form-group row">
-                                        <div class="col-6">{{ linea_de_accion_form.produccion_apoyo_tecnico|as_crispy_field }}</div>
-                                        <div class="col-6">{{ linea_de_accion_form.produccion_maquinaria|as_crispy_field }}</div>
+                                        <div class="col-4">{{ linea_de_accion_form.produccion_apoyo_tecnico|as_crispy_field }}</div>
+                                        <div class="col-4">{{ linea_de_accion_form.produccion_maquinaria|as_crispy_field }}</div>
+                                        <div class="col-4">{{ linea_de_accion_form.produccion_tecnologias|as_crispy_field }}</div>
                                     </div>
                                     <div class="form-group row">
-                                        <div class="col-6">{{ linea_de_accion_form.produccion_tecnologias|as_crispy_field }}</div>
-                                        <div class="col-6">{{ linea_de_accion_form.produccion_entrega|as_crispy_field }}</div>
+                                        <div class="col-4">{{ linea_de_accion_form.produccion_entrega|as_crispy_field }}</div>
+                                        <div class="col-4">{{ linea_de_accion_form.comercializacion_fortalecimiento_institucional|as_crispy_field }}</div>
+                                        <div class="col-4">{{ linea_de_accion_form.comercializacion_apoyo_tecnologico|as_crispy_field }}</div>
                                     </div>
                                     <div class="form-group row">
-                                        <div class="col-6">{{ linea_de_accion_form.comercializacion_fortalecimiento_institucional|as_crispy_field }}</div>
-                                        <div class="col-6">{{ linea_de_accion_form.comercializacion_apoyo_tecnologico|as_crispy_field }}</div>
+                                        <div class="col-4">{{ linea_de_accion_form.comercializacion_habilidades_blandas|as_crispy_field }}</div>
+                                        <div class="col-4">{{ linea_de_accion_form.comercializacion_fortalecimiento_unidades|as_crispy_field }}</div>
+                                        <div class="col-4">{{ linea_de_accion_form.circular_fortalecimiento|as_crispy_field }}</div>
                                     </div>
                                     <div class="form-group row">
-                                        <div class="col-6">{{ linea_de_accion_form.comercializacion_habilidades_blandas|as_crispy_field }}</div>
-                                        <div class="col-6">{{ linea_de_accion_form.comercializacion_fortalecimiento_unidades|as_crispy_field }}</div>
                                     </div>
                                     <div class="form-group row">
-                                        <div class="col-6">{{ linea_de_accion_form.circular_fortalecimiento|as_crispy_field }}</div>
-                                        <div class="col-6">{{ linea_de_accion_form.circular_practicas_sostenibles|as_crispy_field }}</div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <div class="col-6">{{ linea_de_accion_form.circular_materiales_reciclados|as_crispy_field }}</div>
-                                        <div class="col-6">{{ linea_de_accion_form.circular_reduccion_residuos|as_crispy_field }}</div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <div class="col-12">{{ linea_de_accion_form.fundamentacion|as_crispy_field }}</div>
+                                        <div class="col-4">{{ linea_de_accion_form.circular_practicas_sostenibles|as_crispy_field }}</div>
+                                        <div class="col-4">{{ linea_de_accion_form.circular_materiales_reciclados|as_crispy_field }}</div>
+                                        <div class="col-4">{{ linea_de_accion_form.circular_reduccion_residuos|as_crispy_field }}</div>
                                     </div>
                                     <div class="form-group row">
                                         <div class="col-6">{{ linea_de_accion_form.destinatarios_directos|as_crispy_field }}</div>
                                         <div class="col-6">{{ linea_de_accion_form.destinatarios_indirectos|as_crispy_field }}</div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-12">{{ linea_de_accion_form.fundamentacion|as_crispy_field }}</div>
                                     </div>
                                     <table class="table table-bordered table-striped projects">
                                         <thead>
@@ -277,8 +275,10 @@
                                 </div>
                             </div>
                             <div id="step_4" class="step-content" style="display: none;">TEPUSE</div>
-                            <button id="continueButton" class="btn btn-primary mx-1" type="button">Continuar</button>
-                            <a href="{% url 'proyecto_list' %}" class="btn btn-secondary">Cancelar</a>
+                            <div class="mt-3">
+                                <button id="continueButton" class="btn btn-primary mx-1" type="button">Continuar</button>
+                                <a href="{% url 'proyecto_list' %}" class="btn btn-secondary">Cancelar</a>
+                            </div>
                         </form>
                     </div>
                 </div>
