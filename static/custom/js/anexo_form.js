@@ -1,3 +1,30 @@
+class Diccionario {
+    constructor() {
+        this.datos = [];
+        this.ultimoId = 0;
+    }
+
+    Agregar(nuevoElemento) {
+        const nuevoId = ++this.ultimoId;
+        const elementoConId = { id: nuevoId, ...nuevoElemento };
+        this.datos.push(elementoConId);
+        return elementoConId;
+    }
+
+    Eliminar(id) {
+        const index = this.datos.findIndex(elemento => elemento.id === id);
+        if (index !== -1) {
+            this.datos.splice(index, 1); 
+            return true; 
+        }
+        return false; 
+    }
+
+    ObtenerTodos() {
+        return this.datos;
+    }
+}
+
 document.addEventListener("DOMContentLoaded", function () {
     const tipoPersonaFields = document.querySelectorAll("input[name='tipo_persona']");
     const juridicaFields = document.querySelectorAll(".juridica-field");
@@ -89,43 +116,60 @@ document.getElementById('presupuesto_select_tipo_actividad').addEventListener('c
     bienesSelect.value = '';
 });
 
+const Proyectos = new Diccionario();
+
+function actualizarTabla() {
+    console.log(Proyectos.ObtenerTodos());
+    const tablaCuerpo = document.getElementById('presupuestos');
+    tablaCuerpo.innerHTML = ''; // Limpiar la tabla
+
+    Proyectos.ObtenerTodos().forEach(proyecto => {
+        const newRow = document.createElement('tr');
+
+        const cellTipoActividad = document.createElement('td');
+        cellTipoActividad.textContent = proyecto.tipo_actividad;
+        newRow.appendChild(cellTipoActividad);
+
+        const cellBienes = document.createElement('td');
+        cellBienes.textContent = proyecto.bienes;
+        newRow.appendChild(cellBienes);
+
+        const cellNombre = document.createElement('td');
+        cellNombre.textContent = proyecto.nombre;
+        newRow.appendChild(cellNombre);
+
+        const cellCantidad = document.createElement('td');
+        cellCantidad.textContent = proyecto.cantidad;
+        newRow.appendChild(cellCantidad);
+
+        const cellCosto = document.createElement('td');
+        cellCosto.textContent = proyecto.costo;
+        newRow.appendChild(cellCosto);
+
+        const cellAcciones = document.createElement('td');
+        const deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Eliminar';
+        deleteButton.classList.add('btn', 'btn-danger');
+        deleteButton.addEventListener('click', function () {
+            Proyectos.Eliminar(proyecto.id);
+            actualizarTabla();
+        });
+        cellAcciones.appendChild(deleteButton);
+        newRow.appendChild(cellAcciones);
+
+        tablaCuerpo.appendChild(newRow);
+    });
+}
+
 document.getElementById('submitForm').addEventListener('click', function () {
     const tipo_actividad = document.getElementById('presupuesto_select_tipo_actividad').value;
     const bienes = document.getElementById('presupuesto_select_bienes').value;
     const nombre = document.getElementById('presupuesto_nombre').value;
     const cantidad = document.getElementById('presupuesto_cantidad').value;
     const costo = document.getElementById('presupuesto_costo').value;
-
-    // Crear una nueva fila
-    const newRow = document.createElement('tr');
-
-    // Crear celdas y agregarles el contenido
-    const cellTipoActividad = document.createElement('td');
-    cellTipoActividad.textContent = tipo_actividad;
-    newRow.appendChild(cellTipoActividad);
-
-    const cellBienes = document.createElement('td');
-    cellBienes.textContent = bienes;
-    newRow.appendChild(cellBienes);
-
-    const cellNombre = document.createElement('td');
-    cellNombre.textContent = nombre;
-    newRow.appendChild(cellNombre);
-
-    const cellCantidad = document.createElement('td');
-    cellCantidad.textContent = cantidad;
-    newRow.appendChild(cellCantidad);
-
-    const cellCosto = document.createElement('td');
-    cellCosto.textContent = costo;
-    newRow.appendChild(cellCosto);
-
-    // Agregar la nueva fila al cuerpo de la tabla
-    document.getElementById('presupuestos').appendChild(newRow);
-
-
-    // TODO: Aca hay que hacer que se creen filas con la informacoin del form
-
+    Proyectos.Agregar({ tipo_actividad, bienes, nombre, cantidad, costo });
+    
+    actualizarTabla();
 
     $('#formModal').modal('hide');
 });
