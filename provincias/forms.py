@@ -7,12 +7,27 @@ from .models import (
     PersonaFisica,
 )
 
+
+BOOLEAN_CHOICE = [
+    (False, "No"),
+    (True, "Si"),
+]
+
 class ProyectoForm(forms.ModelForm):
     class Meta:
         model = Proyecto
         fields = ['tipo_anexo', 'nombre']
 
 class PersonaJuridicaForm(forms.ModelForm):
+    proyecto_pertenece_comunidad_indigena = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+    )
+    proyecto_practicas_regenerativas = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+    )
+
     class Meta:
         model = PersonaJuridica
         fields = "__all__"
@@ -35,6 +50,14 @@ class PersonaJuridicaForm(forms.ModelForm):
         }
 
 class PersonaFisicaForm(forms.ModelForm):
+    proyecto_pertenece_comunidad_indigena = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+    )
+    proyecto_practicas_regenerativas = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+    )
     class Meta:
         model = PersonaFisica
         fields = "__all__"
@@ -66,6 +89,55 @@ class AnexoSocioProductivoForm(forms.ModelForm):
 
 
 class LineaDeAccionForm(forms.ModelForm):
+    produccion_apoyo_tecnico = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+    )
+    produccion_maquinaria = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+    )
+    produccion_tecnologias = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+    )
+    produccion_entrega = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+    )
+    comercializacion_fortalecimiento_institucional = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+    )
+    comercializacion_apoyo_tecnologico = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+    )
+    comercializacion_habilidades_blandas = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+    )
+    comercializacion_fortalecimiento_unidades = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+    )
+    circular_fortalecimiento = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+    )
+    circular_practicas_sostenibles = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+    )
+    circular_materiales_reciclados = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+    )
+    circular_reduccion_residuos = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+    )
+
     class Meta:
         model = LineaDeAccion
         fields = "__all__"
