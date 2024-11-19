@@ -69,31 +69,13 @@ document.addEventListener("DOMContentLoaded", function () {
     // Personeria
     tipoPersonaFields.forEach(field => field.addEventListener("change", toggleFields));
     toggleFields();
-
-    // Presupuesto
-    document.getElementById('formularioModal').addEventListener('submit', function(event) {
-        event.preventDefault();
-    
-        const tipo_actividad = document.getElementById('tipo_actividad').value;
-        const bienes = document.getElementById('bienes').value;
-        const nombre = document.getElementById('nombre').value;
-        const cantidad = document.getElementById('cantidad').value;
-        const costo = document.getElementById('costo').value;
-
-    
-        const modal = bootstrap.Modal.getInstance(document.getElementById('exampleModal'));
-
-
-        modal.hide();
-
-    });
 });
 
 
-document.getElementById('select_tipo_actividad').addEventListener('change', function () {
+document.getElementById('presupuesto_select_tipo_actividad').addEventListener('change', function () {
     const selectedValue = this.selectedIndex;
 
-    const bienesSelect = document.getElementById('select_bienes');
+    const bienesSelect = document.getElementById('presupuesto_select_bienes');
     const opciones = bienesSelect.querySelectorAll('option');
 
     opciones.forEach(opcion => {
@@ -105,4 +87,17 @@ document.getElementById('select_tipo_actividad').addEventListener('change', func
     });
 
     bienesSelect.value = '';
+});
+
+document.getElementById('submitForm').addEventListener('click', function () {
+    const tipo_actividad = document.getElementById('presupuesto_select_tipo_actividad').value;
+    const bienes = document.getElementById('presupuesto_select_bienes').value;
+    const nombre = document.getElementById('presupuesto_nombre').value;
+    const cantidad = document.getElementById('presupuesto_cantidad').value;
+    const costo = document.getElementById('presupuesto_costo').value;
+
+    // TODO: Aca hay que hacer que se creen filas con la informacoin del form
+
+
+    $('#formModal').modal('hide');
 });
