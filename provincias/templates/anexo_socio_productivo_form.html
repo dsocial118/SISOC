@@ -48,6 +48,20 @@
                                         <span class="bs-stepper-label">Documentacion obligatoria</span>
                                     </button>
                                 </div>
+                                <div class="line"></div>
+                                <div class="step">
+                                    <button type="button" class="step-trigger" role="tab">
+                                        <span class="bs-stepper-circle">5</span>
+                                        <span class="bs-stepper-label">Diagnostico contexto general</span>
+                                    </button>
+                                </div>
+                                <div class="line"></div>
+                                <div class="step">
+                                    <button type="button" class="step-trigger" role="tab">
+                                        <span class="bs-stepper-circle">6</span>
+                                        <span class="bs-stepper-label">Diagnostico estructura economica</span>
+                                    </button>
+                                </div>
                             </div>
                             <form method="post" enctype="multipart/form-data" class="w-100">
                                 {% csrf_token %}
@@ -283,6 +297,64 @@
                                     <div class="col-4 d-flex justify-content-center">{{ form.designacion_autoridades|as_crispy_field }}</div>
                                     <div class="col-4 d-flex justify-content-center">{{ form.autorizacion_gestionar|as_crispy_field }}</div>
                                 </div>
+                            </div>
+                            <div id="step_5" class="step-content" style="display: none;">
+                                <div class="juridica-field" style="display: none;">
+                                    
+                                    <div class="form-group row">
+                                        <div class="col-6">
+                                            {{ diagnostico_juridica_form.tipo_comunidad|as_crispy_field }}
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-6">
+                                            {{ diagnostico_juridica_form.cantidad_integrantes|as_crispy_field }}
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-6">
+                                            {{ diagnostico_juridica_form.genero_mayoria|as_crispy_field }}
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-6">
+                                            {{ diagnostico_juridica_form.composicion_equipo|as_crispy_field }}
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-12">
+                                            {{ diagnostico_juridica_form.mision_vision|as_crispy_field }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="humana-field" style="display: none;">
+                                    <div class="form-group row">
+                                        <div class="col-6">{{ diagnostico_fisica_form.estudios_alcanzados|as_crispy_field }}</div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-6">{{ diagnostico_fisica_form.ocupacion|as_crispy_field }}</div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-6">{{ diagnostico_fisica_form.ocupacion_condicion|as_crispy_field }}</div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-6">{{ diagnostico_fisica_form.ocupacion_sosten_hogar|as_crispy_field }}</div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-6">{{ diagnostico_fisica_form.ocupacion_horas_semanales|as_crispy_field }}</div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-6">{{ diagnostico_fisica_form.beneficiario_social|as_crispy_field }}</div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-6">{{ diagnostico_fisica_form.beneficio_social|as_crispy_field }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="step_6" class="step-content" style="display: none;">
+                                <div class="juridica-field" style="display: none;">
+                                    
+                                    
                             </div>
                             <div class="mt-3">
                                 <button id="continueButton" class="btn btn-primary mx-1" type="button">Continuar</button>

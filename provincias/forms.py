@@ -5,6 +5,8 @@ from .models import (
     Proyecto,
     PersonaJuridica,
     PersonaFisica,
+    DiagnosticoJuridica,
+    DiagnosticoFisica,
 )
 
 
@@ -140,4 +142,14 @@ class LineaDeAccionForm(forms.ModelForm):
 
     class Meta:
         model = LineaDeAccion
+        fields = "__all__"
+
+class DiagnosticoJuridicaForm(forms.ModelForm):
+    class Meta:
+        model = DiagnosticoJuridica
+        fields = "__all__"
+
+class DiagnosticoFisicaForm(forms.ModelForm):
+    class Meta:
+        model = DiagnosticoFisica
         fields = "__all__"
