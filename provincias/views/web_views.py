@@ -8,6 +8,8 @@ from provincias.forms import (
     AnexoSocioProductivoForm,
     PersonaJuridicaForm,
     PersonaFisicaForm,
+    DiagnosticoJuridicaForm,
+    DiagnosticoFisicaForm,
 )
 from usuarios.models import Usuarios
 
@@ -56,11 +58,16 @@ class AnexoSocioProductivoCreateView(CreateView):
             context['fisica_form'] = PersonaFisicaForm(self.request.POST)
             context["persona_juridica_form"] = PersonaJuridicaForm(self.request.POST)
             context["linea_de_accion_form"] = LineaDeAccionForm(self.request.POST)
+            context["diagnostico_juridica_form"] = DiagnosticoJuridicaForm(self.request.POST)
+            context["diagnostico_fisica_form"] = DiagnosticoFisicaForm(self.request.POST)
         else:
             context['juridica_form'] = PersonaJuridicaForm()
             context['fisica_form'] = PersonaFisicaForm()
             context["persona_juridica_form"] = PersonaJuridicaForm()
             context["linea_de_accion_form"] = LineaDeAccionForm()
+            context['diagnostico_juridica_form'] = DiagnosticoJuridicaForm()
+            context['diagnostico_fisica_form'] = DiagnosticoFisicaForm()
+
         return context
 
     def form_valid(self, form):
