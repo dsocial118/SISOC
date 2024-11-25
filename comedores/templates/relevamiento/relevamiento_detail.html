@@ -22,12 +22,13 @@
 {% endblock %}
 ;
 {% block content %}
-    <div class="row justify-content-sm-start justify-content-between d-print-none mx-1 mb-2">
-        <a href="{% url 'relevamiento_editar' relevamiento.comedor__id relevamiento.id %}"
-           class="btn btn-primary mr-1">Editar</a>
-        <a href="#" class="btn btn-secondary print mr-1 d-none d-sm-inline">Imprimir</a>
-        <a href="{% url 'relevamiento_eliminar' relevamiento.comedor__id relevamiento.id %}"
-           class="btn btn-danger">Eliminar</a>
+    <div class="row justify-content-between d-print-none mx-1 mb-2">
+        <a href="{% url 'comedor_detalle' relevamiento.comedor__id %}" class="btn btn-secondary mr-1">Volver</a>
+        <div>
+            <a href="{% url 'relevamiento_editar' relevamiento.comedor__id relevamiento.id %}" class="btn btn-primary mr-1">Editar</a>
+            <a href="#" class="btn btn-secondary print mr-1 d-none d-sm-inline">Imprimir</a>
+            <a href="{% url 'relevamiento_eliminar' relevamiento.comedor__id relevamiento.id %}" class="btn btn-danger">Eliminar</a>
+        </div>
     </div>
     <div class="row relevamiento-container">
         <div class="col-3">
@@ -433,38 +434,38 @@
         </div>
         <div class="card-body card-comments p-0 pb-1">
             <div class="nav nav-pills row my-3">
-                <div class="nav-item col-4 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         ¿Qué cantidad de personas realizan tareas en el Comedor?
                         <span class="username">{{ relevamiento.colaboradores__cantidad_colaboradores__nombre | default_if_none:"-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-4 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         3.1.2 ¿El Comedor/Merendero cuentan con personas que realizan tareas capacitadas para la manipulación de alimentos?
                         <span class="username">{{ relevamiento.colaboradores__colaboradores_capacitados_alimentos | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-4 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         ¿Los colaboradores recibieron capacitación sobre manipulación segura de alimentos?
                         <span class="username">{{ relevamiento.colaboradores__colaboradores_recibieron_capacitacion_alimentos | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-4 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         ¿Los colaboradores recibieron capacitación sobre salud y seguridad ocupacional?
                         <span class="username">{{ relevamiento.colaboradores__colaboradores_capacitados_salud_seguridad | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-4 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         ¿Los colaboradores recibieron capacitación sobre preparación y respuesta a las emergencias?
                         <span class="username">{{ relevamiento.colaboradores__colaboradores_recibieron_capacitacion_emergencias | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-4 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         ¿Los colaboradores recibieron capacitación sobre prevención de violencia de género incluyendo acoso sexual, explotación sexual y abuso infantil?
                         <span class="username">{{ relevamiento.colaboradores__colaboradores_recibieron_capacitacion_violencia | yesno:"Sí,No,-" }}</span>
                     </div>
@@ -483,92 +484,92 @@
         </div>
         <div class="card-body card-comments p-0 pb-1">
             <div class="nav nav-pills row my-3">
-                <div class="nav-item col-4 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         Recibe donaciones particulares
                         <span class="username">{{ relevamiento.recursos__recibe_donaciones_particulares | yesno:"Si,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-4 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         Si recibe, ¿Con qué frecuencia recibe donaciones particulares?
                         <span class="username">{{ relevamiento.recursos__frecuencia_donaciones_particulares__nombre | default_if_none:"-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-4 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         ¿Qué tipo de recursos recibe de donaciones particulares?
                         <span class="username">{{ relevamiento.recursos__recursos_donaciones_particulares__nombre | default_if_none:"-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-4 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         Recibe estado nacional
                         <span class="username">{{ relevamiento.recursos__recibe_estado_nacional | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-4 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         Si recibe, ¿Con qué frecuencia recibe del estado nacional?
                         <span class="username">{{ relevamiento.recursos__frecuencia_estado_nacional__nombre | default_if_none:"-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-4 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         ¿Qué tipo de recursos recibe del estado nacional?
                         <span class="username">{{ relevamiento.recursos__recursos_estado_nacional__nombre | default_if_none:"-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-4 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         Recibe estado provincial
                         <span class="username">{{ relevamiento.recursos__recibe_estado_provincial | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-4 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         Si recibe, ¿Con qué frecuencia recibe del estado provincial?
                         <span class="username">{{ relevamiento.recursos__frecuencia_estado_provincial__nombre | default_if_none:"-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-4 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         ¿Qué tipo de recursos recibe del estado provincial?
                         <span class="username">{{ relevamiento.recursos__recursos_estado_provincial__nombre | default_if_none:"-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-4 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         Recibe estado municipal
                         <span class="username">{{ relevamiento.recursos__recibe_estado_municipal | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-4 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         Si recibe, ¿Con qué frecuencia recibe del estado municipal?
                         <span class="username">{{ relevamiento.recursos__frecuencia_estado_municipal__nombre | default_if_none:"-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-4 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         Qué tipo de recursos recibe del estado municipal?
                         <span class="username">{{ relevamiento.recursos__recursos_estado_municipal__nombre | default_if_none:"-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-4 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         Recibe otros
                         <span class="username">{{ relevamiento.recursos__recibe_otros | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-4 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         Si recibe, ¿Con qué frecuencia recibe de otras fuentes?
                         <span class="username">{{ relevamiento.recursos__frecuencia_otros__nombre | default_if_none:"-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-4 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         ¿Qué tipo de recursos recibe de otras fuentes?
                         <span class="username">{{ relevamiento.recursos__recursos_otros__nombre | default_if_none:"-" }}</span>
                     </div>
@@ -589,62 +590,64 @@
         </div>
         <div class="card-body card-comments p-0 pb-1">
             <div class="nav nav-pills row my-3">
-                <div class="nav-item col-2 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-2 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         Almacen cercano
                         <span class="username">{{ relevamiento.compras__almacen_cercano | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-2 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-2 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         Verduleria
                         <span class="username">{{ relevamiento.compras__verduleria | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-2 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-2 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         Granja
                         <span class="username">{{ relevamiento.compras__granja | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-2 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-2 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         Carniceria
                         <span class="username">{{ relevamiento.compras__carniceria | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-2 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-2 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         Pescaderia
                         <span class="username">{{ relevamiento.compras__pescaderia | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-2 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-2 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         Supermercado
                         <span class="username">{{ relevamiento.compras__supermercado | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+            </div>
+            <div class="nav nav-pills row my-3">
+                <div class="nav-item col-2 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         Mercado central
                         <span class="username">{{ relevamiento.compras__mercado_central | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-2 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         Ferias comunales
                         <span class="username">{{ relevamiento.compras__ferias_comunales | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-2 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         Mayoristas
                         <span class="username">{{ relevamiento.compras__mayoristas | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-2 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         Otro
                         <span class="username">{{ relevamiento.compras__otro | yesno:"Sí,No,-" }}</span>
                     </div>
@@ -778,7 +781,35 @@
         </div>
         <div class="card-body card-comments p-0 pb-1 overflow-hidden">
             <div class="nav nav-pills row my-3">
-                <div class="mx-5">{{ relevamiento.observacion|default_if_none:'-' }}</div>
+                <div class="nav-item col-1 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
+                        Fecha
+                        <div class="username">{{ relevamiento.fecha_visita|date:"d/m/Y" }}</div>
+                    </div>
+                </div>
+                <div class="nav-item col-5 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
+                        Detalle
+                        <span class="username">{{ relevamiento.observacion|default_if_none:'-' }}</span>
+                    </div>
+                </div>
+                <div class="nav-item col-2 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
+                        Documentos Adjuntos
+                    </div>
+                </div>
+                <div class="nav-item col-2 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
+                        Imagen
+                    </div>
+                </div>
+                <div class="nav-item col-2 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
+                        <button>
+                            ver mas agregar
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
