@@ -29,77 +29,133 @@
         <a href="{% url 'relevamiento_eliminar' relevamiento.comedor__id relevamiento.id %}"
            class="btn btn-danger">Eliminar</a>
     </div>
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title font-weight-bold mr-3 pt-1">Relevamiento</h3>
-            <div class="card-tools">
-                <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                    <i class="fas fa-minus"></i>
-                </button>
-            </div>
-        </div>
-        <div class="card-body card-comments p-0 pb-1">
-            <div class="nav nav-pills row my-3">
-                <div class="nav-item col-6 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
-                        Usuario relevador
-                        <span class="username">{{ relevamiento.relevador }}</span>
+    <div class="row relevamiento-container">
+        <div class="col-3">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title font-weight-bold mr-3 pt-1">Relevamiento</h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
                     </div>
                 </div>
-                <div class="nav-item col-6 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
-                        Fecha y horario de la visita
-                        <span class="username">{{ relevamiento.fecha_visita | default_if_none:"-" }}</span>
+                <div class="card-body card-comments p-0 pb-1">
+                    <div class="nav nav-pills row my-3">
+                        <div class="nav-item col-12 d-flex">
+                            <div class="comment-text comment-text d-flex flex-column text-sm">
+                                Usuario relevador
+                                <span class="username">{{ relevamiento.relevador }}</span>
+                            </div>
+                        </div>
+                        
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title font-weight-bold mr-3 pt-1">Información</h3>
-            <div class="card-tools">
-                <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                    <i class="fas fa-minus"></i>
-                </button>
-            </div>
-        </div>
-        <div class="card-body card-comments p-0 pb-1">
-            <div class="nav nav-pills row my-3">
-                <div class="nav-item col-6 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
-                        Nombre del Comedor/Merendero
-                        <span class="username">{{ relevamiento.comedor__nombre | default_if_none:"-" }}</span>
-                    </div>
-                </div>
-                <div class="nav-item col-6 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
-                        ¿En qué año comenzó a funcionar?
-                        <span class="username">{{ relevamiento.comedor__comienzo | default_if_none:"-" }}</span>
-                    </div>
-                </div>
-            </div>
-            <div class="nav nav-pills row my-3">
-                <div class="nav-item col-4 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
-                        Modalidad de prestación
-                        <span class="username">{{ relevamiento.funcionamiento__modalidad_prestacion__nombre | default_if_none:"-" }}</span>
-                    </div>
-                </div>
-                <div class="nav-item col-4 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
-                        ¿El servicio está organizado por turnos?
-                        <span class="username">{{ relevamiento.funcionamiento__servicio_por_turnos | yesno:"Si,No,-" }}</span>
-                    </div>
-                </div>
-                <div class="nav-item col-4 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
-                        Cantidad de turnos
-                        <span class="username">{{ relevamiento.funcionamiento__cantidad_turnos | default_if_none:"-" }}</span>
+                    <div class="nav nav-pills row my-3">
+                        <div class="nav-item col-12 d-flex">
+                            <div class="comment-text comment-text d-flex flex-column text-sm">
+                                Fecha y horario de la visita
+                                <span class="username">{{ relevamiento.fecha_visita | default_if_none:"-" }}</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+        
+        <div class="col-4">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title font-weight-bold mr-3 pt-1">Información</h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body card-comments p-0 pb-1">
+                    <div class="nav nav-pills row my-3">
+                        <div class="nav-item col-6 d-flex">
+                            <div class="comment-text comment-text d-flex flex-column text-sm">
+                                Nombre del Comedor/Merendero
+                                <span class="username">{{ relevamiento.comedor__nombre | default_if_none:"-" }}</span>
+                            </div>
+                        </div>
+                        <div class="nav-item col-6 d-flex">
+                            <div class="comment-text comment-text d-flex flex-column text-sm">
+                                ¿En qué año comenzó a funcionar?
+                                <span class="username">{{ relevamiento.comedor__comienzo | default_if_none:"-" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="nav nav-pills row my-3">
+                        <div class="nav-item col-4 d-flex ">
+                            <div class="comment-text comment-text d-flex flex-column text-sm">
+                                Modalidad de prestación
+                                <span class="username">{{ relevamiento.funcionamiento__modalidad_prestacion__nombre | default_if_none:"-" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="nav nav-pills row my-3">
+                        <div class="nav-item col-6 d-flex">
+                            <div class="comment-text comment-text d-flex flex-column text-sm">
+                                ¿El servicio está organizado por turnos?
+                                <span class="username">{{ relevamiento.funcionamiento__servicio_por_turnos | yesno:"Si,No,-" }}</span>
+                            </div>
+                        </div>
+                        <div class="nav-item col-6 d-flex ">
+                            <div class="comment-text comment-text d-flex flex-column text-sm">
+                                Cantidad de turnos
+                                <span class="username">{{ relevamiento.funcionamiento__cantidad_turnos | default_if_none:"-" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-5">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title font-weight-bold mr-3 pt-1">Datos del referente/responsable del Comedor/Merendero</h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body card-comments p-0 pb-1">
+                    <div class="nav nav-pills row my-3">
+                        <div class="nav-item col-6 d-flex">
+                            <div class="comment-text comment-text d-flex flex-column text-sm">
+                                Nombre y Apellido
+                                <span class="username">{{ relevamiento.comedor__referente__nombre | default_if_none:"-" }} {{ relevamiento.comedor__referente__apellido | default_if_none:"-" }}</span>
+                            </div>
+                        </div>
+                        <div class="nav-item col-6 d-flex">
+                            <div class="comment-text comment-text d-flex flex-column text-sm">
+                                DNI de referente/responsable
+                                <span class="username">{{ relevamiento.comedor__referente__documento | default_if_none:"-" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="nav nav-pills row my-3">
+                        <div class="nav-item col-6 d-flex">
+                            <div class="comment-text comment-text d-flex flex-column text-sm">
+                                Mail de referente/responsable
+                                <span class="username"><a href="mailto:{{ relevamiento.comedor__referente__mail }}">{{ relevamiento.comedor__referente__mail | default_if_none:"-" }}</a></span>
+                            </div>
+                        </div>
+                        <div class="nav-item col-6 d-flex ">
+                            <div class="comment-text comment-text d-flex flex-column text-sm">
+                                Numero de referente/responsable
+                                <span class="username">{{ relevamiento.comedor__referente__celular | default_if_none:"-" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
     </div>
     <div class="card">
         <div class="card-header">
@@ -112,65 +168,61 @@
         </div>
         <div class="card-body card-comments p-0 pb-1">
             <div class="nav nav-pills row my-3">
-                <div class="nav-item col-3 d-flex justify-content-center">
+                <div class="nav-item col-1 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Calle
                         <span class="username">{{ relevamiento.comedor__calle | default_if_none:"-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
+                <div class="nav-item col-1 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Número
                         <span class="username">{{ relevamiento.comedor__numero | default_if_none:"-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
+                <div class="nav-item col-1 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Entre calle 1
                         <span class="username">{{ relevamiento.comedor__entre_calle_1 | default_if_none:"-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
+                <div class="nav-item col-1 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Entre calle 2
                         <span class="username">{{ relevamiento.comedor__entre_calle_2 | default_if_none:"-" }}</span>
                     </div>
                 </div>
-            </div>
-            <div class="nav nav-pills row my-3">
-                <div class="nav-item col-3 d-flex justify-content-center">
+                <div class="nav-item col-1 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Provincia
                         <span class="username">{{ relevamiento.comedor__provincia__nombre | default_if_none:"-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
+                <div class="nav-item col-1 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Municipio
                         <span class="username">{{ relevamiento.comedor__municipio__nombre | default_if_none:"-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
+                <div class="nav-item col-1 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Localidad
                         <span class="username">{{ relevamiento.comedor__localidad__nombre | default_if_none:"-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
+                <div class="nav-item col-1 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Partido
                         <span class="username">{{ relevamiento.comedor__partido | default_if_none:"-" }}</span>
                     </div>
                 </div>
-            </div>
-            <div class="nav nav-pills row my-3">
-                <div class="nav-item col-6 d-flex justify-content-center">
+                <div class="nav-item col-1 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Barrio
                         <span class="username">{{ relevamiento.comedor__barrio | default_if_none:"-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-6 d-flex justify-content-center">
+                <div class="nav-item col-1 d-flex justify-content-center">
                     <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                         Código postal
                         <span class="username">{{ relevamiento.comedor__codigo_postal | default_if_none:"-" }}</span>
@@ -179,44 +231,7 @@
             </div>
         </div>
     </div>
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title font-weight-bold mr-3 pt-1">Datos del referente/responsable del Comedor/Merendero</h3>
-            <div class="card-tools">
-                <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                    <i class="fas fa-minus"></i>
-                </button>
-            </div>
-        </div>
-        <div class="card-body card-comments p-0 pb-1">
-            <div class="nav nav-pills row my-3">
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
-                        Nombre y Apellido
-                        <span class="username">{{ relevamiento.comedor__referente__nombre | default_if_none:"-" }} {{ relevamiento.comedor__referente__apellido | default_if_none:"-" }}</span>
-                    </div>
-                </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
-                        Mail de referente/responsable
-                        <span class="username"><a href="mailto:{{ relevamiento.comedor__referente__mail }}">{{ relevamiento.comedor__referente__mail | default_if_none:"-" }}</a></span>
-                    </div>
-                </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
-                        Numero de referente/responsable
-                        <span class="username">{{ relevamiento.comedor__referente__celular | default_if_none:"-" }}</span>
-                    </div>
-                </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
-                        DNI de referente/responsable
-                        <span class="username">{{ relevamiento.comedor__referente__documento | default_if_none:"-" }}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    
     <div class="card">
         <div class="card-header">
             <h3 class="card-title font-weight-bold mr-3 pt-1">
@@ -230,158 +245,174 @@
         </div>
         <div class="card-body card-comments p-0 pb-1">
             <div class="nav nav-pills row my-3">
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         ¿En qué tipo de espacio físico funciona el comedor?
                         <span class="username">{{ relevamiento.espacio__tipo_espacio_fisico__nombre | default_if_none:"-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         Si eligió 'Otro', especificar
                         <span class="username">{{ relevamiento.espacio__espacio_fisico_otro | default_if_none:"-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         ¿Cuenta con un espacio específico para elaboración de alimentos?
                         <span class="username">{{ relevamiento.espacio__cocina__espacio_elaboracion_alimentos | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+            </div>
+            <div class="nav nav-pills row my-3">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         ¿Cuenta con un lugar para el almacenamiento de los alimentos secos que compra/recibe?
                         <span class="username">{{ relevamiento.espacio__cocina__almacenamiento_alimentos_secos | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         ¿El Comedor/Merendero cuenta con heladera?
                         <span class="username">{{ relevamiento.espacio__cocina__heladera | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         ¿El Comedor/Merendero cuenta con freezer?
                         <span class="username">{{ relevamiento.espacio__cocina__freezer | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+            </div>
+            <div class="nav nav-pills row my-3">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         ¿Cuenta con recipientes destinados a la disposición de residuos orgánicos y asimilables?
                         <span class="username">{{ relevamiento.espacio__cocina__recipiente_residuos_organicos | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         ¿Cuenta con un recipientes destinados a la disposición de residuos reciclables?
                         <span class="username">{{ relevamiento.espacio__cocina__recipiente_residuos_reciclables | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         ¿Generan otro tipo de residuos? ¿Cuenta con recipientes destinados a la disposición de dichos residuos?
                         <span class="username">{{ relevamiento.espacio__cocina__otros_residuos | yesno:"Sí,No,-" }}, {{ relevamiento.espacio__cocina__recipiente_otros_residuos | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+            </div>
+            <div class="nav nav-pills row my-3">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         Para cocinar utiliza:
                         <span class="username">{{ relevamiento.gas | default_if_none:"-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex ">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         El abastecimiento del agua es con:
                         <span class="username">{{ relevamiento.espacio__cocina__abastecimiento_agua__nombre | default_if_none:"-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         En caso de ser otro abastecimiento de agua:
                         <span class="username">{{ relevamiento.espacio__cocina__abastecimiento_agua_otro | default_if_none:"-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+            </div>
+            <div class="nav nav-pills row my-3">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         ¿Cuenta con instalación eléctrica adecuada?
                         <span class="username">{{ relevamiento.espacio__cocina__instalacion_electrica | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         ¿Cuenta con espacio y equipamiento (mesas, bancos o sillas)?
                         <span class="username">{{ relevamiento.espacio__prestacion__espacio_equipado | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         ¿El espacio donde tiene actividad el Comedor/Merendero cuenta con un sistema de ventilación adecuado?
                         <span class="username">{{ relevamiento.espacio__prestacion__tiene_ventilacion | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+            </div>
+            <div class="nav nav-pills row my-3">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         ¿El espacio donde tiene actividad el Comedor/Merendero cuenta con salidas de emergencia?
                         <span class="username">{{ relevamiento.espacio__prestacion__tiene_salida_emergencia | yesno:"Si,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         ¿Están señalizadas las salidas de emergencia?
                         <span class="username">{{ relevamiento.espacio__prestacion__salida_emergencia_senializada | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         ¿El lugar cuenta con elementos para apagar incendios (matafuegos / manguera)?
                         <span class="username">{{ relevamiento.espacio__prestacion__tiene_equipacion_incendio | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+            </div>
+            <div class="nav nav-pills row my-3">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         ¿El lugar cuenta con un botiquín de primeros auxilios?
                         <span class="username">{{ relevamiento.espacio__prestacion__tiene_botiquin | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         ¿El espacio donde tiene actividad el Comedor/Merendero cuenta con buena iluminación?
                         <span class="username">{{ relevamiento.espacio__prestacion__tiene_buena_iluminacion | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         ¿El lugar cuenta con baño para las personas que realizan tareas en el Comedor/Merendero y para los destinatarios?
                         <span class="username">{{ relevamiento.espacio__prestacion__tiene_sanitarios | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+            </div>
+            <div class="nav nav-pills row my-3">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         Si hay sanitarios, ¿cómo es el desagüe del hinodoro?
                         <span class="username">{{ relevamiento.espacio__prestacion__desague_hinodoro__nombre | default_if_none:"-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         ¿El Comedor/Merendero cuenta con un buzón de quejas y reclamos en el lugar?
                         <span class="username">{{ relevamiento.espacio__prestacion__gestion_quejas | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         ¿Que otra forma de gestion de reclamos se aplica?
                         <span class="username">{{ relevamiento.espacio__prestacion__gestion_quejas_otro | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+            </div>
+            <div class="nav nav-pills row my-3">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         ¿Hay en el lugar cartelería con información sobre los mecanismos de gestión de quejas, reclamos y sugerencias del Comedor/Merendero?
                         <span class="username">{{ relevamiento.espacio__prestacion__informacion_quejas | yesno:"Sí,No,-" }}</span>
                     </div>
                 </div>
-                <div class="nav-item col-3 d-flex justify-content-center">
-                    <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                <div class="nav-item col-4 d-flex">
+                    <div class="comment-text comment-text d-flex flex-column text-sm">
                         ¿Con qué frecuencia se realiza la limpieza de las instalaciones?
                         <span class="username">{{ relevamiento.espacio__prestacion__frecuencia_limpieza__nombre | default_if_none:"-" }}</span>
                     </div>
@@ -751,4 +782,5 @@
             </div>
         </div>
     </div>
+
 {% endblock %}
