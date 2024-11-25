@@ -128,26 +128,26 @@
                         </div>
                         <div class="card-body card-comments p-0 pb-1">
                             <div class="nav nav-pills row my-3">
-                                <div class="nav-item col-3 d-flex justify-content-center">
-                                    <div class="comment-text comment-text d-flex flex-column align-items-center">
+                                <div class="nav-item col-3 d-flex">
+                                    <div class="comment-text comment-text d-flex flex-column">
                                         Nombre completo
                                         <span class="username">{{ comedor.referente__nombre }} {{ comedor.referente__apellido }}</span>
                                     </div>
                                 </div>
-                                <div class="nav-item col-3 d-flex justify-content-center">
-                                    <div class="comment-text comment-text d-flex flex-column align-items-center">
+                                <div class="nav-item col-3 d-flex">
+                                    <div class="comment-text comment-text d-flex flex-column">
                                         Numero de contacto
                                         <span class="username">{{ comedor.referente__celular | default_if_none:"-" }}</span>
                                     </div>
                                 </div>
-                                <div class="nav-item col-3 d-flex justify-content-center">
-                                    <div class="comment-text comment-text d-flex flex-column align-items-center">
+                                <div class="nav-item col-3 d-flex">
+                                    <div class="comment-text comment-text d-flex flex-column">
                                         Mail de contacto
                                         <span class="username"><a href="mailto:{{ relevamiento.comedor__referente__mail }}">{{ comedor.referente__mail | default_if_none:"-" }}</a></span>
                                     </div>
                                 </div>
-                                <div class="nav-item col-3 d-flex justify-content-center">
-                                    <div class="comment-text comment-text d-flex flex-column align-items-center">
+                                <div class="nav-item col-3 d-flex">
+                                    <div class="comment-text comment-text d-flex flex-column">
                                         Documento
                                         <span class="username">{{ comedor.referente__documento | default_if_none:"-" }}</span>
                                     </div>
@@ -192,7 +192,7 @@
                 <div class="card-body card-comments p-0 pb-1">
                     <div class="nav nav-pills row my-3">
                         {% for relevamiento in relevamientos %}
-                            <div class="col-2 d-flex justify-content-center">
+                            <div class="col-6 d-flex">
                                 <a href="{% url 'relevamiento_detalle' comedor.id relevamiento.id %}">{{ relevamiento.id }} - {{ relevamiento.fecha_visita }}</a>
                             </div>
                         {% endfor %}
@@ -214,7 +214,7 @@
                 <div class="card-body card-comments p-0 pb-1">
                     <div class="nav nav-pills row my-3">
                         {% for observacion in observaciones %}
-                            <div class="col-2 d-flex justify-content-center">
+                            <div class="col-2 d-flex">
                                 <a href="{% url 'observacion_detalle' comedor.id observacion.id %}">{{ observacion.id }} - {{ observacion.fecha_visita }}</a>
                             </div>
                         {% endfor %}
