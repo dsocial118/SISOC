@@ -670,7 +670,14 @@ class LegajosCreateView(PermisosMixin, CreateView):
     permission_required = ROL_ADMIN
     model = Legajos
     form_class = LegajosForm
-
+    def form_invalid(self, form):
+        print("form.errors", form.errors)
+        messages.error(
+            self.request,
+            "Se produjo un error al crear el legajo. Por favor, verifique los datos ingresados.",
+        )
+        return super().form_invalid(form)
+    
     def form_valid(self, form):
         legajo = form.save(commit=False)
 
