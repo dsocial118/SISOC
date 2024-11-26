@@ -30,7 +30,7 @@
         <div class="col-6">
             <div class="row">
                 <div class="col-12">
-                    <div class="card">
+                    <div class="card card-informacion">
                         <div class="card-header">
                             <h3 class="card-title font-weight-bold mr-3 pt-1">Información</h3>
                             <div class="card-tools">
@@ -41,115 +41,89 @@
                         </div>
                         <div class="card-body card-comments p-0 pb-1">
                             <div class="nav nav-pills row my-3">
-                                <div class="nav-item col-3 d-flex">
-                                    <div class="comment-text comment-text d-flex flex-column">
-                                        Nombre
-                                        <span class="username">{{ comedor.nombre }}</span>
+                                <div class="col-6">
+                                    <div class="row">
+                                        <!-- Imagen agregar despues -->
                                     </div>
                                 </div>
-                                <div class="nav-item col-3 d-flex">
-                                    <div class="comment-text comment-text d-flex flex-column">
-                                        Provincia
-                                        <span class="username">{{ comedor.provincia__nombre|default_if_none:"-" }}</span>
+                                <div class="col-6">
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <div class="nav-item d-flex">
+                                                <div class="comment-text comment-text d-flex flex-column">
+                                                    Nombre
+                                                    <span class="username">{{ comedor.nombre }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="nav-item d-flex">
+                                                <div class="comment-text comment-text d-flex flex-column">
+                                                    Provincia
+                                                    <span class="username">{{ comedor.provincia__nombre|default_if_none:"-" }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="nav-item d-flex">
+                                                <div class="comment-text comment-text d-flex flex-column">
+                                                    Municipio
+                                                    <span class="username">{{ comedor.municipio__nombre|default_if_none:"-" }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="nav-item d-flex">
+                                                <div class="comment-text comment-text d-flex flex-column">
+                                                    Localidad
+                                                    <span class="username">{{ comedor.localidad__nombre|default_if_none:"-" }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="nav-item d-flex">
+                                                <div class="comment-text comment-text d-flex flex-column">
+                                                    Año en el que empezo a funcionar
+                                                    <span class="username">{{ comedor.comienzo }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="nav-item d-flex">
+                                                <div class="comment-text comment-text d-flex flex-column">
+                                                    Partido
+                                                    <span class="username">{{ comedor.partido|default_if_none:"-" }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="nav-item">
+                                                <div class="comment-text comment-text d-flex flex-column">
+                                                    Barrio
+                                                    <span class="username">{{ comedor.barrio|default_if_none:"-" }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="nav-item">
+                                                <div class="comment-text comment-text d-flex flex-column">
+                                                    Codigo postal
+                                                    <span class="username">{{ comedor.codigo_postal }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="nav-item col-3 d-flex">
-                                    <div class="comment-text comment-text d-flex flex-column">
-                                        Partido
-                                        <span class="username">{{ comedor.partido|default_if_none:"-" }}</span>
-                                    </div>
-                                </div>
-                                <div class="nav-item col-3">
-                                    <div class="comment-text comment-text d-flex flex-column">
-                                        Calle
-                                        <span class="username">{{ comedor.calle }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="nav nav-pills row my-3">
-                                <div class="nav-item col-3 d-flex"></div>
-                                <div class="nav-item col-3 d-flex">
-                                    <div class="comment-text comment-text d-flex flex-column">
-                                        Municipio
-                                        <span class="username">{{ comedor.municipio__nombre|default_if_none:"-" }}</span>
-                                    </div>
-                                </div>
-                                <div class="nav-item col-3">
-                                    <div class="comment-text comment-text d-flex flex-column">
-                                        Barrio
-                                        <span class="username">{{ comedor.barrio|default_if_none:"-" }}</span>
-                                    </div>
-                                </div>
-                                <div class="nav-item col-3">
-                                    <div class="comment-text comment-text d-flex flex-column">
-                                        Número
-                                        <span class="username">{{ comedor.numero }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="nav nav-pills row my-3">
-                                <div class="nav-item col-3 d-flex">
-                                    <div class="comment-text comment-text d-flex flex-column">
-                                        Año en el que empezo a funcionar
-                                        <span class="username">{{ comedor.comienzo }}</span>
-                                    </div>
-                                </div>
-                                <div class="nav-item col-3 d-flex">
-                                    <div class="comment-text comment-text d-flex flex-column">
-                                        Localidad
-                                        <span class="username">{{ comedor.localidad__nombre|default_if_none:"-" }}</span>
-                                    </div>
-                                </div>
-                                <div class="nav-item col-3">
-                                    <div class="comment-text comment-text d-flex flex-column">
-                                        Codigo postal
-                                        <span class="username">{{ comedor.codigo_postal }}</span>
-                                    </div>
-                                </div>
-                                <div class="nav-item col-3 ">
-                                    <div class="comment-text comment-text d-flex flex-column">
-                                        Entre calles
-                                        <span class="username">{{ comedor.entre_calle_1 | default_if_none:"-" }} y {{ comedor.entre_calle_2 | default_if_none:"-" }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title font-weight-bold mr-3 pt-1">Referente</h3>
-                            <div class="card-tools">
-                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                    <i class="fas fa-minus"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="card-body card-comments p-0 pb-1">
-                            <div class="nav nav-pills row my-3">
-                                <div class="nav-item col-3 d-flex">
-                                    <div class="comment-text comment-text d-flex flex-column">
-                                        Nombre completo
-                                        <span class="username">{{ comedor.referente__nombre }} {{ comedor.referente__apellido }}</span>
-                                    </div>
-                                </div>
-                                <div class="nav-item col-3 d-flex">
-                                    <div class="comment-text comment-text d-flex flex-column">
-                                        Numero de contacto
-                                        <span class="username">{{ comedor.referente__celular | default_if_none:"-" }}</span>
-                                    </div>
-                                </div>
-                                <div class="nav-item col-3 d-flex">
-                                    <div class="comment-text comment-text d-flex flex-column">
-                                        Mail de contacto
-                                        <span class="username"><a href="mailto:{{ relevamiento.comedor__referente__mail }}">{{ comedor.referente__mail | default_if_none:"-" }}</a></span>
-                                    </div>
-                                </div>
-                                <div class="nav-item col-3 d-flex">
-                                    <div class="comment-text comment-text d-flex flex-column">
-                                        Documento
-                                        <span class="username">{{ comedor.referente__documento | default_if_none:"-" }}</span>
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="row">
+                                                <div class="nav-item col-4">
+                                                    <div class="comment-text comment-text d-flex flex-column">
+                                                        Calle
+                                                        <span class="username">{{ comedor.calle }}</span>
+                                                    </div>
+                                                </div>
+                                                <div class="nav-item col-4">
+                                                    <div class="comment-text comment-text d-flex flex-column">
+                                                        Número
+                                                        <span class="username">{{ comedor.numero }}</span>
+                                                    </div>
+                                                </div>
+                                                <div class="nav-item col-4 ">
+                                                    <div class="comment-text comment-text d-flex flex-column">
+                                                        Entre calles
+                                                        <span class="username">{{ comedor.entre_calle_1 | default_if_none:"-" }} y {{ comedor.entre_calle_2 | default_if_none:"-" }}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -176,14 +150,12 @@
             </div>
         </div>
     </div>
-    
     <div class="row">
         <div class="col-6">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title font-weight-bold mr-3 pt-1">Relevamientos</h3>
+                    <h3 class="card-title font-weight-bold mr-3 pt-1">Referente</h3>
                     <div class="card-tools">
-                        <a href="{% url 'relevamiento_crear' comedor.id %}" class="mx-3">Agregar</a>
                         <button type="button" class="btn btn-tool" data-card-widget="collapse">
                             <i class="fas fa-minus"></i>
                         </button>
@@ -191,16 +163,57 @@
                 </div>
                 <div class="card-body card-comments p-0 pb-1">
                     <div class="nav nav-pills row my-3">
-                        {% for relevamiento in relevamientos %}
-                            <div class="col-6 d-flex">
-                                <a href="{% url 'relevamiento_detalle' comedor.id relevamiento.id %}">{{ relevamiento.id }} - {{ relevamiento.fecha_visita }}</a>
+                        <div class="nav-item col-3 d-flex">
+                            <div class="comment-text comment-text d-flex flex-column">
+                                Nombre completo
+                                <span class="username">{{ comedor.referente__nombre }} {{ comedor.referente__apellido }}</span>
                             </div>
-                        {% endfor %}
+                        </div>
+                        <div class="nav-item col-3 d-flex">
+                            <div class="comment-text comment-text d-flex flex-column">
+                                Numero de contacto
+                                <span class="username">{{ comedor.referente__celular | default_if_none:"-" }}</span>
+                            </div>
+                        </div>
+                        <div class="nav-item col-3 d-flex">
+                            <div class="comment-text comment-text d-flex flex-column">
+                                Mail de contacto
+                                <span class="username"><a href="mailto:{{ relevamiento.comedor__referente__mail }}">{{ comedor.referente__mail | default_if_none:"-" }}</a></span>
+                            </div>
+                        </div>
+                        <div class="nav-item col-3 d-flex">
+                            <div class="comment-text comment-text d-flex flex-column">
+                                Documento
+                                <span class="username">{{ comedor.referente__documento | default_if_none:"-" }}</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-6">
+            <div class="col-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title font-weight-bold mr-3 pt-1">Relevamientos</h3>
+                        <div class="card-tools">
+                            <a href="{% url 'relevamiento_crear' comedor.id %}" class="mx-3">Agregar</a>
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body card-comments p-0 pb-1">
+                        <div class="nav nav-pills row my-3">
+                            {% for relevamiento in relevamientos %}
+                                <div class="col-6 d-flex">
+                                    <a href="{% url 'relevamiento_detalle' comedor.id relevamiento.id %}">{{ relevamiento.id }} - {{ relevamiento.fecha_visita }}</a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <div class="col-12">
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title font-weight-bold mr-3 pt-1">Observaciones</h3>
