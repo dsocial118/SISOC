@@ -525,6 +525,7 @@ class EstadoDerivacion(models.Model):
 
 class VinculoFamiliar(models.Model):
     vinculo = models.CharField(max_length=255)
+    inverso = models.CharField(max_length=255)
 
     def __str__(self):
         return str(self.vinculo)

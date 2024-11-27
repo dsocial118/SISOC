@@ -1,3 +1,4 @@
+import os
 from datetime import date, timedelta
 
 from django.core.cache import cache
@@ -11,9 +12,12 @@ from legajos.models import EstadoDerivacion, LegajoAlertas, Legajos, LegajosDeri
 
 
 def table_exists(table_name):
+    es_produccion = os.getenv("DATABASE_NAME") == 'production'
     with connection.cursor() as cursor:
-        cursor.execute(f"SHOW TABLES LIKE '{table_name}'")
-        return cursor.fetchone() is not None
+        if es_produccion:
+            cursor.execute(f"SHOW TABLES LIKE '{table_name}'")
+            return cursor.fetchone() is not None
+        return False
 
 
 today = date.today()

@@ -667,7 +667,14 @@ class LegajosCreateView(PermisosMixin, CreateView):
     permission_required = ROL_ADMIN
     model = Legajos
     form_class = LegajosForm
-
+    def form_invalid(self, form):
+        print("form.errors", form.errors)
+        messages.error(
+            self.request,
+            "Se produjo un error al crear el legajo. Por favor, verifique los datos ingresados.",
+        )
+        return super().form_invalid(form)
+    
     def form_valid(self, form):
         legajo = form.save(commit=False)
 
@@ -824,7 +831,7 @@ class LegajosGrupoFamiliarCreateView(CreateView):
         pk = self.kwargs["pk"]
         vinculo = form.cleaned_data["vinculo"]
         conviven = form.cleaned_data["conviven"]
-        estado_relacion = form.cleaned_data["estado_relacion"]
+        estado_relacion = form.cleaned_data["estado_relacion"].id
         cuidador_principal = form.cleaned_data["cuidador_principal"]
 
         # Crea el objeto Legajos
@@ -843,35 +850,26 @@ class LegajosGrupoFamiliarCreateView(CreateView):
             )
 
         # Crea el objeto LegajoGrupoFamiliar con los valores del formulario
-        vinculo_data = VinculoFamiliar.get(vinculo)
-        if not vinculo_data:
-            return messages.error(self.request, "Vinculo inválido.")
-        vinculo_instance = VinculoFamiliar.objects.get(vinculo=vinculo_data["vinculo"])
-        # vinculo_inverso_instance = VinculoFamiliar.objects.get(
-        # vinculo=vinculo_data["vinculo_inverso"])
-        estado_relacion_instance = EstadoRelacion.objects.get(pk=estado_relacion)
-        # crea la relacion de grupo familiar
-        legajo_principal = Legajos.objects.get(id=pk)
+
         try:
+            vinculo_instance = VinculoFamiliar.objects.get(vinculo=vinculo)
+            estado_relacion_instance = EstadoRelacion.objects.get(pk=estado_relacion)
+            legajo_principal = Legajos.objects.get(id=pk)
             LegajoGrupoFamiliar.objects.create(
                 fk_legajo_1=legajo_principal,
                 fk_legajo_2=nuevo_legajo,
                 vinculo=vinculo_instance,
-                vinculo_inverso=vinculo_data["vinculo_inverso"],
-                conviven=conviven,
+                vinculo_inverso=vinculo_instance.inverso,
                 estado_relacion=estado_relacion_instance,
+                conviven=conviven,
                 cuidador_principal=cuidador_principal,
             )
 
         except Exception as e:
-            return messages.error(
-                self.request,
-                f"Verifique que no exista un legajo con ese DNI y NÚMERO. Error: {e}",
-            )
+            messages.error(self.request, f"Error al crear el familiar. Error: {e}")
+            return redirect(self.request.path_info)
 
         messages.success(self.request, "Familiar agregado correctamente.")
-        # Redireccionar a la misma página después de realizar la acción con éxito
-
         return HttpResponseRedirect(self.request.path_info)
 
 
@@ -904,7 +902,7 @@ def busqueda_familiares(request):
         & (Q(apellido__icontains=busqueda) | Q(documento__icontains=busqueda))
     ).exclude(id__in=legajos_asociados_ids)
 
-    if len(familiares) > 0 and busqueda:
+    if familiares.exists() and busqueda:
         paginator = Paginator(familiares, paginate_by)
         try:
             page_obj = paginator.page(page_number)
@@ -919,9 +917,9 @@ def busqueda_familiares(request):
                 "nombre": familiar.nombre,
                 "apellido": familiar.apellido,
                 "documento": familiar.documento,
-                "tipo_doc": familiar.tipo_doc,
+                "tipo_doc": familiar.tipo_doc.tipo if familiar.tipo_doc else None,
                 "fecha_nacimiento": familiar.fecha_nacimiento,
-                "sexo": familiar.sexo,
+                "sexo": familiar.sexo.sexo if familiar.sexo else None,
                 # Otros campos
             }
             for familiar in page_obj
@@ -964,17 +962,10 @@ class CreateGrupoFamiliar(View):
         conviven = request.GET.get("conviven", None)
         cuidador_principal = request.GET.get("cuidador_principal", None)
         obj = None
-        vinculo_data = VinculoFamiliar.get(vinculo)
+        vinculo_instance = VinculoFamiliar.objects.get(pk=vinculo)
 
-        if not vinculo_data:
+        if not vinculo_instance:
             return messages.error(self.request, "Vinculo inválido.")
-        try:
-            vinculo_instance = VinculoFamiliar.objects.get(
-                vinculo=vinculo_data["vinculo"]
-            )
-        except VinculoFamiliar.DoesNotExist:
-            return JsonResponse({"error": "VínculoFamiliar no encontrado"}, status=400)
-
         try:
             estado_relacion_instance = EstadoRelacion.objects.get(pk=estado_relacion)
         except EstadoRelacion.DoesNotExist:
@@ -984,7 +975,7 @@ class CreateGrupoFamiliar(View):
             fk_legajo_1_id=fk_legajo_1,
             fk_legajo_2_id=fk_legajo_2,
             vinculo=vinculo_instance,
-            vinculo_inverso=vinculo_data["vinculo_inverso"],
+            vinculo_inverso=vinculo_instance.inverso,
             estado_relacion=estado_relacion_instance,
             conviven=conviven,
             cuidador_principal=cuidador_principal,

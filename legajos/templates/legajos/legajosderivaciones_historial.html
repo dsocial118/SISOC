@@ -1,10 +1,7 @@
-{% extends "includes/base.html" %};
-{% load static %}
-;
-{% block title %}Historial de derivaciones{% endblock %}
-;
-{% block titulo-pagina %}Historial de derivaciones{% endblock %}
-;
+{% extends "includes/main.html" %};
+{% load static %};
+{% block title %}Historial de derivaciones{% endblock %};
+{% block titulo-pagina %}Historial de derivaciones{% endblock %};
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
         <li class="breadcrumb-item">
@@ -15,10 +12,8 @@
         </li>
         <li class="breadcrumb-item active">Derivaciones</li>
     </ol>
-{% endblock %}
-;
-{% block menu-adicional %}{% endblock %}
-;
+{% endblock %};
+{% block menu-adicional %}{% endblock %};
 {% block content %}
     <div class="row">
         <!-- botones -->
@@ -129,6 +124,5 @@
         <!-- /.col -->
     </div>
     <!-- /.row -->
-{% endblock %}
-;
+{% endblock %};
 {% block customJS %}{% endblock %}
