@@ -131,14 +131,3 @@ border-left-color: #fb4733 !important;
 }
 
 
-/* Custom para relevamiento_detail */
-.relevamiento-container .card{
-  min-height: 95% !important;
-}
-
-/* Custom para comedores_detail */
-
-.card-informacion .nav-item
-{
-  margin-bottom: 1rem !important;
-}
