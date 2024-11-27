@@ -1,0 +1,80 @@
+{% extends "includes/base.html" %}
+{% load static crispy_forms_tags %}
+;
+{% block title %}Comedores{% endblock %}
+{% block titulo-pagina %}Comedores{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right px-3">
+        <li class="breadcrumb-item">
+            <a href="{% url 'legajos_listar' %}">Comedores</a>
+        </li>
+        {% if request.resolver_match.url_name == "comedor_editar" %}
+            <li class="breadcrumb-item">
+                <a href="{% url 'comedor_detalle' comedor.id %}">{{ comedor }}</a>
+            </li>
+            <li class="breadcrumb-item active">Editar</li>
+        {% else %}
+            <li class="breadcrumb-item active">Agregar</li>
+        {% endif %}
+    </ol>
+{% endblock %}
+;
+{% block content %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card card-primary card-outline">
+                <div class="bs-stepper">
+                    <div class="card-header mb-3">
+                        <h3 class="card-title">Agregar Comedor/Merendero</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-row justify-content-center">
+                            <form method="post" class="w-100">
+                                {% csrf_token %}
+                                <div class="form-group row">
+                                    <div class="col-6">{{ form.nombre|as_crispy_field }}</div>
+                                    <div class="col-6">{{ form.comienzo|as_crispy_field }}</div>
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col-4">{{ form.provincia|as_crispy_field }}</div>
+                                    <div class="col-4">{{ form.municipio|as_crispy_field }}</div>
+                                    <div class="col-4">{{ form.localidad|as_crispy_field }}</div>
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col-4">{{ form.partido|as_crispy_field }}</div>
+                                    <div class="col-4">{{ form.barrio|as_crispy_field }}</div>
+                                    <div class="col-4">{{ form.codigo_postal|as_crispy_field }}</div>
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col-3">{{ form.calle|as_crispy_field }}</div>
+                                    <div class="col-3">{{ form.numero|as_crispy_field }}</div>
+                                    <div class="col-3">{{ form.entre_calle_1|as_crispy_field }}</div>
+                                    <div class="col-3">{{ form.entre_calle_2|as_crispy_field }}</div>
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col-4">{{ referente_form.nombre|as_crispy_field }}</div>
+                                    <div class="col-4">{{ referente_form.apellido|as_crispy_field }}</div>
+                                    <div class="col-4">{{ referente_form.mail|as_crispy_field }}</div>
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col-6">{{ referente_form.celular|as_crispy_field }}</div>
+                                    <div class="col-6">{{ referente_form.documento|as_crispy_field }}</div>
+                                </div>
+                                <button class="btn btn-primary mx-1" type="submit">Confirmar</button>
+                                <a class='btn btn-secondary print mr-1 d-none d-sm-inline'>Imprimir</a>
+                                <a href='#' onclick='window.history.back();' class='btn btn-secondary'>Cancelar</a>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block customJS %}
+    <script>
+        var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
+        var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
+    </script>
+    <script src="{% static 'custom/js/comedorform.js' %}"></script>
+{% endblock %}

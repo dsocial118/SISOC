@@ -1,0 +1,30 @@
+[
+    {
+        "model": "comedores.frecuenciarecepcionrecursos",
+        "pk": 1,
+        "fields": {
+            "nombre": "1 vez por semana"
+        }
+    },
+    {
+        "model": "comedores.frecuenciarecepcionrecursos",
+        "pk": 2,
+        "fields": {
+            "nombre": "2 a 4 veces por mes"
+        }
+    },
+    {
+        "model": "comedores.frecuenciarecepcionrecursos",
+        "pk": 3,
+        "fields": {
+            "nombre": "5 o mas veces por mes"
+        }
+    },
+    {
+        "model": "comedores.frecuenciarecepcionrecursos",
+        "pk": 4,
+        "fields": {
+            "nombre": "Sin frecuencia específica"
+        }
+    }
+]

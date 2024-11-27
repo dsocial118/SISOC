@@ -13,6 +13,11 @@ from configuraciones.models import (
     PlanesSociales,
     Programas,
 )
+from configuraciones.models import Provincia
+from configuraciones.models import Municipio
+from configuraciones.models import Departamento
+from configuraciones.models import Localidad
+from configuraciones.models import Asentamiento
 from usuarios.models import User, Usuarios
 
 # Modelo para choices de dimension educacion
@@ -577,101 +582,6 @@ class Importancia(models.Model):
 # fin de modelo para choices de dimension trabajo y salud
 
 
-class LegajoProvincias(models.Model):
-    """
-    Guardado de las provincias de los vecinos y vecinas registrados.
-    """
-
-    nombre = models.CharField(max_length=255)
-
-    def __str__(self):
-        return str(self.nombre)
-
-    class Meta:
-        ordering = ["id"]
-        verbose_name = "Provincia"
-        verbose_name_plural = "Provincia"
-
-
-class LegajoMunicipio(models.Model):
-    """
-    Guardado de los municipios de los vecinos y vecinas registrados.
-    """
-
-    nombre = models.CharField(max_length=255)
-    fk_provincia = models.ForeignKey(
-        LegajoProvincias, on_delete=models.SET_NULL, null=True, blank=True
-    )
-
-    def __str__(self):
-        return str(self.nombre)
-
-    class Meta:
-        ordering = ["id"]
-        verbose_name = "Municipio"
-        verbose_name_plural = "Municipio"
-
-
-class LegajoDepartamento(models.Model):
-    nombre = models.CharField(max_length=255)
-    fk_provincia = models.ForeignKey(
-        LegajoProvincias, on_delete=models.SET_NULL, null=True, blank=True
-    )
-
-    def __str__(self):
-        return str(self.nombre)
-
-    class Meta:
-        ordering = ["id"]
-        verbose_name = "Departamento"
-        verbose_name_plural = "Departamento"
-
-
-class LegajoLocalidad(models.Model):
-    """
-    Guardado de las localidades de los vecinos y vecinas registrados.
-    """
-
-    nombre = models.CharField(max_length=255)
-    fk_municipio = models.ForeignKey(
-        LegajoMunicipio, on_delete=models.SET_NULL, null=True, blank=True
-    )
-    fk_departamento = models.ForeignKey(
-        LegajoDepartamento, on_delete=models.SET_NULL, null=True, blank=True
-    )
-
-    def __str__(self):
-        return str(self.nombre)
-
-    class Meta:
-        verbose_name = "Localidad"
-        verbose_name_plural = "Localidad"
-
-
-class LegajoAsentamientos(models.Model):
-    """
-    Guardado de los asentamientos de los vecinos y vecinas registrados.
-    """
-
-    nombre = models.CharField(max_length=255)
-    fk_departamento = models.ForeignKey(
-        LegajoDepartamento, on_delete=models.SET_NULL, null=True, blank=True
-    )
-    fk_municipio = models.ForeignKey(
-        LegajoMunicipio, on_delete=models.SET_NULL, null=True, blank=True
-    )
-    fk_localidad = models.ForeignKey(
-        LegajoLocalidad, on_delete=models.SET_NULL, null=True, blank=True
-    )
-
-    def __str__(self):
-        return str(self.nombre)
-
-    class Meta:
-        verbose_name = "Asentamiento"
-        verbose_name_plural = "Asentamientos"
-
-
 class Legajos(models.Model):
     """
 
@@ -759,20 +669,23 @@ class Legajos(models.Model):
     creado = models.DateField(auto_now_add=True)
     modificado = models.DateField(auto_now=True)
     fk_provincia = models.ForeignKey(
-        LegajoProvincias, on_delete=models.SET_NULL, null=True, blank=True
+        Provincia, on_delete=models.SET_NULL, null=True, blank=True
     )
     fk_municipio = models.ForeignKey(
-        LegajoMunicipio, on_delete=models.SET_NULL, null=True, blank=True
+        Municipio, on_delete=models.SET_NULL, null=True, blank=True
     )
     fk_localidad = models.ForeignKey(
-        LegajoLocalidad, on_delete=models.SET_NULL, null=True, blank=True
+        Localidad, on_delete=models.SET_NULL, null=True, blank=True
     )
     fk_departamento = models.ForeignKey(
-        LegajoDepartamento, on_delete=models.SET_NULL, null=True, blank=True
+        Departamento, on_delete=models.SET_NULL, null=True, blank=True
     )
     fk_asentamiento = models.ForeignKey(
-        LegajoAsentamientos, on_delete=models.SET_NULL, null=True, blank=True
+        Asentamiento, on_delete=models.SET_NULL, null=True, blank=True
     )
+    cuil = models.BigIntegerField(null=True, blank=True)
+    _id = models.CharField(max_length=255, null=True, blank=True)
+    cuit = models.BigIntegerField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.apellido}, {self.nombre}"
@@ -1211,21 +1124,21 @@ class DimensionEducacion(models.Model):
     )
     # Nuevos campos dimencion estudio
     provinciaInstitucion = models.ForeignKey(
-        LegajoProvincias,
+        Provincia,
         on_delete=models.SET_NULL,
         verbose_name="Provincia de la institucion",
         null=True,
         blank=True,
     )
     localidadInstitucion = models.ForeignKey(
-        LegajoLocalidad,
+        Localidad,
         on_delete=models.SET_NULL,
         verbose_name="Localidad de la institucion",
         null=True,
         blank=True,
     )
     municipioInstitucion = models.ForeignKey(
-        LegajoMunicipio,
+        Municipio,
         on_delete=models.SET_NULL,
         verbose_name="Municipio de la institucion",
         null=True,

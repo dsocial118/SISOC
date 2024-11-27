@@ -1,0 +1,23 @@
+[
+    {
+        "model": "comedores.cantidadcolaboradores",
+        "pk": 1,
+        "fields": {
+            "nombre": "1 a 3"
+        }
+    },
+    {
+        "model": "comedores.cantidadcolaboradores",
+        "pk": 2,
+        "fields": {
+            "nombre": "4 a 7"
+        }
+    },
+    {
+        "model": "comedores.cantidadcolaboradores",
+        "pk": 3,
+        "fields": {
+            "nombre": "8 o más"
+        }
+    }
+]

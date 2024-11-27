@@ -1,0 +1,62 @@
+{% extends "includes/base.html" %};
+{% load static %}
+;
+{% block title %}Observacion - Comedor: {{ observacion.comedor__nombre }}{% endblock %}
+;
+{% block titulo-pagina %}Observacion {{ observacion.id }} - Comedor: {{ observacion.comedor__nombre }}{% endblock %}
+;
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <div class="breadcrumb-item">
+            <a href="{% url 'comedores' %}">Comedores</a>
+        </div>
+        <div class="breadcrumb-item">
+            <a href="{% url 'comedor_detalle' observacion.comedor__id %}">{{ observacion.comedor__nombre }}</a>
+        </div>
+        <div class="breadcrumb-item active">Observacion {{ observacion.id }}</div>
+    </ol>
+{% endblock %}
+;
+{% block content %}
+    <div class="row justify-content-sm-start justify-content-between d-print-none mx-1 mb-2">
+        <a href="{% url 'observacion_editar' observacion.comedor__id observacion.id %}"
+           class="btn btn-primary mr-1">Editar</a>
+        <a href="#" class="btn btn-secondary print mr-1 d-none d-sm-inline">Imprimir</a>
+        <a href="{% url 'observacion_eliminar' observacion.comedor__id observacion.id %}"
+           class="btn btn-danger">Eliminar</a>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title font-weight-bold mr-3 pt-1">Información</h3>
+            <div class="card-tools">
+                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                    <i class="fas fa-minus"></i>
+                </button>
+            </div>
+        </div>
+        <div class="card-body card-comments p-0 pb-1">
+            <div class="nav nav-pills row my-3">
+                <div class="nav-item col-6 d-flex justify-content-center">
+                    <div class="comment-text comment-text d-flex flex-column align-items-center">
+                        Usuario observador
+                        <span class="username">{{ observacion.observador }}</span>
+                    </div>
+                </div>
+                <div class="nav-item col-6 d-flex justify-content-center">
+                    <div class="comment-text comment-text d-flex flex-column align-items-center">
+                        Fecha y hora de observacion
+                        <span class="username">{{ observacion.fecha_visita }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="nav nav-pills row my-3">
+                <div class="nav-item col-12 d-flex justify-content-center">
+                    <div class="comment-text comment-text d-flex flex-column align-items-center">
+                        Observacion
+                        <span class="username">{{ observacion.observacion }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

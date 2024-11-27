@@ -125,12 +125,17 @@ INSTALLED_APPS = [
     "multiselectfield",
     "debug_toolbar",
     "silk",
+    "rest_framework",
+    "rest_framework_api_key",
+    "corsheaders",
     # Aplicaciones propias
     "usuarios",
     "configuraciones",
     "inicio",
     "dashboard",
     "legajos",
+    "comedores",
+    "provincias",
 ]
 
 # Definición del middleware utilizado por el proyecto
@@ -148,6 +153,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "config.middlewares.xss_protection.XSSProtectionMiddleware",
     "config.middlewares.no_special_characters.NoSpecialCharactersMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
 ]
 
 # Configuración de plantillas
@@ -246,3 +252,12 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = False
 SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
+
+# Configuracion de Django Rest Framework
+REST_FRAMEWORK = {
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 10,
+}
+
+# Configuracion de CORS header
+CORS_ALLOW_ALL_ORIGINS = True

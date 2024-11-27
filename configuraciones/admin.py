@@ -21,6 +21,9 @@ from configuraciones.models import (
     TipoDeFormulario,
     TipoOrganismo,
     TurnoVacante,
+    Provincia,
+    Municipio,
+    Asentamiento,
 )
 
 
@@ -131,7 +134,10 @@ admin.site.register(SalaVacante)
 admin.site.register(TurnoVacante)
 admin.site.register(Jurisdiccion)
 admin.site.register(Circuito)
+admin.site.register(Provincia)
+admin.site.register(Municipio)
 admin.site.register(Localidad)
+admin.site.register(Asentamiento)
 admin.site.register(Barrio)
 admin.site.register(Impacto)
 admin.site.register(Dimension)

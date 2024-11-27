@@ -27,13 +27,16 @@ TODO: Agregar documentacion para la API
 ## Variables de entorno
 
 ```
-DEBUG=boolean
+DJANGO_DEBUG=boolean
 DJANGO_SECRET_KEY=string
 DJANGO_ALLOWED_HOSTS=string with hosts separated by spaces
-SQL_HOST=string
-SQL_USER=string
-SQL_PASSWORD=string
-SQL_NAME=string
+DATABASE_HOST=string
+DATABASE_USER=string
+DATABASE_PASSWORD=string
+DATABASE_NAME=string
+GESTIONAR_API_KEY=string
+GESTIONAR_API_CREAR_RELEVAMIENTO=string
+GESTIONAR_API_CREAR_COMEDOR=string
 ```
 
 ## TECNOLOGÍAS UTILIZADAS

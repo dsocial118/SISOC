@@ -27,9 +27,6 @@ from .models import (
     Grado,
     Importancia,
     Inodoro,
-    LegajoLocalidad,
-    LegajoMunicipio,
-    LegajoProvincias,
     ModoContratacion,
     MotivoNivelIncompleto,
     Nacionalidad,
@@ -53,28 +50,6 @@ from .models import (
     Turno,
     VinculoFamiliar,
 )
-
-
-@admin.register(LegajoProvincias)
-class LegajoProvinciasAdmin(admin.ModelAdmin):
-    list_display = ("nombre",)
-    search_fields = ["nombre"]
-    ordering = ["nombre"]
-
-
-@admin.register(LegajoMunicipio)
-class LegajoMunicipioAdmin(admin.ModelAdmin):
-    list_display = ("nombre",)
-    search_fields = ["nombre"]
-    ordering = ["nombre"]
-
-
-@admin.register(LegajoLocalidad)
-class LegajoLocalidadAdmin(admin.ModelAdmin):
-    list_display = ("nombre",)
-    search_fields = ["nombre"]
-    ordering = ["nombre"]
-
 
 admin.site.register(NivelEducativo)
 admin.site.register(EstadoNivelEducativo)
