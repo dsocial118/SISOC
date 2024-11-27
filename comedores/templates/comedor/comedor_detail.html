@@ -207,20 +207,21 @@
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title font-weight-bold mr-3 pt-1">Relevamientos</h3>
-                        <div class="card-tools">
-                            <a href="{% url 'relevamiento_crear' comedor.id %}" class="mx-3">Agregar</a>
-                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                <i class="fas fa-minus"></i>
-                            </button>
-                        </div>
+                        
                     </div>
-                    <div class="card-body card-comments p-0 pb-1">
-                        <div class="nav nav-pills row my-3">
+                    <div class="card-body row card-comments p-0 pb-1">
+                        <div class="nav nav-pills col-7 row my-3">
                             {% for relevamiento in relevamientos %}
-                                <div class="col-6 d-flex">
+                                <div class="col-12 d-flex">
                                     <a href="{% url 'relevamiento_detalle' comedor.id relevamiento.id %}">{{ relevamiento.id }} - {{ relevamiento.fecha_visita }}</a>
                                 </div>
                             {% endfor %}
+                        </div>
+                        <div class="card-tools col-5 d-flex justify-content-end align-items-start my-3">
+                            <a href="#" class="btn btn-primary mx-3">Ver mas</a>
+                            <a href="{% url 'relevamiento_crear' comedor.id %}" class="btn btn-primary">Agregar</a>
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            </button>
                         </div>
                     </div>
                 </div>
