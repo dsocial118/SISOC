@@ -10,7 +10,7 @@ services:
       - mysql_data:/var/lib/mysql
       - ./docker/mysql/local-dump.sql:/docker-entrypoint-initdb.d/local-dump.sql
     ports:
-      - 3307:3307
+      - 3308:3307
     expose:
       - 3307
     healthcheck:
@@ -24,7 +24,7 @@ services:
       context: .
       dockerfile: ./docker/django/Dockerfile
     ports:
-      - "8000:8000"
+      - "8001:8000"
       - "3000:3000" # Debugger
     depends_on:
       mysql:

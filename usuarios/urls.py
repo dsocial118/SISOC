@@ -5,11 +5,6 @@ from django.urls import path
 
 from usuarios.forms import MySetPasswordFormm
 from usuarios.views import (
-    GruposCreateView,
-    GruposDeleteView,
-    GruposDetailView,
-    GruposListView,
-    GruposUpdateView,
     PerfilChangePassView,
     PerfilUpdateView,
     UsuariosCreateView,
@@ -90,31 +85,5 @@ urlpatterns = [
         "administracion/perfil/cambiar_password",
         login_required(PerfilChangePassView.as_view()),
         name="cambiar_password",
-    ),
-    # Grupos de Usuarios
-    path(
-        "administracion/grupos/crear",
-        login_required(GruposCreateView.as_view()),
-        name="grupos_crear",
-    ),
-    path(
-        "administracion/grupos/listar",
-        login_required(GruposListView.as_view()),
-        name="grupos_listar",
-    ),
-    path(
-        "administracion/grupos/ver/<pk>",
-        login_required(GruposDetailView.as_view()),
-        name="grupos_ver",
-    ),
-    path(
-        "administracion/grupos/editar/<pk>",
-        login_required(GruposUpdateView.as_view()),
-        name="grupos_editar",
-    ),
-    path(
-        "administracion/grupos/eliminar/<pk>",
-        login_required(GruposDeleteView.as_view()),
-        name="grupos_eliminar",
     ),
 ]

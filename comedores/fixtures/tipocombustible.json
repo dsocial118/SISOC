@@ -1,0 +1,30 @@
+[
+    {
+        "model": "comedores.tipocombustible",
+        "pk": 1,
+        "fields": {
+            "nombre": "Gas natural"
+        }
+    },
+    {
+        "model": "comedores.tipocombustible",
+        "pk": 2,
+        "fields": {
+            "nombre": "Gas envasado"
+        }
+    },
+    {
+        "model": "comedores.tipocombustible",
+        "pk": 3,
+        "fields": {
+            "nombre": "Leña"
+        }
+    },
+    {
+        "model": "comedores.tipocombustible",
+        "pk": 4,
+        "fields": {
+            "nombre": "Otro"
+        }
+    }
+]

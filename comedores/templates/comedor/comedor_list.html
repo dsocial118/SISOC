@@ -1,0 +1,131 @@
+{% extends "includes/base.html" %};
+{% load static %}
+;
+{% block title %}Comedores{% endblock %}
+;
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'comedores' %}">Comedores</a>
+        </li>
+        <li class="breadcrumb-item active">Listar</li>
+    </ol>
+{% endblock %}
+;
+{% block content %}
+    <h2 class="text-center display-4 mb-4">Buscar Comedor/Merendero</h2>
+    <form method="GET">
+        <div class="row">
+            <div class="col-md-10 offset-md-1">
+                <div class="form-group">
+                    <div class="input-group input-group-lg">
+                        <input type="search"
+                               class="form-control form-control-lg"
+                               placeholder="Buscar por nombre, ubicación o referente"
+                               title="Ingresar nombre, ubicación o referente."
+                               name="busqueda" />
+                        <div class="input-group-append">
+                            <button type="submit" class="btn btn-lg btn-primary">
+                                <i class="fa fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+    <div class="row mt-3">
+        <div class="col-12 text-center">
+            <a href="{% url 'comedor_crear' %}"
+               class="btn btn-primary btn-lg d-block d-sm-inline mt-2 mr-2 ">Agregar</a>
+            <a href="{% url 'comedores' %}"
+               class="btn btn-secondary btn-lg d-block d-sm-inline mt-2 ">Resetear</a>
+        </div>
+    </div>
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <table class="table table-bordered table-striped projects">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Ubicacion</th>
+                                <th>Direccion</th>
+                                <th>Referente</th>
+                                <th>Numero de contacto</th>
+                                <th style="width: 15%" class="notexport">Aciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for comedor in comedores %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'comedor_detalle' comedor.id %}"
+                                           class="font-weight-bold"
+                                           title="Ver detalles">{{ comedor.nombre }}</a>
+                                    </td>
+                                    <td>
+                                        {{ comedor.provincia__nombre|default_if_none:"-" }}, {{ comedor.municipio__nombre|default_if_none:"-" }}, {{ comedor.localidad__nombre|default_if_none:"-" }}, {{ comedor.barrio|default_if_none:"-" }}
+                                    </td>
+                                    <td>{{ comedor.calle }} {{ comedor.numero }}</td>
+                                    <td>{{ comedor.referente__nombre }} {{ comedor.referente__apellido }}</td>
+                                    <td>{{ comedor.referente__celular|default_if_none:"-" }}</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'comedor_detalle' comedor.id %}"
+                                               class="btn btn-primary btn-sm ver">Ver</a>
+                                            <a href="{% url 'comedor_editar' comedor.id %}"
+                                               class="btn btn-primary btn-sm editar">Editar</a>
+                                            <a href="{% url 'comedor_eliminar' comedor.id %}"
+                                               class="btn btn-danger btn-sm eliminar">Eliminar</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% if is_paginated %}
+                        <div class="mt-2">
+                            <ul class="pagination">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ page_obj.previous_page_number }}"
+                                           class="page-link">Volver</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <a href="#" class="page-link">Volver</a>
+                                    </li>
+                                {% endif %}
+                                {% for i in page_range %}
+                                    {% if i == '…' %}
+                                        <li class="page-item disabled">
+                                            <a href="#" class="page-link">…</a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item {% if page_obj.number == i %}active{% endif %}">
+                                            <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ i }}"
+                                               class="page-link">{{ i }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ page_obj.next_page_number }}"
+                                           class="page-link">Continuar</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <a href="#" class="page-link">Continuar</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block customJS %}{% endblock %}

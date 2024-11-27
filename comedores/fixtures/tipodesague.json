@@ -1,0 +1,23 @@
+[
+    {
+        "model": "comedores.tipodesague",
+        "pk": 1,
+        "fields": {
+            "nombre": "Cloaca"
+        }
+    },
+    {
+        "model": "comedores.tipodesague",
+        "pk": 2,
+        "fields": {
+            "nombre": "Pozo ciego"
+        }
+    },
+    {
+        "model": "comedores.tipodesague",
+        "pk": 3,
+        "fields": {
+            "nombre": "Letrina"
+        }
+    }
+]

@@ -1,0 +1,16 @@
+[
+    {
+        "model": "comedores.tiporecurso",
+        "pk": 1,
+        "fields": {
+            "nombre": "Transferencia monetaria"
+        }
+    },
+    {
+        "model": "comedores.tiporecurso",
+        "pk": 2,
+        "fields": {
+            "nombre": "Mercadería"
+        }
+    }
+]
