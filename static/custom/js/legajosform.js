@@ -1,7 +1,6 @@
 
 
 document.addEventListener('DOMContentLoaded', function () {
-    document.getElementById('id_nacionalidad').classList.add('select2');
 
     document.getElementById('id_fk_provincia').addEventListener('change', function () {
         var url = ajaxLoadMunicipiosUrl;  // Obtén la URL de la vista

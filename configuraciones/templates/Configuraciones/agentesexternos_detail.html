@@ -1,9 +1,7 @@
-{% extends "includes/base.html" %}
+{% extends "includes/main.html" %}
 {% load static %}
-{% block title %}Agentes Externos{% endblock %}
-;
-{% block titulo-pagina %}Agentes Externos{% endblock %}
-;
+{% block title %}Agentes Externos{% endblock %};
+{% block titulo-pagina %}Agentes Externos{% endblock %};
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right ">
         <li class="breadcrumb-item">Configuraciones</li>
@@ -12,8 +10,7 @@
         </li>
         <li class="breadcrumb-item active">{{ object }}</li>
     </ol>
-{% endblock %}
-;
+{% endblock %};
 {% load crispy_forms_tags %}
 {% block content %}
     <div class="row">

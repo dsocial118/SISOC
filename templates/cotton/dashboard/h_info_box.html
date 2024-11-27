@@ -1,0 +1,12 @@
+<div class="col-12 col-sm-6 col-md-3">
+    <div class="info-box"> 
+        <span class="info-box-icon text-bg-{{color}} shadow-sm"> 
+            {% comment %} <i class="fas fa-address-card"></i>  {% endcomment %}
+            {{slot}}
+        </span>
+        <div class="info-box-content"> 
+            <span class="info-box-text-sm">{{titulo}}</span> 
+            <span class="info-box-number">{{valor|default_if_none:'No implementado'}}</span> 
+        </div>
+    </div>
+</div>

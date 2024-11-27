@@ -1,10 +1,7 @@
-{% extends "includes/base.html" %};
-{% load static %}
-;
-{% block title %}Vista de detalle{% endblock %}
-;
-{% block titulo-pagina %}Derivaciones{% endblock %}
-;
+{% extends "includes/main.html" %};
+{% load static %};
+{% block title %}Vista de detalle{% endblock %};
+{% block titulo-pagina %}Derivaciones{% endblock %};
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
         <li class="breadcrumb-item">
@@ -15,10 +12,8 @@
         </li>
         <li class="breadcrumb-item active">Detalle</li>
     </ol>
-{% endblock %}
-;
-{% block menu-adicional %}{% endblock %}
-;
+{% endblock %};
+{% block menu-adicional %}{% endblock %};
 {% block content %}
     <!-- card-info -->
     <div class="row">
@@ -161,6 +156,5 @@
                class="btn btn-secondary">Volver</a>
         </div>
     </div>
-{% endblock %}
-;
+{% endblock %};
 {% block customJS %}{% endblock %}

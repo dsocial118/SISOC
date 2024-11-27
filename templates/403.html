@@ -1,13 +1,9 @@
-{% extends "includes/base.html" %};
+{% extends "includes/main.html" %};
 {% load static %}
-{% block title %}Error 403{% endblock %}
-;
-{% block titulo-pagina %}{% endblock %}
-;
-{% block breadcrumb %}{% endblock %}
-;
-{% block menu-adicional %}{% endblock %}
-;
+{% block title %}Error 403{% endblock %};
+{% block titulo-pagina %}{% endblock %};
+{% block breadcrumb %}{% endblock %};
+{% block menu-adicional %}{% endblock %};
 {% block content %}
     <div class="error-page align-items-center">
         <h2 class="headline text-info">403</h2>
@@ -22,7 +18,7 @@
                 </div>
                 <div class="mt-2">
                     Mientras tanto, puede
-                    <a href="{% url 'legajos_listar' %}">volver al inicio</a>
+                    <a href="{% url 'dashboard' %}">volver al inicio</a>
                     o intentar usar el buscador de menú.
                 </p>
                 <form class="search-form" method="GET" action="{% url 'busqueda_menu' %}">

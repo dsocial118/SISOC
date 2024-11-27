@@ -1,4 +1,4 @@
-{% extends "includes/base.html" %}
+{% extends "includes/main.html" %}
 {% load static %}
 {% block title %}Alertas{% endblock %}
 {% block titulo-pagina %}Dimensiones{% endblock %}
@@ -147,11 +147,11 @@
                         <dd class="col-sm-8">
                             Posee Agua caliente
                         </dd>
-                        <dt class="col-sm-4">{{ object.dimensionvivienda.hay_agua_caliente|default_if_none:"-" }}</dt>
+                        <dt class="col-sm-4">{{ object.dimensionvivienda.hay_agua_caliente|yesno:'Sí,No,-' }}</dt>
                         <dd class="col-sm-8">
                             Riesgo de desmoronamiento
                         </dd>
-                        <dt class="col-sm-4">{{ object.dimensionvivienda.hay_desmoronamiento|default_if_none:"-" }}</dt>
+                        <dt class="col-sm-4">{{ object.dimensionvivienda.hay_desmoronamiento|yesno:'Sí,No,-' }}</dt>
                         <dd class="col-sm-8">
                             La vivienda está ubicada...
                         </dd>
@@ -159,15 +159,15 @@
                         <dd class="col-sm-8">
                             Posee Celular
                         </dd>
-                        <dt class="col-sm-4">{{ object.dimensionvivienda.PoseenCelular|default_if_none:"-" }}</dt>
+                        <dt class="col-sm-4">{{ object.dimensionvivienda.PoseenCelular|yesno:'Sí,No,-' }}</dt>
                         <dd class="col-sm-8">
                             Posee PC
                         </dd>
-                        <dt class="col-sm-4">{{ object.dimensionvivienda.PoseenPC|default_if_none:"-" }}</dt>
+                        <dt class="col-sm-4">{{ object.dimensionvivienda.PoseenPC|yesno:'Sí,No,-' }}</dt>
                         <dd class="col-sm-8">
                             Posee Internet
                         </dd>
-                        <dt class="col-sm-4">{{ object.dimensionvivienda.Poseeninternet|default_if_none:"-" }}</dt>
+                        <dt class="col-sm-4">{{ object.dimensionvivienda.Poseeninternet|yesno:'Sí,No,-' }}</dt>
                         <dd class="col-sm-8">
                             ¿Que utilizan principalmente para cocinar?
                         </dd>
@@ -342,7 +342,7 @@
                         <dd class="col-sm-8">
                             ¿Recibe Plan Social?
                         </dd>
-                        <dt class="col-sm-4">{{ object.dimensioneconomia.recibe_plan|default_if_none:"-" }}</dt>
+                        <dt class="col-sm-4">{{ object.dimensioneconomia.recibe_plan|yesno:'Sí,No,-' }}</dt>
                         <dd class="col-sm-8">
                             Planes sociales que recibe
                         </dd>
@@ -371,7 +371,7 @@
                             ¿Actualmente realizás alguna actividad laboral, productiva o
                             comunitaria?
                         </dd>
-                        <dt class="col-sm-4">{{ object.dimensiontrabajo.tiene_trabajo|default_if_none:"-" }}</dt>
+                        <dt class="col-sm-4">{{ object.dimensiontrabajo.tiene_trabajo|yesno:'Sí,No,-' }}</dt>
                         <dd class="col-sm-8">
                             Ocupación
                         </dd>
@@ -399,7 +399,7 @@
                         <dd class="col-sm-8">
                             ¿Buscaste trabajo en los últimos 30 días?
                         </dd>
-                        <dt class="col-sm-4">{{ object.dimensiontrabajo.busquedaLaboral|default_if_none:"-" }}</dt>
+                        <dt class="col-sm-4">{{ object.dimensiontrabajo.busquedaLaboral|yesno:'Sí,No,-' }}</dt>
                         <dd class="col-sm-8">
                             ¿Cuánto hace que buscás trabajo?
                         </dd>
@@ -411,7 +411,7 @@
                         <dd class="col-sm-8">
                             ¿Conviviente trabaja?
                         </dd>
-                        <dt class="col-sm-4">{{ object.dimensiontrabajo.conviviente_trabaja|default_if_none:"-" }}</dt>
+                        <dt class="col-sm-4">{{ object.dimensiontrabajo.conviviente_trabaja|yesno:'Sí,No,-' }}</dt>
                         <dd class="col-12 mt-3">
                             Observaciones
                         </dd>

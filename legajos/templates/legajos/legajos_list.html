@@ -1,11 +1,8 @@
-{% extends "includes/base.html" %};
-{% load static %}
-;
+{% extends "includes/main.html" %};
+{% load static %};
 {% block head %}{% endblock %}
-{% block title %}Legajos{% endblock %}
-;
-{% block titulo-pagina %}{% endblock %}
-;
+{% block title %}Legajos{% endblock %};
+{% block titulo-pagina %}{% endblock %};
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
         <li class="breadcrumb-item">
@@ -13,10 +10,8 @@
         </li>
         <li class="breadcrumb-item active">Listar</li>
     </ol>
-{% endblock %}
-;
-{% block menu-adicional %}{% endblock %}
-;
+{% endblock %};
+{% block menu-adicional %}{% endblock %};
 {% block content %}
     <h2 class="text-center display-4 mb-4">Buscar Ciudadano</h2>
     <form method="GET">
@@ -29,11 +24,9 @@
                                placeholder="Buscar"
                                title="Ingresar DNI o apellido."
                                name="busqueda" />
-                        <div class="input-group-append">
-                            <button type="submit" class="btn btn-lg btn-primary">
-                                <i class="fa fa-search"></i>
-                            </button>
-                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa fa-search"></i>
+                        </button>
                     </div>
                 </div>
             </div>
