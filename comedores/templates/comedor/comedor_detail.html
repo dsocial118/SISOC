@@ -223,13 +223,10 @@
                             {% endfor %}
                         </div>
                         <div class="card-tools col-5 d-flex justify-content-end align-items-start my-3">
-                            <a href="#" class="btn btn-primary mx-3">Ver mas</a>
+                            <a href="{% url 'relevamientos' comedor.id %}" class="btn btn-primary mx-3">Ver mas</a>
                             <a href="{% url 'relevamiento_crear' comedor.id %}" class="btn btn-primary">Agregar</a>
                             <button type="button" class="btn btn-tool" data-card-widget="collapse">
                             </button>
-                        </div>
-                        <div class="row">
-                            <a href="{% url 'relevamientos' comedor.id %}" class="btn btn-primary">Ver mas</a>
                         </div>
                     </div>
                 </div>
