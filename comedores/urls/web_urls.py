@@ -11,6 +11,7 @@ from comedores.views.web_views import (
     ObservacionDeleteView,
     ObservacionDetailView,
     ObservacionUpdateView,
+    RelevamientoListView,
     RelevamientoCreateView,
     RelevamientoDeleteView,
     RelevamientoDetailView,
@@ -42,6 +43,11 @@ urlpatterns = [
         "comedores/<pk>/eliminar",
         login_required(ComedorDeleteView.as_view()),
         name="comedor_eliminar",
+    ),
+    path(
+        "comedores/<comedor_pk>/relevamiento/listar",
+        login_required(RelevamientoListView.as_view()),
+        name="relevamientos",
     ),
     path(
         "comedores/<comedor_pk>/relevamiento/crear",

@@ -136,6 +136,35 @@ class ComedorDeleteView(DeleteView):
     success_url = reverse_lazy("comedores")
 
 
+class RelevamientoListView(ListView):
+    model = Relevamiento
+    template_name = "relevamiento/relevamiento_list.html"
+    context_object_name = "relevamientos"
+
+    def get_queryset(self):
+        comedor = self.kwargs["comedor_pk"]
+        return (
+            Relevamiento.objects.filter(comedor=comedor)
+            .order_by("-fecha_visita")
+            .values(
+                "id",
+                "fecha_visita",
+            )
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["comedor"] = Comedor.objects.values(
+            "id",
+            "nombre",
+            "provincia__nombre",
+            "localidad__nombre",
+            "municipio__nombre",
+        ).get(pk=self.kwargs["comedor_pk"])
+
+        return context
+
+
 class RelevamientoCreateView(CreateView):
     model = Relevamiento
     form_class = RelevamientoForm

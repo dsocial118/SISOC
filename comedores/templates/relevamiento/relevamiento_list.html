@@ -1,0 +1,20 @@
+{% extends "includes/main.html" %};
+{% load static %}
+;
+{% block title %}Relevamiento - Comedor: {{ comedor.nombre }}{% endblock %}
+;
+{% block titulo-pagina %}
+    {{ relevamiento.comedor__nombre }}
+    <span class="ml-2 h5"> {{ comedor.nombre }} | {{ comedor.provincia__nombre }}, {{ comedor.municipio__nombre }}, {{ comedor.localidad__nombre }}</span>
+    <span class="ml-2 h5">{{ relevamiento.fecha_visita | default_if_none:"-" }}</span>
+{% endblock %}
+;
+{% block breadcrumb %}
+{% endblock %}
+;
+{% block content %}
+    {% for relevamiento in relevamientos %}
+        <a href="{% url 'relevamiento_detalle' comedor.id relevamiento.id %}">{{ relevamiento.id }} - {{ relevamiento.fecha_visita }}</a>
+    {% endfor %}
+
+{% endblock %}
