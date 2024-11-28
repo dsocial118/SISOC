@@ -198,15 +198,8 @@ DATABASES = {
             "charset": "utf8mb4",
         },
         "CONN_MAX_AGE": 300,
-    } 
-} if os.getenv("DATABASE_NAME") == 'production' else {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite",
     }
-
 }
-
 
 
 # Configuracion de logging
