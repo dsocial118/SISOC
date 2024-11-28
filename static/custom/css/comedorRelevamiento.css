@@ -1,5 +1,5 @@
 /* Custom para relevamiento_detail */
-.relevamiento-container .card{
+.relevamiento-container .card, .comedor-form .card{
     min-height: 95% !important;
     margin-bottom:1rem;
 }
@@ -13,4 +13,8 @@
   
 .card .card-body{
     margin-left: 1rem; 
+}
+
+.mb-3 {
+    margin-bottom: 1rem !important;
 }
