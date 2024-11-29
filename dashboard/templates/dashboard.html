@@ -1,35 +1,34 @@
 {% extends "includes/main.html" %};
 {% load static %}
 {% block head %}
-    <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css" />
+    <link rel="stylesheet"
+          href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css" />
     <!-- Chart -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/charts.css/dist/charts.min.css" />
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/charts.css/dist/charts.min.css" />
 {% endblock %}
-{% block title %}Dashboard{% endblock %};
-{% block titulo-pagina %}Dashboard{% endblock %};
-{% block breadcrumb %}{% endblock %};
-{% block menu-adicional %}{% endblock %};
+{% block title %}Dashboard{% endblock %}
+;
+{% block titulo-pagina %}Dashboard{% endblock %}
+;
+{% block breadcrumb %}{% endblock %}
+;
+{% block menu-adicional %}{% endblock %}
+;
 {% block content %}
-
-
-<div class="row">
-
-    <c-dashboard.h-info-box titulo='Legajos Activos' valor={{cantidad_legajos_activos}} color='primary'>
+    <div class="row">
+        <c-dashboard.h-info-box titulo='Legajos Activos' valor={{ cantidad_legajos_activos }} color='primary'>
         <i class="fas fa-address-card"></i>
-    </c-dashboard.h-info-box>
-
-    <c-dashboard.h-info-box titulo='Alarmas Activas' valor={{cantidad_legajos_con_alarmas_activas}} color='danger'>
+        </c-dashboard.h-info-box>
+        <c-dashboard.h-info-box titulo='Alarmas Activas' valor={{ cantidad_legajos_con_alarmas_activas }} color='danger'>
         <i class="fas fa-bell"></i>
-    </c-dashboard.h-info-box>
-
-    <c-dashboard.h-info-box titulo='Derivaciones Pendientes' valor={{cantidad_dv_pendientes}} color='success'>
+        </c-dashboard.h-info-box>
+        <c-dashboard.h-info-box titulo='Derivaciones Pendientes' valor={{ cantidad_dv_pendientes }} color='success'>
         <i class="fas fa-share-square"></i>
-    </c-dashboard.h-info-box>
-
-    <c-dashboard.h-info-box titulo='Benef. de Acciones Sociales' valor={{cantidad_dv_pendientes}} color='warning'>
+        </c-dashboard.h-info-box>
+        <c-dashboard.h-info-box titulo='Benef. de Acciones Sociales' valor={{ cantidad_dv_pendientes }} color='warning'>
         <i class="fas fa-handshake"></i>
-    </c-dashboard.h-info-box>
-
+        </c-dashboard.h-info-box>
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header">
@@ -53,29 +52,23 @@
         </div>
         <div class="col-md-4 pt-5">
             <c-dashboard.v-info-box titulo='Población total beneficiarios PAS' valor='No implementado' color='primary'>
-                <i class="fas fa-users"></i>
+            <i class="fas fa-users"></i>
             </c-dashboard.v-info-box>
-        
             <c-dashboard.v-info-box titulo='Población total' valor='No implementado' color='danger'>
-                <i class="fas fa-child"></i>
+            <i class="fas fa-child"></i>
             </c-dashboard.v-info-box>
-        
             <c-dashboard.v-info-box titulo='Poblacion total con NBI (censo)' valor='No implementado' color='success'>
-                <i class="fas fa-user-check"></i>
+            <i class="fas fa-user-check"></i>
             </c-dashboard.v-info-box>
-        
             <c-dashboard.v-info-box titulo='Poblacion 018 con NBI (censo)' valor='No implementado' color='warning'>
-                <i class="fas fa-child"></i>
+            <i class="fas fa-child"></i>
             </c-dashboard.v-info-box>
-        
             <c-dashboard.v-info-box titulo='Poblacion total registrada en SISOC' valor='No implementado' color='warning'>
-                <i class="fas fa-address-card"></i>
+            <i class="fas fa-address-card"></i>
             </c-dashboard.v-info-box>
-        
             <c-dashboard.v-info-box titulo='Poblacion 018 en SISOC' valor='No implementado' color='warning'>
-                <i class="fas fa-address-card"></i>
+            <i class="fas fa-address-card"></i>
             </c-dashboard.v-info-box>
-
         </div>
         <div class="col-lg-4 mt-3 ">
             <div class="card">

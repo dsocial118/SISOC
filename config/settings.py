@@ -114,8 +114,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.admindocs",
-    #Cotton
-    'django_cotton',
+    # Cotton
+    "django_cotton",
     # Librerías de terceros
     "crispy_forms",
     # "crispy_bootstrap4",

@@ -123,15 +123,11 @@ class LegajosForm(forms.ModelForm):
         if "fk_departamento" in self.data:
             try:
                 departamento_id = int(self.data.get("fk_departamento"))
-                self.fields["fk_departamento"].queryset = (
-                    Departamento.objects.filter(id=departamento_id).order_by(
-                        "nombre"
-                    )
-                )
+                self.fields["fk_departamento"].queryset = Departamento.objects.filter(
+                    id=departamento_id
+                ).order_by("nombre")
             except (ValueError, TypeError):
-                self.fields["fk_departamento"].queryset = (
-                    Departamento.objects.none()
-                )
+                self.fields["fk_departamento"].queryset = Departamento.objects.none()
 
         if "fk_asentamiento" in self.data:
             try:
@@ -694,24 +690,20 @@ class DimensionEducacionForm(forms.ModelForm):
         if "municipioInstitucion" in self.data:
             try:
                 municipio_id = int(self.data.get("municipioInstitucion"))
-                self.fields["municipioInstitucion"].queryset = (
-                    Municipio.objects.filter(id=municipio_id).order_by("nombre")
-                )
+                self.fields["municipioInstitucion"].queryset = Municipio.objects.filter(
+                    id=municipio_id
+                ).order_by("nombre")
             except (ValueError, TypeError):
-                self.fields["municipioInstitucion"].queryset = (
-                    Municipio.objects.none()
-                )
+                self.fields["municipioInstitucion"].queryset = Municipio.objects.none()
 
         if "localidadInstitucion" in self.data:
             try:
                 localidad_id = int(self.data.get("localidadInstitucion"))
-                self.fields["localidadInstitucion"].queryset = (
-                    Localidad.objects.filter(id=localidad_id).order_by("nombre")
-                )
+                self.fields["localidadInstitucion"].queryset = Localidad.objects.filter(
+                    id=localidad_id
+                ).order_by("nombre")
             except (ValueError, TypeError):
-                self.fields["localidadInstitucion"].queryset = (
-                    Localidad.objects.none()
-                )
+                self.fields["localidadInstitucion"].queryset = Localidad.objects.none()
 
     class Meta:
         model = DimensionEducacion
