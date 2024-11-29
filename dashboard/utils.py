@@ -12,7 +12,7 @@ from legajos.models import EstadoDerivacion, LegajoAlertas, Legajos, LegajosDeri
 
 
 def table_exists(table_name):
-    es_produccion = os.getenv("DATABASE_NAME") == 'production'
+    es_produccion = os.getenv("DATABASE_NAME") == "production"
     with connection.cursor() as cursor:
         if es_produccion:
             cursor.execute(f"SHOW TABLES LIKE '{table_name}'")

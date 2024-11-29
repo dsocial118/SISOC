@@ -1,0 +1,63 @@
+{% extends "includes/main.html" %};
+{% load static %}
+;
+{% block title %}Relevamiento - Comedor: {{ comedor.nombre }}{% endblock %}
+;
+{% block titulo-pagina %}
+    {{ relevamiento.comedor__nombre }}
+    <span class="ml-2 h5"> {{ comedor.nombre }} | {{ comedor.provincia__nombre }}, {{ comedor.municipio__nombre }}, {{ comedor.localidad__nombre }}</span>
+    <span class="ml-2 h5">{{ relevamiento.fecha_visita | default_if_none:"-" }}</span>
+{% endblock %}
+;
+{% block breadcrumb %}{% endblock %}
+;
+{% block content %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorRelevamiento.css' %}" />
+    <div class="row justify-content-between d-print-none mx-1 mb-3">
+        <div class="col-auto">
+            <a href="{% url 'comedores' %}" class="btn btn-secondary mr-1">Volver</a>
+        </div>
+        <div class="col-auto">
+            <a href="#" class="btn btn-secondary print mr-1 d-none d-sm-inline">Imprimir</a>
+            <a href="{% url 'comedor_editar' comedor.id %}"
+               class="btn btn-primary mr-1">Editar</a>
+            <a href="{% url 'comedor_eliminar' comedor.id %}" class="btn btn-danger">Eliminar</a>
+        </div>
+    </div>
+    <div class="row relevamiento-container">
+        <div class="col-12">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card card-informacion">
+                        <div class="card-header">
+                            <h3 class="card-title font-weight-bold mr-3 pt-1">Relevamientos</h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body card-comments p-0 pb-1">
+                            <div class="nav nav-pills row my-3">
+                                <div class="col-10">
+                                    <div class="nav-item d-flex">
+                                        <div class="comment-text comment-text d-flex flex-column">
+                                            {% for relevamiento in relevamientos %}
+                                                <a href="{% url 'relevamiento_detalle' comedor.id relevamiento.id %}">{{ relevamiento.id }} - {{ relevamiento.fecha_visita }}</a>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-2 d-flex justify-content-end align-items-start my-3">
+                                    <a href="{% url 'relevamiento_crear' comedor.id %}"
+                                       class="btn btn-primary btn-margin-right">Agregar</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

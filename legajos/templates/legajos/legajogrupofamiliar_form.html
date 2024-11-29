@@ -1,13 +1,16 @@
 {% extends "includes/main.html" %};
 {% load crispy_forms_tags %}
-{% load static %};
+{% load static %}
+;
 {% block head %}
     <!--jquery confirm-->
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/jquery-confirm/3.3.2/jquery-confirm.min.css" />
 {% endblock %}
-{% block title %}Grupo Familiar{% endblock %};
-{% block titulo-pagina %}Legajos{% endblock %};
+{% block title %}Grupo Familiar{% endblock %}
+;
+{% block titulo-pagina %}Legajos{% endblock %}
+;
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right mt-2 mr-2">
         <li class="breadcrumb-item">
@@ -18,8 +21,10 @@
         </li>
         <li class="breadcrumb-item active">Grupo familiar</li>
     </ol>
-{% endblock %};
-{% block menu-adicional %}{% endblock %};
+{% endblock %}
+;
+{% block menu-adicional %}{% endblock %}
+;
 {% block content %}
     <div class="row">
         <div class="col-md-12">
@@ -302,7 +307,8 @@
             </div>
         </div>
     </div>
-{% endblock %};
+{% endblock %}
+;
 {% block customJS %}
     <script>
     const searchUrl = "{% url 'familiares_buscar' %}";
