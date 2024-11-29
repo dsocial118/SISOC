@@ -18,13 +18,15 @@
 {% endblock %}
 ;
 {% block content %}
-    <link rel="stylesheet" href="{% static 'custom/css/comedorRelevamiento.css' %}">
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorRelevamiento.css' %}" />
     <div class="row justify-content-between d-print-none mx-1 mb-3">
         <div class="col-auto">
             <a href="{% url 'comedores' %}" class="btn btn-secondary mr-1">Volver</a>
         </div>
         <div class="col-auto">
-            <a href="{% url 'comedor_editar' comedor.id %}" class="btn btn-primary mr-1">Editar</a>
+            <a href="{% url 'comedor_editar' comedor.id %}"
+               class="btn btn-primary mr-1">Editar</a>
             <a href="#" class="btn btn-secondary print mr-1 d-none d-sm-inline">Imprimir</a>
             <a href="{% url 'comedor_eliminar' comedor.id %}" class="btn btn-danger">Eliminar</a>
         </div>
@@ -50,7 +52,9 @@
                                             <div class="nav-item d-flex">
                                                 <div class="comment-text comment-text d-flex flex-column">
                                                     <!--Imagen del comedor remplazar por la que corresponda-->
-                                                    <img src="{% static 'custom/img/default.png' %}" alt="Imagen del comedor" class="img-fluid">
+                                                    <img src="{% static 'custom/img/default.png' %}"
+                                                         alt="Imagen del comedor"
+                                                         class="img-fluid" />
                                                 </div>
                                             </div>
                                         </div>
@@ -152,11 +156,14 @@
                         </button>
                     </div>
                 </div>
-                <div class="card-body p-0" style="height: 400px;"> <!-- Define una altura fija -->
-                    <iframe 
-                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d26285617.576453168!2d-84.86622600167856!3d-36.46496148004889!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95bccaf5f5fdc667%3A0x3d2f77992af00fa8!2sArgentina!5e0!3m2!1sen!2sar!4v1714519306937!5m2!1sen!2sar" 
-                        style="border: 0; width: 100%; height: 100%;" 
-                        allowfullscreen="" loading="lazy">
+                <div class="card-body p-0" style="height: 400px;">
+                    <!-- Define una altura fija -->
+                    <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d26285617.576453168!2d-84.86622600167856!3d-36.46496148004889!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95bccaf5f5fdc667%3A0x3d2f77992af00fa8!2sArgentina!5e0!3m2!1sen!2sar!4v1714519306937!5m2!1sen!2sar"
+                            style="border: 0;
+                                   width: 100%;
+                                   height: 100%"
+                            allowfullscreen=""
+                            loading="lazy">
                     </iframe>
                 </div>
             </div>
@@ -203,34 +210,34 @@
                 </div>
             </div>
         </div>
-            <div class="col-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title font-weight-bold mr-3 pt-1">Relevamientos</h3>
-                        <div class="card-tools">
-                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                <i class="fas fa-minus"></i>
-                            </button>
-                        </div>
-                        
+        <div class="col-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title font-weight-bold mr-3 pt-1">Relevamientos</h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
                     </div>
-                    <div class="card-body row card-comments p-0 pb-1">
-                        <div class="nav nav-pills col-7 row my-3">
-                            {% for relevamiento in relevamientos %}
-                                <div class="col-12 d-flex">
-                                    <a href="{% url 'relevamiento_detalle' comedor.id relevamiento.id %}">{{ relevamiento.id }} - {{ relevamiento.fecha_visita }}</a>
-                                </div>
-                            {% endfor %}
-                        </div>
-                        <div class="card-tools col-5 d-flex justify-content-end align-items-start my-3">
-                            <a href="{% url 'relevamientos' comedor.id %}" class="btn btn-primary mx-3">Ver mas</a>
-                            <a href="{% url 'relevamiento_crear' comedor.id %}" class="btn btn-primary">Agregar</a>
-                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                            </button>
-                        </div>
+                </div>
+                <div class="card-body row card-comments p-0 pb-1">
+                    <div class="nav nav-pills col-7 row my-3">
+                        {% for relevamiento in relevamientos %}
+                            <div class="col-12 d-flex">
+                                <a href="{% url 'relevamiento_detalle' comedor.id relevamiento.id %}">{{ relevamiento.id }} - {{ relevamiento.fecha_visita }}</a>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="card-tools col-5 d-flex justify-content-end align-items-start my-3">
+                        <a href="{% url 'relevamientos' comedor.id %}"
+                           class="btn btn-primary mx-3">Ver mas</a>
+                        <a href="{% url 'relevamiento_crear' comedor.id %}"
+                           class="btn btn-primary">Agregar</a>
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse"></button>
                     </div>
                 </div>
             </div>
+        </div>
     </div>
     <div class="row relevamiento-container">
         <div class="col-12">
@@ -252,9 +259,9 @@
                         {% endfor %}
                     </div>
                     <div class="card-tools col-2 d-flex justify-content-end align-items-start my-3">
-                        <a href="{% url 'observacion_crear' comedor.id %}" class="btn btn-primary">Agregar</a>
-                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                        </button>
+                        <a href="{% url 'observacion_crear' comedor.id %}"
+                           class="btn btn-primary">Agregar</a>
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse"></button>
                     </div>
                 </div>
             </div>

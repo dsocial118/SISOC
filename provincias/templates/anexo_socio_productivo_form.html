@@ -164,8 +164,7 @@
                                         <div class="col-4">{{ linea_de_accion_form.comercializacion_fortalecimiento_unidades|as_crispy_field }}</div>
                                         <div class="col-4">{{ linea_de_accion_form.circular_fortalecimiento|as_crispy_field }}</div>
                                     </div>
-                                    <div class="form-group row">
-                                    </div>
+                                    <div class="form-group row"></div>
                                     <div class="form-group row">
                                         <div class="col-4">{{ linea_de_accion_form.circular_practicas_sostenibles|as_crispy_field }}</div>
                                         <div class="col-4">{{ linea_de_accion_form.circular_materiales_reciclados|as_crispy_field }}</div>
@@ -190,7 +189,6 @@
                                             </tr>
                                         </thead>
                                         <tbody id="presupuestos">
-                                            
                                         </tbody>
                                     </table>
                                     <button type="button"
@@ -216,7 +214,10 @@
                                                     <form id="modalForm">
                                                         <div class="form-group">
                                                             <label for="tipo_actividad">TIPO DE ACTIVIDAD PRODUCTIVA</label>
-                                                            <select name="tipo_actividad" class="form-control" id="presupuesto_select_tipo_actividad" required>
+                                                            <select name="tipo_actividad"
+                                                                    class="form-control"
+                                                                    id="presupuesto_select_tipo_actividad"
+                                                                    required>
                                                                 <option selected></option>
                                                                 <option id="1" value="Apoyo técnico para mejorar competitividad">Apoyo técnico para mejorar competitividad</option>
                                                                 <option id="2" value="Acceso a máquinas, herramientas e insumos">Acceso a máquinas, herramientas e insumos</option>
@@ -224,10 +225,18 @@
                                                                 <option id="4" value="Entrega directa según stock">Entrega directa según stock</option>
                                                                 <option id="5" value="Fortalecimiento Institucional">Fortalecimiento Institucional</option>
                                                                 <option id="6" value="Apoyo tecnológico">Apoyo tecnológico</option>
-                                                                <option id="7" value="Habilidades blandas para la Comercialización">Habilidades blandas para la Comercialización</option>
+                                                                <option id="7" value="Habilidades blandas para la Comercialización">
+                                                                    Habilidades blandas para la Comercialización
+                                                                </option>
                                                                 <option id="8" value="Desarrollo local">Desarrollo local</option>
-                                                                <option id="9" value="Fortalecimiento de la Comercialización de unidades productivas">Fortalecimiento de la Comercialización de unidades productivas</option>
-                                                                <option id="10" value="Fortalecimiento a recuperadores de base, organizaciones y sistemas locales de reciclado">Fortalecimiento a recuperadores de base, organizaciones y sistemas locales de reciclado</option>
+                                                                <option id="9"
+                                                                        value="Fortalecimiento de la Comercialización de unidades productivas">
+                                                                    Fortalecimiento de la Comercialización de unidades productivas
+                                                                </option>
+                                                                <option id="10"
+                                                                        value="Fortalecimiento a recuperadores de base, organizaciones y sistemas locales de reciclado">
+                                                                    Fortalecimiento a recuperadores de base, organizaciones y sistemas locales de reciclado
+                                                                </option>
                                                                 <option id="11" value="Implementación de prácticas sostenibles">Implementación de prácticas sostenibles</option>
                                                                 <option id="12" value="Uso de materiales reciclados">Uso de materiales reciclados</option>
                                                                 <option id="13" value="Reducción de residuos">Reducción de residuos</option>
@@ -237,7 +246,9 @@
                                                             <label for="bienes">TIPO DE BIENES/SERVICIO</label>
                                                             <select name="bienes" class="form-control" id="presupuesto_select_bienes">
                                                                 <option selected></option>
-                                                                <option class="tipo1" value="Asistencia técnica específica a través de RRHH">Asistencia técnica específica a través de RRHH</option>
+                                                                <option class="tipo1" value="Asistencia técnica específica a través de RRHH">
+                                                                    Asistencia técnica específica a través de RRHH
+                                                                </option>
                                                                 <option class="tipo2" value="Máquinas">Máquinas</option>
                                                                 <option class="tipo2" value="Herramientas">Herramientas</option>
                                                                 <option class="tipo2" value="Insumos">Insumos</option>
@@ -247,12 +258,28 @@
                                                                 <option class="tipo4" value="Entrega directa textiles">Entrega directa textiles</option>
                                                                 <option class="tipo5" value="Asesoría Contable y Asesoría Jurídica">Asesoría Contable y Asesoría Jurídica</option>
                                                                 <option class="tipo5" value="Asesoría en Administración y Costos">Asesoría en Administración y Costos</option>
-                                                                <option class="tipo5" value="Asesoría y acompañamiento en diseño e inscripción de marca">Asesoría y acompañamiento en diseño e inscripción de marca</option>
-                                                                <option class="tipo5" value="Asistencia en la confección de documentación y certificación de productos">Asistencia en la confección de documentación y certificación de productos</option>
-                                                                <option class="tipo6" value="Asesoría en redes sociales y Plataformas de Venta">Asesoría en redes sociales y Plataformas de Venta</option>
-                                                                <option class="tipo6" value="Asesoría en Marketing digital (Foto Producto - Diseño de Catálogos online)">Asesoría en Marketing digital (Foto Producto - Diseño de Catálogos online)</option>
-                                                                <option class="tipo7" value="Acompañamiento en técnicas de venta y oratoria">Acompañamiento en técnicas de venta y oratoria</option>
-                                                                <option class="tipo7" value="Acompañamiento en armado de stands y vidrieras">Acompañamiento en armado de stands y vidrieras</option>
+                                                                <option class="tipo5"
+                                                                        value="Asesoría y acompañamiento en diseño e inscripción de marca">
+                                                                    Asesoría y acompañamiento en diseño e inscripción de marca
+                                                                </option>
+                                                                <option class="tipo5"
+                                                                        value="Asistencia en la confección de documentación y certificación de productos">
+                                                                    Asistencia en la confección de documentación y certificación de productos
+                                                                </option>
+                                                                <option class="tipo6"
+                                                                        value="Asesoría en redes sociales y Plataformas de Venta">
+                                                                    Asesoría en redes sociales y Plataformas de Venta
+                                                                </option>
+                                                                <option class="tipo6"
+                                                                        value="Asesoría en Marketing digital (Foto Producto - Diseño de Catálogos online)">
+                                                                    Asesoría en Marketing digital (Foto Producto - Diseño de Catálogos online)
+                                                                </option>
+                                                                <option class="tipo7" value="Acompañamiento en técnicas de venta y oratoria">
+                                                                    Acompañamiento en técnicas de venta y oratoria
+                                                                </option>
+                                                                <option class="tipo7" value="Acompañamiento en armado de stands y vidrieras">
+                                                                    Acompañamiento en armado de stands y vidrieras
+                                                                </option>
                                                                 <option class="tipo8" value="Acceso a nuevos mercados">Acceso a nuevos mercados</option>
                                                                 <option class="tipo8" value="Participación en ferias y mercados">Participación en ferias y mercados</option>
                                                                 <option class="tipo9" value="Equipamiento">Equipamiento</option>
@@ -268,15 +295,27 @@
                                                         </div>
                                                         <div class="form-group">
                                                             <label for="nombre">NOMBRE DEL PRODUCTO O SERVICIO</label>
-                                                            <input type="text" class="form-control" id="presupuesto_nombre" name="nombre" required >
+                                                            <input type="text"
+                                                                   class="form-control"
+                                                                   id="presupuesto_nombre"
+                                                                   name="nombre"
+                                                                   required />
                                                         </div>
                                                         <div class="form-group">
                                                             <label for="cantidad">CANTIDAD A ADQUIRIR</label>
-                                                            <input type="number" class="form-control" id="presupuesto_cantidad" name="cantidad" required>
+                                                            <input type="number"
+                                                                   class="form-control"
+                                                                   id="presupuesto_cantidad"
+                                                                   name="cantidad"
+                                                                   required />
                                                         </div>
                                                         <div class="form-group">
                                                             <label for="costo">COSTO UNITARIO TOTAL</label>
-                                                            <input type="number" class="form-control" id="presupuesto_costo" name="costo" required>
+                                                            <input type="number"
+                                                                   class="form-control"
+                                                                   id="presupuesto_costo"
+                                                                   name="costo"
+                                                                   required />
                                                         </div>
                                                     </form>
                                                 </div>
@@ -300,31 +339,20 @@
                             </div>
                             <div id="step_5" class="step-content" style="display: none;">
                                 <div class="juridica-field" style="display: none;">
-                                    
                                     <div class="form-group row">
-                                        <div class="col-6">
-                                            {{ diagnostico_juridica_form.tipo_comunidad|as_crispy_field }}
-                                        </div>
+                                        <div class="col-6">{{ diagnostico_juridica_form.tipo_comunidad|as_crispy_field }}</div>
                                     </div>
                                     <div class="form-group row">
-                                        <div class="col-6">
-                                            {{ diagnostico_juridica_form.cantidad_integrantes|as_crispy_field }}
-                                        </div>
+                                        <div class="col-6">{{ diagnostico_juridica_form.cantidad_integrantes|as_crispy_field }}</div>
                                     </div>
                                     <div class="form-group row">
-                                        <div class="col-6">
-                                            {{ diagnostico_juridica_form.genero_mayoria|as_crispy_field }}
-                                        </div>
+                                        <div class="col-6">{{ diagnostico_juridica_form.genero_mayoria|as_crispy_field }}</div>
                                     </div>
                                     <div class="form-group row">
-                                        <div class="col-6">
-                                            {{ diagnostico_juridica_form.composicion_equipo|as_crispy_field }}
-                                        </div>
+                                        <div class="col-6">{{ diagnostico_juridica_form.composicion_equipo|as_crispy_field }}</div>
                                     </div>
                                     <div class="form-group row">
-                                        <div class="col-12">
-                                            {{ diagnostico_juridica_form.mision_vision|as_crispy_field }}
-                                        </div>
+                                        <div class="col-12">{{ diagnostico_juridica_form.mision_vision|as_crispy_field }}</div>
                                     </div>
                                 </div>
                                 <div class="humana-field" style="display: none;">
@@ -351,9 +379,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div id="step_6" class="step-content" style="display: none;">
-                             
-                            </div>
+                            <div id="step_6" class="step-content" style="display: none;"></div>
                             <div class="mt-3">
                                 <button id="continueButton" class="btn btn-primary mx-1" type="button">Continuar</button>
                                 <a href="{% url 'proyecto_list' %}" class="btn btn-secondary">Cancelar</a>

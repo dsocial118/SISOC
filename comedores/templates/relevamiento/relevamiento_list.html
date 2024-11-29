@@ -9,18 +9,19 @@
     <span class="ml-2 h5">{{ relevamiento.fecha_visita | default_if_none:"-" }}</span>
 {% endblock %}
 ;
-{% block breadcrumb %}
-{% endblock %}
+{% block breadcrumb %}{% endblock %}
 ;
 {% block content %}
-    <link rel="stylesheet" href="{% static 'custom/css/comedorRelevamiento.css' %}">
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorRelevamiento.css' %}" />
     <div class="row justify-content-between d-print-none mx-1 mb-3">
         <div class="col-auto">
             <a href="{% url 'comedores' %}" class="btn btn-secondary mr-1">Volver</a>
         </div>
         <div class="col-auto">
             <a href="#" class="btn btn-secondary print mr-1 d-none d-sm-inline">Imprimir</a>
-            <a href="{% url 'comedor_editar' comedor.id %}" class="btn btn-primary mr-1">Editar</a>
+            <a href="{% url 'comedor_editar' comedor.id %}"
+               class="btn btn-primary mr-1">Editar</a>
             <a href="{% url 'comedor_eliminar' comedor.id %}" class="btn btn-danger">Eliminar</a>
         </div>
     </div>
@@ -49,16 +50,14 @@
                                     </div>
                                 </div>
                                 <div class="col-2 d-flex justify-content-end align-items-start my-3">
-                                        <a href="{% url 'relevamiento_crear' comedor.id %}" class="btn btn-primary btn-margin-right">Agregar</a>
+                                    <a href="{% url 'relevamiento_crear' comedor.id %}"
+                                       class="btn btn-primary btn-margin-right">Agregar</a>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>  
-
+        </div>
     </div>
-    
-
 {% endblock %}

@@ -20,7 +20,8 @@
 {% endblock %}
 ;
 {% block content %}
-    <link rel="stylesheet" href="{% static 'custom/css/comedorRelevamiento.css' %}">
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorRelevamiento.css' %}" />
     <div class="d-flex justify-content-between mb-3">
         <div>
             <a href="{% url 'comedores' %}" class='btn btn-secondary'>Volver</a>
@@ -32,15 +33,14 @@
     </div>
     <div class="row comedor-form">
         <div class="col-12">
-        <form method="post" class="w-100">
-            <div class="card card-primary card-outline">
-                <div class="bs-stepper">
-                    <div class="card-header mb-3">
-                        <h3 class="card-title">Agregar Comedor/Merendero</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="form-row justify-content-center">
-                            
+            <form method="post" class="w-100">
+                <div class="card card-primary card-outline">
+                    <div class="bs-stepper">
+                        <div class="card-header mb-3">
+                            <h3 class="card-title">Agregar Comedor/Merendero</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-row justify-content-center">
                                 {% csrf_token %}
                                 <div class="form-group row">
                                     <div class="col-3">{{ form.nombre|as_crispy_field }}</div>
@@ -60,51 +60,49 @@
                                     <div class="col-3">{{ form.entre_calle_1|as_crispy_field }}</div>
                                     <div class="col-3">{{ form.entre_calle_2|as_crispy_field }}</div>
                                 </div>
-                                
-                            
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="card card-primary card-outline">
-                <div class="bs-stepper">
-                    <div class="card-header mb-3">
-                        <h3 class="card-title">Datos del referente del comedor/merendero</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="form-group row">
-                            <div class="col-4">{{ referente_form.nombre|as_crispy_field }}</div>
-                            <div class="col-4">{{ referente_form.apellido|as_crispy_field }}</div>
-                            <div class="col-4">{{ referente_form.mail|as_crispy_field }}</div>
-                        </div>
-                        <div class="form-group row">
-                            <div class="col-6">{{ referente_form.celular|as_crispy_field }}</div>
-                            <div class="col-6">{{ referente_form.documento|as_crispy_field }}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="card card-primary card-outline">
-                <div class="bs-stepper">
-                    <div class="card-header mb-3">
-                        <h3 class="card-title">Imágenes</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="d-flex justify-content-end">
-                            <div class="card-tools d-flex align-items-start my-3">
-                                <a href="#" class="btn btn-primary">Agregar</a>
-                                <button type="button" class="btn btn-tool" data-card-widget="collapse"></button>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="d-flex justify-content-end">
-                <button class="btn btn-success mx-1" type="submit">Guardar comedor</button>
-            </div>
-        </form>
+                <div class="card card-primary card-outline">
+                    <div class="bs-stepper">
+                        <div class="card-header mb-3">
+                            <h3 class="card-title">Datos del referente del comedor/merendero</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group row">
+                                <div class="col-4">{{ referente_form.nombre|as_crispy_field }}</div>
+                                <div class="col-4">{{ referente_form.apellido|as_crispy_field }}</div>
+                                <div class="col-4">{{ referente_form.mail|as_crispy_field }}</div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="col-6">{{ referente_form.celular|as_crispy_field }}</div>
+                                <div class="col-6">{{ referente_form.documento|as_crispy_field }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card card-primary card-outline">
+                    <div class="bs-stepper">
+                        <div class="card-header mb-3">
+                            <h3 class="card-title">Imágenes</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-end">
+                                <div class="card-tools d-flex align-items-start my-3">
+                                    <a href="#" class="btn btn-primary">Agregar</a>
+                                    <button type="button" class="btn btn-tool" data-card-widget="collapse"></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end">
+                    <button class="btn btn-success mx-1" type="submit">Guardar comedor</button>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
 {% endblock %}
 {% block customJS %}
     <script>
