@@ -1,6 +1,6 @@
 from django import forms
 
-from comedores.models import Comedor, Referente
+from comedores.models import Comedor, Referente,Intervencion
 from configuraciones.models import Municipio, Provincia
 from configuraciones.models import Localidad
 
@@ -10,6 +10,32 @@ class ReferenteForm(forms.ModelForm):
         model = Referente
         fields = "__all__"
 
+
+class IntervencionForm(forms.ModelForm):
+    class Meta:
+        model = Intervencion
+        fields = "__all__"
+        widgets = {
+            "detalles": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 3,
+                }
+            ),
+            "fk_subintervencion": forms.Select(
+                attrs={"class": "select2 subintervencion-select"}
+            ),
+            "fk_tipo_intervencion": forms.Select(
+                attrs={"class": "select2 tipo_intervencion-select"}
+            ),
+        }
+        labels = {
+            "detalles": "Detalles de la intervención",
+            "fk_subintervencion": "Subintervención",
+            "fk_tipo_intervencion": "Tipo de intervención",
+            "fk_estado": "Estado",
+            "fk_direccion": "Dirección",
+        }
 
 class ComedorForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):

@@ -12,9 +12,11 @@ from django.views.generic import (
     DetailView,
     ListView,
     UpdateView,
+    TemplateView,
+    
 )
 
-from comedores.forms.comedor_form import ComedorForm, ReferenteForm
+from comedores.forms.comedor_form import ComedorForm, ReferenteForm,IntervencionForm
 from comedores.forms.observacion_form import ObservacionForm
 from comedores.forms.relevamiento_form import (
     ColaboradoresForm,
@@ -27,11 +29,82 @@ from comedores.forms.relevamiento_form import (
     PrestacionForm,
     RelevamientoForm,
 )
-from comedores.models import Comedor, Observacion, Prestacion, Relevamiento
+from comedores.models import Comedor, Observacion, Prestacion, Relevamiento, Intervencion
 from comedores.services.comedor_service import ComedorService
 from comedores.services.relevamiento_service import RelevamientoService
 from usuarios.models import Usuarios
 
+
+
+class IntervencionDetail(TemplateView):
+    template_name = "legajos/intervencion_detail.html"
+    model = Intervencion
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        legajo = Comedor.objects.values(
+            "id", "nombre", "apellido", "documento", "fecha_nacimiento", "sexo"
+        ).get(pk=self.kwargs["pk"])
+        intervenciones = Intervencion.objects.filter(fk_legajo=self.kwargs["pk"])
+        cantidad_intervenciones = Intervencion.objects.filter(
+            fk_legajo=self.kwargs["pk"]
+        ).count()
+        context["intervenciones"] = intervenciones
+        context["object"] = legajo
+        context["cantidad_intervenciones"] = cantidad_intervenciones
+
+        return context
+
+
+class IntervencionCreateView(CreateView):
+    model = Intervencion
+    template_name = "legajos/intervencion_form.html"
+    form_class = IntervencionForm
+
+    def form_valid(self, form):
+        pk = self.kwargs["pk"]
+        form.save()
+        return redirect("intervencion_ver", pk=pk)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        legajo = Comedor.objects.values(
+            "id", "nombre", "apellido", "documento", "fecha_nacimiento", "sexo"
+        ).get(pk=self.kwargs["pk"])
+
+        context["form"] = self.get_form()
+        context["object"] = legajo
+
+        return context
+
+
+class IntervencionDeleteView(DeleteView):
+    model = Intervencion
+    template_name = "legajos/intervencion_confirm_delete.html"
+
+    def form_valid(self, form):
+        self.object.delete()
+        return redirect("intervencion_ver", pk=self.kwargs["pk2"])
+
+
+class IntervencionUpdateView(UpdateView):
+    model = Intervencion
+    form_class = IntervencionForm
+    template_name = "legajos/intervencion_form.html"
+
+    def form_valid(self, form):
+        pk = self.kwargs["pk2"]
+        form.save()
+        return redirect("intervencion_ver", pk=pk)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        legajo = Legajos.objects.values(
+            "id", "nombre", "apellido", "documento", "fecha_nacimiento", "sexo"
+        ).get(pk=self.kwargs["pk2"])
+        context["form"] = self.get_form()
+        context["object"] = legajo
+        return context
 
 class ComedorListView(ListView):
     model = Comedor
