@@ -8,10 +8,10 @@
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
         <li class="breadcrumb-item">
-            <a href="" title="Ver listado de admisiones">Admisiones</a>
+            <a href="" title="Ver listado de admisiones">Comedores</a>
         </li>
         <li class="breadcrumb-item ">
-            <a href="{% url 'legajos_ver' object.id %}" title="Ver legajo">{{ object.nombre }} {{ object.apellido }}</a>
+            <a href="{% url 'legajos_ver' object.id %}" title="Ver Comedor">{{ object.nombre }}</a>
         </li>
         <li class="breadcrumb-item active">Detalle</li>
     </ol>
@@ -35,9 +35,9 @@
         <div class="col-sm-4 pb-3">
             <div class="card card-outline card-primary h-100 mb-0">
                 <div class="card-header">
-                    <h3 class="card-title">Detalle Legajo</h3>
+                    <h3 class="card-title">Detalle del Comedor</h3>
                     <div class="card-tools d-inline">
-                        <a href="{% url 'legajos_ver' object.id %}" class="ml-3 mr-2">Ver detalles</a>
+                        <a href="{% url 'comedor_detalle' object.id %}" class="ml-3 mr-2">Ver detalles</a>
                         <button type="button"
                                 class="btn btn-tool d-md-none"
                                 data-card-widget="collapse">
@@ -51,20 +51,20 @@
                             Nombre
                         </dd>
                         <dt class="col-sm-7 mb-2">
-                            <a href="{% url 'legajos_ver' object.id %}" title="Ver legajo">{{ object.nombre }} {{ object.apellido }}</a>
+                            <a href="{% url 'comedor_detalle' object.id %}" title="Ver legajo">{{ object.nombre }}</a>
                         </dt>
                         <dd class="col-sm-5 mb-2">
-                            DNI
+                            Gestionar
                         </dd>
-                        <dt class="col-sm-7 mb-2">{{ object.documento }}</dt>
+                        <dt class="col-sm-7 mb-2">{{ object.gestionar_uid }}</dt>
                         <dd class="col-sm-5 mb-2">
-                            Fecha de nacimiento
+                            Provincia
                         </dd>
-                        <dt class="col-sm-7 mb-2">{{ object.fecha_nacimiento|date:'d/m/Y' }}</dt>
+                        <dt class="col-sm-7 mb-2">{{ object.provincia}}</dt>
                         <dd class="col-sm-5 mb-2">
-                            Sexo
+                            Barrio
                         </dd>
-                        <dt class="col-sm-7 mb-2">{{ object.sexo }}</dt>
+                        <dt class="col-sm-7 mb-2">{{ object.barrio }}</dt>
                     </dl>
                 </div>
             </div>
@@ -102,10 +102,9 @@
                         <thead>
                             <tr>
                                 <th>Fecha</th>
-                                <th>Usuario</th>
+                                <th>Comedor</th>
                                 <th>Sub Intervencion</th>
                                 <th>Tipo Intervencion</th>
-                                <th>Direccion</th>
                                 <th>Estado</th>
                                 <th></th>
                                 <th></th>
@@ -115,15 +114,9 @@
                             {% for e in intervenciones %}
                                 <tr>
                                     <td>{{ e.fecha|date:'d/m/Y' }}</td>
-                                    <td>{{ e.fk_usuario }}</td>
+                                    <td>{{ e.fk_comedor }}</td>
                                     <td>{{ e.fk_subintervencion }}</td>
                                     <td>{{ e.fk_tipo_intervencion }}</td>
-                                    <td>
-                                        {% for direccion in e.fk_direccion.all %}
-                                            {{ direccion }}
-                                            {% if not forloop.last %},{% endif %}
-                                        {% endfor %}
-                                    </td>
                                     <td>{{ e.fk_estado }}</td>
                                     <td>
                                         <a href="{% url 'intervencion_editar' e.id object.id %}">Editar</a>
@@ -143,7 +136,7 @@
     <div class="row mt-4 d-print-none">
         <div class="col-12 mx-2">
             <div class="form-group  d-flex justify-content-between">
-                <a href="{% url 'legajos_ver' object.id %}" class="btn btn-secondary">Volver</a>
+                <a href="{% url 'comedor_detalle' object.id %}" class="btn btn-secondary">Volver</a>
             </div>
         </div>
     </div>

@@ -703,7 +703,7 @@ class Intervencion(models.Model):
     Guardado de las intervenciones realizadas a un legajo.
     """
 
-    fk_legajo = models.ForeignKey(Comedor, on_delete=models.SET_NULL, null=True)
+    fk_comedor = models.ForeignKey(Comedor, on_delete=models.SET_NULL, null=True)
     fk_subintervencion = models.ForeignKey(
         SubIntervencion, on_delete=models.SET_NULL, null=True
     )
@@ -719,7 +719,7 @@ class Intervencion(models.Model):
         ordering = ["-fecha"]
         verbose_name = "Intervencion"
         verbose_name_plural = "Intervenciones"
-        indexes = [models.Index(fields=["fk_legajo"])]
+        indexes = [models.Index(fields=["fk_comedor"])]
 
 
 class Relevamiento(models.Model):

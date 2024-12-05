@@ -22,10 +22,10 @@
           href="{% static 'custom/css/comedorRelevamiento.css' %}" />
     <div class="row justify-content-between d-print-none mx-1 mb-3">
         <div class="col-auto">
-            <a href="{% url 'intervencion_ver' comedor.id %}" class="btn btn-secondary mr-1">Volver</a>
+            <a href="{% url 'comedores' %}" class="btn btn-secondary mr-1">Volver</a>
         </div>
         <div class="col-auto">
-            <a href="{% url 'comedor_crear' %}" class="btn btn-primary mr-1">Intervenciones</a>
+            <a href="{% url 'intervencion_ver' comedor.id%}" class="btn btn-primary mr-1">Intervenciones</a>
             <a href="{% url 'comedor_editar' comedor.id %}"
                class="btn btn-primary mr-1">Editar</a>
             <a href="#" class="btn btn-secondary print mr-1 d-none d-sm-inline">Imprimir</a>

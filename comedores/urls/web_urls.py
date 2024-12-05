@@ -20,6 +20,7 @@ from comedores.views.web_views import (
     IntervencionCreateView,
     IntervencionUpdateView,
     IntervencionDeleteView,
+    SubEstadosIntervencionesAJax,
 )
 
 urlpatterns = [
@@ -113,5 +114,10 @@ urlpatterns = [
         "comedores/intervencion/borrar/<pk>/<pk2>",
         login_required(IntervencionDeleteView.as_view()),
         name="intervencion_borrar",
+    ),
+    path(
+        "ajax/load-subestadosintervenciones/",
+        SubEstadosIntervencionesAJax.as_view(),
+        name="ajax_load_subestadosintervenciones",
     ),
 ]

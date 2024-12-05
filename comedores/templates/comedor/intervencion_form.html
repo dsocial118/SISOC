@@ -7,7 +7,7 @@
     <ol class="breadcrumb float-sm-right ">
         <li class="breadcrumb-item">Intervenciones</li>
         <li class="breadcrumb-item">
-            <a href="{% url 'legajos_ver' object.id %}" title="Ver legajo">{{ object.nombre }} {{ object.apellido }}</a>
+            <a href="{% url 'comedor_detalle' object.id %}" title="Ver Comedor">{{ object.nombre }} {{ object.apellido }}</a>
         </li>
         <li class="breadcrumb-item active">Agregar</li>
     </ol>
@@ -20,7 +20,7 @@
         <div class="col-12">
             <div class="card card-outline card-primary ">
                 <div class="card-header">
-                    <h3 class="card-title">Detalle Legajo</h3>
+                    <h3 class="card-title">Detalle del Comedor</h3>
                 </div>
                 <div class="card-body">
                     <dl class="row">
@@ -28,20 +28,20 @@
                             Nombre
                         </dd>
                         <dt class="col-sm-10 mb-2">
-                            <a href="{% url 'legajos_ver' object.id %}" title="Ver legajo">{{ object.nombre }} {{ object.apellido }}</a>
+                            <a href="{% url 'comedor_detalle' object.id %}" title="Ver Comedor">{{ object.nombre }}</a>
                         </dt>
-                        <dd class="col-sm-2 mb-2">
-                            DNI
+                        <dd class="col-sm-5 mb-2">
+                            Gestionar
                         </dd>
-                        <dt class="col-sm-10 mb-2">{{ object.documento }}</dt>
-                        <dd class="col-sm-2 mb-2">
-                            Fecha de nacimiento
+                        <dt class="col-sm-7 mb-2">{{ object.gestionar_uid }}</dt>
+                        <dd class="col-sm-5 mb-2">
+                            Provincia
                         </dd>
-                        <dt class="col-sm-10 mb-2">{{ object.fecha_nacimiento|date:'d/m/Y' }}</dt>
-                        <dd class="col-sm-2 mb-2">
-                            Sexo
+                        <dt class="col-sm-7 mb-2">{{ object.provincia}}</dt>
+                        <dd class="col-sm-5 mb-2">
+                            Barrio
                         </dd>
-                        <dt class="col-sm-10 mb-2">{{ object.sexo }}</dt>
+                        <dt class="col-sm-7 mb-2">{{ object.barrio }}</dt>
                     </dl>
                 </div>
             </div>
@@ -62,16 +62,12 @@
                     </div>
                     <div class="card-body ">
                         <div class="row m-0 p-0">
-                            <input type="hidden" name="fk_legajo" value="{{ object.id }}" />
-                            <input type="hidden" name="fk_usuario" value="{{ request.user.id }}" />
+                            <input type="hidden" name="fk_comedor" value="{{ object.id }}" />
                             <div class="col-sm-6">
                                 <div class="form-group">{{ form.fk_tipo_intervencion| as_crispy_field }}</div>
                             </div>
                             <div class="col-sm-6">
                                 <div class="form-group">{{ form.fk_subintervencion| as_crispy_field }}</div>
-                            </div>
-                            <div class="col-sm-9">
-                                <div class="form-group">{{ form.fk_direccion| as_crispy_field }}</div>
                             </div>
                             <div class="col-sm-3">
                                 <div class="form-group">{{ form.fk_estado| as_crispy_field }}</div>
@@ -81,7 +77,7 @@
                 </div>
                 <div class="mt-4 mx-2">
                     <button class="btn btn-primary mr-1">Confirmar</button>
-                    <a href="{% url 'legajos_ver' object.id %}" class="btn btn-secondary">Cancelar</a>
+                    <a href="{% url 'comedor_detalle' object.id %}" class="btn btn-secondary">Cancelar</a>
                 </div>
             </form>
         </div>
