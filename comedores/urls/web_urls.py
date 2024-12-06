@@ -116,8 +116,8 @@ urlpatterns = [
         name="intervencion_borrar",
     ),
     path(
-        "ajax/load-subestadosintervenciones/",
-        SubEstadosIntervencionesAJax.as_view(),
+        "comedores/ajax/load-subestadosintervenciones/",
+        SubEstadosIntervencionesAJax,
         name="ajax_load_subestadosintervenciones",
     ),
 ]
