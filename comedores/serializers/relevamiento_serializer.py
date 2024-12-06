@@ -82,6 +82,13 @@ class RelevamientoSerializer(serializers.ModelSerializer):
                 ).id
             )
 
+        if "gestionar_uid" in self.initial_data:
+            if Relevamiento.objects.filter(
+                gestionar_uid=self.initial_data["gestionar_uid"]
+            ).exists():
+                raise serializers.ValidationError(
+                    {"error": "gestionar_uid debe ser único si no es nulo."}
+                )
         return self
 
     class Meta:
