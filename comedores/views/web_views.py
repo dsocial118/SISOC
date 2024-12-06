@@ -36,18 +36,18 @@ from comedores.services.relevamiento_service import RelevamientoService
 from usuarios.models import Usuarios
 
 
-class SubEstadosIntervencionesAJax(View):
-    def get(self, request):
-        request_id = request.GET.get("id", None)
-        if request_id:
-            sub_estados = SubIntervencion.objects.filter(fk_subintervencion=request_id)
-        else:
-            sub_estados = SubIntervencion.objects.all()
-        data = [
-            {"id": sub_estado.id, "text": sub_estado.nombre}
-            for sub_estado in sub_estados
-        ]
-        return JsonResponse(data, safe=False)
+def SubEstadosIntervencionesAJax(request):
+    request_id = request.GET.get("id")
+    if request_id:
+        sub_estados = SubIntervencion.objects.filter(fk_subintervencion=request_id)
+    else:
+        sub_estados = SubIntervencion.objects.all()
+    
+    data = [
+        {"id": sub_estado.id, "text": sub_estado.nombre}
+        for sub_estado in sub_estados
+    ]
+    return JsonResponse(data, safe=False)
 
 class IntervencionDetail(TemplateView):
     template_name = "comedor/intervencion_detail.html"
