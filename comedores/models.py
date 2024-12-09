@@ -714,7 +714,7 @@ class Intervencion(models.Model):
     fk_estado = models.ForeignKey(
         EstadosIntervencion, on_delete=models.SET_NULL, default=1, null=True
     )
-
+    observaciones = models.TextField(blank=True, null=True)
     class Meta:
         ordering = ["-fecha"]
         verbose_name = "Intervencion"
