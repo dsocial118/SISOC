@@ -294,7 +294,10 @@ class RelevamientoUpdateView(UpdateView):
             self.request.POST if self.request.POST else None,
             instance=getattr(self.object.espacio, "cocina", None),
         )
-
+        data["espacio_prestacion_form"] = EspacioPrestacionForm(
+            self.request.POST if self.request.POST else None,
+            instance=getattr(self.object.espacio, "prestacion", None),
+        )
         return data
 
     def form_valid(self, form):
