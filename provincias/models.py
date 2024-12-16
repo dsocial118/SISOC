@@ -660,9 +660,9 @@ class AbstractDiagnostico(models.Model):
     recicladores_equipados = models.BooleanField(
         default=False,
         verbose_name=(
-        "¿Los recicladores urbanos cuentan con elementos de protección personal "
-        "adecuados, condiciones laborales adecuadas como salarios dignos y horarios "
-        "razonables?"
+            "¿Los recicladores urbanos cuentan con elementos de protección personal "
+            "adecuados, condiciones laborales adecuadas como salarios dignos y horarios "
+            "razonables?"
         ),
     )
     clasificacion_residuos = models.BooleanField(
