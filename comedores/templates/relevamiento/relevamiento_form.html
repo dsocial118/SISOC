@@ -23,6 +23,8 @@
 {% endblock %}
 ;
 {% block content %}
+    <link rel="stylesheet"
+    href="{% static 'admin/css/select2templated.css' %}" />
     <div class="row">
         <div class="col-12">
             <div class="card card-primary card-outline">
@@ -31,7 +33,7 @@
                         <h3 class="card-title">Agregar Comedor/Merendero</h3>
                     </div>
                     <div class="card-body">
-                        <div class="form-row justify-content-center">
+                        select2-selection select2-selection--multiple                    <div class="form-row justify-content-center">
                             <form method="post" class="w-100">
                                 {% csrf_token %}
                                 <h1>1- Datos del Comedor/Merendero</h1>
