@@ -290,6 +290,10 @@ class RelevamientoUpdateView(UpdateView):
         data["comedor"] = Comedor.objects.values("id", "nombre").get(
             pk=self.kwargs["comedor_pk"]
         )
+        data["espacio_cocina_form"] = EspacioCocinaForm(
+            self.request.POST if self.request.POST else None,
+            instance=getattr(self.object.espacio, "cocina", None),
+        )
 
         return data
 
