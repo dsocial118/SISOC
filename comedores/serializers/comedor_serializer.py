@@ -31,6 +31,14 @@ class ComedorSerializer(serializers.ModelSerializer):
             ):
                 ComedorService.get_ubicaciones_ids(self.initial_data)
 
+            if "gestionar_uid" in self.initial_data:
+                if Comedor.objects.filter(
+                    gestionar_uid=self.initial_data["gestionar_uid"]
+                ).exists():
+                    raise serializers.ValidationError(
+                        {"error": "gestionar_uid debe ser único si no es nulo."}
+                    )
+
         except Exception as e:
             raise serializers.ValidationError({"error": str(e)})
 

@@ -611,7 +611,7 @@ class Comedor(models.Model):
         referente (ForeignKey): Referente del Comedor/Merendero.
     """
 
-    gestionar_uid = models.CharField(max_length=255, unique=True, blank=True)
+    gestionar_uid = models.CharField(max_length=255, blank=True, null=True)
 
     nombre = models.CharField(
         max_length=255,
@@ -669,7 +669,7 @@ class Relevamiento(models.Model):
         compras (OneToOneField): Información relacionada a la realización de compras para abastecer el Comedor/Merendero.
     """
 
-    gestionar_uid = models.CharField(max_length=255, unique=True, blank=True)
+    gestionar_uid = models.CharField(max_length=255, blank=True, null=True)
 
     comedor = models.ForeignKey(
         to=Comedor,
