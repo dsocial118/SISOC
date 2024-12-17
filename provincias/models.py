@@ -659,7 +659,10 @@ class AbstractDiagnostico(models.Model):
     )
     recicladores_equipados = models.BooleanField(
         default=False,
-        verbose_name="¿Los recicladores urbanos cuentan con elementos de protección personal adecuados, condiciones laborales adecuadas como salarios dignos y horarios razonables?",
+        verbose_name=(
+            "¿Los recicladores urbanos cuentan con elementos de protección personal adecuados, "
+            "condiciones laborales adecuadas como salarios dignos y horarios razonables?"
+        ),
     )
     clasificacion_residuos = models.BooleanField(
         default=False,
@@ -687,7 +690,10 @@ class AbstractDiagnostico(models.Model):
     )
     tecnologias_mejorar_eficiencia = models.BooleanField(
         default=False,
-        verbose_name="¿Se utilizan tecnologías para mejorar la eficiencia en la recolección, clasificación y reciclaje de materiales y los recicladores tienen acceso a plataformas digitales?",
+        verbose_name=(
+            "¿Se utilizan tecnologías para mejorar la eficiencia en la recolección, "
+            "clasificación y reciclaje de materiales y los recicladores tienen acceso a plataformas digitales?"
+        ),
     )
     tecnologias_cuales = models.CharField(
         max_length=255,
