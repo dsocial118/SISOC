@@ -7,6 +7,7 @@ from comedores.models import Comedor, Observacion, Relevamiento
 from comedores.serializers.comedor_serializer import ComedorSerializer
 from comedores.serializers.relevamiento_serializer import RelevamientoSerializer
 from comedores.serializers.observacion_serializer import ObservacionSerializer
+from comedores.services.comedor_service import ComedorService
 from comedores.utils import format_serializer_errors, format_fecha_django
 
 
@@ -17,6 +18,7 @@ class ComedorRelevamientoObservacionApiView(APIView):
         comedor_data = request.data.get("comedor")
         relevamiento_data = request.data.get("relevamiento")
         observacion_data = request.data.get("observacion")
+        imagenes_data = comedor_data.get("imagenes")
 
         try:
             comedor = Comedor.objects.get(gestionar_uid=comedor_data["gestionar_uid"])
@@ -25,6 +27,8 @@ class ComedorRelevamientoObservacionApiView(APIView):
             if comedor_serializer.is_valid():
                 comedor_serializer.save()
                 comedor = comedor_serializer.instance
+                for imagen in imagenes_data:
+                    ComedorService.create_imagenes(imagen, comedor)
             else:
                 error_message_str = format_serializer_errors(comedor_serializer)
 
