@@ -4,6 +4,7 @@ from typing import Union
 from django.db.models import Q
 import requests
 
+from comedores.forms.comedor_form import ImagenComedorForm
 from comedores.models import Comedor, Referente
 from configuraciones.models import Municipio, Provincia
 from configuraciones.models import Localidad
@@ -43,6 +44,7 @@ class ComedorService:
             Comedor.objects.select_related("provincia", "referente")
             .values(
                 "id",
+                "foto_legajo",
                 "nombre",
                 "comienzo",
                 "provincia__nombre",
@@ -103,6 +105,17 @@ class ComedorService:
             referente_instance.save()
 
         return referente_instance
+
+    @staticmethod
+    def create_imagenes(imagen, comedor_pk):
+        imagen_comedor = ImagenComedorForm(
+            {"comedor": comedor_pk},
+            {"imagen": imagen},
+        )
+        if imagen_comedor.is_valid():
+            return imagen_comedor.save()
+        else:
+            return imagen_comedor.errors
 
     @staticmethod
     def send_to_gestionar(comedor: Comedor):
