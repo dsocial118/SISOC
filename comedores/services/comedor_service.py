@@ -31,10 +31,10 @@ class ComedorService:
             queryset = queryset.filter(
                 Q(nombre__icontains=query)
                 | Q(provincia__nombre__icontains=query)
-                | Q(municipio__nombre=query)
-                | Q(localidad__nombre=query)
-                | Q(referente__nombre=query)
-                | Q(referente__apellido=query)
+                | Q(municipio__nombre__icontains=query)
+                | Q(localidad__nombre__icontains=query)
+                | Q(barrio__icontains=query)
+                | Q(calle__icontains=query)
             )
         return queryset
 
