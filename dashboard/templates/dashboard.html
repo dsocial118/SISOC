@@ -17,17 +17,23 @@
 ;
 {% block content %}
     <div class="row">
-        <c-dashboard.h-info-box titulo='Legajos Activos' valor={{ cantidad_legajos_activos }} color='primary'>
-        <i class="fas fa-address-card"></i>
+        <c-dashboard.h-info-box titulo='Comedores Activos' valor={{ cantidad_comedores_activos }} color='primary'>
+            <i class="fas fa-utensils"></i>
         </c-dashboard.h-info-box>
-        <c-dashboard.h-info-box titulo='Alarmas Activas' valor={{ cantidad_legajos_con_alarmas_activas }} color='danger'>
-        <i class="fas fa-bell"></i>
+        <c-dashboard.h-info-box titulo='Relevamientos Activos' valor={{ cantidad_relevamientos_activos }} color='success'>
+            <i class="fas fa-clipboard-check"></i>
         </c-dashboard.h-info-box>
-        <c-dashboard.h-info-box titulo='Derivaciones Pendientes' valor={{ cantidad_dv_pendientes }} color='success'>
-        <i class="fas fa-share-square"></i>
+        <c-dashboard.h-info-box titulo='Beneficiarios' valor={{ cantidad_beneficiarios }} color='warning'>
+            <i class="fas fa-users"></i>
         </c-dashboard.h-info-box>
-        <c-dashboard.h-info-box titulo='Benef. de Acciones Sociales' valor={{ cantidad_dv_pendientes }} color='warning'>
-        <i class="fas fa-handshake"></i>
+        <c-dashboard.h-info-box titulo='Presupuesto Desayuno' valor={{ presupuesto_desayuno }} color='info'>
+            <i class="fas fa-coffee"></i>
+        </c-dashboard.h-info-box>
+        <c-dashboard.h-info-box titulo='Presupuesto Merienda' valor={{ presupuesto_merienda }} color='info'>
+            <i class="fas fa-cookie"></i>
+        </c-dashboard.h-info-box>
+        <c-dashboard.h-info-box titulo='Presupuesto Comida' valor={{ presupuesto_comida }} color='info'>
+            <i class="fas fa-utensils"></i>
         </c-dashboard.h-info-box>
         <div class="col-md-8">
             <div class="card">
@@ -50,139 +56,6 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4 pt-5">
-            <c-dashboard.v-info-box titulo='Población total beneficiarios PAS' valor='No implementado' color='primary'>
-            <i class="fas fa-users"></i>
-            </c-dashboard.v-info-box>
-            <c-dashboard.v-info-box titulo='Población total' valor='No implementado' color='danger'>
-            <i class="fas fa-child"></i>
-            </c-dashboard.v-info-box>
-            <c-dashboard.v-info-box titulo='Poblacion total con NBI (censo)' valor='No implementado' color='success'>
-            <i class="fas fa-user-check"></i>
-            </c-dashboard.v-info-box>
-            <c-dashboard.v-info-box titulo='Poblacion 018 con NBI (censo)' valor='No implementado' color='warning'>
-            <i class="fas fa-child"></i>
-            </c-dashboard.v-info-box>
-            <c-dashboard.v-info-box titulo='Poblacion total registrada en SISOC' valor='No implementado' color='warning'>
-            <i class="fas fa-address-card"></i>
-            </c-dashboard.v-info-box>
-            <c-dashboard.v-info-box titulo='Poblacion 018 en SISOC' valor='No implementado' color='warning'>
-            <i class="fas fa-address-card"></i>
-            </c-dashboard.v-info-box>
-        </div>
-        <div class="col-lg-4 mt-3 ">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Nacimientos</h3>
-                </div>
-                <div class="card-body">
-                    <div class="small-box bg-green mb-2">
-                        <div class="inner">
-                            <h3>{{ cantidad_legajos_40_dias|default_if_none:'No implementado' }}</h3>
-                            <p>Nuevos</p>
-                        </div>
-                        <div class="icon">
-                            <i class="fas fas fa-baby"></i>
-                        </div>
-                    </div>
-                    <div class="small-box bg-green mb-2">
-                        <div class="inner">
-                            <h3>{{ cantidad_bb_riesgo|default_if_none:'No implementado' }}</h3>
-                            <p>En Riesgo</p>
-                        </div>
-                        <div class="icon">
-                            <i class="fas fa-user-md"></i>
-                        </div>
-                    </div>
-                    <div class="small-box bg-green mb-2">
-                        <div class="inner">
-                            <h3>{{ cantidad_bb_sin_derivacion_aceptada|default_if_none:'No implementado' }}</h3>
-                            <p>Sin Derivación</p>
-                        </div>
-                        <div class="icon">
-                            <i class="far fa-share-square"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-4 mt-3">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Niños de 0 a 18</h3>
-                </div>
-                <div class="card-body">
-                    <div class="small-box bg-primary mb-2">
-                        <div class="inner">
-                            <h3>No implementado</h3>
-                            <p>Total</p>
-                        </div>
-                        <div class="icon">
-                            <i class="fas fas fa-child"></i>
-                        </div>
-                    </div>
-                    <div class="small-box bg-primary mb-2">
-                        <div class="inner">
-                            <h3>{{ cantidad_adolescente_riesgo|default_if_none:'No implementado' }}</h3>
-                            <p>En Riesgo</p>
-                        </div>
-                        <div class="icon">
-                            <i class="fas fa-user-md"></i>
-                        </div>
-                    </div>
-                    <div class="small-box bg-primary mb-2">
-                        <div class="inner">
-                            <h3>{{ cantidad_adolescente_sin_derivacion_aceptada|default_if_none:'No implementado' }}</h3>
-                            <p>Sin Derivación</p>
-                        </div>
-                        <div class="icon">
-                            <i class="far fa-share-square"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-4 mt-3">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Embarazadas</h3>
-                </div>
-                <div class="card-body">
-                    <div class="small-box bg-danger mb-2">
-                        <div class="inner">
-                            <h3>{{ cantidad_legajos_embarazados|default_if_none:'No implementado' }}</h3>
-                            <p>Total</p>
-                        </div>
-                        <div class="icon">
-                            <i class="fas fa-female"></i>
-                        </div>
-                    </div>
-                    <div class="small-box bg-danger mb-2">
-                        <div class="inner">
-                            <h3>{{ cantidad_embarazos_en_riesgo|default_if_none:'No implementado' }}</h3>
-                            <p>En Riesgo / Sin Control</p>
-                        </div>
-                        <div class="icon">
-                            <i class="fas fa-user-md"></i>
-                        </div>
-                    </div>
-                    <div class="small-box bg-danger mb-2">
-                        <div class="inner">
-                            <h3>{{ embarazos_sin_derivacion_aceptada|default_if_none:'No implementado' }}</h3>
-                            <p>Sin adherencia</p>
-                        </div>
-                        <div class="icon">
-                            <i class="far fa-share-square"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 {% endblock %}
-{% block customJS %}
-    <!--Utiliza el custom js-->
-    <!-- Chart -->
-    <!--script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script -->
-    <!--script src="{% static 'custom/js/dashboard.js' %}"></script -->
-{% endblock %}
+
