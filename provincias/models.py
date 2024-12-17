@@ -692,8 +692,8 @@ class AbstractDiagnostico(models.Model):
     tecnologias_mejorar_eficiencia = models.BooleanField(
         default=False,
         verbose_name=(
-            "¿Se utilizan tecnologías para mejorar la eficiencia en la recolección, clasificación y reciclaje de materiales"
-            "y los recicladores tienen acceso a plataformas digitales?"
+            "¿Se utilizan tecnologías para mejorar la eficiencia en la recolección, "
+            "clasificación y reciclaje de materiales y los recicladores tienen acceso a plataformas digitales?"
         ),
     )
     tecnologias_cuales = models.CharField(
