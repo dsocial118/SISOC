@@ -53,12 +53,12 @@
                                                 <div class="comment-text comment-text d-flex flex-column">
                                                     {% if comedor.foto_legajo %}
                                                         <img src="/media/{{ comedor.foto_legajo }}"
-                                                        alt="Imagen del comedor"
-                                                        class="img-fluid mw-100 rounded" />
+                                                             alt="Imagen del comedor"
+                                                             class="img-fluid mw-100 rounded" />
                                                     {% else %}
                                                         <img src="{% static 'custom/img/default.png' %}"
-                                                            alt="Imagen del comedor"
-                                                            class="img-fluid mw-100 rounded" />
+                                                             alt="Imagen del comedor"
+                                                             class="img-fluid mw-100 rounded" />
                                                     {% endif %}
                                                 </div>
                                             </div>
@@ -286,9 +286,11 @@
                 <div class="card-body row card-comments p-0 pb-1">
                     <div class="nav nav-pills row col-10 my-3 mx-auto">
                         {% for imagen in imagenes %}
-                        <div class="col-2 d-flex">
-                            <img src="/media/{{ imagen.imagen }}" alt="Imagen del comedor" class="mw-100 my-1 rounded" />
-                        </div>
+                            <div class="col-2 d-flex">
+                                <img src="/media/{{ imagen.imagen }}"
+                                     alt="Imagen del comedor"
+                                     class="mw-100 my-1 rounded" />
+                            </div>
                         {% endfor %}
                     </div>
                 </div>
