@@ -18,6 +18,44 @@
 {% endblock %}
 ;
 {% block content %}
+    <div class="row">
+        <div class="col-md-2 pt-5">
+            <c-dashboard.v-info-box titulo='Relevamientos' valor='{{countRelevamientos }}' color='success'>
+                <i class="fa fa-user"></i>
+            </c-dashboard.v-info-box>
+        </div>
+        <div class="col-md-2 pt-5">
+            <c-dashboard.v-info-box titulo='Beneficiarios' valor='{{ countBeneficiarios }}' color='success'>
+                <i class="fa fa-user"></i>
+            </c-dashboard.v-info-box>
+        </div>
+        <div class="col-md-2 pt-5">
+            <c-dashboard.v-info-box titulo='Desayuno Presupuesto' valor='{{ presupuestoDesayuno }}' color='success'>
+                <i class="fa fa-user"></i>
+            </c-dashboard.v-info-box>
+        </div>
+        <div class="col-md-2 pt-5">
+            <c-dashboard.v-info-box titulo='Almuerzo Presupuesto' valor='{{ presupuestoAlmuerzo }}' color='success'>
+                <i class="fa fa-user"></i>
+            </c-dashboard.v-info-box>
+        </div>
+        <div class="col-md-2 pt-5">
+            <c-dashboard.v-info-box titulo='Merienda Presupuesto' valor='{{ presupuestoMerienda }}' color='success'>
+                <i class="fa fa-user"></i>
+            </c-dashboard.v-info-box>
+        </div>
+        <div class="col-md-2 pt-5">
+            <c-dashboard.v-info-box titulo='Cena Presupuesto' valor='{{ presupuestoCena }}' color='success'>
+                <i class="fa fa-user"></i>
+            </c-dashboard.v-info-box>
+        </div>
+
+
+
+
+
+
+    </div>
     <link rel="stylesheet"
           href="{% static 'custom/css/comedorRelevamiento.css' %}" />
     <div class="row justify-content-between d-print-none mx-1 mb-3">
