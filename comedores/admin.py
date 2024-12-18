@@ -17,6 +17,7 @@ from comedores.models import (
     TipoModalidadPrestacion,
     TipoRecurso,
     TipoGestionQuejas,
+    ValorComida,
 )
 
 
@@ -173,3 +174,16 @@ class ObservacionAdmin(admin.ModelAdmin):
         "fecha_visita",
     ]
     ordering = ["comedor"]
+
+
+@admin.register(ValorComida)
+class ValorComidaAdmin(admin.ModelAdmin):
+    list_display = (
+        "tipo",
+        "valor",
+    )
+    search_fields = [
+        "tipo",
+        "valor",
+    ]
+    ordering = ["tipo"]
