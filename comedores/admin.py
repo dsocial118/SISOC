@@ -175,6 +175,7 @@ class ObservacionAdmin(admin.ModelAdmin):
     ]
     ordering = ["comedor"]
 
+
 @admin.register(ValorComida)
 class ValorComidaAdmin(admin.ModelAdmin):
     list_display = (
