@@ -1,6 +1,6 @@
 from django import forms
 
-from comedores.models import Comedor, Referente
+from comedores.models import Comedor, Referente, ImagenComedor
 from configuraciones.models import Municipio, Provincia
 from configuraciones.models import Localidad
 
@@ -54,4 +54,10 @@ class ComedorForm(forms.ModelForm):
 
     class Meta:
         model = Comedor
+        fields = "__all__"
+
+
+class ImagenComedorForm(forms.ModelForm):
+    class Meta:
+        model = ImagenComedor
         fields = "__all__"

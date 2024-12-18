@@ -636,7 +636,7 @@ class Comedor(models.Model):
         referente (ForeignKey): Referente del Comedor/Merendero.
     """
 
-    gestionar_uid = models.CharField(max_length=255, unique=True, blank=True)
+    gestionar_uid = models.CharField(max_length=255, blank=True, null=True)
 
     nombre = models.CharField(
         max_length=255,
@@ -666,6 +666,7 @@ class Comedor(models.Model):
     referente = models.ForeignKey(
         to=Referente, on_delete=models.SET_NULL, null=True, blank=True
     )
+    foto_legajo = models.ImageField(upload_to="comedor/", blank=True, null=True)
 
     def __str__(self) -> str:
         return str(self.nombre)
@@ -677,6 +678,16 @@ class Comedor(models.Model):
         verbose_name = "comedor"
         verbose_name_plural = "comedores"
         ordering = ["nombre"]
+
+
+class ImagenComedor(models.Model):
+    comedor = models.ForeignKey(
+        Comedor, on_delete=models.CASCADE, related_name="imagenes"
+    )
+    imagen = models.ImageField(upload_to="comedor/")
+
+    def __str__(self):
+        return f"Imagen de {self.comedor.nombre}"
 
 
 class Relevamiento(models.Model):
@@ -694,7 +705,7 @@ class Relevamiento(models.Model):
         compras (OneToOneField): Información relacionada a la realización de compras para abastecer el Comedor/Merendero.
     """
 
-    gestionar_uid = models.CharField(max_length=255, unique=True, blank=True)
+    gestionar_uid = models.CharField(max_length=255, blank=True, null=True)
 
     comedor = models.ForeignKey(
         to=Comedor,
