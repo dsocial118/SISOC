@@ -25,10 +25,13 @@ def update_dashboard_key(llave, cantidad):
     )
     return dashboard
 
+
 def update_dashboard_comedores(sender, instance, **kwargs):
     update_dashboard_key("cantidad_comedores_activos", contar_comedores_activos())
-    update_dashboard_key("cantidad_relevamientos_activos", contar_relevamientos_activos())
-    #update_dashboard_key("cantidad_beneficiarios", contar_beneficiarios())
+    update_dashboard_key(
+        "cantidad_relevamientos_activos", contar_relevamientos_activos()
+    )
+    # update_dashboard_key("cantidad_beneficiarios", contar_beneficiarios())
     update_dashboard_key("presupuesto_desayuno", calcular_presupuesto_desayuno())
     update_dashboard_key("presupuesto_merienda", calcular_presupuesto_merienda())
     update_dashboard_key("presupuesto_comida", calcular_presupuesto_comida())
@@ -41,6 +44,7 @@ def register_signals():
         and table_exists("comedores_prestacion")
         and table_exists("comedores_valorcomida")
     ):
+
         @receiver(post_save, sender=Comedor)
         def trigger_update_comedor(sender, instance, **kwargs):
             return update_dashboard_comedores(sender, instance, **kwargs)
@@ -72,5 +76,6 @@ def register_signals():
         @receiver(post_delete, sender=ValorComida)
         def trigger_update_delete_valorcomida(sender, instance, **kwargs):
             return update_dashboard_comedores(sender, instance, **kwargs)
+
 
 register_signals()
