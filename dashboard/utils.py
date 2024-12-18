@@ -39,8 +39,8 @@ def contar_relevamientos_activos():
 
 def contar_beneficiarios():
     """Contar el total de beneficiarios."""
-    #cache_key = "contar_beneficiarios"
-    #cached_value = cache.get(cache_key)
+    # cache_key = "contar_beneficiarios"
+    # cached_value = cache.get(cache_key)
     # TODO: Esperar definiciones de como se manejara el tema beneficiarios.
     # if cached_value is None:
     # cached_value = Comedor.objects.aggregate(total_beneficiarios=Sum('beneficiarios'))['total_beneficiarios'] or 0
