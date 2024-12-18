@@ -686,6 +686,7 @@ class Comedor(models.Model):
     referente = models.ForeignKey(
         to=Referente, on_delete=models.SET_NULL, null=True, blank=True
     )
+    foto_legajo = models.ImageField(upload_to="comedor/", blank=True, null=True)
 
     def __str__(self) -> str:
         return str(self.nombre)
@@ -720,6 +721,16 @@ class Intervencion(models.Model):
         verbose_name = "Intervencion"
         verbose_name_plural = "Intervenciones"
         indexes = [models.Index(fields=["fk_comedor"])]
+
+
+class ImagenComedor(models.Model):
+    comedor = models.ForeignKey(
+        Comedor, on_delete=models.CASCADE, related_name="imagenes"
+    )
+    imagen = models.ImageField(upload_to="comedor/")
+
+    def __str__(self):
+        return f"Imagen de {self.comedor.nombre}"
 
 
 class Relevamiento(models.Model):
