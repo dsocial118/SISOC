@@ -1,13 +1,8 @@
-import os
-from datetime import date, timedelta
-
 from django.core.cache import cache
 from django.db import connection
-from django.db.models import Count, Q, Sum
+from django.db.models import Sum
 
-from configuraciones.models import Alertas
-from legajos.models import EstadoDerivacion, LegajoAlertas, Legajos, LegajosDerivaciones
-from comedores.models import Comedor, Prestacion, Relevamiento, ValorComida
+from comedores.models import Comedor, Relevamiento, ValorComida
 
 
 def table_exists(table_name):
