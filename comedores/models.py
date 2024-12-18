@@ -6,6 +6,31 @@ from configuraciones.models import Municipio, Provincia
 from configuraciones.models import Localidad
 
 
+
+
+class ValorComida(models.Model):
+    """
+    Opciones de valores de comida para un Comedor/Merendero
+    """
+
+    nombre = models.CharField(max_length=255, unique=True)
+    valor = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(99999),
+        ],
+    )
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        verbose_name = "Valor de comida"
+        verbose_name_plural = "Valores de comida"
+        ordering = ["nombre"]
+
 class TipoModalidadPrestacion(models.Model):
     """
     Opciones de modalidades de prestacion de un Comedor/Merendero
