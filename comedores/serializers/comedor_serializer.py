@@ -1,10 +1,19 @@
 from rest_framework import serializers
 
-from comedores.models import Comedor
+
+from comedores.models import Comedor, ImagenComedor
 from comedores.services.comedor_service import ComedorService
 
 
+class ComedorImagenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ImagenComedor
+        fields = "__all__"
+
+
 class ComedorSerializer(serializers.ModelSerializer):
+    imagenes = ComedorImagenSerializer(many=True, read_only=True)
+
     def clean(self):
         try:
             if "comienzo" in self.initial_data:
