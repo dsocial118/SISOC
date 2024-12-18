@@ -14,7 +14,10 @@ from django.views.generic import (
     UpdateView,
 )
 
-from comedores.forms.comedor_form import ComedorForm, ReferenteForm
+from comedores.forms.comedor_form import (
+    ComedorForm,
+    ReferenteForm,
+)
 from comedores.forms.observacion_form import ObservacionForm
 from comedores.forms.relevamiento_form import (
     ColaboradoresForm,
@@ -27,7 +30,13 @@ from comedores.forms.relevamiento_form import (
     PrestacionForm,
     RelevamientoForm,
 )
-from comedores.models import Comedor, Observacion, Prestacion, Relevamiento
+from comedores.models import (
+    Comedor,
+    ImagenComedor,
+    Observacion,
+    Prestacion,
+    Relevamiento,
+)
 from comedores.services.comedor_service import ComedorService
 from comedores.services.relevamiento_service import RelevamientoService
 from usuarios.models import Usuarios
@@ -55,18 +64,26 @@ class ComedorCreateView(CreateView):
     def get_context_data(self, **kwargs):
         data = super().get_context_data(**kwargs)
         data["referente_form"] = ReferenteForm(
-            self.request.POST if self.request.POST else None, prefix="referente"
+            self.request.POST or None, prefix="referente"
         )
         return data
 
     def form_valid(self, form):
         context = self.get_context_data()
         referente_form = context["referente_form"]
+        imagenes = self.request.FILES.getlist("imagenes")
 
         if referente_form.is_valid():  # Creo y asigno el referente
             self.object = form.save()
             self.object.referente = referente_form.save()
             self.object.save()
+
+            for imagen in imagenes:  # Creo las imagenes
+                try:
+                    ComedorService.create_imagenes(imagen, self.object.pk)
+                except Exception:
+                    return self.form_invalid(form)
+
             return super().form_valid(form)
         else:
             return self.form_invalid(form)
@@ -91,6 +108,9 @@ class ComedorDetailView(DetailView):
                 "observaciones": Observacion.objects.filter(comedor=self.object["id"])
                 .values("id", "fecha_visita")
                 .order_by("-fecha_visita")[:12],
+                "imagenes": ImagenComedor.objects.filter(
+                    comedor=self.object["id"]
+                ).values("imagen"),
             }
         )
 
@@ -118,11 +138,18 @@ class ComedorUpdateView(UpdateView):
     def form_valid(self, form):
         context = self.get_context_data()
         referente_form = context["referente_form"]
+        imagenes = self.request.FILES.getlist("imagenes")
 
-        if referente_form.is_valid():
+        if referente_form.is_valid():  # Creo y asigno el referente
             self.object = form.save()
             self.object.referente = referente_form.save()
             self.object.save()
+
+            for imagen in imagenes:  # Creo las imagenes
+                try:
+                    ComedorService.create_imagenes(imagen, self.object.pk)
+                except Exception:
+                    return self.form_invalid(form)
 
             return super().form_valid(form)
         else:
