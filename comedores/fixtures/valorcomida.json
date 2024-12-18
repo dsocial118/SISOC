@@ -3,32 +3,36 @@
         "model": "comedores.valorcomida",
         "pk": 1,
         "fields": {
-            "nombre": "Desayuno",
-            "valor": 1.00
+            "tipo": "Desayuno",
+            "valor": 1.00,
+            "fecha": "2019-01-01"
         }
     },
     {
         "model": "comedores.valorcomida",
         "pk": 2,
         "fields": {
-            "nombre": "Almuerzo",
-            "valor": 2.00
+            "tipo": "Almuerzo",
+            "valor": 2.00,
+            "fecha": "2019-01-01"
         }
     },
     {
         "model": "comedores.valorcomida",
         "pk": 3,
         "fields": {
-            "nombre": "Merienda",
-            "valor": 3.00
+            "tipo": "Merienda",
+            "valor": 3.00,
+            "fecha": "2019-01-01"
         }
     },
     {
         "model": "comedores.valorcomida",
         "pk": 4,
         "fields": {
-            "nombre": "Cena",
-            "valor": 4.00
+            "tipo": "Cena",
+            "valor": 4.00,
+            "fecha": "2019-01-01"
         }
     }
 ]

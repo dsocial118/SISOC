@@ -16,6 +16,11 @@ from comedores.views.web_views import (
     RelevamientoDeleteView,
     RelevamientoDetailView,
     RelevamientoUpdateView,
+    IntervencionDetail,
+    IntervencionCreateView,
+    IntervencionUpdateView,
+    IntervencionDeleteView,
+    SubEstadosIntervencionesAJax,
 )
 
 urlpatterns = [
@@ -88,5 +93,31 @@ urlpatterns = [
         "comedores/<comedor_pk>/observacion/<pk>/eliminar",
         login_required(ObservacionDeleteView.as_view()),
         name="observacion_eliminar",
+    ),
+
+    path(
+        "comedores/intervencion/ver/<pk>",
+        login_required(IntervencionDetail.as_view()),
+        name="intervencion_ver",
+    ),
+    path(
+        "comedores/intervencion/crear/<pk>",
+        login_required(IntervencionCreateView.as_view()),
+        name="intervencion_crear",
+    ),
+    path(
+        "comedores/intervencion/editar/<pk>/<pk2>",
+        login_required(IntervencionUpdateView.as_view()),
+        name="intervencion_editar",
+    ),
+    path(
+        "comedores/intervencion/borrar/<pk>/<pk2>",
+        login_required(IntervencionDeleteView.as_view()),
+        name="intervencion_borrar",
+    ),
+    path(
+        "comedores/ajax/load-subestadosintervenciones/",
+        SubEstadosIntervencionesAJax,
+        name="ajax_load_subestadosintervenciones",
     ),
 ]
