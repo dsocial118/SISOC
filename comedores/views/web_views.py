@@ -194,43 +194,49 @@ class ComedorDetailView(DetailView):
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         beneficiarios = Relevamiento.objects.filter(comedor=self.object["id"]).first()
-        countDesayuno = (
-                (beneficiarios.prestacion.lunes_desayuno_actual or 0) +
-                (beneficiarios.prestacion.martes_desayuno_actual or 0) +
-                (beneficiarios.prestacion.miercoles_desayuno_actual or 0) +
-                (beneficiarios.prestacion.jueves_almuerzo_actual or 0) +
-                (beneficiarios.prestacion.viernes_desayuno_actual or 0) +
-                (beneficiarios.prestacion.sabado_desayuno_actual or 0) +
-                (beneficiarios.prestacion.domingo_desayuno_actual or 0)
+        if(beneficiarios == None):
+            countDesayuno = 0
+            countAlmuerzo = 0
+            countMerienda = 0
+            countCena = 0
+        else:
+            countDesayuno = (
+                    (beneficiarios.prestacion.lunes_desayuno_actual or 0) +
+                    (beneficiarios.prestacion.martes_desayuno_actual or 0) +
+                    (beneficiarios.prestacion.miercoles_desayuno_actual or 0) +
+                    (beneficiarios.prestacion.jueves_almuerzo_actual or 0) +
+                    (beneficiarios.prestacion.viernes_desayuno_actual or 0) +
+                    (beneficiarios.prestacion.sabado_desayuno_actual or 0) +
+                    (beneficiarios.prestacion.domingo_desayuno_actual or 0)
+                )
+            
+            countAlmuerzo = (
+                    (beneficiarios.prestacion.lunes_almuerzo_actual or 0) +
+                    (beneficiarios.prestacion.martes_almuerzo_actual or 0) +
+                    (beneficiarios.prestacion.miercoles_almuerzo_actual or 0) +
+                    (beneficiarios.prestacion.jueves_almuerzo_actual or 0) +
+                    (beneficiarios.prestacion.viernes_almuerzo_actual or 0) +
+                    (beneficiarios.prestacion.sabado_almuerzo_actual or 0) +
+                    (beneficiarios.prestacion.domingo_almuerzo_actual or 0)
             )
-        
-        countAlmuerzo = (
-                (beneficiarios.prestacion.lunes_almuerzo_actual or 0) +
-                (beneficiarios.prestacion.martes_almuerzo_actual or 0) +
-                (beneficiarios.prestacion.miercoles_almuerzo_actual or 0) +
-                (beneficiarios.prestacion.jueves_almuerzo_actual or 0) +
-                (beneficiarios.prestacion.viernes_almuerzo_actual or 0) +
-                (beneficiarios.prestacion.sabado_almuerzo_actual or 0) +
-                (beneficiarios.prestacion.domingo_almuerzo_actual or 0)
-        )
-        countMerienda = (
-                (beneficiarios.prestacion.lunes_merienda_actual or 0) +
-                (beneficiarios.prestacion.martes_merienda_actual or 0) +
-                (beneficiarios.prestacion.miercoles_merienda_actual or 0) +
-                (beneficiarios.prestacion.jueves_merienda_actual or 0) +
-                (beneficiarios.prestacion.viernes_merienda_actual or 0) +
-                (beneficiarios.prestacion.sabado_merienda_actual or 0) +
-                (beneficiarios.prestacion.domingo_merienda_actual or 0)
-        )
-        countCena = (
-                (beneficiarios.prestacion.lunes_cena_actual or 0) +
-                (beneficiarios.prestacion.martes_cena_actual or 0) +
-                (beneficiarios.prestacion.miercoles_cena_actual or 0) +
-                (beneficiarios.prestacion.jueves_cena_actual or 0) +
-                (beneficiarios.prestacion.viernes_cena_actual or 0) +
-                (beneficiarios.prestacion.sabado_cena_actual or 0) +
-                (beneficiarios.prestacion.domingo_cena_actual or 0)
-        )
+            countMerienda = (
+                    (beneficiarios.prestacion.lunes_merienda_actual or 0) +
+                    (beneficiarios.prestacion.martes_merienda_actual or 0) +
+                    (beneficiarios.prestacion.miercoles_merienda_actual or 0) +
+                    (beneficiarios.prestacion.jueves_merienda_actual or 0) +
+                    (beneficiarios.prestacion.viernes_merienda_actual or 0) +
+                    (beneficiarios.prestacion.sabado_merienda_actual or 0) +
+                    (beneficiarios.prestacion.domingo_merienda_actual or 0)
+            )
+            countCena = (
+                    (beneficiarios.prestacion.lunes_cena_actual or 0) +
+                    (beneficiarios.prestacion.martes_cena_actual or 0) +
+                    (beneficiarios.prestacion.miercoles_cena_actual or 0) +
+                    (beneficiarios.prestacion.jueves_cena_actual or 0) +
+                    (beneficiarios.prestacion.viernes_cena_actual or 0) +
+                    (beneficiarios.prestacion.sabado_cena_actual or 0) +
+                    (beneficiarios.prestacion.domingo_cena_actual or 0)
+            )
 
         countBeneficiarios = countDesayuno + countAlmuerzo + countMerienda + countCena
 
