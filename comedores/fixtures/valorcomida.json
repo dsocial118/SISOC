@@ -3,7 +3,7 @@
         "model": "comedores.valorcomida",
         "pk": 1,
         "fields": {
-            "nombre": "Desayuno",
+            "tipo": "Desayuno",
             "valor": 1.00
         }
     },
@@ -11,7 +11,7 @@
         "model": "comedores.valorcomida",
         "pk": 2,
         "fields": {
-            "nombre": "Almuerzo",
+            "tipo": "Almuerzo",
             "valor": 2.00
         }
     },
@@ -19,7 +19,7 @@
         "model": "comedores.valorcomida",
         "pk": 3,
         "fields": {
-            "nombre": "Merienda",
+            "tipo": "Merienda",
             "valor": 3.00
         }
     },
@@ -27,7 +27,7 @@
         "model": "comedores.valorcomida",
         "pk": 4,
         "fields": {
-            "nombre": "Cena",
+            "tipo": "Cena",
             "valor": 4.00
         }
     }
