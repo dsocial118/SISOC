@@ -1,0 +1,34 @@
+.select2-container--default .select2-selection--multiple
+{
+    background-color: var(--bs-body-bg) !important;
+    color: var(--bs-body-color) !important;
+    border: var(--bs-border-width) solid var(--bs-border-color) !important;
+    border-radius: var(--bs-border-radius) !important;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice
+{
+    background-color: var(--bs-secondary-bg) !important;
+}
+
+.form-control.select2 option
+{
+    background-color: var(--bs-body-bg) !important;
+}
+
+.select2-container--default .select2-results__option {
+    background-color: var(--bs-body-bg) !important;
+    color: #fff;
+}
+
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: var(--link-hover-color) !important;
+    color: var(--primary) !important;
+}
+
+.select2-container--default .select2-results__option--highlighted[aria-selected]:hover,
+.select2-container--default .select2-results__option:hover,
+.select2-results__option.select2-results__option--selectable.select2-results__option--highlighted:hover {
+    background-color: var(--link-hover-color) !important;
+    color: black !important;
+}
