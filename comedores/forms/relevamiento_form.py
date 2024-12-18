@@ -15,6 +15,7 @@ from comedores.models import (
     FuncionamientoPrestacion,
     Prestacion,
     Relevamiento,
+    TipoCombustible,
 )
 
 BOOLEAN_CHOICE = [
@@ -84,10 +85,14 @@ class EspacioCocinaForm(forms.ModelForm):
         widget=forms.Select,
         label="2.2.9 ¿Cuenta con instalación eléctrica adecuada? ",
     )
-
     class Meta:
         model = EspacioCocina
         fields = "__all__"
+        widgets = {
+            "abastecimiento_combustible": forms.SelectMultiple(
+                attrs={"class": "select2 w-100", "multiple": True}
+            ),
+        }
 
 
 class EspacioPrestacionForm(forms.ModelForm):
