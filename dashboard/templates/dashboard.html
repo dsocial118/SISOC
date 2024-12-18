@@ -16,43 +16,43 @@
 {% block menu-adicional %}{% endblock %}
 ;
 {% block content %}
-    <link rel="stylesheet" href="{% static 'custom/css/dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'custom/css/dashboard.css' %}" />
     <div class="row">
         <div class="col-md-8">
             <div class="row mb-4">
                 <div class="col-4">
                     <div class="custom-card card-violet">
                         <div class="card-icon">
-                          <i class="fas fa-utensils"></i> 
+                            <i class="fas fa-utensils"></i>
                         </div>
                         <div class="card-content">
-                          <div class="card-amount">{{ cantidad_comedores_activos }}</div>
-                          <div class="card-title">Comedores Activos</div>
+                            <div class="card-amount">{{ cantidad_comedores_activos }}</div>
+                            <div class="card-title">Comedores Activos</div>
                         </div>
-                      </div>
+                    </div>
                 </div>
                 <div class="col-4">
                     <div class="custom-card card-red">
                         <div class="card-icon">
-                          <i class="fas fa-clipboard-check"></i> 
+                            <i class="fas fa-clipboard-check"></i>
                         </div>
                         <div class="card-content">
-                          <div class="card-amount">{{ cantidad_relevamientos_activos }}</div>
-                          <div class="card-title">Relevamientos Activos</div>
+                            <div class="card-amount">{{ cantidad_relevamientos_activos }}</div>
+                            <div class="card-title">Relevamientos Activos</div>
                         </div>
-                      </div>
+                    </div>
                 </div>
                 <div class="col-4">
                     <div class="custom-card card-green">
                         <div class="card-icon">
-                          <i class="fas fa-users"></i> 
+                            <i class="fas fa-users"></i>
                         </div>
                         <div class="card-content">
-                          <!-- TODO Reemplazar una vez implementado cantidad_beneficiarios -->
-                          <div class="card-amount">0</div>
-                          <div class="card-title">Beneficiarios</div>
+                            <!-- TODO Reemplazar una vez implementado cantidad_beneficiarios -->
+                            <div class="card-amount">0</div>
+                            <div class="card-title">Beneficiarios</div>
                         </div>
-                      </div>
+                    </div>
                 </div>
             </div>
             <div class="row">
@@ -80,52 +80,55 @@
             </div>
         </div>
         <div class="col-md-3">
-            <!--TODO: Crear funcionalidad para las duplas--> 
+            <!--TODO: Crear funcionalidad para las duplas-->
             <div class="container mb-2">
                 <div class="custom-card">
                     <div class="card-icon">
-                      <i class="fas fa-users"></i> 
+                        <i class="fas fa-users"></i>
                     </div>
                     <div class="card-content">
-                      <div class="card-title">Duplas</div>
-                      <div class="card-amount">{{ presupuesto_desayuno }}</div>
+                        <div class="card-title">Duplas</div>
+                        <div class="card-amount">{{ presupuesto_desayuno }}</div>
                     </div>
-                  </div>
+                </div>
             </div>
             <div class="container mb-2">
                 <div class="custom-card">
                     <div class="card-icon">
-                      <i class="fas fa-coffee"></i> 
+                        <i class="fas fa-coffee"></i>
                     </div>
                     <div class="card-content">
-                      <div class="card-title">Presupuesto total<br>Desayuno</div>
-                      <div class="card-amount">${{ presupuesto_desayuno }}</div>
+                        <div class="card-title">
+                            Presupuesto total
+                            <br />
+                            Desayuno
+                        </div>
+                        <div class="card-amount">${{ presupuesto_desayuno }}</div>
                     </div>
-                  </div>
+                </div>
             </div>
             <div class="container mb-2">
                 <div class="custom-card">
                     <div class="card-icon">
-                      <i class="fas fa-cookie"></i> 
+                        <i class="fas fa-cookie"></i>
                     </div>
                     <div class="card-content">
-                      <div class="card-title">Presupuesto Merienda</div>
-                      <div class="card-amount">${{ presupuesto_merienda }}</div>
+                        <div class="card-title">Presupuesto Merienda</div>
+                        <div class="card-amount">${{ presupuesto_merienda }}</div>
                     </div>
-                  </div>
+                </div>
             </div>
             <div class="container mb-2">
                 <div class="custom-card">
                     <div class="card-icon">
-                      <i class="fas fa-utensils"></i> 
+                        <i class="fas fa-utensils"></i>
                     </div>
                     <div class="card-content">
-                      <div class="card-title">Presupuesto Comida</div>
-                      <div class="card-amount">${{ presupuesto_comida }}</div>
+                        <div class="card-title">Presupuesto Comida</div>
+                        <div class="card-amount">${{ presupuesto_comida }}</div>
                     </div>
-                  </div>
+                </div>
             </div>
         </div>
     </div>
 {% endblock %}
-
