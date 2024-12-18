@@ -50,7 +50,6 @@ class SubIntervencion(models.Model):
     class Meta:
         verbose_name = "SubIntervencion"
         verbose_name_plural = "SubIntervenciones"
-=======
 
 
 class ValorComida(models.Model):
