@@ -182,7 +182,7 @@ class EspacioCocina(models.Model):
     otros_residuos = models.BooleanField(default=False)
     recipiente_otros_residuos = models.BooleanField(default=False)
     abastecimiento_combustible = models.ManyToManyField(
-        to=TipoCombustible,
+        TipoCombustible,
         related_name="espacios",
         verbose_name="2.2.7 Para cocinar utiliza",
     )
