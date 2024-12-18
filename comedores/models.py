@@ -6,30 +6,50 @@ from configuraciones.models import Municipio, Provincia
 from configuraciones.models import Localidad
 
 
-
-
-class ValorComida(models.Model):
+class EstadosIntervencion(models.Model):
     """
-    Opciones de valores de comida para un Comedor/Merendero
+    Guardado de los estados de las intervenciones realizadas a un legajo.
     """
 
-    nombre = models.CharField(max_length=255, unique=True)
-    valor = models.DecimalField(
-        max_digits=5,
-        decimal_places=2,
-        validators=[
-            MinValueValidator(0),
-            MaxValueValidator(99999),
-        ],
+    nombre = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"{self.nombre}"
+
+    class Meta:
+        verbose_name = "EstadosIntervencion"
+        verbose_name_plural = "EstadosIntervenciones"
+
+class TipoIntervencion(models.Model):
+    """
+    Guardado de los tipos de intervenciones realizadas a un legajo.
+    """
+
+    nombre = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"{self.nombre}"
+
+    class Meta:
+        verbose_name = "TipoIntervencion"
+        verbose_name_plural = "TiposIntervencion"
+
+class SubIntervencion(models.Model):
+    """
+    Guardado de las SubIntervencion realizadas a un legajo.
+    """
+
+    nombre = models.CharField(max_length=255)
+    fk_subintervencion = models.ForeignKey(
+        TipoIntervencion, on_delete=models.SET_NULL, default=1, null=True
     )
 
     def __str__(self):
-        return str(self.nombre)
+        return f"{self.nombre}"
 
     class Meta:
-        verbose_name = "Valor de comida"
-        verbose_name_plural = "Valores de comida"
-        ordering = ["nombre"]
+        verbose_name = "SubIntervencion"
+        verbose_name_plural = "SubIntervenciones"
 
 class TipoModalidadPrestacion(models.Model):
     """
@@ -678,6 +698,29 @@ class Comedor(models.Model):
         verbose_name = "comedor"
         verbose_name_plural = "comedores"
         ordering = ["nombre"]
+
+class Intervencion(models.Model):
+    """
+    Guardado de las intervenciones realizadas a un legajo.
+    """
+
+    fk_comedor = models.ForeignKey(Comedor, on_delete=models.SET_NULL, null=True)
+    fk_subintervencion = models.ForeignKey(
+        SubIntervencion, on_delete=models.SET_NULL, null=True
+    )
+    fk_tipo_intervencion = models.ForeignKey(
+        TipoIntervencion, on_delete=models.SET_NULL, null=True
+    )
+    fecha = models.DateTimeField(auto_now_add=True)
+    fk_estado = models.ForeignKey(
+        EstadosIntervencion, on_delete=models.SET_NULL, default=1, null=True
+    )
+    observaciones = models.TextField(blank=True, null=True)
+    class Meta:
+        ordering = ["-fecha"]
+        verbose_name = "Intervencion"
+        verbose_name_plural = "Intervenciones"
+        indexes = [models.Index(fields=["fk_comedor"])]
 
 
 class ImagenComedor(models.Model):
