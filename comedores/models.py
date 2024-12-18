@@ -769,3 +769,9 @@ class Observacion(models.Model):
         unique_together = [["comedor", "fecha_visita"]]
         verbose_name = "Observacion"
         verbose_name_plural = "Observaciones"
+
+
+class ValorComida(models.Model):
+    tipo = models.CharField(max_length=50)
+    valor = models.DecimalField(max_digits=10, decimal_places=2)
+    fecha = models.DateField()
