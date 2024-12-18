@@ -49,13 +49,18 @@
                             <div class="nav nav-pills row my-3">
                                 <div class="col-6">
                                     <div class="row">
-                                        <div class="col-6">
+                                        <div class="col-6 w-100">
                                             <div class="nav-item d-flex">
                                                 <div class="comment-text comment-text d-flex flex-column">
-                                                    <!--Imagen del comedor remplazar por la que corresponda-->
-                                                    <img src="{% static 'custom/img/default.png' %}"
-                                                         alt="Imagen del comedor"
-                                                         class="img-fluid" />
+                                                    {% if comedor.foto_legajo %}
+                                                        <img src="/media/{{ comedor.foto_legajo }}"
+                                                             alt="Imagen del comedor"
+                                                             class="img-fluid mw-100 rounded" />
+                                                    {% else %}
+                                                        <img src="{% static 'custom/img/default.png' %}"
+                                                             alt="Imagen del comedor"
+                                                             class="img-fluid mw-100 rounded" />
+                                                    {% endif %}
                                                 </div>
                                             </div>
                                         </div>
@@ -263,6 +268,31 @@
                         <a href="{% url 'observacion_crear' comedor.id %}"
                            class="btn btn-primary">Agregar</a>
                         <button type="button" class="btn btn-tool" data-card-widget="collapse"></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row relevamiento-container">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title font-weight-bold mr-3 pt-1">Imagenes</h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body row card-comments p-0 pb-1">
+                    <div class="nav nav-pills row col-10 my-3 mx-auto">
+                        {% for imagen in imagenes %}
+                            <div class="col-2 d-flex">
+                                <img src="/media/{{ imagen.imagen }}"
+                                     alt="Imagen del comedor"
+                                     class="mw-100 my-1 rounded" />
+                            </div>
+                        {% endfor %}
                     </div>
                 </div>
             </div>
