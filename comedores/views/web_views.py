@@ -234,10 +234,10 @@ class ComedorDetailView(DetailView):
 
         countBeneficiarios = countDesayuno + countAlmuerzo + countMerienda + countCena
 
-        valorCena = countCena * ValorComida.objects.get(nombre="Cena").valor
-        valorDesayuno = countDesayuno * ValorComida.objects.get(nombre="Desayuno").valor
-        valorAlmuerzo = countAlmuerzo * ValorComida.objects.get(nombre="Almuerzo").valor
-        valorMerienda = countMerienda * ValorComida.objects.get(nombre="Merienda").valor
+        valorCena = countCena * ValorComida.objects.get(tipo="Cena").valor
+        valorDesayuno = countDesayuno * ValorComida.objects.get(tipo="Desayuno").valor
+        valorAlmuerzo = countAlmuerzo * ValorComida.objects.get(tipo="Almuerzo").valor
+        valorMerienda = countMerienda * ValorComida.objects.get(tipo="Merienda").valor
 
         context.update(
             {
