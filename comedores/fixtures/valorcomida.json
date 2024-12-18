@@ -4,7 +4,8 @@
         "pk": 1,
         "fields": {
             "tipo": "Desayuno",
-            "valor": 1.00
+            "valor": 1.00,
+            "fecha": "2019-01-01"
         }
     },
     {
@@ -12,7 +13,8 @@
         "pk": 2,
         "fields": {
             "tipo": "Almuerzo",
-            "valor": 2.00
+            "valor": 2.00,
+            "fecha": "2019-01-01"
         }
     },
     {
@@ -20,7 +22,8 @@
         "pk": 3,
         "fields": {
             "tipo": "Merienda",
-            "valor": 3.00
+            "valor": 3.00,
+            "fecha": "2019-01-01"
         }
     },
     {
@@ -28,7 +31,8 @@
         "pk": 4,
         "fields": {
             "tipo": "Cena",
-            "valor": 4.00
+            "valor": 4.00,
+            "fecha": "2019-01-01"
         }
     }
 ]
