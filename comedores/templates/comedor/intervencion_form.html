@@ -37,7 +37,7 @@
                         <dd class="col-sm-5 mb-2">
                             Provincia
                         </dd>
-                        <dt class="col-sm-7 mb-2">{{ object.provincia}}</dt>
+                        <dt class="col-sm-7 mb-2">{{ object.provincia }}</dt>
                         <dd class="col-sm-5 mb-2">
                             Barrio
                         </dd>
@@ -80,7 +80,8 @@
                 </div>
                 <div class="mt-4 mx-2">
                     <button class="btn btn-primary mr-1">Confirmar</button>
-                    <a href="{% url 'comedor_detalle' object.id %}" class="btn btn-secondary">Cancelar</a>
+                    <a href="{% url 'comedor_detalle' object.id %}"
+                       class="btn btn-secondary">Cancelar</a>
                 </div>
             </form>
         </div>
