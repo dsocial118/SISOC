@@ -274,27 +274,36 @@ class ComedorDetailView(DetailView):
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
-        relevamiento = Relevamiento()
-        relevamiento.comedor = get_object_or_404(Comedor, id=self.object["id"])
-
-        gestionar_uid = json.loads(request.POST.get("territorial"))["gestionar_uid"]
-        nombre = json.loads(request.POST.get("territorial"))["nombre"]
-        if gestionar_uid and nombre:
-            territorial, _created = Territorial.objects.get_or_create(
-                gestionar_uid=gestionar_uid, defaults={"nombre": nombre}
-            )
-            relevamiento.territorial = territorial
-            relevamiento.estado = "Visita pendiente"
-        else:
+        try:
+            relevamiento = Relevamiento()
+            relevamiento.comedor = get_object_or_404(Comedor, id=self.object["id"])
             relevamiento.estado = "Pendiente"
 
-        relevamiento.save()
-        return redirect(
-            reverse(
-                "relevamiento_detalle",
-                kwargs={"pk": relevamiento.pk, "comedor_pk": relevamiento.comedor.pk},
+            if request.POST.get("territorial"):
+                gestionar_uid = json.loads(request.POST.get("territorial"))[
+                    "gestionar_uid"
+                ]
+                nombre = json.loads(request.POST.get("territorial"))["nombre"]
+                if gestionar_uid and nombre:
+                    territorial, _created = Territorial.objects.get_or_create(
+                        gestionar_uid=gestionar_uid, defaults={"nombre": nombre}
+                    )
+                    relevamiento.territorial = territorial
+                    relevamiento.estado = "Visita pendiente"
+
+            relevamiento.save()
+            return redirect(
+                reverse(
+                    "relevamiento_detalle",
+                    kwargs={
+                        "pk": relevamiento.pk,
+                        "comedor_pk": relevamiento.comedor.pk,
+                    },
+                )
             )
-        )
+        except Exception as e:
+            messages.error(request, f"Error al crear el relevamiento: {e}")
+            return redirect("comedor_detalle", pk=self.object["id"])
 
 
 class ComedorUpdateView(UpdateView):
