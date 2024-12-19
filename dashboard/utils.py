@@ -23,7 +23,6 @@ def contar_comedores_activos():
         # TODO: Agregar filtro para contar solo los comedores activos
         cached_value = Comedor.objects.count()
         cache.set(cache_key, cached_value, timeout=CACHE_TIMEOUT)
-        print("Contar comedores activos " + str(cached_value))
     return cached_value
 
 

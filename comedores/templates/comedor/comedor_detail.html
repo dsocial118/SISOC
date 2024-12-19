@@ -262,16 +262,57 @@
                 <div class="card-body row card-comments p-0 pb-1">
                     <div class="nav nav-pills col-7 row my-3">
                         {% for relevamiento in relevamientos %}
-                            <div class="col-12 d-flex">
-                                <a href="{% url 'relevamiento_detalle' comedor.id relevamiento.id %}">{{ relevamiento.id }} - {{ relevamiento.fecha_visita }}</a>
+                            <div class="col-6 d-flex">
+                                <a href="{% url 'relevamiento_detalle' comedor.id relevamiento.id %}">{{ relevamiento.id }} - {{ relevamiento.fecha_visita|default_if_none:"Sin asignar" }}</a>
+                            </div>
+                            <div class="col-6 d-flex">
+                                <p 
+                                    {% if relevamiento.estado == "Pendiente" %}
+                                        style="color: yellow;"
+                                    {% elif relevamiento.estado == "Visita pendiente" %}
+                                        style="color: green;"
+                                    {% else %}
+                                        style="color: white;"
+                                    {% endif %}
+                                >
+                                    {{ relevamiento.estado }}
+                                </p>                              
                             </div>
                         {% endfor %}
                     </div>
                     <div class="card-tools col-5 d-flex justify-content-end align-items-start my-3">
                         <a href="{% url 'relevamientos' comedor.id %}"
                            class="btn btn-primary mx-3">Ver mas</a>
-                        <a href="{% url 'relevamiento_crear' comedor.id %}"
-                           class="btn btn-primary">Agregar</a>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#RelevamientoModal">
+                            Agregar
+                        </button>                        
+                        <div class="modal fade" id="RelevamientoModal" tabindex="-1" aria-labelledby="RelevamientoModalLabel" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="RelevamientoModalLabel">Nuevo relevamiento</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <label for="inputField" class="form-label">Territorial</label>
+                                                <select name="territorial" id="territorial_select" class="form-control">
+                                                    <option value="">No definido</option>
+                                                    <option value='{"gestionar_uid": "abc", "nombre": "Juan Pedro"}'>Juan Pedro</option>
+                                                    <option value='{"gestionar_uid": "123", "nombre": "Matias"}'>Matias</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                            <button type="submit" class="btn btn-primary">Guardar</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
                         <button type="button" class="btn btn-tool" data-card-widget="collapse"></button>
                     </div>
                 </div>
@@ -323,7 +364,7 @@
                             <div class="col-2 d-flex">
                                 <img src="/media/{{ imagen.imagen }}"
                                      alt="Imagen del comedor"
-                                     class="mw-100 my-1 rounded" />
+                                     class="img-fluid my-1 rounded object-fit-contain" />
                             </div>
                         {% endfor %}
                     </div>
