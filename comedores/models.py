@@ -20,6 +20,7 @@ class EstadosIntervencion(models.Model):
         verbose_name = "EstadosIntervencion"
         verbose_name_plural = "EstadosIntervenciones"
 
+
 class TipoIntervencion(models.Model):
     """
     Guardado de los tipos de intervenciones realizadas a un legajo.
@@ -33,6 +34,7 @@ class TipoIntervencion(models.Model):
     class Meta:
         verbose_name = "TipoIntervencion"
         verbose_name_plural = "TiposIntervencion"
+
 
 class SubIntervencion(models.Model):
     """
@@ -50,6 +52,7 @@ class SubIntervencion(models.Model):
     class Meta:
         verbose_name = "SubIntervencion"
         verbose_name_plural = "SubIntervenciones"
+
 
 class TipoModalidadPrestacion(models.Model):
     """
@@ -699,6 +702,7 @@ class Comedor(models.Model):
         verbose_name_plural = "comedores"
         ordering = ["nombre"]
 
+
 class Intervencion(models.Model):
     """
     Guardado de las intervenciones realizadas a un legajo.
@@ -716,6 +720,7 @@ class Intervencion(models.Model):
         EstadosIntervencion, on_delete=models.SET_NULL, default=1, null=True
     )
     observaciones = models.TextField(blank=True, null=True)
+
     class Meta:
         ordering = ["-fecha"]
         verbose_name = "Intervencion"

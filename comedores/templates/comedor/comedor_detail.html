@@ -20,41 +20,35 @@
 {% block content %}
     <div class="row">
         <div class="col-md-2 pt-5">
-            <c-dashboard.v-info-box titulo='Relevamientos' valor='{{countRelevamientos }}' color='success'>
-                <i class="fa fa-user"></i>
+            <c-dashboard.v-info-box titulo='Relevamientos' valor='{{ countRelevamientos }}' color='success'>
+            <i class="fa fa-user"></i>
             </c-dashboard.v-info-box>
         </div>
         <div class="col-md-2 pt-5">
             <c-dashboard.v-info-box titulo='Beneficiarios' valor='{{ countBeneficiarios }}' color='success'>
-                <i class="fa fa-user"></i>
+            <i class="fa fa-user"></i>
             </c-dashboard.v-info-box>
         </div>
         <div class="col-md-2 pt-5">
             <c-dashboard.v-info-box titulo='Desayuno Presupuesto' valor='{{ presupuestoDesayuno }}' color='success'>
-                <i class="fa fa-user"></i>
+            <i class="fa fa-user"></i>
             </c-dashboard.v-info-box>
         </div>
         <div class="col-md-2 pt-5">
             <c-dashboard.v-info-box titulo='Almuerzo Presupuesto' valor='{{ presupuestoAlmuerzo }}' color='success'>
-                <i class="fa fa-user"></i>
+            <i class="fa fa-user"></i>
             </c-dashboard.v-info-box>
         </div>
         <div class="col-md-2 pt-5">
             <c-dashboard.v-info-box titulo='Merienda Presupuesto' valor='{{ presupuestoMerienda }}' color='success'>
-                <i class="fa fa-user"></i>
+            <i class="fa fa-user"></i>
             </c-dashboard.v-info-box>
         </div>
         <div class="col-md-2 pt-5">
             <c-dashboard.v-info-box titulo='Cena Presupuesto' valor='{{ presupuestoCena }}' color='success'>
-                <i class="fa fa-user"></i>
+            <i class="fa fa-user"></i>
             </c-dashboard.v-info-box>
         </div>
-
-
-
-
-
-
     </div>
     <link rel="stylesheet"
           href="{% static 'custom/css/comedorRelevamiento.css' %}" />
@@ -63,7 +57,8 @@
             <a href="{% url 'comedores' %}" class="btn btn-secondary mr-1">Volver</a>
         </div>
         <div class="col-auto">
-            <a href="{% url 'intervencion_ver' comedor.id%}" class="btn btn-primary mr-1">Intervenciones</a>
+            <a href="{% url 'intervencion_ver' comedor.id %}"
+               class="btn btn-primary mr-1">Intervenciones</a>
             <a href="{% url 'comedor_editar' comedor.id %}"
                class="btn btn-primary mr-1">Editar</a>
             <a href="#" class="btn btn-secondary print mr-1 d-none d-sm-inline">Imprimir</a>

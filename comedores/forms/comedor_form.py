@@ -1,7 +1,7 @@
 from django import forms
 
 
-from comedores.models import Comedor, Referente,Intervencion,ImagenComedor
+from comedores.models import Comedor, Referente, Intervencion, ImagenComedor
 
 from configuraciones.models import Municipio, Provincia
 from configuraciones.models import Localidad
@@ -38,6 +38,7 @@ class IntervencionForm(forms.ModelForm):
             "fk_estado": "Estado",
             "fk_direccion": "Dirección",
         }
+
 
 class ComedorForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
