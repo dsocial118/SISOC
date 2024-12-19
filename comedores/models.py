@@ -738,13 +738,23 @@ class ImagenComedor(models.Model):
         return f"Imagen de {self.comedor.nombre}"
 
 
+class Territorial(models.Model):
+    """
+    Modelo que representa un Territorial.
+    """
+
+    gestionar_uid = models.CharField(max_length=255, blank=True, null=True)
+    nombre = models.CharField(max_length=255)
+
+
 class Relevamiento(models.Model):
     """
     Modelo que representa un relevamiento realizado en un Comedor/Merendero.
 
     Atributos
         gestionar_uid (CharField): UID unica que referencia al Relevamiento en GESTIONAR.
-        Comedor/Merendero/Merendero (ForeignKey): Relación con el Comedor/Merendero donde se realizó el relevamiento.
+        comedor (ForeignKey): Relación con el Comedor/Merendero donde se realizó el relevamiento.
+        territorial (ForeignKey): Relación con el Territorial donde se realizó el relevamiento.
         fecha_visita (DateTimeField): Fecha y hora de la visita.
         funcionamiento (OneToOneField): Información relacionada al funcionamiento del Comedor/Merendero.
         espacio (OneToOneField): Información relacionada al espacio físico del Comedor/Merendero.
@@ -754,36 +764,32 @@ class Relevamiento(models.Model):
     """
 
     gestionar_uid = models.CharField(max_length=255, blank=True, null=True)
-
+    estado = models.CharField(max_length=255, blank=True, null=True)
     comedor = models.ForeignKey(
         to=Comedor,
         on_delete=models.CASCADE,
     )
-    relevador = models.CharField(max_length=255, blank=True)
-    fecha_visita = models.DateTimeField(default=timezone.now, blank=True)
+    fecha_visita = models.DateTimeField(null=True, blank=True)
+    territorial = models.ForeignKey(
+        Territorial, on_delete=models.PROTECT, blank=True, null=True
+    )
     funcionamiento = models.OneToOneField(
-        to=FuncionamientoPrestacion,
-        on_delete=models.PROTECT,
+        to=FuncionamientoPrestacion, on_delete=models.PROTECT, blank=True, null=True
     )
     espacio = models.OneToOneField(
-        to=Espacio,
-        on_delete=models.PROTECT,
+        to=Espacio, on_delete=models.PROTECT, blank=True, null=True
     )
     colaboradores = models.OneToOneField(
-        to=Colaboradores,
-        on_delete=models.PROTECT,
+        to=Colaboradores, on_delete=models.PROTECT, blank=True, null=True
     )
     recursos = models.OneToOneField(
-        to=FuenteRecursos,
-        on_delete=models.PROTECT,
+        to=FuenteRecursos, on_delete=models.PROTECT, blank=True, null=True
     )
     compras = models.OneToOneField(
-        to=FuenteCompras,
-        on_delete=models.PROTECT,
+        to=FuenteCompras, on_delete=models.PROTECT, blank=True, null=True
     )
     prestacion = models.OneToOneField(
-        to=Prestacion,
-        on_delete=models.PROTECT,
+        to=Prestacion, on_delete=models.PROTECT, blank=True, null=True
     )
     observacion = models.TextField(blank=True, null=True)
 
