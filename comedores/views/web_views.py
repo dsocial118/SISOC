@@ -2,7 +2,7 @@ from typing import Any
 from django.contrib import messages
 from django.db.models.base import Model
 from django.forms import BaseModelForm
-from django.http import HttpResponse,JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
@@ -14,15 +14,10 @@ from django.views.generic import (
     UpdateView,
     TemplateView,
     View,
-    
 )
 
 
-from comedores.forms.comedor_form import (
-    ComedorForm,
-    ReferenteForm,
-    IntervencionForm
-)
+from comedores.forms.comedor_form import ComedorForm, ReferenteForm, IntervencionForm
 
 from comedores.forms.observacion_form import ObservacionForm
 from comedores.forms.relevamiento_form import (
@@ -59,12 +54,12 @@ def SubEstadosIntervencionesAJax(request):
         sub_estados = SubIntervencion.objects.filter(fk_subintervencion=request_id)
     else:
         sub_estados = SubIntervencion.objects.all()
-    
+
     data = [
-        {"id": sub_estado.id, "text": sub_estado.nombre}
-        for sub_estado in sub_estados
+        {"id": sub_estado.id, "text": sub_estado.nombre} for sub_estado in sub_estados
     ]
     return JsonResponse(data, safe=False)
+
 
 class IntervencionDetail(TemplateView):
     template_name = "comedor/intervencion_detail.html"
@@ -73,7 +68,7 @@ class IntervencionDetail(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor = Comedor.objects.values(
-            "id","gestionar_uid", "nombre", "provincia", "barrio", "calle", "numero"
+            "id", "gestionar_uid", "nombre", "provincia", "barrio", "calle", "numero"
         ).get(pk=self.kwargs["pk"])
         intervenciones = Intervencion.objects.filter(fk_comedor=self.kwargs["pk"])
         cantidad_intervenciones = Intervencion.objects.filter(
@@ -99,7 +94,7 @@ class IntervencionCreateView(CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor = Comedor.objects.values(
-            "id","gestionar_uid", "nombre", "provincia", "barrio", "calle", "numero"
+            "id", "gestionar_uid", "nombre", "provincia", "barrio", "calle", "numero"
         ).get(pk=self.kwargs["pk"])
 
         context["form"] = self.get_form()
@@ -130,11 +125,12 @@ class IntervencionUpdateView(UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor = Comedor.objects.values(
-            "id","gestionar_uid", "nombre", "provincia", "barrio", "calle", "numero"
+            "id", "gestionar_uid", "nombre", "provincia", "barrio", "calle", "numero"
         ).get(pk=self.kwargs["pk2"])
         context["form"] = self.get_form()
         context["object"] = comedor
         return context
+
 
 class ComedorListView(ListView):
     model = Comedor
@@ -194,48 +190,48 @@ class ComedorDetailView(DetailView):
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         beneficiarios = Relevamiento.objects.filter(comedor=self.object["id"]).first()
-        if(beneficiarios == None):
+        if beneficiarios == None:
             countDesayuno = 0
             countAlmuerzo = 0
             countMerienda = 0
             countCena = 0
         else:
             countDesayuno = (
-                    (beneficiarios.prestacion.lunes_desayuno_actual or 0) +
-                    (beneficiarios.prestacion.martes_desayuno_actual or 0) +
-                    (beneficiarios.prestacion.miercoles_desayuno_actual or 0) +
-                    (beneficiarios.prestacion.jueves_almuerzo_actual or 0) +
-                    (beneficiarios.prestacion.viernes_desayuno_actual or 0) +
-                    (beneficiarios.prestacion.sabado_desayuno_actual or 0) +
-                    (beneficiarios.prestacion.domingo_desayuno_actual or 0)
-                )
-            
+                (beneficiarios.prestacion.lunes_desayuno_actual or 0)
+                + (beneficiarios.prestacion.martes_desayuno_actual or 0)
+                + (beneficiarios.prestacion.miercoles_desayuno_actual or 0)
+                + (beneficiarios.prestacion.jueves_almuerzo_actual or 0)
+                + (beneficiarios.prestacion.viernes_desayuno_actual or 0)
+                + (beneficiarios.prestacion.sabado_desayuno_actual or 0)
+                + (beneficiarios.prestacion.domingo_desayuno_actual or 0)
+            )
+
             countAlmuerzo = (
-                    (beneficiarios.prestacion.lunes_almuerzo_actual or 0) +
-                    (beneficiarios.prestacion.martes_almuerzo_actual or 0) +
-                    (beneficiarios.prestacion.miercoles_almuerzo_actual or 0) +
-                    (beneficiarios.prestacion.jueves_almuerzo_actual or 0) +
-                    (beneficiarios.prestacion.viernes_almuerzo_actual or 0) +
-                    (beneficiarios.prestacion.sabado_almuerzo_actual or 0) +
-                    (beneficiarios.prestacion.domingo_almuerzo_actual or 0)
+                (beneficiarios.prestacion.lunes_almuerzo_actual or 0)
+                + (beneficiarios.prestacion.martes_almuerzo_actual or 0)
+                + (beneficiarios.prestacion.miercoles_almuerzo_actual or 0)
+                + (beneficiarios.prestacion.jueves_almuerzo_actual or 0)
+                + (beneficiarios.prestacion.viernes_almuerzo_actual or 0)
+                + (beneficiarios.prestacion.sabado_almuerzo_actual or 0)
+                + (beneficiarios.prestacion.domingo_almuerzo_actual or 0)
             )
             countMerienda = (
-                    (beneficiarios.prestacion.lunes_merienda_actual or 0) +
-                    (beneficiarios.prestacion.martes_merienda_actual or 0) +
-                    (beneficiarios.prestacion.miercoles_merienda_actual or 0) +
-                    (beneficiarios.prestacion.jueves_merienda_actual or 0) +
-                    (beneficiarios.prestacion.viernes_merienda_actual or 0) +
-                    (beneficiarios.prestacion.sabado_merienda_actual or 0) +
-                    (beneficiarios.prestacion.domingo_merienda_actual or 0)
+                (beneficiarios.prestacion.lunes_merienda_actual or 0)
+                + (beneficiarios.prestacion.martes_merienda_actual or 0)
+                + (beneficiarios.prestacion.miercoles_merienda_actual or 0)
+                + (beneficiarios.prestacion.jueves_merienda_actual or 0)
+                + (beneficiarios.prestacion.viernes_merienda_actual or 0)
+                + (beneficiarios.prestacion.sabado_merienda_actual or 0)
+                + (beneficiarios.prestacion.domingo_merienda_actual or 0)
             )
             countCena = (
-                    (beneficiarios.prestacion.lunes_cena_actual or 0) +
-                    (beneficiarios.prestacion.martes_cena_actual or 0) +
-                    (beneficiarios.prestacion.miercoles_cena_actual or 0) +
-                    (beneficiarios.prestacion.jueves_cena_actual or 0) +
-                    (beneficiarios.prestacion.viernes_cena_actual or 0) +
-                    (beneficiarios.prestacion.sabado_cena_actual or 0) +
-                    (beneficiarios.prestacion.domingo_cena_actual or 0)
+                (beneficiarios.prestacion.lunes_cena_actual or 0)
+                + (beneficiarios.prestacion.martes_cena_actual or 0)
+                + (beneficiarios.prestacion.miercoles_cena_actual or 0)
+                + (beneficiarios.prestacion.jueves_cena_actual or 0)
+                + (beneficiarios.prestacion.viernes_cena_actual or 0)
+                + (beneficiarios.prestacion.sabado_cena_actual or 0)
+                + (beneficiarios.prestacion.domingo_cena_actual or 0)
             )
 
         countBeneficiarios = countDesayuno + countAlmuerzo + countMerienda + countCena
@@ -253,7 +249,9 @@ class ComedorDetailView(DetailView):
                 "observaciones": Observacion.objects.filter(comedor=self.object["id"])
                 .values("id", "fecha_visita")
                 .order_by("-fecha_visita")[:12],
-                "countRelevamientos": Relevamiento.objects.filter(comedor=self.object["id"]).count(),
+                "countRelevamientos": Relevamiento.objects.filter(
+                    comedor=self.object["id"]
+                ).count(),
                 "countBeneficiarios": countBeneficiarios,
                 "presupuestoDesayuno": valorDesayuno,
                 "presupuestoAlmuerzo": valorAlmuerzo,

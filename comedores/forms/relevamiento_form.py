@@ -85,6 +85,7 @@ class EspacioCocinaForm(forms.ModelForm):
         widget=forms.Select,
         label="2.2.9 ¿Cuenta con instalación eléctrica adecuada? ",
     )
+
     class Meta:
         model = EspacioCocina
         fields = "__all__"
