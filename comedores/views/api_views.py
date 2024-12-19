@@ -97,12 +97,8 @@ class RelevamientoApiView(APIView):
     permission_classes = [HasAPIKey]
 
     def patch(self, request):
-        comedor = Comedor.objects.get(
-            gestionar_uid=request.data["comedor_gestionar_uid"]
-        ).id
         relevamiento = Relevamiento.objects.get(
-            comedor=comedor,
-            fecha_visita=format_fecha_django(request.data["fecha_visita"]),
+            id=request.data["sisoc_id"],
         )
         relevamiento_serializer = RelevamientoSerializer(
             relevamiento, data=request.data, partial=True
