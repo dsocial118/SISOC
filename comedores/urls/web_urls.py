@@ -94,7 +94,6 @@ urlpatterns = [
         login_required(ObservacionDeleteView.as_view()),
         name="observacion_eliminar",
     ),
-
     path(
         "comedores/intervencion/ver/<pk>",
         login_required(IntervencionDetail.as_view()),
