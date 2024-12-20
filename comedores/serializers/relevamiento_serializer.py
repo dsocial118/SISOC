@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from comedores.models import (
     Relevamiento,
+    Territorial,
 )
 from comedores.services.relevamiento_service import RelevamientoService
 from comedores.utils import format_fecha_django
@@ -13,6 +14,14 @@ class RelevamientoSerializer(serializers.ModelSerializer):
             self.initial_data["fecha_visita"] = format_fecha_django(
                 self.initial_data["fecha_visita"]
             )
+
+        if "territorial" in self.initial_data:
+            territorial_data = self.initial_data["territorial"]
+            territorial, _created = Territorial.objects.get_or_create(
+                gestionar_uid=territorial_data["gestionar_uid"],
+                defaults={"nombre": territorial_data["nombre"]},
+            )
+            self.initial_data["territorial"] = territorial.id
 
         if "funcionamiento" in self.initial_data:
             funcionamiento_instance = (
@@ -83,9 +92,13 @@ class RelevamientoSerializer(serializers.ModelSerializer):
             )
 
         if "gestionar_uid" in self.initial_data:
-            if Relevamiento.objects.filter(
-                gestionar_uid=self.initial_data["gestionar_uid"]
-            ).exists():
+            if (
+                Relevamiento.objects.filter(
+                    gestionar_uid=self.initial_data["gestionar_uid"]
+                )
+                .exclude(id=self.initial_data["sisoc_id"])
+                .exists()
+            ):
                 raise serializers.ValidationError(
                     {"error": "gestionar_uid debe ser único si no es nulo."}
                 )

@@ -1,5 +1,6 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.forms import ValidationError
 from django.utils import timezone
 
 from configuraciones.models import Municipio, Provincia
@@ -175,8 +176,10 @@ class FuncionamientoPrestacion(models.Model):
         TipoModalidadPrestacion,
         on_delete=models.PROTECT,
         verbose_name="1.1.4 Modalidad de prestación",
+        blank=True,
+        null=True,
     )
-    servicio_por_turnos = models.BooleanField()
+    servicio_por_turnos = models.BooleanField(default=False)
     cantidad_turnos = models.PositiveIntegerField(
         blank=True,
         null=True,
@@ -213,6 +216,8 @@ class EspacioCocina(models.Model):
         to=TipoAgua,
         on_delete=models.PROTECT,
         verbose_name="2.2.8 El abastecimiento del agua es con",
+        blank=True,
+        null=True,
     )
     abastecimiento_agua_otro = models.CharField(
         max_length=255,
@@ -265,6 +270,8 @@ class EspacioPrestacion(models.Model):
             "2.3.10 ¿El Comedor/Merendero cuenta con alguna forma de "
             "registro de los reclamos sobre la prestacion alimentaria"
         ),
+        blank=True,
+        null=True,
     )
     gestion_quejas_otro = models.CharField(
         max_length=255,
@@ -277,6 +284,8 @@ class EspacioPrestacion(models.Model):
         to=FrecuenciaLimpieza,
         on_delete=models.PROTECT,
         verbose_name="2.4.1 ¿Con qué frecuencia se realiza la limpieza de las instalaciones?",
+        blank=True,
+        null=True,
     )
 
     class Meta:
@@ -295,6 +304,8 @@ class Colaboradores(models.Model):
         to=CantidadColaboradores,
         on_delete=models.PROTECT,
         verbose_name="3.1.1 ¿Qué cantidad de personas realizan tareas en el Comedor / Merendero?",
+        blank=True,
+        null=True,
     )
     colaboradores_capacitados_alimentos = models.BooleanField(
         default=False,
@@ -324,6 +335,8 @@ class Espacio(models.Model):
         to=TipoEspacio,
         on_delete=models.PROTECT,
         verbose_name="2.1.1 ¿En qué tipo de espacio físico funciona el Comedor/Merendero?",
+        blank=True,
+        null=True,
     )
     espacio_fisico_otro = models.CharField(
         max_length=255,
@@ -738,13 +751,23 @@ class ImagenComedor(models.Model):
         return f"Imagen de {self.comedor.nombre}"
 
 
+class Territorial(models.Model):
+    """
+    Modelo que representa un Territorial.
+    """
+
+    gestionar_uid = models.CharField(max_length=255)
+    nombre = models.CharField(max_length=255)
+
+
 class Relevamiento(models.Model):
     """
     Modelo que representa un relevamiento realizado en un Comedor/Merendero.
 
     Atributos
         gestionar_uid (CharField): UID unica que referencia al Relevamiento en GESTIONAR.
-        Comedor/Merendero/Merendero (ForeignKey): Relación con el Comedor/Merendero donde se realizó el relevamiento.
+        comedor (ForeignKey): Relación con el Comedor/Merendero donde se realizó el relevamiento.
+        territorial (ForeignKey): Relación con el Territorial donde se realizó el relevamiento.
         fecha_visita (DateTimeField): Fecha y hora de la visita.
         funcionamiento (OneToOneField): Información relacionada al funcionamiento del Comedor/Merendero.
         espacio (OneToOneField): Información relacionada al espacio físico del Comedor/Merendero.
@@ -754,38 +777,51 @@ class Relevamiento(models.Model):
     """
 
     gestionar_uid = models.CharField(max_length=255, blank=True, null=True)
-
+    estado = models.CharField(max_length=255, blank=True, null=True)
     comedor = models.ForeignKey(
         to=Comedor,
         on_delete=models.CASCADE,
     )
-    relevador = models.CharField(max_length=255, blank=True)
-    fecha_visita = models.DateTimeField(default=timezone.now, blank=True)
+    fecha_visita = models.DateTimeField(null=True, blank=True)
+    territorial = models.ForeignKey(
+        Territorial, on_delete=models.PROTECT, blank=True, null=True
+    )
     funcionamiento = models.OneToOneField(
-        to=FuncionamientoPrestacion,
-        on_delete=models.PROTECT,
+        to=FuncionamientoPrestacion, on_delete=models.PROTECT, blank=True, null=True
     )
     espacio = models.OneToOneField(
-        to=Espacio,
-        on_delete=models.PROTECT,
+        to=Espacio, on_delete=models.PROTECT, blank=True, null=True
     )
     colaboradores = models.OneToOneField(
-        to=Colaboradores,
-        on_delete=models.PROTECT,
+        to=Colaboradores, on_delete=models.PROTECT, blank=True, null=True
     )
     recursos = models.OneToOneField(
-        to=FuenteRecursos,
-        on_delete=models.PROTECT,
+        to=FuenteRecursos, on_delete=models.PROTECT, blank=True, null=True
     )
     compras = models.OneToOneField(
-        to=FuenteCompras,
-        on_delete=models.PROTECT,
+        to=FuenteCompras, on_delete=models.PROTECT, blank=True, null=True
     )
     prestacion = models.OneToOneField(
-        to=Prestacion,
-        on_delete=models.PROTECT,
+        to=Prestacion, on_delete=models.PROTECT, blank=True, null=True
     )
     observacion = models.TextField(blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        if self.estado in ["Pendiente", "Visita pendiente"]:
+            relevamiento_existente = (
+                Relevamiento.objects.filter(
+                    comedor=self.comedor, estado__in=["Pendiente", "Visita pendiente"]
+                )
+                .exclude(pk=self.pk)
+                .exists()
+            )
+
+            if relevamiento_existente:
+                raise ValidationError(
+                    f"Ya existe un relevamiento activo para el comedor '{self.comedor}'."
+                )
+
+        super().save(*args, **kwargs)
 
     class Meta:
         indexes = [
