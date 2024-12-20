@@ -1,11 +1,13 @@
 import os
+import re
 from typing import Union
 
 from django.db.models import Q
 import requests
 
 from comedores.forms.comedor_form import ImagenComedorForm
-from comedores.models import Comedor, Referente
+from comedores.models import Comedor, Referente, Territorial
+from config import settings
 from configuraciones.models import Municipio, Provincia
 from configuraciones.models import Localidad
 
@@ -72,19 +74,19 @@ class ComedorService:
             provincia_obj = Provincia.objects.filter(
                 nombre__iexact=data["provincia"]
             ).first()
-            data["provincia"] = provincia_obj.id if provincia_obj else None
+            data["provincia"] = provincia_obj.id if provincia_obj else ""
 
         if "municipio" in data:
             municipio_obj = Municipio.objects.filter(
                 nombre__iexact=data["municipio"]
             ).first()
-            data["municipio"] = municipio_obj.id if municipio_obj else None
+            data["municipio"] = municipio_obj.id if municipio_obj else ""
 
         if "localidad" in data:
             localidad_obj = Localidad.objects.filter(
                 nombre__iexact=data["localidad"]
             ).first()
-            data["localidad"] = localidad_obj.id if localidad_obj else None
+            data["localidad"] = localidad_obj.id if localidad_obj else ""
 
         return data
 
@@ -119,31 +121,36 @@ class ComedorService:
 
     @staticmethod
     def send_to_gestionar(comedor: Comedor):
-
         if comedor.gestionar_uid is None:
             data = {
                 "Action": "Add",
                 "Properties": {"Locale": "es-ES"},
                 "Rows": [
                     {
+                        "ComedorID": comedor.id,
+                        "ID_Sisoc": comedor.id,
                         "nombre": comedor.nombre,
-                        "comienzo": comedor.comienzo,
+                        "comienzo": f"01/01/{comedor.comienzo}",
                         "calle": comedor.calle,
                         "numero": comedor.numero,
                         "entre_calle_1": comedor.entre_calle_1,
                         "entre_calle_2": comedor.entre_calle_2,
                         "provincia": (
-                            comedor.provincia.nombre if comedor.provincia else None
+                            comedor.provincia.nombre if comedor.provincia else ""
                         ),
                         "municipio": (
-                            comedor.municipio.nombre if comedor.municipio else None
+                            comedor.municipio.nombre if comedor.municipio else ""
                         ),
                         "localidad": (
-                            comedor.localidad.nombre if comedor.localidad else None
+                            comedor.localidad.nombre if comedor.localidad else ""
                         ),
                         "partido": comedor.partido,
                         "barrio": comedor.barrio,
                         "codigo_postal": comedor.codigo_postal,
+                        "Referente": (
+                            comedor.referente.documento if comedor.referente else ""
+                        ),
+                        "Imagen": f"{os.getenv('DOMINIO')}/media/{comedor.foto_legajo}",
                     }
                 ],
             }
@@ -165,3 +172,45 @@ class ComedorService:
                 comedor.save()
             except requests.exceptions.RequestException as e:
                 print(f"Error en la petición POST: {e}")
+
+    @staticmethod
+    def get_territoriales(comedor_id: int):
+        data = {
+            "Action": "Find",
+            "Properties": {"Locale": "es-ES"},
+            "Rows": [{"ComedorID": comedor_id}],
+        }
+
+        headers = {
+            "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
+        }
+
+        try:
+            response = requests.post(
+                os.getenv("GESTIONAR_API_CREAR_COMEDOR"),
+                json=data,
+                headers=headers,
+            )
+            response.raise_for_status()
+            response = response.json()
+
+            territoriales = []
+            territoriales_data = [
+                {"gestionar_uid": uid, "nombre": nombre.strip()}
+                for uid, nombre in re.findall(
+                    r"(\w+)/ ([^,]+(?:,.*?[^,])?)",
+                    response[0]["ListadoRelevadoresDisponibles"],
+                )
+            ]
+
+            for territorial_data in territoriales_data:
+                territorial, _created = Territorial.objects.get_or_create(
+                    gestionar_uid=territorial_data["gestionar_uid"],
+                    defaults={"nombre": territorial_data["nombre"]},
+                )
+                territoriales.append(territorial)
+
+            return territoriales
+        except requests.exceptions.RequestException as e:
+            print(f"Error en la petición POST: {e}")
+            return []
