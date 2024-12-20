@@ -48,17 +48,9 @@
                                                     <a href="{% url 'relevamiento_detalle' comedor.id relevamiento.id %}">{{ relevamiento.id }} - {{ relevamiento.fecha_visita|default_if_none:"Sin asignar" }}</a>
                                                 </div>
                                                 <div class="col-6 d-flex">
-                                                    <p 
-                                                        {% if relevamiento.estado == "Pendiente" %}
-                                                            style="color: yellow;"
-                                                        {% elif relevamiento.estado == "Visita pendiente" %}
-                                                            style="color: green;"
-                                                        {% else %}
-                                                            style="color: white;"
-                                                        {% endif %}
-                                                    >
+                                                    <p {% if relevamiento.estado == "Pendiente" %} style="color: yellow;" {% elif relevamiento.estado == "Visita pendiente" %} style="color: green;" {% else %} style="color: white;" {% endif %}>
                                                         {{ relevamiento.estado }}
-                                                    </p>                              
+                                                    </p>                            
                                                 </div>
                                             {% endfor %}
                                         </div>
