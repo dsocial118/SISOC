@@ -166,7 +166,7 @@ class ComedorCreateView(CreateView):
         imagenes = self.request.FILES.getlist("imagenes")
 
         if referente_form.is_valid():  # Creo y asigno el referente
-            self.object = form.save()
+            self.object = form.save(commit=False)
             self.object.referente = referente_form.save()
             self.object.save()
 
@@ -248,11 +248,14 @@ class ComedorDetailView(DetailView):
         valorAlmuerzo = countAlmuerzo * ValorComida.objects.get(tipo="Almuerzo").valor
         valorMerienda = countMerienda * ValorComida.objects.get(tipo="Merienda").valor
 
+        territoriales = ComedorService.get_territoriales(self.object["id"])
+
         context.update(
             {
                 "relevamientos": Relevamiento.objects.filter(comedor=self.object["id"])
                 .values("id", "fecha_visita", "estado")
                 .order_by("-fecha_visita")[:3],
+                "territoriales": territoriales,
                 "observaciones": Observacion.objects.filter(comedor=self.object["id"])
                 .values("id", "fecha_visita")
                 .order_by("-fecha_visita")[:3],

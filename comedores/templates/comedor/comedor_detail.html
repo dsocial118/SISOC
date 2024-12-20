@@ -300,8 +300,9 @@
                                                 <label for="inputField" class="form-label">Territorial</label>
                                                 <select name="territorial" id="territorial_select" class="form-control">
                                                     <option value="">No definido</option>
-                                                    <option value='{"gestionar_uid": "abc", "nombre": "Juan Pedro"}'>Juan Pedro</option>
-                                                    <option value='{"gestionar_uid": "123", "nombre": "Matias"}'>Matias</option>
+                                                    {% for territorial in territoriales %}
+                                                        <option value='{"gestionar_uid": "{{ territorial.gestionar_uid }}", "nombre": "{{ territorial.nombre }}"}'>{{ territorial.nombre }}</option>
+                                                    {% endfor %}
                                                 </select>
                                             </div>
                                         </div>

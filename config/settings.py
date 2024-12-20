@@ -254,3 +254,6 @@ REST_FRAMEWORK = {
 
 # Configuracion de CORS header
 CORS_ALLOW_ALL_ORIGINS = True
+
+# Dominio
+DOMINIO = os.environ.get("DOMINIO", default="localhost:8001")
