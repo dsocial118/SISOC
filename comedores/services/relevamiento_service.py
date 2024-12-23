@@ -135,7 +135,7 @@ class RelevamientoService:
                 "espacio__prestacion__tiene_buena_iluminacion",
                 "espacio__prestacion__tiene_sanitarios",
                 "espacio__prestacion__desague_hinodoro__nombre",
-                "espacio__prestacion__gestion_quejas",
+                "espacio__prestacion__gestion_quejas__nombre",
                 "espacio__prestacion__gestion_quejas_otro",
                 "espacio__prestacion__informacion_quejas",
                 "espacio__prestacion__frecuencia_limpieza__nombre",
