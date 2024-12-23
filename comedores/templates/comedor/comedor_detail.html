@@ -268,20 +268,30 @@
                             <div class="col-6 d-flex">
                                 <p {% if relevamiento.estado == "Pendiente" %} style="color: yellow;" {% elif relevamiento.estado == "Visita pendiente" %} style="color: green;" {% else %} style="color: white;" {% endif %}>
                                     {{ relevamiento.estado }}
-                                </p>                             
+                                </p>
                             </div>
                         {% endfor %}
                     </div>
                     <div class="card-tools col-5 d-flex justify-content-end align-items-start my-3">
                         <a href="{% url 'relevamientos' comedor.id %}"
                            class="btn btn-primary mx-3">Ver mas</a>
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#RelevamientoModal">Agregar</button>
-                        <div class="modal fade" id="RelevamientoModal" tabindex="-1" aria-labelledby="RelevamientoModalLabel" aria-hidden="true">
+                        <button type="button"
+                                class="btn btn-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#RelevamientoModal">Agregar</button>
+                        <div class="modal fade"
+                             id="RelevamientoModal"
+                             tabindex="-1"
+                             aria-labelledby="RelevamientoModalLabel"
+                             aria-hidden="true">
                             <div class="modal-dialog">
                                 <div class="modal-content">
                                     <div class="modal-header">
                                         <h5 class="modal-title" id="RelevamientoModalLabel">Nuevo relevamiento</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        <button type="button"
+                                                class="btn-close"
+                                                data-bs-dismiss="modal"
+                                                aria-label="Close"></button>
                                     </div>
                                     <form method="post">
                                         {% csrf_token %}
@@ -293,7 +303,7 @@
                                                     {% for territorial in territoriales %}
                                                         <option value='{"gestionar_uid": "{{ territorial.gestionar_uid }}", "nombre": "{{ territorial.nombre }}"}'>
                                                             {{ territorial.nombre }}
-                                                        </option>   
+                                                        </option>
                                                     {% endfor %}
                                                 </select>
                                             </div>
