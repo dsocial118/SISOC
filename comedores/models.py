@@ -807,10 +807,10 @@ class Relevamiento(models.Model):
     observacion = models.TextField(blank=True, null=True)
 
     def save(self, *args, **kwargs):
-        if self.estado in ["Pendiente", "Visita pendiente"]:
+        """if self.estado in ["Pendiente", "Visita pendiente", "Finalizado"]:
             relevamiento_existente = (
                 Relevamiento.objects.filter(
-                    comedor=self.comedor, estado__in=["Pendiente", "Visita pendiente"]
+                    comedor=self.comedor, estado__in=["Pendiente", "Visita pendiente", "Finalizado"]
                 )
                 .exclude(pk=self.pk)
                 .exists()
@@ -819,7 +819,7 @@ class Relevamiento(models.Model):
             if relevamiento_existente:
                 raise ValidationError(
                     f"Ya existe un relevamiento activo para el comedor '{self.comedor}'."
-                )
+                )"""
 
         super().save(*args, **kwargs)
 
