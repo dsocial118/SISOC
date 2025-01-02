@@ -640,11 +640,19 @@ class Referente(models.Model):
         documento (BigIntegerField): Documento único del referente.
     """
 
-    nombre = models.CharField(max_length=255, verbose_name="Nombe del referente")
-    apellido = models.CharField(max_length=255, verbose_name="Apellido del referente")
-    mail = models.EmailField(verbose_name="Mail del referente")
-    celular = models.BigIntegerField(verbose_name="Celular del referente")
-    documento = models.BigIntegerField(verbose_name="Documento del referente")
+    nombre = models.CharField(
+        max_length=255, verbose_name="Nombre del referente", blank=True, null=True
+    )
+    apellido = models.CharField(
+        max_length=255, verbose_name="Apellido del referente", blank=True, null=True
+    )
+    mail = models.EmailField(verbose_name="Mail del referente", blank=True, null=True)
+    celular = models.BigIntegerField(
+        verbose_name="Celular del referente", blank=True, null=True
+    )
+    documento = models.BigIntegerField(
+        verbose_name="Documento del referente", blank=True, null=True
+    )
 
     class Meta:
         verbose_name = "Referente"
@@ -683,21 +691,29 @@ class Comedor(models.Model):
             MaxValueValidator(timezone.now().year),
         ],
         verbose_name="Año en el que comenzó a funcionar",
+        blank=True,
+        null=True,
     )
-    calle = models.CharField(max_length=255)
-    numero = models.PositiveIntegerField()
+    calle = models.CharField(max_length=255, blank=True, null=True)
+    numero = models.PositiveIntegerField(blank=True, null=True)
     entre_calle_1 = models.CharField(max_length=255, blank=True, null=True)
     entre_calle_2 = models.CharField(max_length=255, blank=True, null=True)
     provincia = models.ForeignKey(to=Provincia, on_delete=models.PROTECT, null=True)
-    municipio = models.ForeignKey(to=Municipio, on_delete=models.PROTECT, null=True)
-    localidad = models.ForeignKey(to=Localidad, on_delete=models.PROTECT, null=True)
-    partido = models.CharField(max_length=255, null=True)
-    barrio = models.CharField(max_length=255, null=True)
+    municipio = models.ForeignKey(
+        to=Municipio, on_delete=models.PROTECT, null=True, blank=True
+    )
+    localidad = models.ForeignKey(
+        to=Localidad, on_delete=models.PROTECT, null=True, blank=True
+    )
+    partido = models.CharField(max_length=255, null=True, blank=True)
+    barrio = models.CharField(max_length=255, null=True, blank=True)
     codigo_postal = models.IntegerField(
         validators=[
             MinValueValidator(1000),
             MaxValueValidator(999999),
         ],  # Entre 4 a 6 digitos
+        blank=True,
+        null=True,
     )
     referente = models.ForeignKey(
         to=Referente, on_delete=models.SET_NULL, null=True, blank=True
