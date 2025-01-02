@@ -640,11 +640,19 @@ class Referente(models.Model):
         documento (BigIntegerField): Documento único del referente.
     """
 
-    nombre = models.CharField(max_length=255, verbose_name="Nombre del referente",blank=True, null=True)
-    apellido = models.CharField(max_length=255, verbose_name="Apellido del referente", blank=True, null=True)
+    nombre = models.CharField(
+        max_length=255, verbose_name="Nombre del referente", blank=True, null=True
+    )
+    apellido = models.CharField(
+        max_length=255, verbose_name="Apellido del referente", blank=True, null=True
+    )
     mail = models.EmailField(verbose_name="Mail del referente", blank=True, null=True)
-    celular = models.BigIntegerField(verbose_name="Celular del referente",  blank=True, null=True)
-    documento = models.BigIntegerField(verbose_name="Documento del referente", blank=True, null=True)
+    celular = models.BigIntegerField(
+        verbose_name="Celular del referente", blank=True, null=True
+    )
+    documento = models.BigIntegerField(
+        verbose_name="Documento del referente", blank=True, null=True
+    )
 
     class Meta:
         verbose_name = "Referente"
@@ -691,8 +699,12 @@ class Comedor(models.Model):
     entre_calle_1 = models.CharField(max_length=255, blank=True, null=True)
     entre_calle_2 = models.CharField(max_length=255, blank=True, null=True)
     provincia = models.ForeignKey(to=Provincia, on_delete=models.PROTECT, null=True)
-    municipio = models.ForeignKey(to=Municipio, on_delete=models.PROTECT, null=True, blank=True)
-    localidad = models.ForeignKey(to=Localidad, on_delete=models.PROTECT, null=True, blank=True)
+    municipio = models.ForeignKey(
+        to=Municipio, on_delete=models.PROTECT, null=True, blank=True
+    )
+    localidad = models.ForeignKey(
+        to=Localidad, on_delete=models.PROTECT, null=True, blank=True
+    )
     partido = models.CharField(max_length=255, null=True, blank=True)
     barrio = models.CharField(max_length=255, null=True, blank=True)
     codigo_postal = models.IntegerField(
