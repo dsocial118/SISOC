@@ -57299,6 +57299,126 @@
         }
     },
     {
+        "model": "configuraciones.Localidad",
+        "pk": "03001",
+        "fields": {
+            "nombre": "Comuna 1",
+            "fk_municipio": "022007"
+        }
+    },
+    {
+        "model": "configuraciones.Localidad",
+        "pk": "03002",
+        "fields": {
+            "nombre": "Comuna 2",
+            "fk_municipio": "022014"
+        }
+    },
+    {
+        "model": "configuraciones.Localidad",
+        "pk": "03003",
+        "fields": {
+            "nombre": "Comuna 3",
+            "fk_municipio": "022021"
+        }
+    },
+    {
+        "model": "configuraciones.Localidad",
+        "pk": "03004",
+        "fields": {
+            "nombre": "Comuna 4",
+            "fk_municipio": "022028"
+        }
+    },
+    {
+        "model": "configuraciones.Localidad",
+        "pk": "03005",
+        "fields": {
+            "nombre": "Comuna 5",
+            "fk_municipio": "022035"
+        }
+    },
+    {
+        "model": "configuraciones.Localidad",
+        "pk": "03006",
+        "fields": {
+            "nombre": "Comuna 6",
+            "fk_municipio": "022042"
+        }
+    },
+    {
+        "model": "configuraciones.Localidad",
+        "pk": "03007",
+        "fields": {
+            "nombre": "Comuna 7",
+            "fk_municipio": "022049"
+        }
+    },
+    {
+        "model": "configuraciones.Localidad",
+        "pk": "03008",
+        "fields": {
+            "nombre": "Comuna 8",
+            "fk_municipio": "022056"
+        }
+    },
+    {
+        "model": "configuraciones.Localidad",
+        "pk": "03009",
+        "fields": {
+            "nombre": "Comuna 9",
+            "fk_municipio": "022063"
+        }
+    },
+    {
+        "model": "configuraciones.Localidad",
+        "pk": "03010",
+        "fields": {
+            "nombre": "Comuna 10",
+            "fk_municipio": "022070"
+        }
+    },
+    {
+        "model": "configuraciones.Localidad",
+        "pk": "03011",
+        "fields": {
+            "nombre": "Comuna 11",
+            "fk_municipio": "022077"
+        }
+    },
+    {
+        "model": "configuraciones.Localidad",
+        "pk": "03012",
+        "fields": {
+            "nombre": "Comuna 12",
+            "fk_municipio": "022084"
+        }
+    },
+    {
+        "model": "configuraciones.Localidad",
+        "pk": "03013",
+        "fields": {
+            "nombre": "Comuna 13",
+            "fk_municipio": "022091"
+        }
+    },
+    {
+        "model": "configuraciones.Localidad",
+        "pk": "03014",
+        "fields": {
+            "nombre": "Comuna 14",
+            "fk_municipio": "022098"
+        }
+    },
+    {
+        "model": "configuraciones.Localidad",
+        "pk": "03015",
+        "fields": {
+            "nombre": "Comuna 15",
+            "fk_municipio": "022105"
+        }
+    },
+    {
         "model": "configuraciones.Asentamiento",
         "pk": 1,
         "fields": {
