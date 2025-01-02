@@ -194,6 +194,9 @@ class ComedorService:
             response.raise_for_status()
             response = response.json()
 
+            if not response or not response[0].get("ListadoRelevadoresDisponibles"):
+                return []
+
             territoriales = []
             territoriales_data = [
                 {"gestionar_uid": uid, "nombre": nombre.strip()}
