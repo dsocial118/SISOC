@@ -1,0 +1,96 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Nomina formulario{% endblock %}
+{% block titulo-pagina %}Nomina{% endblock %}
+;
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right ">
+        <li class="breadcrumb-item">Nomina</li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'comedor_detalle' object.id %}" title="Ver Comedor">{{ object.nombre }} {{ object.apellido }}</a>
+        </li>
+        <li class="breadcrumb-item active">Agregar</li>
+    </ol>
+{% endblock %}
+;
+{% load crispy_forms_tags %}
+{% block content %}
+    <!-- Datos de legajo -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card card-outline card-primary ">
+                <div class="card-header">
+                    <h3 class="card-title">Detalle del Comedor</h3>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dd class="col-sm-2 mb-2">
+                            Nombre
+                        </dd>
+                        <dt class="col-sm-10 mb-2">
+                            <a href="{% url 'comedor_detalle' object.id %}" title="Ver Comedor">{{ object.nombre }}</a>
+                        </dt>
+                        <dd class="col-sm-5 mb-2">
+                            Gestionar
+                        </dd>
+                        <dt class="col-sm-7 mb-2">{{ object.gestionar_uid }}</dt>
+                        <dd class="col-sm-5 mb-2">
+                            Provincia
+                        </dd>
+                        <dt class="col-sm-7 mb-2">{{ object.provincia }}</dt>
+                        <dd class="col-sm-5 mb-2">
+                            Barrio
+                        </dd>
+                        <dt class="col-sm-7 mb-2">{{ object.barrio }}</dt>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /  -->
+    <div class="row">
+        <div class="col">
+            <form class="needs-validation"
+                  novalidate
+                  method="POST"
+                  enctype="multipart/form-data">
+                <!-- Security token -->
+                {% csrf_token %}
+                <div class="card card-primary card-outline">
+                    <div class="card-header">
+                        <h3 class="card-title">Agregar Nomina</h3>
+                    </div>
+                    <div class="card-body ">
+                        <div class="row m-0 p-0">
+                            <input type="hidden" name="fk_comedor" value="{{ object.id }}" />
+                            <div class="col-sm-6">
+                                <div class="form-group">{{ form.nombre| as_crispy_field }}</div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="form-group">{{ form.apellido| as_crispy_field }}</div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="form-group">{{ form.dni| as_crispy_field }}</div>
+                            </div>
+                            <div class="col-sm-3">
+                                <div class="form-group">{{ form.fk_estado| as_crispy_field }}</div>
+                            </div>
+                            <div class="col-sm-12>
+                                <div class="form-group">{{ form.observaciones| as_crispy_field }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 mx-2">
+                    <a href="{% url 'nomina_ver' object.id %}" class="btn btn-primary mr-1">Agregar Persona</a>
+
+                    <a href="{% url 'nomina_ver' object.id %}"
+                       class="btn btn-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+{% block customJS %}
+{% endblock %}
+;

@@ -20,6 +20,8 @@ from comedores.views.web_views import (
     IntervencionCreateView,
     IntervencionUpdateView,
     IntervencionDeleteView,
+    NominaDetail,
+    NominaCreateView,
     SubEstadosIntervencionesAJax,
 )
 
@@ -98,6 +100,16 @@ urlpatterns = [
         "comedores/intervencion/ver/<pk>",
         login_required(IntervencionDetail.as_view()),
         name="intervencion_ver",
+    ),
+    path(
+        "comedores/nomina/ver/<pk>",
+        login_required(NominaDetail.as_view()),
+        name="nomina_ver",
+    ),
+    path(
+        "comedores/nomina/crear/<pk>",
+        login_required(NominaCreateView.as_view()),
+        name="nomina_crear",
     ),
     path(
         "comedores/intervencion/crear/<pk>",

@@ -1,7 +1,7 @@
 from django import forms
 
 
-from comedores.models import Comedor, Referente, Intervencion, ImagenComedor
+from comedores.models import Comedor, Referente, Intervencion, ImagenComedor , Nomina
 
 from configuraciones.models import Municipio, Provincia
 from configuraciones.models import Localidad
@@ -37,6 +37,24 @@ class IntervencionForm(forms.ModelForm):
             "fk_tipo_intervencion": "Tipo de intervención",
             "fk_estado": "Estado",
             "fk_direccion": "Dirección",
+        }
+class NominaForm(forms.ModelForm):
+    class Meta:
+        model = Nomina
+        fields = "__all__"
+        widgets = {
+            "detalles": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 3,
+                }
+            ),
+        }
+        labels = {
+            "fk_estado": "Estado",
+            "nombre": "Nombre",
+            "apellido": "Apellido",
+            "dni": "Dni",
         }
 
 
