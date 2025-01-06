@@ -18,7 +18,7 @@ from django.views.generic import (
 )
 
 
-from comedores.forms.comedor_form import ComedorForm, ReferenteForm, IntervencionForm
+from comedores.forms.comedor_form import ComedorForm, ReferenteForm, IntervencionForm, NominaForm
 
 from comedores.forms.observacion_form import ObservacionForm
 from comedores.forms.relevamiento_form import (
@@ -43,6 +43,7 @@ from comedores.models import (
     SubIntervencion,
     Territorial,
     ValorComida,
+    Nomina,
 )
 
 from comedores.services.comedor_service import ComedorService
@@ -81,8 +82,46 @@ class IntervencionDetail(TemplateView):
         context["cantidad_intervenciones"] = cantidad_intervenciones
 
         return context
+class NominaDetail(TemplateView):
+    template_name = "comedor/nomina_detail.html"
+    model = Nomina
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        comedor = Comedor.objects.values(
+            "id", "gestionar_uid", "nombre", "provincia", "barrio", "calle", "numero"
+        ).get(pk=self.kwargs["pk"])
+        nomina = Nomina.objects.filter(fk_comedor=self.kwargs["pk"])
+        cantidad_intervenciones = Nomina.objects.filter(
+            fk_comedor=self.kwargs["pk"]
+        ).count()
+        context["nomina"] = nomina
+        context["object"] = comedor
+        context["cantidad_nomina"] = cantidad_intervenciones
+
+        return context
 
 
+class NominaCreateView(CreateView):
+    model = Nomina
+    template_name = "comedor/nomina_form.html"
+    form_class = NominaForm
+
+    def form_valid(self, form):
+        pk = self.kwargs["pk"]
+        form.save()
+        return redirect("intervencion_ver", pk=pk)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        comedor = Comedor.objects.values(
+            "id", "gestionar_uid", "nombre", "provincia", "barrio", "calle", "numero"
+        ).get(pk=self.kwargs["pk"])
+
+        context["form"] = self.get_form()
+        context["object"] = comedor
+
+        return context
 class IntervencionCreateView(CreateView):
     model = Intervencion
     template_name = "comedor/intervencion_form.html"
