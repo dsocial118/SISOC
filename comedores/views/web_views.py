@@ -110,7 +110,7 @@ class NominaCreateView(CreateView):
     def form_valid(self, form):
         pk = self.kwargs["pk"]
         form.save()
-        return redirect("intervencion_ver", pk=pk)
+        return redirect("nomina_ver", pk=pk)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
