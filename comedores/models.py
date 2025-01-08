@@ -756,7 +756,8 @@ class Intervencion(models.Model):
         verbose_name = "Intervencion"
         verbose_name_plural = "Intervenciones"
         indexes = [models.Index(fields=["fk_comedor"])]
-        
+
+
 class Nomina(models.Model):
     """
     Guardado de las intervenciones realizadas a un legajo.
@@ -771,10 +772,7 @@ class Nomina(models.Model):
     nombre = models.TextField(blank=True, null=True)
     apellido = models.TextField(blank=True, null=True)
     dni = models.IntegerField(blank=True, null=True)
-    fk_sexo = models.ForeignKey(
-        Sexo, on_delete=models.SET_NULL, default=1, null=True
-    )
-    
+    fk_sexo = models.ForeignKey(Sexo, on_delete=models.SET_NULL, default=1, null=True)
 
     class Meta:
         ordering = ["-fecha"]
