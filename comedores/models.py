@@ -5,6 +5,7 @@ from django.utils import timezone
 
 from configuraciones.models import Municipio, Provincia
 from configuraciones.models import Localidad
+from legajos.models import Sexo
 
 
 class EstadosIntervencion(models.Model):
@@ -770,6 +771,10 @@ class Nomina(models.Model):
     nombre = models.TextField(blank=True, null=True)
     apellido = models.TextField(blank=True, null=True)
     dni = models.IntegerField(blank=True, null=True)
+    fk_sexo = models.ForeignKey(
+        Sexo, on_delete=models.SET_NULL, default=1, null=True
+    )
+    
 
     class Meta:
         ordering = ["-fecha"]
