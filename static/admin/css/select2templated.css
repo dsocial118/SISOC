@@ -1,34 +1,59 @@
-.select2-container--default .select2-selection--multiple
-{
+/* Estilo general del select2 */
+.select2-container--default .select2-selection--multiple {
     background-color: var(--bs-body-bg) !important;
     color: var(--bs-body-color) !important;
-    border: var(--bs-border-width) solid var(--bs-border-color) !important;
+    border: var(--bs-border-width) solid var(--bs-border-color) !important; 
     border-radius: var(--bs-border-radius) !important;
 }
 
-.select2-container--default .select2-selection--multiple .select2-selection__choice
+span.select2.select2-container
 {
+    border: var(--bs-border-width) solid var(--bs-border-color) !important; 
+    border-radius: var(--bs-border-radius) !important;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
     background-color: var(--bs-secondary-bg) !important;
+    color: var(--bs-body-color) !important;
 }
 
-.form-control.select2 option
+/* Opciones del dropdown */
+
+.select2-container--default .select2-results__option, .select2-container--default .select2-search__field {
+    background-color: var(--bs-body-bg) !important;
+    color: var(--bs-body-color) !important;
+}
+
+.select2-container--default .select2-selection__rendered
 {
+    border: var(--bs-border-width) solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius);
     background-color: var(--bs-body-bg) !important;
+    color: var(--bs-body-color) !important;
 }
 
-.select2-container--default .select2-results__option {
-    background-color: var(--bs-body-bg) !important;
-    color: #fff;
+.select2-container--default .select2-selection--single
+{
+    border: none !important;
+    background-color: transparent !important;
 }
 
-.select2-container--default .select2-results__option--highlighted[aria-selected] {
-    background-color: var(--link-hover-color) !important;
-    color: var(--primary) !important;
+
+/* Hover y opción resaltada */
+.select2-container--default .select2-results__option--highlighted[aria-selected],
+.select2-container--default .select2-results__option:hover {
+    background-color: var(--bs-primary-bg) !important; /* Fondo del hover */
+    color: var(--bs-primary-text) !important; /* Texto con buen contraste */
 }
 
-.select2-container--default .select2-results__option--highlighted[aria-selected]:hover,
-.select2-container--default .select2-results__option:hover,
-.select2-results__option.select2-results__option--selectable.select2-results__option--highlighted:hover {
-    background-color: var(--link-hover-color) !important;
-    color: black !important;
+/* Mejor contraste en modo oscuro */
+:root[data-bs-theme="dark"] {
+    --bs-primary-bg: #495057; /* Fondo del hover en modo oscuro */
+    --bs-primary-text: #ffffff; /* Texto blanco en hover */
+}
+
+/* Mejor contraste en modo claro */
+:root[data-bs-theme="light"] {
+    --bs-primary-bg: #e9ecef; /* Fondo del hover en modo claro */
+    --bs-primary-text: #000000; /* Texto negro en hover */
 }
