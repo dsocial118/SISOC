@@ -194,7 +194,6 @@ class ComedorService:
             response.raise_for_status()
             response = response.json()
 
-            territoriales = []
             territoriales_data = [
                 {"gestionar_uid": uid, "nombre": nombre.strip()}
                 for uid, nombre in re.findall(
@@ -203,14 +202,38 @@ class ComedorService:
                 )
             ]
 
-            for territorial_data in territoriales_data:
-                territorial, _created = Territorial.objects.get_or_create(
-                    gestionar_uid=territorial_data["gestionar_uid"],
-                    defaults={"nombre": territorial_data["nombre"]},
+            # Obtener todos los gestionar_uid existentes de una sola vez
+            existing_uids = set(
+                Territorial.objects.filter(
+                    gestionar_uid__in=[t["gestionar_uid"] for t in territoriales_data]
+                ).values_list("gestionar_uid", flat=True)
+            )
+
+            # Filtrar los que no existen en la base de datos
+            new_territoriales_data = [
+                t for t in territoriales_data if t["gestionar_uid"] not in existing_uids
+            ]
+
+            # Crear los nuevos territoriales en bulk para ahorrar queries
+            Territorial.objects.bulk_create(
+                [
+                    Territorial(
+                        gestionar_uid=t["gestionar_uid"],
+                        nombre=t["nombre"],
+                    )
+                    for t in new_territoriales_data
+                ],
+                ignore_conflicts=True,
+            )
+
+            territoriales = list(
+                Territorial.objects.filter(
+                    gestionar_uid__in=[t["gestionar_uid"] for t in territoriales_data]
                 )
-                territoriales.append(territorial)
+            )
 
             return territoriales
         except requests.exceptions.RequestException as e:
             print(f"Error en la petición POST: {e}")
+            return []
             return []
