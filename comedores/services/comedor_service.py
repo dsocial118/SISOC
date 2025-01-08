@@ -6,7 +6,7 @@ from django.db.models import Q
 import requests
 
 from comedores.forms.comedor_form import ImagenComedorForm
-from comedores.models import Comedor, Referente, Territorial
+from comedores.models import Comedor, Referente, Relevamiento, Territorial, ValorComida
 from config import settings
 from configuraciones.models import Municipio, Provincia
 from configuraciones.models import Localidad
@@ -237,3 +237,54 @@ class ComedorService:
             print(f"Error en la petición POST: {e}")
             return []
             return []
+
+    @staticmethod
+    def get_presupuestos(comedor_id: int):
+        beneficiarios = Relevamiento.objects.filter(comedor=comedor_id).first()
+
+        # Inicializamos contadores
+        count = {
+            "desayuno": 0,
+            "almuerzo": 0,
+            "merienda": 0,
+            "cena": 0,
+        }
+
+        if beneficiarios and beneficiarios.prestacion:
+            dias = [
+                "lunes",
+                "martes",
+                "miercoles",
+                "jueves",
+                "viernes",
+                "sabado",
+                "domingo",
+            ]
+            tipos = ["desayuno", "almuerzo", "merienda", "cena"]
+
+            for tipo in tipos:
+                count[tipo] = sum(
+                    getattr(beneficiarios.prestacion, f"{dia}_{tipo}_actual", 0) or 0
+                    for dia in dias
+                )
+
+        count_beneficiarios = sum(count.values())
+
+        # Cálculo de valores
+        valores_comida = ValorComida.objects.filter(tipo__in=count.keys()).values(
+            "tipo", "valor"
+        )
+        valor_map = {item["tipo"].lower(): item["valor"] for item in valores_comida}
+
+        valor_cena = count["cena"] * valor_map.get("cena", 0)
+        valor_desayuno = count["desayuno"] * valor_map.get("desayuno", 0)
+        valor_almuerzo = count["almuerzo"] * valor_map.get("almuerzo", 0)
+        valor_merienda = count["merienda"] * valor_map.get("merienda", 0)
+
+        return (
+            count_beneficiarios,
+            valor_cena,
+            valor_desayuno,
+            valor_almuerzo,
+            valor_merienda,
+        )
