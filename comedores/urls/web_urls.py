@@ -20,6 +20,10 @@ from comedores.views.web_views import (
     IntervencionCreateView,
     IntervencionUpdateView,
     IntervencionDeleteView,
+    NominaDetail,
+    NominaCreateView,
+    NominaDeleteView,
+    NominaUpdateView,
     SubEstadosIntervencionesAJax,
 )
 
@@ -100,6 +104,16 @@ urlpatterns = [
         name="intervencion_ver",
     ),
     path(
+        "comedores/nomina/ver/<pk>",
+        login_required(NominaDetail.as_view()),
+        name="nomina_ver",
+    ),
+    path(
+        "comedores/nomina/crear/<pk>",
+        login_required(NominaCreateView.as_view()),
+        name="nomina_crear",
+    ),
+    path(
         "comedores/intervencion/crear/<pk>",
         login_required(IntervencionCreateView.as_view()),
         name="intervencion_crear",
@@ -110,9 +124,19 @@ urlpatterns = [
         name="intervencion_editar",
     ),
     path(
+        "comedores/nomina/editar/<pk>/<pk2>",
+        login_required(NominaUpdateView.as_view()),
+        name="nomina_editar",
+    ),
+    path(
         "comedores/intervencion/borrar/<pk>/<pk2>",
         login_required(IntervencionDeleteView.as_view()),
         name="intervencion_borrar",
+    ),
+    path(
+        "comedores/nomina/borrar/<pk>/<pk2>",
+        login_required(NominaDeleteView.as_view()),
+        name="nomina_borrar",
     ),
     path(
         "comedores/ajax/load-subestadosintervenciones/",
