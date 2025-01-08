@@ -852,7 +852,7 @@ class Observacion(models.Model):
     """
     Modelo que representa una observación realizada en un Comedor/Merendero.
     """
-
+    gestionar_uid = models.CharField(max_length=255, blank=True, null=True)
     observador = models.CharField(max_length=255, blank=True)
     comedor = models.ForeignKey(
         to=Comedor,
