@@ -18,7 +18,12 @@ from django.views.generic import (
 )
 
 
-from comedores.forms.comedor_form import ComedorForm, ReferenteForm, IntervencionForm, NominaForm
+from comedores.forms.comedor_form import (
+    ComedorForm,
+    ReferenteForm,
+    IntervencionForm,
+    NominaForm,
+)
 
 from comedores.forms.observacion_form import ObservacionForm
 from comedores.forms.relevamiento_form import (
@@ -82,6 +87,8 @@ class IntervencionDetail(TemplateView):
         context["cantidad_intervenciones"] = cantidad_intervenciones
 
         return context
+
+
 class NominaDetail(TemplateView):
     template_name = "comedor/nomina_detail.html"
     model = Nomina
@@ -122,7 +129,8 @@ class NominaCreateView(CreateView):
         context["object"] = comedor
 
         return context
-    
+
+
 class NominaDeleteView(DeleteView):
     model = Nomina
     template_name = "comedor/nomina_confirm_delete.html"
@@ -130,7 +138,8 @@ class NominaDeleteView(DeleteView):
     def form_valid(self, form):
         self.object.delete()
         return redirect("nomina_ver", pk=self.kwargs["pk2"])
-    
+
+
 class IntervencionCreateView(CreateView):
     model = Intervencion
     template_name = "comedor/intervencion_form.html"
@@ -180,6 +189,8 @@ class IntervencionUpdateView(UpdateView):
         context["form"] = self.get_form()
         context["object"] = comedor
         return context
+
+
 class NominaUpdateView(UpdateView):
     model = Nomina
     form_class = NominaForm
