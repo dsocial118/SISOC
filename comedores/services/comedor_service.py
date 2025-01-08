@@ -236,7 +236,6 @@ class ComedorService:
         except requests.exceptions.RequestException as e:
             print(f"Error en la petición POST: {e}")
             return []
-            return []
 
     @staticmethod
     def get_presupuestos(comedor_id: int):
