@@ -122,6 +122,15 @@ class NominaCreateView(CreateView):
         context["object"] = comedor
 
         return context
+    
+class NominaDeleteView(DeleteView):
+    model = Nomina
+    template_name = "comedor/nomina_confirm_delete.html"
+
+    def form_valid(self, form):
+        self.object.delete()
+        return redirect("nomina_ver", pk=self.kwargs["pk2"])
+    
 class IntervencionCreateView(CreateView):
     model = Intervencion
     template_name = "comedor/intervencion_form.html"
@@ -162,6 +171,24 @@ class IntervencionUpdateView(UpdateView):
         pk = self.kwargs["pk2"]
         form.save()
         return redirect("intervencion_ver", pk=pk)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        comedor = Comedor.objects.values(
+            "id", "gestionar_uid", "nombre", "provincia", "barrio", "calle", "numero"
+        ).get(pk=self.kwargs["pk2"])
+        context["form"] = self.get_form()
+        context["object"] = comedor
+        return context
+class NominaUpdateView(UpdateView):
+    model = Nomina
+    form_class = NominaForm
+    template_name = "comedor/nomina_form.html"
+
+    def form_valid(self, form):
+        pk = self.kwargs["pk2"]
+        form.save()
+        return redirect("nomina_ver", pk=pk)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

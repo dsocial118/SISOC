@@ -117,14 +117,14 @@
                                     <td>{{ e.fecha|date:'d/m/Y' }}</td>
                                     <td>{{ e.nombre }}</td>
                                     <td>{{ e.apellido }}</td>
-                                    <td>{{ e.sexo }}</td>
+                                    <td>{{ e.fk_sexo }}</td>
                                     <td>{{ e.dni }}</td>
                                     <td>{{ e.fk_estado }}</td>
                                     <td>
-                                        <a href="{% url 'intervencion_editar' e.id object.id %}">Editar</a>
+                                        <a href="{% url 'nomina_editar' e.id object.id %}">Editar</a>
                                     </td>
                                     <td>
-                                        <a href="{% url 'intervencion_borrar' e.id object.id %}">Eliminiar</a>
+                                        <a href="{% url 'nomina_borrar' e.id object.id %}">Eliminiar</a>
                                     </td>
                                 </tr>
                             {% endfor %}

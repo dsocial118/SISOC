@@ -14319,7 +14319,7 @@ html.maximized-card {
   position: sticky;
   top: 0;
   z-index: 10;
-  background-color: #fff;
+  /* background-color: #fff; */
   border-bottom: 0;
   box-shadow: inset 0 1px 0 var(--bs-border-color), inset 0 -1px 0 var(--bs-border-color);
 }
