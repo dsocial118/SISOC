@@ -55,6 +55,7 @@ class NominaForm(forms.ModelForm):
             "nombre": "Nombre",
             "apellido": "Apellido",
             "dni": "Dni",
+            "fk_sexo": "Sexo",
         }
 
 
