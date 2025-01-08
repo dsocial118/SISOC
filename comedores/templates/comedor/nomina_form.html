@@ -1,11 +1,11 @@
 {% extends "includes/main.html" %}
 {% load static %}
-{% block title %}Intervenciones formulario{% endblock %}
-{% block titulo-pagina %}Intervenciones{% endblock %}
+{% block title %}Nomina formulario{% endblock %}
+{% block titulo-pagina %}Nomina{% endblock %}
 ;
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right ">
-        <li class="breadcrumb-item">Intervenciones</li>
+        <li class="breadcrumb-item">Nomina</li>
         <li class="breadcrumb-item">
             <a href="{% url 'comedor_detalle' object.id %}" title="Ver Comedor">{{ object.nombre }} {{ object.apellido }}</a>
         </li>
@@ -15,7 +15,6 @@
 ;
 {% load crispy_forms_tags %}
 {% block content %}
-    <link rel="stylesheet" href="{% static 'admin/css/select2templated.css' %}" />
     <!-- Datos de legajo -->
     <div class="row mb-3">
         <div class="col-12">
@@ -59,21 +58,27 @@
                 {% csrf_token %}
                 <div class="card card-primary card-outline">
                     <div class="card-header">
-                        <h3 class="card-title">Agregar Intervención</h3>
+                        <h3 class="card-title">Agregar Nomina</h3>
                     </div>
                     <div class="card-body ">
                         <div class="row m-0 p-0">
                             <input type="hidden" name="fk_comedor" value="{{ object.id }}" />
                             <div class="col-sm-6">
-                                <div class="form-group">{{ form.fk_tipo_intervencion| as_crispy_field }}</div>
+                                <div class="form-group">{{ form.nombre| as_crispy_field }}</div>
                             </div>
                             <div class="col-sm-6">
-                                <div class="form-group">{{ form.fk_subintervencion| as_crispy_field }}</div>
+                                <div class="form-group">{{ form.apellido| as_crispy_field }}</div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="form-group">{{ form.dni| as_crispy_field }}</div>
                             </div>
                             <div class="col-sm-3">
                                 <div class="form-group">{{ form.fk_estado| as_crispy_field }}</div>
                             </div>
-                            <div class="col-sm-12">
+                            <div class="col-sm-3">
+                                <div class="form-group">{{ form.fk_sexo| as_crispy_field }}</div>
+                            </div>
+                            <div class="col-sm-12>
                                 <div class="form-group">{{ form.observaciones| as_crispy_field }}</div>
                             </div>
                         </div>
@@ -88,29 +93,5 @@
         </div>
     </div>
 {% endblock %}
-{% block customJS %}
-    <script>
-$(document).ready(function() {
-    $('.tipo_intervencion-select').change(function() {
-        var estadoId = $(this).val();
-        $.ajax({
-            url: "{% url 'ajax_load_subestadosintervenciones' %}",
-            data: {
-                'id': estadoId
-            },
-            success: function(data) {
-                var $subIntervencion = $('.subintervencion-select');
-                $subIntervencion.empty();
-                $.each(data, function(index, item) {
-                    $subIntervencion.append($('<option>', {
-                        value: item.id,
-                        text: item.text
-                    }));
-                });
-            }
-        });
-    });
-});
-    </script>
-{% endblock %}
+{% block customJS %}{% endblock %}
 ;
