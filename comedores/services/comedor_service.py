@@ -178,6 +178,37 @@ class ComedorService:
                 print(f"Error en la petición POST: {e}")
 
     @staticmethod
+    def send_referente_to_gestionar(referente: Referente):
+        data = {
+            "Action": "Add",
+            "Properties": {"Locale": "es-ES"},
+            "Rows": [
+                {
+                    "Documento DNI": referente.documento,
+                    "Nombre": referente.nombre,
+                    "Apellido": referente.apellido,
+                    "mail": referente.mail,
+                    "celular": referente.celular,
+                }
+            ],
+        }
+
+        headers = {
+            "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
+        }
+
+        try:
+            response = requests.post(
+                os.getenv("GESTIONAR_API_CREAR_REFERENTE"),
+                json=data,
+                headers=headers,
+            )
+            response.raise_for_status()
+            response = response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"Error en la petición POST: {e}")
+
+    @staticmethod
     def get_territoriales(comedor_id: int):
         data = {
             "Action": "Find",
