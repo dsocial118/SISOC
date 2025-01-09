@@ -1,6 +1,6 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from comedores.models import Observacion, Relevamiento, Comedor
+from comedores.models import Observacion, Referente, Relevamiento, Comedor
 from comedores.services.observacion_service import ObservacionService
 from comedores.services.relevamiento_service import RelevamientoService
 from comedores.services.comedor_service import ComedorService
@@ -22,3 +22,9 @@ def send_relevamiento_to_gestionar(sender, instance, created, **kwargs):
 def send_observacion_to_gestionar(sender, instance, created, **kwargs):
     if created:
         ObservacionService.send_to_gestionar(instance)
+
+
+@receiver(post_save, sender=Referente)
+def send_referente_to_gestionar(sender, instance, created, **kwargs):
+    if created:
+        ComedorService.send_referente_to_gestionar(instance)
