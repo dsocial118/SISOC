@@ -130,7 +130,11 @@ class ComedorService:
                         "ComedorID": comedor.id,
                         "ID_Sisoc": comedor.id,
                         "nombre": comedor.nombre,
-                        "comienzo": f"01/01/{comedor.comienzo}",
+                        "comienzo": (
+                            f"01/01/{comedor.comienzo}"
+                            if comedor.comienzo
+                            else "01/01/1900"
+                        ),
                         "calle": comedor.calle,
                         "numero": comedor.numero,
                         "entre_calle_1": comedor.entre_calle_1,
