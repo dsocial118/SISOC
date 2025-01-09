@@ -845,6 +845,7 @@ class Relevamiento(models.Model):
         to=Prestacion, on_delete=models.PROTECT, blank=True, null=True
     )
     observacion = models.TextField(blank=True, null=True)
+    docPDF = models.URLField(blank=True, null=True)
 
     def save(self, *args, **kwargs):
         if self.estado in ["Pendiente", "Visita pendiente"]:
