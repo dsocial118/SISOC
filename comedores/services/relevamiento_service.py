@@ -89,14 +89,16 @@ class RelevamientoService:
             .filter(pk=relevamiento_id)
             .values(
                 "id",
-                "territorial__nombre",
+                "estado",
+                "docPDF",
                 "comedor__nombre",
                 "fecha_visita",
                 "observacion",
-                "comedor__comienzo",
                 "funcionamiento__modalidad_prestacion__nombre",
                 "funcionamiento__servicio_por_turnos",
                 "funcionamiento__cantidad_turnos",
+                "territorial__nombre",
+                "comedor__comienzo",
                 "comedor__id",
                 "comedor__calle",
                 "comedor__numero",
@@ -851,9 +853,8 @@ class RelevamientoService:
                 response.raise_for_status()
                 response = response.json()
 
-                relevamiento.gestionar_uid = response["Rows"][0][
-                    "Id_formularioComedores"
-                ]
+                relevamiento.gestionar_uid = response["Rows"][0]["Relevamiento id"]
+                relevamiento.docPDF = response["Rows"][0]["docPDF"]
                 relevamiento.save()
             except requests.exceptions.RequestException as e:
                 print(f"Error en la petición POST: {e}")

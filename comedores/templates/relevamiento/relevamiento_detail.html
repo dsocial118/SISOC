@@ -6,7 +6,10 @@
 {% block titulo-pagina %}
     {{ relevamiento.comedor__nombre }}
     <span class="ml-2 h5">| Relevamiento</span>
-    <span class="ml-2 h5">{{ relevamiento.fecha_visita | default_if_none:"-" }}</span>
+    <span class="ml-2 h5">| {{ relevamiento.fecha_visita | default_if_none:"-" }} |</span>
+    <span class="ml-2 h5" {% if relevamiento.estado == "Pendiente" %} style="color: yellow;" {% elif relevamiento.estado == "Visita pendiente" %} style="color: green;" {% else %} style="color: white;" {% endif %}>
+        {{ relevamiento.estado | default_if_none:"-" }}
+    </span>
 {% endblock %}
 ;
 {% block breadcrumb %}
@@ -17,7 +20,7 @@
         <div class="breadcrumb-item">
             <a href="{% url 'comedor_detalle' relevamiento.comedor__id %}">{{ relevamiento.comedor__nombre }}</a>
         </div>
-        <div class="breadcrumb-item active">Relevamiento - {{ relevamiento.fecha_visita }}</div>
+        <div class="breadcrumb-item active">Relevamiento - {{ relevamiento.fecha_visita }}></div>
     </ol>
 {% endblock %}
 ;
@@ -32,7 +35,9 @@
         <div class="col-auto">
             <a href="{% url 'relevamiento_editar' relevamiento.comedor__id relevamiento.id %}"
                class="btn btn-primary mr-1">Editar</a>
-            <a href="#" class="btn btn-secondary print mr-1 d-none d-sm-inline">Imprimir</a>
+            {% if relevamiento.estado == "Finalizado" %}
+                <a href="{{ relevamiento.docPDF }}" target="_blank" class="btn btn-secondary mr-1 d-none d-sm-inline">Imprimir</a>
+            {% endif %}
             <a href="{% url 'relevamiento_eliminar' relevamiento.comedor__id relevamiento.id %}"
                class="btn btn-danger">Eliminar</a>
         </div>
