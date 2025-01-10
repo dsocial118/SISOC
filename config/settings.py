@@ -131,7 +131,6 @@ INSTALLED_APPS = [
     # Aplicaciones propias
     "usuarios",
     "configuraciones",
-    "inicio",
     "dashboard",
     "legajos",
     "comedores",
