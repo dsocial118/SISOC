@@ -10,7 +10,6 @@ urlpatterns = [
     path("", include("django.contrib.auth.urls")),
     path("", include("usuarios.urls")),
     path("", include("configuraciones.urls")),
-    path("", include("inicio.urls")),
     path("", include("dashboard.urls")),
     path("", include("legajos.urls")),
     path("", include("comedores.urls")),

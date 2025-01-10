@@ -44,7 +44,7 @@ MESSAGE_TAGS = {
 
 # Configuración de visualización de modelos gráficos
 GRAPH_MODELS = {
-    "app_labels": ["inicio", "legajos"],
+    "app_labels": ["legajos"],
 }
 
 # Configuración de clases CSS para formularios Crispy
