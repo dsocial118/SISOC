@@ -24,7 +24,7 @@
           href="{% static 'custom/css/comedorRelevamiento.css' %}" />
     <div class="d-flex justify-content-between mb-3">
         <div>
-            <a href="{% url 'comedores' %}" class='btn btn-secondary'>Volver</a>
+            <a href="{% url 'comedor_detalle' comedor.id %}" class='btn btn-secondary'>Volver</a>
         </div>
         <div>
             <a class='btn btn-secondary print mr-1 d-none d-sm-inline'>Imprimir</a>
