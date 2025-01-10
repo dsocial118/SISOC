@@ -212,6 +212,8 @@ class EspacioCocina(models.Model):
         TipoCombustible,
         related_name="espacios",
         verbose_name="2.2.7 Para cocinar utiliza",
+        blank=True,
+        null=True,
     )
     abastecimiento_agua = models.ForeignKey(
         to=TipoAgua,
