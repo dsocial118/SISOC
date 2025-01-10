@@ -66,11 +66,11 @@
                                            title="Ver detalles">{{ comedor.nombre }}</a>
                                     </td>
                                     <td>
-                                        {{ comedor.provincia__nombre|default_if_none:"-" }}, {{ comedor.municipio__nombre|default_if_none:"-" }}, {{ comedor.localidad__nombre|default_if_none:"-" }}, {{ comedor.barrio|default_if_none:"-" }}
+                                        {{ comedor.provincia__nombre | default_if_none:"-" }}, {{ comedor.municipio__nombre | default_if_none:"-" }}, {{ comedor.localidad__nombre | default_if_none:"-" }}, {{ comedor.barrio | default_if_none:"-" }}
                                     </td>
-                                    <td>{{ comedor.calle }} {{ comedor.numero }}</td>
-                                    <td>{{ comedor.referente__nombre }} {{ comedor.referente__apellido }}</td>
-                                    <td>{{ comedor.referente__celular|default_if_none:"-" }}</td>
+                                    <td>{{ comedor.calle | default_if_none:"-" }} {{ comedor.numero | default_if_none:"-" }}</td>
+                                    <td>{{ comedor.referente__nombre | default_if_none:"-" }}, {{ comedor.referente__apellido | default_if_none:"-" }}</td>
+                                    <td>{{ comedor.referente__celular | default_if_none:"-" }}</td>
                                     <td>
                                         <div class="btn-group" role="group">
                                             <a href="{% url 'comedor_detalle' comedor.id %}"
