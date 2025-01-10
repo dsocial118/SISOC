@@ -114,6 +114,12 @@
                                             </div>
                                             <div class="nav-item d-flex">
                                                 <div class="comment-text comment-text d-flex flex-column">
+                                                    Tipo Comedor
+                                                    <span class="username">{{ comedor.fk_tipocomedor }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="nav-item d-flex">
+                                                <div class="comment-text comment-text d-flex flex-column">
                                                     Provincia
                                                     <span class="username">{{ comedor.provincia__nombre|default_if_none:"-" }}</span>
                                                 </div>
