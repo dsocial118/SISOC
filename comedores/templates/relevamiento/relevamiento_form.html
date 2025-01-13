@@ -32,7 +32,6 @@
                         <h3 class="card-title">Agregar Comedor/Merendero</h3>
                     </div>
                     <div class="card-body">
-                        select2-selection select2-selection--multiple
                         <div class="form-row justify-content-center">
                             <form method="post" class="w-100">
                                 {% csrf_token %}
@@ -70,16 +69,20 @@
                                             <div class="col-4">{{ form.provincia|as_crispy_field }}</div>
                                         </div>
                                     </div>
-                                    <h3 class="mt-5">1.3 Datos del referente/responsable del Comedor/Merendero</h3>
+                                    <h3 class="mt-5">1.3 Datos del responsable del relevamiento</h3>
                                     <div class="px-3 mt-1">
                                         <div class="form-group row align-items-end">
-                                            <div class="col-4">{{ form.referente_nombre|as_crispy_field }}</div>
-                                            <div class="col-4">{{ form.referente_apellido|as_crispy_field }}</div>
-                                            <div class="col-4">{{ form.referente_mail|as_crispy_field }}</div>
+                                            <div class="col-4">{{ form.responsable_es_referente|as_crispy_field }}</div>
                                         </div>
                                         <div class="form-group row align-items-end">
-                                            <div class="col-6">{{ form.referente_celular|as_crispy_field }}</div>
-                                            <div class="col-6">{{ form.referente_documento|as_crispy_field }}</div>
+                                            <div class="col-4">{{ referente_form.nombre|as_crispy_field }}</div>
+                                            <div class="col-4">{{ referente_form.apellido|as_crispy_field }}</div>
+                                            <div class="col-4">{{ referente_form.mail|as_crispy_field }}</div>
+                                        </div>
+                                        <div class="form-group row align-items-end">
+                                            <div class="col-4">{{ referente_form.celular|as_crispy_field }}</div>
+                                            <div class="col-4">{{ referente_form.documento|as_crispy_field }}</div>
+                                            <div class="col-4">{{ referente_form.funcion|as_crispy_field }}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -360,5 +363,22 @@
 {% endblock %}
 ;
 {% block customJS %}
+    <script>
+        const responsable = {
+            esReferente: "{{ relevamiento.responsable_es_referente }}",
+            nombre: "{{ responsable.nombre | default_if_none:'' }}",
+            apellido: "{{ responsable.apellido | default_if_none:'' }}",
+            mail: "{{ responsable.mail | default_if_none:'' }}",
+            celular: "{{ responsable.celular | default_if_none:'' }}",
+            documento: "{{ responsable.documento | default_if_none:'' }}"
+        }
+        const referente = {
+            nombre: "{{ comedor.referente__nombre | default_if_none:'' }}",
+            apellido: "{{ comedor.referente__apellido | default_if_none:'' }}",
+            mail: "{{ comedor.referente__mail | default_if_none:'' }}",
+            celular: "{{ comedor.referente__celular | default_if_none:'' }}",
+            documento: "{{ comedor.referente__documento | default_if_none:'' }}",
+        }
+    </script>
     <script src="{% static 'custom/js/relevamientoform.js' %}"></script>
 {% endblock %}
