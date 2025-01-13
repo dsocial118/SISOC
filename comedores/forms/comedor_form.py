@@ -106,6 +106,10 @@ class ComedorForm(forms.ModelForm):
         model = Comedor
         fields = "__all__"
 
+        labels = {
+            "fk_tipocomedor": "Tipo comedor",
+        }
+
 
 class ImagenComedorForm(forms.ModelForm):
     class Meta:
