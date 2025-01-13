@@ -277,20 +277,10 @@ class RelevamientoForm(forms.ModelForm):
     codigo_postal = forms.CharField(
         required=False, disabled=True, label="1.2.6 Código Postal"
     )
-    referente_nombre = forms.CharField(
-        required=False, disabled=True, label="1.3.1 Nombre del referente/responsable"
-    )
-    referente_apellido = forms.CharField(
-        required=False, disabled=True, label="1.3.5 Apellido del referente/responsable"
-    )
-    referente_mail = forms.CharField(
-        required=False, disabled=True, label="1.3.2 Mail del referente/responsable"
-    )
-    referente_celular = forms.CharField(
-        required=False, disabled=True, label="1.3.3 Celular del referente/responsable"
-    )
-    referente_documento = forms.CharField(
-        required=False, disabled=True, label="1.3.4 DNI del referente/responsable"
+    responsable_es_referente = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿El responsable es el referente del comedor/merendero?",
     )
 
     def __init__(self, *args, **kwargs):
@@ -316,11 +306,6 @@ class RelevamientoForm(forms.ModelForm):
         self.fields["partido"].initial = comedor.partido
         self.fields["barrio"].initial = comedor.barrio
         self.fields["codigo_postal"].initial = comedor.codigo_postal
-        self.fields["referente_nombre"].initial = comedor.referente.nombre
-        self.fields["referente_apellido"].initial = comedor.referente.apellido
-        self.fields["referente_mail"].initial = comedor.referente.mail
-        self.fields["referente_celular"].initial = comedor.referente.celular
-        self.fields["referente_documento"].initial = comedor.referente.documento
 
     class Meta:
         model = Relevamiento
