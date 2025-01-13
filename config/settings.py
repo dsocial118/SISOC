@@ -44,7 +44,7 @@ MESSAGE_TAGS = {
 
 # Configuración de visualización de modelos gráficos
 GRAPH_MODELS = {
-    "app_labels": ["inicio", "legajos"],
+    "app_labels": ["legajos"],
 }
 
 # Configuración de clases CSS para formularios Crispy
@@ -131,7 +131,6 @@ INSTALLED_APPS = [
     # Aplicaciones propias
     "usuarios",
     "configuraciones",
-    "inicio",
     "dashboard",
     "legajos",
     "comedores",
@@ -257,3 +256,9 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 # Dominio
 DOMINIO = os.environ.get("DOMINIO", default="localhost:8001")
+
+# CSRF
+CSRF_TRUSTED_ORIGINS = [
+    "http://com.sisoc.secretarianaf.gob.ar",
+    "https://com.sisoc.secretarianaf.gob.ar",
+]
