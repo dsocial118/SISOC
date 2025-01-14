@@ -6,7 +6,11 @@
 {% block titulo-pagina %}
     {{ relevamiento.comedor__nombre }}
     <span class="ml-2 h5">| Relevamiento</span>
-    <span class="ml-2 h5">{{ relevamiento.fecha_visita | default_if_none:"-" }}</span>
+    <span class="ml-2 h5">| {{ relevamiento.fecha_visita | default_if_none:"-" }} |</span>
+    <span class="ml-2 h5"
+          {% if relevamiento.estado == "Pendiente" %} style="color: yellow;" {% elif relevamiento.estado == "Visita pendiente" %} style="color: green;" {% else %} style="color: white;" {% endif %}>
+        {{ relevamiento.estado | default_if_none:"-" }}
+    </span>
 {% endblock %}
 ;
 {% block breadcrumb %}
@@ -17,7 +21,7 @@
         <div class="breadcrumb-item">
             <a href="{% url 'comedor_detalle' relevamiento.comedor__id %}">{{ relevamiento.comedor__nombre }}</a>
         </div>
-        <div class="breadcrumb-item active">Relevamiento - {{ relevamiento.fecha_visita }}</div>
+        <div class="breadcrumb-item active">Relevamiento {{ relevamiento.fecha_visita | default_if_none:"-" }}></div>
     </ol>
 {% endblock %}
 ;
@@ -32,7 +36,11 @@
         <div class="col-auto">
             <a href="{% url 'relevamiento_editar' relevamiento.comedor__id relevamiento.id %}"
                class="btn btn-primary mr-1">Editar</a>
-            <a href="#" class="btn btn-secondary print mr-1 d-none d-sm-inline">Imprimir</a>
+            {% if relevamiento.estado == "Finalizado" %}
+                <a href="{{ relevamiento.docPDF }}"
+                   target="_blank"
+                   class="btn btn-secondary mr-1 d-none d-sm-inline">Imprimir</a>
+            {% endif %}
             <a href="{% url 'relevamiento_eliminar' relevamiento.comedor__id relevamiento.id %}"
                class="btn btn-danger">Eliminar</a>
         </div>
@@ -53,7 +61,7 @@
                         <div class="nav-item col-12 d-flex">
                             <div class="comment-text comment-text d-flex flex-column text-sm">
                                 Territorial
-                                <span class="username">{{ relevamiento.territorial__nombre }}</span>
+                                <span class="username">{{ relevamiento.territorial__nombre | default_if_none:"-" }}</span>
                             </div>
                         </div>
                     </div>
@@ -121,7 +129,7 @@
         <div class="col-5">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title font-weight-bold mr-3 pt-1">Datos del referente/responsable del Comedor/Merendero</h3>
+                    <h3 class="card-title font-weight-bold mr-3 pt-1">Datos del referente del Comedor/Merendero</h3>
                     <div class="card-tools">
                         <button type="button" class="btn btn-tool" data-card-widget="collapse">
                             <i class="fas fa-minus"></i>
@@ -231,6 +239,56 @@
                         <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                             Código postal
                             <span class="username">{{ relevamiento.comedor__codigo_postal | default_if_none:"-" }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title font-weight-bold mr-3 pt-1">Datos del responsable del relevamiento</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body card-comments p-0 pb-1">
+                <div class="nav nav-pills row my-3">
+                    <div class="nav-item col-2 d-flex justify-content-center">
+                        <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                            Es el referente del comedor/merendero
+                            <span class="username">{{ relevamiento.responsable_es_referente | yesno:"Si,No,-" }}</span>
+                        </div>
+                    </div>
+                    <div class="nav-item col-2 d-flex justify-content-center">
+                        <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                            Nombre completo
+                            <span class="username">{{ relevamiento.responsable__nombre | default_if_none:"-" }}, {{ relevamiento.responsable__apellido | default_if_none:"-" }}</span>
+                        </div>
+                    </div>
+                    <div class="nav-item col-2 d-flex justify-content-center">
+                        <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                            Mail
+                            <span class="username">{{ relevamiento.responsable__mail | default_if_none:"-" }}</span>
+                        </div>
+                    </div>
+                    <div class="nav-item col-2 d-flex justify-content-center">
+                        <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                            Celular
+                            <span class="username">{{ relevamiento.responsable__celular | default_if_none:"-" }}</span>
+                        </div>
+                    </div>
+                    <div class="nav-item col-2 d-flex justify-content-center">
+                        <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                            Documento
+                            <span class="username">{{ relevamiento.responsable__documento | default_if_none:"-" }}</span>
+                        </div>
+                    </div>
+                    <div class="nav-item col-2 d-flex justify-content-center">
+                        <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
+                            Funcion
+                            <span class="username">{{ relevamiento.responsable__funcion | default_if_none:"-" }}</span>
                         </div>
                     </div>
                 </div>
@@ -617,14 +675,14 @@
                             <span class="username">{{ relevamiento.compras__pescaderia | yesno:"Sí,No,-" }}</span>
                         </div>
                     </div>
+                </div>
+                <div class="nav nav-pills row my-3">
                     <div class="nav-item col-2 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Supermercado
                             <span class="username">{{ relevamiento.compras__supermercado | yesno:"Sí,No,-" }}</span>
                         </div>
                     </div>
-                </div>
-                <div class="nav nav-pills row my-3">
                     <div class="nav-item col-2 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Mercado central
@@ -778,29 +836,9 @@
             </div>
             <div class="card-body card-comments p-0 pb-1 overflow-hidden">
                 <div class="nav nav-pills row my-3">
-                    <div class="nav-item col-1 d-flex">
-                        <div class="comment-text comment-text d-flex flex-column text-sm">
-                            Fecha
-                            <div class="username">{{ relevamiento.fecha_visita|date:"d/m/Y" }}</div>
-                        </div>
-                    </div>
                     <div class="nav-item col-5 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
-                            Detalle
-                            <span class="username">{{ relevamiento.observacion|default_if_none:'-' }}</span>
-                        </div>
-                    </div>
-                    <div class="nav-item col-2 d-flex">
-                        <div class="comment-text comment-text d-flex flex-column text-sm">Documentos Adjuntos</div>
-                    </div>
-                    <div class="nav-item col-2 d-flex">
-                        <div class="comment-text comment-text d-flex flex-column text-sm">Imagen</div>
-                    </div>
-                    <div class="nav-item col-2 d-flex">
-                        <div class="card-tools d-flex justify-content-end align-items-start my-3">
-                            <a href="#" class="btn btn-primary mx-3">Ver mas</a>
-                            <a href="#" class="btn btn-primary">Agregar</a>
-                            <button type="button" class="btn btn-tool" data-card-widget="collapse"></button>
+                            <span class="username text-wrap">{{ relevamiento.observacion|default_if_none:'-' }}</span>
                         </div>
                     </div>
                 </div>

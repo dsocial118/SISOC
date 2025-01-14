@@ -225,6 +225,7 @@ class EspacioCocina(models.Model):
         TipoCombustible,
         related_name="espacios",
         verbose_name="2.2.7 Para cocinar utiliza",
+        blank=True,
     )
     abastecimiento_agua = models.ForeignKey(
         to=TipoAgua,
@@ -652,6 +653,7 @@ class Referente(models.Model):
         mail (EmailField): Dirección de correo electrónico única del referente.
         celular (BigIntegerField): Número único del referente.
         documento (BigIntegerField): Documento único del referente.
+        funcion (CharField): Función del referente.
     """
 
     nombre = models.CharField(
@@ -666,6 +668,9 @@ class Referente(models.Model):
     )
     documento = models.BigIntegerField(
         verbose_name="Documento del referente", blank=True, null=True
+    )
+    funcion = models.CharField(
+        verbose_name="Funcion del referente", max_length=255, blank=True, null=True
     )
 
     class Meta:
@@ -861,8 +866,23 @@ class Relevamiento(models.Model):
         to=Prestacion, on_delete=models.PROTECT, blank=True, null=True
     )
     observacion = models.TextField(blank=True, null=True)
+    docPDF = models.URLField(blank=True, null=True)
+    responsable_es_referente = models.BooleanField(default=True)
+    responsable = models.ForeignKey(
+        to=Referente, on_delete=models.PROTECT, null=True, blank=True
+    )
 
     def save(self, *args, **kwargs):
+        self.validate_relevamientos_activos()
+        self.set_referente_como_responsable()
+
+        super().save(*args, **kwargs)
+
+    def set_referente_como_responsable(self):
+        if self.responsable_es_referente:
+            self.responsable = self.comedor.referente
+
+    def validate_relevamientos_activos(self):
         if self.estado in ["Pendiente", "Visita pendiente"]:
             relevamiento_existente = (
                 Relevamiento.objects.filter(
@@ -876,8 +896,6 @@ class Relevamiento(models.Model):
                 raise ValidationError(
                     f"Ya existe un relevamiento activo para el comedor '{self.comedor}'."
                 )
-
-        super().save(*args, **kwargs)
 
     class Meta:
         indexes = [

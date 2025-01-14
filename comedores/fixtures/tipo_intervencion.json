@@ -1,0 +1,16 @@
+[
+{
+  "model": "comedores.tipointervencion",
+  "pk": 1,
+  "fields": {
+    "nombre": "A"
+  }
+},
+{
+  "model": "comedores.tipointervencion",
+  "pk": 2,
+  "fields": {
+    "nombre": "B"
+  }
+}
+]

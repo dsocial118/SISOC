@@ -10,12 +10,13 @@ urlpatterns = [
     path("", include("django.contrib.auth.urls")),
     path("", include("usuarios.urls")),
     path("", include("configuraciones.urls")),
-    path("", include("inicio.urls")),
     path("", include("dashboard.urls")),
     path("", include("legajos.urls")),
     path("", include("comedores.urls")),
     path("", include("provincias.urls")),
     path("", include("healthcheck.urls")),
+    # Django Debug Toolbar
+    path("__debug__/", include("debug_toolbar.urls")),
 ]
 
 urlpatterns += staticfiles_urlpatterns()

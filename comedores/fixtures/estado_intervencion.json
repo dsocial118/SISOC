@@ -1,0 +1,16 @@
+[
+{
+  "model": "comedores.estadosintervencion",
+  "pk": 1,
+  "fields": {
+    "nombre": "Activo"
+  }
+},
+{
+  "model": "comedores.estadosintervencion",
+  "pk": 2,
+  "fields": {
+    "nombre": "Inactivo"
+  }
+}
+]

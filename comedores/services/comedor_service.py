@@ -132,7 +132,11 @@ class ComedorService:
                         "ComedorID": comedor.id,
                         "ID_Sisoc": comedor.id,
                         "nombre": comedor.nombre,
-                        "comienzo": f"01/01/{comedor.comienzo}",
+                        "comienzo": (
+                            f"01/01/{comedor.comienzo}"
+                            if comedor.comienzo
+                            else "01/01/1900"
+                        ),
                         "calle": comedor.calle,
                         "numero": comedor.numero,
                         "entre_calle_1": comedor.entre_calle_1,
@@ -174,6 +178,37 @@ class ComedorService:
                 comedor.save()
             except requests.exceptions.RequestException as e:
                 print(f"Error en la petición POST: {e}")
+
+    @staticmethod
+    def send_referente_to_gestionar(referente: Referente):
+        data = {
+            "Action": "Add",
+            "Properties": {"Locale": "es-ES"},
+            "Rows": [
+                {
+                    "Documento DNI": referente.documento,
+                    "Nombre": referente.nombre,
+                    "Apellido": referente.apellido,
+                    "mail": referente.mail,
+                    "celular": referente.celular,
+                }
+            ],
+        }
+
+        headers = {
+            "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
+        }
+
+        try:
+            response = requests.post(
+                os.getenv("GESTIONAR_API_CREAR_REFERENTE"),
+                json=data,
+                headers=headers,
+            )
+            response.raise_for_status()
+            response = response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"Error en la petición POST: {e}")
 
     @staticmethod
     def get_territoriales(comedor_id: int):
