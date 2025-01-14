@@ -38,8 +38,7 @@ RUN echo "es_AR.UTF-8 UTF-8" >> /etc/locale.gen && \
 # App dependencies
 COPY ./requirements.txt .
 RUN pip install --upgrade pip && pip install -r requirements.txt && \
-    pip install pymysql && \
-    python manage.py collectstatic --noinput
+    pip install pymysql
 
 # Add and make entrypoint script executable
 COPY ./docker/django/entrypoint.py ./docker/django/entrypoint.py

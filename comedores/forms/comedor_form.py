@@ -8,6 +8,20 @@ from configuraciones.models import Localidad
 
 
 class ReferenteForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        comedor_id = kwargs.pop("comedor_pk", None)
+        if comedor_id:
+            comedor = Comedor.objects.get(pk=comedor_id)
+
+            self.fields["referente_nombre"].initial = comedor.referente.nombre
+            self.fields["referente_apellido"].initial = comedor.referente.apellido
+            self.fields["referente_mail"].initial = comedor.referente.mail
+            self.fields["referente_celular"].initial = comedor.referente.celular
+            self.fields["referente_documento"].initial = comedor.referente.documento
+            self.fields["referente_funcion"].initial = comedor.referente.funcion
+
     class Meta:
         model = Referente
         fields = "__all__"

@@ -538,6 +538,7 @@ class RelevamientoUpdateView(UpdateView):
             "recursos_form": FuenteRecursosForm,
             "compras_form": FuenteComprasForm,
             "prestacion_form": PrestacionForm,
+            "referente_form": ReferenteForm,
         }
 
         for form_name, form_class in forms.items():
@@ -548,9 +549,15 @@ class RelevamientoUpdateView(UpdateView):
                 ),
             )
 
-        data["comedor"] = Comedor.objects.values("id", "nombre").get(
-            pk=self.kwargs["comedor_pk"]
-        )
+        data["comedor"] = Comedor.objects.values(
+            "id",
+            "nombre",
+            "referente__nombre",
+            "referente__apellido",
+            "referente__mail",
+            "referente__celular",
+            "referente__documento",
+        ).get(pk=self.kwargs["comedor_pk"])
         data["espacio_cocina_form"] = EspacioCocinaForm(
             self.request.POST if self.request.POST else None,
             instance=getattr(self.object.espacio, "cocina", None),
@@ -559,6 +566,8 @@ class RelevamientoUpdateView(UpdateView):
             self.request.POST if self.request.POST else None,
             instance=getattr(self.object.espacio, "prestacion", None),
         )
+        data["responsable"] = self.object.responsable
+
         return data
 
     def form_valid(self, form):
@@ -572,6 +581,7 @@ class RelevamientoUpdateView(UpdateView):
             "recursos_form": context["recursos_form"],
             "compras_form": context["compras_form"],
             "prestacion_form": context["prestacion_form"],
+            "referente_form": context["referente_form"],
         }
 
         if all(form.is_valid() for form in forms.values()):
