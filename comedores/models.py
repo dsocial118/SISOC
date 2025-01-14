@@ -71,10 +71,8 @@ class TipoModalidadPrestacion(models.Model):
         verbose_name_plural = "Tipos de Modalidades de Prestación"
         ordering = ["nombre"]
 
-class Tipodecomedor(models.Model):
-    """
-    Guardado de las provincias de los vecinos y vecinas registrados.
-    """
+
+class TipodeComedor(models.Model):
 
     nombre = models.CharField(max_length=255)
 
@@ -83,8 +81,8 @@ class Tipodecomedor(models.Model):
 
     class Meta:
         ordering = ["id"]
-        verbose_name = "Tipodecomedor"
-        verbose_name_plural = "Tipodecomedor"
+        verbose_name = "TipodeComedor"
+        verbose_name_plural = "TipodeComedor"
 
 
 class TipoEspacio(models.Model):
@@ -719,7 +717,7 @@ class Comedor(models.Model):
         to=Municipio, on_delete=models.PROTECT, null=True, blank=True
     )
     tipocomedor = models.ForeignKey(
-        to=Tipodecomedor, on_delete=models.PROTECT, null=True, blank=True
+        to=TipodeComedor, on_delete=models.PROTECT, null=True, blank=True
     )
     localidad = models.ForeignKey(
         to=Localidad, on_delete=models.PROTECT, null=True, blank=True
