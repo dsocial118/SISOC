@@ -1,0 +1,81 @@
+.custom-card {
+    display: flex;
+    align-items: center;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    background-color: #4FD0C8; /* Color de fondo principal */
+    color: white; /* Color de texto */
+  }
+
+  .card-icon {
+    background-color: #3CAEA3; /* Color para la parte del ícono */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    margin: -2rem 0;
+    font-size: 2rem;
+    min-width: 5rem;
+  }
+
+  .card-content {
+    padding: 0.75rem 1rem;
+  }
+
+  .card-title {
+    margin-bottom: 0.25rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .card-amount {
+    font-size: 1.8rem;
+    font-weight: bold;
+  }
+  
+  .custom-card.card-violet
+  {
+    background-color: #D3A141 !important;
+  }
+
+  .custom-card.card-violet .card-icon
+  {
+    background-color: #FCBF49 !important;
+  }
+
+  .custom-card.card-red
+  {
+    background-color: #5C86AD !important;
+  }
+
+  .custom-card.card-red .card-icon
+  {
+    background-color: #75AADB !important;
+  }
+
+  .custom-card.card-green
+  {
+    background-color: #D17C94 !important;
+  }
+
+  .custom-card.card-green .card-icon
+  {
+    background-color: #F48EAB !important;
+  }
+
+  .custom-card.card-RED
+  {
+    background-color: #c84542 !important;
+  }
+
+  .custom-card.card-RED .card-icon
+  {
+    background-color: #EF5350 !important;
+  }
+
+  iframe
+  {
+    width: 100%;
+    height: 382px;
+  }

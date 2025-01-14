@@ -226,6 +226,20 @@ class ComedorListView(ListView):
     def get_queryset(self):
         query = self.request.GET.get("busqueda")
         return ComedorService.get_comedores_filtrados(query)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if "comedor_pk" in self.kwargs:
+            context["comedores"] = Comedor.objects.values(
+                "id",
+                "nombre",
+                "fk_tipocomedor",
+                "provincia__nombre",
+                "localidad__nombre",
+                "municipio__nombre",
+            ).get(pk=self.kwargs["comedor_pk"])
+        return context
+        
 
 
 class ComedorCreateView(CreateView):
