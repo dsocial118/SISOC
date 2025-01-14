@@ -262,3 +262,7 @@ CSRF_TRUSTED_ORIGINS = [
     "http://com.sisoc.secretarianaf.gob.ar",
     "https://com.sisoc.secretarianaf.gob.ar",
 ]
+
+# Configuración de hosts permitidos desde variables de entorno
+ALLOWED_HOSTS = ['com.sisoc.secretarianaf.gob.ar', 'localhost', '127.0.0.1']
+
