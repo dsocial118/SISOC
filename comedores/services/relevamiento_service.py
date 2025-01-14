@@ -24,8 +24,6 @@ from comedores.models import (
     TipoModalidadPrestacion,
     TipoRecurso,
 )
-from comedores.utils import format_fecha_gestionar
-from usuarios.models import Usuarios
 
 
 class RelevamientoService:
@@ -56,6 +54,12 @@ class RelevamientoService:
         prestacion = extra_forms["prestacion_form"].save()
         relevamiento.prestacion = prestacion
 
+        referente = extra_forms["referente_form"].save()
+        relevamiento.responsable = referente
+        relevamiento.responsable_es_referente = (
+            relevamiento_form.cleaned_data["responsable_es_referente"] == "True"
+        )
+
         relevamiento.fecha_visita = timezone.now()
 
         relevamiento.save()
@@ -85,6 +89,7 @@ class RelevamientoService:
                 "colaboradores",
                 "recursos",
                 "compras",
+                "referente",
             )
             .filter(pk=relevamiento_id)
             .values(
@@ -98,6 +103,13 @@ class RelevamientoService:
                 "funcionamiento__servicio_por_turnos",
                 "funcionamiento__cantidad_turnos",
                 "territorial__nombre",
+                "responsable_es_referente",
+                "responsable__nombre",
+                "responsable__apellido",
+                "responsable__mail",
+                "responsable__celular",
+                "responsable__documento",
+                "responsable__funcion",
                 "comedor__comienzo",
                 "comedor__id",
                 "comedor__calle",
