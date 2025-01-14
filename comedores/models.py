@@ -72,6 +72,19 @@ class TipoModalidadPrestacion(models.Model):
         ordering = ["nombre"]
 
 
+class TipodeComedor(models.Model):
+
+    nombre = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        ordering = ["id"]
+        verbose_name = "TipodeComedor"
+        verbose_name_plural = "TipodeComedor"
+
+
 class TipoEspacio(models.Model):
     """
     Opciones de tipos de espacios fisicos para un Comedor/Merendero
@@ -707,6 +720,9 @@ class Comedor(models.Model):
     provincia = models.ForeignKey(to=Provincia, on_delete=models.PROTECT, null=True)
     municipio = models.ForeignKey(
         to=Municipio, on_delete=models.PROTECT, null=True, blank=True
+    )
+    tipocomedor = models.ForeignKey(
+        to=TipodeComedor, on_delete=models.PROTECT, null=True, blank=True
     )
     localidad = models.ForeignKey(
         to=Localidad, on_delete=models.PROTECT, null=True, blank=True

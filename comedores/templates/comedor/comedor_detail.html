@@ -3,6 +3,11 @@
 ;
 {% block title %}Comedor: {{ comedor.nombre }}{% endblock %}
 ;
+<div class="col-md-2 pt-5">
+    <c-dashboard.v-info-box titulo='Beneficiarios' valor='{{ tipo_comedor }}' color='success'>
+    <i class="fa fa-user"></i>
+    </c-dashboard.v-info-box>
+</div>
 {% block titulo-pagina %}
     {{ comedor.nombre }}
     <span class="ml-2 h5">| {{ comedor.provincia__nombre | default_if_none:"-" }}, {{ comedor.municipio__nombre | default_if_none:"-" }}, {{ comedor.localidad__nombre | default_if_none:"-" }}</span>
@@ -110,6 +115,12 @@
                                                 <div class="comment-text comment-text d-flex flex-column">
                                                     Nombre
                                                     <span class="username">{{ comedor.nombre }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="nav-item d-flex">
+                                                <div class="comment-text comment-text d-flex flex-column">
+                                                    Tipo Comedor
+                                                    <span class="username">{{ comedor.tipocomedor__nombre }}</span>
                                                 </div>
                                             </div>
                                             <div class="nav-item d-flex">

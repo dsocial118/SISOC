@@ -59,10 +59,39 @@ class NominaForm(forms.ModelForm):
         model = Nomina
         fields = "__all__"
         widgets = {
+            "nombre": forms.TextInput(
+                attrs={
+                    "class": "form-control",  # Clase CSS para estilos de Bootstrap o personalizados
+                    "placeholder": "Nombre",  # Placeholder para el campo
+                }
+            ),
+            "apellido": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Apellido",
+                }
+            ),
+            "dni": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Documento de Identidad",
+                }
+            ),
+            "fk_sexo": forms.Select(
+                attrs={
+                    "class": "form-control",
+                }
+            ),
+            "fk_estado": forms.Select(
+                attrs={
+                    "class": "form-control",
+                }
+            ),
             "detalles": forms.Textarea(
                 attrs={
                     "class": "form-control",
                     "rows": 3,
+                    "placeholder": "Observaciones",
                 }
             ),
         }
@@ -70,7 +99,7 @@ class NominaForm(forms.ModelForm):
             "fk_estado": "Estado",
             "nombre": "Nombre",
             "apellido": "Apellido",
-            "dni": "Dni",
+            "dni": "Documento de Identidad",
             "fk_sexo": "Sexo",
         }
 
@@ -119,6 +148,10 @@ class ComedorForm(forms.ModelForm):
     class Meta:
         model = Comedor
         fields = "__all__"
+
+        labels = {
+            "tipocomedor": "Tipo comedor",
+        }
 
 
 class ImagenComedorForm(forms.ModelForm):

@@ -99,10 +99,22 @@ class NominaDetail(TemplateView):
             "id", "gestionar_uid", "nombre", "provincia", "barrio", "calle", "numero"
         ).get(pk=self.kwargs["pk"])
         nomina = Nomina.objects.filter(fk_comedor=self.kwargs["pk"])
+        cantidad_nominaM = Nomina.objects.filter(
+            fk_comedor=self.kwargs["pk"], fk_sexo__sexo="Masculino"
+        ).count()
+        cantidad_nominaF = Nomina.objects.filter(
+            fk_comedor=self.kwargs["pk"], fk_sexo__sexo="Femenino"
+        ).count()
+        espera = Nomina.objects.filter(
+            fk_comedor=self.kwargs["pk"], fk_estado__nombre="Lista de espera"
+        ).count()
         cantidad_intervenciones = Nomina.objects.filter(
             fk_comedor=self.kwargs["pk"]
         ).count()
         context["nomina"] = nomina
+        context["nominaM"] = cantidad_nominaM
+        context["nominaF"] = cantidad_nominaF
+        context["espera"] = espera
         context["object"] = comedor
         context["cantidad_nomina"] = cantidad_intervenciones
 
