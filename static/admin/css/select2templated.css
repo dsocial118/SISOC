@@ -57,3 +57,7 @@ span.select2.select2-container
     --bs-primary-bg: #e9ecef; /* Fondo del hover en modo claro */
     --bs-primary-text: #000000; /* Texto negro en hover */
 }
+
+.select2-container--default.select2-container--focus .select2-selection--multiple {
+    background-color: var(--bs-body-bg) !important;
+}
