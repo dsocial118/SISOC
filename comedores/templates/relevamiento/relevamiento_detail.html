@@ -7,7 +7,8 @@
     {{ relevamiento.comedor__nombre }}
     <span class="ml-2 h5">| Relevamiento</span>
     <span class="ml-2 h5">| {{ relevamiento.fecha_visita | default_if_none:"-" }} |</span>
-    <span class="ml-2 h5" {% if relevamiento.estado == "Pendiente" %} style="color: yellow;" {% elif relevamiento.estado == "Visita pendiente" %} style="color: green;" {% else %} style="color: white;" {% endif %}>
+    <span class="ml-2 h5"
+          {% if relevamiento.estado == "Pendiente" %} style="color: yellow;" {% elif relevamiento.estado == "Visita pendiente" %} style="color: green;" {% else %} style="color: white;" {% endif %}>
         {{ relevamiento.estado | default_if_none:"-" }}
     </span>
 {% endblock %}
@@ -36,7 +37,9 @@
             <a href="{% url 'relevamiento_editar' relevamiento.comedor__id relevamiento.id %}"
                class="btn btn-primary mr-1">Editar</a>
             {% if relevamiento.estado == "Finalizado" %}
-                <a href="{{ relevamiento.docPDF }}" target="_blank" class="btn btn-secondary mr-1 d-none d-sm-inline">Imprimir</a>
+                <a href="{{ relevamiento.docPDF }}"
+                   target="_blank"
+                   class="btn btn-secondary mr-1 d-none d-sm-inline">Imprimir</a>
             {% endif %}
             <a href="{% url 'relevamiento_eliminar' relevamiento.comedor__id relevamiento.id %}"
                class="btn btn-danger">Eliminar</a>
