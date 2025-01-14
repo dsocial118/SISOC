@@ -1,0 +1,20 @@
+.form-control {
+  background-color: #2c3e50; /* Color de fondo similar al de la imagen */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 10px;
+}
+
+button {
+  background-color: #27ae60; /* Botón verde */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  font-weight: bold;
+}
+
+button:hover {
+  background-color: #2ecc71; /* Color al pasar el mouse */
+}

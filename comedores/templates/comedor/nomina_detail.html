@@ -21,6 +21,7 @@
 ;
 {% block content %}
     <!-- card-info -->
+    <link rel="stylesheet" href="{% static 'custom/css/nomina.css' %}" />
     <div class="row">
         <!-- botones -->
         <div class="col-12 my-3 mx-2 d-print-none">
@@ -29,6 +30,58 @@
             <a href="" class="btn btn-secondary mr-1 print">Imprimir</a>
         </div>
         <!-- ./botones -->
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="row mb-3">
+                <div class="col-3">
+                    <div class="custom-card card-violet">
+                        <div class="card-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="card-content">
+                            <div class="card-amount">{{ cantidad_nomina }}</div>
+                            <div class="card-title">Asistentes</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="custom-card card-red">
+                        <div class="card-icon">
+                            <i class="fas fa-male"></i>
+                        </div>
+                        <div class="card-content">
+                            <div class="card-amount">{{ nominaM }}</div>
+                            <div class="card-title">Hombres</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="custom-card card-green">
+                        <div class="card-icon">
+                            <i class="fas fa-female"></i>
+                        </div>
+                        <div class="card-content">
+                            <!-- TODO Reemplazar una vez implementado cantidad_beneficiarios -->
+                            <div class="card-amount">{{ nominaF }}</div>
+                            <div class="card-title">Mujeres</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="custom-card card-RED">
+                        <div class="card-icon">
+                            <i class="fas fa-tasks"></i>
+                        </div>
+                        <div class="card-content">
+                            <!-- TODO Reemplazar una vez implementado cantidad_beneficiarios -->
+                            <div class="card-amount">{{ espera }}</div>
+                            <div class="card-title">Lista de espera</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
     <div class="row p-0 m-0 " id="seleccion">
         <!-- Datos de legajo -->
@@ -73,14 +126,7 @@
         <!-- Datos de indice -->
         <div class="col-sm-3">
             <div class="row h-100">
-                <div class="col-12">
-                    <div class="info-box py-3 ">
-                        <span class="info-box-icon">{{ cantidad_nomina }}</span>
-                        <div class="info-box-content">
-                            <span class="info-box-text">Asistentes</span>
-                        </div>
-                    </div>
-                </div>
+                <div class="col-12"></div>
             </div>
         </div>
         <!-- /  -->
