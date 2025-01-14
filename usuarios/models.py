@@ -4,7 +4,15 @@ from django.db.models import Q
 from django.urls import reverse
 
 # region------- EXTENSION DEL MODELO USER---------------------------------------------------------------------
+class Grupos(models.Model):
+    grupo = models.CharField(max_length=255)
 
+    def __str__(self):
+        return str(self.grupo)
+
+    class Meta:
+        verbose_name = "Grupo"
+        verbose_name_plural = "Grupos"
 
 class Rol(models.Model):
     rol = models.CharField(max_length=255)
@@ -34,7 +42,7 @@ class Usuarios(models.Model):
     darkmode = models.BooleanField(default=True, null=True, blank=True)
     rol = models.ForeignKey(Rol, on_delete=models.SET_NULL, null=True, blank=True)
     provincia = models.CharField(max_length=255, null=True, blank=True)
-
+    grupos = models.ManyToManyField(Grupos, blank=True)
     def __str__(self):
         if self.usuario.first_name or self.usuario.last_name:
             nombre = self.usuario.first_name + " " + self.usuario.last_name

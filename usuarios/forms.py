@@ -206,47 +206,14 @@ class PerfilUpdateForm(UserChangeForm):
             "email",
         )
 
-
 class GruposUsuariosForm(forms.ModelForm):
-
-    programa = forms.ModelChoiceField(
-        required=True,
-        label="Módulo",
-        queryset=Permission.objects.filter(codename__startswith="programa_").order_by(
-            "id"
-        ),
-    )
-    permiso = forms.ModelChoiceField(
-        label="Rol",
-        required=True,
-        queryset=Permission.objects.filter(codename__startswith="rol_").order_by("id"),
-    )
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.instance.pk:
-            self.fields["programa"].initial = (
-                Group.objects.get(id=self.instance.pk)
-                .permissions.all()
-                .get(codename__startswith="programa_")
-            )
-            self.fields["permiso"].initial = (
-                Group.objects.get(id=self.instance.pk)
-                .permissions.all()
-                .get(codename__startswith="rol_")
-            )
-            self.fields["programa"].label = "Módulo"
-
-    def clean_name(self):
-        name = self.cleaned_data["name"]
-        if Group.objects.filter(name=name).exists():
-            raise forms.ValidationError("Ya existe un grupo similar.")
-        return name
-
+        self.fields["nombre"].help_text = None
+    
     class Meta:
         model = Group
         fields = "__all__"
-
 
 class MyPasswordChangeForm(PasswordChangeForm):
     def __init__(self, *args, **kwargs):

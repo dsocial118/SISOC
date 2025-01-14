@@ -25,7 +25,7 @@ from usuarios.forms import (
     UsuariosCreateForm,
     UsuariosUpdateForm,
 )
-from usuarios.models import Usuarios
+from usuarios.models import Usuarios, Grupos
 from usuarios.utils import recortar_imagen
 
 from .mixins import PermisosMixin
@@ -46,6 +46,34 @@ def set_dark_mode(request):
         return JsonResponse({"status": "ok"})
     return None
 
+class GruposListView(PermisosMixin, ListView):
+    permission_required = ROL_ADMIN
+    model = Grupos
+    template_name = "grupos/grupos_list.html"
+
+class GruposDetailView(PermisosMixin, DetailView):
+    permission_required = ROL_ADMIN
+    model = Grupos
+    template_name = "grupos/grupos_detail.html"
+
+class GruposCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
+    permission_required = ROL_ADMIN
+    template_name = "grupos/grupos_form.html"
+    model = Grupos
+    success_message = "El grupo fue creado con éxito."
+
+class GruposUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
+    permission_required = ROL_ADMIN
+    model = Grupos
+    template_name = "grupos/grupos_form.html"
+    success_message = "El grupo fue modificado con éxito."
+
+class GruposDeleteView(PermisosMixin, SuccessMessageMixin, DeleteView):
+    permission_required = ROL_ADMIN
+    model = Grupos
+    template_name = "grupos/grupos_confirm_delete.html"
+    success_url = reverse_lazy("grupos_listar")
+    success_message = "El grupo fue eliminado correctamente."
 
 class UsuariosLoginView(LoginView):
     template_name = "login.html"
@@ -120,7 +148,12 @@ class UsuariosCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
     template_name = "usuarios/usuarios_create_form.html"
     form_class = UsuariosCreateForm
     model = User
-
+    
+    def form_invalid(self, form):
+        messages.error(self.request, ("No fue posible crear el usuario."))
+        print(form.errors)
+        return super().form_invalid(form)
+    
     def form_valid(self, form):
         dni = form.cleaned_data["dni"]
         img = self.request.FILES.get("imagen")
@@ -147,10 +180,15 @@ class UsuariosCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
                 return redirect("usuarios_ver", user.usuarios.id)
 
             except Exception as e:
+                print(e)
                 messages.error(self.request, (f"No fue posible crear el usuario: {e}"))
                 user.delete()
                 return redirect("usuarios_listar")
-        return None
+        
+        else:
+            print(form.errors)
+            messages.error(self.request, ("No fue posible crear el usuario."))
+            return redirect("usuarios_listar")
 
 
 class UsuariosUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
