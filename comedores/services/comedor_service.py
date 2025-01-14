@@ -33,6 +33,7 @@ class ComedorService:
         if query:
             queryset = queryset.filter(
                 Q(nombre__icontains=query)
+                | Q(tipocomedor__nombre__icontains=query)
                 | Q(provincia__nombre__icontains=query)
                 | Q(municipio__nombre__icontains=query)
                 | Q(localidad__nombre__icontains=query)

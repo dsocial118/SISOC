@@ -99,9 +99,15 @@ class NominaDetail(TemplateView):
             "id", "gestionar_uid", "nombre", "provincia", "barrio", "calle", "numero"
         ).get(pk=self.kwargs["pk"])
         nomina = Nomina.objects.filter(fk_comedor=self.kwargs["pk"])
-        cantidad_nominaM = Nomina.objects.filter(fk_comedor=self.kwargs["pk"], fk_sexo__sexo="Masculino").count()
-        cantidad_nominaF = Nomina.objects.filter(fk_comedor=self.kwargs["pk"], fk_sexo__sexo="Femenino").count()
-        espera = Nomina.objects.filter(fk_comedor=self.kwargs["pk"], fk_estado__nombre="Lista de espera").count()
+        cantidad_nominaM = Nomina.objects.filter(
+            fk_comedor=self.kwargs["pk"], fk_sexo__sexo="Masculino"
+        ).count()
+        cantidad_nominaF = Nomina.objects.filter(
+            fk_comedor=self.kwargs["pk"], fk_sexo__sexo="Femenino"
+        ).count()
+        espera = Nomina.objects.filter(
+            fk_comedor=self.kwargs["pk"], fk_estado__nombre="Lista de espera"
+        ).count()
         cantidad_intervenciones = Nomina.objects.filter(
             fk_comedor=self.kwargs["pk"]
         ).count()
@@ -226,20 +232,6 @@ class ComedorListView(ListView):
     def get_queryset(self):
         query = self.request.GET.get("busqueda")
         return ComedorService.get_comedores_filtrados(query)
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        if "comedor_pk" in self.kwargs:
-            context["comedores"] = Comedor.objects.values(
-                "id",
-                "nombre",
-                "tipocomedor__nombre",
-                "provincia__nombre",
-                "localidad__nombre",
-                "municipio__nombre",
-            ).get(pk=self.kwargs["comedor_pk"])
-        return context
-        
 
 
 class ComedorCreateView(CreateView):

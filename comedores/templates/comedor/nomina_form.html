@@ -15,7 +15,7 @@
 ;
 {% load crispy_forms_tags %}
 {% block content %}
-<link rel="stylesheet" href="{% static 'custom/css/nominaform.css' %}" />
+    <link rel="stylesheet" href="{% static 'custom/css/nominaform.css' %}" />
     <!-- Datos de legajo -->
     <div class="row mb-3">
         <div class="col-12">
@@ -81,7 +81,7 @@
                             </div>
                             <div class="col-sm-12">
                                 <div class="form-group">{{ form.observaciones| as_crispy_field }}</div>
-                            </div>                            
+                            </div>
                         </div>
                     </div>
                 </div>
