@@ -233,7 +233,7 @@ class ComedorListView(ListView):
             context["comedores"] = Comedor.objects.values(
                 "id",
                 "nombre",
-                "fk_tipocomedor",
+                "tipocomedor__nombre",
                 "provincia__nombre",
                 "localidad__nombre",
                 "municipio__nombre",

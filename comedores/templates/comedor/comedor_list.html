@@ -67,7 +67,7 @@
                                            title="Ver detalles">{{ comedor.nombre }}</a>
                                     </td>
                                     <!-- ver porque no lo muestra -->
-                                    <td>{{ comedor.fk_tipocomedor}}</td>
+                                    <td>{{ comedor.tipocomedor__nombre}}</td>
                                     <td>
                                         {{ comedor.provincia__nombre|default_if_none:"-" }}, {{ comedor.municipio__nombre|default_if_none:"-" }}, {{ comedor.localidad__nombre|default_if_none:"-" }}, {{ comedor.barrio|default_if_none:"-" }}
                                     </td>

@@ -18,6 +18,7 @@ class ComedorService:
         queryset = Comedor.objects.prefetch_related("provincia", "referente").values(
             "id",
             "nombre",
+            "tipocomedor__nombre",
             "provincia__nombre",
             "municipio__nombre",
             "localidad__nombre",

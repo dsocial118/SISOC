@@ -718,7 +718,7 @@ class Comedor(models.Model):
     municipio = models.ForeignKey(
         to=Municipio, on_delete=models.PROTECT, null=True, blank=True
     )
-    fk_tipocomedor = models.ForeignKey(
+    tipocomedor = models.ForeignKey(
         to=Tipodecomedor, on_delete=models.PROTECT, null=True, blank=True
     )
     localidad = models.ForeignKey(
