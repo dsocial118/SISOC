@@ -24,6 +24,7 @@ from configuraciones.models import (
     Provincia,
     Municipio,
     Asentamiento,
+    Sexo,
 )
 
 
@@ -144,3 +145,4 @@ admin.site.register(Dimension)
 admin.site.register(TipoDeDato)
 admin.site.register(TipoDeFormulario)
 admin.site.register(CriterioAlerta)
+admin.site.register(Sexo)

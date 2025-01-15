@@ -1,5 +1,7 @@
 from django.contrib import admin
 
+from configuraciones.models import Sexo
+
 from .models import (
     Accion,
     ActividadRealizada,
@@ -34,7 +36,6 @@ from .models import (
     NivelEducativo,
     NoBusquedaLaboral,
     Rechazo,
-    Sexo,
     TiempoBusquedaLaboral,
     TipoAyudaHogar,
     TipoConstruccionVivienda,
@@ -75,7 +76,6 @@ admin.site.register(Gas)
 admin.site.register(TipoConstruccionVivienda)
 admin.site.register(TipoEstadoVivienda)
 admin.site.register(EstadoCivil)
-admin.site.register(Sexo)
 admin.site.register(Genero)
 admin.site.register(GeneroPronombre)
 admin.site.register(TipoDoc)
