@@ -72,6 +72,19 @@ class TipoModalidadPrestacion(models.Model):
         ordering = ["nombre"]
 
 
+class TipodeComedor(models.Model):
+
+    nombre = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        ordering = ["id"]
+        verbose_name = "TipodeComedor"
+        verbose_name_plural = "TipodeComedor"
+
+
 class TipoEspacio(models.Model):
     """
     Opciones de tipos de espacios fisicos para un Comedor/Merendero
@@ -212,6 +225,7 @@ class EspacioCocina(models.Model):
         TipoCombustible,
         related_name="espacios",
         verbose_name="2.2.7 Para cocinar utiliza",
+        blank=True,
     )
     abastecimiento_agua = models.ForeignKey(
         to=TipoAgua,
@@ -639,6 +653,7 @@ class Referente(models.Model):
         mail (EmailField): Dirección de correo electrónico única del referente.
         celular (BigIntegerField): Número único del referente.
         documento (BigIntegerField): Documento único del referente.
+        funcion (CharField): Función del referente.
     """
 
     nombre = models.CharField(
@@ -653,6 +668,9 @@ class Referente(models.Model):
     )
     documento = models.BigIntegerField(
         verbose_name="Documento del referente", blank=True, null=True
+    )
+    funcion = models.CharField(
+        verbose_name="Funcion del referente", max_length=255, blank=True, null=True
     )
 
     class Meta:
@@ -702,6 +720,9 @@ class Comedor(models.Model):
     provincia = models.ForeignKey(to=Provincia, on_delete=models.PROTECT, null=True)
     municipio = models.ForeignKey(
         to=Municipio, on_delete=models.PROTECT, null=True, blank=True
+    )
+    tipocomedor = models.ForeignKey(
+        to=TipodeComedor, on_delete=models.PROTECT, null=True, blank=True
     )
     localidad = models.ForeignKey(
         to=Localidad, on_delete=models.PROTECT, null=True, blank=True
@@ -846,8 +867,22 @@ class Relevamiento(models.Model):
     )
     observacion = models.TextField(blank=True, null=True)
     docPDF = models.URLField(blank=True, null=True)
+    responsable_es_referente = models.BooleanField(default=True)
+    responsable = models.ForeignKey(
+        to=Referente, on_delete=models.PROTECT, null=True, blank=True
+    )
 
     def save(self, *args, **kwargs):
+        self.validate_relevamientos_activos()
+        self.set_referente_como_responsable()
+
+        super().save(*args, **kwargs)
+
+    def set_referente_como_responsable(self):
+        if self.responsable_es_referente:
+            self.responsable = self.comedor.referente
+
+    def validate_relevamientos_activos(self):
         if self.estado in ["Pendiente", "Visita pendiente"]:
             relevamiento_existente = (
                 Relevamiento.objects.filter(
@@ -861,8 +896,6 @@ class Relevamiento(models.Model):
                 raise ValidationError(
                     f"Ya existe un relevamiento activo para el comedor '{self.comedor}'."
                 )
-
-        super().save(*args, **kwargs)
 
     class Meta:
         indexes = [

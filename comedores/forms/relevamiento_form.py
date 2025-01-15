@@ -257,40 +257,30 @@ class RelevamientoForm(forms.ModelForm):
         label="1.1.2 Nombre del Comedor/Merendero",
     )
     comienzo = forms.CharField(
-        required=True, disabled=True, label="1.1.3 ¿En qué año comenzó a funcionar?"
+        required=False, disabled=True, label="1.1.3 ¿En qué año comenzó a funcionar?"
     )
-    calle = forms.CharField(required=True, disabled=True, label="1.2.1 Calle")
-    numero = forms.CharField(required=True, disabled=True, label="1.2.2 Número")
+    calle = forms.CharField(required=False, disabled=True, label="1.2.1 Calle")
+    numero = forms.CharField(required=False, disabled=True, label="1.2.2 Número")
     entre_calle_1 = forms.CharField(
         required=False, disabled=True, label="1.2.3 Entre calle 1"
     )
     entre_calle_2 = forms.CharField(
         required=False, disabled=True, label="1.2.4 Entre calle 2"
     )
-    provincia = forms.CharField(required=True, disabled=True, label="1.2.10 Provincia")
-    municipio = forms.CharField(required=True, disabled=True, label="1.2.8 Municipio")
-    localidad = forms.CharField(required=True, disabled=True, label="1.2.7 Localidad")
+    provincia = forms.CharField(required=False, disabled=True, label="1.2.10 Provincia")
+    municipio = forms.CharField(required=False, disabled=True, label="1.2.8 Municipio")
+    localidad = forms.CharField(required=False, disabled=True, label="1.2.7 Localidad")
     partido = forms.CharField(
-        required=True, disabled=True, label="1.2.9 Departamento/Partido"
+        required=False, disabled=True, label="1.2.9 Departamento/Partido"
     )
-    barrio = forms.CharField(required=True, disabled=True, label="1.2.5 Barrio")
+    barrio = forms.CharField(required=False, disabled=True, label="1.2.5 Barrio")
     codigo_postal = forms.CharField(
-        required=True, disabled=True, label="1.2.6 Código Postal"
+        required=False, disabled=True, label="1.2.6 Código Postal"
     )
-    referente_nombre = forms.CharField(
-        required=True, disabled=True, label="1.3.1 Nombre del referente/responsable"
-    )
-    referente_apellido = forms.CharField(
-        required=True, disabled=True, label="1.3.5 Apellido del referente/responsable"
-    )
-    referente_mail = forms.CharField(
-        required=True, disabled=True, label="1.3.2 Mail del referente/responsable"
-    )
-    referente_celular = forms.CharField(
-        required=True, disabled=True, label="1.3.3 Celular del referente/responsable"
-    )
-    referente_documento = forms.CharField(
-        required=True, disabled=True, label="1.3.4 DNI del referente/responsable"
+    responsable_es_referente = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿El responsable es el referente del comedor/merendero?",
     )
 
     def __init__(self, *args, **kwargs):
@@ -316,11 +306,6 @@ class RelevamientoForm(forms.ModelForm):
         self.fields["partido"].initial = comedor.partido
         self.fields["barrio"].initial = comedor.barrio
         self.fields["codigo_postal"].initial = comedor.codigo_postal
-        self.fields["referente_nombre"].initial = comedor.referente.nombre
-        self.fields["referente_apellido"].initial = comedor.referente.apellido
-        self.fields["referente_mail"].initial = comedor.referente.mail
-        self.fields["referente_celular"].initial = comedor.referente.celular
-        self.fields["referente_documento"].initial = comedor.referente.documento
 
     class Meta:
         model = Relevamiento
