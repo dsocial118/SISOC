@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("comedores", "0014_relevamiento_docpdf"),
+        ("comedores", "0014_comedor_fk_tipocomedor"),
     ]
 
     operations = [

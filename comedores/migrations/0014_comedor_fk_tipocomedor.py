@@ -7,7 +7,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("comedores", "0013_tipodecomedor"),
+        ("comedores", "0013_merge_20250109_1245"),
     ]
 
     operations = [
@@ -20,5 +20,10 @@ class Migration(migrations.Migration):
                 on_delete=django.db.models.deletion.PROTECT,
                 to="comedores.tipodecomedor",
             ),
+        ),
+        migrations.AddField(
+            model_name="relevamiento",
+            name="docPDF",
+            field=models.URLField(blank=True, null=True),
         ),
     ]
