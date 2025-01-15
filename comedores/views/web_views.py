@@ -99,10 +99,22 @@ class NominaDetail(TemplateView):
             "id", "gestionar_uid", "nombre", "provincia", "barrio", "calle", "numero"
         ).get(pk=self.kwargs["pk"])
         nomina = Nomina.objects.filter(fk_comedor=self.kwargs["pk"])
+        cantidad_nominaM = Nomina.objects.filter(
+            fk_comedor=self.kwargs["pk"], fk_sexo__sexo="Masculino"
+        ).count()
+        cantidad_nominaF = Nomina.objects.filter(
+            fk_comedor=self.kwargs["pk"], fk_sexo__sexo="Femenino"
+        ).count()
+        espera = Nomina.objects.filter(
+            fk_comedor=self.kwargs["pk"], fk_estado__nombre="Lista de espera"
+        ).count()
         cantidad_intervenciones = Nomina.objects.filter(
             fk_comedor=self.kwargs["pk"]
         ).count()
         context["nomina"] = nomina
+        context["nominaM"] = cantidad_nominaM
+        context["nominaF"] = cantidad_nominaF
+        context["espera"] = espera
         context["object"] = comedor
         context["cantidad_nomina"] = cantidad_intervenciones
 
@@ -526,6 +538,7 @@ class RelevamientoUpdateView(UpdateView):
             "recursos_form": FuenteRecursosForm,
             "compras_form": FuenteComprasForm,
             "prestacion_form": PrestacionForm,
+            "referente_form": ReferenteForm,
         }
 
         for form_name, form_class in forms.items():
@@ -536,9 +549,15 @@ class RelevamientoUpdateView(UpdateView):
                 ),
             )
 
-        data["comedor"] = Comedor.objects.values("id", "nombre").get(
-            pk=self.kwargs["comedor_pk"]
-        )
+        data["comedor"] = Comedor.objects.values(
+            "id",
+            "nombre",
+            "referente__nombre",
+            "referente__apellido",
+            "referente__mail",
+            "referente__celular",
+            "referente__documento",
+        ).get(pk=self.kwargs["comedor_pk"])
         data["espacio_cocina_form"] = EspacioCocinaForm(
             self.request.POST if self.request.POST else None,
             instance=getattr(self.object.espacio, "cocina", None),
@@ -547,6 +566,8 @@ class RelevamientoUpdateView(UpdateView):
             self.request.POST if self.request.POST else None,
             instance=getattr(self.object.espacio, "prestacion", None),
         )
+        data["responsable"] = self.object.responsable
+
         return data
 
     def form_valid(self, form):
@@ -560,6 +581,7 @@ class RelevamientoUpdateView(UpdateView):
             "recursos_form": context["recursos_form"],
             "compras_form": context["compras_form"],
             "prestacion_form": context["prestacion_form"],
+            "referente_form": context["referente_form"],
         }
 
         if all(form.is_valid() for form in forms.values()):

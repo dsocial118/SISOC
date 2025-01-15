@@ -32,6 +32,11 @@ class Migration(migrations.Migration):
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AddField(
+            model_name="observacion",
+            name="gestionar_uid",
+            field=models.CharField(blank=True, max_length=255, null=True),
+        ),
+        migrations.AddField(
             model_name="nomina",
             name="dni",
             field=models.IntegerField(blank=True, null=True),
