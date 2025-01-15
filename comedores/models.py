@@ -5,7 +5,7 @@ from django.utils import timezone
 
 from configuraciones.models import Municipio, Provincia
 from configuraciones.models import Localidad
-from legajos.models import Sexo
+from configuraciones.models import Sexo
 
 
 class EstadosIntervencion(models.Model):

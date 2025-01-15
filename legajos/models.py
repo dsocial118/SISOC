@@ -18,6 +18,7 @@ from configuraciones.models import Municipio
 from configuraciones.models import Departamento
 from configuraciones.models import Localidad
 from configuraciones.models import Asentamiento
+from configuraciones.models import Sexo
 from usuarios.models import User, Usuarios
 
 # Modelo para choices de dimension educacion
@@ -308,17 +309,6 @@ class EstadoCivil(models.Model):
     class Meta:
         verbose_name = "Estado Civil"
         verbose_name_plural = "Estados Civiles"
-
-
-class Sexo(models.Model):
-    sexo = models.CharField(max_length=10)
-
-    def __str__(self):
-        return str(self.sexo)
-
-    class Meta:
-        verbose_name = "Sexo"
-        verbose_name_plural = "Sexos"
 
 
 class Genero(models.Model):
