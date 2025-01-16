@@ -277,7 +277,7 @@ class PerfilChangePassView(LoginRequiredMixin, SuccessMessageMixin, PasswordChan
 
     template_name = "perfiles/perfil_change_password.html"
     form_class = MyPasswordChangeForm
-    success_url = reverse_lazy("legajos_listar")
+    success_url = reverse_lazy("dashboard")
     success_message = "La contraseña fue modificada con éxito."
 
 
