@@ -137,6 +137,9 @@ class ComedorService:
                             if comedor.comienzo
                             else "01/01/1900"
                         ),
+                        "TipoComedor": (
+                            comedor.tipocomedor.nombre if comedor.tipocomedor else ""
+                        ),
                         "calle": comedor.calle,
                         "numero": comedor.numero,
                         "entre_calle_1": comedor.entre_calle_1,
