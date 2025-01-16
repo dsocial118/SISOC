@@ -140,10 +140,14 @@ class ComedorService:
                         "TipoComedor": (
                             comedor.tipocomedor.nombre if comedor.tipocomedor else ""
                         ),
-                        "calle": comedor.calle,
-                        "numero": comedor.numero,
-                        "entre_calle_1": comedor.entre_calle_1,
-                        "entre_calle_2": comedor.entre_calle_2,
+                        "calle": comedor.calle if comedor.calle else "",
+                        "numero": comedor.numero if comedor.numero else "",
+                        "entre_calle_1": (
+                            comedor.entre_calle_1 if comedor.entre_calle_1 else ""
+                        ),
+                        "entre_calle_2": (
+                            comedor.entre_calle_2 if comedor.entre_calle_2 else ""
+                        ),
                         "provincia": (
                             comedor.provincia.nombre if comedor.provincia else ""
                         ),
@@ -153,16 +157,25 @@ class ComedorService:
                         "localidad": (
                             comedor.localidad.nombre if comedor.localidad else ""
                         ),
-                        "partido": comedor.partido,
-                        "barrio": comedor.barrio,
-                        "codigo_postal": comedor.codigo_postal,
-                        "Referente": (
-                            comedor.referente.documento if comedor.referente else ""
+                        "partido": comedor.partido if comedor.partido else "",
+                        "barrio": comedor.barrio if comedor.barrio else "",
+                        "codigo_postal": (
+                            comedor.codigo_postal if comedor.codigo_postal else ""
                         ),
-                        "Imagen": f"{os.getenv('DOMINIO')}/media/{comedor.foto_legajo}",
+                        "Referente": (
+                            comedor.referente.documento
+                            if comedor.referente.documento
+                            else ""
+                        ),
+                        "Imagen": (
+                            f"{os.getenv('DOMINIO')}/media/{comedor.foto_legajo}"
+                            if comedor.foto_legajo
+                            else ""
+                        ),
                     }
                 ],
             }
+            print(data)
 
             headers = {
                 "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
