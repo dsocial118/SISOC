@@ -1,21 +1,7 @@
-from django.contrib import messages
-from django.contrib.messages.views import SuccessMessageMixin
-from django.db.models import Q
-from django.shortcuts import redirect
-from django.urls import reverse_lazy
 from django.http import JsonResponse
-from django.views.generic import (
-    CreateView,
-    DeleteView,
-    DetailView,
-    ListView,
-    UpdateView,
-)
+
 
 from django.shortcuts import render
-
-from usuarios.mixins import PermisosMixin
-
 
 from configuraciones.models import (
     Asentamiento,
