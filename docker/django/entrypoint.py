@@ -6,6 +6,7 @@ import pymysql
 
 from concurrent.futures import ThreadPoolExecutor
 
+
 def wait_for_mysql():
     host = os.getenv("DATABASE_HOST", "mysql")
     port = int(os.getenv("DATABASE_PORT", 3307))
