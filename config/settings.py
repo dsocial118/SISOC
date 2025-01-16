@@ -43,7 +43,6 @@ MESSAGE_TAGS = {
 }
 
 
-
 # Configuración de clases CSS para formularios Crispy
 CRISPY_CLASS_CONVERTERS = {
     "textinput": "form-control",
