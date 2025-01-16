@@ -72,7 +72,10 @@ class TipoModalidadPrestacion(models.Model):
         ordering = ["nombre"]
 
 
-class TipodeComedor(models.Model):
+class TipoDeComedor(models.Model):
+    """
+    Opciones de tipos para un Comedor/Merendero/Punto de entrega
+    """
 
     nombre = models.CharField(max_length=255)
 
@@ -81,8 +84,8 @@ class TipodeComedor(models.Model):
 
     class Meta:
         ordering = ["id"]
-        verbose_name = "TipodeComedor"
-        verbose_name_plural = "TipodeComedor"
+        verbose_name = "Tipo de comedor"
+        verbose_name_plural = "Tipos de comedor"
 
 
 class TipoEspacio(models.Model):
@@ -722,7 +725,7 @@ class Comedor(models.Model):
         to=Municipio, on_delete=models.PROTECT, null=True, blank=True
     )
     tipocomedor = models.ForeignKey(
-        to=TipodeComedor, on_delete=models.PROTECT, null=True, blank=True
+        to=TipoDeComedor, on_delete=models.PROTECT, null=True, blank=True
     )
     localidad = models.ForeignKey(
         to=Localidad, on_delete=models.PROTECT, null=True, blank=True
