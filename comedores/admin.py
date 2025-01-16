@@ -12,6 +12,7 @@ from comedores.models import (
     Relevamiento,
     TipoAgua,
     TipoCombustible,
+    TipoDeComedor,
     TipoDesague,
     TipoEspacio,
     TipoModalidadPrestacion,
@@ -47,3 +48,4 @@ admin.site.register(SubIntervencion)
 admin.site.register(TipoIntervencion)
 admin.site.register(EstadosIntervencion)
 admin.site.register(Nomina)
+admin.site.register(TipoDeComedor)
