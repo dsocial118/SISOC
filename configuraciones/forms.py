@@ -313,3 +313,5 @@ class IndiceCriteriosForm(forms.ModelForm):
 IndicesFormset = inlineformset_factory(
     Indices, IndiceCriterios, form=IndiceCriteriosForm, extra=1, can_delete=True
 )
+
+
