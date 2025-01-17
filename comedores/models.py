@@ -5,7 +5,7 @@ from django.utils import timezone
 
 from configuraciones.models import Municipio, Provincia
 from configuraciones.models import Localidad
-from legajos.models import Sexo
+from configuraciones.models import Sexo
 
 
 class EstadosIntervencion(models.Model):
@@ -72,7 +72,10 @@ class TipoModalidadPrestacion(models.Model):
         ordering = ["nombre"]
 
 
-class TipodeComedor(models.Model):
+class TipoDeComedor(models.Model):
+    """
+    Opciones de tipos para un Comedor/Merendero/Punto de entrega
+    """
 
     nombre = models.CharField(max_length=255)
 
@@ -81,8 +84,8 @@ class TipodeComedor(models.Model):
 
     class Meta:
         ordering = ["id"]
-        verbose_name = "TipodeComedor"
-        verbose_name_plural = "TipodeComedor"
+        verbose_name = "Tipo de comedor"
+        verbose_name_plural = "Tipos de comedor"
 
 
 class TipoEspacio(models.Model):
@@ -686,6 +689,7 @@ class Comedor(models.Model):
         gestionar_uid (CharField): UID unica que referencia al Comedor/Merendero en GESTIONAR.
         nombre (CharField): Nombre del Comedor/Merendero.
         comienzo (IntegerField): Año de inicio de la actividad del Comedor/Merendero.
+        tipocomedor (ForeignKey): Tipo de Comedor/Merendero.
         calle (CharField): Calle donde se encuentra el Comedor/Merendero.
         numero (PositiveIntegerField): Número de la calle donde se encuentra el Comedor/Merendero.
         entre_calle_1 (CharField): Primera calle entre la cual se encuentra el Comedor/Merendero.
@@ -713,6 +717,9 @@ class Comedor(models.Model):
         blank=True,
         null=True,
     )
+    tipocomedor = models.ForeignKey(
+        to=TipoDeComedor, on_delete=models.PROTECT, null=True, blank=True
+    )
     calle = models.CharField(max_length=255, blank=True, null=True)
     numero = models.PositiveIntegerField(blank=True, null=True)
     entre_calle_1 = models.CharField(max_length=255, blank=True, null=True)
@@ -720,9 +727,6 @@ class Comedor(models.Model):
     provincia = models.ForeignKey(to=Provincia, on_delete=models.PROTECT, null=True)
     municipio = models.ForeignKey(
         to=Municipio, on_delete=models.PROTECT, null=True, blank=True
-    )
-    tipocomedor = models.ForeignKey(
-        to=TipodeComedor, on_delete=models.PROTECT, null=True, blank=True
     )
     localidad = models.ForeignKey(
         to=Localidad, on_delete=models.PROTECT, null=True, blank=True

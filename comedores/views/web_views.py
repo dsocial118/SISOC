@@ -440,6 +440,7 @@ class RelevamientoCreateView(CreateView):
             "recursos_form": FuenteRecursosForm,
             "compras_form": FuenteComprasForm,
             "prestacion_form": PrestacionForm,
+            "referente_form": ReferenteForm,
         }
 
         for form_name, form_class in forms.items():
@@ -464,6 +465,7 @@ class RelevamientoCreateView(CreateView):
             "recursos_form": context["recursos_form"],
             "compras_form": context["compras_form"],
             "prestacion_form": context["prestacion_form"],
+            "referente_form": context["referente_form"],
         }
 
         if all(form.is_valid() for form in forms.values()):
