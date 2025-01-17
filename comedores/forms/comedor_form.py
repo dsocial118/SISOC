@@ -111,14 +111,20 @@ class ComedorForm(forms.ModelForm):
         self.popular_campos_ubicacion()
 
     def popular_campos_ubicacion(self):
+
+        def pk_formatter(value):
+            return int(value) if value and value.isdigit() else None
+
         provincia = Provincia.objects.filter(
-            pk=self.data.get("provincia")
+            pk=pk_formatter(self.data.get("provincia"))
         ).first() or getattr(self.instance, "provincia", None)
+
         municipio = Municipio.objects.filter(
-            pk=self.data.get("municipio")
+            pk=pk_formatter(self.data.get("municipio"))
         ).first() or getattr(self.instance, "municipio", None)
+
         localidad = Localidad.objects.filter(
-            pk=self.data.get("localidad")
+            pk=pk_formatter(self.data.get("localidad"))
         ).first() or getattr(self.instance, "localidad", None)
 
         if provincia:

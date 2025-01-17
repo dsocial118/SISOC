@@ -49716,7 +49716,7 @@
         "pk": "78014070",
         "fields": {
             "nombre": "Pico Truncado",
-            "fk_municipio": null,
+            "fk_municipio": "78014001",
             "fk_departamento": "78014"
         }
     },
@@ -49725,7 +49725,7 @@
         "pk": "78014080",
         "fields": {
             "nombre": "Puerto Deseado",
-            "fk_municipio": null,
+            "fk_municipio": "78014001",
             "fk_departamento": "78014"
         }
     },
@@ -49734,7 +49734,7 @@
         "pk": "78021070",
         "fields": {
             "nombre": "Yacimientos Río Turbio",
-            "fk_municipio": null,
+            "fk_municipio": "78021003",
             "fk_departamento": "78021"
         }
     },
@@ -49743,7 +49743,7 @@
         "pk": "78014060",
         "fields": {
             "nombre": "Las Heras",
-            "fk_municipio": null,
+            "fk_municipio": "78014001",
             "fk_departamento": "78014"
         }
     },
@@ -49752,7 +49752,7 @@
         "pk": "78042010",
         "fields": {
             "nombre": "Puerto San Julián",
-            "fk_municipio": null,
+            "fk_municipio": "78042004",
             "fk_departamento": "78042"
         }
     },
@@ -49761,7 +49761,7 @@
         "pk": "78007010",
         "fields": {
             "nombre": "Comandante Luis Piedrabuena",
-            "fk_municipio": null,
+            "fk_municipio": "78007005",
             "fk_departamento": "78007"
         }
     },
@@ -49770,7 +49770,7 @@
         "pk": "78021060",
         "fields": {
             "nombre": "28 de Noviembre",
-            "fk_municipio": null,
+            "fk_municipio": "78021003",
             "fk_departamento": "78021"
         }
     },
@@ -49779,7 +49779,7 @@
         "pk": "78028010",
         "fields": {
             "nombre": "El Calafate",
-            "fk_municipio": null,
+            "fk_municipio": "78028006",
             "fk_departamento": "78028"
         }
     },
@@ -49788,7 +49788,7 @@
         "pk": "78035020",
         "fields": {
             "nombre": "Perito Moreno",
-            "fk_municipio": null,
+            "fk_municipio": "78035002",
             "fk_departamento": "78035"
         }
     },
@@ -49797,7 +49797,7 @@
         "pk": "78007020",
         "fields": {
             "nombre": "Puerto Santa Cruz",
-            "fk_municipio": null,
+            "fk_municipio": "78007005",
             "fk_departamento": "78007"
         }
     },
@@ -49806,7 +49806,7 @@
         "pk": "78049020",
         "fields": {
             "nombre": "Gobernador Gregores",
-            "fk_municipio": null,
+            "fk_municipio": "78049007",
             "fk_departamento": "78049"
         }
     },
@@ -49815,7 +49815,7 @@
         "pk": "78035010",
         "fields": {
             "nombre": "Los Antiguos",
-            "fk_municipio": null,
+            "fk_municipio": "78035002",
             "fk_departamento": "78035"
         }
     },
@@ -49824,7 +49824,7 @@
         "pk": "78021040",
         "fields": {
             "nombre": "Río Gallegos",
-            "fk_municipio": null,
+            "fk_municipio": "78021003",
             "fk_departamento": "78021"
         }
     },
@@ -49833,7 +49833,7 @@
         "pk": "78014020",
         "fields": {
             "nombre": "Cañadón Seco",
-            "fk_municipio": null,
+            "fk_municipio": "78014001",
             "fk_departamento": "78014"
         }
     },
@@ -49842,7 +49842,7 @@
         "pk": "78021050",
         "fields": {
             "nombre": "Rospentek",
-            "fk_municipio": null,
+            "fk_municipio": "78021003",
             "fk_departamento": "78021"
         }
     },
@@ -49851,7 +49851,7 @@
         "pk": "78021020",
         "fields": {
             "nombre": "Julia Dufour",
-            "fk_municipio": null,
+            "fk_municipio": "78021003",
             "fk_departamento": "78021"
         }
     },
@@ -49860,7 +49860,7 @@
         "pk": "78014050",
         "fields": {
             "nombre": "Nuestra Señora de los Dolores de Koluel Kayke",
-            "fk_municipio": null,
+            "fk_municipio": "78014001",
             "fk_departamento": "78014"
         }
     },
@@ -49869,7 +49869,7 @@
         "pk": "78014040",
         "fields": {
             "nombre": "Jaramillo",
-            "fk_municipio": null,
+            "fk_municipio": "78014001",
             "fk_departamento": "78014"
         }
     },
@@ -49878,7 +49878,7 @@
         "pk": "78028030",
         "fields": {
             "nombre": "Tres Lagos",
-            "fk_municipio": null,
+            "fk_municipio": "78028006",
             "fk_departamento": "78028"
         }
     },
@@ -49887,7 +49887,7 @@
         "pk": "78014030",
         "fields": {
             "nombre": "Fitz Roy",
-            "fk_municipio": null,
+            "fk_municipio": "78014001",
             "fk_departamento": "78014"
         }
     },
@@ -49896,7 +49896,7 @@
         "pk": "78049030",
         "fields": {
             "nombre": "Lago Posadas",
-            "fk_municipio": null,
+            "fk_municipio": "78049007",
             "fk_departamento": "78049"
         }
     },
@@ -49905,7 +49905,7 @@
         "pk": "78021010",
         "fields": {
             "nombre": "El Turbio",
-            "fk_municipio": null,
+            "fk_municipio": "78021003",
             "fk_departamento": "78021"
         }
     },
@@ -49914,7 +49914,7 @@
         "pk": "78049010",
         "fields": {
             "nombre": "Bajo Caracoles",
-            "fk_municipio": null,
+            "fk_municipio": "78049007",
             "fk_departamento": "78049"
         }
     },
@@ -49923,7 +49923,7 @@
         "pk": "78028020",
         "fields": {
             "nombre": "El Chaltén",
-            "fk_municipio": null,
+            "fk_municipio": "78028006",
             "fk_departamento": "78028"
         }
     },
@@ -49932,7 +49932,7 @@
         "pk": "78014090",
         "fields": {
             "nombre": "Tellier",
-            "fk_municipio": null,
+            "fk_municipio": "78014001",
             "fk_departamento": "78014"
         }
     },
@@ -49941,7 +49941,7 @@
         "pk": "78014010",
         "fields": {
             "nombre": "Caleta Olivia",
-            "fk_municipio": null,
+            "fk_municipio": "78014001",
             "fk_departamento": "78014"
         }
     },
@@ -49950,7 +49950,7 @@
         "pk": "78021005",
         "fields": {
             "nombre": "Chimen Aike",
-            "fk_municipio": null,
+            "fk_municipio": "78021003",
             "fk_departamento": "78021"
         }
     },
@@ -49959,7 +49959,7 @@
         "pk": "78021015",
         "fields": {
             "nombre": "Esperanza",
-            "fk_municipio": null,
+            "fk_municipio": "78021003",
             "fk_departamento": "78021"
         }
     },
@@ -157406,6 +157406,62 @@
             "fk_municipio": "500077",
             "fk_departamento": "50077",
             "fk_localidad": null
+        }
+    },
+    {
+        "model": "configuraciones.Municipio",
+        "pk": "78014001",
+        "fields": {
+            "nombre": "Deseado",
+            "fk_provincia": "78"
+        }
+    },
+    {
+        "model": "configuraciones.Municipio",
+        "pk": "78035002",
+        "fields": {
+            "nombre": "Lago Buenos Aires",
+            "fk_provincia": "78"
+        }
+    },
+    {
+        "model": "configuraciones.Municipio",
+        "pk": "78021003",
+        "fields": {
+            "nombre": "Güer Aike",
+            "fk_provincia": "78"
+        }
+    },
+    {
+        "model": "configuraciones.Municipio",
+        "pk": "78042004",
+        "fields": {
+            "nombre": "Magallanes",
+            "fk_provincia": "78"
+        }
+    },
+    {
+        "model": "configuraciones.Municipio",
+        "pk": "78007005",
+        "fields": {
+            "nombre": "Corpen Aike",
+            "fk_provincia": "78"
+        }
+    },
+    {
+        "model": "configuraciones.Municipio",
+        "pk": "78028006",
+        "fields": {
+            "nombre": "Lago Argentino",
+            "fk_provincia": "78"
+        }
+    },
+    {
+        "model": "configuraciones.Municipio",
+        "pk": "78049007",
+        "fields": {
+            "nombre": "Río Chico",
+            "fk_provincia": "78"
         }
     }
 ]

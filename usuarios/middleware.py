@@ -50,7 +50,7 @@ class CustomLoginMiddleware:
                         if user is not None:
                             login(request, user)
                             return redirect(
-                                "legajos_listar"
+                                "dashboard"
                             )  # Redirigir a la página deseada después del inicio de sesión
 
         return None
