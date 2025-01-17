@@ -12,8 +12,7 @@
     <ol class="breadcrumb float-sm-right ">
         <li class="breadcrumb-item">Administración</li>
         <li class="breadcrumb-item">
-            <a href="{% url 'grupos_listar' %}">Grupos de
-            Usuario</a>
+            <a href="{% url 'grupos_listar' %}">Grupo</a>
         </li>
         <li class="breadcrumb-item active">
             {% if request.resolver_match.url_name == "grupos_editar" %}
@@ -26,7 +25,46 @@
 {% endblock %}
 ;
 {% block content %}
-
+    <div class="row">
+        <!-- botones -->
+        <div class="col-12 my-3 mx-2 d-print-none">
+            <a href="{% url 'grupos_editar' object.id %}"
+               class="btn btn-primary mr-1">Editar</a>
+            <a href="{% url 'grupos_eliminar' object.id %}"
+               class="btn btn-danger mr-1">Eliminar</a>
+        </div>
+        <!-- ./botones -->
+    </div>
+    <div class="row">
+        <div class="col-sm-5">
+            <div class="row">
+                <div class="col">
+                    <div class="card card-outline">
+                        <div class="card-header">
+                            <div class="card-title">Datos del Grupo</div>
+                        </div>
+                        <div class="card-footer card-comments p-2">
+                            <ul class="nav nav-pills flex-column">
+                                <li class="nav-item">
+                                    <div class="comment-text">
+                                        Nombre:
+                                        <span class="username">{{ object.nombre }}</span>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% if perms.Usuarios.rol_admin %}
+        <div class="row mt-4 d-print-none">
+            <div class="col-12 mx-2">
+                <a href="{% url 'grupos_listar' %}" class="btn btn-secondary">Volver</a>
+            </div>
+        </div>
+    {% endif %}
 {% endblock content %}
 {% block customJS %}
     <script src="{% static 'custom/js/gruposform.js' %}"></script>

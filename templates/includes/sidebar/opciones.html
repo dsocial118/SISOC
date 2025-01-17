@@ -55,6 +55,11 @@
                         <i class="fas fa-arrow-alt-circle-right nav-icon"></i>
                         <p>Usuarios</p>
                     </a>
+                    <a href="{% url 'grupos_listar' %}"
+                       class="nav-link {% if 'grupos' in pagina_actual %}active{% endif %}">
+                        <i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+                        <p>Grupos</p>
+                    </a>
                 </li>
             </ul>
         </li>
