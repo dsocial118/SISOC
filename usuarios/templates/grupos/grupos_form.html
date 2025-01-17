@@ -44,17 +44,13 @@
                     </div>
                     <div class="card-body">
                         <div class="form-row">
-                            <div class="form-group col-md-6">{{ form.programa| as_crispy_field |cut:'Usuarios | Usuario |' }}</div>
-                            <div class="form-group col-md-6">{{ form.permiso| as_crispy_field|cut:'Usuarios | Usuario |' }}</div>
-                        </div>
-                        <div class="form-row d-none">
-                            <div class="form-group col-12">{{ form.name| as_crispy_field }}</div>
+                            <div class="form-group col-12">{{ form.nombre| as_crispy_field }}</div>
                         </div>
                     </div>
                 </div>
                 <div class="row mt-4 mx-2">
                     <button type="button" class="btn btn-primary mr-1" id="btn-submit">Confirmar</button>
-                    <a href=' {% if request.resolver_match.url_name == "grupos_editar" %} {% url "grupos_ver" object.id %} {% else %} {% url "grupos_listar" %} {% endif %} '
+                    <a href=' {% if request.resolver_match.url_name == "grupos_editar" %} {% url "grupos_editar" object.id %} {% else %} {% url "grupos_listar" %} {% endif %} '
                        class="btn btn-secondary">Cancelar</a>
                 </div>
             </form>

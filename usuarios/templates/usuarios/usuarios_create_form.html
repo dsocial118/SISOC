@@ -73,11 +73,12 @@
                             <div class="form-group col-sm-4">{{ form.dni| as_crispy_field }}</div>
                             <div class="form-group col-sm-4">{{ form.email| as_crispy_field }}</div>
                             <div class="form-group col-sm-4" title="Solo valores numéricos">{{ form.telefono| as_crispy_field }}</div>
-                            <div class="form-group col-sm-6">{{ form.password1| as_crispy_field }}</div>
-                            <div class="form-group col-sm-6">{{ form.password2| as_crispy_field }}</div>
+                            <div class="form-group col-sm-6">{{ form.password| as_crispy_field }}</div>
+                            <div class="form-group col-sm-6 d-none">{{ form.date_joined| as_crispy_field }}</div>
+                            <div class="form-group col-sm-3">{{ form.is_active| as_crispy_field }}</div>
                             <div class="form-group col-12"
                                  title="Grupos a los cuales pertenece este usuario. Un usuario obtiene todos los permisos otorgados a cada uno de los grupos a los cuales pertenece.">
-                                {{ form.groups| as_crispy_field }}
+                                {{ form.grupos| as_crispy_field }}
                             </div>
                         </div>
                     </div>

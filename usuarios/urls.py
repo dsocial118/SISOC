@@ -80,13 +80,17 @@ urlpatterns = [
         ),
         name="password_reset_complete",
     ),
-    #Grupos
+    # Grupos
     path(
         "administracion/grupos/crear",
         login_required(GruposCreateView.as_view()),
         name="grupos_crear",
     ),
-    path("administracion/grupos/listar", login_required(GruposListView.as_view()), name="grupos_listar"),
+    path(
+        "administracion/grupos/listar",
+        login_required(GruposListView.as_view()),
+        name="grupos_listar",
+    ),
     path(
         "administracion/grupos/ver/<pk>",
         login_required(GruposDetailView.as_view()),

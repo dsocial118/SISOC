@@ -6,10 +6,10 @@ from django.contrib.auth.forms import (
     UserChangeForm,
     UserCreationForm,
 )
-from django.contrib.auth.models import Group, Permission, User
+from django.contrib.auth.models import User
 from django.core.validators import MaxValueValidator, MinValueValidator
-
-from usuarios.models import Usuarios
+from django_select2.forms import Select2MultipleWidget
+from usuarios.models import Usuarios, Grupos
 
 from .validators import MaxSizeFileValidator
 
@@ -17,6 +17,10 @@ usuarios = Usuarios.objects.all()
 
 
 class UsuariosCreateForm(UserCreationForm):
+    grupos = forms.ModelMultipleChoiceField(
+        queryset=Grupos.objects.all(), widget=Select2MultipleWidget, required=False
+    )
+    password = forms.PasswordInput(attrs={"type": "password", "name": "password"})
     password1 = forms.CharField(
         widget=forms.PasswordInput(attrs={"type": "password", "name": "password1"}),
         label="Contraseña",
@@ -41,7 +45,7 @@ class UsuariosCreateForm(UserCreationForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for fieldname in ["username", "password1", "password2", "groups"]:
+        for fieldname in ["username", "password1", "password2"]:
             self.fields[fieldname].help_text = None
         self.fields["telefono"].label = "Teléfono"
         self.fields["dni"].label = "DNI"
@@ -67,18 +71,19 @@ class UsuariosCreateForm(UserCreationForm):
 
     class Meta:
         model = User
-        fields = UserCreationForm.Meta.fields + (
-            "first_name",
-            "last_name",
-            "email",
-            "groups",
-        )
+        fields = "__all__"
         labels = {
             "first_name": "Nombres",
             "last_name": "Apellidos",
             "username": "Nombre de Usuario",
             "email": "Email",
-            "groups": "Grupos de usuarios",
+            "grupos": "Grupos de usuarios",
+        }
+        widgets = {
+            "grupos": forms.SelectMultiple(
+                attrs={"class": "select2 w-100", "multiple": True}
+            ),
+            "password": forms.PasswordInput(),
         }
 
 
@@ -87,6 +92,10 @@ class UsuariosUpdateForm(UserChangeForm):
     Formulario solo para usuario administrador
     """
 
+    grupos = forms.ModelMultipleChoiceField(
+        queryset=Grupos.objects.all(), widget=Select2MultipleWidget, required=False
+    )
+    password = forms.PasswordInput(attrs={"type": "password", "name": "password"})
     password1 = forms.CharField(
         widget=forms.PasswordInput(attrs={"type": "password", "name": "password1"}),
         label="Contraseña",
@@ -125,38 +134,32 @@ class UsuariosUpdateForm(UserChangeForm):
         self.fields["telefono"].initial = usuario.telefono
         self.fields["imagen"].initial = usuario.imagen
         self.fields["dni"].initial = usuario.dni
-        for fieldname in [
-            "username",
-            "telefono",
-            "groups",
-            "imagen",
-            "dni",
-            "is_active",
-        ]:
-            self.fields[fieldname].help_text = None
         self.fields["telefono"].label = "Teléfono"
         self.fields["dni"].label = "DNI"
 
     class Meta:
         model = User
-        fields = UserCreationForm.Meta.fields + (
-            "first_name",
-            "last_name",
-            "email",
-            "is_active",
-            "groups",
-        )
+        fields = "__all__"
         widgets = {
-            "is_active": forms.Select(choices=[(True, "Activo"), (False, "Inactivo")])
+            "grupos": forms.SelectMultiple(
+                attrs={"class": "select2 w-100", "multiple": True}
+            ),
+            "password": forms.PasswordInput(),
         }
         labels = {
             "first_name": "Nombres",
             "last_name": "Apellidos",
             "username": "Nombre de Usuario",
             "email": "Email",
-            "groups": "Grupos de usuarios",
-            "is_active": "Estado",
+            "grupos": "Grupos de usuarios",
         }
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        if commit:
+            user.save()
+            self.save_m2m()  # Save many-to-many relationships
+        return user
 
 
 class PerfilUpdateForm(UserChangeForm):
@@ -206,14 +209,15 @@ class PerfilUpdateForm(UserChangeForm):
             "email",
         )
 
-class GruposUsuariosForm(forms.ModelForm):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["nombre"].help_text = None
-    
+
+class GruposForm(forms.ModelForm):
     class Meta:
-        model = Group
+        model = Grupos
         fields = "__all__"
+        labels = {
+            "name": "Nombre",
+        }
+
 
 class MyPasswordChangeForm(PasswordChangeForm):
     def __init__(self, *args, **kwargs):
