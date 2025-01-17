@@ -60,7 +60,7 @@ class UsuariosCreateForm(UserCreationForm):
 
     def save(self, commit=True):
         user = super().save(commit=False)
-        password1 = self.cleaned_data.get("password1")
+        password1 = self.cleaned_data.get("password")
         if password1:
             user.set_password(password1)
         else:

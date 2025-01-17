@@ -96,7 +96,6 @@ class GruposDeleteView(PermisosMixin, SuccessMessageMixin, DeleteView):
 class UsuariosLoginView(LoginView):
     template_name = "login.html"
 
-
 class UsuariosListView(PermisosMixin, ListView):
     permission_required = [
         ROL_ADMIN,
