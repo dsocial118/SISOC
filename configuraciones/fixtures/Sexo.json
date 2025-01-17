@@ -1,20 +1,20 @@
 [
     {
-        "model": "legajos.sexo",
+        "model": "configuraciones.sexo",
         "pk": 1,
         "fields": {
             "sexo": "Femenino"
         }
     },
     {
-        "model": "legajos.sexo",
+        "model": "configuraciones.sexo",
         "pk": 2,
         "fields": {
             "sexo": "Masculino"
         }
     },
     {
-        "model": "legajos.sexo",
+        "model": "configuraciones.sexo",
         "pk": 3,
         "fields": {
             "sexo": "X"

@@ -42,10 +42,6 @@ MESSAGE_TAGS = {
     messages.ERROR: "error",
 }
 
-# Configuración de visualización de modelos gráficos
-GRAPH_MODELS = {
-    "app_labels": ["legajos"],
-}
 
 # Configuración de clases CSS para formularios Crispy
 CRISPY_CLASS_CONVERTERS = {
@@ -132,7 +128,6 @@ INSTALLED_APPS = [
     "usuarios",
     "configuraciones",
     "dashboard",
-    "legajos",
     "comedores",
     "provincias",
 ]
