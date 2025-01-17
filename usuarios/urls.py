@@ -14,6 +14,11 @@ from usuarios.views import (
     UsuariosLoginView,
     UsuariosResetPassView,
     UsuariosUpdateView,
+    GruposCreateView,
+    GruposDeleteView,
+    GruposDetailView,
+    GruposListView,
+    GruposUpdateView,
     set_dark_mode,
 )
 
@@ -74,6 +79,32 @@ urlpatterns = [
             template_name="passwords/password_reset_complete.html"
         ),
         name="password_reset_complete",
+    ),
+    # Grupos
+    path(
+        "administracion/grupos/crear",
+        login_required(GruposCreateView.as_view()),
+        name="grupos_crear",
+    ),
+    path(
+        "administracion/grupos/listar",
+        login_required(GruposListView.as_view()),
+        name="grupos_listar",
+    ),
+    path(
+        "administracion/grupos/ver/<pk>",
+        login_required(GruposDetailView.as_view()),
+        name="grupos_ver",
+    ),
+    path(
+        "administracion/grupos/editar/<pk>",
+        login_required(GruposUpdateView.as_view()),
+        name="grupos_editar",
+    ),
+    path(
+        "administracion/grupos/eliminar/<pk>",
+        login_required(GruposDeleteView.as_view()),
+        name="grupos_eliminar",
     ),
     # Perfil: acciones que realiza el usuario logeado
     path(
