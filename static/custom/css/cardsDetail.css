@@ -34,3 +34,16 @@
     background-color:#45928e;
     border-radius: 0 0 10px 10px;
 }
+
+@media (max-width: 1366px) and (min-width: 1025px) {
+    .info-card {
+      min-height:111px;
+    }
+    .info-card-label {
+        min-height: 55px;
+    }
+  }
+
+  .min-width-100 {
+    min-width: 100%;
+  }
