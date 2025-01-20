@@ -23,38 +23,8 @@
 {% endblock %}
 ;
 {% block content %}
-    <div class="row">
-        <div class="col-md-2 pt-5">
-            <c-dashboard.v-info-box titulo='Relevamientos' valor='{{ count_relevamientos }}' color='success'>
-            <i class="fa fa-user"></i>
-            </c-dashboard.v-info-box>
-        </div>
-        <div class="col-md-2 pt-5">
-            <c-dashboard.v-info-box titulo='Beneficiarios' valor='{{ count_beneficiarios }}' color='success'>
-            <i class="fa fa-user"></i>
-            </c-dashboard.v-info-box>
-        </div>
-        <div class="col-md-2 pt-5">
-            <c-dashboard.v-info-box titulo='Desayuno Presupuesto' valor='{{ presupuesto_desayuno }}' color='success'>
-            <i class="fa fa-user"></i>
-            </c-dashboard.v-info-box>
-        </div>
-        <div class="col-md-2 pt-5">
-            <c-dashboard.v-info-box titulo='Almuerzo Presupuesto' valor='{{ presupuesto_almuerzo }}' color='success'>
-            <i class="fa fa-user"></i>
-            </c-dashboard.v-info-box>
-        </div>
-        <div class="col-md-2 pt-5">
-            <c-dashboard.v-info-box titulo='Merienda Presupuesto' valor='{{ presupuesto_merienda }}' color='success'>
-            <i class="fa fa-user"></i>
-            </c-dashboard.v-info-box>
-        </div>
-        <div class="col-md-2 pt-5">
-            <c-dashboard.v-info-box titulo='Cena Presupuesto' valor='{{ presupuesto_cena }}' color='success'>
-            <i class="fa fa-user"></i>
-            </c-dashboard.v-info-box>
-        </div>
-    </div>
+    <link rel="stylesheet"
+    href="{% static 'custom/css/cardsDetail.css' %}" />
     <link rel="stylesheet"
           href="{% static 'custom/css/comedorRelevamiento.css' %}" />
     <div class="row justify-content-between d-print-none mx-1 mb-3">
@@ -64,16 +34,111 @@
         <div class="col-auto">
             <!-- boton nomina -->
             <a href="{% url 'nomina_ver' pk=comedor.id %}"
-               class="btn btn-primary mr-1">Nomina</a>
+                class="btn btn-primary mr-1">Nomina</a>
             <!-- boton nomina -->
             <a href="{% url 'intervencion_ver' comedor.id %}"
-               class="btn btn-primary mr-1">Intervenciones</a>
+                class="btn btn-primary mr-1">Intervenciones</a>
             <a href="{% url 'comedor_editar' comedor.id %}"
-               class="btn btn-primary mr-1">Editar</a>
+                class="btn btn-primary mr-1">Editar</a>
             <a href="#" class="btn btn-secondary print mr-1 d-none d-sm-inline">Imprimir</a>
             <a href="{% url 'comedor_eliminar' comedor.id %}" class="btn btn-danger">Eliminar</a>
         </div>
     </div>
+    <div class="row text-center mb-3">
+        <div class="col-md-2 pt-3">
+            <div class="info-card bg-card">
+                <div class="row">
+                    <div class="col-3">
+                        <i class="fa fa-clipboard fa-2x"></i>
+                    </div>
+                    <div class="col-9 text-start">
+                        <p>{{ count_relevamientos }}</p>
+                    </div>
+                </div>
+                <div class="row info-card-label">
+                    <h5 class="mt-2">Relevamientos</h5>
+                </div>                
+            </div>
+        </div>
+        <div class="col-md-2 pt-3">
+            <div class="info-card bg-card">
+                <div class="row">
+                    <div class="col-3">
+                        <i class="fa fa-users fa-2x"></i>
+                    </div>
+                    <div class="col-9">
+                        <p>{{ count_beneficiarios }}</p>
+                    </div>
+                </div>
+                <div class="row info-card-label">
+                    <h5 class="mt-2">Beneficiarios</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 pt-3">
+            <div class="info-card bg-card">
+                <div class="row">
+                    <div class="col-3">
+                        <i class="fa fa-coffee fa-2x"></i>
+                    </div>
+                    <div class="col-9">
+                        <p>{{ presupuesto_desayuno }}</p>
+                    </div>
+                </div>
+                <div class="row info-card-label">
+                    <h5 class="mt-2">Presupuesto Desayuno</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 pt-3">
+            <div class="info-card bg-card">
+                <div class="row">
+                    <div class="col-3">
+                        <i class="fa fa-utensils fa-2x"></i>
+                    </div>
+                    <div class="col-9">
+                        <p>{{ presupuesto_almuerzo }}</p>
+                    </div>
+                </div>
+                <div class="row info-card-label">
+                    <h5 class="mt-2">Presupuesto Almuerzo</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 pt-3">
+            <div class="info-card bg-card">
+                <div class="row">
+                    <div class="col-3">
+                        <i class="fa fa-mug-hot fa-2x"></i>
+                    </div>
+                    <div class="col-9">
+                        <p>{{ presupuesto_merienda }}</p>
+                    </div>
+                </div>
+                <div class="row info-card-label">
+                    <h5 class="mt-2">Presupuesto Merienda</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 pt-3">
+            <div class="info-card bg-card">
+                <div class="row">
+                    <div class="col-3">
+                        <i class="fa fa-concierge-bell fa-2x"></i>
+                    </div>
+                    <div class="col-9">
+                        <p>{{ presupuesto_cena }}</p>
+                    </div>
+                </div>
+                <div class="row info-card-label">
+                    <h5 class="mt-2">Presupuesto Cena</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    
     <div class="row relevamiento-container">
         <div class="col-6">
             <div class="row">
