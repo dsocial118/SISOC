@@ -310,17 +310,15 @@ class ComedorDetailView(DetailView):
                 ).values("imagen"),
             }
         )
-
         return context
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         try:
-            relevamiento = Relevamiento()
-            relevamiento.comedor = get_object_or_404(Comedor, id=self.object["id"])
-            relevamiento.estado = "Pendiente"
-
-            if request.POST.get("territorial"):
+            if "territorial" in request.POST and request.POST.get("territorial"):
+                relevamiento = Relevamiento()
+                relevamiento.comedor = get_object_or_404(Comedor, id=self.object["id"])
+                relevamiento.estado = "Pendiente"
                 gestionar_uid = json.loads(request.POST.get("territorial"))[
                     "gestionar_uid"
                 ]
@@ -332,7 +330,22 @@ class ComedorDetailView(DetailView):
                     relevamiento.territorial = territorial
                     relevamiento.estado = "Visita pendiente"
 
-            relevamiento.save()
+                relevamiento.save()
+            elif "territorialEditar" in request.POST and request.POST.get(
+                "territorialEditar"
+            ):
+                gestionar_uid = json.loads(request.POST.get("territorialEditar"))[
+                    "gestionar_uid"
+                ]
+                relevamiento_id = request.POST.get("relevamiento_id")
+                if gestionar_uid and relevamiento_id:
+                    relevamiento = Relevamiento.objects.get(id=relevamiento_id)
+                    territorio = Territorial.objects.get(gestionar_uid=gestionar_uid)
+                    relevamiento.territorial = territorio
+                    relevamiento.save()
+                else:
+                    raise ValueError("Error al editar el relevamiento")
+
             return redirect(
                 reverse(
                     "relevamiento_detalle",
@@ -343,7 +356,38 @@ class ComedorDetailView(DetailView):
                 )
             )
         except Exception as e:
+            print(e)
             messages.error(request, f"Error al crear el relevamiento: {e}")
+            return redirect("comedor_detalle", pk=self.object["id"])
+
+    def patch(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        try:
+
+            if request.PATCH.get("territorialEditar"):
+                gestionar_uid = json.loads(request.PATCH.get("territorialEditar"))[
+                    "gestionar_uid"
+                ]
+                relevamiento_id = json.loads(request.PATCH.get("territorialEditar"))[
+                    "relevamiento_id"
+                ]
+
+                if gestionar_uid and relevamiento_id:
+                    relevamiento = Relevamiento.objects.get(id=relevamiento_id)
+                    relevamiento.territorial = gestionar_uid
+                    relevamiento.save()
+
+            return redirect(
+                reverse(
+                    "relevamiento_detalle",
+                    kwargs={
+                        "pk": relevamiento.pk,
+                        "comedor_pk": relevamiento.comedor.pk,
+                    },
+                )
+            )
+        except Exception as e:
+            messages.error(request, f"Error al editar el relevamiento: {e}")
             return redirect("comedor_detalle", pk=self.object["id"])
 
 

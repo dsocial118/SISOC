@@ -291,6 +291,50 @@
                         <a href="{% url 'relevamientos' comedor.id %}"
                            class="btn btn-primary mx-3">Ver mas</a>
                         <button type="button"
+                                class="btn btn-primary me-3"
+                                data-bs-toggle="modal"
+                                data-bs-target="#RelevamientoModalEditar">Editar Territorio</button>
+                        <div class="modal fade"
+                             id="RelevamientoModalEditar"
+                             tabindex="-1"
+                             aria-labelledby="RelevamientoModalEditarLabel"
+                             aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="RelevamientoModalEditarLabel">Editar Territorio</h5>
+                                        <button type="button"
+                                                class="btn-close"
+                                                data-bs-dismiss="modal"
+                                                aria-label="Close"></button>
+                                    </div>
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                {% for relevamiento in relevamientos %}
+                                                    <input type="hidden" name="relevamiento_id" value="{{ relevamiento.id }}" />
+                                                {% endfor %}
+                                                <label for="inputField" class="form-label">Territorial</label>
+                                                <select name="territorialEditar" id="territorial_select" class="form-control">
+                                                    <option value="">No definido</option>
+                                                    {% for territorial in territoriales %}
+                                                        <option value='{"gestionar_uid": "{{ territorial.gestionar_uid }}", "nombre": "{{ territorial.nombre }}"}'>
+                                                            {{ territorial.nombre }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                            <button type="submit" class="btn btn-primary">Guardar</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button"
                                 class="btn btn-primary"
                                 data-bs-toggle="modal"
                                 data-bs-target="#RelevamientoModal">Agregar</button>
