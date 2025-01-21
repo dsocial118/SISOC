@@ -1,0 +1,30 @@
+[
+    {
+        "model": "comedores.tipoinsumos",
+        "pk": 1,
+        "fields": {
+            "nombre": "Dinero"
+        }
+    },
+    {
+        "model": "comedores.tipoinsumos",
+        "pk": 2,
+        "fields": {
+            "nombre": "Mercadería"
+        }
+    },
+    {
+        "model": "comedores.tipoinsumos",
+        "pk": 3,
+        "fields": {
+            "nombre": "Ambos"
+        }
+    },
+    {
+        "model": "comedores.tipoinsumos",
+        "pk": 4,
+        "fields": {
+            "nombre": "No sabe"
+        }
+    }
+]
