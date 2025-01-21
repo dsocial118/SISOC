@@ -24,6 +24,11 @@ from comedores.models import (
     TipoIntervencion,
     EstadosIntervencion,
     Nomina,
+    TipoInsumos,
+    TipoFrecuenciaInsumos,
+    TipoTecnologia,
+    TipoAccesoComedor,
+    TipoDistanciaTransporte,
 )
 
 admin.site.register(TipoModalidadPrestacion)
@@ -49,3 +54,8 @@ admin.site.register(TipoIntervencion)
 admin.site.register(EstadosIntervencion)
 admin.site.register(Nomina)
 admin.site.register(TipoDeComedor)
+admin.site.register(TipoInsumos)
+admin.site.register(TipoFrecuenciaInsumos)
+admin.site.register(TipoTecnologia)
+admin.site.register(TipoAccesoComedor)
+admin.site.register(TipoDistanciaTransporte)
