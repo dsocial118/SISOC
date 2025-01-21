@@ -13,6 +13,7 @@ urlpatterns = [
     path("", include("dashboard.urls")),
     path("", include("legajos.urls")),
     path("", include("comedores.urls")),
+    path("", include("cdi.urls")),
     path("", include("provincias.urls")),
     path("", include("healthcheck.urls")),
     # Django Debug Toolbar

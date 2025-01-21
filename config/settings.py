@@ -134,6 +134,7 @@ INSTALLED_APPS = [
     "dashboard",
     "legajos",
     "comedores",
+    "cdi",
     "provincias",
 ]
 

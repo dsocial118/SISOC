@@ -41,6 +41,26 @@ class Municipio(models.Model):
         verbose_name = "Municipio"
         verbose_name_plural = "Municipio"
 
+class Mes(models.Model):
+    nombre = models.CharField(max_length=20, unique=True)
+
+    def __str__(self):
+        return self.nombre
+
+
+class Dia(models.Model):
+    nombre = models.CharField(max_length=20,  unique=True)
+
+    def __str__(self):
+        return self.nombre
+
+
+class Turno(models.Model):
+    nombre = models.CharField(max_length=20, unique=True)
+
+    def __str__(self):
+        return self.nombre
+
 
 class Departamento(models.Model):
     nombre = models.CharField(max_length=255)

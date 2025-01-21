@@ -78,6 +78,15 @@
                     </a>
                 </li>
             {% endif %}
+            {% if perms.comedores %}
+                <li class="nav-item">
+                    <a href="{% url 'centrodesarrolloinfantil_listar' %}"
+                       class="nav-link {% if 'centrodesarrolloinfantil/listar' in pagina_actual %}active{% endif %}">
+                        <i class="nav-icon fas fa-user"></i>
+                        <p>Centro Desarrollo Infantil</p>
+                    </a>
+                </li>
+            {% endif %}
             {% if perms.provincias %}
                 <li class="nav-item">
                     <a href="{% url 'proyecto_list' %}"
