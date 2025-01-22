@@ -1,10 +1,12 @@
 import os
+import json
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 import requests
 
-from django.db import models
 from comedores.models import (
     CantidadColaboradores,
+    Comedor,
     Espacio,
     EspacioCocina,
     EspacioPrestacion,
@@ -16,6 +18,7 @@ from comedores.models import (
     FuncionamientoPrestacion,
     Prestacion,
     Relevamiento,
+    Territorial,
     TipoAgua,
     TipoCombustible,
     TipoDesague,
@@ -27,6 +30,49 @@ from comedores.models import (
 
 
 class RelevamientoService:
+
+    @staticmethod
+    def create_pendiente(request, comedor_id):
+        comedor = get_object_or_404(Comedor, id=comedor_id)
+        relevamiento = Relevamiento(comedor=comedor, estado="Pendiente")
+        territorial_data = request.POST.get("territorial")
+
+        if territorial_data:
+            territorial_data = json.loads(territorial_data)
+            gestionar_uid = territorial_data.get("gestionar_uid")
+            nombre = territorial_data.get("nombre")
+
+            territorial, _ = Territorial.objects.get_or_create(
+                gestionar_uid=gestionar_uid, defaults={"nombre": nombre}
+            )
+            relevamiento.territorial = territorial
+            relevamiento.estado = "Visita pendiente"
+
+        relevamiento.save()
+
+        return relevamiento
+
+    @staticmethod
+    def update_territorial(request):
+        relevamiento_id = request.POST.get("relevamiento_id")
+        relevamiento = Relevamiento.objects.get(id=relevamiento_id)
+        territorial_data = request.POST.get("territorial_editar")
+
+        if territorial_data:
+            territorial_data = json.loads(territorial_data)
+            gestionar_uid = territorial_data["gestionar_uid"]
+            territorial = Territorial.objects.get(gestionar_uid=gestionar_uid)
+
+            relevamiento.territorial = territorial
+            relevamiento.estado = "Visita pendiente"
+        else:
+            relevamiento.territorial = None
+            relevamiento.estado = "Pendiente"
+
+        relevamiento.save()
+
+        return relevamiento
+
     @staticmethod
     def populate_relevamiento(relevamiento_form, extra_forms, user_id):
         relevamiento = relevamiento_form.save(commit=False)
@@ -869,4 +915,4 @@ class RelevamientoService:
                 relevamiento.docPDF = response["Rows"][0]["docPDF"]
                 relevamiento.save()
             except requests.exceptions.RequestException as e:
-                print(f"Error en la petición POST: {e}")
+                print(f"Error al sincronizar con GESTIONAR: {e}")

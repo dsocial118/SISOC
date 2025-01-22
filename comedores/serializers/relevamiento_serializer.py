@@ -17,7 +17,7 @@ class RelevamientoSerializer(serializers.ModelSerializer):
 
         if "territorial" in self.initial_data:
             territorial_data = self.initial_data["territorial"]
-            territorial, _created = Territorial.objects.get_or_create(
+            territorial, _ = Territorial.objects.get_or_create(
                 gestionar_uid=territorial_data["gestionar_uid"],
                 defaults={"nombre": territorial_data["nombre"]},
             )
