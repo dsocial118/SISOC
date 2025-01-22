@@ -878,6 +878,17 @@ class RelevamientoService:
         return prestacion_data
 
     @staticmethod
+    def create_or_update_responsable(responsable_data, responsable_instance=None):
+        if responsable_instance is None:
+            responsable_instance = Referente.objects.create(**responsable_data)
+        else:
+            for field, value in responsable_data.items():
+                setattr(responsable_instance, field, value)
+            responsable_instance.save()
+
+        return responsable_instance
+
+    @staticmethod
     def send_to_gestionar(relevamiento: Relevamiento):
         if relevamiento.gestionar_uid is None:
             data = {
