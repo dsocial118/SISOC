@@ -9,9 +9,6 @@ from legajos.models import Sexo
 from comedores.models import Referente
 
 
-
-
-
 class CentroDesarrolloInfantil(models.Model):
     nombre = models.CharField(max_length=255)
     # organizacion = models.ForeignKey(Organizacion, on_delete=models.CASCADE)
