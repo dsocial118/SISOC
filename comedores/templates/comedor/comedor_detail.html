@@ -336,7 +336,7 @@
                     </div>
                 </div>
                 <div class="card-body row card-comments p-0 pb-1">
-                    <div class="nav nav-pills col-7 row my-3">
+                    <div class="nav nav-pills col-6 row my-3">
                         {% for relevamiento in relevamientos %}
                             <div class="col-6 d-flex">
                                 <a href="{% url 'relevamiento_detalle' comedor.id relevamiento.id %}">{{ relevamiento.id }} - {{ relevamiento.fecha_visita|default_if_none:"Pendiente" }}</a>
@@ -348,13 +348,13 @@
                             </div>
                         {% endfor %}
                     </div>
-                    <div class="card-tools col-5 d-flex justify-content-end align-items-start my-3">
+                    <div class="card-tools col-6 d-flex justify-content-end align-items-start my-3">
                         <a href="{% url 'relevamientos' comedor.id %}"
                            class="btn btn-primary mx-3">Ver mas</a>
                         <button type="button"
                                 class="btn btn-primary me-3"
                                 data-bs-toggle="modal"
-                                data-bs-target="#RelevamientoModalEditar">Editar Territorio</button>
+                                data-bs-target="#RelevamientoModalEditar">Asignar</button>
                         <div class="modal fade"
                              id="RelevamientoModalEditar"
                              tabindex="-1"
@@ -363,7 +363,7 @@
                             <div class="modal-dialog">
                                 <div class="modal-content">
                                     <div class="modal-header">
-                                        <h5 class="modal-title" id="RelevamientoModalEditarLabel">Editar Territorio</h5>
+                                        <h5 class="modal-title" id="RelevamientoModalEditarLabel">Asignar</h5>
                                         <button type="button"
                                                 class="btn-close"
                                                 data-bs-dismiss="modal"
@@ -377,7 +377,7 @@
                                                     <input type="hidden" name="relevamiento_id" value="{{ relevamiento.id }}" />
                                                 {% endfor %}
                                                 <label for="inputField" class="form-label">Territorial</label>
-                                                <select name="territorialEditar" id="territorial_select" class="form-control">
+                                                <select name="territorial_editar" id="territorial_select" class="form-control">
                                                     <option value="">No definido</option>
                                                     {% for territorial in territoriales %}
                                                         <option value='{"gestionar_uid": "{{ territorial.gestionar_uid }}", "nombre": "{{ territorial.nombre }}"}'>
