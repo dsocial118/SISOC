@@ -45,7 +45,7 @@ class CentroDesarrolloInfantil(models.Model):
         validators=[
             MinValueValidator(1000),
             MaxValueValidator(999999),
-        ],  # Entre 4 a 6 digitos
+        ],  
         blank=True,
         null=True,
     )
