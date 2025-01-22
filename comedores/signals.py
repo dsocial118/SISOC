@@ -14,8 +14,7 @@ def send_comedor_to_gestionar(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=Relevamiento)
 def send_relevamiento_to_gestionar(sender, instance, created, **kwargs):
-    if created:
-        RelevamientoService.send_to_gestionar(instance)
+    RelevamientoService.send_to_gestionar(instance)
 
 
 @receiver(post_save, sender=Observacion)

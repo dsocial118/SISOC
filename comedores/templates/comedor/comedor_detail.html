@@ -338,10 +338,10 @@
                 <div class="card-body row card-comments p-0 pb-1">
                     <div class="nav nav-pills col-6 row my-3">
                         {% for relevamiento in relevamientos %}
-                            <div class="col-6 d-flex">
+                            <div class="col-7 d-flex">
                                 <a href="{% url 'relevamiento_detalle' comedor.id relevamiento.id %}">{{ relevamiento.id }} - {{ relevamiento.fecha_visita|default_if_none:"Pendiente" }}</a>
                             </div>
-                            <div class="col-6 d-flex">
+                            <div class="col-5 d-flex">
                                 <p {% if relevamiento.estado == "Pendiente" %} style="color: yellow;" {% elif relevamiento.estado == "Visita pendiente" %} style="color: green;" {% else %} style="color: white;" {% endif %}>
                                     {{ relevamiento.estado }}
                                 </p>
