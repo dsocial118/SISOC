@@ -146,7 +146,6 @@ MIDDLEWARE = [
     "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "config.middlewares.xss_protection.XSSProtectionMiddleware",
-    "config.middlewares.no_special_characters.NoSpecialCharactersMiddleware",
     "corsheaders.middleware.CorsMiddleware",
 ]
 
