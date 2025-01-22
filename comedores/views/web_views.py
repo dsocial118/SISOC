@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.db.models.base import Model
 from django.forms import BaseModelForm
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views.generic import (
@@ -14,7 +14,6 @@ from django.views.generic import (
     ListView,
     UpdateView,
     TemplateView,
-    View,
 )
 
 
@@ -47,7 +46,6 @@ from comedores.models import (
     Intervencion,
     SubIntervencion,
     Territorial,
-    ValorComida,
     Nomina,
 )
 
@@ -315,36 +313,17 @@ class ComedorDetailView(DetailView):
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         try:
-            if "territorial" in request.POST and request.POST.get("territorial"):
-                relevamiento = Relevamiento()
-                relevamiento.comedor = get_object_or_404(Comedor, id=self.object["id"])
-                relevamiento.estado = "Pendiente"
-                gestionar_uid = json.loads(request.POST.get("territorial"))[
-                    "gestionar_uid"
-                ]
-                nombre = json.loads(request.POST.get("territorial"))["nombre"]
-                if gestionar_uid and nombre:
-                    territorial, _created = Territorial.objects.get_or_create(
-                        gestionar_uid=gestionar_uid, defaults={"nombre": nombre}
-                    )
-                    relevamiento.territorial = territorial
-                    relevamiento.estado = "Visita pendiente"
+            relevamiento = None
+            is_new_relevamiento = "territorial" in request.POST
+            is_edit_relevamiento = "territorial_editar" in request.POST
 
-                relevamiento.save()
-            elif "territorialEditar" in request.POST and request.POST.get(
-                "territorialEditar"
-            ):
-                gestionar_uid = json.loads(request.POST.get("territorialEditar"))[
-                    "gestionar_uid"
-                ]
-                relevamiento_id = request.POST.get("relevamiento_id")
-                if gestionar_uid and relevamiento_id:
-                    relevamiento = Relevamiento.objects.get(id=relevamiento_id)
-                    territorio = Territorial.objects.get(gestionar_uid=gestionar_uid)
-                    relevamiento.territorial = territorio
-                    relevamiento.save()
-                else:
-                    raise ValueError("Error al editar el relevamiento")
+            if is_new_relevamiento:
+                relevamiento = RelevamientoService.create_pendiente(
+                    request, self.object["id"]
+                )
+
+            elif is_edit_relevamiento:
+                relevamiento = RelevamientoService.update_territorial(request)
 
             return redirect(
                 reverse(
@@ -356,38 +335,7 @@ class ComedorDetailView(DetailView):
                 )
             )
         except Exception as e:
-            print(e)
             messages.error(request, f"Error al crear el relevamiento: {e}")
-            return redirect("comedor_detalle", pk=self.object["id"])
-
-    def patch(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        try:
-
-            if request.PATCH.get("territorialEditar"):
-                gestionar_uid = json.loads(request.PATCH.get("territorialEditar"))[
-                    "gestionar_uid"
-                ]
-                relevamiento_id = json.loads(request.PATCH.get("territorialEditar"))[
-                    "relevamiento_id"
-                ]
-
-                if gestionar_uid and relevamiento_id:
-                    relevamiento = Relevamiento.objects.get(id=relevamiento_id)
-                    relevamiento.territorial = gestionar_uid
-                    relevamiento.save()
-
-            return redirect(
-                reverse(
-                    "relevamiento_detalle",
-                    kwargs={
-                        "pk": relevamiento.pk,
-                        "comedor_pk": relevamiento.comedor.pk,
-                    },
-                )
-            )
-        except Exception as e:
-            messages.error(request, f"Error al editar el relevamiento: {e}")
             return redirect("comedor_detalle", pk=self.object["id"])
 
 
