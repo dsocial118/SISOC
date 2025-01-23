@@ -1,4 +1,3 @@
-import json
 from typing import Any
 from django.contrib import messages
 from django.db.models.base import Model
@@ -45,7 +44,6 @@ from comedores.models import (
     Relevamiento,
     Intervencion,
     SubIntervencion,
-    Territorial,
     Nomina,
 )
 

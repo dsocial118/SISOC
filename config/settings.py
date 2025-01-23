@@ -129,6 +129,7 @@ INSTALLED_APPS = [
     "configuraciones",
     "dashboard",
     "comedores",
+    "organizaciones",
     "provincias",
 ]
 
