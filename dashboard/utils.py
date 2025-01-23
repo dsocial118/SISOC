@@ -2,7 +2,8 @@ from django.core.cache import cache
 from django.db import connection
 from django.db.models import Sum
 
-from comedores.models import Comedor, Relevamiento, ValorComida
+from comedores.models.relevamiento import Relevamiento
+from comedores.models.comedor import Comedor, ValorComida
 
 
 def table_exists(table_name):
