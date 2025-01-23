@@ -918,11 +918,11 @@ class RelevamientoService:
                 )
 
                 obj = {
-                    "Relevamiento_Id": relevamiento.pk,
+                    "Relevamiento_Id": f"{relevamiento.pk}",
                     "TipoPrestacion": tipo,
                     "DiaPrestacion": dia,
-                    "CantidadActual": cantidad_actual if cantidad_actual else "",
-                    "CantidadEspera": cantidad_espera if cantidad_espera else "",
+                    "CantidadActual": f"{cantidad_actual}" if cantidad_actual else "",
+                    "CantidadEspera": f"{cantidad_espera}" if cantidad_espera else "",
                 }
                 prestaciones.append(obj)
 
@@ -1205,6 +1205,7 @@ class RelevamientoService:
             ],
         }
 
+        print(data)
         headers = {
             "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
         }
