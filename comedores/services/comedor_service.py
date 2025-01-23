@@ -52,6 +52,7 @@ class ComedorService:
                 "foto_legajo",
                 "nombre",
                 "comienzo",
+                "organizacion__nombre",
                 "provincia__nombre",
                 "municipio__nombre",
                 "localidad__nombre",
