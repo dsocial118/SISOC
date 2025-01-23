@@ -5,6 +5,7 @@ from django.utils import timezone
 from configuraciones.models import Municipio, Provincia
 from configuraciones.models import Localidad
 from configuraciones.models import Sexo
+from organizaciones.models import Organizacion
 
 
 class EstadosIntervencion(models.Model):
@@ -132,6 +133,9 @@ class Comedor(models.Model):
 
     nombre = models.CharField(
         max_length=255,
+    )
+    organizacion = models.ForeignKey(
+        to=Organizacion, blank=True, null=True, on_delete=models.PROTECT
     )
     comienzo = models.IntegerField(
         validators=[

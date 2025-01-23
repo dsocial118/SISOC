@@ -11,6 +11,7 @@ from comedores.models.comedor import (
 
 from configuraciones.models import Municipio, Provincia
 from configuraciones.models import Localidad
+from organizaciones.models import Organizacion
 
 
 class ReferenteForm(forms.ModelForm):
