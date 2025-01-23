@@ -5,6 +5,7 @@ from django.forms import inlineformset_factory
 from django.utils import dateformat, timezone
 
 from comedores.models import (
+    Anexo,
     Colaboradores,
     Comedor,
     Espacio,
@@ -244,45 +245,7 @@ class PrestacionForm(forms.ModelForm):
         model = Prestacion
         fields = "__all__"
 
-
-class RelevamientoForm(forms.ModelForm):
-    fecha_visita_ui = forms.CharField(
-        disabled=True,
-        label="1.1.1 Fecha y horario de la visita",
-        initial=dateformat.format(timezone.now(), "H:i d/m/Y"),
-    )
-    comedor = forms.ModelChoiceField(
-        queryset=Comedor.objects.none(),
-        disabled=True,
-        label="1.1.2 Nombre del Comedor/Merendero",
-    )
-    comienzo = forms.CharField(
-        required=False, disabled=True, label="1.1.3 ¿En qué año comenzó a funcionar?"
-    )
-    calle = forms.CharField(required=False, disabled=True, label="1.2.1 Calle")
-    numero = forms.CharField(required=False, disabled=True, label="1.2.2 Número")
-    entre_calle_1 = forms.CharField(
-        required=False, disabled=True, label="1.2.3 Entre calle 1"
-    )
-    entre_calle_2 = forms.CharField(
-        required=False, disabled=True, label="1.2.4 Entre calle 2"
-    )
-    provincia = forms.CharField(required=False, disabled=True, label="1.2.10 Provincia")
-    municipio = forms.CharField(required=False, disabled=True, label="1.2.8 Municipio")
-    localidad = forms.CharField(required=False, disabled=True, label="1.2.7 Localidad")
-    partido = forms.CharField(
-        required=False, disabled=True, label="1.2.9 Departamento/Partido"
-    )
-    barrio = forms.CharField(required=False, disabled=True, label="1.2.5 Barrio")
-    codigo_postal = forms.CharField(
-        required=False, disabled=True, label="1.2.6 Código Postal"
-    )
-    responsable_es_referente = forms.ChoiceField(
-        choices=BOOLEAN_CHOICE,
-        widget=forms.Select,
-        label="¿El responsable es el referente del comedor/merendero?",
-    )
-    # Apartado Anexo
+class AnexoForm(forms.ModelForm):
     comedor_merendero = forms.ChoiceField(
         choices=BOOLEAN_CHOICE,
         widget=forms.Select,
@@ -385,6 +348,52 @@ class RelevamientoForm(forms.ModelForm):
         label="¿Cuales? (Campo de texto libre)"
     )
 
+    class Meta:
+        model = Anexo
+        fields = "__all__"
+
+
+
+class RelevamientoForm(forms.ModelForm):
+    fecha_visita_ui = forms.CharField(
+        disabled=True,
+        label="1.1.1 Fecha y horario de la visita",
+        initial=dateformat.format(timezone.now(), "H:i d/m/Y"),
+    )
+    comedor = forms.ModelChoiceField(
+        queryset=Comedor.objects.none(),
+        disabled=True,
+        label="1.1.2 Nombre del Comedor/Merendero",
+    )
+    comienzo = forms.CharField(
+        required=False, disabled=True, label="1.1.3 ¿En qué año comenzó a funcionar?"
+    )
+    calle = forms.CharField(required=False, disabled=True, label="1.2.1 Calle")
+    numero = forms.CharField(required=False, disabled=True, label="1.2.2 Número")
+    entre_calle_1 = forms.CharField(
+        required=False, disabled=True, label="1.2.3 Entre calle 1"
+    )
+    entre_calle_2 = forms.CharField(
+        required=False, disabled=True, label="1.2.4 Entre calle 2"
+    )
+    provincia = forms.CharField(required=False, disabled=True, label="1.2.10 Provincia")
+    municipio = forms.CharField(required=False, disabled=True, label="1.2.8 Municipio")
+    localidad = forms.CharField(required=False, disabled=True, label="1.2.7 Localidad")
+    partido = forms.CharField(
+        required=False, disabled=True, label="1.2.9 Departamento/Partido"
+    )
+    barrio = forms.CharField(required=False, disabled=True, label="1.2.5 Barrio")
+    codigo_postal = forms.CharField(
+        required=False, disabled=True, label="1.2.6 Código Postal"
+    )
+    responsable_es_referente = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿El responsable es el referente del comedor/merendero?",
+    )
+    
+    
+
     def __init__(self, *args, **kwargs):
         comedor_id = kwargs.pop("comedor_pk", None)
         super().__init__(*args, **kwargs)
@@ -408,26 +417,7 @@ class RelevamientoForm(forms.ModelForm):
         self.fields["partido"].initial = comedor.partido
         self.fields["barrio"].initial = comedor.barrio
         self.fields["codigo_postal"].initial = comedor.codigo_postal
-        self.fields["comedor_merendero"].initial = comedor.comedor_merendero
-        self.fields["insumos_organizacion"].initial = comedor.insumos_organizacion
-        self.fields["servicio_internet"].initial = comedor.servicio_internet
-        self.fields["zona_inundable"].initial = comedor.zona_inundable
-        self.fields["actividades_jardin_maternal"].initial = comedor.actividades_jardin_maternal
-        self.fields["actividades_jardin_infantes"].initial = comedor.actividades_jardin_infantes
-        self.fields["apoyo_escolar"].initial = comedor.apoyo_escolar
-        self.fields["alfabetizacion_terminalidad"].initial = comedor.alfabetizacion_terminalidad
-        self.fields["capacitaciones_talleres"].initial = comedor.capacitaciones_talleres
-        self.fields["promocion_salud"].initial = comedor.promocion_salud
-        self.fields["actividades_discapacidad"].initial = comedor.actividades_discapacidad
-        self.fields["necesidades_alimentarias"].initial = comedor.necesidades_alimentarias
-        self.fields["actividades_recreativas"].initial = comedor.actividades_recreativas
-        self.fields["actividades_culturales"].initial = comedor.actividades_culturales
-        self.fields["emprendimientos_productivos"].initial = comedor.emprendimientos_productivos
-        self.fields["actividades_religiosas"].initial = comedor.actividades_religiosas
-        self.fields["actividades_huerta"].initial = comedor.actividades_huerta
-        self.fields["espacio_huerta"].initial = comedor.espacio_huerta
-        self.fields["otras_actividades"].initial = comedor.otras_actividades
-        self.fields["cuales_otras_actividades"].initial = comedor.cuales_otras_actividades
+        
         
 
 
