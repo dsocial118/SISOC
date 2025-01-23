@@ -57,6 +57,9 @@ class RelevamientoService:
         recursos = extra_forms["recursos_form"].save()
         relevamiento.recursos = recursos
 
+        anexo = extra_forms["anexo_form"].save()
+        relevamiento.anexo = anexo
+
         compras = extra_forms["compras_form"].save()
         relevamiento.compras = compras
 
@@ -90,7 +93,7 @@ class RelevamientoService:
 
     @staticmethod
     def get_relevamiento_detail_object(relevamiento_id):
-        return (
+        relevamiento= (
             Relevamiento.objects.prefetch_related(
                 "comedor",
                 "funcionamiento",
@@ -99,6 +102,7 @@ class RelevamientoService:
                 "recursos",
                 "compras",
                 "referente",
+                "anexo",
             )
             .filter(pk=relevamiento_id)
             .values(
@@ -194,9 +198,39 @@ class RelevamientoService:
                 "compras__mayoristas",
                 "compras__otro",
                 "prestacion__id",
+                "anexo__tipo_insumo__nombre",
+                "anexo__frecuencia_insumo__nombre",
+                "anexo__tecnologia__nombre",
+                "anexo__acceso_comedor__nombre",
+                "anexo__distancia_transporte__nombre",
+                "anexo__comedor_merendero",
+                "anexo__insumos_organizacion",
+                "anexo__servicio_internet",
+                "anexo__zona_inundable",
+                "anexo__actividades_jardin_maternal",
+                "anexo__actividades_jardin_infantes",
+                "anexo__apoyo_escolar",
+                "anexo__alfabetizacion_terminalidad",
+                "anexo__capacitaciones_talleres",
+                "anexo__promocion_salud",
+                "anexo__actividades_discapacidad",
+                "anexo__necesidades_alimentarias",
+                "anexo__actividades_recreativas",
+                "anexo__actividades_culturales",
+                "anexo__emprendimientos_productivos",
+                "anexo__actividades_religiosas",
+                "anexo__actividades_huerta",
+                "anexo__espacio_huerta",
+                "anexo__otras_actividades",
+                "anexo__cuales_otras_actividades",
+                "anexo__veces_recibio_insumos_2024",
+
+
             )
             .first()
         )
+        return relevamiento
+
 
     @staticmethod
     def create_or_update_funcionamiento(
