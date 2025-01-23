@@ -27,6 +27,7 @@ from comedores.forms.comedor_form import (
 
 from comedores.forms.observacion_form import ObservacionForm
 from comedores.forms.relevamiento_form import (
+    AnexoForm,
     ColaboradoresForm,
     EspacioCocinaForm,
     EspacioForm,
@@ -441,6 +442,7 @@ class RelevamientoCreateView(CreateView):
             "compras_form": FuenteComprasForm,
             "prestacion_form": PrestacionForm,
             "referente_form": ReferenteForm,
+            "anexo_form": AnexoForm,
         }
 
         for form_name, form_class in forms.items():
@@ -466,6 +468,7 @@ class RelevamientoCreateView(CreateView):
             "compras_form": context["compras_form"],
             "prestacion_form": context["prestacion_form"],
             "referente_form": context["referente_form"],
+            "anexo_form": context["anexo_form"],
         }
 
         if all(form.is_valid() for form in forms.values()):
@@ -541,6 +544,7 @@ class RelevamientoUpdateView(UpdateView):
             "compras_form": FuenteComprasForm,
             "prestacion_form": PrestacionForm,
             "referente_form": ReferenteForm,
+            "anexo_form": AnexoForm,
         }
 
         for form_name, form_class in forms.items():
@@ -584,6 +588,7 @@ class RelevamientoUpdateView(UpdateView):
             "compras_form": context["compras_form"],
             "prestacion_form": context["prestacion_form"],
             "referente_form": context["referente_form"],
+            "anexo_form": context["anexo_form"],
         }
 
         if all(form.is_valid() for form in forms.values()):
