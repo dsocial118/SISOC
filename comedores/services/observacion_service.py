@@ -2,7 +2,7 @@ import os
 
 import requests
 
-from comedores.models import Observacion
+from comedores.models.comedor import Observacion
 
 
 class ObservacionService:

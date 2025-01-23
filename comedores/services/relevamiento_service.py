@@ -4,20 +4,22 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 import requests
 
-from comedores.models import (
-    CantidadColaboradores,
+from comedores.models.relevamiento import Relevamiento
+from comedores.models.comedor import (
     Comedor,
+)
+from comedores.models.relevamiento import (
+    CantidadColaboradores,
+    Colaboradores,
     Espacio,
     EspacioCocina,
     EspacioPrestacion,
-    Colaboradores,
     FrecuenciaLimpieza,
     FrecuenciaRecepcionRecursos,
     FuenteCompras,
     FuenteRecursos,
     FuncionamientoPrestacion,
     Prestacion,
-    Relevamiento,
     Territorial,
     TipoAgua,
     TipoCombustible,
