@@ -151,6 +151,7 @@ class TipoDesague(models.Model):
         verbose_name_plural = "Tipos de desagues del hinodoro"
         ordering = ["nombre"]
 
+
 class TipoInsumos(models.Model):
     """
     Opciones de tipos de insumos recibidos por un Comedor/Merendero
@@ -166,11 +167,12 @@ class TipoInsumos(models.Model):
         verbose_name_plural = "Tipos de insumos recibidos"
         ordering = ["nombre"]
 
+
 class TipoFrecuenciaInsumos(models.Model):
     """
     Opciones de frecuencias de insumos recibidos
     """
-    
+
     nombre = models.CharField(max_length=255, unique=True)
 
     def __str__(self):
@@ -181,11 +183,12 @@ class TipoFrecuenciaInsumos(models.Model):
         verbose_name_plural = "Frecuencias de insumos recibidos"
         ordering = ["nombre"]
 
+
 class TipoTecnologia(models.Model):
     """
     Opciones de tipos de tecnologia utilizada en un Comedor/Merendero
     """
-    
+
     nombre = models.CharField(max_length=255, unique=True)
 
     def __str__(self):
@@ -196,11 +199,12 @@ class TipoTecnologia(models.Model):
         verbose_name_plural = "Tipos de tecnologia"
         ordering = ["nombre"]
 
+
 class TipoAccesoComedor(models.Model):
     """
     Opciones de tipos de acceso al Comedor/Merendero
     """
-    
+
     nombre = models.CharField(max_length=255, unique=True)
 
     def __str__(self):
@@ -211,11 +215,12 @@ class TipoAccesoComedor(models.Model):
         verbose_name_plural = "Tipos de acceso al comedor"
         ordering = ["nombre"]
 
+
 class TipoDistanciaTransporte(models.Model):
     """
     Opciones de distancias de transporte al Comedor/Merendero
     """
-    
+
     nombre = models.CharField(max_length=255, unique=True)
 
     def __str__(self):
@@ -225,6 +230,7 @@ class TipoDistanciaTransporte(models.Model):
         verbose_name = "Distancia de transporte"
         verbose_name_plural = "Distancias de transporte"
         ordering = ["nombre"]
+
 
 class FrecuenciaLimpieza(models.Model):
     """
@@ -457,7 +463,6 @@ class Espacio(models.Model):
 
 
 class Anexo(models.Model):
-
     """
     Informacion relacionada a los anexos de un Comedor/Merendero
     """
@@ -497,68 +502,30 @@ class Anexo(models.Model):
         blank=True,
         null=True,
     )
-    comedor_merendero= models.BooleanField(
-        default=False
+    comedor_merendero = models.BooleanField(default=False)
+    insumos_organizacion = models.BooleanField(default=False)
+    servicio_internet = models.BooleanField(default=False)
+    zona_inundable = models.BooleanField(default=False)
+    actividades_jardin_maternal = models.BooleanField(default=False)
+    actividades_jardin_infantes = models.BooleanField(default=False)
+    apoyo_escolar = models.BooleanField(default=False)
+    alfabetizacion_terminalidad = models.BooleanField(default=False)
+    capacitaciones_talleres = models.BooleanField(default=False)
+    promocion_salud = models.BooleanField(default=False)
+    actividades_discapacidad = models.BooleanField(default=False)
+    necesidades_alimentarias = models.BooleanField(default=False)
+    actividades_recreativas = models.BooleanField(default=False)
+    actividades_culturales = models.BooleanField(default=False)
+    emprendimientos_productivos = models.BooleanField(default=False)
+    actividades_religiosas = models.BooleanField(default=False)
+    actividades_huerta = models.BooleanField(default=False)
+    espacio_huerta = models.BooleanField(default=False)
+    otras_actividades = models.BooleanField(default=False)
+    cuales_otras_actividades = models.TextField(blank=True, null=True)
+    veces_recibio_insumos_2024 = models.IntegerField(
+        default=0, verbose_name="¿Cuántas veces recibió estos insumos en el año 2024?"
     )
-    insumos_organizacion= models.BooleanField(
-        default=False
-    )
-    servicio_internet= models.BooleanField(
-        default=False
-    )
-    zona_inundable= models.BooleanField(
-        default=False
-    )
-    actividades_jardin_maternal= models.BooleanField(
-        default=False
-    )
-    actividades_jardin_infantes= models.BooleanField(
-        default=False
-    )
-    apoyo_escolar= models.BooleanField(
-        default=False
-    )
-    alfabetizacion_terminalidad= models.BooleanField(
-        default=False
-    )
-    capacitaciones_talleres= models.BooleanField(
-        default=False
-    )
-    promocion_salud= models.BooleanField(
-        default=False
-    )
-    actividades_discapacidad= models.BooleanField(
-        default=False
-    )
-    necesidades_alimentarias= models.BooleanField(
-        default=False
-    )
-    actividades_recreativas= models.BooleanField(
-        default=False
-    )
-    actividades_culturales= models.BooleanField(
-        default=False
-    )
-    emprendimientos_productivos= models.BooleanField(
-        default=False
-    )
-    actividades_religiosas= models.BooleanField(
-        default=False
-    )
-    actividades_huerta= models.BooleanField(
-        default=False
-    )
-    espacio_huerta = models.BooleanField(
-        default=False
-    )
-    otras_actividades= models.BooleanField(
-        default=False
-    )
-    cuales_otras_actividades = models.TextField(
-        blank=True,
-        null=True
-    )
-    veces_recibio_insumos_2024 = models.IntegerField(default=0, verbose_name="¿Cuántas veces recibió estos insumos en el año 2024?")
+
     class Meta:
         verbose_name = "Anexo"
         verbose_name_plural = "Anexos"
@@ -1058,9 +1025,8 @@ class Relevamiento(models.Model):
         to=Referente, on_delete=models.PROTECT, null=True, blank=True
     )
     anexo = models.OneToOneField(
-        to= Anexo, on_delete=models.PROTECT, blank=True, null=True
+        to=Anexo, on_delete=models.PROTECT, blank=True, null=True
     )
-
 
     def save(self, *args, **kwargs):
         self.validate_relevamientos_activos()

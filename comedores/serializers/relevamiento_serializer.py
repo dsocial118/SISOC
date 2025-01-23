@@ -81,9 +81,7 @@ class RelevamientoSerializer(serializers.ModelSerializer):
 
         if "anexo" in self.initial_data:
             anexo_instance = (
-                self.instance.anexo
-                if self.instance and self.instance.anexo
-                else None
+                self.instance.anexo if self.instance and self.instance.anexo else None
             )
             self.initial_data["anexo"] = RelevamientoService.create_or_update_anexo(
                 self.initial_data["anexo"], anexo_instance

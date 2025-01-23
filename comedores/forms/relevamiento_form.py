@@ -245,6 +245,7 @@ class PrestacionForm(forms.ModelForm):
         model = Prestacion
         fields = "__all__"
 
+
 class AnexoForm(forms.ModelForm):
     comedor_merendero = forms.ChoiceField(
         choices=BOOLEAN_CHOICE,
@@ -335,7 +336,7 @@ class AnexoForm(forms.ModelForm):
         choices=BOOLEAN_CHOICE,
         widget=forms.Select,
         label="¿Cuenta con espacio para realizar ese tipo de actividades?",
-        required=False
+        required=False,
     )
     otras_actividades = forms.ChoiceField(
         choices=BOOLEAN_CHOICE,
@@ -343,15 +344,12 @@ class AnexoForm(forms.ModelForm):
         label="¿En el comedor se realizan otras actividades?",
     )
     cuales_otras_actividades = forms.CharField(
-        required=False,
-        widget=forms.Textarea,
-        label="¿Cuales? (Campo de texto libre)"
+        required=False, widget=forms.Textarea, label="¿Cuales? (Campo de texto libre)"
     )
 
     class Meta:
         model = Anexo
         fields = "__all__"
-
 
 
 class RelevamientoForm(forms.ModelForm):
@@ -391,8 +389,6 @@ class RelevamientoForm(forms.ModelForm):
         widget=forms.Select,
         label="¿El responsable es el referente del comedor/merendero?",
     )
-    
-    
 
     def __init__(self, *args, **kwargs):
         comedor_id = kwargs.pop("comedor_pk", None)
@@ -417,9 +413,6 @@ class RelevamientoForm(forms.ModelForm):
         self.fields["partido"].initial = comedor.partido
         self.fields["barrio"].initial = comedor.barrio
         self.fields["codigo_postal"].initial = comedor.codigo_postal
-        
-        
-
 
     class Meta:
         model = Relevamiento
