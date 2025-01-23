@@ -21,7 +21,7 @@
         <div class="breadcrumb-item">
             <a href="{% url 'comedor_detalle' relevamiento.comedor__id %}">{{ relevamiento.comedor__nombre }}</a>
         </div>
-        <div class="breadcrumb-item active">Relevamiento {{ relevamiento.fecha_visita | default_if_none:"-" }}></div>
+        <div class="breadcrumb-item active">Relevamiento {{ relevamiento.fecha_visita | default_if_none:"-" }}</div>
     </ol>
 {% endblock %}
 ;
