@@ -1,0 +1,91 @@
+{% extends "includes/main.html" %};
+{% load static %}
+;
+{% block title %}Organizacion: {{ organizacion.nombre }}{% endblock %}
+;
+<div class="col-md-2 pt-5">
+    <c-dashboard.v-info-box titulo='Beneficiarios' valor='{{ tipo_organizacion }}' color='success'>
+    <i class="fa fa-user"></i>
+    </c-dashboard.v-info-box>
+</div>
+{% block titulo-pagina %}
+    {{ organizacion.nombre }}
+    <span class="ml-2 h5">| {{ organizacion.cuit | default_if_none:"-" }}</span>
+{% endblock %}
+;
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <div class="breadcrumb-item">
+            <a href="{% url 'organizaciones' %}">Organizaciones</a>
+        </div>
+        <div class="breadcrumb-item active">{{ organizacion.nombre }}</div>
+    </ol>
+{% endblock %}
+;
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
+    <link rel="stylesheet"
+        href="{% static 'custom/css/comedorRelevamiento.css' %}" />
+    <div class="row justify-content-between d-print-none mx-1 mb-3">
+        <div class="col-auto">
+            <a href="{% url 'organizaciones' %}" class="btn btn-secondary mr-1">Volver</a>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'organizacion_editar' organizacion.id %}"
+               class="btn btn-primary mr-1">Editar</a>
+            <a href="#" class="btn btn-secondary print mr-1 d-none d-sm-inline">Imprimir</a>
+            <a href="{% url 'organizacion_eliminar' organizacion.id %}"
+               class="btn btn-danger">Eliminar</a>
+        </div>
+    </div>
+    <div class="row organizacion-container">
+        <div class="col-12">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card card-informacion">
+                        <div class="card-header">
+                            <h3 class="card-title font-weight-bold mr-3 pt-1">Información</h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body card-comments p-0 pb-1">
+                            <div class="col-12">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="nav-item d-flex">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Nombre
+                                                <span class="username">{{ organizacion.nombre }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item d-flex">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                CUIT
+                                                <span class="username">{{ organizacion.cuit | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item d-flex">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Telefono
+                                                <span class="username">{{ organizacion.telefono | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item d-flex">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Email
+                                                <span class="username">{{ organizacion.email | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
