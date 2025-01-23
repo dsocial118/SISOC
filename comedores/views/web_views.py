@@ -16,6 +16,7 @@ from django.views.generic import (
 )
 
 
+from comedores.models.relevamiento import Relevamiento
 from comedores.forms.comedor_form import (
     ComedorForm,
     ReferenteForm,
@@ -36,17 +37,16 @@ from comedores.forms.relevamiento_form import (
     RelevamientoForm,
 )
 
-from comedores.models import (
+from comedores.models.comedor import (
     Comedor,
     ImagenComedor,
     Observacion,
-    Prestacion,
-    Relevamiento,
     Intervencion,
     SubIntervencion,
     Nomina,
 )
 
+from comedores.models.relevamiento import Prestacion
 from comedores.services.comedor_service import ComedorService
 from comedores.services.relevamiento_service import RelevamientoService
 from usuarios.models import Usuarios

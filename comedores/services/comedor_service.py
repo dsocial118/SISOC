@@ -5,8 +5,9 @@ from typing import Union
 from django.db.models import Q
 import requests
 
+from comedores.models.relevamiento import Relevamiento
 from comedores.forms.comedor_form import ImagenComedorForm
-from comedores.models import Comedor, Referente, Relevamiento, ValorComida
+from comedores.models.comedor import Comedor, Referente, ValorComida
 from config import settings
 from configuraciones.models import Municipio, Provincia
 from configuraciones.models import Localidad

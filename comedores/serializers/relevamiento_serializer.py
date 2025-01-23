@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
-from comedores.models import (
-    Relevamiento,
+from comedores.models.relevamiento import Relevamiento
+from comedores.models.relevamiento import (
     Territorial,
 )
 from comedores.services.relevamiento_service import RelevamientoService

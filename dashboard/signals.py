@@ -1,6 +1,8 @@
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
+from comedores.models.relevamiento import Relevamiento
+from comedores.models.relevamiento import Prestacion
 from dashboard.models import Dashboard
 from dashboard.utils import (
     contar_comedores_activos,
@@ -10,7 +12,7 @@ from dashboard.utils import (
     calcular_presupuesto_comida,
 )
 
-from comedores.models import Comedor, Relevamiento, Prestacion, ValorComida
+from comedores.models.comedor import Comedor, ValorComida
 from .utils import table_exists
 
 

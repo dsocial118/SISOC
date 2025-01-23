@@ -1,7 +1,13 @@
 from django import forms
 
 
-from comedores.models import Comedor, Referente, Intervencion, ImagenComedor, Nomina
+from comedores.models.comedor import (
+    Comedor,
+    Referente,
+    Intervencion,
+    ImagenComedor,
+    Nomina,
+)
 
 from configuraciones.models import Municipio, Provincia
 from configuraciones.models import Localidad
