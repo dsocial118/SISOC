@@ -1,6 +1,6 @@
 from django import forms
 
-from comedores.models import Observacion
+from comedores.models.comedor import Observacion
 
 
 class ObservacionForm(forms.ModelForm):
