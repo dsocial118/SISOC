@@ -5,12 +5,87 @@ from django.forms import ValidationError
 from comedores.models.comedor import (
     Comedor,
     Referente,
-    TipoInsumos,
-    TipoFrecuenciaInsumos,
-    TipoTecnologia,
-    TipoAccesoComedor,
-    TipoDistanciaTransporte,
 )
+
+
+class TipoInsumos(models.Model):
+    """
+    Opciones de tipos de insumos recibidos por un Comedor/Merendero
+    """
+
+    nombre = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        verbose_name = "Tipo de insumo recibido"
+        verbose_name_plural = "Tipos de insumos recibidos"
+        ordering = ["nombre"]
+
+
+class TipoFrecuenciaInsumos(models.Model):
+    """
+    Opciones de frecuencias de insumos recibidos
+    """
+
+    nombre = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        verbose_name = "Frecuencia de insumos recibidos"
+        verbose_name_plural = "Frecuencias de insumos recibidos"
+        ordering = ["nombre"]
+
+
+class TipoTecnologia(models.Model):
+    """
+    Opciones de tipos de tecnologia utilizada en un Comedor/Merendero
+    """
+
+    nombre = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        verbose_name = "Tipo de tecnologia"
+        verbose_name_plural = "Tipos de tecnologia"
+        ordering = ["nombre"]
+
+
+class TipoAccesoComedor(models.Model):
+    """
+    Opciones de tipos de acceso al Comedor/Merendero
+    """
+
+    nombre = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        verbose_name = "Tipo de acceso al comedor"
+        verbose_name_plural = "Tipos de acceso al comedor"
+        ordering = ["nombre"]
+
+
+class TipoDistanciaTransporte(models.Model):
+    """
+    Opciones de distancias de transporte al Comedor/Merendero
+    """
+
+    nombre = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        verbose_name = "Distancia de transporte"
+        verbose_name_plural = "Distancias de transporte"
+        ordering = ["nombre"]
 
 
 class TipoAgua(models.Model):
