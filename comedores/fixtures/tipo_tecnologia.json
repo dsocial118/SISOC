@@ -1,0 +1,30 @@
+[
+    {
+        "model": "comedores.tipotecnologia",
+        "pk": 1,
+        "fields": {
+            "nombre": "Computadora"
+        }
+    },
+    {
+        "model": "comedores.tipotecnologia",
+        "pk": 2,
+        "fields": {
+            "nombre": "Celular"
+        }
+    },
+    {
+        "model": "comedores.tipotecnologia",
+        "pk": 3,
+        "fields": {
+            "nombre": "Ambos"
+        }
+    },
+    {
+        "model": "comedores.tipotecnologia",
+        "pk": 4,
+        "fields": {
+            "nombre": "Ninguno"
+        }
+    }
+]
