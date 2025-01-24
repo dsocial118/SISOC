@@ -1,7 +1,6 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from comedores.models.comedor import Observacion, Referente, Comedor
-from comedores.models.relevamiento import Relevamiento
+from comedores.models import Observacion, Referente, Relevamiento, Comedor
 from comedores.services.observacion_service import ObservacionService
 from comedores.services.relevamiento_service import RelevamientoService
 from comedores.services.comedor_service import ComedorService

@@ -1,10 +1,23 @@
 from django.contrib import admin
 
-from comedores.models.relevamiento import Relevamiento
-from comedores.models.comedor import (
+from comedores.models import (
+    CantidadColaboradores,
     Comedor,
+    FrecuenciaLimpieza,
+    FrecuenciaRecepcionRecursos,
+    FuenteCompras,
+    FuenteRecursos,
     Observacion,
+    Prestacion,
+    Relevamiento,
+    TipoAgua,
+    TipoCombustible,
     TipoDeComedor,
+    TipoDesague,
+    TipoEspacio,
+    TipoModalidadPrestacion,
+    TipoRecurso,
+    TipoGestionQuejas,
     ValorComida,
     Intervencion,
     SubIntervencion,
@@ -16,21 +29,6 @@ from comedores.models.comedor import (
     TipoTecnologia,
     TipoAccesoComedor,
     TipoDistanciaTransporte,
-)
-from comedores.models.relevamiento import (
-    CantidadColaboradores,
-    FrecuenciaLimpieza,
-    FrecuenciaRecepcionRecursos,
-    FuenteCompras,
-    FuenteRecursos,
-    Prestacion,
-    TipoAgua,
-    TipoCombustible,
-    TipoDesague,
-    TipoEspacio,
-    TipoGestionQuejas,
-    TipoModalidadPrestacion,
-    TipoRecurso,
 )
 
 admin.site.register(TipoModalidadPrestacion)

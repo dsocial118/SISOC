@@ -2,7 +2,7 @@ import os
 
 import requests
 
-from comedores.models.comedor import Observacion
+from comedores.models import Observacion
 
 
 class ObservacionService:
@@ -41,4 +41,4 @@ class ObservacionService:
                 observacion.gestionar_uid = response["Rows"][0]["ID_Observacion"]
                 observacion.save()
             except requests.exceptions.RequestException as e:
-                print(f"Error al sincronizar con GESTIONAR: {e}")
+                print(f"Error en la petición POST: {e}")

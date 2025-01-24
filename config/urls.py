@@ -12,12 +12,10 @@ urlpatterns = [
     path("", include("configuraciones.urls")),
     path("", include("dashboard.urls")),
     path("", include("comedores.urls")),
-    path("", include("organizaciones.urls")),
     path("", include("provincias.urls")),
+    path("", include("healthcheck.urls")),
     # Django Debug Toolbar
     path("__debug__/", include("debug_toolbar.urls")),
-    # Healthcheck AWS
-    path("", include("healthcheck.urls")),
 ]
 
 urlpatterns += staticfiles_urlpatterns()
