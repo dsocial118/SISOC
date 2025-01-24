@@ -11,11 +11,6 @@ from comedores.models.comedor import (
     TipoIntervencion,
     EstadosIntervencion,
     Nomina,
-    TipoInsumos,
-    TipoFrecuenciaInsumos,
-    TipoTecnologia,
-    TipoAccesoComedor,
-    TipoDistanciaTransporte,
 )
 from comedores.models.relevamiento import (
     CantidadColaboradores,
@@ -31,6 +26,11 @@ from comedores.models.relevamiento import (
     TipoGestionQuejas,
     TipoModalidadPrestacion,
     TipoRecurso,
+    TipoInsumos,
+    TipoFrecuenciaInsumos,
+    TipoTecnologia,
+    TipoAccesoComedor,
+    TipoDistanciaTransporte,
 )
 
 admin.site.register(TipoModalidadPrestacion)
