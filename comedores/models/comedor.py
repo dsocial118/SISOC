@@ -8,7 +8,6 @@ from configuraciones.models import Sexo
 from organizaciones.models import Organizacion
 
 
-
 class EstadosIntervencion(models.Model):
     """
     Guardado de los estados de las intervenciones realizadas a un legajo.
