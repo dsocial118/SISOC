@@ -18,7 +18,6 @@ from comedores.models.relevamiento import (
     FuenteRecursos,
     FuncionamientoPrestacion,
     Prestacion,
-    TipoCombustible,
 )
 
 BOOLEAN_CHOICE = [
