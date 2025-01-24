@@ -31,10 +31,8 @@
             <a href="{% url 'comedores' %}" class="btn btn-secondary mr-1">Volver</a>
         </div>
         <div class="col-auto">
-            <!-- boton nomina -->
             <a href="{% url 'nomina_ver' pk=comedor.id %}"
                class="btn btn-primary mr-1">Nomina</a>
-            <!-- boton nomina -->
             <a href="{% url 'intervencion_ver' comedor.id %}"
                class="btn btn-primary mr-1">Intervenciones</a>
             <a href="{% url 'comedor_editar' comedor.id %}"
@@ -181,7 +179,13 @@
                                             <div class="nav-item d-flex">
                                                 <div class="comment-text comment-text d-flex flex-column">
                                                     Tipo Comedor
-                                                    <span class="username">{{ comedor.tipocomedor__nombre }}</span>
+                                                    <span class="username">{{ comedor.tipocomedor__nombre | default_if_none:"-" }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="nav-item d-flex">
+                                                <div class="comment-text comment-text d-flex flex-column">
+                                                    Organización
+                                                    <span class="username">{{ comedor.organizacion__nombre | default_if_none:"-" }}</span>
                                                 </div>
                                             </div>
                                             <div class="nav-item d-flex">
@@ -336,7 +340,7 @@
                     </div>
                 </div>
                 <div class="card-body row card-comments p-0 pb-1">
-                    <div class="nav nav-pills col-7 row my-3">
+                    <div class="nav nav-pills col-6 row my-3">
                         {% for relevamiento in relevamientos %}
                             <div class="col-6 d-flex">
                                 <a href="{% url 'relevamiento_detalle' comedor.id relevamiento.id %}">{{ relevamiento.id }} - {{ relevamiento.fecha_visita|default_if_none:"Pendiente" }}</a>
@@ -348,9 +352,55 @@
                             </div>
                         {% endfor %}
                     </div>
-                    <div class="card-tools col-5 d-flex justify-content-end align-items-start my-3">
+                    <div class="card-tools col-6 d-flex justify-content-end align-items-start my-3">
                         <a href="{% url 'relevamientos' comedor.id %}"
                            class="btn btn-primary mx-3">Ver mas</a>
+                        <button type="button"
+                                class="btn btn-primary me-3"
+                                data-bs-toggle="modal"
+                                data-bs-target="#RelevamientoModalEditar">Asignar</button>
+                        <div class="modal fade"
+                             id="RelevamientoModalEditar"
+                             tabindex="-1"
+                             aria-labelledby="RelevamientoModalEditarLabel"
+                             aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="RelevamientoModalEditarLabel">Asignar</h5>
+                                        <button type="button"
+                                                class="btn-close"
+                                                data-bs-dismiss="modal"
+                                                aria-label="Close"></button>
+                                    </div>
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                {% for relevamiento in relevamientos %}
+                                                    <input type="hidden" name="relevamiento_id" value="{{ relevamiento.id }}" />
+                                                {% endfor %}
+                                                <label for="inputField" class="form-label">Territorial</label>
+                                                <select name="territorial_editar"
+                                                        id="territorial_select"
+                                                        class="form-control">
+                                                    <option value="">No definido</option>
+                                                    {% for territorial in territoriales %}
+                                                        <option value='{"gestionar_uid": "{{ territorial.gestionar_uid }}", "nombre": "{{ territorial.nombre }}"}'>
+                                                            {{ territorial.nombre }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                            <button type="submit" class="btn btn-primary">Guardar</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
                         <button type="button"
                                 class="btn btn-primary"
                                 data-bs-toggle="modal"
