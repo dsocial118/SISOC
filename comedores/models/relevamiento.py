@@ -10,7 +10,6 @@ from comedores.models.comedor import (
     TipoTecnologia,
     TipoAccesoComedor,
     TipoDistanciaTransporte,
-    
 )
 
 
@@ -664,6 +663,7 @@ class Anexo(models.Model):
     class Meta:
         verbose_name = "Anexo"
         verbose_name_plural = "Anexos"
+
 
 class Relevamiento(models.Model):
 

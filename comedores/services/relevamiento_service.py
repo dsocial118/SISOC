@@ -80,7 +80,7 @@ class RelevamientoService:
         relevamiento.save()
 
         return relevamiento
-    
+
     @staticmethod
     def convert_to_int(value):
         return int(value) if value != "" else None
