@@ -4,13 +4,10 @@ from django import forms
 from django.forms import inlineformset_factory
 from django.utils import dateformat, timezone
 
-from comedores.models.relevamiento import Relevamiento
-from comedores.models.comedor import (
-    Comedor,
-)
-from comedores.models.relevamiento import (
+from comedores.models import (
     Anexo,
     Colaboradores,
+    Comedor,
     Espacio,
     EspacioCocina,
     EspacioPrestacion,
@@ -18,6 +15,7 @@ from comedores.models.relevamiento import (
     FuenteRecursos,
     FuncionamientoPrestacion,
     Prestacion,
+    Relevamiento,
     TipoCombustible,
 )
 

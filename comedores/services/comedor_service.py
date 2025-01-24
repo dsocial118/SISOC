@@ -5,9 +5,8 @@ from typing import Union
 from django.db.models import Q
 import requests
 
-from comedores.models.relevamiento import Relevamiento
 from comedores.forms.comedor_form import ImagenComedorForm
-from comedores.models.comedor import Comedor, Referente, ValorComida
+from comedores.models import Comedor, Referente, Relevamiento, Territorial, ValorComida
 from config import settings
 from configuraciones.models import Municipio, Provincia
 from configuraciones.models import Localidad
@@ -52,7 +51,6 @@ class ComedorService:
                 "foto_legajo",
                 "nombre",
                 "comienzo",
-                "organizacion__nombre",
                 "provincia__nombre",
                 "municipio__nombre",
                 "localidad__nombre",
@@ -177,6 +175,7 @@ class ComedorService:
                     }
                 ],
             }
+            print(data)
 
             headers = {
                 "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
@@ -194,7 +193,7 @@ class ComedorService:
                 comedor.gestionar_uid = response["Rows"][0]["ComedorID"]
                 comedor.save()
             except requests.exceptions.RequestException as e:
-                print(f"Error al sincronizar con GESTIONAR: {e}")
+                print(f"Error en la petición POST: {e}")
 
     @staticmethod
     def send_referente_to_gestionar(referente: Referente):
@@ -225,7 +224,7 @@ class ComedorService:
             response.raise_for_status()
             response = response.json()
         except requests.exceptions.RequestException as e:
-            print(f"Error al sincronizar con GESTIONAR: {e}")
+            print(f"Error en la petición POST: {e}")
 
     @staticmethod
     def get_territoriales(comedor_id: int):
@@ -259,9 +258,39 @@ class ComedorService:
                 )
             ]
 
-            return territoriales_data
+            # Obtener todos los gestionar_uid existentes de una sola vez
+            existing_uids = set(
+                Territorial.objects.filter(
+                    gestionar_uid__in=[t["gestionar_uid"] for t in territoriales_data]
+                ).values_list("gestionar_uid", flat=True)
+            )
+
+            # Filtrar los que no existen en la base de datos
+            new_territoriales_data = [
+                t for t in territoriales_data if t["gestionar_uid"] not in existing_uids
+            ]
+
+            # Crear los nuevos territoriales en bulk para ahorrar queries
+            Territorial.objects.bulk_create(
+                [
+                    Territorial(
+                        gestionar_uid=t["gestionar_uid"],
+                        nombre=t["nombre"],
+                    )
+                    for t in new_territoriales_data
+                ],
+                ignore_conflicts=True,
+            )
+
+            territoriales = list(
+                Territorial.objects.filter(
+                    gestionar_uid__in=[t["gestionar_uid"] for t in territoriales_data]
+                )
+            )
+
+            return territoriales
         except requests.exceptions.RequestException as e:
-            print(f"Error al sincronizar con GESTIONAR: {e}")
+            print(f"Error en la petición POST: {e}")
             return []
 
     @staticmethod

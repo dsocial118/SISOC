@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 
-from comedores.models.comedor import Comedor, ImagenComedor
+from comedores.models import Comedor, ImagenComedor
 from comedores.services.comedor_service import ComedorService
 
 

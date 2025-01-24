@@ -1,9 +1,10 @@
+import json
 from typing import Any
 from django.contrib import messages
 from django.db.models.base import Model
 from django.forms import BaseModelForm
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import redirect
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views.generic import (
@@ -13,10 +14,10 @@ from django.views.generic import (
     ListView,
     UpdateView,
     TemplateView,
+    View,
 )
 
 
-from comedores.models.relevamiento import Relevamiento
 from comedores.forms.comedor_form import (
     ComedorForm,
     ReferenteForm,
@@ -38,16 +39,19 @@ from comedores.forms.relevamiento_form import (
     RelevamientoForm,
 )
 
-from comedores.models.comedor import (
+from comedores.models import (
     Comedor,
     ImagenComedor,
     Observacion,
+    Prestacion,
+    Relevamiento,
     Intervencion,
     SubIntervencion,
+    Territorial,
+    ValorComida,
     Nomina,
 )
 
-from comedores.models.relevamiento import Prestacion
 from comedores.services.comedor_service import ComedorService
 from comedores.services.relevamiento_service import RelevamientoService
 from usuarios.models import Usuarios
@@ -307,23 +311,29 @@ class ComedorDetailView(DetailView):
                 ).values("imagen"),
             }
         )
+
         return context
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         try:
-            relevamiento = None
-            is_new_relevamiento = "territorial" in request.POST
-            is_edit_relevamiento = "territorial_editar" in request.POST
+            relevamiento = Relevamiento()
+            relevamiento.comedor = get_object_or_404(Comedor, id=self.object["id"])
+            relevamiento.estado = "Pendiente"
 
-            if is_new_relevamiento:
-                relevamiento = RelevamientoService.create_pendiente(
-                    request, self.object["id"]
-                )
+            if request.POST.get("territorial"):
+                gestionar_uid = json.loads(request.POST.get("territorial"))[
+                    "gestionar_uid"
+                ]
+                nombre = json.loads(request.POST.get("territorial"))["nombre"]
+                if gestionar_uid and nombre:
+                    territorial, _created = Territorial.objects.get_or_create(
+                        gestionar_uid=gestionar_uid, defaults={"nombre": nombre}
+                    )
+                    relevamiento.territorial = territorial
+                    relevamiento.estado = "Visita pendiente"
 
-            elif is_edit_relevamiento:
-                relevamiento = RelevamientoService.update_territorial(request)
-
+            relevamiento.save()
             return redirect(
                 reverse(
                     "relevamiento_detalle",

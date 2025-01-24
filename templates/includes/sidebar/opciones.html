@@ -83,12 +83,12 @@
                     </a>
                 </li>
             {% endif %}
-            {% if perms.organizaciones %}
+            {% if perms.provincias %}
                 <li class="nav-item">
-                    <a href="{% url 'organizaciones' %}"
+                    <a href="{% url 'proyecto_list' %}"
                        class="nav-link {% if 'comedores/listar' in pagina_actual %}active{% endif %}">
-                        <i class="nav-icon bi bi-building-fill"></i>
-                        <p>Organizaciones</p>
+                        <i class="nav-icon fas fa-user"></i>
+                        <p>Mis Proyectos</p>
                     </a>
                 </li>
             {% endif %}
