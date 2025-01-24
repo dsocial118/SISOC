@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
-from comedores.models import (
-    Relevamiento,
+from comedores.models.relevamiento import Relevamiento
+from comedores.models.relevamiento import (
     Territorial,
 )
 from comedores.services.relevamiento_service import RelevamientoService
@@ -77,6 +77,14 @@ class RelevamientoSerializer(serializers.ModelSerializer):
             )
             self.initial_data["compras"] = RelevamientoService.create_or_update_compras(
                 self.initial_data["compras"], compras_instance
+            ).id
+
+        if "anexo" in self.initial_data:
+            anexo_instance = (
+                self.instance.anexo if self.instance and self.instance.anexo else None
+            )
+            self.initial_data["anexo"] = RelevamientoService.create_or_update_anexo(
+                self.initial_data["anexo"], anexo_instance
             ).id
 
         if "prestacion" in self.initial_data:

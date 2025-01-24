@@ -4,9 +4,13 @@ from django import forms
 from django.forms import inlineformset_factory
 from django.utils import dateformat, timezone
 
-from comedores.models import (
-    Colaboradores,
+from comedores.models.relevamiento import Relevamiento
+from comedores.models.comedor import (
     Comedor,
+)
+from comedores.models.relevamiento import (
+    Anexo,
+    Colaboradores,
     Espacio,
     EspacioCocina,
     EspacioPrestacion,
@@ -14,8 +18,6 @@ from comedores.models import (
     FuenteRecursos,
     FuncionamientoPrestacion,
     Prestacion,
-    Relevamiento,
-    TipoCombustible,
 )
 
 BOOLEAN_CHOICE = [
@@ -242,6 +244,112 @@ class PrestacionForm(forms.ModelForm):
 
     class Meta:
         model = Prestacion
+        fields = "__all__"
+
+
+class AnexoForm(forms.ModelForm):
+    comedor_merendero = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿El comedor/merendero existe?",
+    )
+    insumos_organizacion = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="Durante el año 2024, ¿recibió insumos por parte de la organización?",
+    )
+    servicio_internet = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="En el comedor, ¿hay servicio de internet?",
+    )
+    zona_inundable = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿El comedor se encuentra en zona inundable?",
+    )
+    actividades_jardin_maternal = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿En el comedor se realizan actividades propias de un jardín maternal?",
+    )
+    actividades_jardin_infantes = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿En el comedor se realizan actividades propias de un jardín de infantes/preescolar?",
+    )
+    apoyo_escolar = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿En el comedor se realizan actividades de apoyo escolar?",
+    )
+    alfabetizacion_terminalidad = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿En el comedor se realizan actividades propias de alfabetización/terminalidad educativa?",
+    )
+    capacitaciones_talleres = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿En el comedor se realizan capacitaciones y/o talleres de oficio?",
+    )
+    promocion_salud = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿En el comedor se realizan actividades para la promoción de la salud?",
+    )
+    actividades_discapacidad = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿En el comedor se realizan actividades orientadas a personas con discapacidad?",
+    )
+    necesidades_alimentarias = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿En el comedor se realizan actividades orientadas a personas con necesidades alimentarias especiales (celiaquía, diabetes, etc.)?",
+    )
+    actividades_recreativas = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿En el comedor se realizan actividades Recreativas/deportivas?",
+    )
+    actividades_culturales = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿En el comedor se realizan actividades culturales?",
+    )
+    emprendimientos_productivos = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿En el comedor se realizan emprendimientos productivos/de servicios (ej: elaboración de panificados, dulces y conservas, textil, peluquería, etc)?",
+    )
+    actividades_religiosas = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿En el comedor se realizan actividades religiosas?",
+    )
+    actividades_huerta = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿En el comedor se realizan actividades de huerta?",
+    )
+    espacio_huerta = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿Cuenta con espacio para realizar ese tipo de actividades?",
+        required=False,
+    )
+    otras_actividades = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿En el comedor se realizan otras actividades?",
+    )
+    cuales_otras_actividades = forms.CharField(
+        required=False, widget=forms.Textarea, label="¿Cuales? (Campo de texto libre)"
+    )
+
+    class Meta:
+        model = Anexo
         fields = "__all__"
 
 

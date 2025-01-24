@@ -1,0 +1,23 @@
+[
+    {
+        "model": "comedores.tipodistanciatransporte",
+        "pk": 1,
+        "fields": {
+            "nombre": "De 0 a 5 cuadras"
+        }
+    },
+    {
+        "model": "comedores.tipodistanciatransporte",
+        "pk": 2,
+        "fields": {
+            "nombre": "Entre 6 y 10 cuadras"
+        }
+    },
+    {
+        "model": "comedores.tipodistanciatransporte",
+        "pk": 3,
+        "fields": {
+            "nombre": "Más de 10 cuadras"
+        }
+    }
+]
