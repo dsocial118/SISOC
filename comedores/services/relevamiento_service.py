@@ -9,6 +9,7 @@ from comedores.models.comedor import (
     Comedor,
 )
 from comedores.models.relevamiento import (
+    Anexo,
     CantidadColaboradores,
     Colaboradores,
     Espacio,
@@ -21,13 +22,18 @@ from comedores.models.relevamiento import (
     FuncionamientoPrestacion,
     Prestacion,
     Territorial,
+    TipoAccesoComedor,
     TipoAgua,
     TipoCombustible,
     TipoDesague,
+    TipoDistanciaTransporte,
     TipoEspacio,
+    TipoFrecuenciaInsumos,
     TipoGestionQuejas,
+    TipoInsumos,
     TipoModalidadPrestacion,
     TipoRecurso,
+    TipoTecnologia,
 )
 
 
@@ -76,6 +82,10 @@ class RelevamientoService:
         return relevamiento
 
     @staticmethod
+    def convert_to_int(value):
+        return int(value) if value != "" else None
+
+    @staticmethod
     def populate_relevamiento(relevamiento_form, extra_forms, user_id):
         relevamiento = relevamiento_form.save(commit=False)
 
@@ -95,6 +105,9 @@ class RelevamientoService:
 
         recursos = extra_forms["recursos_form"].save()
         relevamiento.recursos = recursos
+
+        anexo = extra_forms["anexo_form"].save()
+        relevamiento.anexo = anexo
 
         compras = extra_forms["compras_form"].save()
         relevamiento.compras = compras
@@ -129,7 +142,7 @@ class RelevamientoService:
 
     @staticmethod
     def get_relevamiento_detail_object(relevamiento_id):
-        return (
+        relevamiento = (
             Relevamiento.objects.prefetch_related(
                 "comedor",
                 "funcionamiento",
@@ -138,6 +151,7 @@ class RelevamientoService:
                 "recursos",
                 "compras",
                 "referente",
+                "anexo",
             )
             .filter(pk=relevamiento_id)
             .values(
@@ -233,9 +247,36 @@ class RelevamientoService:
                 "compras__mayoristas",
                 "compras__otro",
                 "prestacion__id",
+                "anexo__tipo_insumo__nombre",
+                "anexo__frecuencia_insumo__nombre",
+                "anexo__tecnologia__nombre",
+                "anexo__acceso_comedor__nombre",
+                "anexo__distancia_transporte__nombre",
+                "anexo__comedor_merendero",
+                "anexo__insumos_organizacion",
+                "anexo__servicio_internet",
+                "anexo__zona_inundable",
+                "anexo__actividades_jardin_maternal",
+                "anexo__actividades_jardin_infantes",
+                "anexo__apoyo_escolar",
+                "anexo__alfabetizacion_terminalidad",
+                "anexo__capacitaciones_talleres",
+                "anexo__promocion_salud",
+                "anexo__actividades_discapacidad",
+                "anexo__necesidades_alimentarias",
+                "anexo__actividades_recreativas",
+                "anexo__actividades_culturales",
+                "anexo__emprendimientos_productivos",
+                "anexo__actividades_religiosas",
+                "anexo__actividades_huerta",
+                "anexo__espacio_huerta",
+                "anexo__otras_actividades",
+                "anexo__cuales_otras_actividades",
+                "anexo__veces_recibio_insumos_2024",
             )
             .first()
         )
+        return relevamiento
 
     @staticmethod
     def create_or_update_funcionamiento(
@@ -611,6 +652,159 @@ class RelevamientoService:
         return compras_instance
 
     @staticmethod
+    def create_or_update_anexo(anexo_data, anexo_instance=None):
+        anexo_data = RelevamientoService.populate_anexo_data(anexo_data)
+
+        if anexo_instance is None:
+            anexo_instance = Anexo.objects.create(**anexo_data)
+        else:
+            for field, value in anexo_data.items():
+                setattr(anexo_instance, field, value)
+            anexo_instance.save()
+
+        return anexo_instance
+
+    @staticmethod
+    def populate_anexo_data(anexo_data):
+        if "tipo_insumo" in anexo_data and anexo_data["tipo_insumo"]:
+            try:
+                anexo_data["tipo_insumo"] = TipoInsumos.objects.get(
+                    nombre__iexact=anexo_data["tipo_insumo"]
+                )
+            except TipoInsumos.DoesNotExist:
+                anexo_data["tipo_insumo"] = None
+        else:
+            anexo_data["tipo_insumo"] = None
+        if "frecuencia_insumo" in anexo_data and anexo_data["frecuencia_insumo"]:
+            try:
+                anexo_data["frecuencia_insumo"] = TipoFrecuenciaInsumos.objects.get(
+                    nombre__iexact=anexo_data["frecuencia_insumo"]
+                )
+            except TipoFrecuenciaInsumos.DoesNotExist:
+                anexo_data["frecuencia_insumo"] = None
+        else:
+            anexo_data["frecuencia_insumo"] = None
+
+        if "tecnologia" in anexo_data and anexo_data["tecnologia"]:
+            try:
+                anexo_data["tecnologia"] = TipoTecnologia.objects.get(
+                    nombre__iexact=anexo_data["tecnologia"]
+                )
+            except TipoTecnologia.DoesNotExist:
+                anexo_data["tecnologia"] = None
+        else:
+            anexo_data["tecnologia"] = None
+
+        if "acceso_comedor" in anexo_data and anexo_data["acceso_comedor"]:
+            try:
+                anexo_data["acceso_comedor"] = TipoAccesoComedor.objects.get(
+                    nombre__iexact=anexo_data["acceso_comedor"]
+                )
+            except TipoAccesoComedor.DoesNotExist:
+                anexo_data["acceso_comedor"] = None
+        else:
+            anexo_data["acceso_comedor"] = None
+
+        if "distancia_transporte" in anexo_data and anexo_data["distancia_transporte"]:
+            try:
+                anexo_data["distancia_transporte"] = (
+                    TipoDistanciaTransporte.objects.get(
+                        nombre__iexact=anexo_data["distancia_transporte"]
+                    )
+                )
+            except TipoDistanciaTransporte.DoesNotExist:
+                anexo_data["distancia_transporte"] = None
+        else:
+            anexo_data["distancia_transporte"] = None
+        if "comedor_merendero" in anexo_data:
+            anexo_data["comedor_merendero"] = anexo_data["comedor_merendero"] == "Y"
+
+        if "insumos_organizacion" in anexo_data:
+            anexo_data["insumos_organizacion"] = (
+                anexo_data["insumos_organizacion"] == "Y"
+            )
+
+        if "servicio_internet" in anexo_data:
+            anexo_data["servicio_internet"] = anexo_data["servicio_internet"] == "Y"
+
+        if "zona_inundable" in anexo_data:
+            anexo_data["zona_inundable"] = anexo_data["zona_inundable"] == "Y"
+
+        if "actividades_jardin_maternal" in anexo_data:
+            anexo_data["actividades_jardin_maternal"] = (
+                anexo_data["actividades_jardin_maternal"] == "Y"
+            )
+
+        if "actividades_jardin_infantes" in anexo_data:
+            anexo_data["actividades_jardin_infantes"] = (
+                anexo_data["actividades_jardin_infantes"] == "Y"
+            )
+
+        if "apoyo_escolar" in anexo_data:
+            anexo_data["apoyo_escolar"] = anexo_data["apoyo_escolar"] == "Y"
+
+        if "alfabetizacion_terminalidad" in anexo_data:
+            anexo_data["alfabetizacion_terminalidad"] = (
+                anexo_data["alfabetizacion_terminalidad"] == "Y"
+            )
+
+        if "capacitaciones_talleres" in anexo_data:
+            anexo_data["capacitaciones_talleres"] = (
+                anexo_data["capacitaciones_talleres"] == "Y"
+            )
+
+        if "promocion_salud" in anexo_data:
+            anexo_data["promocion_salud"] = anexo_data["promocion_salud"] == "Y"
+
+        if "actividades_discapacidad" in anexo_data:
+            anexo_data["actividades_discapacidad"] = (
+                anexo_data["actividades_discapacidad"] == "Y"
+            )
+
+        if "necesidades_alimentarias" in anexo_data:
+            anexo_data["necesidades_alimentarias"] = (
+                anexo_data["necesidades_alimentarias"] == "Y"
+            )
+
+        if "actividades_recreativas" in anexo_data:
+            anexo_data["actividades_recreativas"] = (
+                anexo_data["actividades_recreativas"] == "Y"
+            )
+
+        if "actividades_culturales" in anexo_data:
+            anexo_data["actividades_culturales"] = (
+                anexo_data["actividades_culturales"] == "Y"
+            )
+
+        if "emprendimientos_productivos" in anexo_data:
+            anexo_data["emprendimientos_productivos"] = (
+                anexo_data["emprendimientos_productivos"] == "Y"
+            )
+
+        if "actividades_religiosas" in anexo_data:
+            anexo_data["actividades_religiosas"] = (
+                anexo_data["actividades_religiosas"] == "Y"
+            )
+
+        if "actividades_huerta" in anexo_data:
+            anexo_data["actividades_huerta"] = anexo_data["actividades_huerta"] == "Y"
+
+        if "espacio_huerta" in anexo_data:
+            anexo_data["espacio_huerta"] = anexo_data["espacio_huerta"] == "Y"
+
+        if "otras_actividades" in anexo_data:
+            anexo_data["otras_actividades"] = anexo_data["otras_actividades"] == "Y"
+
+        if "veces_recibio_insumos_2024" in anexo_data:
+            anexo_data["veces_recibio_insumos_2024"] = (
+                RelevamientoService.convert_to_int(
+                    anexo_data["veces_recibio_insumos_2024"]
+                )
+            )
+
+        return anexo_data
+
+    @staticmethod
     def populate_compras_data(compras_data):
         if "almacen_cercano" in compras_data:
             compras_data["almacen_cercano"] = compras_data["almacen_cercano"] == "Y"
@@ -650,231 +844,317 @@ class RelevamientoService:
 
     @staticmethod
     def populate_prestacion_data(prestacion_data):
-        def convert_to_int(value):
-            return int(value) if value != "" else None
 
         if "lunes_desayuno_actual" in prestacion_data:
-            prestacion_data["lunes_desayuno_actual"] = convert_to_int(
-                prestacion_data["lunes_desayuno_actual"]
+            prestacion_data["lunes_desayuno_actual"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["lunes_desayuno_actual"]
+                )
             )
         if "lunes_desayuno_espera" in prestacion_data:
-            prestacion_data["lunes_desayuno_espera"] = convert_to_int(
-                prestacion_data["lunes_desayuno_espera"]
+            prestacion_data["lunes_desayuno_espera"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["lunes_desayuno_espera"]
+                )
             )
         if "lunes_almuerzo_actual" in prestacion_data:
-            prestacion_data["lunes_almuerzo_actual"] = convert_to_int(
-                prestacion_data["lunes_almuerzo_actual"]
+            prestacion_data["lunes_almuerzo_actual"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["lunes_almuerzo_actual"]
+                )
             )
         if "lunes_almuerzo_espera" in prestacion_data:
-            prestacion_data["lunes_almuerzo_espera"] = convert_to_int(
-                prestacion_data["lunes_almuerzo_espera"]
+            prestacion_data["lunes_almuerzo_espera"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["lunes_almuerzo_espera"]
+                )
             )
         if "lunes_merienda_actual" in prestacion_data:
-            prestacion_data["lunes_merienda_actual"] = convert_to_int(
-                prestacion_data["lunes_merienda_actual"]
+            prestacion_data["lunes_merienda_actual"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["lunes_merienda_actual"]
+                )
             )
         if "lunes_merienda_espera" in prestacion_data:
-            prestacion_data["lunes_merienda_espera"] = convert_to_int(
-                prestacion_data["lunes_merienda_espera"]
+            prestacion_data["lunes_merienda_espera"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["lunes_merienda_espera"]
+                )
             )
         if "lunes_cena_actual" in prestacion_data:
-            prestacion_data["lunes_cena_actual"] = convert_to_int(
+            prestacion_data["lunes_cena_actual"] = RelevamientoService.convert_to_int(
                 prestacion_data["lunes_cena_actual"]
             )
         if "lunes_cena_espera" in prestacion_data:
-            prestacion_data["lunes_cena_espera"] = convert_to_int(
+            prestacion_data["lunes_cena_espera"] = RelevamientoService.convert_to_int(
                 prestacion_data["lunes_cena_espera"]
             )
         if "martes_desayuno_actual" in prestacion_data:
-            prestacion_data["martes_desayuno_actual"] = convert_to_int(
-                prestacion_data["martes_desayuno_actual"]
+            prestacion_data["martes_desayuno_actual"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["martes_desayuno_actual"]
+                )
             )
         if "martes_desayuno_espera" in prestacion_data:
-            prestacion_data["martes_desayuno_espera"] = convert_to_int(
-                prestacion_data["martes_desayuno_espera"]
+            prestacion_data["martes_desayuno_espera"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["martes_desayuno_espera"]
+                )
             )
         if "martes_almuerzo_actual" in prestacion_data:
-            prestacion_data["martes_almuerzo_actual"] = convert_to_int(
-                prestacion_data["martes_almuerzo_actual"]
+            prestacion_data["martes_almuerzo_actual"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["martes_almuerzo_actual"]
+                )
             )
         if "martes_almuerzo_espera" in prestacion_data:
-            prestacion_data["martes_almuerzo_espera"] = convert_to_int(
-                prestacion_data["martes_almuerzo_espera"]
+            prestacion_data["martes_almuerzo_espera"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["martes_almuerzo_espera"]
+                )
             )
         if "martes_merienda_actual" in prestacion_data:
-            prestacion_data["martes_merienda_actual"] = convert_to_int(
-                prestacion_data["martes_merienda_actual"]
+            prestacion_data["martes_merienda_actual"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["martes_merienda_actual"]
+                )
             )
         if "martes_merienda_espera" in prestacion_data:
-            prestacion_data["martes_merienda_espera"] = convert_to_int(
-                prestacion_data["martes_merienda_espera"]
+            prestacion_data["martes_merienda_espera"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["martes_merienda_espera"]
+                )
             )
         if "martes_cena_actual" in prestacion_data:
-            prestacion_data["martes_cena_actual"] = convert_to_int(
+            prestacion_data["martes_cena_actual"] = RelevamientoService.convert_to_int(
                 prestacion_data["martes_cena_actual"]
             )
         if "martes_cena_espera" in prestacion_data:
-            prestacion_data["martes_cena_espera"] = convert_to_int(
+            prestacion_data["martes_cena_espera"] = RelevamientoService.convert_to_int(
                 prestacion_data["martes_cena_espera"]
             )
         if "miercoles_desayuno_actual" in prestacion_data:
-            prestacion_data["miercoles_desayuno_actual"] = convert_to_int(
-                prestacion_data["miercoles_desayuno_actual"]
+            prestacion_data["miercoles_desayuno_actual"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["miercoles_desayuno_actual"]
+                )
             )
         if "miercoles_desayuno_espera" in prestacion_data:
-            prestacion_data["miercoles_desayuno_espera"] = convert_to_int(
-                prestacion_data["miercoles_desayuno_espera"]
+            prestacion_data["miercoles_desayuno_espera"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["miercoles_desayuno_espera"]
+                )
             )
         if "miercoles_almuerzo_actual" in prestacion_data:
-            prestacion_data["miercoles_almuerzo_actual"] = convert_to_int(
-                prestacion_data["miercoles_almuerzo_actual"]
+            prestacion_data["miercoles_almuerzo_actual"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["miercoles_almuerzo_actual"]
+                )
             )
         if "miercoles_almuerzo_espera" in prestacion_data:
-            prestacion_data["miercoles_almuerzo_espera"] = convert_to_int(
-                prestacion_data["miercoles_almuerzo_espera"]
+            prestacion_data["miercoles_almuerzo_espera"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["miercoles_almuerzo_espera"]
+                )
             )
         if "miercoles_merienda_actual" in prestacion_data:
-            prestacion_data["miercoles_merienda_actual"] = convert_to_int(
-                prestacion_data["miercoles_merienda_actual"]
+            prestacion_data["miercoles_merienda_actual"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["miercoles_merienda_actual"]
+                )
             )
         if "miercoles_merienda_espera" in prestacion_data:
-            prestacion_data["miercoles_merienda_espera"] = convert_to_int(
-                prestacion_data["miercoles_merienda_espera"]
+            prestacion_data["miercoles_merienda_espera"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["miercoles_merienda_espera"]
+                )
             )
         if "miercoles_cena_actual" in prestacion_data:
-            prestacion_data["miercoles_cena_actual"] = convert_to_int(
-                prestacion_data["miercoles_cena_actual"]
+            prestacion_data["miercoles_cena_actual"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["miercoles_cena_actual"]
+                )
             )
         if "miercoles_cena_espera" in prestacion_data:
-            prestacion_data["miercoles_cena_espera"] = convert_to_int(
-                prestacion_data["miercoles_cena_espera"]
+            prestacion_data["miercoles_cena_espera"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["miercoles_cena_espera"]
+                )
             )
         if "jueves_desayuno_actual" in prestacion_data:
-            prestacion_data["jueves_desayuno_actual"] = convert_to_int(
-                prestacion_data["jueves_desayuno_actual"]
+            prestacion_data["jueves_desayuno_actual"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["jueves_desayuno_actual"]
+                )
             )
         if "jueves_desayuno_espera" in prestacion_data:
-            prestacion_data["jueves_desayuno_espera"] = convert_to_int(
-                prestacion_data["jueves_desayuno_espera"]
+            prestacion_data["jueves_desayuno_espera"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["jueves_desayuno_espera"]
+                )
             )
         if "jueves_almuerzo_actual" in prestacion_data:
-            prestacion_data["jueves_almuerzo_actual"] = convert_to_int(
-                prestacion_data["jueves_almuerzo_actual"]
+            prestacion_data["jueves_almuerzo_actual"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["jueves_almuerzo_actual"]
+                )
             )
         if "jueves_almuerzo_espera" in prestacion_data:
-            prestacion_data["jueves_almuerzo_espera"] = convert_to_int(
-                prestacion_data["jueves_almuerzo_espera"]
+            prestacion_data["jueves_almuerzo_espera"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["jueves_almuerzo_espera"]
+                )
             )
         if "jueves_merienda_actual" in prestacion_data:
-            prestacion_data["jueves_merienda_actual"] = convert_to_int(
-                prestacion_data["jueves_merienda_actual"]
+            prestacion_data["jueves_merienda_actual"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["jueves_merienda_actual"]
+                )
             )
         if "jueves_merienda_espera" in prestacion_data:
-            prestacion_data["jueves_merienda_espera"] = convert_to_int(
-                prestacion_data["jueves_merienda_espera"]
+            prestacion_data["jueves_merienda_espera"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["jueves_merienda_espera"]
+                )
             )
         if "jueves_cena_actual" in prestacion_data:
-            prestacion_data["jueves_cena_actual"] = convert_to_int(
+            prestacion_data["jueves_cena_actual"] = RelevamientoService.convert_to_int(
                 prestacion_data["jueves_cena_actual"]
             )
         if "jueves_cena_espera" in prestacion_data:
-            prestacion_data["jueves_cena_espera"] = convert_to_int(
+            prestacion_data["jueves_cena_espera"] = RelevamientoService.convert_to_int(
                 prestacion_data["jueves_cena_espera"]
             )
         if "viernes_desayuno_actual" in prestacion_data:
-            prestacion_data["viernes_desayuno_actual"] = convert_to_int(
-                prestacion_data["viernes_desayuno_actual"]
+            prestacion_data["viernes_desayuno_actual"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["viernes_desayuno_actual"]
+                )
             )
         if "viernes_desayuno_espera" in prestacion_data:
-            prestacion_data["viernes_desayuno_espera"] = convert_to_int(
-                prestacion_data["viernes_desayuno_espera"]
+            prestacion_data["viernes_desayuno_espera"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["viernes_desayuno_espera"]
+                )
             )
         if "viernes_almuerzo_actual" in prestacion_data:
-            prestacion_data["viernes_almuerzo_actual"] = convert_to_int(
-                prestacion_data["viernes_almuerzo_actual"]
+            prestacion_data["viernes_almuerzo_actual"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["viernes_almuerzo_actual"]
+                )
             )
         if "viernes_almuerzo_espera" in prestacion_data:
-            prestacion_data["viernes_almuerzo_espera"] = convert_to_int(
-                prestacion_data["viernes_almuerzo_espera"]
+            prestacion_data["viernes_almuerzo_espera"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["viernes_almuerzo_espera"]
+                )
             )
         if "viernes_merienda_actual" in prestacion_data:
-            prestacion_data["viernes_merienda_actual"] = convert_to_int(
-                prestacion_data["viernes_merienda_actual"]
+            prestacion_data["viernes_merienda_actual"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["viernes_merienda_actual"]
+                )
             )
         if "viernes_merienda_espera" in prestacion_data:
-            prestacion_data["viernes_merienda_espera"] = convert_to_int(
-                prestacion_data["viernes_merienda_espera"]
+            prestacion_data["viernes_merienda_espera"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["viernes_merienda_espera"]
+                )
             )
         if "viernes_cena_actual" in prestacion_data:
-            prestacion_data["viernes_cena_actual"] = convert_to_int(
+            prestacion_data["viernes_cena_actual"] = RelevamientoService.convert_to_int(
                 prestacion_data["viernes_cena_actual"]
             )
         if "viernes_cena_espera" in prestacion_data:
-            prestacion_data["viernes_cena_espera"] = convert_to_int(
+            prestacion_data["viernes_cena_espera"] = RelevamientoService.convert_to_int(
                 prestacion_data["viernes_cena_espera"]
             )
         if "sabado_desayuno_actual" in prestacion_data:
-            prestacion_data["sabado_desayuno_actual"] = convert_to_int(
-                prestacion_data["sabado_desayuno_actual"]
+            prestacion_data["sabado_desayuno_actual"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["sabado_desayuno_actual"]
+                )
             )
         if "sabado_desayuno_espera" in prestacion_data:
-            prestacion_data["sabado_desayuno_espera"] = convert_to_int(
-                prestacion_data["sabado_desayuno_espera"]
+            prestacion_data["sabado_desayuno_espera"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["sabado_desayuno_espera"]
+                )
             )
         if "sabado_almuerzo_actual" in prestacion_data:
-            prestacion_data["sabado_almuerzo_actual"] = convert_to_int(
-                prestacion_data["sabado_almuerzo_actual"]
+            prestacion_data["sabado_almuerzo_actual"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["sabado_almuerzo_actual"]
+                )
             )
         if "sabado_almuerzo_espera" in prestacion_data:
-            prestacion_data["sabado_almuerzo_espera"] = convert_to_int(
-                prestacion_data["sabado_almuerzo_espera"]
+            prestacion_data["sabado_almuerzo_espera"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["sabado_almuerzo_espera"]
+                )
             )
         if "sabado_merienda_actual" in prestacion_data:
-            prestacion_data["sabado_merienda_actual"] = convert_to_int(
-                prestacion_data["sabado_merienda_actual"]
+            prestacion_data["sabado_merienda_actual"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["sabado_merienda_actual"]
+                )
             )
         if "sabado_merienda_espera" in prestacion_data:
-            prestacion_data["sabado_merienda_espera"] = convert_to_int(
-                prestacion_data["sabado_merienda_espera"]
+            prestacion_data["sabado_merienda_espera"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["sabado_merienda_espera"]
+                )
             )
         if "sabado_cena_actual" in prestacion_data:
-            prestacion_data["sabado_cena_actual"] = convert_to_int(
+            prestacion_data["sabado_cena_actual"] = RelevamientoService.convert_to_int(
                 prestacion_data["sabado_cena_actual"]
             )
         if "sabado_cena_espera" in prestacion_data:
-            prestacion_data["sabado_cena_espera"] = convert_to_int(
+            prestacion_data["sabado_cena_espera"] = RelevamientoService.convert_to_int(
                 prestacion_data["sabado_cena_espera"]
             )
         if "domingo_desayuno_actual" in prestacion_data:
-            prestacion_data["domingo_desayuno_actual"] = convert_to_int(
-                prestacion_data["domingo_desayuno_actual"]
+            prestacion_data["domingo_desayuno_actual"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["domingo_desayuno_actual"]
+                )
             )
         if "domingo_desayuno_espera" in prestacion_data:
-            prestacion_data["domingo_desayuno_espera"] = convert_to_int(
-                prestacion_data["domingo_desayuno_espera"]
+            prestacion_data["domingo_desayuno_espera"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["domingo_desayuno_espera"]
+                )
             )
         if "domingo_almuerzo_actual" in prestacion_data:
-            prestacion_data["domingo_almuerzo_actual"] = convert_to_int(
-                prestacion_data["domingo_almuerzo_actual"]
+            prestacion_data["domingo_almuerzo_actual"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["domingo_almuerzo_actual"]
+                )
             )
         if "domingo_almuerzo_espera" in prestacion_data:
-            prestacion_data["domingo_almuerzo_espera"] = convert_to_int(
-                prestacion_data["domingo_almuerzo_espera"]
+            prestacion_data["domingo_almuerzo_espera"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["domingo_almuerzo_espera"]
+                )
             )
         if "domingo_merienda_actual" in prestacion_data:
-            prestacion_data["domingo_merienda_actual"] = convert_to_int(
-                prestacion_data["domingo_merienda_actual"]
+            prestacion_data["domingo_merienda_actual"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["domingo_merienda_actual"]
+                )
             )
         if "domingo_merienda_espera" in prestacion_data:
-            prestacion_data["domingo_merienda_espera"] = convert_to_int(
-                prestacion_data["domingo_merienda_espera"]
+            prestacion_data["domingo_merienda_espera"] = (
+                RelevamientoService.convert_to_int(
+                    prestacion_data["domingo_merienda_espera"]
+                )
             )
         if "domingo_cena_actual" in prestacion_data:
-            prestacion_data["domingo_cena_actual"] = convert_to_int(
+            prestacion_data["domingo_cena_actual"] = RelevamientoService.convert_to_int(
                 prestacion_data["domingo_cena_actual"]
             )
         if "domingo_cena_espera" in prestacion_data:
-            prestacion_data["domingo_cena_espera"] = convert_to_int(
+            prestacion_data["domingo_cena_espera"] = RelevamientoService.convert_to_int(
                 prestacion_data["domingo_cena_espera"]
             )
         return prestacion_data
