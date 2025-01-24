@@ -1,0 +1,23 @@
+[
+    {
+        "model": "comedores.tipofrecuenciainsumos",
+        "pk": 1,
+        "fields": {
+            "nombre": "Una vez por semana"
+        }
+    },
+    {
+        "model": "comedores.tipofrecuenciainsumos",
+        "pk": 2,
+        "fields": {
+            "nombre": "Una vez cada 15 días"
+        }
+    },
+    {
+        "model": "comedores.tipofrecuenciainsumos",
+        "pk": 3,
+        "fields": {
+            "nombre": "Una vez por mes"
+        }
+    }
+]
