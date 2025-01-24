@@ -5,6 +5,12 @@ from django.forms import ValidationError
 from comedores.models.comedor import (
     Comedor,
     Referente,
+    TipoInsumos,
+    TipoFrecuenciaInsumos,
+    TipoTecnologia,
+    TipoAccesoComedor,
+    TipoDistanciaTransporte,
+    
 )
 
 
@@ -591,6 +597,74 @@ class Prestacion(models.Model):
         verbose_name_plural = "Prestaciones"
 
 
+class Anexo(models.Model):
+    """
+    Informacion relacionada a los anexos de un Comedor/Merendero
+    """
+
+    tipo_insumo = models.ForeignKey(
+        to=TipoInsumos,
+        on_delete=models.PROTECT,
+        verbose_name="¿Qué tipo de insumo recibió?",
+        blank=True,
+        null=True,
+    )
+    frecuencia_insumo = models.ForeignKey(
+        to=TipoFrecuenciaInsumos,
+        on_delete=models.PROTECT,
+        verbose_name="¿Con qué frecuencia recibió estos insumos?",
+        blank=True,
+        null=True,
+    )
+    tecnologia = models.ForeignKey(
+        to=TipoTecnologia,
+        on_delete=models.PROTECT,
+        verbose_name="¿El espacio comunitario cuenta con?",
+        blank=True,
+        null=True,
+    )
+    acceso_comedor = models.ForeignKey(
+        to=TipoAccesoComedor,
+        on_delete=models.PROTECT,
+        verbose_name="Al comedor se accede por...",
+        blank=True,
+        null=True,
+    )
+    distancia_transporte = models.ForeignKey(
+        to=TipoDistanciaTransporte,
+        on_delete=models.PROTECT,
+        verbose_name="¿Qué distancia hay desde el comedor al transporte público más cercano?",
+        blank=True,
+        null=True,
+    )
+    comedor_merendero = models.BooleanField(default=False)
+    insumos_organizacion = models.BooleanField(default=False)
+    servicio_internet = models.BooleanField(default=False)
+    zona_inundable = models.BooleanField(default=False)
+    actividades_jardin_maternal = models.BooleanField(default=False)
+    actividades_jardin_infantes = models.BooleanField(default=False)
+    apoyo_escolar = models.BooleanField(default=False)
+    alfabetizacion_terminalidad = models.BooleanField(default=False)
+    capacitaciones_talleres = models.BooleanField(default=False)
+    promocion_salud = models.BooleanField(default=False)
+    actividades_discapacidad = models.BooleanField(default=False)
+    necesidades_alimentarias = models.BooleanField(default=False)
+    actividades_recreativas = models.BooleanField(default=False)
+    actividades_culturales = models.BooleanField(default=False)
+    emprendimientos_productivos = models.BooleanField(default=False)
+    actividades_religiosas = models.BooleanField(default=False)
+    actividades_huerta = models.BooleanField(default=False)
+    espacio_huerta = models.BooleanField(default=False)
+    otras_actividades = models.BooleanField(default=False)
+    cuales_otras_actividades = models.TextField(blank=True, null=True)
+    veces_recibio_insumos_2024 = models.IntegerField(
+        default=0, verbose_name="¿Cuántas veces recibió estos insumos en el año 2024?"
+    )
+
+    class Meta:
+        verbose_name = "Anexo"
+        verbose_name_plural = "Anexos"
+
 class Relevamiento(models.Model):
 
     gestionar_uid = models.CharField(max_length=255, blank=True, null=True)
@@ -626,6 +700,9 @@ class Relevamiento(models.Model):
     responsable_es_referente = models.BooleanField(default=True)
     responsable = models.ForeignKey(
         to=Referente, on_delete=models.PROTECT, null=True, blank=True
+    )
+    anexo = models.OneToOneField(
+        to=Anexo, on_delete=models.PROTECT, blank=True, null=True
     )
 
     def save(self, *args, **kwargs):
