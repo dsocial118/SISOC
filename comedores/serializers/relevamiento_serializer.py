@@ -99,6 +99,23 @@ class RelevamientoSerializer(serializers.ModelSerializer):
                 ).id
             )
 
+        if "responsable_es_referente" in self.initial_data:
+            self.initial_data["responsable_es_referente"] = (
+                self.initial_data["responsable_es_referente"] == "Y"
+            )
+
+        if "responsable" in self.initial_data:
+            responsable_instance = (
+                self.instance.responsable
+                if self.instance and self.instance.responsable
+                else None
+            )
+            self.initial_data["responsable"] = (
+                RelevamientoService.create_or_update_responsable(
+                    self.initial_data["responsable"], responsable_instance
+                ).id
+            )
+
         if "gestionar_uid" in self.initial_data:
             if (
                 Relevamiento.objects.filter(
@@ -110,6 +127,7 @@ class RelevamientoSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {"error": "gestionar_uid debe ser único si no es nulo."}
                 )
+
         return self
 
     class Meta:
