@@ -894,14 +894,15 @@ class RelevamientoService:
 
     @staticmethod
     def send_to_gestionar(relevamiento: Relevamiento):
-        compras = RelevamientoService.separate_m2m_string(
-            [
-                field.name
-                for field in FuenteCompras._meta.fields
-                if isinstance(field, models.BooleanField)
-                and getattr(relevamiento.compras, field.name)
-            ]
-        )
+        try:
+            RelevamientoService.send_relevamiento_to_gestionar(relevamiento)
+            RelevamientoService.send_prestaciones_to_gestionar(relevamiento)
+
+        except requests.exceptions.RequestException as e:
+            print(f"Error al sincronizar con GESTIONAR: {e}")
+
+    @staticmethod
+    def send_prestaciones_to_gestionar(relevamiento):
         prestaciones = []
         tipos_prestacion = ["DESAYUNO", "ALMUERZO", "MERIENDA", "CENA"]
         dias_prestacion = ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES"]
@@ -921,18 +922,47 @@ class RelevamientoService:
                     "Relevamiento_Id": f"{relevamiento.pk}",
                     "TipoPrestacion": tipo,
                     "DiaPrestacion": dia,
-                    "CantidadActual": f"{cantidad_actual}" if cantidad_actual else "",
-                    "CantidadEspera": f"{cantidad_espera}" if cantidad_espera else "",
+                    "CantidadActual": (f"{cantidad_actual}" if cantidad_actual else ""),
+                    "CantidadEspera": (f"{cantidad_espera}" if cantidad_espera else ""),
                 }
                 prestaciones.append(obj)
 
         data = {
             "Action": "Add",
             "Properties": {"Locale": "es-ES"},
+            "Rows": prestaciones,
+        }
+
+        headers = {
+            "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
+        }
+
+        response = requests.post(
+            os.getenv("GESTIONAR_API_CREAR_PRESTACIONES"),
+            json=data,
+            headers=headers,
+        )
+        response.raise_for_status()
+        response = response.json()
+
+    @staticmethod
+    def send_relevamiento_to_gestionar(relevamiento):
+        compras = RelevamientoService.separate_m2m_string(
+            [
+                field.name
+                for field in FuenteCompras._meta.fields
+                if isinstance(field, models.BooleanField)
+                and getattr(relevamiento.compras, field.name)
+            ]
+        )
+
+        data = {
+            "Action": "Add",
+            "Properties": {"Locale": "es-ES"},
             "Rows": [
                 {
-                    "Relevamiento id": relevamiento.id,
-                    "Id_SISOC": relevamiento.id,
+                    "Relevamiento id": f"{relevamiento.id}",
+                    "Id_SISOC": f"{relevamiento.id}",
                     "ESTADO": relevamiento.estado,
                     # "TipoExcepcion": "<<[TipoExcepcion]>>", TODO: Empatar con GESTIONAR
                     "Fecha de visita": (
@@ -940,7 +970,7 @@ class RelevamientoService:
                         if relevamiento.fecha_visita
                         else ""
                     ),
-                    "Id_Comedor": relevamiento.comedor.id,
+                    "Id_Comedor": f"{relevamiento.comedor.id}",
                     "Modalidad Prestacion Servicio": (
                         relevamiento.funcionamiento.modalidad_prestacion.nombre
                         if relevamiento.funcionamiento.modalidad_prestacion
@@ -1185,12 +1215,12 @@ class RelevamientoService:
                         else ""
                     ),
                     "DniRef": (
-                        relevamiento.responsable.documento
+                        f"{relevamiento.responsable.documento}"
                         if relevamiento.responsable.documento
                         else ""
                     ),
                     "TelefonoRef": (
-                        relevamiento.responsable.celular
+                        f"{relevamiento.responsable.celular}"
                         if relevamiento.responsable.celular
                         else ""
                     ),
@@ -1200,27 +1230,22 @@ class RelevamientoService:
                         else ""
                     ),
                     "OBSERVACIONES": relevamiento.observacion,
-                    "DiasPrestacion": prestaciones,
                 }
             ],
         }
 
-        print(data)
         headers = {
             "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
         }
 
-        try:
-            response = requests.post(
-                os.getenv("GESTIONAR_API_CREAR_RELEVAMIENTO"),
-                json=data,
-                headers=headers,
-            )
-            response.raise_for_status()
-            response = response.json()
+        response = requests.post(
+            os.getenv("GESTIONAR_API_CREAR_RELEVAMIENTO"),
+            json=data,
+            headers=headers,
+        )
+        response.raise_for_status()
+        response = response.json()
 
-            relevamiento.gestionar_uid = response["Rows"][0]["Relevamiento id"]
-            relevamiento.docPDF = response["Rows"][0]["docPDF"]
-            relevamiento.save()
-        except requests.exceptions.RequestException as e:
-            print(f"Error al sincronizar con GESTIONAR: {e}")
+        relevamiento.gestionar_uid = response["Rows"][0]["Relevamiento id"]
+        relevamiento.docPDF = response["Rows"][0]["docPDF"]
+        relevamiento.save()
