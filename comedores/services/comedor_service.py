@@ -100,6 +100,8 @@ class ComedorService:
 
         if "celular" in referente_data:
             referente_data["celular"] = referente_data["celular"].replace("-", "")
+            if referente_data["celular"] == "":
+                referente_data["celular"] = None
         if "documento" in referente_data:
             referente_data["documento"] = referente_data["documento"].replace(".", "")
 
