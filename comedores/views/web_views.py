@@ -462,9 +462,7 @@ class RelevamientoCreateView(CreateView):
         }
 
         if all(form.is_valid() for form in forms.values()):
-            self.object = RelevamientoService.populate_relevamiento(
-                form, forms, self.request.user.id
-            )
+            self.object = RelevamientoService.populate_relevamiento(form, forms)
 
             return redirect(
                 "relevamiento_detalle",
@@ -582,9 +580,7 @@ class RelevamientoUpdateView(UpdateView):
         }
 
         if all(form.is_valid() for form in forms.values()):
-            self.object = RelevamientoService.populate_relevamiento(
-                form, forms, self.request.user.id
-            )
+            self.object = RelevamientoService.populate_relevamiento(form, forms)
 
             return redirect(
                 "relevamiento_detalle",
