@@ -83,15 +83,46 @@ class RelevamientoService:
 
         relevamiento.save()
 
+        RelevamientoService.update_territorial_gestionar(relevamiento)
+
         return relevamiento
+
+    @staticmethod
+    def update_territorial_gestionar(relevamiento):
+        data = {
+            "Action": "Add",
+            "Properties": {"Locale": "es-ES"},
+            "Rows": [
+                {
+                    "Relevamiento id": f"{relevamiento.id}",
+                    "Id_SISOC": f"{relevamiento.id}",
+                    "ESTADO": relevamiento.estado,
+                    "TecnicoRelevador": (
+                        f"{relevamiento.territorial.gestionar_uid}"
+                        if relevamiento.territorial
+                        else ""
+                    ),
+                }
+            ],
+        }
+
+        headers = {
+            "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
+        }
+
+        response = requests.post(
+            os.getenv("GESTIONAR_API_CREAR_RELEVAMIENTO"),
+            json=data,
+            headers=headers,
+        )
+        response.raise_for_status()
 
     @staticmethod
     def convert_to_int(value):
         return int(value) if value != "" else None
 
     @staticmethod
-    def populate_relevamiento(relevamiento_form, extra_forms, user_id):
-        # FIXME: Eliminar user_id
+    def populate_relevamiento(relevamiento_form, extra_forms):
         relevamiento = relevamiento_form.save(commit=False)
 
         funcionamiento = extra_forms["funcionamiento_form"].save()
