@@ -5,7 +5,6 @@ from django.utils import timezone
 from django.db import models
 import requests
 
-from comedores.models.relevamiento import Relevamiento
 from comedores.models.comedor import (
     Comedor,
 )
@@ -88,7 +87,7 @@ class RelevamientoService:
         return relevamiento
 
     @staticmethod
-    def update_territorial_gestionar(relevamiento):
+    def update_territorial_gestionar(relevamiento: Relevamiento):
         data = {
             "Action": "Add",
             "Properties": {"Locale": "es-ES"},
@@ -1230,7 +1229,7 @@ class RelevamientoService:
             print(f"Error al sincronizar con GESTIONAR: {e}")
 
     @staticmethod
-    def send_relevamiento_to_gestionar(relevamiento):
+    def send_relevamiento_to_gestionar(relevamiento: Relevamiento):
         data = {
             "Action": "Add",
             "Properties": {"Locale": "es-ES"},
@@ -1267,3 +1266,31 @@ class RelevamientoService:
             relevamiento.gestionar_uid = gestionar_uid
             relevamiento.docPDF = response["Rows"][0]["docPDF"]
             relevamiento.save()
+
+    @staticmethod
+    def remove_to_gestionar(relevamiento: Relevamiento):
+        data = {
+            "Action": "Delete",
+            "Properties": {"Locale": "es-ES"},
+            "Rows": [
+                {
+                    "Action": "Delete",
+                    "Properties": {"Locale": "es-ES"},
+                    "Rows": [{"Relevamiento id": f"{relevamiento.gestionar_uid}"}],
+                }
+            ],
+        }
+
+        headers = {
+            "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
+        }
+
+        try:
+            response = requests.post(
+                os.getenv("GESTIONAR_API_BORRAR_RELEVAMIENTO"),
+                json=data,
+                headers=headers,
+            )
+            response.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            print(f"Error al sincronizar con GESTIONAR: {e}")
