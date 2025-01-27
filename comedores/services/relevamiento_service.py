@@ -1203,6 +1203,15 @@ class RelevamientoService:
 
     @staticmethod
     def create_or_update_responsable(responsable_data, responsable_instance=None):
+        responsable_data["celular"] = (
+            responsable_data["celular"] if responsable_data["celular"] != "" else None
+        )
+        responsable_data["documento"] = (
+            responsable_data["documento"]
+            if responsable_data["documento"] != ""
+            else None
+        )
+
         if responsable_instance is None:
             responsable_instance = Referente.objects.create(**responsable_data)
         else:
