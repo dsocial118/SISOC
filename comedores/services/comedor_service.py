@@ -8,7 +8,6 @@ import requests
 from comedores.models.relevamiento import Relevamiento
 from comedores.forms.comedor_form import ImagenComedorForm
 from comedores.models.comedor import Comedor, Referente, ValorComida
-from config import settings
 from configuraciones.models import Municipio, Provincia
 from configuraciones.models import Localidad
 
@@ -183,7 +182,7 @@ class ComedorService:
             headers = {
                 "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
             }
-
+            print(data)
             try:
                 response = requests.post(
                     os.getenv("GESTIONAR_API_CREAR_COMEDOR"),
@@ -226,6 +225,28 @@ class ComedorService:
             )
             response.raise_for_status()
             response = response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"Error al sincronizar con GESTIONAR: {e}")
+
+    @staticmethod
+    def remove_to_gestionar(comedor: Comedor):
+        data = {
+            "Action": "Delete",
+            "Properties": {"Locale": "es-ES"},
+            "Rows": [{"ComedorID": f"{comedor.id}"}],
+        }
+
+        headers = {
+            "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
+        }
+
+        try:
+            response = requests.post(
+                os.getenv("GESTIONAR_API_BORRAR_COMEDOR"),
+                json=data,
+                headers=headers,
+            )
+            response.raise_for_status()
         except requests.exceptions.RequestException as e:
             print(f"Error al sincronizar con GESTIONAR: {e}")
 
