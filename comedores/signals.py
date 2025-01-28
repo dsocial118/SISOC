@@ -9,8 +9,7 @@ from comedores.services.comedor_service import ComedorService
 
 @receiver(post_save, sender=Comedor)
 def send_comedor_to_gestionar(sender, instance, created, **kwargs):
-    if created:
-        ComedorService.send_to_gestionar(instance)
+    ComedorService.send_to_gestionar(instance)
 
 
 @receiver(pre_delete, sender=Comedor)
