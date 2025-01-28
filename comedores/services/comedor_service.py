@@ -126,76 +126,77 @@ class ComedorService:
 
     @staticmethod
     def send_to_gestionar(comedor: Comedor):
-        if comedor.gestionar_uid is None:
-            data = {
-                "Action": "Add",
-                "Properties": {"Locale": "es-ES"},
-                "Rows": [
-                    {
-                        "ComedorID": comedor.id,
-                        "ID_Sisoc": comedor.id,
-                        "nombre": comedor.nombre,
-                        "comienzo": (
-                            f"01/01/{comedor.comienzo}"
-                            if comedor.comienzo
-                            else "01/01/1900"
-                        ),
-                        "TipoComedor": (
-                            comedor.tipocomedor.nombre if comedor.tipocomedor else ""
-                        ),
-                        "calle": comedor.calle if comedor.calle else "",
-                        "numero": comedor.numero if comedor.numero else "",
-                        "entre_calle_1": (
-                            comedor.entre_calle_1 if comedor.entre_calle_1 else ""
-                        ),
-                        "entre_calle_2": (
-                            comedor.entre_calle_2 if comedor.entre_calle_2 else ""
-                        ),
-                        "provincia": (
-                            comedor.provincia.nombre if comedor.provincia else ""
-                        ),
-                        "municipio": (
-                            comedor.municipio.nombre if comedor.municipio else ""
-                        ),
-                        "localidad": (
-                            comedor.localidad.nombre if comedor.localidad else ""
-                        ),
-                        "partido": comedor.partido if comedor.partido else "",
-                        "barrio": comedor.barrio if comedor.barrio else "",
-                        "codigo_postal": (
-                            comedor.codigo_postal if comedor.codigo_postal else ""
-                        ),
-                        "Referente": (
-                            comedor.referente.documento
-                            if comedor.referente.documento
-                            else ""
-                        ),
-                        "Imagen": (
-                            f"{os.getenv('DOMINIO')}/media/{comedor.foto_legajo}"
-                            if comedor.foto_legajo
-                            else ""
-                        ),
-                    }
-                ],
-            }
+        data = {
+            "Action": "Add",
+            "Properties": {"Locale": "es-ES"},
+            "Rows": [
+                {
+                    "ComedorID": comedor.id,
+                    "ID_Sisoc": comedor.id,
+                    "nombre": comedor.nombre,
+                    "comienzo": (
+                        f"01/01/{comedor.comienzo}"
+                        if comedor.comienzo
+                        else "01/01/1900"
+                    ),
+                    "TipoComedor": (
+                        comedor.tipocomedor.nombre if comedor.tipocomedor else ""
+                    ),
+                    "calle": comedor.calle if comedor.calle else "",
+                    "numero": comedor.numero if comedor.numero else "",
+                    "entre_calle_1": (
+                        comedor.entre_calle_1 if comedor.entre_calle_1 else ""
+                    ),
+                    "entre_calle_2": (
+                        comedor.entre_calle_2 if comedor.entre_calle_2 else ""
+                    ),
+                    "provincia": (
+                        comedor.provincia.nombre if comedor.provincia else ""
+                    ),
+                    "municipio": (
+                        comedor.municipio.nombre if comedor.municipio else ""
+                    ),
+                    "localidad": (
+                        comedor.localidad.nombre if comedor.localidad else ""
+                    ),
+                    "partido": comedor.partido if comedor.partido else "",
+                    "barrio": comedor.barrio if comedor.barrio else "",
+                    "codigo_postal": (
+                        comedor.codigo_postal if comedor.codigo_postal else ""
+                    ),
+                    "Referente": (
+                        comedor.referente.documento
+                        if comedor.referente and comedor.referente.documento
+                        else ""
+                    ),
+                    "Imagen": (
+                        f"{os.getenv('DOMINIO')}/media/{comedor.foto_legajo}"
+                        if comedor.foto_legajo
+                        else ""
+                    ),
+                }
+            ],
+        }
 
-            headers = {
-                "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
-            }
-            print(data)
-            try:
-                response = requests.post(
-                    os.getenv("GESTIONAR_API_CREAR_COMEDOR"),
-                    json=data,
-                    headers=headers,
-                )
-                response.raise_for_status()
-                response = response.json()
+        headers = {
+            "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
+        }
 
-                comedor.gestionar_uid = response["Rows"][0]["ComedorID"]
+        try:
+            response = requests.post(
+                os.getenv("GESTIONAR_API_CREAR_COMEDOR"),
+                json=data,
+                headers=headers,
+            )
+            response.raise_for_status()
+            response = response.json()
+
+            gestionar_uid = response["Rows"][0]["ComedorID"]
+            if comedor.gestionar_uid != gestionar_uid:
+                comedor.gestionar_uid = gestionar_uid
                 comedor.save()
-            except requests.exceptions.RequestException as e:
-                print(f"Error al sincronizar con GESTIONAR: {e}")
+        except requests.exceptions.RequestException as e:
+            print(f"Error al sincronizar con GESTIONAR: {e}")
 
     @staticmethod
     def send_referente_to_gestionar(referente: Referente):
