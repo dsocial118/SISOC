@@ -359,10 +359,9 @@
                                 <button type="button"
                                 class="btn btn-primary col-4"
                                 data-bs-toggle="modal"
-                                data-bs-target="#RelevamientoModalEditar">Asignar</button>
-                            {% endif %}
+                                data-bs-target="#RelevamientoModalEditar-{{ relevamiento.id }}">Asignar</button>
                             <div class="modal fade"
-                                 id="RelevamientoModalEditar"
+                                 id="RelevamientoModalEditar-{{ relevamiento.id }}"
                                  tabindex="-1"
                                  aria-labelledby="RelevamientoModalEditarLabel"
                                  aria-hidden="true">
@@ -401,6 +400,7 @@
                                     </div>
                                 </div>
                             </div>
+                            {% endif %}
                         </div>
                     {% endfor %}
                     <div class="modal fade"
