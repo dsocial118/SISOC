@@ -59,6 +59,7 @@ class OrganizacionDetailView(DetailView):
     template_name = "organizacion_detail.html"
     context_object_name = "organizacion"
 
+
 class OrganizacionDeleteView(DeleteView):
     model = Organizacion
     template_name = "organizacion_confirm_delete.html"
