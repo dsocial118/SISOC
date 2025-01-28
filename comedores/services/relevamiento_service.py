@@ -82,39 +82,9 @@ class RelevamientoService:
 
         relevamiento.save()
 
-        RelevamientoService.update_territorial_gestionar(relevamiento)
+        RelevamientoService.send_relevamiento_to_gestionar(relevamiento)
 
         return relevamiento
-
-    @staticmethod
-    def update_territorial_gestionar(relevamiento: Relevamiento):
-        data = {
-            "Action": "Add",
-            "Properties": {"Locale": "es-ES"},
-            "Rows": [
-                {
-                    "Relevamiento id": f"{relevamiento.id}",
-                    "Id_SISOC": f"{relevamiento.id}",
-                    "ESTADO": relevamiento.estado,
-                    "TecnicoRelevador": (
-                        f"{relevamiento.territorial.gestionar_uid}"
-                        if relevamiento.territorial
-                        else ""
-                    ),
-                }
-            ],
-        }
-
-        headers = {
-            "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
-        }
-
-        response = requests.post(
-            os.getenv("GESTIONAR_API_CREAR_RELEVAMIENTO"),
-            json=data,
-            headers=headers,
-        )
-        response.raise_for_status()
 
     @staticmethod
     def convert_to_int(value):
@@ -1238,7 +1208,11 @@ class RelevamientoService:
                     "Relevamiento id": f"{relevamiento.id}",
                     "Id_SISOC": f"{relevamiento.id}",
                     "ESTADO": relevamiento.estado,
-                    "TecnicoRelevador": f"{relevamiento.territorial.gestionar_uid}",
+                    "TecnicoRelevador": (
+                        f"{relevamiento.territorial.gestionar_uid}"
+                        if relevamiento.territorial
+                        else ""
+                    ),
                     "Fecha de visita": (
                         format_fecha_gestionar(relevamiento.fecha_visita)
                         if relevamiento.fecha_visita
