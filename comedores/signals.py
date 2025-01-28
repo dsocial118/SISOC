@@ -8,8 +8,9 @@ from comedores.services.comedor_service import ComedorService
 
 
 @receiver(post_save, sender=Comedor)
-def send_comedor_to_gestionar(sender, instance, created, **kwargs):
-    ComedorService.send_to_gestionar(instance)
+def send_comedor_to_gestionar(sender, instance, created, update_fields, **kwargs):
+    if created or update_fields:
+        ComedorService.send_to_gestionar(instance)
 
 
 @receiver(pre_delete, sender=Comedor)
@@ -18,8 +19,8 @@ def remove_comedor_to_gestionar(sender, instance, using, **kwargs):
 
 
 @receiver(post_save, sender=Relevamiento)
-def send_relevamiento_to_gestionar(sender, instance, created, **kwargs):
-    if created:
+def send_relevamiento_to_gestionar(sender, instance, created, update_fields, **kwargs):
+    if created or update_fields:
         RelevamientoService.send_to_gestionar(instance)
 
 
