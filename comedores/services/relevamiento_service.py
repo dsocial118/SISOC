@@ -5,7 +5,6 @@ from django.utils import timezone
 from django.db import models
 import requests
 
-from comedores.models.relevamiento import Relevamiento
 from comedores.models.comedor import (
     Comedor,
 )
@@ -83,6 +82,8 @@ class RelevamientoService:
 
         relevamiento.save()
 
+        RelevamientoService.send_relevamiento_to_gestionar(relevamiento)
+
         return relevamiento
 
     @staticmethod
@@ -90,8 +91,7 @@ class RelevamientoService:
         return int(value) if value != "" else None
 
     @staticmethod
-    def populate_relevamiento(relevamiento_form, extra_forms, user_id):
-        # FIXME: Eliminar user_id
+    def populate_relevamiento(relevamiento_form, extra_forms):
         relevamiento = relevamiento_form.save(commit=False)
 
         funcionamiento = extra_forms["funcionamiento_form"].save()
@@ -1172,6 +1172,15 @@ class RelevamientoService:
 
     @staticmethod
     def create_or_update_responsable(responsable_data, responsable_instance=None):
+        responsable_data["celular"] = (
+            responsable_data["celular"] if responsable_data["celular"] != "" else None
+        )
+        responsable_data["documento"] = (
+            responsable_data["documento"]
+            if responsable_data["documento"] != ""
+            else None
+        )
+
         if responsable_instance is None:
             responsable_instance = Referente.objects.create(**responsable_data)
         else:
@@ -1190,7 +1199,7 @@ class RelevamientoService:
             print(f"Error al sincronizar con GESTIONAR: {e}")
 
     @staticmethod
-    def send_relevamiento_to_gestionar(relevamiento):
+    def send_relevamiento_to_gestionar(relevamiento: Relevamiento):
         data = {
             "Action": "Add",
             "Properties": {"Locale": "es-ES"},
@@ -1199,7 +1208,11 @@ class RelevamientoService:
                     "Relevamiento id": f"{relevamiento.id}",
                     "Id_SISOC": f"{relevamiento.id}",
                     "ESTADO": relevamiento.estado,
-                    "TecnicoRelevador": f"{relevamiento.territorial.gestionar_uid}",
+                    "TecnicoRelevador": (
+                        f"{relevamiento.territorial.gestionar_uid}"
+                        if relevamiento.territorial
+                        else ""
+                    ),
                     "Fecha de visita": (
                         format_fecha_gestionar(relevamiento.fecha_visita)
                         if relevamiento.fecha_visita
@@ -1227,3 +1240,31 @@ class RelevamientoService:
             relevamiento.gestionar_uid = gestionar_uid
             relevamiento.docPDF = response["Rows"][0]["docPDF"]
             relevamiento.save()
+
+    @staticmethod
+    def remove_to_gestionar(relevamiento: Relevamiento):
+        data = {
+            "Action": "Delete",
+            "Properties": {"Locale": "es-ES"},
+            "Rows": [
+                {
+                    "Action": "Delete",
+                    "Properties": {"Locale": "es-ES"},
+                    "Rows": [{"Relevamiento id": f"{relevamiento.gestionar_uid}"}],
+                }
+            ],
+        }
+
+        headers = {
+            "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
+        }
+
+        try:
+            response = requests.post(
+                os.getenv("GESTIONAR_API_BORRAR_RELEVAMIENTO"),
+                json=data,
+                headers=headers,
+            )
+            response.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            print(f"Error al sincronizar con GESTIONAR: {e}")

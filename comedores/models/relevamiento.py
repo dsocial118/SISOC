@@ -733,7 +733,10 @@ class Anexo(models.Model):
     otras_actividades = models.BooleanField(default=False)
     cuales_otras_actividades = models.TextField(blank=True, null=True)
     veces_recibio_insumos_2024 = models.IntegerField(
-        default=0, verbose_name="¿Cuántas veces recibió estos insumos en el año 2024?"
+        default=0,
+        verbose_name="¿Cuántas veces recibió estos insumos en el año 2024?",
+        blank=True,
+        null=True,
     )
 
     class Meta:
