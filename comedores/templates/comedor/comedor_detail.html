@@ -357,50 +357,52 @@
                             </div>
                             {% if relevamiento.estado != "Finalizado" %}
                                 <button type="button"
-                                class="btn btn-primary col-4"
-                                data-bs-toggle="modal"
-                                data-bs-target="#RelevamientoModalEditar">Asignar</button>
-                            {% endif %}
-                            <div class="modal fade"
-                                 id="RelevamientoModalEditar"
-                                 tabindex="-1"
-                                 aria-labelledby="RelevamientoModalEditarLabel"
-                                 aria-hidden="true">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title" id="RelevamientoModalEditarLabel">Asignar territorial a relevamiento {{ relevamiento.id }}</h5>
-                                            <button type="button"
-                                                    class="btn-close"
-                                                    data-bs-dismiss="modal"
-                                                    aria-label="Close"></button>
-                                        </div>
-                                        <form method="post">
-                                            {% csrf_token %}
-                                            <div class="modal-body">
-                                                <div class="mb-3">
-                                                    <input type="hidden" name="relevamiento_id" value="{{ relevamiento.id }}" />
-                                                    <label for="inputField" class="form-label">Territorial</label>
-                                                    <select name="territorial_editar"
-                                                            id="territorial_select"
-                                                            class="form-control">
-                                                        <option value="">No definido</option>
-                                                        {% for territorial in territoriales %}
-                                                            <option value='{"gestionar_uid": "{{ territorial.gestionar_uid }}", "nombre": "{{ territorial.nombre }}"}'>
-                                                                {{ territorial.nombre }}
-                                                            </option>
-                                                        {% endfor %}
-                                                    </select>
+                                        class="btn btn-primary col-4"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#RelevamientoModalEditar-{{ relevamiento.id }}">
+                                    Asignar
+                                </button>
+                                <div class="modal fade"
+                                     id="RelevamientoModalEditar-{{ relevamiento.id }}"
+                                     tabindex="-1"
+                                     aria-labelledby="RelevamientoModalEditarLabel"
+                                     aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="RelevamientoModalEditarLabel">Asignar territorial a relevamiento {{ relevamiento.id }}</h5>
+                                                <button type="button"
+                                                        class="btn-close"
+                                                        data-bs-dismiss="modal"
+                                                        aria-label="Close"></button>
+                                            </div>
+                                            <form method="post">
+                                                {% csrf_token %}
+                                                <div class="modal-body">
+                                                    <div class="mb-3">
+                                                        <input type="hidden" name="relevamiento_id" value="{{ relevamiento.id }}" />
+                                                        <label for="inputField" class="form-label">Territorial</label>
+                                                        <select name="territorial_editar"
+                                                                id="territorial_select"
+                                                                class="form-control">
+                                                            <option value="">No definido</option>
+                                                            {% for territorial in territoriales %}
+                                                                <option value='{"gestionar_uid": "{{ territorial.gestionar_uid }}", "nombre": "{{ territorial.nombre }}"}'>
+                                                                    {{ territorial.nombre }}
+                                                                </option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                                                <button type="submit" class="btn btn-primary">Guardar</button>
-                                            </div>
-                                        </form>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                                    <button type="submit" class="btn btn-primary">Guardar</button>
+                                                </div>
+                                            </form>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            {% endif %}
                         </div>
                     {% endfor %}
                     <div class="modal fade"

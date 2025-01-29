@@ -289,7 +289,7 @@ class ComedorDetailView(DetailView):
             {
                 "relevamientos": Relevamiento.objects.filter(comedor=self.object["id"])
                 .values("id", "fecha_visita", "estado")
-                .order_by("-fecha_visita")[:3],
+                .order_by("-estado")[:3],
                 "territoriales": ComedorService.get_territoriales(self.object["id"]),
                 "observaciones": Observacion.objects.filter(comedor=self.object["id"])
                 .values("id", "fecha_visita")
