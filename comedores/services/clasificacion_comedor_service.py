@@ -44,9 +44,9 @@ class ClasificacionComedorService:
 
         if relevamiento.espacio.tipo_espacio_fisico.nombre == 'Espacio alquilado':
             puntuacion += 3
-        elif relevamiento.espacio.tipo_espacio_fisico.nombre == 'Espacio Prestado':
+        elif relevamiento.espacio.tipo_espacio_fisico.nombre == 'Espacio prestado (uso exclusivo)':
             puntuacion += 2
-        elif relevamiento.espacio.tipo_espacio_fisico.nombre == 'Comunitario compartido':
+        elif relevamiento.espacio.tipo_espacio_fisico.nombre == 'Espacio comunitario compartido':
             puntuacion += 2
         elif relevamiento.espacio.tipo_espacio_fisico.nombre == 'Casa de familia':
             puntuacion += 3
@@ -81,12 +81,12 @@ class ClasificacionComedorService:
         else:
             puntuacion += 0
         
-        if relevamiento.espacio.cocina.abastecimiento_combustible.filter(nombre='Leña').exists():
-            puntuacion += 3
-        elif relevamiento.espacio.cocina.abastecimiento_combustible.filter(nombre='Otro').exists():
-            puntuacion += 2
-        elif relevamiento.espacio.cocina.abastecimiento_combustible.filter(nombre='Gas envasado').exists():
+        if relevamiento.espacio.cocina.abastecimiento_combustible.filter(nombre='Gas envasado').order_by('nombre').exists():
             puntuacion += 1
+        elif relevamiento.espacio.cocina.abastecimiento_combustible.filter(nombre='Leña').order_by('nombre').exists():
+            puntuacion += 3
+        elif relevamiento.espacio.cocina.abastecimiento_combustible.filter(nombre='Otro').order_by('nombre').exists():
+            puntuacion += 2
         else:
             puntuacion += 0
 
@@ -174,31 +174,4 @@ class ClasificacionComedorService:
             puntuacion += 3
         else:
             puntuacion += 0
-
-        relevamiento_respuestas.append(relevamiento.espacio.tipo_espacio_fisico.nombre)
-        relevamiento_respuestas.append(relevamiento.espacio.cocina.almacenamiento_alimentos_secos)
-        relevamiento_respuestas.append(relevamiento.espacio.cocina.heladera)
-        relevamiento_respuestas.append(relevamiento.espacio.cocina.recipiente_residuos_organicos)
-        relevamiento_respuestas.append(relevamiento.espacio.cocina.recipiente_residuos_reciclables)
-
-        relevamiento_respuestas.append(relevamiento.espacio.cocina.abastecimiento_combustible)
-
-        relevamiento_respuestas.append(relevamiento.espacio.cocina.abastecimiento_agua.nombre)
-        relevamiento_respuestas.append(relevamiento.espacio.cocina.abastecimiento_agua_otro)
-        relevamiento_respuestas.append(relevamiento.espacio.cocina.instalacion_electrica)
-        relevamiento_respuestas.append(relevamiento.espacio.prestacion.espacio_equipado)
-        relevamiento_respuestas.append(relevamiento.espacio.prestacion.tiene_ventilacion)
-        relevamiento_respuestas.append(relevamiento.espacio.prestacion.tiene_salida_emergencia)
-        relevamiento_respuestas.append(relevamiento.espacio.prestacion.salida_emergencia_senializada)
-        relevamiento_respuestas.append(relevamiento.espacio.prestacion.tiene_equipacion_incendio)
-        relevamiento_respuestas.append(relevamiento.espacio.prestacion.tiene_botiquin)
-        relevamiento_respuestas.append(relevamiento.espacio.prestacion.tiene_buena_iluminacion)
-        relevamiento_respuestas.append(relevamiento.espacio.prestacion.tiene_sanitarios)
-        relevamiento_respuestas.append(relevamiento.espacio.prestacion.desague_hinodoro.nombre)
-        relevamiento_respuestas.append(relevamiento.anexo.tecnologia)
-        relevamiento_respuestas.append(relevamiento.anexo.servicio_internet)
-        relevamiento_respuestas.append(relevamiento.anexo.acceso_comedor)
-        relevamiento_respuestas.append(relevamiento.anexo.zona_inundable)
-
-        print(relevamiento_respuestas)
         return puntuacion
