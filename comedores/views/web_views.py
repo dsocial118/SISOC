@@ -16,7 +16,7 @@ from django.views.generic import (
 )
 
 
-from comedores.models.relevamiento import Relevamiento,ClasificacionComedor
+from comedores.models.relevamiento import Relevamiento, ClasificacionComedor
 from comedores.forms.comedor_form import (
     ComedorForm,
     ReferenteForm,
@@ -305,7 +305,11 @@ class ComedorDetailView(DetailView):
                 "imagenes": ImagenComedor.objects.filter(
                     comedor=self.object["id"]
                 ).values("imagen"),
-                "comedor_categoria":ClasificacionComedor.objects.filter(comedor=self.object["id"]).order_by('-fecha').first()
+                "comedor_categoria": ClasificacionComedor.objects.filter(
+                    comedor=self.object["id"]
+                )
+                .order_by("-fecha")
+                .first(),
             }
         )
         return context
