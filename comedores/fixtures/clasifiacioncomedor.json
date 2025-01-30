@@ -1,0 +1,29 @@
+[
+    {
+        "model": "comedores.categoriacomedor",
+        "pk": 1,
+        "fields": {
+            "nombre": "Categoría A: No precario",
+            "puntuacionMin": 0,
+            "puntuacionMax": 11
+        }
+    },
+    {
+        "model": "comedores.categoriacomedor",
+        "pk": 2,
+        "fields": {
+            "nombre": "Categoría B - Medianamente precario",
+            "puntuacionMin": 11,
+            "puntuacionMax": 41
+        }
+    },
+    {
+        "model": "comedores.categoriacomedor",
+        "pk": 3,
+        "fields": {
+            "nombre": "Categoría C: Muy precario",
+            "puntuacionMin": 42,
+            "puntuacionMax": 67
+        }
+    }
+]

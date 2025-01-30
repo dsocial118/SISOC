@@ -40,7 +40,6 @@ class ClasificacionComedorService:
     @staticmethod
     def get_puntuacion_total(relevamiento: Relevamiento):
         puntuacion = 0
-        relevamiento_respuestas = []
 
         if relevamiento.espacio.tipo_espacio_fisico.nombre == 'Espacio alquilado':
             puntuacion += 3
@@ -50,7 +49,7 @@ class ClasificacionComedorService:
             puntuacion += 2
         elif relevamiento.espacio.tipo_espacio_fisico.nombre == 'Casa de familia':
             puntuacion += 3
-        elif relevamiento.espacio.espacio_fisico_otro is not "":
+        elif relevamiento.espacio.espacio_fisico_otro != "":
             puntuacion += 3
         else:
             puntuacion += 0
