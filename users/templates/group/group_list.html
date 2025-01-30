@@ -1,0 +1,68 @@
+{% extends "includes/main.html" %};
+{% load static %}
+;
+{% block head %}{% endblock %}
+{% block title %}Grupos de usuarios{% endblock %}
+;
+{% block titulo-pagina %}Grupos de usuarios{% endblock %}
+;
+{% load crispy_forms_tags %}
+;
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right ">
+        <li class="breadcrumb-item">Administración</li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'grupos' %}">Grupos</a>
+        </li>
+    </ol>
+{% endblock %}
+;
+{% block content %}
+<div class="row d-flex justify-content-between my-3 mx-sm-2">
+    <div class="col-12 col-sm-3 ">
+        {% if perms.Grupos.rol_admin %}
+            <a class="btn btn-primary mb-2 mb-sm-0 d-block d-sm-inline"
+               href="{% url 'grupo_crear' %}">Agregar</a>
+        {% endif %}
+    </div>
+</div>
+<div class="row ">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body ">
+                <table class="table table-bordered table-striped projects">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th style="width: 15%" class="notexport"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for o in object_list %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'grupos_ver' o.id %}">
+                                        <span class="font-weight-bold ">{{ o.nombre }}</span>
+                                    </a>
+                                </td>
+                                <td class="project-actions text-right">
+                                    {% if perms.Grupos.rol_admin %}
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'grupos_ver' o.id %}" class="btn btn-primary btn-sm ver">Ver</a>
+                                            <a href="{% url 'grupos_editar' o.id %}"
+                                               class="btn btn-primary btn-sm editar">Editar</a>
+                                            <a href="{% url 'grupos_eliminar' o.id %}"
+                                               class="btn btn-danger btn-sm eliminar">Eliminar</a>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+{% block customJS %}{% endblock %}
