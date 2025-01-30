@@ -43,6 +43,29 @@
     </div>
     <div class="row text-center mb-3">
         <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6 pt-3">
+            <div class="info-card bg-card 
+                {% if comedor_categoria.categoria.nombre == 'Categoría A: No precario' %} bg-success
+                {% elif comedor_categoria.categoria.nombre == 'Categoría: Categoría B - Medianamente precario' %} bg-warning
+                {% elif comedor_categoria.categoria.nombre == 'Categoría C: Muy precario' %} bg-danger
+                {% endif %}">
+                <div class="row">
+                    <div class="col-3">
+                        <i class="fa fa-clipboard fa-2x"></i>
+                    </div>
+                    <div class="col-9 text-start">
+                        <p>{{ comedor_categoria.puntuacionTotal }}</p>
+                    </div>
+                </div>
+                <div class="row info-card-label
+                {% if comedor_categoria.categoria.nombre == 'Categoría A: No precario' %} bg-success
+                {% elif comedor_categoria.categoria.nombre == 'Categoría: Categoría B - Medianamente precario' %} bg-warning
+                {% elif comedor_categoria.categoria.nombre == 'Categoría C: Muy precario' %} bg-danger
+                {% endif %}">
+                    <h5 class="mt-2">Categoría: {{comedor_categoria.categoria.nombre}}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6 pt-3">
             <div class="info-card bg-card">
                 <div class="row">
                     <div class="col-3">
