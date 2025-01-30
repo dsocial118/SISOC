@@ -1246,13 +1246,7 @@ class RelevamientoService:
         data = {
             "Action": "Delete",
             "Properties": {"Locale": "es-ES"},
-            "Rows": [
-                {
-                    "Action": "Delete",
-                    "Properties": {"Locale": "es-ES"},
-                    "Rows": [{"Relevamiento id": f"{relevamiento.gestionar_uid}"}],
-                }
-            ],
+            "Rows": [{"Relevamiento id": f"{relevamiento.gestionar_uid}"}],
         }
 
         headers = {
