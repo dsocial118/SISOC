@@ -12,49 +12,57 @@ from comedores.models.comedor import (
 from comedores.models.relevamiento import (
     Relevamiento,
     ClasificacionComedor,
-    CategoriaComedor
+    CategoriaComedor,
 )
 
 
 class ClasificacionComedorService:
     @staticmethod
     def create_clasificacion_relevamiento(relevamiento: Relevamiento):
-        calculoPuntuacion = ClasificacionComedorService.get_puntuacion_total(relevamiento)
-        clasificacionFinal = ClasificacionComedorService.get_clasificacion(calculoPuntuacion)
+        calculoPuntuacion = ClasificacionComedorService.get_puntuacion_total(
+            relevamiento
+        )
+        clasificacionFinal = ClasificacionComedorService.get_clasificacion(
+            calculoPuntuacion
+        )
         ClasificacionComedor.objects.create(
             relevamiento=relevamiento,
             categoria=clasificacionFinal,
             puntuacionTotal=calculoPuntuacion,
-            comedor=relevamiento.comedor
+            comedor=relevamiento.comedor,
         )
         return None
-    
+
     @staticmethod
     def get_clasificacion(puntacionTotal):
         califiacion = CategoriaComedor.objects.filter(
-            puntuacionMin__lte=puntacionTotal,
-            puntuacionMax__gte=puntacionTotal
+            puntuacionMin__lte=puntacionTotal, puntuacionMax__gte=puntacionTotal
         ).first()
         return califiacion if califiacion else None
-    
+
     @staticmethod
     def get_puntuacion_total(relevamiento: Relevamiento):
         puntuacion = 0
 
-        if relevamiento.espacio.tipo_espacio_fisico.nombre == 'Espacio alquilado':
+        if relevamiento.espacio.tipo_espacio_fisico.nombre == "Espacio alquilado":
             puntuacion += 3
-        elif relevamiento.espacio.tipo_espacio_fisico.nombre == 'Espacio prestado (uso exclusivo)':
+        elif (
+            relevamiento.espacio.tipo_espacio_fisico.nombre
+            == "Espacio prestado (uso exclusivo)"
+        ):
             puntuacion += 2
-        elif relevamiento.espacio.tipo_espacio_fisico.nombre == 'Espacio comunitario compartido':
+        elif (
+            relevamiento.espacio.tipo_espacio_fisico.nombre
+            == "Espacio comunitario compartido"
+        ):
             puntuacion += 2
-        elif relevamiento.espacio.tipo_espacio_fisico.nombre == 'Casa de familia':
+        elif relevamiento.espacio.tipo_espacio_fisico.nombre == "Casa de familia":
             puntuacion += 3
         elif relevamiento.espacio.espacio_fisico_otro != "":
             puntuacion += 3
         else:
             puntuacion += 0
 
-        
         if relevamiento.espacio.cocina.espacio_elaboracion_alimentos is False:
             puntuacion += 3
         else:
@@ -69,58 +77,72 @@ class ClasificacionComedorService:
             puntuacion += 3
         else:
             puntuacion += 0
-        
+
         if relevamiento.espacio.cocina.recipiente_residuos_organicos is False:
             puntuacion += 1
         else:
             puntuacion += 0
-        
+
         if relevamiento.espacio.cocina.recipiente_residuos_reciclables is False:
             puntuacion += 1
         else:
             puntuacion += 0
-        
-        if relevamiento.espacio.cocina.abastecimiento_combustible.filter(nombre='Gas envasado').order_by('nombre').exists():
+
+        if (
+            relevamiento.espacio.cocina.abastecimiento_combustible.filter(
+                nombre="Gas envasado"
+            )
+            .order_by("nombre")
+            .exists()
+        ):
             puntuacion += 1
-        elif relevamiento.espacio.cocina.abastecimiento_combustible.filter(nombre='Leña').order_by('nombre').exists():
+        elif (
+            relevamiento.espacio.cocina.abastecimiento_combustible.filter(nombre="Leña")
+            .order_by("nombre")
+            .exists()
+        ):
             puntuacion += 3
-        elif relevamiento.espacio.cocina.abastecimiento_combustible.filter(nombre='Otro').order_by('nombre').exists():
+        elif (
+            relevamiento.espacio.cocina.abastecimiento_combustible.filter(nombre="Otro")
+            .order_by("nombre")
+            .exists()
+        ):
             puntuacion += 2
         else:
             puntuacion += 0
 
-        if relevamiento.espacio.cocina.abastecimiento_agua.nombre == 'Pozo':
+        if relevamiento.espacio.cocina.abastecimiento_agua.nombre == "Pozo":
             puntuacion += 2
         elif relevamiento.espacio.cocina.abastecimiento_agua_otro != "":
             puntuacion += 3
         else:
             puntuacion += 0
-        
+
         if relevamiento.espacio.cocina.instalacion_electrica is False:
             puntuacion += 3
         else:
             puntuacion += 0
-        
+
         if relevamiento.espacio.prestacion.espacio_equipado is False:
             puntuacion += 2
-        else:  
+        else:
             puntuacion += 0
-        
+
         if relevamiento.espacio.prestacion.tiene_ventilacion is False:
             puntuacion += 3
         else:
             puntuacion += 0
-        
+
         if relevamiento.espacio.prestacion.tiene_salida_emergencia is False:
             puntuacion += 2
         else:
             puntuacion += 0
-        
+
         if relevamiento.espacio.prestacion.salida_emergencia_senializada is False:
             puntuacion += 1
         else:
             puntuacion += 0
-        
+
         if relevamiento.espacio.prestacion.tiene_equipacion_incendio is False:
             puntuacion += 3
         else:
@@ -130,20 +152,20 @@ class ClasificacionComedorService:
             puntuacion += 3
         else:
             puntuacion += 0
-        
+
         if relevamiento.espacio.prestacion.tiene_buena_iluminacion is False:
             puntuacion += 2
         else:
             puntuacion += 0
-        
+
         if relevamiento.espacio.prestacion.tiene_sanitarios is False:
             puntuacion += 3
         else:
             puntuacion += 0
-        
-        if relevamiento.espacio.prestacion.desague_hinodoro.nombre == 'Pozo ciego':
+
+        if relevamiento.espacio.prestacion.desague_hinodoro.nombre == "Pozo ciego":
             puntuacion += 2
-        elif relevamiento.espacio.prestacion.desague_hinodoro.nombre == 'Letrina':
+        elif relevamiento.espacio.prestacion.desague_hinodoro.nombre == "Letrina":
             puntuacion += 3
         else:
             puntuacion += 0
@@ -161,14 +183,14 @@ class ClasificacionComedorService:
             puntuacion += 1
         else:
             puntuacion += 0
-        
+
         if relevamiento.anexo.acceso_comedor == "Calle de tierra":
             puntuacion += 3
         elif relevamiento.anexo.acceso_comedor == "Calle con mejorado":
             puntuacion += 2
         else:
             puntuacion += 0
-        
+
         if relevamiento.anexo.zona_inundable is False:
             puntuacion += 3
         else:

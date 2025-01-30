@@ -823,7 +823,6 @@ class CategoriaComedor(models.Model):
     puntuacionMin = models.IntegerField()
     puntuacionMax = models.IntegerField()
 
-
     def __str__(self):
         return str(self.nombre)
 
@@ -831,12 +830,18 @@ class CategoriaComedor(models.Model):
         verbose_name = "Categoria de Comedor"
         verbose_name_plural = "Categorias de Comedor"
 
+
 class ClasificacionComedor(models.Model):
     puntuacionTotal = models.IntegerField()
-    categoria = models.ForeignKey(to=CategoriaComedor, on_delete=models.SET_NULL, null=True)
+    categoria = models.ForeignKey(
+        to=CategoriaComedor, on_delete=models.SET_NULL, null=True
+    )
     comedor = models.ForeignKey(to=Comedor, on_delete=models.SET_NULL, null=True)
-    relevamiento = models.ForeignKey(to=Relevamiento, on_delete=models.SET_NULL, null=True)
+    relevamiento = models.ForeignKey(
+        to=Relevamiento, on_delete=models.SET_NULL, null=True
+    )
     fecha = models.DateTimeField(default=timezone.now, blank=True)
+
     def __str__(self):
         return str(self.puntuacionTotal)
 

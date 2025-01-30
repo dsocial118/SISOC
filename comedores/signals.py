@@ -7,6 +7,7 @@ from comedores.services.relevamiento_service import RelevamientoService
 from comedores.services.comedor_service import ComedorService
 from comedores.services.clasificacion_comedor_service import ClasificacionComedorService
 
+
 @receiver(post_save, sender=Comedor)
 def send_comedor_to_gestionar(sender, instance, created, update_fields, **kwargs):
     if created:
@@ -34,6 +35,7 @@ def send_relevamiento_to_gestionar(sender, instance, created, **kwargs):
     if created:
         RelevamientoService.send_to_gestionar(instance)
 
+
 @receiver(pre_delete, sender=Relevamiento)
 def remove_relevamiento_to_gestionar(sender, instance, using, **kwargs):
     RelevamientoService.remove_to_gestionar(instance)
@@ -50,6 +52,7 @@ def send_referente_to_gestionar(sender, instance, created, **kwargs):
     if created:
         ComedorService.send_referente_to_gestionar(instance)
 
+
 @receiver(post_save, sender=Relevamiento)
 def clasificacion_relevamiento(sender, instance, **kwargs):
-  ClasificacionComedorService.create_clasificacion_relevamiento(instance)
+    ClasificacionComedorService.create_clasificacion_relevamiento(instance)
