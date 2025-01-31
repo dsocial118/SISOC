@@ -4,7 +4,7 @@ from django.db.models import Q
 from django.urls import reverse
 
 
-# region------- EXTENSION DEL MODELO USER---------------------------------------------------------------------
+# region------- EXTENSION DEL MODELO USER---------------------------------
 class Grupos(models.Model):
     nombre = models.CharField(max_length=255)
 
@@ -95,4 +95,4 @@ def users_con_permiso(perm_name):
     ).distinct()
 
 
-# endregion ------------------FIN EXTENSION USER MODEL--------------+---------------------------------------------
+# endregion ------------------FIN EXTENSION USER MODEL--------------+-----

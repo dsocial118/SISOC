@@ -1,7 +1,7 @@
 from django.db import models
 
 
-# -------------------------------CONFIGURACIONES GENERALES (se usan en todo el proyecto)--------------------------------------
+# -------------------------------CONFIGURACIONES GENERALES (se usan en tod
 
 
 class Provincia(models.Model):
@@ -18,6 +18,8 @@ class Provincia(models.Model):
         ordering = ["id"]
         verbose_name = "Provincia"
         verbose_name_plural = "Provincia"
+
+
 class Mes(models.Model):
     """
     Guardado de las provincias de los vecinos y vecinas registrados.
@@ -32,6 +34,8 @@ class Mes(models.Model):
         ordering = ["id"]
         verbose_name = "Mes"
         verbose_name_plural = "Meses"
+
+
 class Dia(models.Model):
     """
     Guardado de las provincias de los vecinos y vecinas registrados.
@@ -46,6 +50,8 @@ class Dia(models.Model):
         ordering = ["id"]
         verbose_name = "Dia"
         verbose_name_plural = "Dias"
+
+
 class Turno(models.Model):
     """
     Guardado de las provincias de los vecinos y vecinas registrados.

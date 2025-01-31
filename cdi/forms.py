@@ -8,7 +8,7 @@ class CentroDesarrolloInfantilForm(forms.ModelForm):
         model = CentroDesarrolloInfantil
         fields = "__all__"
         widgets = {
-            'direccion': forms.TextInput(attrs={'class': 'form-control'}),
-            'barrio': forms.TextInput(attrs={'class': 'form-control'}),
-            'codigo_postal': forms.TextInput(attrs={'class': 'form-control'}),
+            "direccion": forms.TextInput(attrs={"class": "form-control"}),
+            "barrio": forms.TextInput(attrs={"class": "form-control"}),
+            "codigo_postal": forms.TextInput(attrs={"class": "form-control"}),
         }
