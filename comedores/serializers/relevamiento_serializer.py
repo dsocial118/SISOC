@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
-from comedores.models import (
-    Relevamiento,
+from comedores.models.relevamiento import Relevamiento
+from comedores.models.relevamiento import (
     Territorial,
 )
 from comedores.services.relevamiento_service import RelevamientoService
@@ -79,6 +79,14 @@ class RelevamientoSerializer(serializers.ModelSerializer):
                 self.initial_data["compras"], compras_instance
             ).id
 
+        if "anexo" in self.initial_data:
+            anexo_instance = (
+                self.instance.anexo if self.instance and self.instance.anexo else None
+            )
+            self.initial_data["anexo"] = RelevamientoService.create_or_update_anexo(
+                self.initial_data["anexo"], anexo_instance
+            ).id
+
         if "prestacion" in self.initial_data:
             prestacion_instance = (
                 self.instance.prestacion
@@ -88,6 +96,23 @@ class RelevamientoSerializer(serializers.ModelSerializer):
             self.initial_data["prestacion"] = (
                 RelevamientoService.create_or_update_prestacion(
                     self.initial_data["prestacion"], prestacion_instance
+                ).id
+            )
+
+        if "responsable_es_referente" in self.initial_data:
+            self.initial_data["responsable_es_referente"] = (
+                self.initial_data["responsable_es_referente"] == "Y"
+            )
+
+        if "responsable" in self.initial_data:
+            responsable_instance = (
+                self.instance.responsable
+                if self.instance and self.instance.responsable
+                else None
+            )
+            self.initial_data["responsable"] = (
+                RelevamientoService.create_or_update_responsable(
+                    self.initial_data["responsable"], responsable_instance
                 ).id
             )
 
@@ -102,6 +127,7 @@ class RelevamientoSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {"error": "gestionar_uid debe ser único si no es nulo."}
                 )
+
         return self
 
     class Meta:

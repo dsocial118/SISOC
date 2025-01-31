@@ -3,7 +3,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_api_key.permissions import HasAPIKey
-from comedores.models import Comedor, Observacion, Relevamiento
+from comedores.models.relevamiento import Relevamiento
+from comedores.models.comedor import Comedor, Observacion
 from comedores.serializers.comedor_serializer import ComedorSerializer
 from comedores.serializers.relevamiento_serializer import RelevamientoSerializer
 from comedores.serializers.observacion_serializer import ObservacionSerializer

@@ -31,10 +31,8 @@
             <a href="{% url 'comedores' %}" class="btn btn-secondary mr-1">Volver</a>
         </div>
         <div class="col-auto">
-            <!-- boton nomina -->
             <a href="{% url 'nomina_ver' pk=comedor.id %}"
                class="btn btn-primary mr-1">Nomina</a>
-            <!-- boton nomina -->
             <a href="{% url 'intervencion_ver' comedor.id %}"
                class="btn btn-primary mr-1">Intervenciones</a>
             <a href="{% url 'comedor_editar' comedor.id %}"
@@ -181,7 +179,13 @@
                                             <div class="nav-item d-flex">
                                                 <div class="comment-text comment-text d-flex flex-column">
                                                     Tipo Comedor
-                                                    <span class="username">{{ comedor.tipocomedor__nombre }}</span>
+                                                    <span class="username">{{ comedor.tipocomedor__nombre | default_if_none:"-" }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="nav-item d-flex">
+                                                <div class="comment-text comment-text d-flex flex-column">
+                                                    Organización
+                                                    <span class="username">{{ comedor.organizacion__nombre | default_if_none:"-" }}</span>
                                                 </div>
                                             </div>
                                             <div class="nav-item d-flex">
@@ -338,10 +342,10 @@
                 <div class="card-body row card-comments p-0 pb-1">
                     <div class="nav nav-pills col-6 row my-3">
                         {% for relevamiento in relevamientos %}
-                            <div class="col-6 d-flex">
+                            <div class="col-7 d-flex">
                                 <a href="{% url 'relevamiento_detalle' comedor.id relevamiento.id %}">{{ relevamiento.id }} - {{ relevamiento.fecha_visita|default_if_none:"Pendiente" }}</a>
                             </div>
-                            <div class="col-6 d-flex">
+                            <div class="col-5 d-flex">
                                 <p {% if relevamiento.estado == "Pendiente" %} style="color: yellow;" {% elif relevamiento.estado == "Visita pendiente" %} style="color: green;" {% else %} style="color: white;" {% endif %}>
                                     {{ relevamiento.estado }}
                                 </p>
