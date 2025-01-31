@@ -14,6 +14,8 @@ urlpatterns = [
     path("", include("comedores.urls")),
     path("", include("organizaciones.urls")),
     path("", include("provincias.urls")),
+    path("", include("cdi.urls")),
+
     # Django Debug Toolbar
     path("__debug__/", include("debug_toolbar.urls")),
     # Healthcheck AWS
