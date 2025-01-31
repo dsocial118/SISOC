@@ -11,7 +11,7 @@
 {% block titulo-pagina %}
     {{ comedor.nombre }}
     <span class="ml-2 h5">| {{ comedor.provincia__nombre | default_if_none:"-" }}, {{ comedor.municipio__nombre | default_if_none:"-" }}, {{ comedor.localidad__nombre | default_if_none:"-" }}</span>
-    <span class="ml-2 h5"> - {{comedor_categoria.categoria.nombre}} - {{comedor_categoria.puntuacion_total}}</span>
+    <span class="ml-2 h5">- {{ comedor_categoria.categoria.nombre }} - {{ comedor_categoria.puntuacion_total }}</span>
 {% endblock %}
 ;
 {% block breadcrumb %}
