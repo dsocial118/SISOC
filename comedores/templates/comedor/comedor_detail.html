@@ -11,6 +11,7 @@
 {% block titulo-pagina %}
     {{ comedor.nombre }}
     <span class="ml-2 h5">| {{ comedor.provincia__nombre | default_if_none:"-" }}, {{ comedor.municipio__nombre | default_if_none:"-" }}, {{ comedor.localidad__nombre | default_if_none:"-" }}</span>
+    <span class="ml-2 h5"> - {{comedor_categoria.categoria.nombre}} - {{comedor_categoria.puntuacion_total}}</span>
 {% endblock %}
 ;
 {% block breadcrumb %}
@@ -42,21 +43,6 @@
         </div>
     </div>
     <div class="row text-center mb-3">
-        <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6 pt-3">
-            <div class="info-card bg-card {% if comedor_categoria.categoria.nombre == 'Categoría A: No precario' %}bg-success{% elif comedor_categoria.categoria.nombre == 'Categoría B - Medianamente precario' %}bg-warning{% elif comedor_categoria.categoria.nombre == 'Categoría C: Muy precario' %}bg-danger{% endif %}">
-                <div class="row">
-                    <div class="col-3">
-                        <i class="fa fa-clipboard fa-2x"></i>
-                    </div>
-                    <div class="col-9 text-start">
-                        <p>{{ comedor_categoria.puntuacionTotal }}</p>
-                    </div>
-                </div>
-                <div class="row info-card-label {% if comedor_categoria.categoria.nombre == 'Categoría A: No precario' %}bg-success border-top{% elif comedor_categoria.categoria.nombre == 'Categoría B - Medianamente precario' %}bg-warning border-top{% elif comedor_categoria.categoria.nombre == 'Categoría C: Muy precario' %}bg-danger border-top{% endif %}">
-                    <h5 class="mt-2">Categoría: {{ comedor_categoria.categoria.nombre }}</h5>
-                </div>
-            </div>
-        </div>
         <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6 pt-3">
             <div class="info-card bg-card">
                 <div class="row">

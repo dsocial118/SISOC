@@ -4,8 +4,8 @@
         "pk": 1,
         "fields": {
             "nombre": "Categoría A: No precario",
-            "puntuacionMin": 0,
-            "puntuacionMax": 11
+            "puntuacion_min": 0,
+            "puntuacion_max": 11
         }
     },
     {
@@ -13,8 +13,8 @@
         "pk": 2,
         "fields": {
             "nombre": "Categoría B - Medianamente precario",
-            "puntuacionMin": 11,
-            "puntuacionMax": 41
+            "puntuacion_min": 11,
+            "puntuacion_max": 41
         }
     },
     {
@@ -22,8 +22,8 @@
         "pk": 3,
         "fields": {
             "nombre": "Categoría C: Muy precario",
-            "puntuacionMin": 42,
-            "puntuacionMax": 67
+            "puntuacion_min": 42,
+            "puntuacion_max": 67
         }
     }
 ]

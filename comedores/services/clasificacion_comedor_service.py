@@ -28,7 +28,7 @@ class ClasificacionComedorService:
         ClasificacionComedor.objects.create(
             relevamiento=relevamiento,
             categoria=clasificacionFinal,
-            puntuacionTotal=calculoPuntuacion,
+            puntuacion_total=calculoPuntuacion,
             comedor=relevamiento.comedor,
         )
         return None
@@ -36,7 +36,7 @@ class ClasificacionComedorService:
     @staticmethod
     def get_clasificacion(puntacionTotal):
         califiacion = CategoriaComedor.objects.filter(
-            puntuacionMin__lte=puntacionTotal, puntuacionMax__gte=puntacionTotal
+            puntuacion_min__lte=puntacionTotal, puntuacion_max__gte=puntacionTotal
         ).first()
         return califiacion if califiacion else None
 
