@@ -820,8 +820,8 @@ class Relevamiento(models.Model):
 
 class CategoriaComedor(models.Model):
     nombre = models.CharField(max_length=255)
-    puntuacionMin = models.IntegerField()
-    puntuacionMax = models.IntegerField()
+    puntuacion_min = models.IntegerField()
+    puntuacion_max = models.IntegerField()
 
     def __str__(self):
         return str(self.nombre)
@@ -832,7 +832,7 @@ class CategoriaComedor(models.Model):
 
 
 class ClasificacionComedor(models.Model):
-    puntuacionTotal = models.IntegerField()
+    puntuacion_total = models.IntegerField()
     categoria = models.ForeignKey(
         to=CategoriaComedor, on_delete=models.SET_NULL, null=True
     )
@@ -843,7 +843,7 @@ class ClasificacionComedor(models.Model):
     fecha = models.DateTimeField(default=timezone.now, blank=True)
 
     def __str__(self):
-        return str(self.puntuacionTotal)
+        return str(self.puntuacion_total)
 
     class Meta:
         verbose_name = "Clasificacion de Comedor"
