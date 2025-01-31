@@ -92,6 +92,15 @@
                     </a>
                 </li>
             {% endif %}
+            {% if perms.cdi %}
+                <li class="nav-item">
+                    <a href="{% url 'cdi' %}"
+                       class="nav-link {% if 'cdi/listar' in pagina_actual %}active{% endif %}">
+                        <i class="nav-icon bi bi-building-fill"></i>
+                        <p>Centro Desarrollo Infantil</p>
+                    </a>
+                </li>
+            {% endif %}
         </ul>
     </li>
 {% endwith %}
