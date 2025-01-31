@@ -8,12 +8,14 @@ from configuraciones.models import Localidad, Mes, Dia, Turno
 from organizaciones.models import Organizacion
 
 
-
 class CentroDesarrolloInfantil(models.Model):
     nombre = models.CharField(max_length=255)
-    organizacion = models.ForeignKey(Organizacion, on_delete=models.CASCADE,
+    organizacion = models.ForeignKey(
+        Organizacion,
+        on_delete=models.CASCADE,
         blank=True,
-        null=True,)
+        null=True,
+    )
     comienzo = models.IntegerField(
         validators=[
             MinValueValidator(1900),
@@ -41,15 +43,17 @@ class CentroDesarrolloInfantil(models.Model):
             ("municipal", "Gobierno Municipal"),
             ("ong", "ONG"),
             ("cogestion", "Co-gestión"),
-            ("otra", "Otra")
-        ]
-        ,
+            ("otra", "Otra"),
+        ],
         blank=True,
         null=True,
     )
-    provincia = models.ForeignKey(to=Provincia, on_delete=models.PROTECT,
+    provincia = models.ForeignKey(
+        to=Provincia,
+        on_delete=models.PROTECT,
         blank=True,
-        null=True,)
+        null=True,
+    )
     municipio = models.ForeignKey(
         to=Municipio, on_delete=models.PROTECT, null=True, blank=True
     )
@@ -62,52 +66,69 @@ class CentroDesarrolloInfantil(models.Model):
         validators=[
             MinValueValidator(1000),
             MaxValueValidator(999999),
-        ],  
+        ],
         blank=True,
         null=True,
     )
     direccion = models.TextField(
         blank=True,
-        null=True,)
-    telefono = models.CharField(max_length=20,
+        null=True,
+    )
+    telefono = models.CharField(
+        max_length=20,
         blank=True,
-        null=True,)
+        null=True,
+    )
     email = models.EmailField(
         blank=True,
-        null=True,)
-    meses_funcionamiento = models.ManyToManyField(to=Mes, related_name="centros",
+        null=True,
+    )
+    meses_funcionamiento = models.ManyToManyField(
+        to=Mes,
+        related_name="centros",
         blank=True,
-        null=True,)
-    dias_funcionamiento = models.ManyToManyField(to=Dia, related_name="centros",
+        null=True,
+    )
+    dias_funcionamiento = models.ManyToManyField(
+        to=Dia,
+        related_name="centros",
         blank=True,
-        null=True,)
-    turnos_funcionamiento = models.ManyToManyField(to=Turno, related_name="centros",
+        null=True,
+    )
+    turnos_funcionamiento = models.ManyToManyField(
+        to=Turno,
+        related_name="centros",
         blank=True,
-        null=True,)
+        null=True,
+    )
     horario_inicio = models.TimeField(
         blank=True,
-        null=True,)
+        null=True,
+    )
     horario_fin = models.TimeField(
         blank=True,
-        null=True,)
+        null=True,
+    )
     cantidad_ninos = models.PositiveIntegerField(
         blank=True,
-        null=True,)
+        null=True,
+    )
     cantidad_trabajadores = models.PositiveIntegerField(
         blank=True,
-        null=True,)
+        null=True,
+    )
     cobro_arancel = models.CharField(
         max_length=20,
         choices=[
             ("inferior_15", "Arancel inferior al 15%"),
             ("superior_15", "Arancel superior al 15%"),
-            ("no_cobra", "No se cobra arancel")
+            ("no_cobra", "No se cobra arancel"),
         ],
         blank=True,
         null=True,
     )
     estabilidad_matricula = models.BooleanField(
         blank=True,
-        null=True,)
+        null=True,
+    )
     foto_legajo = models.ImageField(upload_to="cdi/", blank=True, null=True)
-

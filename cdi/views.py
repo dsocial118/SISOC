@@ -13,7 +13,6 @@ from cdi.forms import CentroDesarrolloInfantilForm
 from cdi.models import CentroDesarrolloInfantil
 
 
-
 class CDIListView(ListView):
     model = CentroDesarrolloInfantil
     template_name = "centrodesarrolloinfantil_list.html"
@@ -34,6 +33,7 @@ class CDIListView(ListView):
 
         return queryset
 
+
 class CDICreateView(CreateView):
     model = CentroDesarrolloInfantil
     form_class = CentroDesarrolloInfantilForm
@@ -41,11 +41,13 @@ class CDICreateView(CreateView):
 
     def get_success_url(self):
         return reverse("cdi")
-    
+
+
 class CDIDetailView(DetailView):
     model = CentroDesarrolloInfantil
     template_name = "centrodesarrolloinfantil_detail.html"
     context_object_name = "centrodesarrolloinfantiles"
+
 
 class CDIUpdateView(UpdateView):
     model = CentroDesarrolloInfantil
@@ -54,10 +56,10 @@ class CDIUpdateView(UpdateView):
 
     def get_success_url(self):
         return reverse("organizacion_detalle", kwargs={"pk": self.object.pk})
-    
+
+
 class CDIDeleteView(DeleteView):
     model = CentroDesarrolloInfantil
     template_name = "centrodesarrolloinfantil_confirm_delete.html"
     context_object_name = "centrodesarrolloinfantiles"
     success_url = reverse_lazy("cdi")
-

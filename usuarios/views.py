@@ -184,7 +184,8 @@ class UsuariosCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
                     group_ids = [
                         group.id for group in groups
                     ]  # Extract IDs from Grupos objects
-                    user.groups.set(group_ids)  # Assign the group IDs to the user
+                    # Assign the group IDs to the user
+                    user.groups.set(group_ids)
                     user.usuarios.grupos.set(
                         groups
                     )  # Assign the Grupos objects to the Usuarios object
@@ -289,7 +290,8 @@ class UsuariosResetPassView(PermisosMixin, SuccessMessageMixin, PasswordResetVie
 # endregion
 
 
-# region---------------------------------------------------------------------------------------PERFILES DE USUARIOS
+# region---------------------------------------------------------------------------------------PERFILES
+# DE USUARIOS
 
 
 class PerfilUpdateView(UserPassesTestMixin, SuccessMessageMixin, UpdateView):
@@ -324,7 +326,8 @@ class PerfilUpdateView(UserPassesTestMixin, SuccessMessageMixin, UpdateView):
                 usuario.dni = dni
             if telefono:
                 usuario.telefono = telefono
-            # Verificar si la imagen ha cambiado antes de recortarla y guardarla
+            # Verificar si la imagen ha cambiado antes de recortarla y
+            # guardarla
             if img:
                 buffer = recortar_imagen(img)
                 usuario.imagen.save(img.name, ContentFile(buffer.getvalue()))

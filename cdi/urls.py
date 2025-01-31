@@ -25,12 +25,12 @@ urlpatterns = [
         login_required(CDIDetailView.as_view()),
         name="cdi_detalle",
     ),
-        path(
+    path(
         "cdi/editar/<int:pk>",
         login_required(CDIUpdateView.as_view()),
         name="cdi_editar",
     ),
-        path(
+    path(
         "cdi/eliminar/<int:pk>",
         login_required(CDIDeleteView.as_view()),
         name="cdi_eliminar",
