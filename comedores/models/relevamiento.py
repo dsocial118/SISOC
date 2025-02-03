@@ -158,16 +158,6 @@ class EspacioCocina(models.Model):
         verbose_name = "Espacio de cocina y almacenamiento de alimentos"
         verbose_name_plural = "Espacios de cocina y almacenamiento de alimentos"
 
-
-class Territorial(models.Model):
-    """
-    Modelo que representa un Territorial.
-    """
-
-    gestionar_uid = models.CharField(max_length=255)
-    nombre = models.CharField(max_length=255)
-
-
 class TipoModalidadPrestacion(models.Model):
     """
     Opciones de modalidades de prestacion de un Comedor/Merendero
@@ -752,9 +742,8 @@ class Relevamiento(models.Model):
         on_delete=models.CASCADE,
     )
     fecha_visita = models.DateTimeField(null=True, blank=True)
-    territorial = models.ForeignKey(
-        Territorial, on_delete=models.PROTECT, blank=True, null=True
-    )
+    territorial_nombre = models.CharField(max_length=255, blank=True, null=True)
+    territorial_uid = models.CharField(max_length=255, blank=True, null=True)
     funcionamiento = models.OneToOneField(
         to=FuncionamientoPrestacion, on_delete=models.PROTECT, blank=True, null=True
     )
