@@ -1,6 +1,7 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.forms import ValidationError
+from django.utils import timezone
 
 from comedores.models.comedor import (
     Comedor,
@@ -804,3 +805,35 @@ class Relevamiento(models.Model):
         unique_together = [["comedor", "fecha_visita"]]
         verbose_name = "Relevamiento"
         verbose_name_plural = "Relevamientos"
+
+
+class CategoriaComedor(models.Model):
+    nombre = models.CharField(max_length=255)
+    puntuacion_min = models.IntegerField()
+    puntuacion_max = models.IntegerField()
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        verbose_name = "Categoria de Comedor"
+        verbose_name_plural = "Categorias de Comedor"
+
+
+class ClasificacionComedor(models.Model):
+    puntuacion_total = models.IntegerField()
+    categoria = models.ForeignKey(
+        to=CategoriaComedor, on_delete=models.SET_NULL, null=True
+    )
+    comedor = models.ForeignKey(to=Comedor, on_delete=models.SET_NULL, null=True)
+    relevamiento = models.ForeignKey(
+        to=Relevamiento, on_delete=models.SET_NULL, null=True
+    )
+    fecha = models.DateTimeField(default=timezone.now, blank=True)
+
+    def __str__(self):
+        return str(self.puntuacion_total)
+
+    class Meta:
+        verbose_name = "Clasificacion de Comedor"
+        verbose_name_plural = "Clasificaciones de Comedor"
