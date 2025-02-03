@@ -157463,5 +157463,13 @@
             "nombre": "Río Chico",
             "fk_provincia": "78"
         }
+    },
+    {
+        "model": "configuraciones.Municipio",
+        "pk": "78049008",
+        "fields": {
+            "nombre": "La Capital",
+            "fk_provincia": "82"
+        }
     }
 ]
