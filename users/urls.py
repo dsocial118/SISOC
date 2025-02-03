@@ -1,5 +1,8 @@
 from django.urls import path
-from .views import (
+from django.contrib.auth.views import LogoutView
+from django.contrib.auth.decorators import login_required
+from users.views import (
+    UsuariosLoginView,
     UserListView,
     UserCreateView,
     UserUpdateView,
@@ -11,14 +14,38 @@ from .views import (
 )
 
 urlpatterns = [
+    path("", UsuariosLoginView.as_view(), name="login"),
+    path("logout", login_required(LogoutView.as_view()), name="logout"),
     # Usuarios
-    path("usuarios/", UserListView.as_view(), name="usuarios"),
-    path("usuarios/crear/", UserCreateView.as_view(), name="usuario_crear"),
-    path("usuarios/editar/<int:pk>/", UserUpdateView.as_view(), name="usuario_editar"),
-    path("usuarios/borrar/<int:pk>/", UserDeleteView.as_view(), name="usuario_borrar"),
+    path("usuarios/", login_required(UserListView.as_view()), name="usuarios"),
+    path(
+        "usuarios/crear/",
+        login_required(UserCreateView.as_view()),
+        name="usuario_crear",
+    ),
+    path(
+        "usuarios/editar/<int:pk>/",
+        login_required(UserUpdateView.as_view()),
+        name="usuario_editar",
+    ),
+    path(
+        "usuarios/borrar/<int:pk>/",
+        login_required(UserDeleteView.as_view()),
+        name="usuario_borrar",
+    ),
     # Grupos
-    path("grupos/", GroupListView.as_view(), name="grupos"),
-    path("grupos/crear/", GroupCreateView.as_view(), name="grupo_crear"),
-    path("grupos/editar/<int:pk>/", GroupUpdateView.as_view(), name="grupo_editar"),
-    path("grupos/borrar/<int:pk>/", GroupDeleteView.as_view(), name="grupo_borrar"),
+    path("grupos/", login_required(GroupListView.as_view()), name="grupos"),
+    path(
+        "grupos/crear/", login_required(GroupCreateView.as_view()), name="grupo_crear"
+    ),
+    path(
+        "grupos/editar/<int:pk>/",
+        login_required(GroupUpdateView.as_view()),
+        name="grupo_editar",
+    ),
+    path(
+        "grupos/borrar/<int:pk>/",
+        login_required(GroupDeleteView.as_view()),
+        name="grupo_borrar",
+    ),
 ]

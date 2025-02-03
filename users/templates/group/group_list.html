@@ -41,20 +41,17 @@
                         {% for o in object_list %}
                             <tr>
                                 <td>
-                                    <a href="{% url 'grupos_ver' o.id %}">
+                                    <a>
                                         <span class="font-weight-bold ">{{ o.nombre }}</span>
                                     </a>
                                 </td>
                                 <td class="project-actions text-right">
-                                    {% if perms.Grupos.rol_admin %}
-                                        <div class="btn-group" role="group">
-                                            <a href="{% url 'grupos_ver' o.id %}" class="btn btn-primary btn-sm ver">Ver</a>
-                                            <a href="{% url 'grupos_editar' o.id %}"
-                                               class="btn btn-primary btn-sm editar">Editar</a>
-                                            <a href="{% url 'grupos_eliminar' o.id %}"
-                                               class="btn btn-danger btn-sm eliminar">Eliminar</a>
-                                        </div>
-                                    {% endif %}
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'grupo_editar' o.id %}"
+                                            class="btn btn-primary btn-sm editar">Editar</a>
+                                        <a href="{% url 'grupo_borrar' o.id %}"
+                                            class="btn btn-danger btn-sm eliminar">Eliminar</a>
+                                    </div>
                                 </td>
                             </tr>
                         {% endfor %}
