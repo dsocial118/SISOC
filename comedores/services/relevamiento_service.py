@@ -23,7 +23,6 @@ from comedores.models.relevamiento import (
     Prestacion,
     Referente,
     Relevamiento,
-    Territorial,
     TipoAccesoComedor,
     TipoAgua,
     TipoCombustible,
@@ -50,13 +49,8 @@ class RelevamientoService:
 
         if territorial_data:
             territorial_data = json.loads(territorial_data)
-            gestionar_uid = territorial_data.get("gestionar_uid")
-            nombre = territorial_data.get("nombre")
-
-            territorial, _ = Territorial.objects.get_or_create(
-                gestionar_uid=gestionar_uid, defaults={"nombre": nombre}
-            )
-            relevamiento.territorial = territorial
+            relevamiento.territorial_uid = territorial_data.get("gestionar_uid")
+            relevamiento.territorial_nombre = territorial_data.get("nombre")
             relevamiento.estado = "Visita pendiente"
 
         relevamiento.save()
@@ -71,13 +65,12 @@ class RelevamientoService:
 
         if territorial_data:
             territorial_data = json.loads(territorial_data)
-            gestionar_uid = territorial_data["gestionar_uid"]
-            territorial = Territorial.objects.get(gestionar_uid=gestionar_uid)
-
-            relevamiento.territorial = territorial
+            relevamiento.territorial_uid = territorial_data.get("gestionar_uid")
+            relevamiento.territorial_nombre = territorial_data.get("nombre")
             relevamiento.estado = "Visita pendiente"
         else:
-            relevamiento.territorial = None
+            relevamiento.territorial_nombre = None
+            relevamiento.territorial_uid = None
             relevamiento.estado = "Pendiente"
 
         relevamiento.save()
@@ -169,7 +162,7 @@ class RelevamientoService:
                 "funcionamiento__modalidad_prestacion__nombre",
                 "funcionamiento__servicio_por_turnos",
                 "funcionamiento__cantidad_turnos",
-                "territorial__nombre",
+                "territorial_nombre",
                 "responsable_es_referente",
                 "responsable__nombre",
                 "responsable__apellido",
@@ -1209,8 +1202,8 @@ class RelevamientoService:
                     "Id_SISOC": f"{relevamiento.id}",
                     "ESTADO": relevamiento.estado,
                     "TecnicoRelevador": (
-                        f"{relevamiento.territorial.gestionar_uid}"
-                        if relevamiento.territorial
+                        f"{relevamiento.territorial_uid}"
+                        if relevamiento.territorial_uid is not None
                         else ""
                     ),
                     "Fecha de visita": (
