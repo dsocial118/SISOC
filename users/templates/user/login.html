@@ -1,0 +1,63 @@
+{% load static %}
+{% load crispy_forms_tags %}
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" href="{% static 'custom/css/login.css' %}" />
+        <title>Login</title>
+    </head>
+    <body>
+        <div class="login-container">
+            <div class="left-panel"></div>
+            <div class="right-panel">
+                <div class="login-box">
+                    <h2>
+                        <span>👋</span> Hola bienvenido a SISOC
+                    </h2>
+                    <form method="post" id="form-login">
+                        {% csrf_token %}
+                        <div class="input-group mb-3">
+                            <input type="text"
+                                   class="form-control"
+                                   placeholder="Usuario"
+                                   required
+                                   name="username"
+                                   id="id_username"
+                                   required="required" />
+                            <div class="input-group-append">
+                                <div class="input-group-text">
+                                    <span class="fas fa-user"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="input-group mb-3">
+                            <input type="password"
+                                   class="form-control"
+                                   placeholder="Contraseña"
+                                   required
+                                   name="password"
+                                   id="id_password"
+                                   required="required" />
+                            <div class="input-group-append">
+                                <div class="input-group-text">
+                                    <span class="fas fa-lock"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row justify-content-center mt-3">
+                            <div class="col-4">
+                                <button class="btn btn-primary btn-block" type="submit">Ingresar</button>
+                            </div>
+                        </div>
+                    </form>
+                    <footer>
+                        Subsecretaría de Innovación de Economía Solidaria
+                    </footer>
+                </div>
+            </div>
+        </div>
+        <script src="{% static 'dist/js/adminlte.js' %}"></script>
+    </body>
+</html>

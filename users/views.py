@@ -1,5 +1,7 @@
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.views import LoginView
+from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from .forms import UserCreationForm
@@ -8,6 +10,10 @@ from .forms import UserCreationForm
 class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     def test_func(self):
         return self.request.user.is_superuser
+
+
+class UsuariosLoginView(LoginView):
+    template_name = "user/login.html"
 
 
 class UserListView(AdminRequiredMixin, ListView):
