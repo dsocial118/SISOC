@@ -1,6 +1,5 @@
 from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
-from django.forms import ValidationError
 from django.utils import timezone
 
 from configuraciones.models import Municipio, Provincia
