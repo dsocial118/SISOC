@@ -21,9 +21,6 @@ class Provincia(models.Model):
 
 
 class Mes(models.Model):
-    """
-    Guardado de las provincias de los vecinos y vecinas registrados.
-    """
 
     nombre = models.CharField(max_length=255)
 
@@ -37,9 +34,6 @@ class Mes(models.Model):
 
 
 class Dia(models.Model):
-    """
-    Guardado de las provincias de los vecinos y vecinas registrados.
-    """
 
     nombre = models.CharField(max_length=255)
 
@@ -53,9 +47,6 @@ class Dia(models.Model):
 
 
 class Turno(models.Model):
-    """
-    Guardado de las provincias de los vecinos y vecinas registrados.
-    """
 
     nombre = models.CharField(max_length=255)
 
