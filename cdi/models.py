@@ -86,19 +86,16 @@ class CentroDesarrolloInfantil(models.Model):
         to=Mes,
         related_name="centros",
         blank=True,
-        null=True,
     )
     dias_funcionamiento = models.ManyToManyField(
         to=Dia,
         related_name="centros",
         blank=True,
-        null=True,
     )
     turnos_funcionamiento = models.ManyToManyField(
         to=Turno,
         related_name="centros",
         blank=True,
-        null=True,
     )
     horario_inicio = models.TimeField(
         blank=True,
