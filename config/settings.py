@@ -125,7 +125,6 @@ INSTALLED_APPS = [
     "rest_framework_api_key",
     "corsheaders",
     # Aplicaciones propias
-    "usuarios",
     "users",
     "configuraciones",
     "dashboard",
