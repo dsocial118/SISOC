@@ -4,6 +4,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db import models
 import requests
+import pprint
 
 from comedores.models.relevamiento import Relevamiento
 from comedores.models.comedor import (
@@ -43,7 +44,6 @@ class ClasificacionComedorService:
     @staticmethod
     def get_puntuacion_total(relevamiento: Relevamiento):
         puntuacion = 0
-
         if relevamiento.espacio:
             if relevamiento.espacio.tipo_espacio_fisico.nombre == "Espacio alquilado":
                 puntuacion += 3
@@ -70,11 +70,17 @@ class ClasificacionComedorService:
 
             if relevamiento.espacio.cocina.heladera is False:
                 puntuacion += 3
+            
+            if relevamiento.espacio.cocina.freezer is False:
+                puntuacion += 3
 
             if relevamiento.espacio.cocina.recipiente_residuos_organicos is False:
                 puntuacion += 1
 
             if relevamiento.espacio.cocina.recipiente_residuos_reciclables is False:
+                puntuacion += 1
+            
+            if relevamiento.espacio.cocina.otros_residuos is False:
                 puntuacion += 1
 
             if (
@@ -139,6 +145,20 @@ class ClasificacionComedorService:
             elif relevamiento.espacio.prestacion.desague_hinodoro.nombre == "Letrina":
                 puntuacion += 3
 
+        if relevamiento.colaboradores:
+            if relevamiento.colaboradores.colaboradores_capacitados_alimentos is False:
+                puntuacion += 1
+            if relevamiento.colaboradores.colaboradores_recibieron_capacitacion_alimentos is False:
+                puntuacion += 1
+            if relevamiento.colaboradores.colaboradores_capacitados_salud_seguridad is False:
+                puntuacion += 1
+            if relevamiento.colaboradores.colaboradores_recibieron_capacitacion_emergencias is False:
+                puntuacion += 1
+            if relevamiento.colaboradores.colaboradores_recibieron_capacitacion_violencia is False:
+                puntuacion += 1
+
+        
+
         if relevamiento.anexo:
             if relevamiento.anexo.tecnologia == "Computadora":
                 puntuacion += 2
@@ -155,7 +175,12 @@ class ClasificacionComedorService:
             elif relevamiento.anexo.acceso_comedor == "Calle con mejorado":
                 puntuacion += 2
 
-            if relevamiento.anexo.zona_inundable is False:
+            if relevamiento.anexo.zona_inundable is True:
                 puntuacion += 3
 
+            if relevamiento.anexo.distancia_transporte == "Entre 6 y 10 cuadras":
+                puntuacion += 2
+            elif relevamiento.anexo.distancia_transporte == "Más de 10 cuadras":
+                puntuacion += 3
+            
         return puntuacion
