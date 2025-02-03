@@ -4,7 +4,8 @@ from django.contrib.auth.models import User
 from django.shortcuts import redirect
 
 
-# FIXME: Reveer si necesitamos este middleware, en caso de que si, corregir el dns al que se le pega
+# FIXME: Reveer si necesitamos este middleware, en caso de que si,
+# corregir el dns al que se le pega
 class CustomLoginMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
@@ -23,13 +24,14 @@ class CustomLoginMiddleware:
 
             if usuario is not None:
                 if usuario.is_superuser:
-                    # Si el usuario es superadmin, verificar el password localmente
+                    # Si el usuario es superadmin, verificar el password
+                    # localmente
                     user = authenticate(request, username=username, password=password)
                     if user is not None:
                         login(request, user)
-                        return redirect(
-                            "dashboard"
-                        )  # Redirigir a la página deseada después del inicio de sesión
+                        # Redirigir a la página deseada después del inicio de
+                        # sesión
+                        return redirect("dashboard")
 
                 else:
                     # Si no es superadmin, verificar con un endpoint
@@ -49,8 +51,8 @@ class CustomLoginMiddleware:
                         user = User.objects.get(username=username)
                         if user is not None:
                             login(request, user)
-                            return redirect(
-                                "dashboard"
-                            )  # Redirigir a la página deseada después del inicio de sesión
+                            # Redirigir a la página deseada después del inicio
+                            # de sesión
+                            return redirect("dashboard")
 
         return None

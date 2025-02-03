@@ -1,7 +1,7 @@
 from django.db import models
 
 
-# -------------------------------CONFIGURACIONES GENERALES (se usan en todo el proyecto)--------------------------------------
+# -------------------------------CONFIGURACIONES GENERALES (se usan en tod
 
 
 class Provincia(models.Model):
@@ -18,6 +18,45 @@ class Provincia(models.Model):
         ordering = ["id"]
         verbose_name = "Provincia"
         verbose_name_plural = "Provincia"
+
+
+class Mes(models.Model):
+
+    nombre = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        ordering = ["id"]
+        verbose_name = "Mes"
+        verbose_name_plural = "Meses"
+
+
+class Dia(models.Model):
+
+    nombre = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        ordering = ["id"]
+        verbose_name = "Dia"
+        verbose_name_plural = "Dias"
+
+
+class Turno(models.Model):
+
+    nombre = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        ordering = ["id"]
+        verbose_name = "Turno"
+        verbose_name_plural = "Turnos"
 
 
 class Municipio(models.Model):
