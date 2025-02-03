@@ -159,6 +159,7 @@ class EspacioCocina(models.Model):
         verbose_name = "Espacio de cocina y almacenamiento de alimentos"
         verbose_name_plural = "Espacios de cocina y almacenamiento de alimentos"
 
+
 class TipoModalidadPrestacion(models.Model):
     """
     Opciones de modalidades de prestacion de un Comedor/Merendero
