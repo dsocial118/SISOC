@@ -37,13 +37,12 @@ class CentroDesarrolloInfantilService:
         """
         return get_object_or_404(
             CentroDesarrolloInfantil.objects.select_related(
-                "provincia", "municipio", "localidad", 
+                "provincia",
+                "municipio",
+                "localidad",
             ),
             pk=centro_id,
         )
-
- 
-    
 
     @staticmethod
     def create_imagenes(imagen, centro_id):
