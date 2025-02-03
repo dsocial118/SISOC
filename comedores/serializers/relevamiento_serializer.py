@@ -1,9 +1,6 @@
 from rest_framework import serializers
 
 from comedores.models.relevamiento import Relevamiento
-from comedores.models.relevamiento import (
-    Territorial,
-)
 from comedores.services.relevamiento_service import RelevamientoService
 from comedores.utils import format_fecha_django
 
@@ -17,11 +14,8 @@ class RelevamientoSerializer(serializers.ModelSerializer):
 
         if "territorial" in self.initial_data:
             territorial_data = self.initial_data["territorial"]
-            territorial, _ = Territorial.objects.get_or_create(
-                gestionar_uid=territorial_data["gestionar_uid"],
-                defaults={"nombre": territorial_data["nombre"]},
-            )
-            self.initial_data["territorial"] = territorial.id
+            self.initial_data["territorial_nombre"] = territorial_data["nombre"]
+            self.initial_data["territorial_uid"] = territorial_data["gestionar_uid"]
 
         if "funcionamiento" in self.initial_data:
             funcionamiento_instance = (
