@@ -205,9 +205,9 @@ class ComedorService:
             "Properties": {"Locale": "es-ES"},
             "Rows": [
                 {
-                    "Documento DNI": referente.documento,
-                    "Nombre": referente.nombre,
-                    "Apellido": referente.apellido,
+                    "documento": referente.documento,
+                    "nombre": referente.nombre,
+                    "apellido": referente.apellido,
                     "mail": referente.mail,
                     "celular": referente.celular,
                 }
