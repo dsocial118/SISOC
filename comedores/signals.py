@@ -5,6 +5,7 @@ from comedores.models.relevamiento import Relevamiento
 from comedores.services.observacion_service import ObservacionService
 from comedores.services.relevamiento_service import RelevamientoService
 from comedores.services.comedor_service import ComedorService
+from comedores.services.clasificacion_comedor_service import ClasificacionComedorService
 
 
 @receiver(post_save, sender=Comedor)
@@ -50,3 +51,8 @@ def send_observacion_to_gestionar(sender, instance, created, **kwargs):
 def send_referente_to_gestionar(sender, instance, created, **kwargs):
     if created:
         ComedorService.send_referente_to_gestionar(instance)
+
+
+@receiver(post_save, sender=Relevamiento)
+def clasificacion_relevamiento(sender, instance, **kwargs):
+    ClasificacionComedorService.create_clasificacion_relevamiento(instance)
