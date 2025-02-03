@@ -8,7 +8,6 @@ import requests
 from comedores.models.relevamiento import Relevamiento
 from comedores.forms.comedor_form import ImagenComedorForm
 from comedores.models.comedor import Comedor, Referente, ValorComida
-from config import settings
 from configuraciones.models import Municipio, Provincia
 from configuraciones.models import Localidad
 
@@ -100,6 +99,8 @@ class ComedorService:
 
         if "celular" in referente_data:
             referente_data["celular"] = referente_data["celular"].replace("-", "")
+            if referente_data["celular"] == "":
+                referente_data["celular"] = None
         if "documento" in referente_data:
             referente_data["documento"] = referente_data["documento"].replace(".", "")
 
@@ -125,76 +126,77 @@ class ComedorService:
 
     @staticmethod
     def send_to_gestionar(comedor: Comedor):
-        if comedor.gestionar_uid is None:
-            data = {
-                "Action": "Add",
-                "Properties": {"Locale": "es-ES"},
-                "Rows": [
-                    {
-                        "ComedorID": comedor.id,
-                        "ID_Sisoc": comedor.id,
-                        "nombre": comedor.nombre,
-                        "comienzo": (
-                            f"01/01/{comedor.comienzo}"
-                            if comedor.comienzo
-                            else "01/01/1900"
-                        ),
-                        "TipoComedor": (
-                            comedor.tipocomedor.nombre if comedor.tipocomedor else ""
-                        ),
-                        "calle": comedor.calle if comedor.calle else "",
-                        "numero": comedor.numero if comedor.numero else "",
-                        "entre_calle_1": (
-                            comedor.entre_calle_1 if comedor.entre_calle_1 else ""
-                        ),
-                        "entre_calle_2": (
-                            comedor.entre_calle_2 if comedor.entre_calle_2 else ""
-                        ),
-                        "provincia": (
-                            comedor.provincia.nombre if comedor.provincia else ""
-                        ),
-                        "municipio": (
-                            comedor.municipio.nombre if comedor.municipio else ""
-                        ),
-                        "localidad": (
-                            comedor.localidad.nombre if comedor.localidad else ""
-                        ),
-                        "partido": comedor.partido if comedor.partido else "",
-                        "barrio": comedor.barrio if comedor.barrio else "",
-                        "codigo_postal": (
-                            comedor.codigo_postal if comedor.codigo_postal else ""
-                        ),
-                        "Referente": (
-                            comedor.referente.documento
-                            if comedor.referente.documento
-                            else ""
-                        ),
-                        "Imagen": (
-                            f"{os.getenv('DOMINIO')}/media/{comedor.foto_legajo}"
-                            if comedor.foto_legajo
-                            else ""
-                        ),
-                    }
-                ],
-            }
+        data = {
+            "Action": "Add",
+            "Properties": {"Locale": "es-ES"},
+            "Rows": [
+                {
+                    "ComedorID": comedor.id,
+                    "ID_Sisoc": comedor.id,
+                    "nombre": comedor.nombre,
+                    "comienzo": (
+                        f"01/01/{comedor.comienzo}"
+                        if comedor.comienzo
+                        else "01/01/1900"
+                    ),
+                    "TipoComedor": (
+                        comedor.tipocomedor.nombre if comedor.tipocomedor else ""
+                    ),
+                    "calle": comedor.calle if comedor.calle else "",
+                    "numero": comedor.numero if comedor.numero else "",
+                    "entre_calle_1": (
+                        comedor.entre_calle_1 if comedor.entre_calle_1 else ""
+                    ),
+                    "entre_calle_2": (
+                        comedor.entre_calle_2 if comedor.entre_calle_2 else ""
+                    ),
+                    "provincia": (
+                        comedor.provincia.nombre if comedor.provincia else ""
+                    ),
+                    "municipio": (
+                        comedor.municipio.nombre if comedor.municipio else ""
+                    ),
+                    "localidad": (
+                        comedor.localidad.nombre if comedor.localidad else ""
+                    ),
+                    "partido": comedor.partido if comedor.partido else "",
+                    "barrio": comedor.barrio if comedor.barrio else "",
+                    "codigo_postal": (
+                        comedor.codigo_postal if comedor.codigo_postal else ""
+                    ),
+                    "Referente": (
+                        comedor.referente.documento
+                        if comedor.referente and comedor.referente.documento
+                        else ""
+                    ),
+                    "Imagen": (
+                        f"{os.getenv('DOMINIO')}/media/{comedor.foto_legajo}"
+                        if comedor.foto_legajo
+                        else ""
+                    ),
+                }
+            ],
+        }
 
-            headers = {
-                "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
-            }
+        headers = {
+            "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
+        }
 
-            try:
-                response = requests.post(
-                    os.getenv("GESTIONAR_API_CREAR_COMEDOR"),
-                    json=data,
-                    headers=headers,
-                )
-                response.raise_for_status()
-                response = response.json()
+        try:
+            response = requests.post(
+                os.getenv("GESTIONAR_API_CREAR_COMEDOR"),
+                json=data,
+                headers=headers,
+            )
+            response.raise_for_status()
+            response = response.json()
 
-                comedor.gestionar_uid = response["Rows"][0]["ComedorID"]
+            gestionar_uid = response["Rows"][0]["ComedorID"]
+            if comedor.gestionar_uid != gestionar_uid:
+                comedor.gestionar_uid = gestionar_uid
                 comedor.save()
-            except requests.exceptions.RequestException as e:
-                print(f"Error al sincronizar con GESTIONAR: {e}")
+        except requests.exceptions.RequestException as e:
+            print(f"Error al sincronizar con GESTIONAR: {e}")
 
     @staticmethod
     def send_referente_to_gestionar(referente: Referente):
@@ -203,9 +205,9 @@ class ComedorService:
             "Properties": {"Locale": "es-ES"},
             "Rows": [
                 {
-                    "Documento DNI": referente.documento,
-                    "Nombre": referente.nombre,
-                    "Apellido": referente.apellido,
+                    "documento": referente.documento,
+                    "nombre": referente.nombre,
+                    "apellido": referente.apellido,
                     "mail": referente.mail,
                     "celular": referente.celular,
                 }
@@ -224,6 +226,28 @@ class ComedorService:
             )
             response.raise_for_status()
             response = response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"Error al sincronizar con GESTIONAR: {e}")
+
+    @staticmethod
+    def remove_to_gestionar(comedor: Comedor):
+        data = {
+            "Action": "Delete",
+            "Properties": {"Locale": "es-ES"},
+            "Rows": [{"ComedorID": f"{comedor.id}"}],
+        }
+
+        headers = {
+            "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
+        }
+
+        try:
+            response = requests.post(
+                os.getenv("GESTIONAR_API_BORRAR_COMEDOR"),
+                json=data,
+                headers=headers,
+            )
+            response.raise_for_status()
         except requests.exceptions.RequestException as e:
             print(f"Error al sincronizar con GESTIONAR: {e}")
 

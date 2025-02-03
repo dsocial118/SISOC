@@ -16,7 +16,7 @@ from django.views.generic import (
 )
 
 
-from comedores.models.relevamiento import Relevamiento
+from comedores.models.relevamiento import Relevamiento, ClasificacionComedor
 from comedores.forms.comedor_form import (
     ComedorForm,
     ReferenteForm,
@@ -289,7 +289,7 @@ class ComedorDetailView(DetailView):
             {
                 "relevamientos": Relevamiento.objects.filter(comedor=self.object["id"])
                 .values("id", "fecha_visita", "estado")
-                .order_by("-fecha_visita")[:3],
+                .order_by("-estado")[:3],
                 "territoriales": ComedorService.get_territoriales(self.object["id"]),
                 "observaciones": Observacion.objects.filter(comedor=self.object["id"])
                 .values("id", "fecha_visita")
@@ -305,6 +305,11 @@ class ComedorDetailView(DetailView):
                 "imagenes": ImagenComedor.objects.filter(
                     comedor=self.object["id"]
                 ).values("imagen"),
+                "comedor_categoria": ClasificacionComedor.objects.filter(
+                    comedor=self.object["id"]
+                )
+                .order_by("-fecha")
+                .first(),
             }
         )
         return context
@@ -462,9 +467,7 @@ class RelevamientoCreateView(CreateView):
         }
 
         if all(form.is_valid() for form in forms.values()):
-            self.object = RelevamientoService.populate_relevamiento(
-                form, forms, self.request.user.id
-            )
+            self.object = RelevamientoService.populate_relevamiento(form, forms)
 
             return redirect(
                 "relevamiento_detalle",
@@ -582,9 +585,7 @@ class RelevamientoUpdateView(UpdateView):
         }
 
         if all(form.is_valid() for form in forms.values()):
-            self.object = RelevamientoService.populate_relevamiento(
-                form, forms, self.request.user.id
-            )
+            self.object = RelevamientoService.populate_relevamiento(form, forms)
 
             return redirect(
                 "relevamiento_detalle",
