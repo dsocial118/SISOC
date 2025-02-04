@@ -7,7 +7,8 @@ def format_serializer_errors(serializer):
     for field, errors in serializer.errors.items():
         for error in errors:
             if field == "non_field_errors":
-                error_messages.append(str(error))  # Errores sin campo específico
+                # Errores sin campo específico
+                error_messages.append(str(error))
             else:
                 error_messages.append(
                     f"{field}: {str(error)}"

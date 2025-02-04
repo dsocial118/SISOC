@@ -2,14 +2,14 @@
 {% with pagina_actual=request.resolver_match.route %}
     <li class="nav-item">
         <a href="{% url 'dashboard' %}"
-            class="nav-link {% if 'dashboard' in pagina_actual %}active{% endif %}">
+           class="nav-link {% if 'dashboard' in pagina_actual %}active{% endif %}">
             <i class="nav-icon fas fa-chart-pie"></i>
             <p>Dashboard</p>
         </a>
     </li>
     <li class="nav-item {% if 'administracion' in pagina_actual %}menu-open{% endif %}">
         <a href="#"
-            class="nav-link {% if 'administracion' in pagina_actual %}active{% endif %}">
+           class="nav-link {% if 'administracion' in pagina_actual %}active{% endif %}">
             <i class="nav-icon fas fa-users"></i>
             <p>
                 Administración
@@ -19,12 +19,12 @@
         <ul class="nav nav-treeview">
             <li class="nav-item">
                 <a href="{% url 'usuarios' %}"
-                    class="nav-link {% if 'usuarios' in pagina_actual or 'password' in pagina_actual %}active{% endif %}">
+                   class="nav-link {% if 'usuarios' in pagina_actual or 'password' in pagina_actual %}active{% endif %}">
                     <i class="fas fa-arrow-alt-circle-right nav-icon"></i>
                     <p>Usuarios</p>
                 </a>
                 <a href="{% url 'grupos' %}"
-                    class="nav-link {% if 'grupos' in pagina_actual %}active{% endif %}">
+                   class="nav-link {% if 'grupos' in pagina_actual %}active{% endif %}">
                     <i class="fas fa-arrow-alt-circle-right nav-icon"></i>
                     <p>Grupos</p>
                 </a>
@@ -41,20 +41,33 @@
             </p>
         </a>
         <ul class="nav nav-treeview">
-            <li class="nav-item">
-                <a href="{% url 'comedores' %}"
-                    class="nav-link {% if 'comedores/listar' in pagina_actual %}active{% endif %}">
-                    <i class="nav-icon fas fa-user"></i>
-                    <p>Comedores</p>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="{% url 'organizaciones' %}"
-                    class="nav-link {% if 'comedores/listar' in pagina_actual %}active{% endif %}">
-                    <i class="nav-icon bi bi-building-fill"></i>
-                    <p>Organizaciones</p>
-                </a>
-            </li>
+            {% if perms.comedores %}
+                <li class="nav-item">
+                    <a href="{% url 'comedores' %}"
+                       class="nav-link {% if 'comedores/listar' in pagina_actual %}active{% endif %}">
+                        <i class="nav-icon fas fa-user"></i>
+                        <p>Comedores</p>
+                    </a>
+                </li>
+            {% endif %}
+            {% if perms.organizaciones %}
+                <li class="nav-item">
+                    <a href="{% url 'organizaciones' %}"
+                       class="nav-link {% if 'organizaciones/listar' in pagina_actual %}active{% endif %}">
+                        <i class="nav-icon bi bi-building-fill"></i>
+                        <p>Organizaciones</p>
+                    </a>
+                </li>
+            {% endif %}
+            {% if perms.cdi %}
+                <li class="nav-item">
+                    <a href="{% url 'cdi' %}"
+                       class="nav-link {% if 'cdi/listar' in pagina_actual %}active{% endif %}">
+                        <i class="nav-icon bi bi-building-fill"></i>
+                        <p>Centro Desarrollo Infantil</p>
+                    </a>
+                </li>
+            {% endif %}
         </ul>
     </li>
 {% endwith %}
