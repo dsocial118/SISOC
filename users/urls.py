@@ -8,9 +8,6 @@ from users.views import (
     UserUpdateView,
     UserDeleteView,
     GroupListView,
-    GroupCreateView,
-    GroupUpdateView,
-    GroupDeleteView,
 )
 
 urlpatterns = [
@@ -35,17 +32,4 @@ urlpatterns = [
     ),
     # Grupos
     path("grupos/", login_required(GroupListView.as_view()), name="grupos"),
-    path(
-        "grupos/crear/", login_required(GroupCreateView.as_view()), name="grupo_crear"
-    ),
-    path(
-        "grupos/editar/<int:pk>/",
-        login_required(GroupUpdateView.as_view()),
-        name="grupo_editar",
-    ),
-    path(
-        "grupos/borrar/<int:pk>/",
-        login_required(GroupDeleteView.as_view()),
-        name="grupo_borrar",
-    ),
 ]
