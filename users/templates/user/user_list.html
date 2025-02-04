@@ -1,0 +1,48 @@
+{% extends "includes/main.html" %};
+{% load static %}
+;
+{% block head %}{% endblock %}
+{% block title %}Usuarios{% endblock %}
+;
+{% block titulo-pagina %}Usuarios{% endblock %}
+;
+{% block menu-adicional %}{% endblock %}
+;
+{% block content %}
+    <div class="row d-flex justify-content-between my-3 mx-sm-2">
+        <div class="col-12 col-sm-3 ">
+            <a class="btn btn-primary mb-2 mb-sm-0 d-block d-sm-inline"
+               href="{% url 'usuario_crear' %}">Agregar</a>
+        </div>
+    </div>
+    <div class="row ">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body ">
+                    <table class="table table-bordered table-striped projects">
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Acciones</th>
+                        </tr>
+                        {% for user in users %}
+                            <tr>
+                                <td>{{ user.username }}</td>
+                                <td>{{ user.email }}</td>
+                                <td class="project-actions text-right">
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'usuario_editar' user.id %}"
+                                           class="btn btn-primary btn-sm editar">Editar</a>
+                                        <a href="{% url 'usuario_borrar' user.id %}"
+                                           class="btn btn-danger btn-sm eliminar">Eliminar</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
+{% block customJS %}{% endblock %}

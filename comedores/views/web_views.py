@@ -1,4 +1,5 @@
 from typing import Any
+from django.contrib.auth.models import User
 from django.contrib import messages
 from django.db.models.base import Model
 from django.forms import BaseModelForm
@@ -50,7 +51,6 @@ from comedores.models.comedor import (
 from comedores.models.relevamiento import Prestacion
 from comedores.services.comedor_service import ComedorService
 from comedores.services.relevamiento_service import RelevamientoService
-from usuarios.models import Usuarios
 
 
 def SubEstadosIntervencionesAJax(request):
@@ -636,7 +636,7 @@ class ObservacionCreateView(CreateView):
 
     def form_valid(self, form: BaseModelForm) -> HttpResponse:
         form.instance.comedor_id = Comedor.objects.get(pk=self.kwargs["comedor_pk"]).id
-        usuario = Usuarios.objects.get(pk=self.request.user.id).usuario
+        usuario = User.objects.get(pk=self.request.user.id)
         form.instance.observador = f"{usuario.first_name} {usuario.last_name}"
         form.instance.fecha_visita = timezone.now()
 
@@ -687,7 +687,7 @@ class ObservacionUpdateView(UpdateView):
 
     def form_valid(self, form: BaseModelForm) -> HttpResponse:
         form.instance.comedor_id = Comedor.objects.get(pk=self.kwargs["comedor_pk"]).id
-        usuario = Usuarios.objects.get(pk=self.request.user.id).usuario
+        usuario = User.objects.get(pk=self.request.user.id)
         form.instance.observador = f"{usuario.first_name} {usuario.last_name}"
         form.instance.fecha_visita = timezone.now()
 

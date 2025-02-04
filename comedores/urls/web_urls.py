@@ -1,4 +1,3 @@
-from django.contrib.auth.decorators import login_required
 from django.urls import path
 
 from comedores.views.web_views import (
@@ -26,116 +25,117 @@ from comedores.views.web_views import (
     NominaUpdateView,
     SubEstadosIntervencionesAJax,
 )
+from configuraciones.decorators import group_required
 
 urlpatterns = [
     path(
         "comedores/listar",
-        login_required(ComedorListView.as_view()),
+        group_required("Comedores")(ComedorListView.as_view()),
         name="comedores",
     ),
     path(
         "comedores/crear",
-        login_required(ComedorCreateView.as_view()),
+        group_required("Comedores")(ComedorCreateView.as_view()),
         name="comedor_crear",
     ),
     path(
         "comedores/<pk>",
-        login_required(ComedorDetailView.as_view()),
+        group_required("Comedores")(ComedorDetailView.as_view()),
         name="comedor_detalle",
     ),
     path(
         "comedores/<pk>/editar",
-        login_required(ComedorUpdateView.as_view()),
+        group_required("Comedores")(ComedorUpdateView.as_view()),
         name="comedor_editar",
     ),
     path(
         "comedores/<pk>/eliminar",
-        login_required(ComedorDeleteView.as_view()),
+        group_required("Comedores")(ComedorDeleteView.as_view()),
         name="comedor_eliminar",
     ),
     path(
         "comedores/<comedor_pk>/relevamiento/listar",
-        login_required(RelevamientoListView.as_view()),
+        group_required("Comedores")(RelevamientoListView.as_view()),
         name="relevamientos",
     ),
     path(
         "comedores/<comedor_pk>/relevamiento/crear",
-        login_required(RelevamientoCreateView.as_view()),
+        group_required("Comedores")(RelevamientoCreateView.as_view()),
         name="relevamiento_crear",
     ),
     path(
         "comedores/<comedor_pk>/relevamiento/<pk>",
-        login_required(RelevamientoDetailView.as_view()),
+        group_required("Comedores")(RelevamientoDetailView.as_view()),
         name="relevamiento_detalle",
     ),
     path(
         "comedores/<comedor_pk>/relevamiento/<pk>/editar",
-        login_required(RelevamientoUpdateView.as_view()),
+        group_required("Comedores")(RelevamientoUpdateView.as_view()),
         name="relevamiento_editar",
     ),
     path(
         "comedores/<comedor_pk>/relevamiento/<pk>/eliminar",
-        login_required(RelevamientoDeleteView.as_view()),
+        group_required("Comedores")(RelevamientoDeleteView.as_view()),
         name="relevamiento_eliminar",
     ),
     path(
         "comedores/<comedor_pk>/observacion/crear",
-        login_required(ObservacionCreateView.as_view()),
+        group_required("Comedores")(ObservacionCreateView.as_view()),
         name="observacion_crear",
     ),
     path(
         "comedores/<comedor_pk>/observacion/<pk>",
-        login_required(ObservacionDetailView.as_view()),
+        group_required("Comedores")(ObservacionDetailView.as_view()),
         name="observacion_detalle",
     ),
     path(
         "comedores/<comedor_pk>/observacion/<pk>/editar",
-        login_required(ObservacionUpdateView.as_view()),
+        group_required("Comedores")(ObservacionUpdateView.as_view()),
         name="observacion_editar",
     ),
     path(
         "comedores/<comedor_pk>/observacion/<pk>/eliminar",
-        login_required(ObservacionDeleteView.as_view()),
+        group_required("Comedores")(ObservacionDeleteView.as_view()),
         name="observacion_eliminar",
     ),
     path(
         "comedores/intervencion/ver/<pk>",
-        login_required(IntervencionDetail.as_view()),
+        group_required("Comedores")(IntervencionDetail.as_view()),
         name="intervencion_ver",
     ),
     path(
         "comedores/nomina/ver/<pk>",
-        login_required(NominaDetail.as_view()),
+        group_required("Comedores")(NominaDetail.as_view()),
         name="nomina_ver",
     ),
     path(
         "comedores/nomina/crear/<pk>",
-        login_required(NominaCreateView.as_view()),
+        group_required("Comedores")(NominaCreateView.as_view()),
         name="nomina_crear",
     ),
     path(
         "comedores/intervencion/crear/<pk>",
-        login_required(IntervencionCreateView.as_view()),
+        group_required("Comedores")(IntervencionCreateView.as_view()),
         name="intervencion_crear",
     ),
     path(
         "comedores/intervencion/editar/<pk>/<pk2>",
-        login_required(IntervencionUpdateView.as_view()),
+        group_required("Comedores")(IntervencionUpdateView.as_view()),
         name="intervencion_editar",
     ),
     path(
         "comedores/nomina/editar/<pk>/<pk2>",
-        login_required(NominaUpdateView.as_view()),
+        group_required("Comedores")(NominaUpdateView.as_view()),
         name="nomina_editar",
     ),
     path(
         "comedores/intervencion/borrar/<pk>/<pk2>",
-        login_required(IntervencionDeleteView.as_view()),
+        group_required("Comedores")(IntervencionDeleteView.as_view()),
         name="intervencion_borrar",
     ),
     path(
         "comedores/nomina/borrar/<pk>/<pk2>",
-        login_required(NominaDeleteView.as_view()),
+        group_required("Comedores")(NominaDeleteView.as_view()),
         name="nomina_borrar",
     ),
     path(

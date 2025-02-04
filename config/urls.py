@@ -8,7 +8,7 @@ urlpatterns = [
     path("admin/doc/", include("django.contrib.admindocs.urls")),
     path("admin/", admin.site.urls),
     path("", include("django.contrib.auth.urls")),
-    path("", include("usuarios.urls")),
+    path("", include("users.urls")),
     path("", include("configuraciones.urls")),
     path("", include("dashboard.urls")),
     path("", include("comedores.urls")),
