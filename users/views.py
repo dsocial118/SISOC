@@ -1,7 +1,6 @@
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.views import LoginView
-from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from .forms import UserCreationForm
@@ -46,23 +45,3 @@ class GroupListView(AdminRequiredMixin, ListView):
     model = Group
     template_name = "group/group_list.html"
     context_object_name = "groups"
-
-
-class GroupCreateView(AdminRequiredMixin, CreateView):
-    model = Group
-    fields = ["name"]
-    template_name = "group/group_form.html"
-    success_url = reverse_lazy("grupos")
-
-
-class GroupUpdateView(AdminRequiredMixin, UpdateView):
-    model = Group
-    fields = ["name"]
-    template_name = "group/group_form.html"
-    success_url = reverse_lazy("grupos")
-
-
-class GroupDeleteView(AdminRequiredMixin, DeleteView):
-    model = Group
-    template_name = "group/group_confirm_delete.html"
-    success_url = reverse_lazy("grupos")

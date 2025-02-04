@@ -25,7 +25,10 @@
                   enctype="multipart/form-data"
                   autocomplete="off">
                 {% csrf_token %}
-                {{ form.as_p }}
+                {{ form.username | as_crispy_field }}
+                {{ form.email | as_crispy_field }}
+                {{ form.password | as_crispy_field }}
+                {{ form.groups | as_crispy_field }}
                 <div class="mt-4 mx-2">
                     <button type="submit" class="btn btn-primary mr-1">Confirmar</button>
                     <a href="{% url 'usuarios' %}" class="btn btn-secondary">Cancelar</a>
