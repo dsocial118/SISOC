@@ -1,6 +1,6 @@
 from django.urls import path
 from django.contrib.auth.views import LogoutView
-from django.contrib.auth.decorators import login_required
+from configuraciones.decorators import group_required
 from users.views import (
     UsuariosLoginView,
     UserListView,
@@ -12,24 +12,24 @@ from users.views import (
 
 urlpatterns = [
     path("", UsuariosLoginView.as_view(), name="login"),
-    path("logout", login_required(LogoutView.as_view()), name="logout"),
+    path("logout", group_required("Admin")(LogoutView.as_view()), name="logout"),
     # Usuarios
-    path("usuarios/", login_required(UserListView.as_view()), name="usuarios"),
+    path("usuarios/", group_required("Admin")(UserListView.as_view()), name="usuarios"),
     path(
         "usuarios/crear/",
-        login_required(UserCreateView.as_view()),
+        group_required("Admin")(UserCreateView.as_view()),
         name="usuario_crear",
     ),
     path(
         "usuarios/editar/<int:pk>/",
-        login_required(UserUpdateView.as_view()),
+        group_required("Admin")(UserUpdateView.as_view()),
         name="usuario_editar",
     ),
     path(
         "usuarios/borrar/<int:pk>/",
-        login_required(UserDeleteView.as_view()),
+        group_required("Admin")(UserDeleteView.as_view()),
         name="usuario_borrar",
     ),
     # Grupos
-    path("grupos/", login_required(GroupListView.as_view()), name="grupos"),
+    path("grupos/", group_required("Admin")(GroupListView.as_view()), name="grupos"),
 ]
