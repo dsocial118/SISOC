@@ -9,8 +9,7 @@
     </li>
     {% if user|has_group:"Administrador" %}
         <li class="nav-item">
-            <a href="#"
-            class="nav-link">
+            <a href="#" class="nav-link">
                 <i class="nav-icon fas fa-users"></i>
                 <p>
                     Administración
@@ -20,12 +19,12 @@
             <ul class="nav nav-treeview">
                 <li class="nav-item">
                     <a href="{% url 'usuarios' %}"
-                    class="nav-link {% if 'usuarios' in pagina_actual or 'password' in pagina_actual %}active{% endif %}">
+                       class="nav-link {% if 'usuarios' in pagina_actual or 'password' in pagina_actual %}active{% endif %}">
                         <i class="fas fa-arrow-alt-circle-right nav-icon"></i>
                         <p>Usuarios</p>
                     </a>
                     <a href="{% url 'grupos' %}"
-                    class="nav-link {% if 'grupos' in pagina_actual %}active{% endif %}">
+                       class="nav-link {% if 'grupos' in pagina_actual %}active{% endif %}">
                         <i class="fas fa-arrow-alt-circle-right nav-icon"></i>
                         <p>Grupos</p>
                     </a>
@@ -33,10 +32,8 @@
             </ul>
         </li>
     {% endif %}
-
     <li class="nav-item">
-        <a href="#"
-           class="nav-link">
+        <a href="#" class="nav-link">
             <i class="nav-icon fa fa-address-card"></i>
             <p>
                 Legajos
