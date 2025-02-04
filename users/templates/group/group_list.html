@@ -18,30 +18,30 @@
 {% endblock %}
 ;
 {% block content %}
-<div class="row ">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body ">
-                <table class="table table-bordered table-striped projects">
-                    <thead>
-                        <tr>
-                            <th>Nombre</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for o in groups %}
+    <div class="row ">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body ">
+                    <table class="table table-bordered table-striped projects">
+                        <thead>
                             <tr>
-                                <td>
-                                    <a>
-                                        <span class="font-weight-bold ">{{ o }}</span>
-                                    </a>
-                                </td>
+                                <th>Nombre</th>
                             </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {% for o in groups %}
+                                <tr>
+                                    <td>
+                                        <a>
+                                            <span class="font-weight-bold ">{{ o }}</span>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
-</div>
 {% endblock content %}
