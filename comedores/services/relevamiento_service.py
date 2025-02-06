@@ -389,8 +389,12 @@ class RelevamientoService:
                 prestacion_data["informacion_quejas"] == "Y"
             )
         if "frecuencia_limpieza" in prestacion_data:
-            prestacion_data["frecuencia_limpieza"] = FrecuenciaLimpieza.objects.get(
-                nombre__iexact=prestacion_data["frecuencia_limpieza"]
+            prestacion_data["frecuencia_limpieza"] = (
+                FrecuenciaLimpieza.objects.get(
+                    nombre__iexact=prestacion_data["frecuencia_limpieza"]
+                )
+                if prestacion_data["frecuencia_limpieza"] != ""
+                else None
             )
 
         return prestacion_data
@@ -479,8 +483,12 @@ class RelevamientoService:
             espacio_data["prestacion"] = prestacion_instance
 
         if "tipo_espacio_fisico" in espacio_data:
-            espacio_data["tipo_espacio_fisico"] = TipoEspacio.objects.get(
-                nombre__iexact=espacio_data["tipo_espacio_fisico"]
+            espacio_data["tipo_espacio_fisico"] = (
+                TipoEspacio.objects.get(
+                    nombre__iexact=espacio_data["tipo_espacio_fisico"]
+                )
+                if espacio_data["tipo_espacio_fisico"] != ""
+                else None
             )
 
         if espacio_instance is None:
@@ -514,6 +522,8 @@ class RelevamientoService:
                 CantidadColaboradores.objects.get(
                     nombre__iexact=colaboradores_data["cantidad_colaboradores"]
                 )
+                if colaboradores_data["cantidad_colaboradores"] != ""
+                else None
             )
         if "colaboradores_capacitados_alimentos" in colaboradores_data:
             colaboradores_data["colaboradores_capacitados_alimentos"] = (
