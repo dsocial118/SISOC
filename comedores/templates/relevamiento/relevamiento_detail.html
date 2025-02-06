@@ -35,7 +35,7 @@
         </div>
         <div class="col-auto">
             <!-- <a href="{% url 'relevamiento_editar' relevamiento.comedor__id relevamiento.id %}" class="btn btn-primary mr-1">Editar</a> -->
-            {% if relevamiento.estado == "Finalizado" %}
+            {% if relevamiento.estado == "Finalizado" or relevamiento.estado == "Finalizado/Excepciones" %}
                 <a href="{{ relevamiento.docPDF }}"
                    target="_blank"
                    class="btn btn-secondary mr-1 d-none d-sm-inline">Imprimir</a>
