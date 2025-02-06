@@ -447,8 +447,10 @@ class RelevamientoService:
                 cocina_data["recipiente_otros_residuos"] == "Y"
             )
         if "abastecimiento_agua" in cocina_data:
-            cocina_data["abastecimiento_agua"] = TipoAgua.objects.get(
-                nombre__iexact=cocina_data["abastecimiento_agua"]
+            cocina_data["abastecimiento_agua"] = (
+                TipoAgua.objects.get(nombre__iexact=cocina_data["abastecimiento_agua"])
+                if cocina_data["abastecimiento_agua"] != ""
+                else None
             )
         if "instalacion_electrica" in cocina_data:
             cocina_data["instalacion_electrica"] = (
