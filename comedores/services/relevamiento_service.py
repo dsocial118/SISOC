@@ -375,8 +375,10 @@ class RelevamientoService:
                 else None
             )
         if "gestion_quejas" in prestacion_data:
-            prestacion_data["gestion_quejas"] = TipoGestionQuejas.objects.get(
-                nombre=prestacion_data["gestion_quejas"]
+            prestacion_data["gestion_quejas"] = (
+                TipoGestionQuejas.objects.get(nombre=prestacion_data["gestion_quejas"])
+                if prestacion_data["gestion_quejas"] != ""
+                else None
             )
         if "gestion_quejas_otro" in prestacion_data:
             prestacion_data["gestion_quejas_otro"] = prestacion_data[
