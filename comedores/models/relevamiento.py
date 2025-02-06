@@ -735,6 +735,45 @@ class Anexo(models.Model):
         verbose_name_plural = "Anexos"
 
 
+class MotivoExcepcion(models.Model):
+    """
+    Opciones de motivos de excepcion para los relevmaientos
+    """
+
+    nombre = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        verbose_name = "Motivo de excepcion"
+        verbose_name_plural = "Motivos de excepcion"
+
+
+class Excepcion(models.Model):
+
+    motivo = models.ForeignKey(
+        MotivoExcepcion, on_delete=models.PROTECT, blank=True, null=True
+    )
+    descripcion = models.TextField(blank=True, null=True)
+    latitud = models.FloatField(
+        validators=[MinValueValidator(-90), MaxValueValidator(90)],
+        blank=True,
+        null=True,
+    )
+    longitud = models.FloatField(
+        validators=[MinValueValidator(-180), MaxValueValidator(180)],
+        blank=True,
+        null=True,
+    )
+    adjuntos = models.JSONField(default=list, blank=True, null=True)
+    firma = models.CharField(max_length=600, blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Excepcion de comedor"
+        verbose_name_plural = "Excepciones de comedor"
+
+
 class Relevamiento(models.Model):
 
     gestionar_uid = models.CharField(max_length=255, blank=True, null=True)
@@ -772,6 +811,9 @@ class Relevamiento(models.Model):
     )
     anexo = models.OneToOneField(
         to=Anexo, on_delete=models.PROTECT, blank=True, null=True
+    )
+    excepcion = models.OneToOneField(
+        to=Excepcion, on_delete=models.PROTECT, blank=True, null=True
     )
 
     def save(self, *args, **kwargs):
