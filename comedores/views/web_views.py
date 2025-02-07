@@ -1,3 +1,4 @@
+import os
 from typing import Any
 from django.contrib.auth.models import User
 from django.contrib import messages
@@ -290,7 +291,6 @@ class ComedorDetailView(DetailView):
                 "relevamientos": Relevamiento.objects.filter(comedor=self.object["id"])
                 .values("id", "fecha_visita", "estado")
                 .order_by("-estado")[:3],
-                "territoriales": ComedorService.get_territoriales(self.object["id"]),
                 "observaciones": Observacion.objects.filter(comedor=self.object["id"])
                 .values("id", "fecha_visita")
                 .order_by("-fecha_visita")[:3],
@@ -310,6 +310,8 @@ class ComedorDetailView(DetailView):
                 )
                 .order_by("-fecha")
                 .first(),
+                "GESTIONAR_API_KEY": os.getenv("GESTIONAR_API_KEY"),
+                "GESTIONAR_API_CREAR_COMEDOR": os.getenv("GESTIONAR_API_CREAR_COMEDOR"),
             }
         )
 

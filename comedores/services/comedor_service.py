@@ -259,43 +259,6 @@ class ComedorService:
             print(f"Error al sincronizar con GESTIONAR: {e}")
 
     @staticmethod
-    def get_territoriales(comedor_id: int):
-        data = {
-            "Action": "Find",
-            "Properties": {"Locale": "es-ES"},
-            "Rows": [{"ComedorID": comedor_id}],
-        }
-
-        headers = {
-            "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
-        }
-
-        try:
-            response = requests.post(
-                os.getenv("GESTIONAR_API_CREAR_COMEDOR"),
-                json=data,
-                headers=headers,
-            )
-            response.raise_for_status()
-            response = response.json()
-
-            if not response or not response[0].get("ListadoRelevadoresDisponibles"):
-                return []
-
-            territoriales_data = [
-                {"gestionar_uid": uid, "nombre": nombre.strip()}
-                for uid, nombre in re.findall(
-                    r"(\w+)/ ([^,]+(?:,.*?[^,])?)",
-                    response[0]["ListadoRelevadoresDisponibles"],
-                )
-            ]
-
-            return territoriales_data
-        except requests.exceptions.RequestException as e:
-            print(f"Error al sincronizar con GESTIONAR: {e}")
-            return []
-
-    @staticmethod
     def get_presupuestos(comedor_id: int):
         beneficiarios = Relevamiento.objects.filter(comedor=comedor_id).first()
 
