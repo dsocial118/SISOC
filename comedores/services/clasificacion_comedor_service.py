@@ -106,7 +106,10 @@ class ClasificacionComedorService:
                     .exists()
                 ):
                     puntuacion += 2
-                if relevamiento.espacio.cocina.abastecimiento_agua.nombre == "Pozo":
+                if (
+                    relevamiento.espacio.cocina.abastecimiento_agua
+                    and relevamiento.espacio.cocina.abastecimiento_agua.nombre == "Pozo"
+                ):
                     puntuacion += 2
                 elif relevamiento.espacio.cocina.abastecimiento_agua_otro != "":
                     puntuacion += 3
@@ -136,15 +139,17 @@ class ClasificacionComedorService:
                     puntuacion += 2
                 if relevamiento.espacio.prestacion.tiene_sanitarios is False:
                     puntuacion += 3
-                if (
-                    relevamiento.espacio.prestacion.desague_hinodoro.nombre
-                    == "Pozo ciego"
-                ):
-                    puntuacion += 2
-                elif (
-                    relevamiento.espacio.prestacion.desague_hinodoro.nombre == "Letrina"
-                ):
-                    puntuacion += 3
+                if relevamiento.espacio.prestacion.desague_hinodoro:
+                    if (
+                        relevamiento.espacio.prestacion.desague_hinodoro.nombre
+                        == "Pozo ciego"
+                    ):
+                        puntuacion += 2
+                    elif (
+                        relevamiento.espacio.prestacion.desague_hinodoro.nombre
+                        == "Letrina"
+                    ):
+                        puntuacion += 3
 
         if relevamiento.colaboradores:
             if relevamiento.colaboradores.colaboradores_capacitados_alimentos is False:
