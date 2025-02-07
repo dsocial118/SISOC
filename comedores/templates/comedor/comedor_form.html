@@ -54,20 +54,28 @@
                                     <div class="col-3">{{ form.comienzo|as_crispy_field }}</div>
                                 </div>
                                 <div class="form-group row">
-                                    <div class="col-3">{{ form.provincia|as_crispy_field }}</div>
+                                    <div class="col-4">{{ form.provincia|as_crispy_field }}</div>
                                     <div class="col-4">{{ form.municipio|as_crispy_field }}</div>
-                                </div>
-                                <div class="form-group row">
                                     <div class="col-4">{{ form.localidad|as_crispy_field }}</div>
-                                    <div class="col-3">{{ form.partido|as_crispy_field }}</div>
-                                    <div class="col-3">{{ form.barrio|as_crispy_field }}</div>
-                                    <div class="col-2">{{ form.codigo_postal|as_crispy_field }}</div>
                                 </div>
                                 <div class="form-group row">
-                                    <div class="col-4">{{ form.calle|as_crispy_field }}</div>
+                                    <div class="col-4">{{ form.partido|as_crispy_field }}</div>
+                                    <div class="col-4">{{ form.barrio|as_crispy_field }}</div>
+                                    <div class="col-4">{{ form.codigo_postal|as_crispy_field }}</div>
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col-2">{{ form.calle|as_crispy_field }}</div>
                                     <div class="col-2">{{ form.numero|as_crispy_field }}</div>
+                                    <div class="col-2">{{ form.piso|as_crispy_field }}</div>
+                                    <div class="col-2">{{ form.departamento|as_crispy_field }}</div>
+                                    <div class="col-2">{{ form.manzana|as_crispy_field }}</div>
+                                    <div class="col-2">{{ form.lote|as_crispy_field }}</div>
+                                </div>
+                                <div class="form-group row">
                                     <div class="col-3">{{ form.entre_calle_1|as_crispy_field }}</div>
                                     <div class="col-3">{{ form.entre_calle_2|as_crispy_field }}</div>
+                                    <div class="col-3">{{ form.latitud|as_crispy_field }}</div>
+                                    <div class="col-3">{{ form.longitud|as_crispy_field }}</div>
                                 </div>
                                 <div class="form-group row">
                                     <div>{{ form.foto_legajo|as_crispy_field }}</div>
