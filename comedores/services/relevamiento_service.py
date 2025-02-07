@@ -1226,6 +1226,10 @@ class RelevamientoService:
                 if excepcion_data["motivo"] != ""
                 else None
             )
+        if "adjuntos" in excepcion_data:
+            excepcion_data["adjuntos"] = [
+                url.strip() for url in excepcion_data["adjuntos"].split(",")
+            ]
 
         return excepcion_data
 
