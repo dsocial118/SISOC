@@ -1212,7 +1212,7 @@ class RelevamientoService:
                     gestionar_uid=getionar_uid_send
                 )
             responsable = relevamiento_gestionar.responsable
-        elif responsable_data["documento"] is False:
+        elif responsable_es_referente is False:
             responsable = Referente.objects.get(documento=responsable_data["documento"])
         else:
             responsable = None
