@@ -312,6 +312,7 @@ class ComedorDetailView(DetailView):
                 .first(),
             }
         )
+
         return context
 
     def post(self, request, *args, **kwargs):
