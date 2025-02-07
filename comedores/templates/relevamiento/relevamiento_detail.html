@@ -824,7 +824,6 @@
                 </div>
             </div>
         </div>
-        <!-- anexo_detail.html -->
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title font-weight-bold mr-3 pt-1">Datos sobre el Anexo</h3>
@@ -1011,6 +1010,72 @@
                     <div class="nav-item col-5 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             <span class="username text-wrap">{{ relevamiento.observacion|default_if_none:'-' }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title font-weight-bold mr-3 pt-1">Excepcion</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body card-comments p-0 pb-1">
+                <div class="nav nav-pills row my-3">
+                    <div class="nav-item col-4 d-flex">
+                        <div class="comment-text comment-text d-flex flex-column text-sm">
+                            Motivo
+                            <span class="username fw-bold fs-5">{{ relevamiento.excepcion__motivo__nombre | default_if_none:"-" }}</span>
+                        </div>
+                    </div>
+                    <div class="nav-item col-4 d-flex">
+                        <div class="comment-text comment-text d-flex flex-column text-sm">
+                            Longitud
+                            <span class="username fw-bold fs-5">{{ relevamiento.excepcion__longitud | default_if_none:"-" }}</span>
+                        </div>
+                    </div>
+                    <div class="nav-item col-4 d-flex">
+                        <div class="comment-text comment-text d-flex flex-column text-sm">
+                            Latitud
+                            <span class="username fw-bold fs-5">{{ relevamiento.excepcion__latitud | default_if_none:"-" }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="nav nav-pills row my-3">
+                    <div class="nav-item col-5 d-flex">
+                        <div class="comment-text comment-text d-flex flex-column text-sm">
+                            Descripcion
+                            <span class="text-wrap username fw-bold fs-5">{{ relevamiento.excepcion__descripcion | default_if_none:'-' }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="nav nav-pills row my-3">
+                    <div class="nav-item col-5 d-flex">
+                        <div class="comment-text comment-text d-flex flex-column text-sm w-100">
+                            Adjuntos
+                            {% for imagen in relevamiento.excepcion__adjuntos %}
+                                <div class="col-2 d-flex">
+                                    <img src="{{ imagen }}"
+                                        alt="Adjunto del comedor"
+                                        class="img-fluid my-1 rounded object-fit-contain" />
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>                
+                <div class="nav nav-pills row my-3">
+                    <div class="nav-item col-5 d-flex">
+                        <div class="comment-text comment-text d-flex flex-column text-sm w-100">
+                            Firma
+                            <div class="col-2 d-flex">
+                                <img src="{{ relevamiento.excepcion__firma }}"
+                                    alt="Firma del responsable"
+                                    class="img-fluid my-1 rounded object-fit-contain" />
+                            </div>
                         </div>
                     </div>
                 </div>

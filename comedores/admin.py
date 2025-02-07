@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from comedores.models.relevamiento import Relevamiento
+from comedores.models.relevamiento import Excepcion, MotivoExcepcion, Relevamiento
 from comedores.models.comedor import (
     Comedor,
     Observacion,
@@ -61,3 +61,5 @@ admin.site.register(TipoFrecuenciaInsumos)
 admin.site.register(TipoTecnologia)
 admin.site.register(TipoAccesoComedor)
 admin.site.register(TipoDistanciaTransporte)
+admin.site.register(MotivoExcepcion)
+admin.site.register(Excepcion)

@@ -93,6 +93,18 @@ class RelevamientoSerializer(serializers.ModelSerializer):
                 ).id
             )
 
+        if "excepcion" in self.initial_data:
+            excepcion_instance = (
+                self.instance.excepcion
+                if self.instance and self.instance.excepcion
+                else None
+            )
+            self.initial_data["excepcion"] = (
+                RelevamientoService.create_or_update_excepcion(
+                    self.initial_data["excepcion"], excepcion_instance
+                ).id
+            )
+
         if "responsable_es_referente" in self.initial_data:
             self.initial_data["responsable_es_referente"] = (
                 self.initial_data["responsable_es_referente"] == "Y"
