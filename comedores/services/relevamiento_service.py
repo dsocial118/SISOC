@@ -15,11 +15,13 @@ from comedores.models.relevamiento import (
     Espacio,
     EspacioCocina,
     EspacioPrestacion,
+    Excepcion,
     FrecuenciaLimpieza,
     FrecuenciaRecepcionRecursos,
     FuenteCompras,
     FuenteRecursos,
     FuncionamientoPrestacion,
+    MotivoExcepcion,
     Prestacion,
     Referente,
     Relevamiento,
@@ -271,6 +273,12 @@ class RelevamientoService:
                 "anexo__otras_actividades",
                 "anexo__cuales_otras_actividades",
                 "anexo__veces_recibio_insumos_2024",
+                "excepcion__adjuntos",
+                "excepcion__descripcion",
+                "excepcion__motivo__nombre",
+                "excepcion__longitud",
+                "excepcion__latitud",
+                "excepcion__firma",
             )
             .first()
         )
@@ -1196,6 +1204,30 @@ class RelevamientoService:
             responsable_instance.save()
 
         return responsable_instance
+
+    @staticmethod
+    def create_or_update_excepcion(excepcion_data, excepcion_instance=None):
+        excepcion_data = RelevamientoService.populate_excepcion_data(excepcion_data)
+
+        if excepcion_instance is None:
+            excepcion_instance = Excepcion.objects.create(**excepcion_data)
+        else:
+            for field, value in excepcion_data.items():
+                setattr(excepcion_instance, field, value)
+            excepcion_instance.save()
+
+        return excepcion_instance
+
+    @staticmethod
+    def populate_excepcion_data(excepcion_data):
+        if "motivo" in excepcion_data:
+            excepcion_data["motivo"] = (
+                MotivoExcepcion.objects.get(nombre__iexact=excepcion_data["motivo"])
+                if excepcion_data["motivo"] != ""
+                else None
+            )
+
+        return excepcion_data
 
     @staticmethod
     def send_to_gestionar(relevamiento: Relevamiento):
