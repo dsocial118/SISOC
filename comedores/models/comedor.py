@@ -151,8 +151,22 @@ class Comedor(models.Model):
     )
     calle = models.CharField(max_length=255, blank=True, null=True)
     numero = models.PositiveIntegerField(blank=True, null=True)
+    piso = models.CharField(max_length=255, blank=True, null=True)
+    departamento = models.CharField(max_length=255, blank=True, null=True)
+    manzana = models.CharField(max_length=255, blank=True, null=True)
+    lote = models.CharField(max_length=255, blank=True, null=True)
     entre_calle_1 = models.CharField(max_length=255, blank=True, null=True)
     entre_calle_2 = models.CharField(max_length=255, blank=True, null=True)
+    latitud = models.FloatField(
+        validators=[MinValueValidator(-90), MaxValueValidator(90)],
+        blank=True,
+        null=True,
+    )
+    longitud = models.FloatField(
+        validators=[MinValueValidator(-180), MaxValueValidator(180)],
+        blank=True,
+        null=True,
+    )
     provincia = models.ForeignKey(to=Provincia, on_delete=models.PROTECT, null=True)
     municipio = models.ForeignKey(
         to=Municipio, on_delete=models.PROTECT, null=True, blank=True

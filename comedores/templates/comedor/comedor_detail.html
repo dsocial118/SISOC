@@ -170,92 +170,142 @@
                                 </div>
                                 <div class="col-6">
                                     <div class="row">
-                                        <div class="col-6">
-                                            <div class="nav-item d-flex">
-                                                <div class="comment-text comment-text d-flex flex-column">
-                                                    Nombre
-                                                    <span class="username">{{ comedor.nombre }}</span>
-                                                </div>
-                                            </div>
-                                            <div class="nav-item d-flex">
-                                                <div class="comment-text comment-text d-flex flex-column">
-                                                    Tipo Comedor
-                                                    <span class="username">{{ comedor.tipocomedor__nombre | default_if_none:"-" }}</span>
-                                                </div>
-                                            </div>
-                                            <div class="nav-item d-flex">
-                                                <div class="comment-text comment-text d-flex flex-column">
-                                                    Organización
-                                                    <span class="username">{{ comedor.organizacion__nombre | default_if_none:"-" }}</span>
-                                                </div>
-                                            </div>
-                                            <div class="nav-item d-flex">
-                                                <div class="comment-text comment-text d-flex flex-column">
-                                                    Provincia
-                                                    <span class="username">{{ comedor.provincia__nombre | default_if_none:"-" }}</span>
-                                                </div>
-                                            </div>
-                                            <div class="nav-item d-flex">
-                                                <div class="comment-text comment-text d-flex flex-column">
-                                                    Municipio
-                                                    <span class="username">{{ comedor.municipio__nombre | default_if_none:"-" }}</span>
-                                                </div>
-                                            </div>
-                                            <div class="nav-item d-flex">
-                                                <div class="comment-text comment-text d-flex flex-column">
-                                                    Localidad
-                                                    <span class="username">{{ comedor.localidad__nombre | default_if_none:"-" }}</span>
-                                                </div>
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Nombre
+                                                <span class="username">{{ comedor.nombre }}</span>
                                             </div>
                                         </div>
-                                        <div class="col-6">
-                                            <div class="nav-item d-flex">
-                                                <div class="comment-text comment-text d-flex flex-column">
-                                                    Año en el que empezo a funcionar
-                                                    <span class="username">{{ comedor.comienzo | default_if_none:"-" }}</span>
-                                                </div>
-                                            </div>
-                                            <div class="nav-item d-flex">
-                                                <div class="comment-text comment-text d-flex flex-column">
-                                                    Partido
-                                                    <span class="username">{{ comedor.partido | default_if_none:"-" }}</span>
-                                                </div>
-                                            </div>
-                                            <div class="nav-item">
-                                                <div class="comment-text comment-text d-flex flex-column">
-                                                    Barrio
-                                                    <span class="username">{{ comedor.barrio | default_if_none:"-" }}</span>
-                                                </div>
-                                            </div>
-                                            <div class="nav-item">
-                                                <div class="comment-text comment-text d-flex flex-column">
-                                                    Codigo postal
-                                                    <span class="username">{{ comedor.codigo_postal | default_if_none:"-" }}</span>
-                                                </div>
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Tipo Comedor
+                                                <span class="username">{{ comedor.tipocomedor__nombre | default_if_none:"-" }}</span>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="row">
-                                        <div class="col-12">
-                                            <div class="row">
-                                                <div class="nav-item col-4">
-                                                    <div class="comment-text comment-text d-flex flex-column">
-                                                        Calle
-                                                        <span class="username">{{ comedor.calle | default_if_none:"-" }}</span>
-                                                    </div>
-                                                </div>
-                                                <div class="nav-item col-4">
-                                                    <div class="comment-text comment-text d-flex flex-column">
-                                                        Número
-                                                        <span class="username">{{ comedor.numero | default_if_none:"-" }}</span>
-                                                    </div>
-                                                </div>
-                                                <div class="nav-item col-4 ">
-                                                    <div class="comment-text comment-text d-flex flex-column">
-                                                        Entre calles
-                                                        <span class="username">{{ comedor.entre_calle_1 |   default_if_none:"-" }} y {{ comedor.entre_calle_2 |   default_if_none:"-" }}</span>
-                                                    </div>
-                                                </div>
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Organización
+                                                <span class="username">{{ comedor.organizacion__nombre | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Año de comienzo
+                                                <span class="username">{{ comedor.comienzo | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Provincia
+                                                <span class="username">{{ comedor.provincia__nombre | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Municipio
+                                                <span class="username">{{ comedor.municipio__nombre | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Localidad
+                                                <span class="username">{{ comedor.localidad__nombre | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Partido
+                                                <span class="username">{{ comedor.partido | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Barrio
+                                                <span class="username">{{ comedor.barrio | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Codigo postal
+                                                <span class="username">{{ comedor.codigo_postal | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="nav-item col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Calle
+                                                <span class="username">{{ comedor.calle | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Número
+                                                <span class="username">{{ comedor.numero | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="nav-item col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Piso
+                                                <span class="username">{{ comedor.piso | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Departamento
+                                                <span class="username">{{ comedor.departamento | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="nav-item col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Manzana
+                                                <span class="username">{{ comedor.manzana | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Lote
+                                                <span class="username">{{ comedor.lote | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="nav-item col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Entre calle 1
+                                                <span class="username">{{ comedor.entre_calle_1 | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>                                        
+                                        <div class="nav-item col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Entre calle 2
+                                                <span class="username">{{ comedor.entre_calle_2 | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="nav-item col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Longitud
+                                                <span class="username">{{ comedor.longitud | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Latitud
+                                                <span class="username">{{ comedor.latitud | default_if_none:"-" }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -384,14 +434,9 @@
                                                         <input type="hidden" name="relevamiento_id" value="{{ relevamiento.id }}" />
                                                         <label for="inputField" class="form-label">Territorial</label>
                                                         <select name="territorial_editar"
-                                                                id="territorial_select"
+                                                                id="update_territorial_select"
                                                                 class="form-control">
                                                             <option value="">No definido</option>
-                                                            {% for territorial in territoriales %}
-                                                                <option value='{"gestionar_uid": "{{ territorial.gestionar_uid }}", "nombre": "{{ territorial.nombre }}"}'>
-                                                                    {{ territorial.nombre }}
-                                                                </option>
-                                                            {% endfor %}
                                                         </select>
                                                     </div>
                                                 </div>
@@ -425,13 +470,8 @@
                                     <div class="modal-body">
                                         <div class="mb-3">
                                             <label for="inputField" class="form-label">Territorial</label>
-                                            <select name="territorial" id="territorial_select" class="form-control">
+                                            <select name="territorial" id="new_territorial_select" class="form-control">
                                                 <option value="">No definido</option>
-                                                {% for territorial in territoriales %}
-                                                    <option value='{"gestionar_uid": "{{ territorial.gestionar_uid }}", "nombre": "{{ territorial.nombre }}"}'>
-                                                        {{ territorial.nombre }}
-                                                    </option>
-                                                {% endfor %}
                                             </select>
                                         </div>
                                     </div>
@@ -500,4 +540,12 @@
             </div>
         </div>
     </div>
+{% endblock %}
+{% block customJS %}
+    <script>
+        const comedorId = "{{ comedor.id }}"
+        const GESTIONAR_API_KEY = "{{ GESTIONAR_API_KEY }}";
+        const GESTIONAR_API_CREAR_COMEDOR = "{{ GESTIONAR_API_CREAR_COMEDOR }}";
+    </script>
+    <script src="{% static 'custom/js/comedordetail.js' %}"></script>
 {% endblock %}

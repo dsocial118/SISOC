@@ -55,10 +55,17 @@ class ComedorService:
                 "provincia__nombre",
                 "municipio__nombre",
                 "localidad__nombre",
+                "tipocomedor__nombre",
                 "partido",
                 "barrio",
                 "calle",
                 "numero",
+                "piso",
+                "departamento",
+                "manzana",
+                "lote",
+                "longitud",
+                "latitud",
                 "entre_calle_1",
                 "entre_calle_2",
                 "codigo_postal",
@@ -250,43 +257,6 @@ class ComedorService:
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
             print(f"Error al sincronizar con GESTIONAR: {e}")
-
-    @staticmethod
-    def get_territoriales(comedor_id: int):
-        data = {
-            "Action": "Find",
-            "Properties": {"Locale": "es-ES"},
-            "Rows": [{"ComedorID": comedor_id}],
-        }
-
-        headers = {
-            "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
-        }
-
-        try:
-            response = requests.post(
-                os.getenv("GESTIONAR_API_CREAR_COMEDOR"),
-                json=data,
-                headers=headers,
-            )
-            response.raise_for_status()
-            response = response.json()
-
-            if not response or not response[0].get("ListadoRelevadoresDisponibles"):
-                return []
-
-            territoriales_data = [
-                {"gestionar_uid": uid, "nombre": nombre.strip()}
-                for uid, nombre in re.findall(
-                    r"(\w+)/ ([^,]+(?:,.*?[^,])?)",
-                    response[0]["ListadoRelevadoresDisponibles"],
-                )
-            ]
-
-            return territoriales_data
-        except requests.exceptions.RequestException as e:
-            print(f"Error al sincronizar con GESTIONAR: {e}")
-            return []
 
     @staticmethod
     def get_presupuestos(comedor_id: int):

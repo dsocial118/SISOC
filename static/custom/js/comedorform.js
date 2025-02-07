@@ -4,7 +4,11 @@ const localidadSelect = document.getElementById('id_localidad');
 
 
 provinciaSelect.addEventListener('change', async function () {
-    await cargarOpciones(`${ajaxLoadMunicipiosUrl}?provincia_id=${this.value}`, "municipio");
+    console.log('Provincia:', this.value);
+    await cargarOpciones(`${ajaxLoadMunicipiosUrl}?provincia_id=${this.value}`, "municipio").then(async () => {
+        await cargarOpciones(`${ajaxLoadLocalidadesUrl}?municipio_id=${municipioSelect.options[0].value}`, "localidad");
+    })
+
 });
 
 municipioSelect.addEventListener('change', async function () {
