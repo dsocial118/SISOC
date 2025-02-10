@@ -117,9 +117,9 @@ class RelevamientoSerializer(serializers.ModelSerializer):
                 else None
             )
             self.initial_data["responsable"] = (
-                RelevamientoService.create_or_upadate_responsable_relevamiento(
+                RelevamientoService.create_or_update_responsable_relevamiento(
                     self.initial_data["responsable"], self.initial_data["responsable_es_referente"],self.initial_data["gestionar_uid"]
-                ).id
+                )
             )
 
         if "gestionar_uid" in self.initial_data:
