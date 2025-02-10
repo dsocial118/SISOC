@@ -118,7 +118,9 @@ class RelevamientoSerializer(serializers.ModelSerializer):
             )
             self.initial_data["responsable"] = (
                 RelevamientoService.create_or_update_responsable_relevamiento(
-                    self.initial_data["responsable"], self.initial_data["responsable_es_referente"],self.initial_data["gestionar_uid"]
+                    self.initial_data["responsable"],
+                    self.initial_data["responsable_es_referente"],
+                    self.initial_data["gestionar_uid"],
                 )
             )
 
