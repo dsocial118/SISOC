@@ -1217,6 +1217,8 @@ class RelevamientoService:
                 responsable = Referente.objects.get(documento=responsable_data["documento"])
             except Referente.DoesNotExist:
                 responsable = Referente.objects.create(**responsable_data)
+            except Exception as e:
+                return None
         else:
             return None
         return responsable.id
