@@ -1203,18 +1203,21 @@ class RelevamientoService:
                 setattr(responsable_instance, field, value)
             responsable_instance.save()
         return responsable_instance
-    
-    
+
     @staticmethod
-    def create_or_update_responsable_relevamiento(responsable_data, responsable_es_referente,getionar_uid_send):
+    def create_or_update_responsable_relevamiento(
+        responsable_data, responsable_es_referente, getionar_uid_send
+    ):
         if responsable_es_referente:
             relevamiento_gestionar = Relevamiento.objects.get(
-                    gestionar_uid=getionar_uid_send
-                )
+                gestionar_uid=getionar_uid_send
+            )
             responsable = relevamiento_gestionar.responsable
         elif responsable_es_referente is False:
             try:
-                responsable = Referente.objects.get(documento=responsable_data["documento"])
+                responsable = Referente.objects.get(
+                    documento=responsable_data["documento"]
+                )
             except Referente.DoesNotExist:
                 responsable = Referente.objects.create(**responsable_data)
             except Exception as e:
