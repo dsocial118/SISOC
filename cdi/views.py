@@ -58,7 +58,7 @@ class CDIUpdateView(UpdateView):
     template_name = "centrodesarrolloinfantil_form.html"
 
     def get_success_url(self):
-        return reverse("organizacion_detalle", kwargs={"pk": self.object.pk})
+        return reverse("cdi_detalle", kwargs={"pk": self.object.pk})
 
 
 class CDIDeleteView(DeleteView):
