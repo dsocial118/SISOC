@@ -107,6 +107,18 @@ class Referente(models.Model):
         verbose_name_plural = "Referentes"
 
 
+class Programas(models.Model):
+    nombre = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        ordering = ["id"]
+        verbose_name = "Programa"
+        verbose_name_plural = "Programas"
+
+
 class Comedor(models.Model):
     """
     Modelo que representa un Comedor/Merendero.
@@ -136,6 +148,9 @@ class Comedor(models.Model):
     )
     organizacion = models.ForeignKey(
         to=Organizacion, blank=True, null=True, on_delete=models.PROTECT
+    )
+    programa = models.ForeignKey(
+        to=Programas, blank=True, null=True, on_delete=models.PROTECT
     )
     comienzo = models.IntegerField(
         validators=[
