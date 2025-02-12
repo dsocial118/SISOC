@@ -26,7 +26,10 @@ class CDIListView(ListView):
         if query:
             queryset = queryset.filter(
                 Q(nombre__icontains=query)
-                | Q(cuit__icontains=query)
+                | Q(organizacion__nombre__icontains=query)
+                | Q(numexpe__icontains=query)
+                | Q(numrepo__icontains=query)
+                | Q(provincia__nombre__icontains=query)
                 | Q(telefono__icontains=query)
                 | Q(email__icontains=query)
             )
@@ -55,7 +58,7 @@ class CDIUpdateView(UpdateView):
     template_name = "centrodesarrolloinfantil_form.html"
 
     def get_success_url(self):
-        return reverse("organizacion_detalle", kwargs={"pk": self.object.pk})
+        return reverse("cdi_detalle", kwargs={"pk": self.object.pk})
 
 
 class CDIDeleteView(DeleteView):
