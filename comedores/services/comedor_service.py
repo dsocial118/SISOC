@@ -52,6 +52,7 @@ class ComedorService:
                 "nombre",
                 "comienzo",
                 "organizacion__nombre",
+                "programa__nombre",
                 "provincia__nombre",
                 "municipio__nombre",
                 "localidad__nombre",
