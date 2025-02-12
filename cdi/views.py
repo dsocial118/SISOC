@@ -26,7 +26,10 @@ class CDIListView(ListView):
         if query:
             queryset = queryset.filter(
                 Q(nombre__icontains=query)
-                | Q(cuit__icontains=query)
+                | Q(organizacion__nombre__icontains=query)
+                | Q(numexpe__icontains=query)
+                | Q(numrepo__icontains=query)
+                | Q(provincia__nombre__icontains=query)
                 | Q(telefono__icontains=query)
                 | Q(email__icontains=query)
             )
