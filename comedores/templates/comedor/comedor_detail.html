@@ -406,7 +406,7 @@
                                 <p {% if relevamiento.estado == "Pendiente" %} style="color: yellow;" {% elif relevamiento.estado == "Visita pendiente" %} style="color: green;" {% else %} style="color: white;" {% endif %}
                                    class="m-0">{{ relevamiento.estado }}</p>
                             </div>
-                            {% if relevamiento.estado != "Finalizado" %}
+                            {% if relevamiento.estado != "Finalizado" and relevamiento.estado != "Finalizado/Excepciones" %}
                                 <button type="button"
                                         class="btn btn-primary col-4"
                                         data-bs-toggle="modal"
