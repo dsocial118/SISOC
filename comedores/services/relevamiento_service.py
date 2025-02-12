@@ -1196,24 +1196,26 @@ class RelevamientoService:
         return prestacion_data
 
     @staticmethod
-    def create_or_update_responsable(responsable_data, responsable_instance=None):
-        responsable_data["celular"] = (
-            responsable_data["celular"] if responsable_data["celular"] != "" else None
-        )
-        responsable_data["documento"] = (
-            responsable_data["documento"]
-            if responsable_data["documento"] != ""
-            else None
-        )
-
-        if responsable_instance is None:
-            responsable_instance = Referente.objects.create(**responsable_data)
+    def create_or_update_responsable_relevamiento(
+        responsable_data, responsable_es_referente, getionar_uid_send
+    ):
+        if responsable_es_referente:
+            relevamiento_gestionar = Relevamiento.objects.get(
+                gestionar_uid=getionar_uid_send
+            )
+            responsable = relevamiento_gestionar.responsable
+        elif responsable_es_referente is False:
+            try:
+                responsable = Referente.objects.get(
+                    documento=responsable_data["documento"]
+                )
+            except Referente.DoesNotExist:
+                responsable = Referente.objects.create(**responsable_data)
+            except Exception as e:
+                return None
         else:
-            for field, value in responsable_data.items():
-                setattr(responsable_instance, field, value)
-            responsable_instance.save()
-
-        return responsable_instance
+            return None
+        return responsable.id
 
     @staticmethod
     def create_or_update_excepcion(excepcion_data, excepcion_instance=None):
