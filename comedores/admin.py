@@ -10,6 +10,7 @@ from comedores.models.comedor import (
     SubIntervencion,
     TipoIntervencion,
     EstadosIntervencion,
+    Programas,
     Nomina,
 )
 from comedores.models.relevamiento import (
@@ -63,3 +64,4 @@ admin.site.register(TipoAccesoComedor)
 admin.site.register(TipoDistanciaTransporte)
 admin.site.register(MotivoExcepcion)
 admin.site.register(Excepcion)
+admin.site.register(Programas)

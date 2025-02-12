@@ -1,0 +1,1 @@
+[{"model": "comedores.programas", "pk": 2, "fields": {"nombre": "Alimentar comunidad"}}, {"model": "comedores.programas", "pk": 3, "fields": {"nombre": "Abordaje comunitario - Línea Secos"}}, {"model": "comedores.programas", "pk": 4, "fields": {"nombre": "Abordaje comunitario - Línea Tradicional"}}]
