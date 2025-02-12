@@ -420,9 +420,10 @@ class RelevamientoService:
     @staticmethod
     def create_or_update_cocina(cocina_data, cocina_instance=None):
         cocina_data = RelevamientoService.populate_cocina_data(cocina_data)
+        combustibles_queryset = TipoCombustible.objects.none()
 
         if "abastecimiento_combustible" in cocina_data:
-            combustible_str = cocina_data.pop("abastecimiento_combustible", None)
+            combustible_str = cocina_data.get("abastecimiento_combustible")
             combustibles_arr = [nombre.strip() for nombre in combustible_str.split(",")]
             combustibles_queryset = TipoCombustible.objects.filter(
                 nombre__in=combustibles_arr
@@ -432,11 +433,13 @@ class RelevamientoService:
             cocina_instance = EspacioCocina.objects.create(**cocina_data)
         else:
             for field, value in cocina_data.items():
-                setattr(cocina_instance, field, value)
+                if field == "abastecimiento_combustible":
+                    cocina_instance.abastecimiento_combustible.set(
+                        combustibles_queryset
+                    )
+                else:
+                    setattr(cocina_instance, field, value)
             cocina_instance.save()
-
-        if "abastecimiento_combustible" in cocina_data:
-            cocina_instance.abastecimiento_combustible.set(combustibles_queryset)
 
         return cocina_instance
 
