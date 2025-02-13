@@ -14,6 +14,7 @@ from comedores.models.relevamiento import (
     ClasificacionComedor,
     CategoriaComedor,
 )
+import pprint
 
 
 class ClasificacionComedorService:
@@ -34,15 +35,16 @@ class ClasificacionComedorService:
         return None
 
     @staticmethod
-    def get_clasificacion(puntacionTotal):
+    def get_clasificacion(puntacion_total):
         califiacion = CategoriaComedor.objects.filter(
-            puntuacion_min__lte=puntacionTotal, puntuacion_max__gte=puntacionTotal
+            puntuacion_min__lte=puntacion_total, puntuacion_max__gte=puntacion_total
         ).first()
         return califiacion if califiacion else None
 
     @staticmethod
     def get_puntuacion_total(relevamiento: Relevamiento):
         puntuacion = 0
+
         if relevamiento.espacio:
             if relevamiento.espacio.tipo_espacio_fisico:
                 if (
@@ -82,6 +84,7 @@ class ClasificacionComedorService:
                     puntuacion += 1
                 if relevamiento.espacio.cocina.otros_residuos is False:
                     puntuacion += 1
+
                 if (
                     relevamiento.espacio.cocina.abastecimiento_combustible.filter(
                         nombre="Gas envasado"
@@ -106,6 +109,7 @@ class ClasificacionComedorService:
                     .exists()
                 ):
                     puntuacion += 2
+
                 if (
                     relevamiento.espacio.cocina.abastecimiento_agua
                     and relevamiento.espacio.cocina.abastecimiento_agua.nombre == "Pozo"
