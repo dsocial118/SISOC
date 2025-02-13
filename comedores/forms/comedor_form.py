@@ -111,6 +111,12 @@ class NominaForm(forms.ModelForm):
 
 
 class ComedorForm(forms.ModelForm):
+
+    comienzo = forms.IntegerField(min_value=1900)
+    longitud = forms.IntegerField(min_value=-180, max_value=180)
+    latitud = forms.IntegerField(min_value=-90, max_value=90)
+    codigo_postal = forms.IntegerField(min_value=1000, max_value=999999)
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
