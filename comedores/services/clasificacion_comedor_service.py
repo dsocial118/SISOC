@@ -14,7 +14,6 @@ from comedores.models.relevamiento import (
     ClasificacionComedor,
     CategoriaComedor,
 )
-import pprint
 
 
 class ClasificacionComedorService:
