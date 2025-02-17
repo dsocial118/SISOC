@@ -1,0 +1,50 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% block title %}Usuarios{% endblock %}
+{% block titulo-pagina %}Usuarios{% endblock %}
+;
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right ">
+        <li class="breadcrumb-item ">Administración</li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'usuarios' %}">Usuarios</a>
+        </li>
+        <li class="breadcrumb-item active">Agregar</li>
+    </ol>
+{% endblock %}
+;
+{% load crispy_forms_tags %}
+{% block content %}
+    <link rel="stylesheet" href="{% static 'admin/css/select2templated.css' %}" />
+    <div class="row">
+        <div class="col">
+            <form class="needs-validation"
+                  novalidate
+                  method="POST"
+                  enctype="multipart/form-data"
+                  autocomplete="off">
+                {% csrf_token %}
+                {{ form.username | as_crispy_field }}
+                {{ form.email | as_crispy_field }}
+                {{ form.password | as_crispy_field }}
+                {{ form.groups | as_crispy_field }}
+                <div class="mt-4 mx-2">
+                    <button type="submit" class="btn btn-primary mr-1">Confirmar</button>
+                    <a href="{% url 'usuarios' %}" class="btn btn-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock content %}
+{% block customJS %}
+    <script>
+  id_imagen.onchange = (evt) => {
+    const [file] = id_imagen.files;
+    if (file) {
+      blah.src = URL.createObjectURL(file);
+      document.querySelector('#label_id_imagen').innerText = 'Cambiar imagen';
+    }
+  };
+    </script>
+{% endblock customJS %}

@@ -1,6 +1,7 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.forms import ValidationError
+from django.utils import timezone
 
 from comedores.models.comedor import (
     Comedor,
@@ -157,15 +158,6 @@ class EspacioCocina(models.Model):
     class Meta:
         verbose_name = "Espacio de cocina y almacenamiento de alimentos"
         verbose_name_plural = "Espacios de cocina y almacenamiento de alimentos"
-
-
-class Territorial(models.Model):
-    """
-    Modelo que representa un Territorial.
-    """
-
-    gestionar_uid = models.CharField(max_length=255)
-    nombre = models.CharField(max_length=255)
 
 
 class TipoModalidadPrestacion(models.Model):
@@ -742,6 +734,46 @@ class Anexo(models.Model):
         verbose_name = "Anexo"
         verbose_name_plural = "Anexos"
 
+
+class MotivoExcepcion(models.Model):
+    """
+    Opciones de motivos de excepcion para los relevmaientos
+    """
+
+    nombre = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        verbose_name = "Motivo de excepcion"
+        verbose_name_plural = "Motivos de excepcion"
+
+
+class Excepcion(models.Model):
+
+    motivo = models.ForeignKey(
+        MotivoExcepcion, on_delete=models.PROTECT, blank=True, null=True
+    )
+    descripcion = models.TextField(blank=True, null=True)
+    latitud = models.FloatField(
+        validators=[MinValueValidator(-90), MaxValueValidator(90)],
+        blank=True,
+        null=True,
+    )
+    longitud = models.FloatField(
+        validators=[MinValueValidator(-180), MaxValueValidator(180)],
+        blank=True,
+        null=True,
+    )
+    adjuntos = models.JSONField(default=list, blank=True, null=True)
+    firma = models.CharField(max_length=600, blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Excepcion de comedor"
+        verbose_name_plural = "Excepciones de comedor"
+
+
 class ImagenRelevamiento(models.Model):
     imagen = models.ImageField(upload_to="relevamientos/", verbose_name="Imagen")
     url = models.URLField(blank=True, null=True, verbose_name="URL de la imagen")
@@ -762,9 +794,8 @@ class Relevamiento(models.Model):
         on_delete=models.CASCADE,
     )
     fecha_visita = models.DateTimeField(null=True, blank=True)
-    territorial = models.ForeignKey(
-        Territorial, on_delete=models.PROTECT, blank=True, null=True
-    )
+    territorial_nombre = models.CharField(max_length=255, blank=True, null=True)
+    territorial_uid = models.CharField(max_length=255, blank=True, null=True)
     funcionamiento = models.OneToOneField(
         to=FuncionamientoPrestacion, on_delete=models.PROTECT, blank=True, null=True
     )
@@ -792,12 +823,16 @@ class Relevamiento(models.Model):
     anexo = models.OneToOneField(
         to=Anexo, on_delete=models.PROTECT, blank=True, null=True
     )
+    excepcion = models.OneToOneField(
+        to=Excepcion, on_delete=models.PROTECT, blank=True, null=True
+    )
     imagenes = models.ManyToManyField(
         to="ImagenRelevamiento",  
         related_name="relevamientos",  
         blank=True,  
         verbose_name="Imágenes del relevamiento",
     )
+
     def save(self, *args, **kwargs):
         self.validate_relevamientos_activos()
         self.set_referente_como_responsable()
@@ -830,3 +865,35 @@ class Relevamiento(models.Model):
         unique_together = [["comedor", "fecha_visita"]]
         verbose_name = "Relevamiento"
         verbose_name_plural = "Relevamientos"
+
+
+class CategoriaComedor(models.Model):
+    nombre = models.CharField(max_length=255)
+    puntuacion_min = models.IntegerField()
+    puntuacion_max = models.IntegerField()
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        verbose_name = "Categoria de Comedor"
+        verbose_name_plural = "Categorias de Comedor"
+
+
+class ClasificacionComedor(models.Model):
+    puntuacion_total = models.IntegerField()
+    categoria = models.ForeignKey(
+        to=CategoriaComedor, on_delete=models.SET_NULL, null=True
+    )
+    comedor = models.ForeignKey(to=Comedor, on_delete=models.SET_NULL, null=True)
+    relevamiento = models.ForeignKey(
+        to=Relevamiento, on_delete=models.SET_NULL, null=True
+    )
+    fecha = models.DateTimeField(default=timezone.now, blank=True)
+
+    def __str__(self):
+        return str(self.puntuacion_total)
+
+    class Meta:
+        verbose_name = "Clasificacion de Comedor"
+        verbose_name_plural = "Clasificaciones de Comedor"

@@ -1,10 +1,9 @@
 from django.db import models
 from django.forms import ValidationError
 from django.utils import timezone
-
+from django.contrib.auth.models import User
 
 from configuraciones.models import Provincia
-from usuarios.models import Usuarios
 
 
 class Rubro(models.Model):
@@ -803,10 +802,10 @@ class Proyecto(models.Model):
     fecha_creacion = models.DateTimeField(auto_now=True)
     fecha_modificacion = models.DateTimeField(auto_now=True)
     creador = models.ForeignKey(
-        Usuarios, on_delete=models.PROTECT, related_name="creador", blank=True
+        User, on_delete=models.PROTECT, related_name="creador", blank=True
     )
     modificador = models.ForeignKey(
-        Usuarios,
+        User,
         on_delete=models.PROTECT,
         null=True,
         blank=True,
