@@ -107,6 +107,18 @@ class Referente(models.Model):
         verbose_name_plural = "Referentes"
 
 
+class Programas(models.Model):
+    nombre = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        ordering = ["id"]
+        verbose_name = "Programa"
+        verbose_name_plural = "Programas"
+
+
 class Comedor(models.Model):
     """
     Modelo que representa un Comedor/Merendero.
@@ -137,6 +149,9 @@ class Comedor(models.Model):
     organizacion = models.ForeignKey(
         to=Organizacion, blank=True, null=True, on_delete=models.PROTECT
     )
+    programa = models.ForeignKey(
+        to=Programas, blank=True, null=True, on_delete=models.PROTECT
+    )
     comienzo = models.IntegerField(
         validators=[
             MinValueValidator(1900),
@@ -151,8 +166,22 @@ class Comedor(models.Model):
     )
     calle = models.CharField(max_length=255, blank=True, null=True)
     numero = models.PositiveIntegerField(blank=True, null=True)
+    piso = models.CharField(max_length=255, blank=True, null=True)
+    departamento = models.CharField(max_length=255, blank=True, null=True)
+    manzana = models.CharField(max_length=255, blank=True, null=True)
+    lote = models.CharField(max_length=255, blank=True, null=True)
     entre_calle_1 = models.CharField(max_length=255, blank=True, null=True)
     entre_calle_2 = models.CharField(max_length=255, blank=True, null=True)
+    latitud = models.FloatField(
+        validators=[MinValueValidator(-90), MaxValueValidator(90)],
+        blank=True,
+        null=True,
+    )
+    longitud = models.FloatField(
+        validators=[MinValueValidator(-180), MaxValueValidator(180)],
+        blank=True,
+        null=True,
+    )
     provincia = models.ForeignKey(to=Provincia, on_delete=models.PROTECT, null=True)
     municipio = models.ForeignKey(
         to=Municipio, on_delete=models.PROTECT, null=True, blank=True

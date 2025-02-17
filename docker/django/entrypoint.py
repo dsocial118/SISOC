@@ -32,6 +32,7 @@ def run_django_commands():
     subprocess.run(["python", "manage.py", "migrate", "--noinput"])
     load_fixtures()
     subprocess.run(["python", "manage.py", "create_local_superuser"])
+    subprocess.run(["python", "manage.py", "create_groups"])
     subprocess.run(["python", "manage.py", "runserver", "0.0.0.0:8000"])
 
 

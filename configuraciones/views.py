@@ -10,7 +10,8 @@ from configuraciones.models import (
     Municipio,
 )
 
-# region ############################################################### Secretarías
+# region ###############################################################
+# Secretarías
 
 
 def load_municipios(request):

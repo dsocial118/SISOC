@@ -15,15 +15,16 @@ from comedores.models.relevamiento import (
     Espacio,
     EspacioCocina,
     EspacioPrestacion,
+    Excepcion,
     FrecuenciaLimpieza,
     FrecuenciaRecepcionRecursos,
     FuenteCompras,
     FuenteRecursos,
     FuncionamientoPrestacion,
+    MotivoExcepcion,
     Prestacion,
     Referente,
     Relevamiento,
-    Territorial,
     TipoAccesoComedor,
     TipoAgua,
     TipoCombustible,
@@ -51,13 +52,8 @@ class RelevamientoService:
 
         if territorial_data:
             territorial_data = json.loads(territorial_data)
-            gestionar_uid = territorial_data.get("gestionar_uid")
-            nombre = territorial_data.get("nombre")
-
-            territorial, _ = Territorial.objects.get_or_create(
-                gestionar_uid=gestionar_uid, defaults={"nombre": nombre}
-            )
-            relevamiento.territorial = territorial
+            relevamiento.territorial_uid = territorial_data.get("gestionar_uid")
+            relevamiento.territorial_nombre = territorial_data.get("nombre")
             relevamiento.estado = "Visita pendiente"
 
         relevamiento.save()
@@ -72,13 +68,12 @@ class RelevamientoService:
 
         if territorial_data:
             territorial_data = json.loads(territorial_data)
-            gestionar_uid = territorial_data["gestionar_uid"]
-            territorial = Territorial.objects.get(gestionar_uid=gestionar_uid)
-
-            relevamiento.territorial = territorial
+            relevamiento.territorial_uid = territorial_data.get("gestionar_uid")
+            relevamiento.territorial_nombre = territorial_data.get("nombre")
             relevamiento.estado = "Visita pendiente"
         else:
-            relevamiento.territorial = None
+            relevamiento.territorial_nombre = None
+            relevamiento.territorial_uid = None
             relevamiento.estado = "Pendiente"
 
         relevamiento.save()
@@ -148,141 +143,157 @@ class RelevamientoService:
 
     @staticmethod
     def get_relevamiento_detail_object(relevamiento_id):
-        relevamiento = (
-            Relevamiento.objects.prefetch_related(
-                "comedor",
-                "funcionamiento",
-                "espacio",
-                "colaboradores",
-                "recursos",
-                "compras",
-                "referente",
-                "anexo",
+        try:
+            relevamiento = (
+                Relevamiento.objects.prefetch_related(
+                    "comedor",
+                    "funcionamiento",
+                    "espacio",
+                    "colaboradores",
+                    "recursos",
+                    "compras",
+                    "referente",
+                    "anexo",
+                )
+                .values(
+                    "id",
+                    "estado",
+                    "docPDF",
+                    "comedor__nombre",
+                    "fecha_visita",
+                    "observacion",
+                    "funcionamiento__modalidad_prestacion__nombre",
+                    "funcionamiento__servicio_por_turnos",
+                    "funcionamiento__cantidad_turnos",
+                    "territorial_nombre",
+                    "responsable_es_referente",
+                    "responsable__nombre",
+                    "responsable__apellido",
+                    "responsable__mail",
+                    "responsable__celular",
+                    "responsable__documento",
+                    "responsable__funcion",
+                    "comedor__comienzo",
+                    "comedor__id",
+                    "comedor__calle",
+                    "comedor__numero",
+                    "comedor__entre_calle_1",
+                    "comedor__entre_calle_2",
+                    "comedor__provincia__nombre",
+                    "comedor__municipio__nombre",
+                    "comedor__localidad__nombre",
+                    "comedor__partido",
+                    "comedor__barrio",
+                    "comedor__codigo_postal",
+                    "comedor__referente__nombre",
+                    "comedor__referente__apellido",
+                    "comedor__referente__mail",
+                    "comedor__referente__celular",
+                    "comedor__referente__documento",
+                    "espacio__tipo_espacio_fisico__nombre",
+                    "espacio__espacio_fisico_otro",
+                    "espacio__cocina__espacio_elaboracion_alimentos",
+                    "espacio__cocina__almacenamiento_alimentos_secos",
+                    "espacio__cocina__heladera",
+                    "espacio__cocina__freezer",
+                    "espacio__cocina__recipiente_residuos_organicos",
+                    "espacio__cocina__recipiente_residuos_reciclables",
+                    "espacio__cocina__otros_residuos",
+                    "espacio__cocina__recipiente_otros_residuos",
+                    "espacio__cocina__abastecimiento_agua__nombre",
+                    "espacio__cocina__abastecimiento_agua_otro",
+                    "espacio__cocina__instalacion_electrica",
+                    "espacio__prestacion__espacio_equipado",
+                    "espacio__prestacion__tiene_ventilacion",
+                    "espacio__prestacion__tiene_salida_emergencia",
+                    "espacio__prestacion__salida_emergencia_senializada",
+                    "espacio__prestacion__tiene_equipacion_incendio",
+                    "espacio__prestacion__tiene_botiquin",
+                    "espacio__prestacion__tiene_buena_iluminacion",
+                    "espacio__prestacion__tiene_sanitarios",
+                    "espacio__prestacion__desague_hinodoro__nombre",
+                    "espacio__prestacion__gestion_quejas__nombre",
+                    "espacio__prestacion__gestion_quejas_otro",
+                    "espacio__prestacion__informacion_quejas",
+                    "espacio__prestacion__frecuencia_limpieza__nombre",
+                    "colaboradores__cantidad_colaboradores__nombre",
+                    "colaboradores__colaboradores_capacitados_alimentos",
+                    "colaboradores__colaboradores_recibieron_capacitacion_alimentos",
+                    "colaboradores__colaboradores_capacitados_salud_seguridad",
+                    "colaboradores__colaboradores_recibieron_capacitacion_emergencias",
+                    "colaboradores__colaboradores_recibieron_capacitacion_violencia",
+                    "recursos__recibe_donaciones_particulares",
+                    "recursos__frecuencia_donaciones_particulares__nombre",
+                    "recursos__recursos_donaciones_particulares__nombre",
+                    "recursos__recibe_estado_nacional",
+                    "recursos__frecuencia_estado_nacional__nombre",
+                    "recursos__recursos_estado_nacional__nombre",
+                    "recursos__recibe_estado_provincial",
+                    "recursos__frecuencia_estado_provincial__nombre",
+                    "recursos__recursos_estado_provincial__nombre",
+                    "recursos__recibe_estado_municipal",
+                    "recursos__frecuencia_estado_municipal__nombre",
+                    "recursos__recursos_estado_municipal__nombre",
+                    "recursos__recibe_otros",
+                    "recursos__frecuencia_otros__nombre",
+                    "recursos__recursos_otros__nombre",
+                    "compras__almacen_cercano",
+                    "compras__verduleria",
+                    "compras__granja",
+                    "compras__carniceria",
+                    "compras__pescaderia",
+                    "compras__supermercado",
+                    "compras__mercado_central",
+                    "compras__ferias_comunales",
+                    "compras__mayoristas",
+                    "compras__otro",
+                    "prestacion__id",
+                    "anexo__tipo_insumo__nombre",
+                    "anexo__frecuencia_insumo__nombre",
+                    "anexo__tecnologia__nombre",
+                    "anexo__acceso_comedor__nombre",
+                    "anexo__distancia_transporte__nombre",
+                    "anexo__comedor_merendero",
+                    "anexo__insumos_organizacion",
+                    "anexo__servicio_internet",
+                    "anexo__zona_inundable",
+                    "anexo__actividades_jardin_maternal",
+                    "anexo__actividades_jardin_infantes",
+                    "anexo__apoyo_escolar",
+                    "anexo__alfabetizacion_terminalidad",
+                    "anexo__capacitaciones_talleres",
+                    "anexo__promocion_salud",
+                    "anexo__actividades_discapacidad",
+                    "anexo__necesidades_alimentarias",
+                    "anexo__actividades_recreativas",
+                    "anexo__actividades_culturales",
+                    "anexo__emprendimientos_productivos",
+                    "anexo__actividades_religiosas",
+                    "anexo__actividades_huerta",
+                    "anexo__espacio_huerta",
+                    "anexo__otras_actividades",
+                    "anexo__cuales_otras_actividades",
+                    "anexo__veces_recibio_insumos_2024",
+                    "excepcion__adjuntos",
+                    "excepcion__descripcion",
+                    "excepcion__motivo__nombre",
+                    "excepcion__longitud",
+                    "excepcion__latitud",
+                    "excepcion__firma",
+                )
+                .get(pk=relevamiento_id)
             )
-            .filter(pk=relevamiento_id)
-            .values(
-                "id",
-                "estado",
-                "docPDF",
-                "comedor__nombre",
-                "fecha_visita",
-                "observacion",
-                "funcionamiento__modalidad_prestacion__nombre",
-                "funcionamiento__servicio_por_turnos",
-                "funcionamiento__cantidad_turnos",
-                "territorial__nombre",
-                "responsable_es_referente",
-                "responsable__nombre",
-                "responsable__apellido",
-                "responsable__mail",
-                "responsable__celular",
-                "responsable__documento",
-                "responsable__funcion",
-                "comedor__comienzo",
-                "comedor__id",
-                "comedor__calle",
-                "comedor__numero",
-                "comedor__entre_calle_1",
-                "comedor__entre_calle_2",
-                "comedor__provincia__nombre",
-                "comedor__municipio__nombre",
-                "comedor__localidad__nombre",
-                "comedor__partido",
-                "comedor__barrio",
-                "comedor__codigo_postal",
-                "comedor__referente__nombre",
-                "comedor__referente__apellido",
-                "comedor__referente__mail",
-                "comedor__referente__celular",
-                "comedor__referente__documento",
-                "espacio__tipo_espacio_fisico__nombre",
-                "espacio__espacio_fisico_otro",
-                "espacio__cocina__espacio_elaboracion_alimentos",
-                "espacio__cocina__almacenamiento_alimentos_secos",
-                "espacio__cocina__heladera",
-                "espacio__cocina__freezer",
-                "espacio__cocina__recipiente_residuos_organicos",
-                "espacio__cocina__recipiente_residuos_reciclables",
-                "espacio__cocina__otros_residuos",
-                "espacio__cocina__recipiente_otros_residuos",
-                "espacio__cocina__abastecimiento_agua__nombre",
-                "espacio__cocina__abastecimiento_agua_otro",
-                "espacio__cocina__instalacion_electrica",
-                "espacio__prestacion__espacio_equipado",
-                "espacio__prestacion__tiene_ventilacion",
-                "espacio__prestacion__tiene_salida_emergencia",
-                "espacio__prestacion__salida_emergencia_senializada",
-                "espacio__prestacion__tiene_equipacion_incendio",
-                "espacio__prestacion__tiene_botiquin",
-                "espacio__prestacion__tiene_buena_iluminacion",
-                "espacio__prestacion__tiene_sanitarios",
-                "espacio__prestacion__desague_hinodoro__nombre",
-                "espacio__prestacion__gestion_quejas__nombre",
-                "espacio__prestacion__gestion_quejas_otro",
-                "espacio__prestacion__informacion_quejas",
-                "espacio__prestacion__frecuencia_limpieza__nombre",
-                "colaboradores__cantidad_colaboradores__nombre",
-                "colaboradores__colaboradores_capacitados_alimentos",
-                "colaboradores__colaboradores_recibieron_capacitacion_alimentos",
-                "colaboradores__colaboradores_capacitados_salud_seguridad",
-                "colaboradores__colaboradores_recibieron_capacitacion_emergencias",
-                "colaboradores__colaboradores_recibieron_capacitacion_violencia",
-                "recursos__recibe_donaciones_particulares",
-                "recursos__frecuencia_donaciones_particulares__nombre",
-                "recursos__recursos_donaciones_particulares__nombre",
-                "recursos__recibe_estado_nacional",
-                "recursos__frecuencia_estado_nacional__nombre",
-                "recursos__recursos_estado_nacional__nombre",
-                "recursos__recibe_estado_provincial",
-                "recursos__frecuencia_estado_provincial__nombre",
-                "recursos__recursos_estado_provincial__nombre",
-                "recursos__recibe_estado_municipal",
-                "recursos__frecuencia_estado_municipal__nombre",
-                "recursos__recursos_estado_municipal__nombre",
-                "recursos__recibe_otros",
-                "recursos__frecuencia_otros__nombre",
-                "recursos__recursos_otros__nombre",
-                "compras__almacen_cercano",
-                "compras__verduleria",
-                "compras__granja",
-                "compras__carniceria",
-                "compras__pescaderia",
-                "compras__supermercado",
-                "compras__mercado_central",
-                "compras__ferias_comunales",
-                "compras__mayoristas",
-                "compras__otro",
-                "prestacion__id",
-                "anexo__tipo_insumo__nombre",
-                "anexo__frecuencia_insumo__nombre",
-                "anexo__tecnologia__nombre",
-                "anexo__acceso_comedor__nombre",
-                "anexo__distancia_transporte__nombre",
-                "anexo__comedor_merendero",
-                "anexo__insumos_organizacion",
-                "anexo__servicio_internet",
-                "anexo__zona_inundable",
-                "anexo__actividades_jardin_maternal",
-                "anexo__actividades_jardin_infantes",
-                "anexo__apoyo_escolar",
-                "anexo__alfabetizacion_terminalidad",
-                "anexo__capacitaciones_talleres",
-                "anexo__promocion_salud",
-                "anexo__actividades_discapacidad",
-                "anexo__necesidades_alimentarias",
-                "anexo__actividades_recreativas",
-                "anexo__actividades_culturales",
-                "anexo__emprendimientos_productivos",
-                "anexo__actividades_religiosas",
-                "anexo__actividades_huerta",
-                "anexo__espacio_huerta",
-                "anexo__otras_actividades",
-                "anexo__cuales_otras_actividades",
-                "anexo__veces_recibio_insumos_2024",
-            )
-            .first()
-        )
-        return relevamiento
+
+            # Asegurar que `excepcion__adjuntos` sea una lista
+            if isinstance(relevamiento.get("excepcion__adjuntos"), str):
+                relevamiento["excepcion__adjuntos"] = [
+                    relevamiento["excepcion__adjuntos"]
+                ]
+
+            return relevamiento
+
+        except Relevamiento.DoesNotExist:
+            return None
 
     @staticmethod
     def create_or_update_funcionamiento(
@@ -383,8 +394,10 @@ class RelevamientoService:
                 else None
             )
         if "gestion_quejas" in prestacion_data:
-            prestacion_data["gestion_quejas"] = TipoGestionQuejas.objects.get(
-                nombre=prestacion_data["gestion_quejas"]
+            prestacion_data["gestion_quejas"] = (
+                TipoGestionQuejas.objects.get(nombre=prestacion_data["gestion_quejas"])
+                if prestacion_data["gestion_quejas"] != ""
+                else None
             )
         if "gestion_quejas_otro" in prestacion_data:
             prestacion_data["gestion_quejas_otro"] = prestacion_data[
@@ -395,8 +408,12 @@ class RelevamientoService:
                 prestacion_data["informacion_quejas"] == "Y"
             )
         if "frecuencia_limpieza" in prestacion_data:
-            prestacion_data["frecuencia_limpieza"] = FrecuenciaLimpieza.objects.get(
-                nombre__iexact=prestacion_data["frecuencia_limpieza"]
+            prestacion_data["frecuencia_limpieza"] = (
+                FrecuenciaLimpieza.objects.get(
+                    nombre__iexact=prestacion_data["frecuencia_limpieza"]
+                )
+                if prestacion_data["frecuencia_limpieza"] != ""
+                else None
             )
 
         return prestacion_data
@@ -404,9 +421,10 @@ class RelevamientoService:
     @staticmethod
     def create_or_update_cocina(cocina_data, cocina_instance=None):
         cocina_data = RelevamientoService.populate_cocina_data(cocina_data)
+        combustibles_queryset = TipoCombustible.objects.none()
 
         if "abastecimiento_combustible" in cocina_data:
-            combustible_str = cocina_data.pop("abastecimiento_combustible", None)
+            combustible_str = cocina_data.get("abastecimiento_combustible")
             combustibles_arr = [nombre.strip() for nombre in combustible_str.split(",")]
             combustibles_queryset = TipoCombustible.objects.filter(
                 nombre__in=combustibles_arr
@@ -416,11 +434,13 @@ class RelevamientoService:
             cocina_instance = EspacioCocina.objects.create(**cocina_data)
         else:
             for field, value in cocina_data.items():
-                setattr(cocina_instance, field, value)
+                if field == "abastecimiento_combustible":
+                    cocina_instance.abastecimiento_combustible.set(
+                        combustibles_queryset
+                    )
+                else:
+                    setattr(cocina_instance, field, value)
             cocina_instance.save()
-
-        if "abastecimiento_combustible" in cocina_data:
-            cocina_instance.abastecimiento_combustible.set(combustibles_queryset)
 
         return cocina_instance
 
@@ -455,8 +475,10 @@ class RelevamientoService:
                 cocina_data["recipiente_otros_residuos"] == "Y"
             )
         if "abastecimiento_agua" in cocina_data:
-            cocina_data["abastecimiento_agua"] = TipoAgua.objects.get(
-                nombre__iexact=cocina_data["abastecimiento_agua"]
+            cocina_data["abastecimiento_agua"] = (
+                TipoAgua.objects.get(nombre__iexact=cocina_data["abastecimiento_agua"])
+                if cocina_data["abastecimiento_agua"] != ""
+                else None
             )
         if "instalacion_electrica" in cocina_data:
             cocina_data["instalacion_electrica"] = (
@@ -483,8 +505,12 @@ class RelevamientoService:
             espacio_data["prestacion"] = prestacion_instance
 
         if "tipo_espacio_fisico" in espacio_data:
-            espacio_data["tipo_espacio_fisico"] = TipoEspacio.objects.get(
-                nombre__iexact=espacio_data["tipo_espacio_fisico"]
+            espacio_data["tipo_espacio_fisico"] = (
+                TipoEspacio.objects.get(
+                    nombre__iexact=espacio_data["tipo_espacio_fisico"]
+                )
+                if espacio_data["tipo_espacio_fisico"] != ""
+                else None
             )
 
         if espacio_instance is None:
@@ -518,6 +544,8 @@ class RelevamientoService:
                 CantidadColaboradores.objects.get(
                     nombre__iexact=colaboradores_data["cantidad_colaboradores"]
                 )
+                if colaboradores_data["cantidad_colaboradores"] != ""
+                else None
             )
         if "colaboradores_capacitados_alimentos" in colaboradores_data:
             colaboradores_data["colaboradores_capacitados_alimentos"] = (
@@ -1172,24 +1200,54 @@ class RelevamientoService:
         return prestacion_data
 
     @staticmethod
-    def create_or_update_responsable(responsable_data, responsable_instance=None):
-        responsable_data["celular"] = (
-            responsable_data["celular"] if responsable_data["celular"] != "" else None
-        )
-        responsable_data["documento"] = (
-            responsable_data["documento"]
-            if responsable_data["documento"] != ""
-            else None
-        )
-
-        if responsable_instance is None:
-            responsable_instance = Referente.objects.create(**responsable_data)
+    def create_or_update_responsable_relevamiento(
+        responsable_data, responsable_es_referente, getionar_uid_send
+    ):
+        if responsable_es_referente:
+            relevamiento_gestionar = Relevamiento.objects.get(
+                gestionar_uid=getionar_uid_send
+            )
+            responsable = relevamiento_gestionar.responsable
+        elif responsable_es_referente is False:
+            try:
+                responsable = Referente.objects.get(
+                    documento=responsable_data["documento"]
+                )
+            except Referente.DoesNotExist:
+                responsable = Referente.objects.create(**responsable_data)
+            except Exception as e:
+                return None
         else:
-            for field, value in responsable_data.items():
-                setattr(responsable_instance, field, value)
-            responsable_instance.save()
+            return None
+        return responsable.id
 
-        return responsable_instance
+    @staticmethod
+    def create_or_update_excepcion(excepcion_data, excepcion_instance=None):
+        excepcion_data = RelevamientoService.populate_excepcion_data(excepcion_data)
+
+        if excepcion_instance is None:
+            excepcion_instance = Excepcion.objects.create(**excepcion_data)
+        else:
+            for field, value in excepcion_data.items():
+                setattr(excepcion_instance, field, value)
+            excepcion_instance.save()
+
+        return excepcion_instance
+
+    @staticmethod
+    def populate_excepcion_data(excepcion_data):
+        if "motivo" in excepcion_data:
+            excepcion_data["motivo"] = (
+                MotivoExcepcion.objects.get(nombre__iexact=excepcion_data["motivo"])
+                if excepcion_data["motivo"] != ""
+                else None
+            )
+        if "adjuntos" in excepcion_data:
+            excepcion_data["adjuntos"] = [
+                url.strip() for url in excepcion_data["adjuntos"].split(",")
+            ]
+
+        return excepcion_data
 
     @staticmethod
     def send_to_gestionar(relevamiento: Relevamiento):
@@ -1210,8 +1268,8 @@ class RelevamientoService:
                     "Id_SISOC": f"{relevamiento.id}",
                     "ESTADO": relevamiento.estado,
                     "TecnicoRelevador": (
-                        f"{relevamiento.territorial.gestionar_uid}"
-                        if relevamiento.territorial
+                        f"{relevamiento.territorial_uid}"
+                        if relevamiento.territorial_uid is not None
                         else ""
                     ),
                     "Fecha de visita": (
@@ -1247,13 +1305,7 @@ class RelevamientoService:
         data = {
             "Action": "Delete",
             "Properties": {"Locale": "es-ES"},
-            "Rows": [
-                {
-                    "Action": "Delete",
-                    "Properties": {"Locale": "es-ES"},
-                    "Rows": [{"Relevamiento id": f"{relevamiento.gestionar_uid}"}],
-                }
-            ],
+            "Rows": [{"Relevamiento id": f"{relevamiento.gestionar_uid}"}],
         }
 
         headers = {

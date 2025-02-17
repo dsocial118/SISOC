@@ -1,6 +1,7 @@
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, ListView, UpdateView, DeleteView
 from django.shortcuts import redirect
+from django.contrib.auth.models import User
 from provincias.models import Proyecto, AnexoSocioProductivo
 from provincias.forms import (
     LineaDeAccionForm,
@@ -11,7 +12,6 @@ from provincias.forms import (
     DiagnosticoJuridicaForm,
     DiagnosticoFisicaForm,
 )
-from usuarios.models import Usuarios
 
 
 class ProyectoCreateView(CreateView):
@@ -20,7 +20,7 @@ class ProyectoCreateView(CreateView):
     template_name = "proyecto_form.html"
 
     def form_valid(self, form):
-        form.instance.creador = Usuarios.objects.get(pk=self.request.user.id)
+        form.instance.creador = User.objects.get(pk=self.request.user.id)
         tipo_anexo = form.cleaned_data["tipo_anexo"]
         if tipo_anexo == "SOCIO_PRODUCTIVO":
             return redirect("anexo_create")

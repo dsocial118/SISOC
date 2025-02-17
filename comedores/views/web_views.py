@@ -1,4 +1,6 @@
+import os
 from typing import Any
+from django.contrib.auth.models import User
 from django.contrib import messages
 from django.db.models.base import Model
 from django.forms import BaseModelForm
@@ -16,7 +18,7 @@ from django.views.generic import (
 )
 
 
-from comedores.models.relevamiento import Relevamiento
+from comedores.models.relevamiento import Relevamiento, ClasificacionComedor
 from comedores.forms.comedor_form import (
     ComedorForm,
     ReferenteForm,
@@ -50,7 +52,6 @@ from comedores.models.comedor import (
 from comedores.models.relevamiento import Prestacion
 from comedores.services.comedor_service import ComedorService
 from comedores.services.relevamiento_service import RelevamientoService
-from usuarios.models import Usuarios
 
 
 def SubEstadosIntervencionesAJax(request):
@@ -290,7 +291,6 @@ class ComedorDetailView(DetailView):
                 "relevamientos": Relevamiento.objects.filter(comedor=self.object["id"])
                 .values("id", "fecha_visita", "estado")
                 .order_by("-estado")[:3],
-                "territoriales": ComedorService.get_territoriales(self.object["id"]),
                 "observaciones": Observacion.objects.filter(comedor=self.object["id"])
                 .values("id", "fecha_visita")
                 .order_by("-fecha_visita")[:3],
@@ -305,8 +305,16 @@ class ComedorDetailView(DetailView):
                 "imagenes": ImagenComedor.objects.filter(
                     comedor=self.object["id"]
                 ).values("imagen"),
+                "comedor_categoria": ClasificacionComedor.objects.filter(
+                    comedor=self.object["id"]
+                )
+                .order_by("-fecha")
+                .first(),
+                "GESTIONAR_API_KEY": os.getenv("GESTIONAR_API_KEY"),
+                "GESTIONAR_API_CREAR_COMEDOR": os.getenv("GESTIONAR_API_CREAR_COMEDOR"),
             }
         )
+
         return context
 
     def post(self, request, *args, **kwargs):
@@ -631,7 +639,7 @@ class ObservacionCreateView(CreateView):
 
     def form_valid(self, form: BaseModelForm) -> HttpResponse:
         form.instance.comedor_id = Comedor.objects.get(pk=self.kwargs["comedor_pk"]).id
-        usuario = Usuarios.objects.get(pk=self.request.user.id).usuario
+        usuario = User.objects.get(pk=self.request.user.id)
         form.instance.observador = f"{usuario.first_name} {usuario.last_name}"
         form.instance.fecha_visita = timezone.now()
 
@@ -682,7 +690,7 @@ class ObservacionUpdateView(UpdateView):
 
     def form_valid(self, form: BaseModelForm) -> HttpResponse:
         form.instance.comedor_id = Comedor.objects.get(pk=self.kwargs["comedor_pk"]).id
-        usuario = Usuarios.objects.get(pk=self.request.user.id).usuario
+        usuario = User.objects.get(pk=self.request.user.id)
         form.instance.observador = f"{usuario.first_name} {usuario.last_name}"
         form.instance.fecha_visita = timezone.now()
 
