@@ -742,6 +742,16 @@ class Anexo(models.Model):
         verbose_name = "Anexo"
         verbose_name_plural = "Anexos"
 
+class ImagenRelevamiento(models.Model):
+    imagen = models.ImageField(upload_to="relevamientos/", verbose_name="Imagen")
+    url = models.URLField(blank=True, null=True, verbose_name="URL de la imagen")
+
+    class Meta:
+        verbose_name = "Imagen de relevamiento"
+        verbose_name_plural = "Imágenes de relevamientos"
+
+    def __str__(self):
+        return f"Imagen {self.id}"
 
 class Relevamiento(models.Model):
 
@@ -782,7 +792,12 @@ class Relevamiento(models.Model):
     anexo = models.OneToOneField(
         to=Anexo, on_delete=models.PROTECT, blank=True, null=True
     )
-
+    imagenes = models.ManyToManyField(
+        to="ImagenRelevamiento",  
+        related_name="relevamientos",  
+        blank=True,  
+        verbose_name="Imágenes del relevamiento",
+    )
     def save(self, *args, **kwargs):
         self.validate_relevamientos_activos()
         self.set_referente_como_responsable()
