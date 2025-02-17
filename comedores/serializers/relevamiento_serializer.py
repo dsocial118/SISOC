@@ -3,12 +3,20 @@ from rest_framework import serializers
 from comedores.models.relevamiento import Relevamiento
 from comedores.models.relevamiento import (
     Territorial,
+    ImagenRelevamiento,
 )
 from comedores.services.relevamiento_service import RelevamientoService
 from comedores.utils import format_fecha_django
 
 
+class ImagenRelevamientoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ImagenRelevamiento
+        fields = ['id', 'imagen', 'url']
+
 class RelevamientoSerializer(serializers.ModelSerializer):
+    imagenes = ImagenRelevamientoSerializer(many=True, read_only=True)
+
     def clean(self):
         if "fecha_visita" in self.initial_data:
             self.initial_data["fecha_visita"] = format_fecha_django(

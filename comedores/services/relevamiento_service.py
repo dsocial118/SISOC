@@ -36,6 +36,7 @@ from comedores.models.relevamiento import (
     TipoModalidadPrestacion,
     TipoRecurso,
     TipoTecnologia,
+    ImagenRelevamiento,
 )
 from comedores.utils import format_fecha_gestionar
 
@@ -1268,3 +1269,13 @@ class RelevamientoService:
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
             print(f"Error al sincronizar con GESTIONAR: {e}")
+
+    @staticmethod
+    def create_or_update_imagenes(imagenes_data, relevamiento_instance):
+        imagenes_instances = []
+        for imagen_data in imagenes_data:
+            imagen_instance = ImagenRelevamiento.objects.create(**imagen_data)
+            imagenes_instances.append(imagen_instance)
+        relevamiento_instance.imagenes.set(imagenes_instances)
+        relevamiento_instance.save()
+        return relevamiento_instance
