@@ -1,14 +1,3 @@
-import os
-import json
-from django.shortcuts import get_object_or_404
-from django.utils import timezone
-from django.db import models
-import requests
-
-from comedores.models.relevamiento import Relevamiento
-from comedores.models.comedor import (
-    Comedor,
-)
 from comedores.models.relevamiento import (
     Relevamiento,
     ClasificacionComedor,
@@ -19,19 +8,20 @@ from comedores.models.relevamiento import (
 class ClasificacionComedorService:
     @staticmethod
     def create_clasificacion_relevamiento(relevamiento: Relevamiento):
-        calculoPuntuacion = ClasificacionComedorService.get_puntuacion_total(
+        calculo_puntuacion = ClasificacionComedorService.get_puntuacion_total(
             relevamiento
         )
-        clasificacionFinal = ClasificacionComedorService.get_clasificacion(
-            calculoPuntuacion
+        clasificacion_final = ClasificacionComedorService.get_clasificacion(
+            calculo_puntuacion
         )
-        ClasificacionComedor.objects.create(
+        clasificacion = ClasificacionComedor.objects.create(
             relevamiento=relevamiento,
-            categoria=clasificacionFinal,
-            puntuacion_total=calculoPuntuacion,
+            categoria=clasificacion_final,
+            puntuacion_total=calculo_puntuacion,
             comedor=relevamiento.comedor,
         )
-        return None
+
+        return clasificacion
 
     @staticmethod
     def get_clasificacion(puntacion_total):
@@ -41,165 +31,120 @@ class ClasificacionComedorService:
         return califiacion if califiacion else None
 
     @staticmethod
-    def get_puntuacion_total(relevamiento: Relevamiento):
+    def get_puntuacion_total(relevamiento: Relevamiento) -> int:
         puntuacion = 0
 
-        if relevamiento.espacio:
-            if relevamiento.espacio.tipo_espacio_fisico:
-                if (
-                    relevamiento.espacio.tipo_espacio_fisico.nombre
-                    == "Espacio alquilado"
-                ):
-                    puntuacion += 3
-                elif (
-                    relevamiento.espacio.tipo_espacio_fisico.nombre
-                    == "Espacio prestado (uso exclusivo)"
-                ):
-                    puntuacion += 2
-                elif (
-                    relevamiento.espacio.tipo_espacio_fisico.nombre
-                    == "Espacio comunitario compartido"
-                ):
-                    puntuacion += 2
-                elif (
-                    relevamiento.espacio.tipo_espacio_fisico.nombre == "Casa de familia"
-                ):
-                    puntuacion += 3
-            if relevamiento.espacio.espacio_fisico_otro != "":
+        # Puntuación por tipo de espacio físico
+        if relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico:
+            tipo_espacio = relevamiento.espacio.tipo_espacio_fisico.nombre
+            puntuacion += {
+                "Espacio alquilado": 3,
+                "Espacio prestado (uso exclusivo)": 2,
+                "Espacio comunitario compartido": 2,
+                "Casa de familia": 3,
+            }.get(tipo_espacio, 0)
+
+            if relevamiento.espacio.espacio_fisico_otro:
                 puntuacion += 3
 
-            if relevamiento.espacio.cocina:
-                if relevamiento.espacio.cocina.espacio_elaboracion_alimentos is False:
-                    puntuacion += 3
-                if relevamiento.espacio.cocina.almacenamiento_alimentos_secos is False:
+        # Puntuación por cocina
+        if relevamiento.espacio and relevamiento.espacio.cocina:
+            cocina = relevamiento.espacio.cocina
+            puntuacion += sum(
+                [
+                    3 if not cocina.espacio_elaboracion_alimentos else 0,
+                    2 if not cocina.almacenamiento_alimentos_secos else 0,
+                    3 if not cocina.heladera else 0,
+                    3 if not cocina.freezer else 0,
+                    1 if not cocina.recipiente_residuos_organicos else 0,
+                    1 if not cocina.recipiente_residuos_reciclables else 0,
+                    1 if not cocina.otros_residuos else 0,
+                ]
+            )
+
+            if cocina.abastecimiento_combustible:
+                puntuacion += {"Gas envasado": 1, "Leña": 3, "Otro": 2}.get(
+                    cocina.abastecimiento_combustible.filter().first().nombre, 0
+                )
+
+            if cocina.abastecimiento_agua:
+                if cocina.abastecimiento_agua.nombre == "Pozo":
                     puntuacion += 2
-                if relevamiento.espacio.cocina.heladera is False:
-                    puntuacion += 3
-                if relevamiento.espacio.cocina.freezer is False:
-                    puntuacion += 3
-                if relevamiento.espacio.cocina.recipiente_residuos_organicos is False:
-                    puntuacion += 1
-                if relevamiento.espacio.cocina.recipiente_residuos_reciclables is False:
-                    puntuacion += 1
-                if relevamiento.espacio.cocina.otros_residuos is False:
-                    puntuacion += 1
-
-                if (
-                    relevamiento.espacio.cocina.abastecimiento_combustible.filter(
-                        nombre="Gas envasado"
-                    )
-                    .order_by("nombre")
-                    .exists()
-                ):
-                    puntuacion += 1
-                elif (
-                    relevamiento.espacio.cocina.abastecimiento_combustible.filter(
-                        nombre="Leña"
-                    )
-                    .order_by("nombre")
-                    .exists()
-                ):
-                    puntuacion += 3
-                elif (
-                    relevamiento.espacio.cocina.abastecimiento_combustible.filter(
-                        nombre="Otro"
-                    )
-                    .order_by("nombre")
-                    .exists()
-                ):
-                    puntuacion += 2
-
-                if (
-                    relevamiento.espacio.cocina.abastecimiento_agua
-                    and relevamiento.espacio.cocina.abastecimiento_agua.nombre == "Pozo"
-                ):
-                    puntuacion += 2
-                elif relevamiento.espacio.cocina.abastecimiento_agua_otro != "":
+                elif cocina.abastecimiento_agua_otro:
                     puntuacion += 3
 
-                if relevamiento.espacio.cocina.instalacion_electrica is False:
-                    puntuacion += 3
+            if not cocina.instalacion_electrica:
+                puntuacion += 3
 
-            if relevamiento.espacio.prestacion:
-                if relevamiento.espacio.prestacion.espacio_equipado is False:
-                    puntuacion += 2
+        # Puntuación por prestación
+        if relevamiento.espacio and relevamiento.espacio.prestacion:
+            prestacion = relevamiento.espacio.prestacion
+            puntuacion += sum(
+                [
+                    2 if not prestacion.espacio_equipado else 0,
+                    3 if not prestacion.tiene_ventilacion else 0,
+                    2 if not prestacion.tiene_salida_emergencia else 0,
+                    1 if not prestacion.salida_emergencia_senializada else 0,
+                    3 if not prestacion.tiene_equipacion_incendio else 0,
+                    3 if not prestacion.tiene_botiquin else 0,
+                    2 if not prestacion.tiene_buena_iluminacion else 0,
+                    3 if not prestacion.tiene_sanitarios else 0,
+                ]
+            )
 
-                if relevamiento.espacio.prestacion.tiene_ventilacion is False:
-                    puntuacion += 3
+            if prestacion.desague_hinodoro:
+                puntuacion += {"Pozo ciego": 2, "Letrina": 3}.get(
+                    prestacion.desague_hinodoro.nombre, 0
+                )
 
-                if relevamiento.espacio.prestacion.tiene_salida_emergencia is False:
-                    puntuacion += 2
-                if (
-                    relevamiento.espacio.prestacion.salida_emergencia_senializada
-                    is False
-                ):
-                    puntuacion += 1
-                if relevamiento.espacio.prestacion.tiene_equipacion_incendio is False:
-                    puntuacion += 3
-                if relevamiento.espacio.prestacion.tiene_botiquin is False:
-                    puntuacion += 3
-                if relevamiento.espacio.prestacion.tiene_buena_iluminacion is False:
-                    puntuacion += 2
-                if relevamiento.espacio.prestacion.tiene_sanitarios is False:
-                    puntuacion += 3
-                if relevamiento.espacio.prestacion.desague_hinodoro:
-                    if (
-                        relevamiento.espacio.prestacion.desague_hinodoro.nombre
-                        == "Pozo ciego"
-                    ):
-                        puntuacion += 2
-                    elif (
-                        relevamiento.espacio.prestacion.desague_hinodoro.nombre
-                        == "Letrina"
-                    ):
-                        puntuacion += 3
-
+        # Puntuación por colaboradores
         if relevamiento.colaboradores:
-            if relevamiento.colaboradores.colaboradores_capacitados_alimentos is False:
-                puntuacion += 1
-            if (
-                relevamiento.colaboradores.colaboradores_recibieron_capacitacion_alimentos
-                is False
-            ):
-                puntuacion += 1
-            if (
-                relevamiento.colaboradores.colaboradores_capacitados_salud_seguridad
-                is False
-            ):
-                puntuacion += 1
-            if (
-                relevamiento.colaboradores.colaboradores_recibieron_capacitacion_emergencias
-                is False
-            ):
-                puntuacion += 1
-            if (
-                relevamiento.colaboradores.colaboradores_recibieron_capacitacion_violencia
-                is False
-            ):
-                puntuacion += 1
+            colaboradores = relevamiento.colaboradores
+            puntuacion += sum(
+                [
+                    1 if not colaboradores.colaboradores_capacitados_alimentos else 0,
+                    (
+                        1
+                        if not colaboradores.colaboradores_recibieron_capacitacion_alimentos
+                        else 0
+                    ),
+                    (
+                        1
+                        if not colaboradores.colaboradores_capacitados_salud_seguridad
+                        else 0
+                    ),
+                    (
+                        1
+                        if not colaboradores.colaboradores_recibieron_capacitacion_emergencias
+                        else 0
+                    ),
+                    (
+                        1
+                        if not colaboradores.colaboradores_recibieron_capacitacion_violencia
+                        else 0
+                    ),
+                ]
+            )
 
+        # Puntuación por anexo
         if relevamiento.anexo:
-            if relevamiento.anexo.tecnologia == "Computadora":
-                puntuacion += 2
-            elif relevamiento.anexo.tecnologia == "Celular":
-                puntuacion += 2
-            elif relevamiento.anexo.tecnologia == "Ninguno":
-                puntuacion += 3
+            anexo = relevamiento.anexo
+            puntuacion += {"Computadora": 2, "Celular": 2, "Ninguno": 3}.get(
+                anexo.tecnologia.nombre, 0
+            )
 
-            if relevamiento.anexo.servicio_internet is False:
+            if not anexo.servicio_internet:
                 puntuacion += 1
 
-            if relevamiento.anexo.acceso_comedor == "Calle de tierra":
-                puntuacion += 3
-            elif relevamiento.anexo.acceso_comedor == "Calle con mejorado":
-                puntuacion += 2
+            puntuacion += {"Calle de tierra": 3, "Calle con mejorado": 2}.get(
+                anexo.acceso_comedor.nombre, 0
+            )
 
-            if relevamiento.anexo.zona_inundable is True:
+            if anexo.zona_inundable:
                 puntuacion += 3
 
-            if relevamiento.anexo.distancia_transporte == "Entre 6 y 10 cuadras":
-                puntuacion += 2
-            elif relevamiento.anexo.distancia_transporte == "Más de 10 cuadras":
-                puntuacion += 3
+            puntuacion += {"Entre 6 y 10 cuadras": 2, "Más de 10 cuadras": 3}.get(
+                anexo.distancia_transporte, 0
+            )
 
         return puntuacion
