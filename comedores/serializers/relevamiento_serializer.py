@@ -1,20 +1,13 @@
 from rest_framework import serializers
 
 from comedores.models.relevamiento import Relevamiento
-from comedores.models.relevamiento import (
-    ImagenRelevamiento,
-)
+
 from comedores.services.relevamiento_service import RelevamientoService
 from comedores.utils import format_fecha_django
 
 
-class ImagenRelevamientoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ImagenRelevamiento
-        fields = ['id', 'imagen', 'url']
-
 class RelevamientoSerializer(serializers.ModelSerializer):
-    imagenes = ImagenRelevamientoSerializer(many=True, read_only=True)
+    
 
     def clean(self):
         if "fecha_visita" in self.initial_data:
@@ -90,7 +83,6 @@ class RelevamientoSerializer(serializers.ModelSerializer):
             self.initial_data["anexo"] = RelevamientoService.create_or_update_anexo(
                 self.initial_data["anexo"], anexo_instance
             ).id
-
         if "prestacion" in self.initial_data:
             prestacion_instance = (
                 self.instance.prestacion
@@ -145,6 +137,11 @@ class RelevamientoSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {"error": "gestionar_uid debe ser único si no es nulo."}
                 )
+        
+        if "imagenes" in self.initial_data:
+            self.initial_data["imagenes"] = [
+                url.strip() for url in self.initial_data["imagenes"].split(",")
+            ]
 
         return self
 

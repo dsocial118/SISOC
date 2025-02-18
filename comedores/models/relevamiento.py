@@ -773,18 +773,6 @@ class Excepcion(models.Model):
         verbose_name = "Excepcion de comedor"
         verbose_name_plural = "Excepciones de comedor"
 
-
-class ImagenRelevamiento(models.Model):
-    imagen = models.ImageField(upload_to="relevamientos/", verbose_name="Imagen")
-    url = models.URLField(blank=True, null=True, verbose_name="URL de la imagen")
-
-    class Meta:
-        verbose_name = "Imagen de relevamiento"
-        verbose_name_plural = "Imágenes de relevamientos"
-
-    def __str__(self):
-        return f"Imagen {self.id}"
-
 class Relevamiento(models.Model):
 
     gestionar_uid = models.CharField(max_length=255, blank=True, null=True)
@@ -826,12 +814,8 @@ class Relevamiento(models.Model):
     excepcion = models.OneToOneField(
         to=Excepcion, on_delete=models.PROTECT, blank=True, null=True
     )
-    imagenes = models.ManyToManyField(
-        to="ImagenRelevamiento",  
-        related_name="relevamientos",  
-        blank=True,  
-        verbose_name="Imágenes del relevamiento",
-    )
+    imagenes = models.JSONField(default=list, blank=True, null=True)
+    
 
     def save(self, *args, **kwargs):
         self.validate_relevamientos_activos()
