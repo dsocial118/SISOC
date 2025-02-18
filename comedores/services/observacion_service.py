@@ -41,4 +41,7 @@ class ObservacionService:
                 observacion.gestionar_uid = response["Rows"][0]["ID_Observacion"]
                 observacion.save()
             except requests.exceptions.RequestException as e:
-                print(f"Error al sincronizar con GESTIONAR: {e}")
+                print("!!! Error al sincronizar OBSERVACION con GESTIONAR:")
+                print(e)
+                print("!!! Con la data:")
+                print(data)
