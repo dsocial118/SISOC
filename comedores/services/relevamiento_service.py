@@ -424,7 +424,7 @@ class RelevamientoService:
         combustibles_queryset = TipoCombustible.objects.none()
 
         if "abastecimiento_combustible" in cocina_data:
-            combustible_str = cocina_data.get("abastecimiento_combustible")
+            combustible_str = cocina_data.pop("abastecimiento_combustible")
             combustibles_arr = [nombre.strip() for nombre in combustible_str.split(",")]
             combustibles_queryset = TipoCombustible.objects.filter(
                 nombre__in=combustibles_arr
@@ -434,13 +434,12 @@ class RelevamientoService:
             cocina_instance = EspacioCocina.objects.create(**cocina_data)
         else:
             for field, value in cocina_data.items():
-                if field == "abastecimiento_combustible":
-                    cocina_instance.abastecimiento_combustible.set(
-                        combustibles_queryset
-                    )
-                else:
-                    setattr(cocina_instance, field, value)
-            cocina_instance.save()
+                setattr(cocina_instance, field, value)
+
+        if combustibles_queryset.exists():
+            cocina_instance.abastecimiento_combustible.set(combustibles_queryset)
+
+        cocina_instance.save()
 
         return cocina_instance
 
@@ -1255,7 +1254,10 @@ class RelevamientoService:
             RelevamientoService.send_relevamiento_to_gestionar(relevamiento)
 
         except Exception as e:
-            print(f"Error al sincronizar con GESTIONAR: {e}")
+            print(f"!!! Error al sincronizar creacion de RELEVAMIENTO con GESTIONAR:")
+            print(e)
+            print("!!! Con la data:")
+            print(data)
 
     @staticmethod
     def send_relevamiento_to_gestionar(relevamiento: Relevamiento):
@@ -1321,7 +1323,7 @@ class RelevamientoService:
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
             print(f"Error al sincronizar con GESTIONAR: {e}")
-
+            
     @staticmethod
     def create_or_update_imagenes(imagenes_data, relevamiento_instance):
         imagenes_instances = []
