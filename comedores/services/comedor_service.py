@@ -230,13 +230,15 @@ class ComedorService:
         }
 
         try:
-            response = requests.post(
-                os.getenv("GESTIONAR_API_CREAR_REFERENTE"),
-                json=data,
-                headers=headers,
-            )
-            response.raise_for_status()
-            response = response.json()
+            if referente.documento is not None:
+                response = requests.post(
+                    os.getenv("GESTIONAR_API_CREAR_REFERENTE"),
+                    json=data,
+                    headers=headers,
+                )
+                response.raise_for_status()
+                response = response.json()
+
         except requests.exceptions.RequestException as e:
             print("!!! Error al sincronizar REFERENTE con GESTIONAR:")
             print(e)
