@@ -279,6 +279,7 @@ class RelevamientoService:
                     "excepcion__longitud",
                     "excepcion__latitud",
                     "excepcion__firma",
+                    "imagenes",
                 )
                 .get(pk=relevamiento_id)
             )
@@ -288,7 +289,11 @@ class RelevamientoService:
                 relevamiento["excepcion__adjuntos"] = [
                     relevamiento["excepcion__adjuntos"]
                 ]
-
+            
+            if isinstance(relevamiento.get("imagenes"), str):
+                relevamiento["imagenes"] = [
+                    relevamiento["imagenes"]
+                ]
             return relevamiento
 
         except Relevamiento.DoesNotExist:
