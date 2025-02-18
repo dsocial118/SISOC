@@ -231,7 +231,6 @@ class ComedorService:
 
         try:
             if referente.documento is not None:
-                print("Test")
                 response = requests.post(
                     os.getenv("GESTIONAR_API_CREAR_REFERENTE"),
                     json=data,
