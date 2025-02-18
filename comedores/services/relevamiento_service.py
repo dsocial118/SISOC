@@ -1253,7 +1253,10 @@ class RelevamientoService:
             RelevamientoService.send_relevamiento_to_gestionar(relevamiento)
 
         except Exception as e:
-            print(f"Error al sincronizar con GESTIONAR: {e}")
+            print(f"!!! Error al sincronizar creacion de RELEVAMIENTO con GESTIONAR:")
+            print(e)
+            print("!!! Con la data:")
+            print(data)
 
     @staticmethod
     def send_relevamiento_to_gestionar(relevamiento: Relevamiento):
@@ -1318,4 +1321,7 @@ class RelevamientoService:
             )
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
-            print(f"Error al sincronizar con GESTIONAR: {e}")
+            print("!!! Error al sincronizar eliminacion de RELEVAMIENTO con GESTIONAR:")
+            print(e)
+            print("!!! Con la data:")
+            print(data)
