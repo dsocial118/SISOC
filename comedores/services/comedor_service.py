@@ -204,7 +204,10 @@ class ComedorService:
                 comedor.gestionar_uid = gestionar_uid
                 comedor.save()
         except requests.exceptions.RequestException as e:
-            print(f"Error al sincronizar con GESTIONAR: {e}")
+            print("!!! Error al sincronizar creacion de COMEDOR con GESTIONAR:")
+            print(e)
+            print("!!! Con la data:")
+            print(data)
 
     @staticmethod
     def send_referente_to_gestionar(referente: Referente):
@@ -235,7 +238,10 @@ class ComedorService:
             response.raise_for_status()
             response = response.json()
         except requests.exceptions.RequestException as e:
-            print(f"Error al sincronizar con GESTIONAR: {e}")
+            print("!!! Error al sincronizar REFERENTE con GESTIONAR:")
+            print(e)
+            print("!!! Con la data:")
+            print(data)
 
     @staticmethod
     def remove_to_gestionar(comedor: Comedor):
@@ -257,7 +263,10 @@ class ComedorService:
             )
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
-            print(f"Error al sincronizar con GESTIONAR: {e}")
+            print("!!! Error al sincronizar eliminacion de COMEDOR con GESTIONAR:")
+            print(e)
+            print("!!! Con la data:")
+            print(data)
 
     @staticmethod
     def get_presupuestos(comedor_id: int):
