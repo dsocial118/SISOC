@@ -430,7 +430,12 @@ class RelevamientoService:
             )
 
         if cocina_instance is None:
+            abastecimientos = cocina_data.pop(
+                "abastecimiento_combustible", None
+            )  # Extraer el campo m2m
             cocina_instance = EspacioCocina.objects.create(**cocina_data)
+            if abastecimientos:
+                cocina_instance.abastecimiento_combustible.set(abastecimientos)
         else:
             for field, value in cocina_data.items():
                 if field == "abastecimiento_combustible":
@@ -439,6 +444,7 @@ class RelevamientoService:
                     )
                 else:
                     setattr(cocina_instance, field, value)
+
             cocina_instance.save()
 
         return cocina_instance
