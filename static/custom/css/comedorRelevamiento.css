@@ -22,3 +22,27 @@
 .btn-margin-right {
     margin-right: 15px; 
 }
+
+.carousel-item img {
+    width: 100%; /* Ocupa todo el ancho del contenedor */
+    height: 400px; /* Altura fija (ajusta según tus necesidades) */
+    object-fit: cover; /* Recorta la imagen para que cubra el espacio */
+    border-radius: 10px; /* Opcional: para mantener el borde redondeado */
+}
+
+.carousel-control-prev,
+.carousel-control-next {
+    background-color: rgba(0, 0, 0, 0.5); /* Fondo semitransparente */
+    width: 40px; /* Ancho del botón */
+    height: 40px; /* Alto del botón */
+    border-radius: 50%; /* Forma circular */
+    top: 50%; /* Centrar verticalmente */
+    transform: translateY(-50%); /* Ajuste fino para centrar */
+}
+
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+    filter: brightness(0) invert(1); /* Cambia el color de las flechas a blanco */
+    width: 30px; /* Tamaño del ícono */
+    height: 30px; /* Tamaño del ícono */
+}
