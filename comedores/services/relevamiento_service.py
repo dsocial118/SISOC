@@ -423,7 +423,7 @@ class RelevamientoService:
         combustibles_queryset = TipoCombustible.objects.none()
 
         if "abastecimiento_combustible" in cocina_data:
-            combustible_str = cocina_data.get("abastecimiento_combustible")
+            combustible_str = cocina_data.pop("abastecimiento_combustible")
             combustibles_arr = [nombre.strip() for nombre in combustible_str.split(",")]
             combustibles_queryset = TipoCombustible.objects.filter(
                 nombre__in=combustibles_arr
