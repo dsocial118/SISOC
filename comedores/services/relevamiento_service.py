@@ -431,18 +431,14 @@ class RelevamientoService:
 
         if cocina_instance is None:
             cocina_instance = EspacioCocina.objects.create(**cocina_data)
-            if combustibles_queryset:
-                cocina_instance.abastecimiento_combustible.set(combustibles_queryset)
         else:
             for field, value in cocina_data.items():
-                if field == "abastecimiento_combustible":
-                    cocina_instance.abastecimiento_combustible.set(
-                        combustibles_queryset
-                    )
-                else:
-                    setattr(cocina_instance, field, value)
+                setattr(cocina_instance, field, value)
 
-            cocina_instance.save()
+        if combustibles_queryset.exists():
+            cocina_instance.abastecimiento_combustible.set(combustibles_queryset)
+
+        cocina_instance.save()
 
         return cocina_instance
 
