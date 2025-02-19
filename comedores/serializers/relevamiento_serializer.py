@@ -7,7 +7,6 @@ from comedores.utils import format_fecha_django
 
 
 class RelevamientoSerializer(serializers.ModelSerializer):
-    
 
     def clean(self):
         if "fecha_visita" in self.initial_data:
@@ -137,7 +136,7 @@ class RelevamientoSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {"error": "gestionar_uid debe ser único si no es nulo."}
                 )
-        
+
         if "imagenes" in self.initial_data:
             self.initial_data["imagenes"] = [
                 url.strip() for url in self.initial_data["imagenes"].split(",")
