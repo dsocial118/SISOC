@@ -1324,4 +1324,7 @@ class RelevamientoService:
             )
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
-            print(f"Error al sincronizar con GESTIONAR: {e}")
+            print("!!! Error al sincronizar eliminacion de RELEVAMIENTO con GESTIONAR:")
+            print(e)
+            print("!!! Con la data:")
+            print(data)
