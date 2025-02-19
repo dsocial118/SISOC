@@ -773,6 +773,7 @@ class Excepcion(models.Model):
         verbose_name = "Excepcion de comedor"
         verbose_name_plural = "Excepciones de comedor"
 
+
 class Relevamiento(models.Model):
 
     gestionar_uid = models.CharField(max_length=255, blank=True, null=True)
@@ -815,7 +816,6 @@ class Relevamiento(models.Model):
         to=Excepcion, on_delete=models.PROTECT, blank=True, null=True
     )
     imagenes = models.JSONField(default=list, blank=True, null=True)
-    
 
     def save(self, *args, **kwargs):
         self.validate_relevamientos_activos()

@@ -289,11 +289,9 @@ class RelevamientoService:
                 relevamiento["excepcion__adjuntos"] = [
                     relevamiento["excepcion__adjuntos"]
                 ]
-            
+
             if isinstance(relevamiento.get("imagenes"), str):
-                relevamiento["imagenes"] = [
-                    relevamiento["imagenes"]
-                ]
+                relevamiento["imagenes"] = [relevamiento["imagenes"]]
             return relevamiento
 
         except Relevamiento.DoesNotExist:
@@ -1327,5 +1325,3 @@ class RelevamientoService:
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
             print(f"Error al sincronizar con GESTIONAR: {e}")
-            
-  

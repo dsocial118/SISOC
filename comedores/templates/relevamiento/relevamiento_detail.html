@@ -1096,24 +1096,33 @@
                     <!-- Indicadores -->
                     <div class="carousel-indicators">
                         {% for imagen in relevamiento.imagenes %}
-                            <button type="button" data-bs-target="#carouselExample" data-bs-slide-to="{{ forloop.counter0 }}" 
-                                    {% if forloop.first %}class="active" aria-current="true"{% endif %} aria-label="Slide {{ forloop.counter }}"></button>
+                            <button type="button"
+                                    data-bs-target="#carouselExample"
+                                    data-bs-slide-to="{{ forloop.counter0 }}"
+                                    {% if forloop.first %}class="active" aria-current="true"{% endif %}
+                                    aria-label="Slide {{ forloop.counter }}"></button>
                         {% endfor %}
                     </div>
                     <!-- Imágenes -->
                     <div class="carousel-inner">
                         {% for imagen in relevamiento.imagenes %}
                             <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                <img src="{{ imagen }}" class="d-block w-100" alt="Relevamiento">
+                                <img src="{{ imagen }}" class="d-block w-100" alt="Relevamiento" />
                             </div>
                         {% endfor %}
                     </div>
                     <!-- Controles -->
-                    <button class="carousel-control-prev" type="button" data-bs-target="#carouselExample" data-bs-slide="prev">
+                    <button class="carousel-control-prev"
+                            type="button"
+                            data-bs-target="#carouselExample"
+                            data-bs-slide="prev">
                         <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                         <span class="visually-hidden">Anterior</span>
                     </button>
-                    <button class="carousel-control-next" type="button" data-bs-target="#carouselExample" data-bs-slide="next">
+                    <button class="carousel-control-next"
+                            type="button"
+                            data-bs-target="#carouselExample"
+                            data-bs-slide="next">
                         <span class="carousel-control-next-icon" aria-hidden="true"></span>
                         <span class="visually-hidden">Siguiente</span>
                     </button>
