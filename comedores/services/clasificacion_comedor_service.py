@@ -129,16 +129,18 @@ class ClasificacionComedorService:
         # Puntuación por anexo
         if relevamiento.anexo:
             anexo = relevamiento.anexo
-            puntuacion += {"Computadora": 2, "Celular": 2, "Ninguno": 3}.get(
-                anexo.tecnologia.nombre, 0
-            )
+            if anexo.tecnologia:
+                puntuacion += {"Computadora": 2, "Celular": 2, "Ninguno": 3}.get(
+                    anexo.tecnologia.nombre, 0
+                )
 
             if not anexo.servicio_internet:
                 puntuacion += 1
 
-            puntuacion += {"Calle de tierra": 3, "Calle con mejorado": 2}.get(
-                anexo.acceso_comedor.nombre, 0
-            )
+            if anexo.acceso_comedor:
+                puntuacion += {"Calle de tierra": 3, "Calle con mejorado": 2}.get(
+                    anexo.acceso_comedor.nombre, 0
+                )
 
             if anexo.zona_inundable:
                 puntuacion += 3
