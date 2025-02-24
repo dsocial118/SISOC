@@ -1081,5 +1081,53 @@
                 </div>
             </div>
         </div>
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title font-weight-bold mr-3 pt-1">Fotos</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Carrusel de Bootstrap -->
+                <div id="carouselExample" class="carousel slide" data-bs-ride="carousel">
+                    <!-- Indicadores -->
+                    <div class="carousel-indicators">
+                        {% for imagen in relevamiento.imagenes %}
+                            <button type="button"
+                                    data-bs-target="#carouselExample"
+                                    data-bs-slide-to="{{ forloop.counter0 }}"
+                                    {% if forloop.first %}class="active" aria-current="true"{% endif %}
+                                    aria-label="Slide {{ forloop.counter }}"></button>
+                        {% endfor %}
+                    </div>
+                    <!-- Imágenes -->
+                    <div class="carousel-inner">
+                        {% for imagen in relevamiento.imagenes %}
+                            <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                <img src="{{ imagen }}" class="d-block w-100" alt="Relevamiento" />
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <!-- Controles -->
+                    <button class="carousel-control-prev"
+                            type="button"
+                            data-bs-target="#carouselExample"
+                            data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Anterior</span>
+                    </button>
+                    <button class="carousel-control-next"
+                            type="button"
+                            data-bs-target="#carouselExample"
+                            data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Siguiente</span>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 {% endblock %}

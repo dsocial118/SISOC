@@ -815,6 +815,7 @@ class Relevamiento(models.Model):
     excepcion = models.OneToOneField(
         to=Excepcion, on_delete=models.PROTECT, blank=True, null=True
     )
+    imagenes = models.JSONField(default=list, blank=True, null=True)
 
     def save(self, *args, **kwargs):
         self.validate_relevamientos_activos()
