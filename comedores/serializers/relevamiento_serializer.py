@@ -135,7 +135,6 @@ class RelevamientoSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {"error": "gestionar_uid debe ser único si no es nulo."}
                 )
-
         return self
 
     class Meta:

@@ -619,7 +619,7 @@ class RelevamientoService:
 
         if "recibe_estado_nacional" in recursos_data:
             recursos_data["recibe_estado_nacional"] = (
-                recursos_data["recibe_donaciones_particulares"] == "Y"
+                recursos_data["recibe_estado_nacional"] == "Y"
             )
 
         if "frecuencia_estado_nacional" in recursos_data:
@@ -634,7 +634,7 @@ class RelevamientoService:
 
         if "recibe_estado_provincial" in recursos_data:
             recursos_data["recibe_estado_provincial"] = (
-                recursos_data["recibe_donaciones_particulares"] == "Y"
+                recursos_data["recibe_estado_provincial"] == "Y"
             )
 
         if "frecuencia_estado_provincial" in recursos_data:
@@ -649,7 +649,7 @@ class RelevamientoService:
 
         if "recibe_estado_municipal" in recursos_data:
             recursos_data["recibe_estado_municipal"] = (
-                recursos_data["recibe_donaciones_particulares"] == "Y"
+                recursos_data["recibe_estado_municipal"] == "Y"
             )
 
         if "frecuencia_estado_municipal" in recursos_data:
@@ -663,9 +663,7 @@ class RelevamientoService:
             )
 
         if "recibe_otros" in recursos_data:
-            recursos_data["recibe_otros"] = (
-                recursos_data["recibe_donaciones_particulares"] == "Y"
-            )
+            recursos_data["recibe_otros"] = recursos_data["recibe_otros"] == "Y"
 
         if "frecuencia_otros" in recursos_data:
             recursos_data["frecuencia_otros"] = get_frecuencia_recepcion(
