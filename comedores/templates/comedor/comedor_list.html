@@ -100,7 +100,7 @@
                                         <a href="#" class="page-link">Volver</a>
                                     </li>
                                 {% endif %}
-                                {% for i in page_range %}
+                                {% for i in page_obj.paginator.page_range %}
                                     {% if i == '…' %}
                                         <li class="page-item disabled">
                                             <a href="#" class="page-link">…</a>
