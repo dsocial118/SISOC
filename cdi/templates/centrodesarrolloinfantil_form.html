@@ -24,10 +24,10 @@
     <div class="d-flex justify-content-between mb-3">
         <div>
             {% if comedor.id %}
-                <a href="{% url 'comedor_detalle' comedor.id %}"
+                <a href="{% url 'cdi' %}"
                    class='btn btn-secondary'>Volver</a>
             {% else %}
-                <a href="{% url 'comedores' %}" class='btn btn-secondary'>Volver</a>
+                <a href="{% url 'cdi' %}" class='btn btn-secondary'>Volver</a>
             {% endif %}
         </div>
         <div>
