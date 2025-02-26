@@ -2,7 +2,6 @@ from django.db.models.signals import post_save, pre_delete, pre_save
 from django.dispatch import receiver
 from comedores.models.comedor import Observacion, Referente, Comedor
 from comedores.models.relevamiento import Relevamiento
-from comedores.services.comedor_service import ComedorService
 from comedores.services.clasificacion_comedor_service import ClasificacionComedorService
 from comedores.tasks import (
     AsyncRemoveComedorToGestionar,
