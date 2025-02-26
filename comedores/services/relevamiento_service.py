@@ -38,6 +38,7 @@ from comedores.models.relevamiento import (
     TipoRecurso,
     TipoTecnologia,
 )
+from comedores.tasks import AsyncSendRelevamientoToGestionar
 from comedores.utils import format_fecha_gestionar
 
 
@@ -77,7 +78,7 @@ class RelevamientoService:
 
         relevamiento.save()
 
-        RelevamientoService.send_relevamiento_to_gestionar(relevamiento)
+        AsyncSendRelevamientoToGestionar(relevamiento.id).start()
 
         return relevamiento
 
@@ -1203,9 +1204,7 @@ class RelevamientoService:
         responsable_data, responsable_es_referente, getionar_uid_send
     ):
         if responsable_es_referente:
-            relevamiento_gestionar = Relevamiento.objects.get(
-                gestionar_uid=getionar_uid_send
-            )
+            relevamiento_gestionar = Relevamiento.objects.get(pk=getionar_uid_send)
             responsable = relevamiento_gestionar.responsable
         elif responsable_es_referente is False:
             try:
@@ -1247,82 +1246,3 @@ class RelevamientoService:
             ]
 
         return excepcion_data
-
-    @staticmethod
-    def send_to_gestionar(relevamiento: Relevamiento):
-        try:
-            RelevamientoService.send_relevamiento_to_gestionar(relevamiento)
-
-        except Exception as e:
-            print(f"!!! Error al sincronizar creacion de RELEVAMIENTO con GESTIONAR:")
-            print(e)
-            print("!!! Con la data:")
-            print(data)
-
-    @staticmethod
-    def send_relevamiento_to_gestionar(relevamiento: Relevamiento):
-        data = {
-            "Action": "Add",
-            "Properties": {"Locale": "es-ES"},
-            "Rows": [
-                {
-                    "Relevamiento id": f"{relevamiento.id}",
-                    "Id_SISOC": f"{relevamiento.id}",
-                    "ESTADO": relevamiento.estado,
-                    "TecnicoRelevador": (
-                        f"{relevamiento.territorial_uid}"
-                        if relevamiento.territorial_uid is not None
-                        else ""
-                    ),
-                    "Fecha de visita": (
-                        format_fecha_gestionar(relevamiento.fecha_visita)
-                        if relevamiento.fecha_visita
-                        else ""
-                    ),
-                    "Id_Comedor": f"{relevamiento.comedor.id}",
-                }
-            ],
-        }
-
-        headers = {
-            "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
-        }
-
-        response = requests.post(
-            os.getenv("GESTIONAR_API_CREAR_RELEVAMIENTO"),
-            json=data,
-            headers=headers,
-        )
-        response.raise_for_status()
-        response = response.json()
-
-        gestionar_uid = response["Rows"][0]["Relevamiento id"]
-        if relevamiento.gestionar_uid != gestionar_uid:
-            relevamiento.gestionar_uid = gestionar_uid
-            relevamiento.docPDF = response["Rows"][0]["docPDF"]
-            relevamiento.save()
-
-    @staticmethod
-    def remove_to_gestionar(relevamiento: Relevamiento):
-        data = {
-            "Action": "Delete",
-            "Properties": {"Locale": "es-ES"},
-            "Rows": [{"Relevamiento id": f"{relevamiento.gestionar_uid}"}],
-        }
-
-        headers = {
-            "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
-        }
-
-        try:
-            response = requests.post(
-                os.getenv("GESTIONAR_API_BORRAR_RELEVAMIENTO"),
-                json=data,
-                headers=headers,
-            )
-            response.raise_for_status()
-        except requests.exceptions.RequestException as e:
-            print("!!! Error al sincronizar eliminacion de RELEVAMIENTO con GESTIONAR:")
-            print(e)
-            print("!!! Con la data:")
-            print(data)

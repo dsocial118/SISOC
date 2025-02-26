@@ -112,30 +112,13 @@ class RelevamientoSerializer(serializers.ModelSerializer):
             )
 
         if "responsable" in self.initial_data:
-            responsable_instance = (
-                self.instance.responsable
-                if self.instance and self.instance.responsable
-                else None
-            )
             self.initial_data["responsable"] = (
                 RelevamientoService.create_or_update_responsable_relevamiento(
                     self.initial_data["responsable"],
                     self.initial_data["responsable_es_referente"],
-                    self.initial_data["gestionar_uid"],
+                    self.initial_data["sisoc_id"],
                 )
             )
-
-        if "gestionar_uid" in self.initial_data:
-            if (
-                Relevamiento.objects.filter(
-                    gestionar_uid=self.initial_data["gestionar_uid"]
-                )
-                .exclude(id=self.initial_data["sisoc_id"])
-                .exists()
-            ):
-                raise serializers.ValidationError(
-                    {"error": "gestionar_uid debe ser único si no es nulo."}
-                )
 
         if "imagenes" in self.initial_data:
             self.initial_data["imagenes"] = [

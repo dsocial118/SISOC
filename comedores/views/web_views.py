@@ -256,8 +256,7 @@ class ComedorCreateView(CreateView):
             self.object = form.save(commit=False)
             self.object.referente = referente_form.save()
             self.object.save()
-
-            for imagen in imagenes:  # Creo las imagenes
+            for imagen in imagenes:  # Creo las imágenes
                 try:
                     ComedorService.create_imagenes(imagen, self.object.pk)
                 except Exception:

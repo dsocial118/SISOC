@@ -1072,9 +1072,11 @@
                         <div class="comment-text comment-text d-flex flex-column text-sm w-100">
                             Firma
                             <div class="col-2 d-flex">
-                                <img src="{{ relevamiento.excepcion__firma }}"
-                                     alt="Firma del responsable"
-                                     class="img-fluid my-1 rounded object-fit-contain" />
+                                {% if relevamiento.excepcion__firma is not None %}
+                                    <img src="{{ relevamiento.excepcion__firma }}"
+                                        alt="Firma del responsable"
+                                        class="img-fluid my-1 rounded object-fit-contain" />
+                                {% endif %}
                             </div>
                         </div>
                     </div>
