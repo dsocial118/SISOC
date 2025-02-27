@@ -74,7 +74,7 @@ class IntervencionDetail(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor = Comedor.objects.values(
-            "id", "gestionar_uid", "nombre", "provincia", "barrio", "calle", "numero"
+            "id", "nombre", "provincia", "barrio", "calle", "numero"
         ).get(pk=self.kwargs["pk"])
         intervenciones = Intervencion.objects.filter(fk_comedor=self.kwargs["pk"])
         cantidad_intervenciones = Intervencion.objects.filter(
@@ -94,7 +94,7 @@ class NominaDetail(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor = Comedor.objects.values(
-            "id", "gestionar_uid", "nombre", "provincia", "barrio", "calle", "numero"
+            "id", "nombre", "provincia", "barrio", "calle", "numero"
         ).get(pk=self.kwargs["pk"])
         nomina = Nomina.objects.filter(fk_comedor=self.kwargs["pk"])
         cantidad_nominaM = Nomina.objects.filter(
@@ -132,7 +132,7 @@ class NominaCreateView(CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor = Comedor.objects.values(
-            "id", "gestionar_uid", "nombre", "provincia", "barrio", "calle", "numero"
+            "id", "nombre", "provincia", "barrio", "calle", "numero"
         ).get(pk=self.kwargs["pk"])
 
         context["form"] = self.get_form()
@@ -163,7 +163,7 @@ class IntervencionCreateView(CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor = Comedor.objects.values(
-            "id", "gestionar_uid", "nombre", "provincia", "barrio", "calle", "numero"
+            "id", "nombre", "provincia", "barrio", "calle", "numero"
         ).get(pk=self.kwargs["pk"])
 
         context["form"] = self.get_form()
@@ -194,7 +194,7 @@ class IntervencionUpdateView(UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor = Comedor.objects.values(
-            "id", "gestionar_uid", "nombre", "provincia", "barrio", "calle", "numero"
+            "id", "nombre", "provincia", "barrio", "calle", "numero"
         ).get(pk=self.kwargs["pk2"])
         context["form"] = self.get_form()
         context["object"] = comedor
@@ -214,7 +214,7 @@ class NominaUpdateView(UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor = Comedor.objects.values(
-            "id", "gestionar_uid", "nombre", "provincia", "barrio", "calle", "numero"
+            "id", "nombre", "provincia", "barrio", "calle", "numero"
         ).get(pk=self.kwargs["pk2"])
         context["form"] = self.get_form()
         context["object"] = comedor
