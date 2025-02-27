@@ -510,6 +510,13 @@ class RelevamientoDetailView(DetailView):
             if relevamiento.prestacion
             else None
         )
+        context["relevamiento"]["recursos"] = (
+            RelevamientoService.separate_m2m_string(
+                relevamiento.recursos.fuente_recursos.all()
+            )
+            if relevamiento.recursos
+            else None
+        )
 
         return context
 
