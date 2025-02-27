@@ -23,6 +23,8 @@ services:
     build: 
       context: .
       dockerfile: ./docker/django/Dockerfile
+    env_file:
+      - .env
     ports:
       - "8001:8000"
       - "3000:3000" # Debugger
