@@ -382,7 +382,6 @@ class ComedorUpdateView(UpdateView):
                 match = pattern.match(key)
                 if match:
                     imagen_id = match.group(1)  # Extract the number at the end
-                    print(f"Field name: {key}, Image ID: {imagen_id}")
                     try:
                         imagen = ImagenComedor.objects.get(id=imagen_id)
                         imagen.delete()
