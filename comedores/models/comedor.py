@@ -124,7 +124,6 @@ class Comedor(models.Model):
     Modelo que representa un Comedor/Merendero.
 
     Atributos:
-        gestionar_uid (CharField): UID unica que referencia al Comedor/Merendero en GESTIONAR.
         nombre (CharField): Nombre del Comedor/Merendero.
         comienzo (IntegerField): Año de inicio de la actividad del Comedor/Merendero.
         tipocomedor (ForeignKey): Tipo de Comedor/Merendero.
@@ -140,8 +139,6 @@ class Comedor(models.Model):
         codigo_postal (IntegerField): Código postal del Comedor/Merendero.
         referente (ForeignKey): Referente del Comedor/Merendero.
     """
-
-    gestionar_uid = models.CharField(max_length=255, blank=True, null=True)
 
     nombre = models.CharField(
         max_length=255,
@@ -279,7 +276,6 @@ class Observacion(models.Model):
     Modelo que representa una observación realizada en un Comedor/Merendero.
     """
 
-    gestionar_uid = models.CharField(max_length=255, blank=True, null=True)
     observador = models.CharField(max_length=255, blank=True)
     comedor = models.ForeignKey(
         to=Comedor,

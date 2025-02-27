@@ -766,7 +766,6 @@ class Excepcion(models.Model):
 
 class Relevamiento(models.Model):
 
-    gestionar_uid = models.CharField(max_length=255, blank=True, null=True)
     estado = models.CharField(max_length=255, blank=True, null=True)
     comedor = models.ForeignKey(
         to=Comedor,
