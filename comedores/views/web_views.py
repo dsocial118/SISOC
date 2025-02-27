@@ -1,4 +1,5 @@
 import os
+import re
 from typing import Any
 from django.contrib.auth.models import User
 from django.contrib import messages
@@ -361,6 +362,7 @@ class ComedorUpdateView(UpdateView):
             instance=self.object.referente,
             prefix="referente",
         )
+        data["imagenes_borrar"] = ImagenComedor.objects.filter(comedor=self.object.pk)
         return data
 
     def form_valid(self, form):
@@ -373,6 +375,20 @@ class ComedorUpdateView(UpdateView):
             self.object.referente = referente_form.save()
             self.object.save()
 
+            pattern = re.compile(r"^imagen_legajo-borrar-(\d+)$")
+
+            # Iterate over POST data to find matching fields
+            for key in self.request.POST:
+                match = pattern.match(key)
+                if match:
+                    imagen_id = match.group(1)  # Extract the number at the end
+                    print(f"Field name: {key}, Image ID: {imagen_id}")
+                    try:
+                        imagen = ImagenComedor.objects.get(id=imagen_id)
+                        imagen.delete()
+                    except ImagenComedor.DoesNotExist:
+                        pass
+                    
             for imagen in imagenes:  # Creo las imagenes
                 try:
                     ComedorService.create_imagenes(imagen, self.object.pk)
