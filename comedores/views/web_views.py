@@ -388,7 +388,7 @@ class ComedorUpdateView(UpdateView):
                         imagen.delete()
                     except ImagenComedor.DoesNotExist:
                         pass
-                    
+
             for imagen in imagenes:  # Creo las imagenes
                 try:
                     ComedorService.create_imagenes(imagen, self.object.pk)
