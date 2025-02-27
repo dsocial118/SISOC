@@ -1,9 +1,6 @@
-import os
 import json
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.db import models
-import requests
 
 from comedores.models.comedor import (
     Comedor,
@@ -39,7 +36,6 @@ from comedores.models.relevamiento import (
     TipoTecnologia,
 )
 from comedores.tasks import AsyncSendRelevamientoToGestionar
-from comedores.utils import format_fecha_gestionar
 
 
 class RelevamientoService:
