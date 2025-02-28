@@ -509,9 +509,41 @@ class RelevamientoDetailView(DetailView):
             if relevamiento.prestacion
             else None
         )
-        context["relevamiento"]["recursos"] = (
+        context["relevamiento"]["donaciones"] = (
             RelevamientoService.separate_m2m_string(
-                relevamiento.recursos.fuente_recursos.all()
+                relevamiento.recursos.recursos_donaciones_particulares.all()
+            )
+            if relevamiento.recursos
+            else None
+        )
+
+        context["relevamiento"]["nacional"] = (
+            RelevamientoService.separate_m2m_string(
+                relevamiento.recursos.recursos_estado_nacional.all()
+            )
+            if relevamiento.recursos
+            else None
+        )
+
+        context["relevamiento"]["provincial"] = (
+            RelevamientoService.separate_m2m_string(
+                relevamiento.recursos.recursos_estado_provincial.all()
+            )
+            if relevamiento.recursos
+            else None
+        )
+
+        context["relevamiento"]["municipal"] = (
+            RelevamientoService.separate_m2m_string(
+                relevamiento.recursos.recursos_estado_municipal.all()
+            )
+            if relevamiento.recursos
+            else None
+        )
+
+        context["relevamiento"]["otras"] = (
+            RelevamientoService.separate_m2m_string(
+                relevamiento.recursos.recursos_otros.all()
             )
             if relevamiento.recursos
             else None
