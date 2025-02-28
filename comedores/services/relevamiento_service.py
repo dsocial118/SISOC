@@ -220,19 +220,14 @@ class RelevamientoService:
                     "colaboradores__colaboradores_recibieron_capacitacion_violencia",
                     "recursos__recibe_donaciones_particulares",
                     "recursos__frecuencia_donaciones_particulares__nombre",
-                    "recursos__recursos_donaciones_particulares__nombre",
                     "recursos__recibe_estado_nacional",
                     "recursos__frecuencia_estado_nacional__nombre",
-                    "recursos__recursos_estado_nacional__nombre",
                     "recursos__recibe_estado_provincial",
                     "recursos__frecuencia_estado_provincial__nombre",
-                    "recursos__recursos_estado_provincial__nombre",
                     "recursos__recibe_estado_municipal",
                     "recursos__frecuencia_estado_municipal__nombre",
-                    "recursos__recursos_estado_municipal__nombre",
                     "recursos__recibe_otros",
                     "recursos__frecuencia_otros__nombre",
-                    "recursos__recursos_otros__nombre",
                     "compras__almacen_cercano",
                     "compras__verduleria",
                     "compras__granja",
@@ -574,30 +569,30 @@ class RelevamientoService:
     @staticmethod
     def create_or_update_recursos(recursos_data, recursos_instance=None):
         recursos_data = RelevamientoService.populate_recursos_data(recursos_data)
-
+        
         if recursos_instance is None:
-            recursos_instance = FuenteRecursos.objects.create(**recursos_data)
+            recursos_instance = FuenteRecursos.objects.create()
         else:
             for field, value in recursos_data.items():
-                if field in ["recursos_donaciones_particulares", "recursos_estado_nacional", "recursos_estado_provincial", "recursos_estado_municipal", "recursos_otros"]:
-                    continue
-                setattr(recursos_instance, field, value)
-            recursos_instance.save()
-
+                if field not in ["recursos_donaciones_particulares", "recursos_estado_nacional", "recursos_estado_provincial", "recursos_estado_municipal", "recursos_otros"]:
+                    setattr(recursos_instance, field, value)
+        
         if "recursos_donaciones_particulares" in recursos_data:
             recursos_instance.recursos_donaciones_particulares.set(recursos_data["recursos_donaciones_particulares"])
-
+        
         if "recursos_estado_nacional" in recursos_data:
             recursos_instance.recursos_estado_nacional.set(recursos_data["recursos_estado_nacional"])
-
+        
         if "recursos_estado_provincial" in recursos_data:
             recursos_instance.recursos_estado_provincial.set(recursos_data["recursos_estado_provincial"])
-
+        
         if "recursos_estado_municipal" in recursos_data:
             recursos_instance.recursos_estado_municipal.set(recursos_data["recursos_estado_municipal"])
-
+        
         if "recursos_otros" in recursos_data:
             recursos_instance.recursos_otros.set(recursos_data["recursos_otros"])
+        
+        recursos_instance.save()
 
         return recursos_instance
 
