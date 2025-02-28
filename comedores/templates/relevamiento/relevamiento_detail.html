@@ -553,7 +553,7 @@
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             ¿Qué tipo de recursos recibe de donaciones particulares?
-                            <span class="username fw-bold fs-5">{{ relevamiento.recursos__recursos_donaciones_particulares__nombre | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.donaciones | default_if_none:"-" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
@@ -571,7 +571,7 @@
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             ¿Qué tipo de recursos recibe del estado nacional?
-                            <span class="username fw-bold fs-5">{{ relevamiento.recursos__recursos_estado_nacional__nombre | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.nacional | default_if_none:"-" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
@@ -589,7 +589,7 @@
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             ¿Qué tipo de recursos recibe del estado provincial?
-                            <span class="username fw-bold fs-5">{{ relevamiento.recursos__recursos_estado_provincial__nombre | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.provincial | default_if_none:"-" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
@@ -607,7 +607,7 @@
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Qué tipo de recursos recibe del estado municipal?
-                            <span class="username fw-bold fs-5">{{ relevamiento.recursos__recursos_estado_municipal__nombre | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.municipal | default_if_none:"-" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
@@ -625,7 +625,7 @@
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             ¿Qué tipo de recursos recibe de otras fuentes?
-                            <span class="username fw-bold fs-5">{{ relevamiento.recursos__recursos_otros__nombre | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.otras | default_if_none:"-" }}</span>
                         </div>
                     </div>
                 </div>
