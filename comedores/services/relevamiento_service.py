@@ -1,9 +1,6 @@
-import os
 import json
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.db import models
-import requests
 
 from comedores.models.comedor import (
     Comedor,
@@ -38,7 +35,7 @@ from comedores.models.relevamiento import (
     TipoRecurso,
     TipoTecnologia,
 )
-from comedores.utils import format_fecha_gestionar
+from comedores.tasks import AsyncSendRelevamientoToGestionar
 
 
 class RelevamientoService:
@@ -77,7 +74,7 @@ class RelevamientoService:
 
         relevamiento.save()
 
-        RelevamientoService.send_relevamiento_to_gestionar(relevamiento)
+        AsyncSendRelevamientoToGestionar(relevamiento.id).start()
 
         return relevamiento
 
@@ -223,19 +220,14 @@ class RelevamientoService:
                     "colaboradores__colaboradores_recibieron_capacitacion_violencia",
                     "recursos__recibe_donaciones_particulares",
                     "recursos__frecuencia_donaciones_particulares__nombre",
-                    "recursos__recursos_donaciones_particulares__nombre",
                     "recursos__recibe_estado_nacional",
                     "recursos__frecuencia_estado_nacional__nombre",
-                    "recursos__recursos_estado_nacional__nombre",
                     "recursos__recibe_estado_provincial",
                     "recursos__frecuencia_estado_provincial__nombre",
-                    "recursos__recursos_estado_provincial__nombre",
                     "recursos__recibe_estado_municipal",
                     "recursos__frecuencia_estado_municipal__nombre",
-                    "recursos__recursos_estado_municipal__nombre",
                     "recursos__recibe_otros",
                     "recursos__frecuencia_otros__nombre",
-                    "recursos__recursos_otros__nombre",
                     "compras__almacen_cercano",
                     "compras__verduleria",
                     "compras__granja",
@@ -579,11 +571,42 @@ class RelevamientoService:
         recursos_data = RelevamientoService.populate_recursos_data(recursos_data)
 
         if recursos_instance is None:
-            recursos_instance = FuenteRecursos.objects.create(**recursos_data)
+            recursos_instance = FuenteRecursos.objects.create()
         else:
             for field, value in recursos_data.items():
-                setattr(recursos_instance, field, value)
-            recursos_instance.save()
+                if field not in [
+                    "recursos_donaciones_particulares",
+                    "recursos_estado_nacional",
+                    "recursos_estado_provincial",
+                    "recursos_estado_municipal",
+                    "recursos_otros",
+                ]:
+                    setattr(recursos_instance, field, value)
+
+        if "recursos_donaciones_particulares" in recursos_data:
+            recursos_instance.recursos_donaciones_particulares.set(
+                recursos_data["recursos_donaciones_particulares"]
+            )
+
+        if "recursos_estado_nacional" in recursos_data:
+            recursos_instance.recursos_estado_nacional.set(
+                recursos_data["recursos_estado_nacional"]
+            )
+
+        if "recursos_estado_provincial" in recursos_data:
+            recursos_instance.recursos_estado_provincial.set(
+                recursos_data["recursos_estado_provincial"]
+            )
+
+        if "recursos_estado_municipal" in recursos_data:
+            recursos_instance.recursos_estado_municipal.set(
+                recursos_data["recursos_estado_municipal"]
+            )
+
+        if "recursos_otros" in recursos_data:
+            recursos_instance.recursos_otros.set(recursos_data["recursos_otros"])
+
+        recursos_instance.save()
 
         return recursos_instance
 
@@ -599,11 +622,11 @@ class RelevamientoService:
             )
 
         def get_recursos(nombre):
-            return (
-                TipoRecurso.objects.get(nombre__iexact=recursos_data[f"{nombre}"])
-                if recursos_data[f"{nombre}"] != ""
-                else None
-            )
+            recursos_str = recursos_data.pop(nombre, "")
+            if recursos_str:
+                recursos_arr = [nombre.strip() for nombre in recursos_str.split(",")]
+                return TipoRecurso.objects.filter(nombre__in=recursos_arr)
+            return TipoRecurso.objects.none()
 
         if "recibe_donaciones_particulares" in recursos_data:
             recursos_data["recibe_donaciones_particulares"] = (
@@ -675,6 +698,7 @@ class RelevamientoService:
 
         if "recursos_otros" in recursos_data:
             recursos_data["recursos_otros"] = get_recursos("recursos_otros")
+
         return recursos_data
 
     @staticmethod
@@ -1203,9 +1227,7 @@ class RelevamientoService:
         responsable_data, responsable_es_referente, getionar_uid_send
     ):
         if responsable_es_referente:
-            relevamiento_gestionar = Relevamiento.objects.get(
-                gestionar_uid=getionar_uid_send
-            )
+            relevamiento_gestionar = Relevamiento.objects.get(pk=getionar_uid_send)
             responsable = relevamiento_gestionar.responsable
         elif responsable_es_referente is False:
             try:
@@ -1247,82 +1269,3 @@ class RelevamientoService:
             ]
 
         return excepcion_data
-
-    @staticmethod
-    def send_to_gestionar(relevamiento: Relevamiento):
-        try:
-            RelevamientoService.send_relevamiento_to_gestionar(relevamiento)
-
-        except Exception as e:
-            print(f"!!! Error al sincronizar creacion de RELEVAMIENTO con GESTIONAR:")
-            print(e)
-            print("!!! Con la data:")
-            print(data)
-
-    @staticmethod
-    def send_relevamiento_to_gestionar(relevamiento: Relevamiento):
-        data = {
-            "Action": "Add",
-            "Properties": {"Locale": "es-ES"},
-            "Rows": [
-                {
-                    "Relevamiento id": f"{relevamiento.id}",
-                    "Id_SISOC": f"{relevamiento.id}",
-                    "ESTADO": relevamiento.estado,
-                    "TecnicoRelevador": (
-                        f"{relevamiento.territorial_uid}"
-                        if relevamiento.territorial_uid is not None
-                        else ""
-                    ),
-                    "Fecha de visita": (
-                        format_fecha_gestionar(relevamiento.fecha_visita)
-                        if relevamiento.fecha_visita
-                        else ""
-                    ),
-                    "Id_Comedor": f"{relevamiento.comedor.id}",
-                }
-            ],
-        }
-
-        headers = {
-            "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
-        }
-
-        response = requests.post(
-            os.getenv("GESTIONAR_API_CREAR_RELEVAMIENTO"),
-            json=data,
-            headers=headers,
-        )
-        response.raise_for_status()
-        response = response.json()
-
-        gestionar_uid = response["Rows"][0]["Relevamiento id"]
-        if relevamiento.gestionar_uid != gestionar_uid:
-            relevamiento.gestionar_uid = gestionar_uid
-            relevamiento.docPDF = response["Rows"][0]["docPDF"]
-            relevamiento.save()
-
-    @staticmethod
-    def remove_to_gestionar(relevamiento: Relevamiento):
-        data = {
-            "Action": "Delete",
-            "Properties": {"Locale": "es-ES"},
-            "Rows": [{"Relevamiento id": f"{relevamiento.gestionar_uid}"}],
-        }
-
-        headers = {
-            "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
-        }
-
-        try:
-            response = requests.post(
-                os.getenv("GESTIONAR_API_BORRAR_RELEVAMIENTO"),
-                json=data,
-                headers=headers,
-            )
-            response.raise_for_status()
-        except requests.exceptions.RequestException as e:
-            print("!!! Error al sincronizar eliminacion de RELEVAMIENTO con GESTIONAR:")
-            print(e)
-            print("!!! Con la data:")
-            print(data)

@@ -74,7 +74,7 @@ class IntervencionDetail(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor = Comedor.objects.values(
-            "id", "gestionar_uid", "nombre", "provincia", "barrio", "calle", "numero"
+            "id", "nombre", "provincia", "barrio", "calle", "numero"
         ).get(pk=self.kwargs["pk"])
         intervenciones = Intervencion.objects.filter(fk_comedor=self.kwargs["pk"])
         cantidad_intervenciones = Intervencion.objects.filter(
@@ -94,7 +94,7 @@ class NominaDetail(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor = Comedor.objects.values(
-            "id", "gestionar_uid", "nombre", "provincia", "barrio", "calle", "numero"
+            "id", "nombre", "provincia", "barrio", "calle", "numero"
         ).get(pk=self.kwargs["pk"])
         nomina = Nomina.objects.filter(fk_comedor=self.kwargs["pk"])
         cantidad_nominaM = Nomina.objects.filter(
@@ -132,7 +132,7 @@ class NominaCreateView(CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor = Comedor.objects.values(
-            "id", "gestionar_uid", "nombre", "provincia", "barrio", "calle", "numero"
+            "id", "nombre", "provincia", "barrio", "calle", "numero"
         ).get(pk=self.kwargs["pk"])
 
         context["form"] = self.get_form()
@@ -163,7 +163,7 @@ class IntervencionCreateView(CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor = Comedor.objects.values(
-            "id", "gestionar_uid", "nombre", "provincia", "barrio", "calle", "numero"
+            "id", "nombre", "provincia", "barrio", "calle", "numero"
         ).get(pk=self.kwargs["pk"])
 
         context["form"] = self.get_form()
@@ -194,7 +194,7 @@ class IntervencionUpdateView(UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor = Comedor.objects.values(
-            "id", "gestionar_uid", "nombre", "provincia", "barrio", "calle", "numero"
+            "id", "nombre", "provincia", "barrio", "calle", "numero"
         ).get(pk=self.kwargs["pk2"])
         context["form"] = self.get_form()
         context["object"] = comedor
@@ -214,7 +214,7 @@ class NominaUpdateView(UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor = Comedor.objects.values(
-            "id", "gestionar_uid", "nombre", "provincia", "barrio", "calle", "numero"
+            "id", "nombre", "provincia", "barrio", "calle", "numero"
         ).get(pk=self.kwargs["pk2"])
         context["form"] = self.get_form()
         context["object"] = comedor
@@ -256,8 +256,7 @@ class ComedorCreateView(CreateView):
             self.object = form.save(commit=False)
             self.object.referente = referente_form.save()
             self.object.save()
-
-            for imagen in imagenes:  # Creo las imagenes
+            for imagen in imagenes:  # Creo las imágenes
                 try:
                     ComedorService.create_imagenes(imagen, self.object.pk)
                 except Exception:
@@ -508,6 +507,45 @@ class RelevamientoDetailView(DetailView):
         context["prestacion"] = (
             Prestacion.objects.get(pk=relevamiento.prestacion.id)
             if relevamiento.prestacion
+            else None
+        )
+        context["relevamiento"]["donaciones"] = (
+            RelevamientoService.separate_m2m_string(
+                relevamiento.recursos.recursos_donaciones_particulares.all()
+            )
+            if relevamiento.recursos
+            else None
+        )
+
+        context["relevamiento"]["nacional"] = (
+            RelevamientoService.separate_m2m_string(
+                relevamiento.recursos.recursos_estado_nacional.all()
+            )
+            if relevamiento.recursos
+            else None
+        )
+
+        context["relevamiento"]["provincial"] = (
+            RelevamientoService.separate_m2m_string(
+                relevamiento.recursos.recursos_estado_provincial.all()
+            )
+            if relevamiento.recursos
+            else None
+        )
+
+        context["relevamiento"]["municipal"] = (
+            RelevamientoService.separate_m2m_string(
+                relevamiento.recursos.recursos_estado_municipal.all()
+            )
+            if relevamiento.recursos
+            else None
+        )
+
+        context["relevamiento"]["otras"] = (
+            RelevamientoService.separate_m2m_string(
+                relevamiento.recursos.recursos_otros.all()
+            )
+            if relevamiento.recursos
             else None
         )
 
