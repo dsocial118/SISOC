@@ -1,4 +1,5 @@
 import os
+import re
 from typing import Any
 from django.contrib.auth.models import User
 from django.contrib import messages
@@ -361,6 +362,9 @@ class ComedorUpdateView(UpdateView):
             instance=self.object.referente,
             prefix="referente",
         )
+        data["imagenes_borrar"] = ImagenComedor.objects.filter(
+            comedor=self.object.pk
+        ).values("id", "imagen")
         return data
 
     def form_valid(self, form):
@@ -372,6 +376,8 @@ class ComedorUpdateView(UpdateView):
             self.object = form.save()
             self.object.referente = referente_form.save()
             self.object.save()
+
+            ComedorService.borrar_imagenes(self.request.POST)  # Borro las imagenes
 
             for imagen in imagenes:  # Creo las imagenes
                 try:
