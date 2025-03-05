@@ -445,13 +445,11 @@ class FuenteRecursos(models.Model):
         blank=True,
         null=True,
     )
-    recursos_donaciones_particulares = models.ForeignKey(
-        to=TipoRecurso,
-        on_delete=models.PROTECT,
+    recursos_donaciones_particulares = models.ManyToManyField(
+        TipoRecurso,
+        related_name="fuentes_donaciones_particulares",
         verbose_name="4.1.9 ¿Qué tipo de recursos recibe de donaciones particulares?",
-        related_name="tipo_donaciones_particulares",
         blank=True,
-        null=True,
     )
 
     recibe_estado_nacional = models.BooleanField(default=False)
@@ -463,13 +461,11 @@ class FuenteRecursos(models.Model):
         blank=True,
         null=True,
     )
-    recursos_estado_nacional = models.ForeignKey(
-        to=TipoRecurso,
-        on_delete=models.PROTECT,
+    recursos_estado_nacional = models.ManyToManyField(
+        TipoRecurso,
+        related_name="fuentes_estado_nacional",
         verbose_name="4.1.11 ¿Qué tipo de recursos recibe del estado nacional?",
-        related_name="tipo_estado_nacional",
         blank=True,
-        null=True,
     )
 
     recibe_estado_provincial = models.BooleanField(default=False)
@@ -481,13 +477,11 @@ class FuenteRecursos(models.Model):
         blank=True,
         null=True,
     )
-    recursos_estado_provincial = models.ForeignKey(
-        to=TipoRecurso,
-        on_delete=models.PROTECT,
-        verbose_name="4.1.15 ¿Qué tipo de recursos recibe del estado provincial?",
-        related_name="tipo_estado_provincial",
+    recursos_estado_provincial = models.ManyToManyField(
+        TipoRecurso,
+        related_name="fuentes_estado_provincial",
+        verbose_name="4.1.13 ¿Qué tipo de recursos recibe del estado provincial?",
         blank=True,
-        null=True,
     )
 
     recibe_estado_municipal = models.BooleanField(default=False)
@@ -499,13 +493,11 @@ class FuenteRecursos(models.Model):
         blank=True,
         null=True,
     )
-    recursos_estado_municipal = models.ForeignKey(
-        to=TipoRecurso,
-        on_delete=models.PROTECT,
-        verbose_name="4.1.17 ¿Qué tipo de recursos recibe del estado municipal?",
-        related_name="tipo_estado_municipal",
+    recursos_estado_municipal = models.ManyToManyField(
+        TipoRecurso,
+        related_name="fuentes_estado_municipal",
+        verbose_name="4.1.15 ¿Qué tipo de recursos recibe del estado municipal?",
         blank=True,
-        null=True,
     )
 
     recibe_otros = models.BooleanField(default=False)
@@ -517,13 +509,11 @@ class FuenteRecursos(models.Model):
         blank=True,
         null=True,
     )
-    recursos_otros = models.ForeignKey(
-        to=TipoRecurso,
-        on_delete=models.PROTECT,
+    recursos_otros = models.ManyToManyField(
+        TipoRecurso,
+        related_name="fuentes_otros",
         verbose_name="4.1.19 ¿Qué tipo de recursos recibe de otras fuentes?",
-        related_name="tipo_otros",
         blank=True,
-        null=True,
     )
 
     def clean(self) -> None:
