@@ -362,7 +362,9 @@ class ComedorUpdateView(UpdateView):
             instance=self.object.referente,
             prefix="referente",
         )
-        data["imagenes_borrar"] = ImagenComedor.objects.filter(comedor=self.object.pk)
+        data["imagenes_borrar"] = ImagenComedor.objects.filter(
+            comedor=self.object.pk
+        ).values("id", "imagen")
         return data
 
     def form_valid(self, form):
@@ -375,18 +377,7 @@ class ComedorUpdateView(UpdateView):
             self.object.referente = referente_form.save()
             self.object.save()
 
-            pattern = re.compile(r"^imagen_legajo-borrar-(\d+)$")
-
-            # Iterate over POST data to find matching fields
-            for key in self.request.POST:
-                match = pattern.match(key)
-                if match:
-                    imagen_id = match.group(1)  # Extract the number at the end
-                    try:
-                        imagen = ImagenComedor.objects.get(id=imagen_id)
-                        imagen.delete()
-                    except ImagenComedor.DoesNotExist:
-                        pass
+            ComedorService.borrar_imagenes(self.request.POST)  # Borro las imagenes
 
             for imagen in imagenes:  # Creo las imagenes
                 try:
