@@ -63,7 +63,7 @@ class ClasificacionComedorService:
             )
 
             if cocina.abastecimiento_combustible:
-                puntuacion += {"Gas envasado": 1, "Leña": 3, "Otro": 2}.get(
+                puntuacion += {"Leña": 3, "Otro": 2, "Gas envasado": 1}.get(
                     cocina.abastecimiento_combustible.filter().first(), 0
                 )
 
