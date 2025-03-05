@@ -1,18 +1,32 @@
-import os
 import re
 from typing import Union
 
 from django.db.models import Q
-import requests
 
 from comedores.models.relevamiento import Relevamiento
 from comedores.forms.comedor_form import ImagenComedorForm
 from comedores.models.comedor import Comedor, Referente, ValorComida
 from configuraciones.models import Municipio, Provincia
 from configuraciones.models import Localidad
+from comedores.models.comedor import ImagenComedor
 
 
 class ComedorService:
+    @staticmethod
+    def borrar_imagenes(post):
+        pattern = re.compile(
+            r"^imagen_legajo-borrar-(\d+)$"
+        )  # Patron para encontrar los campos de imagenes a borrar
+        imagenes_ids = []
+        # Itera sobre los datos POST para encontrar los campos coincidentes con el patron
+        for key in post:
+            match = pattern.match(key)
+            if match:
+                imagen_id = match.group(1)  # Extrae el id al final del nombre del campo
+                imagenes_ids.append(imagen_id)
+
+        ImagenComedor.objects.filter(id__in=imagenes_ids).delete()
+
     @staticmethod
     def get_comedores_filtrados(query: Union[str, None] = None):
         queryset = Comedor.objects.prefetch_related("provincia", "referente").values(
