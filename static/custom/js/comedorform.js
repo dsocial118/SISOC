@@ -3,6 +3,10 @@ const municipioSelect = document.getElementById('id_municipio');
 const localidadSelect = document.getElementById('id_localidad');
 
 
+function confirmSubmit() {
+    return confirm("¿Estás seguro de que deseas guardar el comedor?");
+}
+
 provinciaSelect.addEventListener('change', async function () {
     console.log('Provincia:', this.value);
     await cargarOpciones(`${ajaxLoadMunicipiosUrl}?provincia_id=${this.value}`, "municipio").then(async () => {

@@ -38,7 +38,11 @@
     </div>
     <div class="row comedor-form">
         <div class="col-12">
-            <form method="post" class="w-100" enctype="multipart/form-data">
+            <form method="post"
+                  id="comedorForm"
+                  class="w-100"
+                  enctype="multipart/form-data"
+                  onsubmit="return confirmSubmit()">
                 <div class="card card-primary card-outline">
                     <div class="bs-stepper">
                         <div class="card-header mb-3">
