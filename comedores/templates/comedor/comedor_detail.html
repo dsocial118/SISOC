@@ -11,6 +11,7 @@
 {% block titulo-pagina %}
     {{ comedor.nombre }}
     <span class="ml-2 h5">| {{ comedor.provincia__nombre | default_if_none:"-" }}, {{ comedor.municipio__nombre | default_if_none:"-" }}, {{ comedor.localidad__nombre | default_if_none:"-" }}</span>
+    <span class="ml-2 h5">- {{ comedor.programa__nombre }} - {{ comedor_categoria.categoria.nombre }} - {{ comedor_categoria.puntuacion_total }}</span>
 {% endblock %}
 ;
 {% block breadcrumb %}
@@ -169,92 +170,142 @@
                                 </div>
                                 <div class="col-6">
                                     <div class="row">
-                                        <div class="col-6">
-                                            <div class="nav-item d-flex">
-                                                <div class="comment-text comment-text d-flex flex-column">
-                                                    Nombre
-                                                    <span class="username">{{ comedor.nombre }}</span>
-                                                </div>
-                                            </div>
-                                            <div class="nav-item d-flex">
-                                                <div class="comment-text comment-text d-flex flex-column">
-                                                    Tipo Comedor
-                                                    <span class="username">{{ comedor.tipocomedor__nombre | default_if_none:"-" }}</span>
-                                                </div>
-                                            </div>
-                                            <div class="nav-item d-flex">
-                                                <div class="comment-text comment-text d-flex flex-column">
-                                                    Organización
-                                                    <span class="username">{{ comedor.organizacion__nombre | default_if_none:"-" }}</span>
-                                                </div>
-                                            </div>
-                                            <div class="nav-item d-flex">
-                                                <div class="comment-text comment-text d-flex flex-column">
-                                                    Provincia
-                                                    <span class="username">{{ comedor.provincia__nombre | default_if_none:"-" }}</span>
-                                                </div>
-                                            </div>
-                                            <div class="nav-item d-flex">
-                                                <div class="comment-text comment-text d-flex flex-column">
-                                                    Municipio
-                                                    <span class="username">{{ comedor.municipio__nombre | default_if_none:"-" }}</span>
-                                                </div>
-                                            </div>
-                                            <div class="nav-item d-flex">
-                                                <div class="comment-text comment-text d-flex flex-column">
-                                                    Localidad
-                                                    <span class="username">{{ comedor.localidad__nombre | default_if_none:"-" }}</span>
-                                                </div>
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Nombre
+                                                <span class="username">{{ comedor.nombre }}</span>
                                             </div>
                                         </div>
-                                        <div class="col-6">
-                                            <div class="nav-item d-flex">
-                                                <div class="comment-text comment-text d-flex flex-column">
-                                                    Año en el que empezo a funcionar
-                                                    <span class="username">{{ comedor.comienzo | default_if_none:"-" }}</span>
-                                                </div>
-                                            </div>
-                                            <div class="nav-item d-flex">
-                                                <div class="comment-text comment-text d-flex flex-column">
-                                                    Partido
-                                                    <span class="username">{{ comedor.partido | default_if_none:"-" }}</span>
-                                                </div>
-                                            </div>
-                                            <div class="nav-item">
-                                                <div class="comment-text comment-text d-flex flex-column">
-                                                    Barrio
-                                                    <span class="username">{{ comedor.barrio | default_if_none:"-" }}</span>
-                                                </div>
-                                            </div>
-                                            <div class="nav-item">
-                                                <div class="comment-text comment-text d-flex flex-column">
-                                                    Codigo postal
-                                                    <span class="username">{{ comedor.codigo_postal | default_if_none:"-" }}</span>
-                                                </div>
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Tipo Comedor
+                                                <span class="username">{{ comedor.tipocomedor__nombre | default_if_none:"-" }}</span>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="row">
-                                        <div class="col-12">
-                                            <div class="row">
-                                                <div class="nav-item col-4">
-                                                    <div class="comment-text comment-text d-flex flex-column">
-                                                        Calle
-                                                        <span class="username">{{ comedor.calle | default_if_none:"-" }}</span>
-                                                    </div>
-                                                </div>
-                                                <div class="nav-item col-4">
-                                                    <div class="comment-text comment-text d-flex flex-column">
-                                                        Número
-                                                        <span class="username">{{ comedor.numero | default_if_none:"-" }}</span>
-                                                    </div>
-                                                </div>
-                                                <div class="nav-item col-4 ">
-                                                    <div class="comment-text comment-text d-flex flex-column">
-                                                        Entre calles
-                                                        <span class="username">{{ comedor.entre_calle_1 |   default_if_none:"-" }} y {{ comedor.entre_calle_2 |   default_if_none:"-" }}</span>
-                                                    </div>
-                                                </div>
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Organización
+                                                <span class="username">{{ comedor.organizacion__nombre | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Año de comienzo
+                                                <span class="username">{{ comedor.comienzo | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Provincia
+                                                <span class="username">{{ comedor.provincia__nombre | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Municipio
+                                                <span class="username">{{ comedor.municipio__nombre | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Localidad
+                                                <span class="username">{{ comedor.localidad__nombre | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Partido
+                                                <span class="username">{{ comedor.partido | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Barrio
+                                                <span class="username">{{ comedor.barrio | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Codigo postal
+                                                <span class="username">{{ comedor.codigo_postal | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="nav-item col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Calle
+                                                <span class="username">{{ comedor.calle | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Número
+                                                <span class="username">{{ comedor.numero | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="nav-item col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Piso
+                                                <span class="username">{{ comedor.piso | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Departamento
+                                                <span class="username">{{ comedor.departamento | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="nav-item col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Manzana
+                                                <span class="username">{{ comedor.manzana | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Lote
+                                                <span class="username">{{ comedor.lote | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="nav-item col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Entre calle 1
+                                                <span class="username">{{ comedor.entre_calle_1 | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Entre calle 2
+                                                <span class="username">{{ comedor.entre_calle_2 | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="nav-item col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Longitud
+                                                <span class="username">{{ comedor.longitud | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Latitud
+                                                <span class="username">{{ comedor.latitud | default_if_none:"-" }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -334,115 +385,103 @@
                 <div class="card-header">
                     <h3 class="card-title font-weight-bold mr-3 pt-1">Relevamientos</h3>
                     <div class="card-tools">
+                        <a href="{% url 'relevamientos' comedor.id %}"
+                           class="btn btn-primary mx-3">Ver mas</a>
+                        <button type="button"
+                                class="btn btn-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#RelevamientoModal">Agregar</button>
                         <button type="button" class="btn btn-tool" data-card-widget="collapse">
                             <i class="fas fa-minus"></i>
                         </button>
                     </div>
                 </div>
                 <div class="card-body row card-comments p-0 pb-1">
-                    <div class="nav nav-pills col-6 row my-3">
-                        {% for relevamiento in relevamientos %}
-                            <div class="col-7 d-flex">
+                    {% for relevamiento in relevamientos %}
+                        <div class="nav nav-pills row my-3">
+                            <div class="col-4 d-flex align-self-center">
                                 <a href="{% url 'relevamiento_detalle' comedor.id relevamiento.id %}">{{ relevamiento.id }} - {{ relevamiento.fecha_visita|default_if_none:"Pendiente" }}</a>
                             </div>
-                            <div class="col-5 d-flex">
-                                <p {% if relevamiento.estado == "Pendiente" %} style="color: yellow;" {% elif relevamiento.estado == "Visita pendiente" %} style="color: green;" {% else %} style="color: white;" {% endif %}>
-                                    {{ relevamiento.estado }}
-                                </p>
+                            <div class="col-4 d-flex align-self-center">
+                                <p {% if relevamiento.estado == "Pendiente" %} style="color: yellow;" {% elif relevamiento.estado == "Visita pendiente" %} style="color: green;" {% else %} style="color: white;" {% endif %}
+                                   class="m-0">{{ relevamiento.estado }}</p>
                             </div>
-                        {% endfor %}
-                    </div>
-                    <div class="card-tools col-6 d-flex justify-content-end align-items-start my-3">
-                        <a href="{% url 'relevamientos' comedor.id %}"
-                           class="btn btn-primary mx-3">Ver mas</a>
-                        <button type="button"
-                                class="btn btn-primary me-3"
-                                data-bs-toggle="modal"
-                                data-bs-target="#RelevamientoModalEditar">Asignar</button>
-                        <div class="modal fade"
-                             id="RelevamientoModalEditar"
-                             tabindex="-1"
-                             aria-labelledby="RelevamientoModalEditarLabel"
-                             aria-hidden="true">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title" id="RelevamientoModalEditarLabel">Asignar</h5>
-                                        <button type="button"
-                                                class="btn-close"
-                                                data-bs-dismiss="modal"
-                                                aria-label="Close"></button>
-                                    </div>
-                                    <form method="post">
-                                        {% csrf_token %}
-                                        <div class="modal-body">
-                                            <div class="mb-3">
-                                                {% for relevamiento in relevamientos %}
-                                                    <input type="hidden" name="relevamiento_id" value="{{ relevamiento.id }}" />
-                                                {% endfor %}
-                                                <label for="inputField" class="form-label">Territorial</label>
-                                                <select name="territorial_editar"
-                                                        id="territorial_select"
-                                                        class="form-control">
-                                                    <option value="">No definido</option>
-                                                    {% for territorial in territoriales %}
-                                                        <option value='{"gestionar_uid": "{{ territorial.gestionar_uid }}", "nombre": "{{ territorial.nombre }}"}'>
-                                                            {{ territorial.nombre }}
-                                                        </option>
-                                                    {% endfor %}
-                                                </select>
+                            {% if relevamiento.estado != "Finalizado" and relevamiento.estado != "Finalizado/Excepciones" %}
+                                <button type="button"
+                                        class="btn btn-primary col-4"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#RelevamientoModalEditar-{{ relevamiento.id }}">
+                                    Asignar
+                                </button>
+                                <div class="modal fade"
+                                     id="RelevamientoModalEditar-{{ relevamiento.id }}"
+                                     tabindex="-1"
+                                     aria-labelledby="RelevamientoModalEditarLabel"
+                                     aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="RelevamientoModalEditarLabel">Asignar territorial a relevamiento {{ relevamiento.id }}</h5>
+                                                <button type="button"
+                                                        class="btn-close"
+                                                        data-bs-dismiss="modal"
+                                                        aria-label="Close"></button>
                                             </div>
+                                            <form method="post">
+                                                {% csrf_token %}
+                                                <div class="modal-body">
+                                                    <div class="mb-3">
+                                                        <input type="hidden" name="relevamiento_id" value="{{ relevamiento.id }}" />
+                                                        <label for="inputField" class="form-label">Territorial</label>
+                                                        <select name="territorial_editar"
+                                                                id="update_territorial_select"
+                                                                class="form-control">
+                                                            <option value="">No definido</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                                    <button type="submit" class="btn btn-primary">Guardar</button>
+                                                </div>
+                                            </form>
                                         </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                                            <button type="submit" class="btn btn-primary">Guardar</button>
-                                        </div>
-                                    </form>
+                                    </div>
                                 </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    <div class="modal fade"
+                         id="RelevamientoModal"
+                         tabindex="-1"
+                         aria-labelledby="RelevamientoModalLabel"
+                         aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="RelevamientoModalLabel">Nuevo relevamiento</h5>
+                                    <button type="button"
+                                            class="btn-close"
+                                            data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
+                                </div>
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label for="inputField" class="form-label">Territorial</label>
+                                            <select name="territorial" id="new_territorial_select" class="form-control">
+                                                <option value="">No definido</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                        <button type="submit" class="btn btn-primary">Guardar</button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
-                        <button type="button"
-                                class="btn btn-primary"
-                                data-bs-toggle="modal"
-                                data-bs-target="#RelevamientoModal">Agregar</button>
-                        <div class="modal fade"
-                             id="RelevamientoModal"
-                             tabindex="-1"
-                             aria-labelledby="RelevamientoModalLabel"
-                             aria-hidden="true">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title" id="RelevamientoModalLabel">Nuevo relevamiento</h5>
-                                        <button type="button"
-                                                class="btn-close"
-                                                data-bs-dismiss="modal"
-                                                aria-label="Close"></button>
-                                    </div>
-                                    <form method="post">
-                                        {% csrf_token %}
-                                        <div class="modal-body">
-                                            <div class="mb-3">
-                                                <label for="inputField" class="form-label">Territorial</label>
-                                                <select name="territorial" id="territorial_select" class="form-control">
-                                                    <option value="">No definido</option>
-                                                    {% for territorial in territoriales %}
-                                                        <option value='{"gestionar_uid": "{{ territorial.gestionar_uid }}", "nombre": "{{ territorial.nombre }}"}'>
-                                                            {{ territorial.nombre }}
-                                                        </option>
-                                                    {% endfor %}
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                                            <button type="submit" class="btn btn-primary">Guardar</button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                        <button type="button" class="btn btn-tool" data-card-widget="collapse"></button>
                     </div>
                 </div>
             </div>
@@ -501,4 +540,12 @@
             </div>
         </div>
     </div>
+{% endblock %}
+{% block customJS %}
+    <script>
+        const comedorId = "{{ comedor.id }}"
+        const GESTIONAR_API_KEY = "{{ GESTIONAR_API_KEY }}";
+        const GESTIONAR_API_CREAR_COMEDOR = "{{ GESTIONAR_API_CREAR_COMEDOR }}";
+    </script>
+    <script src="{% static 'custom/js/comedordetail.js' %}"></script>
 {% endblock %}

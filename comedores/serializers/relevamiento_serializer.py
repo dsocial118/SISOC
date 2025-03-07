@@ -1,14 +1,13 @@
 from rest_framework import serializers
 
 from comedores.models.relevamiento import Relevamiento
-from comedores.models.relevamiento import (
-    Territorial,
-)
+
 from comedores.services.relevamiento_service import RelevamientoService
 from comedores.utils import format_fecha_django
 
 
 class RelevamientoSerializer(serializers.ModelSerializer):
+
     def clean(self):
         if "fecha_visita" in self.initial_data:
             self.initial_data["fecha_visita"] = format_fecha_django(
@@ -17,11 +16,8 @@ class RelevamientoSerializer(serializers.ModelSerializer):
 
         if "territorial" in self.initial_data:
             territorial_data = self.initial_data["territorial"]
-            territorial, _ = Territorial.objects.get_or_create(
-                gestionar_uid=territorial_data["gestionar_uid"],
-                defaults={"nombre": territorial_data["nombre"]},
-            )
-            self.initial_data["territorial"] = territorial.id
+            self.initial_data["territorial_nombre"] = territorial_data["nombre"]
+            self.initial_data["territorial_uid"] = territorial_data["gestionar_uid"]
 
         if "funcionamiento" in self.initial_data:
             funcionamiento_instance = (
@@ -86,7 +82,6 @@ class RelevamientoSerializer(serializers.ModelSerializer):
             self.initial_data["anexo"] = RelevamientoService.create_or_update_anexo(
                 self.initial_data["anexo"], anexo_instance
             ).id
-
         if "prestacion" in self.initial_data:
             prestacion_instance = (
                 self.instance.prestacion
@@ -99,34 +94,36 @@ class RelevamientoSerializer(serializers.ModelSerializer):
                 ).id
             )
 
+        if "excepcion" in self.initial_data:
+            excepcion_instance = (
+                self.instance.excepcion
+                if self.instance and self.instance.excepcion
+                else None
+            )
+            self.initial_data["excepcion"] = (
+                RelevamientoService.create_or_update_excepcion(
+                    self.initial_data["excepcion"], excepcion_instance
+                ).id
+            )
+
         if "responsable_es_referente" in self.initial_data:
             self.initial_data["responsable_es_referente"] = (
                 self.initial_data["responsable_es_referente"] == "Y"
             )
 
         if "responsable" in self.initial_data:
-            responsable_instance = (
-                self.instance.responsable
-                if self.instance and self.instance.responsable
-                else None
-            )
             self.initial_data["responsable"] = (
-                RelevamientoService.create_or_update_responsable(
-                    self.initial_data["responsable"], responsable_instance
-                ).id
+                RelevamientoService.create_or_update_responsable_relevamiento(
+                    self.initial_data["responsable"],
+                    self.initial_data["responsable_es_referente"],
+                    self.initial_data["sisoc_id"],
+                )
             )
 
-        if "gestionar_uid" in self.initial_data:
-            if (
-                Relevamiento.objects.filter(
-                    gestionar_uid=self.initial_data["gestionar_uid"]
-                )
-                .exclude(id=self.initial_data["sisoc_id"])
-                .exists()
-            ):
-                raise serializers.ValidationError(
-                    {"error": "gestionar_uid debe ser único si no es nulo."}
-                )
+        if "imagenes" in self.initial_data:
+            self.initial_data["imagenes"] = [
+                url.strip() for url in self.initial_data["imagenes"].split(",")
+            ]
 
         return self
 

@@ -1,0 +1,39 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Eliminar Centro de Desarrollo Infantil: {{ centrodesarrolloinfantiles.nombre }}{% endblock %}
+{% block titulo-pagina %}Confirmar eliminación de {{ centrodesarrolloinfantiles.nombre }}{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <div class="breadcrumb-item">
+            <a href="{% url 'cdi' %}">Centros de Desarrollo Infantil</a>
+        </div>
+        <div class="breadcrumb-item active">Eliminar</div>
+    </ol>
+{% endblock %}
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
+    <div class="row justify-content-center my-5">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title font-weight-bold text-danger">Confirmar Eliminación</h3>
+                </div>
+                <div class="card-body">
+                    <p>
+                        ¿Estás seguro de que deseas eliminar el centro de desarrollo infantil <strong>{{ centrodesarrolloinfantiles.nombre }}</strong>?
+                    </p>
+                    <p>
+                        <strong>Esta acción no se puede deshacer.</strong>
+                    </p>
+                </div>
+                <div class="card-footer d-flex justify-content-between">
+                    <a href="{% url 'cdi' %}" class="btn btn-secondary">Cancelar</a>
+                    <form method="post" action="">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Eliminar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

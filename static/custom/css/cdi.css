@@ -1,0 +1,58 @@
+/* Custom para relevamiento_detail */
+.relevamiento-container .card, .comedor-form .card{
+    min-height: 95% !important;
+    margin-bottom:1rem;
+}
+
+/* Custom para comedores_detail */
+
+.card-informacion .nav-item
+{
+    margin-bottom: 1rem !important;
+}
+  
+.card .card-body{
+    margin-left: 1rem; 
+}
+
+.mb-3 {
+    margin-bottom: 1rem !important;
+}
+
+.btn-margin-right {
+    margin-right: 15px; 
+}
+.select2-container--default .select2-selection--multiple {
+    background-color: transparent !important;
+    border: 1px solid #666464;
+    border-radius: 4px;
+    cursor: text; }
+
+    /* Cambia el color del texto de los valores seleccionados */
+.select2-container--default .select2-selection--multiple .select2-selection__rendered {
+    color: #ffffff !important; /* Cambia el color del texto a blanco */
+}
+
+/* Cambia el color de los valores en la lista desplegable */
+.select2-container--default .select2-results__option {
+    color: #ffffff !important; /* Asegura que los valores en la lista sean blancos */
+    background-color: #333333 !important; /* Fija un fondo oscuro para contraste */
+}
+
+/* Evita que los valores seleccionados tengan fondo blanco */
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background-color: #444444 !important; /* Fondo oscuro */
+    color: #ffffff !important; /* Texto blanco */
+    border: 1px solid #666464 !important; /* Mantiene el borde visible */
+}
+
+/* Ajuste para el campo de búsqueda dentro de Select2 */
+.select2-container--default .select2-search__field {
+    background-color: transparent !important;
+    color: #ffffff !important; /* Asegura que el texto ingresado se vea */
+    border: none !important;
+}
+
+ 
+
+  

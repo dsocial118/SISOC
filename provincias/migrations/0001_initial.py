@@ -2,6 +2,7 @@
 
 from django.db import migrations, models
 import django.db.models.deletion
+from django.conf import settings
 
 
 class Migration(migrations.Migration):
@@ -9,7 +10,6 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ("usuarios", "0001_initial"),
         ("configuraciones", "0001_initial"),
     ]
 
@@ -748,7 +748,7 @@ class Migration(migrations.Migration):
                         blank=True,
                         on_delete=django.db.models.deletion.PROTECT,
                         related_name="creador",
-                        to="usuarios.usuarios",
+                        to=settings.AUTH_USER_MODEL,
                     ),
                 ),
                 (
@@ -758,7 +758,7 @@ class Migration(migrations.Migration):
                         null=True,
                         on_delete=django.db.models.deletion.PROTECT,
                         related_name="modificador",
-                        to="usuarios.usuarios",
+                        to=settings.AUTH_USER_MODEL,
                     ),
                 ),
                 (

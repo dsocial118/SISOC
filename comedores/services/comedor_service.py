@@ -1,19 +1,32 @@
-import os
 import re
 from typing import Union
 
 from django.db.models import Q
-import requests
 
 from comedores.models.relevamiento import Relevamiento
 from comedores.forms.comedor_form import ImagenComedorForm
 from comedores.models.comedor import Comedor, Referente, ValorComida
-from config import settings
 from configuraciones.models import Municipio, Provincia
 from configuraciones.models import Localidad
+from comedores.models.comedor import ImagenComedor
 
 
 class ComedorService:
+    @staticmethod
+    def borrar_imagenes(post):
+        pattern = re.compile(
+            r"^imagen_legajo-borrar-(\d+)$"
+        )  # Patron para encontrar los campos de imagenes a borrar
+        imagenes_ids = []
+        # Itera sobre los datos POST para encontrar los campos coincidentes con el patron
+        for key in post:
+            match = pattern.match(key)
+            if match:
+                imagen_id = match.group(1)  # Extrae el id al final del nombre del campo
+                imagenes_ids.append(imagen_id)
+
+        ImagenComedor.objects.filter(id__in=imagenes_ids).delete()
+
     @staticmethod
     def get_comedores_filtrados(query: Union[str, None] = None):
         queryset = Comedor.objects.prefetch_related("provincia", "referente").values(
@@ -53,13 +66,21 @@ class ComedorService:
                 "nombre",
                 "comienzo",
                 "organizacion__nombre",
+                "programa__nombre",
                 "provincia__nombre",
                 "municipio__nombre",
                 "localidad__nombre",
+                "tipocomedor__nombre",
                 "partido",
                 "barrio",
                 "calle",
                 "numero",
+                "piso",
+                "departamento",
+                "manzana",
+                "lote",
+                "longitud",
+                "latitud",
                 "entre_calle_1",
                 "entre_calle_2",
                 "codigo_postal",
@@ -100,6 +121,8 @@ class ComedorService:
 
         if "celular" in referente_data:
             referente_data["celular"] = referente_data["celular"].replace("-", "")
+            if referente_data["celular"] == "":
+                referente_data["celular"] = None
         if "documento" in referente_data:
             referente_data["documento"] = referente_data["documento"].replace(".", "")
 
@@ -122,147 +145,6 @@ class ComedorService:
             return imagen_comedor.save()
         else:
             return imagen_comedor.errors
-
-    @staticmethod
-    def send_to_gestionar(comedor: Comedor):
-        if comedor.gestionar_uid is None:
-            data = {
-                "Action": "Add",
-                "Properties": {"Locale": "es-ES"},
-                "Rows": [
-                    {
-                        "ComedorID": comedor.id,
-                        "ID_Sisoc": comedor.id,
-                        "nombre": comedor.nombre,
-                        "comienzo": (
-                            f"01/01/{comedor.comienzo}"
-                            if comedor.comienzo
-                            else "01/01/1900"
-                        ),
-                        "TipoComedor": (
-                            comedor.tipocomedor.nombre if comedor.tipocomedor else ""
-                        ),
-                        "calle": comedor.calle if comedor.calle else "",
-                        "numero": comedor.numero if comedor.numero else "",
-                        "entre_calle_1": (
-                            comedor.entre_calle_1 if comedor.entre_calle_1 else ""
-                        ),
-                        "entre_calle_2": (
-                            comedor.entre_calle_2 if comedor.entre_calle_2 else ""
-                        ),
-                        "provincia": (
-                            comedor.provincia.nombre if comedor.provincia else ""
-                        ),
-                        "municipio": (
-                            comedor.municipio.nombre if comedor.municipio else ""
-                        ),
-                        "localidad": (
-                            comedor.localidad.nombre if comedor.localidad else ""
-                        ),
-                        "partido": comedor.partido if comedor.partido else "",
-                        "barrio": comedor.barrio if comedor.barrio else "",
-                        "codigo_postal": (
-                            comedor.codigo_postal if comedor.codigo_postal else ""
-                        ),
-                        "Referente": (
-                            comedor.referente.documento
-                            if comedor.referente.documento
-                            else ""
-                        ),
-                        "Imagen": (
-                            f"{os.getenv('DOMINIO')}/media/{comedor.foto_legajo}"
-                            if comedor.foto_legajo
-                            else ""
-                        ),
-                    }
-                ],
-            }
-
-            headers = {
-                "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
-            }
-
-            try:
-                response = requests.post(
-                    os.getenv("GESTIONAR_API_CREAR_COMEDOR"),
-                    json=data,
-                    headers=headers,
-                )
-                response.raise_for_status()
-                response = response.json()
-
-                comedor.gestionar_uid = response["Rows"][0]["ComedorID"]
-                comedor.save()
-            except requests.exceptions.RequestException as e:
-                print(f"Error al sincronizar con GESTIONAR: {e}")
-
-    @staticmethod
-    def send_referente_to_gestionar(referente: Referente):
-        data = {
-            "Action": "Add",
-            "Properties": {"Locale": "es-ES"},
-            "Rows": [
-                {
-                    "Documento DNI": referente.documento,
-                    "Nombre": referente.nombre,
-                    "Apellido": referente.apellido,
-                    "mail": referente.mail,
-                    "celular": referente.celular,
-                }
-            ],
-        }
-
-        headers = {
-            "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
-        }
-
-        try:
-            response = requests.post(
-                os.getenv("GESTIONAR_API_CREAR_REFERENTE"),
-                json=data,
-                headers=headers,
-            )
-            response.raise_for_status()
-            response = response.json()
-        except requests.exceptions.RequestException as e:
-            print(f"Error al sincronizar con GESTIONAR: {e}")
-
-    @staticmethod
-    def get_territoriales(comedor_id: int):
-        data = {
-            "Action": "Find",
-            "Properties": {"Locale": "es-ES"},
-            "Rows": [{"ComedorID": comedor_id}],
-        }
-
-        headers = {
-            "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
-        }
-
-        try:
-            response = requests.post(
-                os.getenv("GESTIONAR_API_CREAR_COMEDOR"),
-                json=data,
-                headers=headers,
-            )
-            response.raise_for_status()
-            response = response.json()
-
-            if not response or not response[0].get("ListadoRelevadoresDisponibles"):
-                return []
-
-            territoriales_data = [
-                {"gestionar_uid": uid, "nombre": nombre.strip()}
-                for uid, nombre in re.findall(
-                    r"(\w+)/ ([^,]+(?:,.*?[^,])?)",
-                    response[0]["ListadoRelevadoresDisponibles"],
-                )
-            ]
-
-            return territoriales_data
-        except requests.exceptions.RequestException as e:
-            print(f"Error al sincronizar con GESTIONAR: {e}")
-            return []
 
     @staticmethod
     def get_presupuestos(comedor_id: int):

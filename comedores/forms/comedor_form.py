@@ -11,7 +11,6 @@ from comedores.models.comedor import (
 
 from configuraciones.models import Municipio, Provincia
 from configuraciones.models import Localidad
-from organizaciones.models import Organizacion
 
 
 class ReferenteForm(forms.ModelForm):
@@ -112,6 +111,12 @@ class NominaForm(forms.ModelForm):
 
 
 class ComedorForm(forms.ModelForm):
+
+    comienzo = forms.IntegerField(min_value=1900, required=False)
+    longitud = forms.FloatField(min_value=-180, max_value=180, required=False)
+    latitud = forms.FloatField(min_value=-90, max_value=90, required=False)
+    codigo_postal = forms.IntegerField(min_value=1000, max_value=999999, required=False)
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

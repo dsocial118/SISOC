@@ -16,7 +16,7 @@ def main():
             import debugpy
 
             debugpy.listen(("0.0.0.0", 3000))
-            print("Attached!")
+            print("Debugger listo")
 
     try:
         from django.core.management import execute_from_command_line
