@@ -55,7 +55,7 @@
                                 <th>Direccion</th>
                                 <th>Referente</th>
                                 <th>Numero de contacto</th>
-                                <th style="width: 15%" class="notexport">Aciones</th>
+                                <th style="width: 15%" class="notexport">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -100,7 +100,7 @@
                                         <a href="#" class="page-link">Volver</a>
                                     </li>
                                 {% endif %}
-                                {% for i in page_range %}
+                                {% for i in page_obj.paginator.page_range %}
                                     {% if i == '…' %}
                                         <li class="page-item disabled">
                                             <a href="#" class="page-link">…</a>

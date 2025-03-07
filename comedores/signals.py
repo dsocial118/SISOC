@@ -1,31 +1,69 @@
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_delete, pre_save
 from django.dispatch import receiver
 from comedores.models.comedor import Observacion, Referente, Comedor
 from comedores.models.relevamiento import Relevamiento
-from comedores.services.observacion_service import ObservacionService
-from comedores.services.relevamiento_service import RelevamientoService
-from comedores.services.comedor_service import ComedorService
+from comedores.services.clasificacion_comedor_service import ClasificacionComedorService
+from comedores.tasks import (
+    AsyncRemoveComedorToGestionar,
+    AsyncRemoveRelevamientoToGestionar,
+    AsyncSendComedorToGestionar,
+    AsyncSendObservacionToGestionar,
+    AsyncSendReferenteToGestionar,
+    AsyncSendRelevamientoToGestionar,
+)
 
 
 @receiver(post_save, sender=Comedor)
 def send_comedor_to_gestionar(sender, instance, created, **kwargs):
     if created:
-        ComedorService.send_to_gestionar(instance)
+        AsyncSendComedorToGestionar(instance.id).start()
+
+
+@receiver(pre_save, sender=Comedor)
+def update_comedor_in_gestionar(sender, instance, **kwargs):
+    if instance.pk:  # Solo para updates
+        previous_instance = sender.objects.get(pk=instance.pk)
+        for field in instance._meta.fields:
+            field_name = field.name
+            new_value = getattr(instance, field_name)
+            old_value = getattr(previous_instance, field_name)
+
+            if field_name == "foto_legajo" and not new_value:
+                continue  # Ignorar cambios en foto_legajo si está vacío
+
+            if new_value != old_value:
+                AsyncSendComedorToGestionar(instance.id).start()
+                break
+
+
+@receiver(pre_delete, sender=Comedor)
+def remove_comedor_to_gestionar(sender, instance, using, **kwargs):
+    AsyncRemoveComedorToGestionar(instance.id).start()
 
 
 @receiver(post_save, sender=Relevamiento)
 def send_relevamiento_to_gestionar(sender, instance, created, **kwargs):
     if created:
-        RelevamientoService.send_to_gestionar(instance)
+        AsyncSendRelevamientoToGestionar(instance.id).start()
+
+
+@receiver(pre_delete, sender=Relevamiento)
+def remove_relevamiento_to_gestionar(sender, instance, using, **kwargs):
+    AsyncRemoveRelevamientoToGestionar(instance.id).start()
 
 
 @receiver(post_save, sender=Observacion)
 def send_observacion_to_gestionar(sender, instance, created, **kwargs):
     if created:
-        ObservacionService.send_to_gestionar(instance)
+        AsyncSendObservacionToGestionar(instance.id).start()
 
 
 @receiver(post_save, sender=Referente)
 def send_referente_to_gestionar(sender, instance, created, **kwargs):
     if created:
-        ComedorService.send_referente_to_gestionar(instance)
+        AsyncSendReferenteToGestionar(instance.id).start()
+
+
+@receiver(post_save, sender=Relevamiento)
+def clasificacion_relevamiento(sender, instance, **kwargs):
+    ClasificacionComedorService.create_clasificacion_relevamiento(instance)

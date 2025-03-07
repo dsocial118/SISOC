@@ -1,4 +1,7 @@
+import os
+import re
 from typing import Any
+from django.contrib.auth.models import User
 from django.contrib import messages
 from django.db.models.base import Model
 from django.forms import BaseModelForm
@@ -16,7 +19,7 @@ from django.views.generic import (
 )
 
 
-from comedores.models.relevamiento import Relevamiento
+from comedores.models.relevamiento import Relevamiento, ClasificacionComedor
 from comedores.forms.comedor_form import (
     ComedorForm,
     ReferenteForm,
@@ -50,7 +53,6 @@ from comedores.models.comedor import (
 from comedores.models.relevamiento import Prestacion
 from comedores.services.comedor_service import ComedorService
 from comedores.services.relevamiento_service import RelevamientoService
-from usuarios.models import Usuarios
 
 
 def SubEstadosIntervencionesAJax(request):
@@ -73,7 +75,7 @@ class IntervencionDetail(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor = Comedor.objects.values(
-            "id", "gestionar_uid", "nombre", "provincia", "barrio", "calle", "numero"
+            "id", "nombre", "provincia", "barrio", "calle", "numero"
         ).get(pk=self.kwargs["pk"])
         intervenciones = Intervencion.objects.filter(fk_comedor=self.kwargs["pk"])
         cantidad_intervenciones = Intervencion.objects.filter(
@@ -93,7 +95,7 @@ class NominaDetail(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor = Comedor.objects.values(
-            "id", "gestionar_uid", "nombre", "provincia", "barrio", "calle", "numero"
+            "id", "nombre", "provincia", "barrio", "calle", "numero"
         ).get(pk=self.kwargs["pk"])
         nomina = Nomina.objects.filter(fk_comedor=self.kwargs["pk"])
         cantidad_nominaM = Nomina.objects.filter(
@@ -131,7 +133,7 @@ class NominaCreateView(CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor = Comedor.objects.values(
-            "id", "gestionar_uid", "nombre", "provincia", "barrio", "calle", "numero"
+            "id", "nombre", "provincia", "barrio", "calle", "numero"
         ).get(pk=self.kwargs["pk"])
 
         context["form"] = self.get_form()
@@ -162,7 +164,7 @@ class IntervencionCreateView(CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor = Comedor.objects.values(
-            "id", "gestionar_uid", "nombre", "provincia", "barrio", "calle", "numero"
+            "id", "nombre", "provincia", "barrio", "calle", "numero"
         ).get(pk=self.kwargs["pk"])
 
         context["form"] = self.get_form()
@@ -193,7 +195,7 @@ class IntervencionUpdateView(UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor = Comedor.objects.values(
-            "id", "gestionar_uid", "nombre", "provincia", "barrio", "calle", "numero"
+            "id", "nombre", "provincia", "barrio", "calle", "numero"
         ).get(pk=self.kwargs["pk2"])
         context["form"] = self.get_form()
         context["object"] = comedor
@@ -213,7 +215,7 @@ class NominaUpdateView(UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor = Comedor.objects.values(
-            "id", "gestionar_uid", "nombre", "provincia", "barrio", "calle", "numero"
+            "id", "nombre", "provincia", "barrio", "calle", "numero"
         ).get(pk=self.kwargs["pk2"])
         context["form"] = self.get_form()
         context["object"] = comedor
@@ -255,8 +257,7 @@ class ComedorCreateView(CreateView):
             self.object = form.save(commit=False)
             self.object.referente = referente_form.save()
             self.object.save()
-
-            for imagen in imagenes:  # Creo las imagenes
+            for imagen in imagenes:  # Creo las imágenes
                 try:
                     ComedorService.create_imagenes(imagen, self.object.pk)
                 except Exception:
@@ -289,8 +290,7 @@ class ComedorDetailView(DetailView):
             {
                 "relevamientos": Relevamiento.objects.filter(comedor=self.object["id"])
                 .values("id", "fecha_visita", "estado")
-                .order_by("-fecha_visita")[:3],
-                "territoriales": ComedorService.get_territoriales(self.object["id"]),
+                .order_by("-estado")[:3],
                 "observaciones": Observacion.objects.filter(comedor=self.object["id"])
                 .values("id", "fecha_visita")
                 .order_by("-fecha_visita")[:3],
@@ -305,8 +305,16 @@ class ComedorDetailView(DetailView):
                 "imagenes": ImagenComedor.objects.filter(
                     comedor=self.object["id"]
                 ).values("imagen"),
+                "comedor_categoria": ClasificacionComedor.objects.filter(
+                    comedor=self.object["id"]
+                )
+                .order_by("-fecha")
+                .first(),
+                "GESTIONAR_API_KEY": os.getenv("GESTIONAR_API_KEY"),
+                "GESTIONAR_API_CREAR_COMEDOR": os.getenv("GESTIONAR_API_CREAR_COMEDOR"),
             }
         )
+
         return context
 
     def post(self, request, *args, **kwargs):
@@ -354,6 +362,9 @@ class ComedorUpdateView(UpdateView):
             instance=self.object.referente,
             prefix="referente",
         )
+        data["imagenes_borrar"] = ImagenComedor.objects.filter(
+            comedor=self.object.pk
+        ).values("id", "imagen")
         return data
 
     def form_valid(self, form):
@@ -365,6 +376,8 @@ class ComedorUpdateView(UpdateView):
             self.object = form.save()
             self.object.referente = referente_form.save()
             self.object.save()
+
+            ComedorService.borrar_imagenes(self.request.POST)  # Borro las imagenes
 
             for imagen in imagenes:  # Creo las imagenes
                 try:
@@ -462,9 +475,7 @@ class RelevamientoCreateView(CreateView):
         }
 
         if all(form.is_valid() for form in forms.values()):
-            self.object = RelevamientoService.populate_relevamiento(
-                form, forms, self.request.user.id
-            )
+            self.object = RelevamientoService.populate_relevamiento(form, forms)
 
             return redirect(
                 "relevamiento_detalle",
@@ -502,6 +513,45 @@ class RelevamientoDetailView(DetailView):
         context["prestacion"] = (
             Prestacion.objects.get(pk=relevamiento.prestacion.id)
             if relevamiento.prestacion
+            else None
+        )
+        context["relevamiento"]["donaciones"] = (
+            RelevamientoService.separate_m2m_string(
+                relevamiento.recursos.recursos_donaciones_particulares.all()
+            )
+            if relevamiento.recursos
+            else None
+        )
+
+        context["relevamiento"]["nacional"] = (
+            RelevamientoService.separate_m2m_string(
+                relevamiento.recursos.recursos_estado_nacional.all()
+            )
+            if relevamiento.recursos
+            else None
+        )
+
+        context["relevamiento"]["provincial"] = (
+            RelevamientoService.separate_m2m_string(
+                relevamiento.recursos.recursos_estado_provincial.all()
+            )
+            if relevamiento.recursos
+            else None
+        )
+
+        context["relevamiento"]["municipal"] = (
+            RelevamientoService.separate_m2m_string(
+                relevamiento.recursos.recursos_estado_municipal.all()
+            )
+            if relevamiento.recursos
+            else None
+        )
+
+        context["relevamiento"]["otras"] = (
+            RelevamientoService.separate_m2m_string(
+                relevamiento.recursos.recursos_otros.all()
+            )
+            if relevamiento.recursos
             else None
         )
 
@@ -582,9 +632,7 @@ class RelevamientoUpdateView(UpdateView):
         }
 
         if all(form.is_valid() for form in forms.values()):
-            self.object = RelevamientoService.populate_relevamiento(
-                form, forms, self.request.user.id
-            )
+            self.object = RelevamientoService.populate_relevamiento(form, forms)
 
             return redirect(
                 "relevamiento_detalle",
@@ -635,7 +683,7 @@ class ObservacionCreateView(CreateView):
 
     def form_valid(self, form: BaseModelForm) -> HttpResponse:
         form.instance.comedor_id = Comedor.objects.get(pk=self.kwargs["comedor_pk"]).id
-        usuario = Usuarios.objects.get(pk=self.request.user.id).usuario
+        usuario = User.objects.get(pk=self.request.user.id)
         form.instance.observador = f"{usuario.first_name} {usuario.last_name}"
         form.instance.fecha_visita = timezone.now()
 
@@ -686,7 +734,7 @@ class ObservacionUpdateView(UpdateView):
 
     def form_valid(self, form: BaseModelForm) -> HttpResponse:
         form.instance.comedor_id = Comedor.objects.get(pk=self.kwargs["comedor_pk"]).id
-        usuario = Usuarios.objects.get(pk=self.request.user.id).usuario
+        usuario = User.objects.get(pk=self.request.user.id)
         form.instance.observador = f"{usuario.first_name} {usuario.last_name}"
         form.instance.fecha_visita = timezone.now()
 

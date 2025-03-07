@@ -3,15 +3,12 @@
 import django.core.validators
 from django.db import migrations, models
 import django.db.models.deletion
+from django.conf import settings
 
 
 class Migration(migrations.Migration):
 
     initial = True
-
-    dependencies = [
-        ("usuarios", "0001_initial"),
-    ]
 
     operations = [
         migrations.CreateModel(
@@ -839,7 +836,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "m2m_usuarios",
-                    models.ManyToManyField(blank=True, to="usuarios.usuarios"),
+                    models.ManyToManyField(blank=True, to=settings.AUTH_USER_MODEL),
                 ),
             ],
             options={
@@ -873,7 +870,7 @@ class Migration(migrations.Migration):
                         null=True,
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="fkcoordinador",
-                        to="usuarios.usuarios",
+                        to=settings.AUTH_USER_MODEL,
                     ),
                 ),
                 (
@@ -883,7 +880,7 @@ class Migration(migrations.Migration):
                         to="configuraciones.programas",
                     ),
                 ),
-                ("m2m_usuarios", models.ManyToManyField(to="usuarios.usuarios")),
+                ("m2m_usuarios", models.ManyToManyField(to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 "verbose_name": "Equipo",
