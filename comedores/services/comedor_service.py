@@ -5,7 +5,13 @@ from django.db.models import Q
 
 from comedores.models.relevamiento import Relevamiento
 from comedores.forms.comedor_form import ImagenComedorForm
-from comedores.models.comedor import Comedor, Referente, ValorComida, Intervencion, Nomina
+from comedores.models.comedor import (
+    Comedor,
+    Referente,
+    ValorComida,
+    Intervencion,
+    Nomina,
+)
 from configuraciones.models import Municipio, Provincia
 from configuraciones.models import Localidad
 from comedores.models.comedor import ImagenComedor
@@ -18,6 +24,7 @@ class ComedorService:
             "id", "nombre", "provincia", "barrio", "calle", "numero"
         ).get(pk=pk_send)
         return comedor
+
     @staticmethod
     def detalle_de_intervencion(kwargs):
         intervenciones = Intervencion.objects.filter(fk_comedor=kwargs["pk"])
@@ -39,10 +46,15 @@ class ComedorService:
         espera = Nomina.objects.filter(
             fk_comedor=kwargs["pk"], fk_estado__nombre="Lista de espera"
         ).count()
-        cantidad_intervenciones = Nomina.objects.filter(
-            fk_comedor=kwargs["pk"]
-        ).count()
-        return nomina, cantidad_nomina_m, cantidad_nomina_f, espera, cantidad_intervenciones
+        cantidad_intervenciones = Nomina.objects.filter(fk_comedor=kwargs["pk"]).count()
+        return (
+            nomina,
+            cantidad_nomina_m,
+            cantidad_nomina_f,
+            espera,
+            cantidad_intervenciones,
+        )
+
     @staticmethod
     def borrar_imagenes(post):
         pattern = re.compile(

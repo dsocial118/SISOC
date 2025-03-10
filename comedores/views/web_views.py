@@ -74,7 +74,9 @@ class IntervencionDetail(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        intervenciones , cantidad_intervenciones = ComedorService.detalle_de_intervencion(self.kwargs)
+        intervenciones, cantidad_intervenciones = (
+            ComedorService.detalle_de_intervencion(self.kwargs)
+        )
         comedor = ComedorService.get_comedor(self.kwargs["pk"])
         context["intervenciones"] = intervenciones
         context["object"] = comedor
@@ -89,7 +91,13 @@ class NominaDetail(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        nomina, cantidad_nomina_m, cantidad_nomina_f, espera, cantidad_intervenciones = ComedorService.detalle_de_nomina(self.kwargs)
+        (
+            nomina,
+            cantidad_nomina_m,
+            cantidad_nomina_f,
+            espera,
+            cantidad_intervenciones,
+        ) = ComedorService.detalle_de_nomina(self.kwargs)
         comedor = ComedorService.get_comedor(self.kwargs["pk"])
         context["nomina"] = nomina
         context["nominaM"] = cantidad_nomina_m
