@@ -78,7 +78,7 @@ class ClasificacionComedorService:
             if cocina.abastecimiento_agua:
                 if cocina.abastecimiento_agua.nombre == "Pozo":
                     puntuacion += 2
-                
+
             if cocina.abastecimiento_agua_otro:
                 puntuacion += 3
 
