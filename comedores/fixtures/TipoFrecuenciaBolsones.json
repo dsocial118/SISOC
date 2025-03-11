@@ -1,0 +1,30 @@
+[
+    {
+        "model": "comedores.tipofrecuenciabolsones",
+        "pk": 1,
+        "fields": {
+            "nombre": "Semanal"
+        }
+    },
+    {
+        "model": "comedores.tipofrecuenciabolsones",
+        "pk": 2,
+        "fields": {
+            "nombre": "Mensual"
+        }
+    },
+    {
+        "model": "comedores.tipofrecuenciabolsones",
+        "pk": 3,
+        "fields": {
+            "nombre": "Quincenal"
+        }
+    },
+    {
+        "model": "comedores.tipofrecuenciabolsones",
+        "pk": 4,
+        "fields": {
+            "nombre": "Otros"
+        }
+    }
+]
