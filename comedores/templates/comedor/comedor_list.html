@@ -100,15 +100,25 @@
                                         <a href="#" class="page-link">Volver</a>
                                     </li>
                                 {% endif %}
-                                {% for i in page_range %}
-                                    {% if i == '…' %}
-                                        <li class="page-item disabled">
-                                            <a href="#" class="page-link">…</a>
-                                        </li>
-                                    {% else %}
-                                        <li class="page-item {% if page_obj.number == i %}active{% endif %}">
+                                {% for i in page_obj.paginator.page_range %}
+                                    {% if page_obj.number == i %}
+                                        <li class="page-item active">
                                             <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ i }}"
                                                class="page-link">{{ i }}</a>
+                                        </li>
+                                    {% elif i > page_obj.number|add:'-5' and i < page_obj.number|add:'5' %}
+                                        <li class="page-item">
+                                            <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ i }}"
+                                               class="page-link">{{ i }}</a>
+                                        </li>
+                                    {% elif i == 1 or i == page_obj.paginator.num_pages %}
+                                        <li class="page-item">
+                                            <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ i }}"
+                                               class="page-link">{{ i }}</a>
+                                        </li>
+                                    {% elif i == page_obj.number|add:'-6' or i == page_obj.number|add:'6' %}
+                                        <li class="page-item disabled">
+                                            <a href="#" class="page-link">...</a>
                                         </li>
                                     {% endif %}
                                 {% endfor %}
