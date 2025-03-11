@@ -5,13 +5,56 @@ from django.db.models import Q
 
 from comedores.models.relevamiento import Relevamiento
 from comedores.forms.comedor_form import ImagenComedorForm
-from comedores.models.comedor import Comedor, Referente, ValorComida
+from comedores.models.comedor import (
+    Comedor,
+    Referente,
+    ValorComida,
+    Intervencion,
+    Nomina,
+)
 from configuraciones.models import Municipio, Provincia
 from configuraciones.models import Localidad
 from comedores.models.comedor import ImagenComedor
 
 
 class ComedorService:
+    @staticmethod
+    def get_comedor(pk_send):
+        comedor = Comedor.objects.values(
+            "id", "nombre", "provincia", "barrio", "calle", "numero"
+        ).get(pk=pk_send)
+        return comedor
+
+    @staticmethod
+    def detalle_de_intervencion(kwargs):
+        intervenciones = Intervencion.objects.filter(fk_comedor=kwargs["pk"])
+        cantidad_intervenciones = Intervencion.objects.filter(
+            fk_comedor=kwargs["pk"]
+        ).count()
+
+        return intervenciones, cantidad_intervenciones
+
+    @staticmethod
+    def detalle_de_nomina(kwargs):
+        nomina = Nomina.objects.filter(fk_comedor=kwargs["pk"])
+        cantidad_nomina_m = Nomina.objects.filter(
+            fk_comedor=kwargs["pk"], fk_sexo__sexo="Masculino"
+        ).count()
+        cantidad_nomina_f = Nomina.objects.filter(
+            fk_comedor=kwargs["pk"], fk_sexo__sexo="Femenino"
+        ).count()
+        espera = Nomina.objects.filter(
+            fk_comedor=kwargs["pk"], fk_estado__nombre="Lista de espera"
+        ).count()
+        cantidad_intervenciones = Nomina.objects.filter(fk_comedor=kwargs["pk"]).count()
+        return (
+            nomina,
+            cantidad_nomina_m,
+            cantidad_nomina_f,
+            espera,
+            cantidad_intervenciones,
+        )
+
     @staticmethod
     def borrar_imagenes(post):
         pattern = re.compile(
