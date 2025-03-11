@@ -63,9 +63,17 @@ class ClasificacionComedorService:
             )
 
             if cocina.abastecimiento_combustible:
-                puntuacion += {"Leña": 3, "Otro": 2, "Gas envasado": 1}.get(
-                    cocina.abastecimiento_combustible.filter().first(), 0
-                )
+                respuesta = cocina.abastecimiento_combustible.filter().first()
+                respuesta_str = str(respuesta)
+                print(respuesta_str)
+                if respuesta_str == "Leña":
+                    puntuacion += 3
+                elif respuesta_str == "Otro":
+                    puntuacion += 2
+                elif respuesta_str == "Gas envasado":
+                    puntuacion += 1
+                else:
+                    puntuacion += 0
 
             if cocina.abastecimiento_agua:
                 if cocina.abastecimiento_agua.nombre == "Pozo":
