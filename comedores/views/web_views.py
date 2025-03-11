@@ -549,6 +549,14 @@ class RelevamientoDetailView(DetailView):
             else None
         )
 
+        context["relevamiento"]["Entregas"] = (
+            RelevamientoService.separate_m2m_string(
+                relevamiento.punto_entregas.all()
+            )
+            if relevamiento.punto_entregas
+            else None
+        )
+
         return context
 
     def get_object(self, queryset=None) -> Model:
@@ -623,6 +631,7 @@ class RelevamientoUpdateView(UpdateView):
             "prestacion_form": context["prestacion_form"],
             "referente_form": context["referente_form"],
             "anexo_form": context["anexo_form"],
+            
         }
 
         if all(form.is_valid() for form in forms.values()):
