@@ -18,6 +18,7 @@ from comedores.models.relevamiento import (
     FuenteRecursos,
     FuncionamientoPrestacion,
     Prestacion,
+    PuntoEntregas,
 )
 
 BOOLEAN_CHOICE = [
@@ -350,6 +351,48 @@ class AnexoForm(forms.ModelForm):
 
     class Meta:
         model = Anexo
+        fields = "__all__"
+
+# TODO: Revisar si los textos del label con el funcional
+class PuntosEntregaForm(forms.ModelForm):
+    existe_punto_entregas = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿Existe un punto de entrega de alimentos en el comedor/merendero?",
+    )
+    funciona_punto_entregas = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿El punto de entrega de alimentos funciona en el comedor/merendero?",
+    )
+    observa_entregas = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿Observa las entregas de alimentos en el comedor/merendero?", # TODO: Revisar el texto del label con Andi
+    )
+    retiran_mercaderias_distribucion = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿Retiran mercaderías de la distribución?",
+    )
+    retiran_mercaderias_comercio = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿Retiran mercaderías de comercios?",
+    )
+    reciben_dinero = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿Reciben dinero por la entrega de alimentos?",
+    )
+    Registran_entrega_bolsones = forms.ChoiceField(
+        choices=BOOLEAN_CHOICE,
+        widget=forms.Select,
+        label="¿Registran la entrega de bolsones?",
+    )
+
+    class Meta:
+        model = PuntoEntregas
         fields = "__all__"
 
 
