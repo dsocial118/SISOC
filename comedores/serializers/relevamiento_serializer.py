@@ -82,6 +82,14 @@ class RelevamientoSerializer(serializers.ModelSerializer):
             self.initial_data["anexo"] = RelevamientoService.create_or_update_anexo(
                 self.initial_data["anexo"], anexo_instance
             ).id
+        if "punto_entregas" in self.initial_data:
+            punto_entregas_instance = (
+                self.instance.punto_entregas if self.instance and self.instance.punto_entregas else None
+            )
+            self.initial_data["punto_entregas"] = RelevamientoService.create_or_update_punto_entregas(
+                self.initial_data["punto_entregas"], punto_entregas_instance
+            ).id
+
         if "prestacion" in self.initial_data:
             prestacion_instance = (
                 self.instance.prestacion

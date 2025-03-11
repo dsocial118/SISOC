@@ -6,6 +6,7 @@ from django.utils import timezone
 from comedores.models.comedor import (
     Comedor,
     Referente,
+    TipoDeComedor,
 )
 
 
@@ -38,6 +39,51 @@ class TipoFrecuenciaInsumos(models.Model):
     class Meta:
         verbose_name = "Frecuencia de insumos recibidos"
         verbose_name_plural = "Frecuencias de insumos recibidos"
+        ordering = ["nombre"]
+
+class TipoOtrosRecepcion(models.Model): # TODO: Ver con Andi
+    """
+    Opciones de otros tipos de insumos recibidos
+    """
+
+    nombre = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        verbose_name = "Otros tipos de insumos recibidos"
+        verbose_name_plural = "Otros tipos de insumos recibidos"
+        ordering = ["nombre"]
+
+class TipoModuloBolsones(models.Model):
+    """
+    Opciones de frecuencias de entrega de bolsones
+    """
+    
+    nombre = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        verbose_name = "Frecuencia de entrega de bolsones"
+        verbose_name_plural = "Frecuencias de entrega de bolsones"
+        ordering = ["nombre"]
+
+class TipoFrecuenciaBolsones(models.Model):
+    """
+    Opciones de frecuencias de entrega de bolsones
+    """
+    
+    nombre = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        verbose_name = "Frecuencia de entrega de bolsones"
+        verbose_name_plural = "Frecuencias de entrega de bolsones"
         ordering = ["nombre"]
 
 
@@ -763,6 +809,53 @@ class Excepcion(models.Model):
         verbose_name = "Excepcion de comedor"
         verbose_name_plural = "Excepciones de comedor"
 
+class PuntoEntregas(models.Model):
+    tipo_comedor = models.ForeignKey(
+        to=TipoDeComedor,
+        on_delete=models.PROTECT,
+        verbose_name="Tipo de comedor",
+        blank=True,
+        null=True,
+    )
+    reciben_otros_recepcion = models.CharField( # TODO: Campo de texto libre
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Otros",
+    )
+    frecuencia_recepcion_mercaderias = models.ManyToManyField(
+        TipoFrecuenciaBolsones,
+        related_name="frecuencia_recepcion_mercaderias",
+        verbose_name="frecuencia de recepcion de mercaderias",
+        blank=True,
+    )
+    frecuencia_entrega_bolsones = models.ForeignKey(
+        to=TipoFrecuenciaBolsones,
+        on_delete=models.PROTECT,
+        verbose_name="Frecuencia de entrega de bolsones",
+        blank=True,
+        null=True,
+    )
+    tipo_modulo_bolsones = models.ForeignKey(
+        to=TipoModuloBolsones,
+        on_delete=models.PROTECT,
+        verbose_name="Tipo de modulo de bolsones",
+        blank=True,
+        null=True,
+    )
+    otros_punto_entregas = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Otros punto de entrega",
+    )
+    existe_punto_entregas = models.BooleanField(default=False)
+    funciona_punto_entregas = models.BooleanField(default=False)
+    observa_entregas = models.BooleanField(default=False)
+    retiran_mercaderias_distribucion = models.BooleanField(default=False)
+    retiran_mercaderias_comercio = models.BooleanField(default=False)
+    reciben_dinero = models.BooleanField(default=False)
+    Registran_entrega_bolsones = models.BooleanField(default=False)
 
 class Relevamiento(models.Model):
 
@@ -805,6 +898,9 @@ class Relevamiento(models.Model):
         to=Excepcion, on_delete=models.PROTECT, blank=True, null=True
     )
     imagenes = models.JSONField(default=list, blank=True, null=True)
+    punto_entregas = models.OneToOneField(
+        to=PuntoEntregas, on_delete=models.PROTECT, blank=True, null=True
+    )
 
     def save(self, *args, **kwargs):
         self.validate_relevamientos_activos()
