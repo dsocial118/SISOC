@@ -353,6 +353,7 @@ class AnexoForm(forms.ModelForm):
         model = Anexo
         fields = "__all__"
 
+
 # TODO: Revisar si los textos del label con el funcional
 class PuntosEntregaForm(forms.ModelForm):
     existe_punto_entregas = forms.ChoiceField(
@@ -368,7 +369,7 @@ class PuntosEntregaForm(forms.ModelForm):
     observa_entregas = forms.ChoiceField(
         choices=BOOLEAN_CHOICE,
         widget=forms.Select,
-        label="¿Observa las entregas de alimentos en el comedor/merendero?", # TODO: Revisar el texto del label con Andi
+        label="¿Observa las entregas de alimentos en el comedor/merendero?",  # TODO: Revisar el texto del label con Andi
     )
     retiran_mercaderias_distribucion = forms.ChoiceField(
         choices=BOOLEAN_CHOICE,
