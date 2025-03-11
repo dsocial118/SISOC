@@ -41,7 +41,8 @@ class TipoFrecuenciaInsumos(models.Model):
         verbose_name_plural = "Frecuencias de insumos recibidos"
         ordering = ["nombre"]
 
-class TipoOtrosRecepcion(models.Model): # TODO: Ver con Andi
+
+class TipoOtrosRecepcion(models.Model):  # TODO: Ver con Andi
     """
     Opciones de otros tipos de insumos recibidos
     """
@@ -56,11 +57,12 @@ class TipoOtrosRecepcion(models.Model): # TODO: Ver con Andi
         verbose_name_plural = "Otros tipos de insumos recibidos"
         ordering = ["nombre"]
 
+
 class TipoModuloBolsones(models.Model):
     """
     Opciones de frecuencias de entrega de bolsones
     """
-    
+
     nombre = models.CharField(max_length=255, unique=True)
 
     def __str__(self):
@@ -71,11 +73,12 @@ class TipoModuloBolsones(models.Model):
         verbose_name_plural = "Frecuencias de entrega de bolsones"
         ordering = ["nombre"]
 
+
 class TipoFrecuenciaBolsones(models.Model):
     """
     Opciones de frecuencias de entrega de bolsones
     """
-    
+
     nombre = models.CharField(max_length=255, unique=True)
 
     def __str__(self):
@@ -809,6 +812,7 @@ class Excepcion(models.Model):
         verbose_name = "Excepcion de comedor"
         verbose_name_plural = "Excepciones de comedor"
 
+
 class PuntoEntregas(models.Model):
     tipo_comedor = models.ForeignKey(
         to=TipoDeComedor,
@@ -817,7 +821,7 @@ class PuntoEntregas(models.Model):
         blank=True,
         null=True,
     )
-    reciben_otros_recepcion = models.CharField( # TODO: Campo de texto libre
+    reciben_otros_recepcion = models.CharField(  # TODO: Campo de texto libre
         max_length=255,
         blank=True,
         null=True,
@@ -856,6 +860,7 @@ class PuntoEntregas(models.Model):
     retiran_mercaderias_comercio = models.BooleanField(default=False)
     reciben_dinero = models.BooleanField(default=False)
     Registran_entrega_bolsones = models.BooleanField(default=False)
+
 
 class Relevamiento(models.Model):
 

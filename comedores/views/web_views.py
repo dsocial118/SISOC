@@ -619,7 +619,6 @@ class RelevamientoUpdateView(UpdateView):
             "prestacion_form": context["prestacion_form"],
             "referente_form": context["referente_form"],
             "anexo_form": context["anexo_form"],
-            
         }
 
         if all(form.is_valid() for form in forms.values()):
