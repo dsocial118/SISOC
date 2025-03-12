@@ -42,7 +42,7 @@ class TipoFrecuenciaInsumos(models.Model):
         ordering = ["nombre"]
 
 
-class TipoOtrosRecepcion(models.Model):  
+class TipoOtrosRecepcion(models.Model):
     """
     Opciones de otros tipos de insumos recibidos
     """

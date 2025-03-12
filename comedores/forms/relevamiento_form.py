@@ -385,7 +385,7 @@ class PuntosEntregaForm(forms.ModelForm):
         widget=forms.Select,
         label="¿Reciben dinero por la entrega de alimentos?",
     )
-    Registran_entrega_bolsones = forms.ChoiceField(
+    registran_entrega_bolsones = forms.ChoiceField(
         choices=BOOLEAN_CHOICE,
         widget=forms.Select,
         label="¿Registran la entrega de bolsones?",

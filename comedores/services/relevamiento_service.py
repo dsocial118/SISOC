@@ -291,7 +291,7 @@ class RelevamientoService:
                     "punto_entregas__retiran_mercaderias_distribucion",
                     "punto_entregas__retiran_mercaderias_comercio",
                     "punto_entregas__reciben_dinero",
-                    "punto_entregas__Registran_entrega_bolsones",
+                    "punto_entregas__registran_entrega_bolsones",
                 )
                 .get(pk=relevamiento_id)
             )
@@ -894,6 +894,7 @@ class RelevamientoService:
         punto_entregas_data = RelevamientoService.populate_punto_entregas_data(
             punto_entregas_data
         )
+
         frecuencia_recepcion_mercaderias_queryset = (
             TipoFrecuenciaBolsones.objects.none()
         )
@@ -901,7 +902,6 @@ class RelevamientoService:
             frecuencia_str = punto_entregas_data.pop(
                 "frecuencia_recepcion_mercaderias", ""
             )
-
             frecuencia_arr = [nombre.strip() for nombre in frecuencia_str.split(",")]
             frecuencia_recepcion_mercaderias_queryset = (
                 TipoFrecuenciaBolsones.objects.filter(nombre__in=frecuencia_arr)
@@ -993,11 +993,11 @@ class RelevamientoService:
                 punto_entregas_data["reciben_dinero"] == "Y"
             )
 
-        if "Registran_entrega_bolsones" in punto_entregas_data:
-            punto_entregas_data["Registran_entrega_bolsones"] = (
-                punto_entregas_data["Registran_entrega_bolsones"] == "Y"
+        if "registran_entrega_bolsones" in punto_entregas_data:
+            punto_entregas_data["registran_entrega_bolsones"] = (
+                punto_entregas_data["registran_entrega_bolsones"] == "Y"
             )
-
+            
         return punto_entregas_data
 
     @staticmethod
