@@ -12,6 +12,7 @@ from comedores.models.relevamiento import (
     Anexo,
     CantidadColaboradores,
     Colaboradores,
+    Entrevistado,
     Espacio,
     EspacioCocina,
     EspacioPrestacion,
@@ -172,6 +173,11 @@ class RelevamientoService:
                     "responsable__celular",
                     "responsable__documento",
                     "responsable__funcion",
+                    "entrevistado__nombre",
+                    "entrevistado__apellido",
+                    "entrevistado__mail",
+                    "entrevistado__celular",
+                    "entrevistado__documento",
                     "comedor__comienzo",
                     "comedor__id",
                     "comedor__calle",
@@ -1199,26 +1205,100 @@ class RelevamientoService:
         return prestacion_data
 
     @staticmethod
-    def create_or_update_responsable_relevamiento(
-        responsable_data, responsable_es_referente, getionar_uid_send
-    ):
+    def create_or_update_responsable_y_entrevistado(responsable_data, responsable_es_referente, entrevistado_data, gestionar_uid):
+        responsable = None
+        entrevistado = None
+
         if responsable_es_referente:
-            relevamiento_gestionar = Relevamiento.objects.get(
-                gestionar_uid=getionar_uid_send
-            )
-            responsable = relevamiento_gestionar.responsable
-        elif responsable_es_referente is False:
-            try:
-                responsable = Referente.objects.get(
-                    documento=responsable_data["documento"]
-                )
-            except Referente.DoesNotExist:
-                responsable = Referente.objects.create(**responsable_data)
-            except Exception as e:
-                return None
+            if responsable_data and any(responsable_data.values()):
+                try:
+                    responsable = Referente.objects.get(documento=responsable_data["documento"] or None)
+                    for key, value in responsable_data.items():
+                        if value:
+                            setattr(responsable, key, value)
+                    responsable.save()
+                except Referente.DoesNotExist:
+                    responsable = Referente.objects.create(
+                        nombre=responsable_data.get("nombre", ""),
+                        apellido=responsable_data.get("apellido", ""),
+                        mail=responsable_data.get("mail", ""),
+                        celular=responsable_data.get("celular", ""),
+                        documento=responsable_data.get("documento", ""),
+                        funcion=responsable_data.get("funcion", ""),
+                    )
+            if responsable:
+                try:
+                    entrevistado = Entrevistado.objects.get(documento=responsable_data["documento"] or None)
+                    for key, value in responsable_data.items():
+                        if value: 
+                            setattr(entrevistado, key, value)
+                    entrevistado.save()
+                except Entrevistado.DoesNotExist:
+                    entrevistado = Entrevistado.objects.create(
+                        nombre=responsable_data.get("nombre", ""),
+                        apellido=responsable_data.get("apellido", ""),
+                        mail=responsable_data.get("mail", ""),
+                        celular=responsable_data.get("celular", ""),
+                        documento=responsable_data.get("documento", ""),
+                    )
+            if responsable:
+                try:
+                    comedor = Comedor.objects.get(gestionar_uid=gestionar_uid)
+                    comedor.referente = responsable
+                    comedor.save()
+                except Comedor.DoesNotExist:
+                    pass
+                
+                
         else:
-            return None
-        return responsable.id
+            if responsable_data and any(responsable_data.values()):
+                try:
+                    responsable = Referente.objects.get(documento=responsable_data["documento"] or None)
+                    for key, value in responsable_data.items():
+                        if value:
+                            setattr(responsable, key, value)
+                    responsable.save()
+                except Referente.DoesNotExist:
+                    responsable = Referente.objects.create(**responsable_data)
+
+            if entrevistado_data and any(entrevistado_data.values()):
+                entrevistado_data = {
+                    "nombre": entrevistado_data.get("nombre_entrevistado", ""),
+                    "apellido": entrevistado_data.get("apellido_entrevistado", ""),
+                    "documento": entrevistado_data.get("DNI_entrevistado", ""),
+                    "mail": entrevistado_data.get("mail_entrevistado", ""),
+                    "celular": entrevistado_data.get("celular_entrevistado", ""),
+                }
+
+                if entrevistado_data["documento"]:
+                    try:
+                        entrevistado = Entrevistado.objects.get(documento=entrevistado_data["documento"])
+                        for key, value in entrevistado_data.items():
+                            if value:
+                                setattr(entrevistado, key, value)
+                        entrevistado.save()
+                    except Entrevistado.DoesNotExist:
+                        entrevistado = Entrevistado.objects.create(**entrevistado_data)
+
+            if responsable:
+                try:
+                    comedor = Comedor.objects.get(gestionar_uid=gestionar_uid)
+                    comedor.referente = responsable
+                    comedor.save()
+                except Comedor.DoesNotExist:
+                    pass
+
+        if responsable or entrevistado:
+            relevamiento = Relevamiento.objects.filter(gestionar_uid=gestionar_uid).first()
+            if relevamiento:
+                if responsable:
+                    relevamiento.responsable = responsable
+                if entrevistado:
+                    relevamiento.entrevistado = entrevistado
+                relevamiento.save()
+
+        return responsable.id if responsable else None, entrevistado.id if entrevistado else None
+
 
     @staticmethod
     def create_or_update_excepcion(excepcion_data, excepcion_instance=None):

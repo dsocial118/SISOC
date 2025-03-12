@@ -111,19 +111,15 @@ class RelevamientoSerializer(serializers.ModelSerializer):
                 self.initial_data["responsable_es_referente"] == "Y"
             )
 
-        if "responsable" in self.initial_data:
-            responsable_instance = (
-                self.instance.responsable
-                if self.instance and self.instance.responsable
-                else None
+        if "responsable" in self.initial_data or "entrevistado" in self.initial_data:
+            responsable_id, entrevistado_id = RelevamientoService.create_or_update_responsable_y_entrevistado(
+                self.initial_data.get("responsable", {}),
+                self.initial_data.get("responsable_es_referente", False),
+                self.initial_data.get("entrevistado", {}),
+                self.initial_data.get("gestionar_uid"),
             )
-            self.initial_data["responsable"] = (
-                RelevamientoService.create_or_update_responsable_relevamiento(
-                    self.initial_data["responsable"],
-                    self.initial_data["responsable_es_referente"],
-                    self.initial_data["gestionar_uid"],
-                )
-            )
+            self.initial_data["responsable"] = responsable_id
+            self.initial_data["entrevistado"] = entrevistado_id
 
         if "gestionar_uid" in self.initial_data:
             if (

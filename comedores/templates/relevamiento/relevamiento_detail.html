@@ -140,13 +140,13 @@
                         <div class="nav-item col-6 d-flex">
                             <div class="comment-text comment-text d-flex flex-column text-sm">
                                 Nombre y Apellido
-                                <span class="username fw-bold fs-5">{{ relevamiento.comedor__referente__nombre | default_if_none:"-" }} {{ relevamiento.comedor__referente__apellido | default_if_none:"-" }}</span>
+                                <span class="username fw-bold fs-5">{{ relevamiento.responsable__nombre | default_if_none:"-" }} {{ relevamiento.responsable__apellido | default_if_none:"-" }}</span>
                             </div>
                         </div>
                         <div class="nav-item col-6 d-flex">
                             <div class="comment-text comment-text d-flex flex-column text-sm">
                                 DNI de referente/responsable
-                                <span class="username fw-bold fs-5">{{ relevamiento.comedor__referente__documento | default_if_none:"-" }}</span>
+                                <span class="username fw-bold fs-5">{{ relevamiento.responsable__documento | default_if_none:"-" }}</span>
                             </div>
                         </div>
                     </div>
@@ -154,13 +154,19 @@
                         <div class="nav-item col-6 d-flex">
                             <div class="comment-text comment-text d-flex flex-column text-sm">
                                 Mail de referente/responsable
-                                <span class="username fw-bold fs-5"><a href="mailto:{{ relevamiento.comedor__referente__mail }}">{{ relevamiento.comedor__referente__mail | default_if_none:"-" }}</a></span>
+                                <span class="username fw-bold fs-5"><a href="mailto:{{ relevamiento.responsable__mail }}">{{ relevamiento.responsable__mail | default_if_none:"-" }}</a></span>
                             </div>
                         </div>
                         <div class="nav-item col-6 d-flex ">
                             <div class="comment-text comment-text d-flex flex-column text-sm">
                                 Numero de referente/responsable
-                                <span class="username fw-bold fs-5">{{ relevamiento.comedor__referente__celular | default_if_none:"-" }}</span>
+                                <span class="username fw-bold fs-5">{{ relevamiento.responsable__celular | default_if_none:"-" }}</span>
+                            </div>
+                        </div>
+                        <div class="nav-item col-6 d-flex ">
+                            <div class="comment-text comment-text d-flex flex-column text-sm">
+                                Función
+                                <span class="username fw-bold fs-5">{{ relevamiento.responsable__funcion | default_if_none:"-" }}</span>
                             </div>
                         </div>
                     </div>
@@ -245,7 +251,7 @@
         </div>
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title font-weight-bold mr-3 pt-1">Datos del responsable del relevamiento</h3>
+                <h3 class="card-title font-weight-bold mr-3 pt-1">Datos del entrevistado del relevamiento</h3>
                 <div class="card-tools">
                     <button type="button" class="btn btn-tool" data-card-widget="collapse">
                         <i class="fas fa-minus"></i>
@@ -254,42 +260,44 @@
             </div>
             <div class="card-body card-comments p-0 pb-1">
                 <div class="nav nav-pills row my-3">
-                    <div class="nav-item col-2 d-flex justify-content-center">
+                    <div class="nav-item col d-flex justify-content-center">
                         <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                             Es el referente del comedor/merendero
                             <span class="username fw-bold fs-5">{{ relevamiento.responsable_es_referente | yesno:"Si,No,-" }}</span>
                         </div>
                     </div>
-                    <div class="nav-item col-2 d-flex justify-content-center">
+                    <div class="nav-item col d-flex justify-content-center">
                         <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                             Nombre completo
-                            <span class="username fw-bold fs-5">{{ relevamiento.responsable__nombre | default_if_none:"-" }}, {{ relevamiento.responsable__apellido | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.entrevistado__nombre | default_if_none:"-" }}, {{ relevamiento.entrevistado__apellido | default_if_none:"-" }}</span>
                         </div>
                     </div>
-                    <div class="nav-item col-2 d-flex justify-content-center">
+                    <div class="nav-item col d-flex justify-content-center">
                         <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                             Mail
-                            <span class="username fw-bold fs-5">{{ relevamiento.responsable__mail | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.entrevistado__mail | default_if_none:"-" }}</span>
                         </div>
                     </div>
-                    <div class="nav-item col-2 d-flex justify-content-center">
+                    <div class="nav-item col d-flex justify-content-center">
                         <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                             Celular
-                            <span class="username fw-bold fs-5">{{ relevamiento.responsable__celular | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.entrevistado__celular | default_if_none:"-" }}</span>
                         </div>
                     </div>
-                    <div class="nav-item col-2 d-flex justify-content-center">
+                    <div class="nav-item col d-flex justify-content-center">
                         <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                             Documento
-                            <span class="username fw-bold fs-5">{{ relevamiento.responsable__documento | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.entrevistado__documento | default_if_none:"-" }}</span>
                         </div>
                     </div>
+                    {% comment %}
                     <div class="nav-item col-2 d-flex justify-content-center">
                         <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                             Funcion
                             <span class="username fw-bold fs-5">{{ relevamiento.responsable__funcion | default_if_none:"-" }}</span>
                         </div>
                     </div>
+                    {% endcomment %}
                 </div>
             </div>
         </div>
