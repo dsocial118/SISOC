@@ -8,6 +8,25 @@ from comedores.models.comedor import (
     Referente,
 )
 
+class Entrevistado(models.Model):
+
+    nombre = models.CharField(
+        max_length=255, verbose_name="Nombre del entrevistado", blank=True, null=True
+    )
+    apellido = models.CharField(
+        max_length=255, verbose_name="Apellido del entrevistado", blank=True, null=True
+    )
+    mail = models.EmailField(verbose_name="Mail del entrevistado", blank=True, null=True)
+    celular = models.BigIntegerField(
+        verbose_name="Celular del entrevistado", blank=True, null=True
+    )
+    documento = models.BigIntegerField(
+        verbose_name="Documento del entrevistado", blank=True, null=True
+    )
+    class Meta:
+        verbose_name = "Entrevistado"
+        verbose_name_plural = "Entrevistados"
+
 
 class TipoInsumos(models.Model):
     """
@@ -808,6 +827,9 @@ class Relevamiento(models.Model):
     responsable_es_referente = models.BooleanField(default=True)
     responsable = models.ForeignKey(
         to=Referente, on_delete=models.PROTECT, null=True, blank=True
+    )
+    entrevistado = models.ForeignKey(
+        to=Entrevistado, on_delete=models.PROTECT, null=True, blank=True
     )
     anexo = models.OneToOneField(
         to=Anexo, on_delete=models.PROTECT, blank=True, null=True
