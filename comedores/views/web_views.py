@@ -270,7 +270,7 @@ class ComedorDetailView(DetailView):
             {
                 "relevamientos": Relevamiento.objects.filter(comedor=self.object["id"])
                 .values("id", "fecha_visita", "estado")
-                .order_by("-estado")[:3],
+                .order_by("-estado", "-id")[:3],
                 "observaciones": Observacion.objects.filter(comedor=self.object["id"])
                 .values("id", "fecha_visita")
                 .order_by("-fecha_visita")[:3],
