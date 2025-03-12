@@ -4,6 +4,7 @@ from django.utils import timezone
 
 from comedores.models.comedor import (
     Comedor,
+    TipoDeComedor,
 )
 from comedores.models.relevamiento import (
     Anexo,
@@ -34,6 +35,10 @@ from comedores.models.relevamiento import (
     TipoModalidadPrestacion,
     TipoRecurso,
     TipoTecnologia,
+    PuntoEntregas,
+    TipoModuloBolsones,
+    FrecuenciaRecepcionRecursos,
+    TipoFrecuenciaBolsones,
 )
 from comedores.tasks import AsyncSendRelevamientoToGestionar
 
@@ -117,6 +122,8 @@ class RelevamientoService:
         relevamiento.responsable_es_referente = (
             relevamiento_form.cleaned_data["responsable_es_referente"] == "True"
         )
+        PuntoEntregas = extra_forms["punto_entregas_form"].save()
+        relevamiento.punto_entregas = PuntoEntregas
 
         relevamiento.fecha_visita = timezone.now()
 
@@ -150,6 +157,7 @@ class RelevamientoService:
                     "compras",
                     "referente",
                     "anexo",
+                    "punto_entregas",
                 )
                 .values(
                     "id",
@@ -272,6 +280,18 @@ class RelevamientoService:
                     "excepcion__latitud",
                     "excepcion__firma",
                     "imagenes",
+                    "punto_entregas__tipo_comedor__nombre",
+                    "punto_entregas__reciben_otros_recepcion",
+                    "punto_entregas__frecuencia_entrega_bolsones__nombre",
+                    "punto_entregas__tipo_modulo_bolsones__nombre",
+                    "punto_entregas__otros_punto_entregas",
+                    "punto_entregas__existe_punto_entregas",
+                    "punto_entregas__funciona_punto_entregas",
+                    "punto_entregas__observa_entregas",
+                    "punto_entregas__retiran_mercaderias_distribucion",
+                    "punto_entregas__retiran_mercaderias_comercio",
+                    "punto_entregas__reciben_dinero",
+                    "punto_entregas__registran_entrega_bolsones",
                 )
                 .get(pk=relevamiento_id)
             )
@@ -866,6 +886,119 @@ class RelevamientoService:
             )
 
         return anexo_data
+
+    @staticmethod
+    def create_or_update_punto_entregas(
+        punto_entregas_data, punto_entregas_instance=None
+    ):
+        punto_entregas_data = RelevamientoService.populate_punto_entregas_data(
+            punto_entregas_data
+        )
+
+        frecuencia_recepcion_mercaderias_queryset = (
+            TipoFrecuenciaBolsones.objects.none()
+        )
+        if "frecuencia_recepcion_mercaderias" in punto_entregas_data:
+            frecuencia_str = punto_entregas_data.pop(
+                "frecuencia_recepcion_mercaderias", ""
+            )
+            frecuencia_arr = [nombre.strip() for nombre in frecuencia_str.split(",")]
+            frecuencia_recepcion_mercaderias_queryset = (
+                TipoFrecuenciaBolsones.objects.filter(nombre__in=frecuencia_arr)
+            )
+
+        if punto_entregas_instance is None:
+            punto_entregas_instance = PuntoEntregas.objects.create(
+                **punto_entregas_data
+            )
+        else:
+            for field, value in punto_entregas_data.items():
+                if field not in [
+                    "frecuencia_recepcion_mercaderias",
+                ]:
+                    setattr(punto_entregas_instance, field, value)
+
+        if frecuencia_recepcion_mercaderias_queryset.exists():
+            punto_entregas_instance.frecuencia_recepcion_mercaderias.set(
+                frecuencia_recepcion_mercaderias_queryset
+            )
+
+        punto_entregas_instance.save()
+
+        return punto_entregas_instance
+
+    @staticmethod
+    def populate_punto_entregas_data(punto_entregas_data):
+        def get_frecuencia_entrega(nombre):
+            return (
+                TipoFrecuenciaBolsones.objects.get(
+                    nombre__iexact=punto_entregas_data[f"{nombre}"]
+                )
+                if punto_entregas_data[f"{nombre}"] != ""
+                else None
+            )
+
+        if "tipo_comedor" in punto_entregas_data:
+            punto_entregas_data["tipo_comedor"] = (
+                TipoDeComedor.objects.get(
+                    nombre__iexact=punto_entregas_data["tipo_comedor"]
+                )
+                if punto_entregas_data["tipo_comedor"]
+                else None
+            )
+
+        if "frecuencia_entrega_bolsones" in punto_entregas_data:
+            punto_entregas_data["frecuencia_entrega_bolsones"] = get_frecuencia_entrega(
+                "frecuencia_entrega_bolsones"
+            )
+
+        if "tipo_modulo_bolsones" in punto_entregas_data:
+            punto_entregas_data["tipo_modulo_bolsones"] = (
+                TipoModuloBolsones.objects.get(
+                    nombre__iexact=punto_entregas_data["tipo_modulo_bolsones"]
+                )
+                if punto_entregas_data["tipo_modulo_bolsones"] != ""
+                else None
+            )
+        else:
+            punto_entregas_data["tipo_modulo_bolsones"] = None
+
+        if "existe_punto_entregas" in punto_entregas_data:
+            punto_entregas_data["existe_punto_entregas"] = (
+                punto_entregas_data["existe_punto_entregas"] == "Y"
+            )
+
+        if "funciona_punto_entregas" in punto_entregas_data:
+            punto_entregas_data["funciona_punto_entregas"] = (
+                punto_entregas_data["funciona_punto_entregas"] == "Y"
+            )
+
+        if "observa_entregas" in punto_entregas_data:
+            punto_entregas_data["observa_entregas"] = (
+                punto_entregas_data["observa_entregas"] == "Y"
+            )
+
+        if "retiran_mercaderias_distribucion" in punto_entregas_data:
+            punto_entregas_data["retiran_mercaderias_distribucion"] = (
+                punto_entregas_data["retiran_mercaderias_distribucion"] == "Y"
+            )
+
+        if "retiran_mercaderias_comercio" in punto_entregas_data:
+            punto_entregas_data["retiran_mercaderias_comercio"] = (
+                punto_entregas_data["retiran_mercaderias_comercio"] == "Y"
+            )
+
+        if "reciben_dinero" in punto_entregas_data:
+            punto_entregas_data["reciben_dinero"] = (
+                punto_entregas_data["reciben_dinero"] == "Y"
+            )
+
+        if "registran_entrega_bolsones" in punto_entregas_data:
+            punto_entregas_data["registran_entrega_bolsones"] = (
+                punto_entregas_data["registran_entrega_bolsones"] == "Y"
+            )
+            
+        return punto_entregas_data
 
     @staticmethod
     def populate_compras_data(compras_data):
