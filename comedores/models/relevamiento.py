@@ -42,7 +42,7 @@ class TipoFrecuenciaInsumos(models.Model):
         ordering = ["nombre"]
 
 
-class TipoOtrosRecepcion(models.Model):  # TODO: Ver con Andi
+class TipoOtrosRecepcion(models.Model):  
     """
     Opciones de otros tipos de insumos recibidos
     """
@@ -821,7 +821,7 @@ class PuntoEntregas(models.Model):
         blank=True,
         null=True,
     )
-    reciben_otros_recepcion = models.CharField(  # TODO: Campo de texto libre
+    reciben_otros_recepcion = models.CharField(
         max_length=255,
         blank=True,
         null=True,
@@ -859,7 +859,7 @@ class PuntoEntregas(models.Model):
     retiran_mercaderias_distribucion = models.BooleanField(default=False)
     retiran_mercaderias_comercio = models.BooleanField(default=False)
     reciben_dinero = models.BooleanField(default=False)
-    Registran_entrega_bolsones = models.BooleanField(default=False)
+    registran_entrega_bolsones = models.BooleanField(default=False)
 
 
 class Relevamiento(models.Model):
