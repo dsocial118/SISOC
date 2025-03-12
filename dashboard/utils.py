@@ -21,7 +21,6 @@ def contar_comedores_activos():
     cache_key = "contar_comedores_activos"
     cached_value = cache.get(cache_key)
     if cached_value is None:
-        # TODO: Agregar filtro para contar solo los comedores activos
         cached_value = Comedor.objects.count()
         cache.set(cache_key, cached_value, timeout=CACHE_TIMEOUT)
     return cached_value
@@ -35,17 +34,6 @@ def contar_relevamientos_activos():
         cached_value = Relevamiento.objects.count()
         cache.set(cache_key, cached_value, timeout=CACHE_TIMEOUT)
     return cached_value
-
-
-def contar_beneficiarios():
-    """Contar el total de beneficiarios."""
-    # cache_key = "contar_beneficiarios"
-    # cached_value = cache.get(cache_key)
-    # TODO: Esperar definiciones de como se manejara el tema beneficiarios.
-    # if cached_value is None:
-    # cached_value = Comedor.objects.aggregate(total_beneficiarios=Sum('beneficiarios'))['total_beneficiarios'] or 0
-    # cache.set(cache_key, cached_value, timeout=CACHE_TIMEOUT)
-    # return cached_value
 
 
 def calcular_presupuesto_desayuno():

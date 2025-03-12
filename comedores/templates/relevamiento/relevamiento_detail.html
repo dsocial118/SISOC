@@ -998,6 +998,106 @@
         </div>
         <div class="card">
             <div class="card-header">
+                <h3 class="card-title font-weight-bold mr-3 pt-1">Punto Entrega</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body card-comments p-0 pb-1">
+                <div class="nav nav-pills row my-3">
+                    <div class="nav-item col-4 d-flex">
+                        <div class="comment-text comment-text d-flex flex-column text-sm">
+                            Tipo de comedor
+                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas__tipo_comedor__nombre| default_if_none:"-" }}</span>
+                        </div>
+                    </div>
+                    <div class="nav-item col-4 d-flex">
+                        <div class="comment-text comment-text d-flex flex-column text-sm">
+                            ¿El Punto de entrega existe o existió?
+                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas__existe_punto_entregas | yesno:"Sí,No,-" }}</span>
+                        </div>
+                    </div>
+                    <div class="nav-item col-4 d-flex">
+                        <div class="comment-text comment-text d-flex flex-column text-sm">
+                            ¿El Punto de entrega funciona?
+                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas__funciona_punto_entregas | yesno:"Sí,No,-" }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="nav nav-pills row my-3">
+                    <div class="nav-item col-4 d-flex">
+                        <div class="comment-text comment-text d-flex flex-column text-sm">
+                            ¿Se puede/pudo observar la entrega durante la visita?
+                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas__observa_entregas | yesno:"Sí,No,-" }}</span>
+                        </div>
+                    </div>
+                    <div class="nav-item col-4 d-flex">
+                        <div class="comment-text comment-text d-flex flex-column text-sm">
+                            Retiran mercadería del Punto de Distribución
+                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas__retiran_mercaderias_distribucion | yesno:"Sí,No,-" }}</span>
+                        </div>
+                    </div>
+                    <div class="nav-item col-4 d-flex">
+                        <div class="comment-text comment-text d-flex flex-column text-sm">
+                            Retiran mercadería del comercio
+                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas__retiran_mercaderias_comercio | yesno:"Sí,No,-" }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="nav nav-pills row my-3">
+                    <div class="nav-item col-4 d-flex">
+                        <div class="comment-text comment-text d-flex flex-column text-sm">
+                            Reciben dinero
+                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas__reciben_dinero | yesno:"Sí,No,-" }}</span>
+                        </div>
+                    </div>
+                    <div class="nav-item col-4 d-flex">
+                        <div class="comment-text comment-text d-flex flex-column text-sm">
+                            Otro
+                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas__reciben_otros_recepcion | default_if_none:"-" }}</span>
+                        </div>
+                    </div>
+                    <div class="nav-item col-4 d-flex">
+                        <div class="comment-text comment-text d-flex flex-column text-sm">
+                            Frecuencia recepción mercadería
+                            <span class="username fw-bold fs-5">{{ relevamiento.Entregas | default_if_none:"-" }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="nav nav-pills row my-3">
+                    <div class="nav-item col-4 d-flex">
+                        <div class="comment-text comment-text d-flex flex-column text-sm">
+                            Frecuencia de entrega de bolsones
+                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas__frecuencia_entrega_bolsones__nombre | default_if_none:"-" }}</span>
+                        </div>
+                    </div>
+                    <div class="nav-item col-4 d-flex">
+                        <div class="comment-text comment-text d-flex flex-column text-sm">
+                            Tipo de módulo/bolsones de alimento que entregan
+                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas__tipo_modulo_bolsones__nombre | default_if_none:"-" }}</span>
+                        </div>
+                    </div>
+                    <div class="nav-item col-4 d-flex">
+                        <div class="comment-text comment-text d-flex flex-column text-sm">
+                            ¿El espacio cuenta con un registro de la entrega de los módulos/bolsones de alimentos?
+                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas__registran_entrega_bolsones | yesno:"Sí,No,-" }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="nav nav-pills row my-3">
+                    <div class="nav-item col-4 d-flex">
+                        <div class="comment-text comment-text d-flex flex-column text-sm">
+                            Otros (Especificar en el punto 6- Observaciones)
+                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas__otros_punto_entregas | default_if_none:"-" }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
                 <h3 class="card-title font-weight-bold mr-3 pt-1">Observacion</h3>
                 <div class="card-tools">
                     <button type="button" class="btn btn-tool" data-card-widget="collapse">

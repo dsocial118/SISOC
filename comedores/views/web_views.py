@@ -17,6 +17,7 @@ from django.views.generic import (
     UpdateView,
     TemplateView,
 )
+from comedores.forms.relevamiento_form import PuntosEntregaForm
 
 
 from comedores.models.relevamiento import Relevamiento, ClasificacionComedor
@@ -426,6 +427,7 @@ class RelevamientoCreateView(CreateView):
             "prestacion_form": PrestacionForm,
             "referente_form": ReferenteForm,
             "anexo_form": AnexoForm,
+            "punto_entregas_form": PuntosEntregaForm,
         }
 
         for form_name, form_class in forms.items():
@@ -532,6 +534,14 @@ class RelevamientoDetailView(DetailView):
                 relevamiento.recursos.recursos_otros.all()
             )
             if relevamiento.recursos
+            else None
+        )
+
+        context["relevamiento"]["Entregas"] = (
+            RelevamientoService.separate_m2m_string(
+                relevamiento.punto_entregas.frecuencia_recepcion_mercaderias.all()
+            )
+            if relevamiento.punto_entregas
             else None
         )
 
