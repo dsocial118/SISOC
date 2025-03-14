@@ -37,7 +37,7 @@ def run_django_commands():
     load_fixtures()
     subprocess.run(["python", "manage.py", "create_local_superuser"])
     subprocess.run(["python", "manage.py", "create_groups"])
-    subprocess.run(["python", "manage.py", "runserver", "0.0.0.0:8000"])
+    subprocess.run(["gunicorn", "config.asgi:application", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8000", "--workers", "4", "--threads", "2", "--log-level", "info"])
 
 
 def load_fixture(file):
