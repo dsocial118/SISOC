@@ -387,7 +387,7 @@ class RelevamientoListView(ListView):
         comedor = self.kwargs["comedor_pk"]
         return (
             Relevamiento.objects.filter(comedor=comedor)
-            .order_by("-fecha_visita")
+            .order_by("-estado", "-id")
             .values("id", "fecha_visita", "estado")
         )
 
