@@ -11,7 +11,6 @@ def wait_for_mysql():
     user = os.getenv("DATABASE_USER", "root")
     password = os.getenv("DATABASE_PASSWORD", "root1-password2")
 
-    # Variable para controlar la espera por la base de datos
     wait_for_db = os.getenv("WAIT_FOR_DB", "true").lower() == "true"
 
     if not wait_for_db:
@@ -26,7 +25,6 @@ def wait_for_mysql():
             break
         except pymysql.MySQLError:
             time.sleep(5)
-    # Delay adicional (si fuese necesario, por ejemplo para cargar un dump)
     time.sleep(10)
     print("MySQL is up and ready")
 
@@ -37,7 +35,19 @@ def run_django_commands():
     load_fixtures()
     subprocess.run(["python", "manage.py", "create_local_superuser"])
     subprocess.run(["python", "manage.py", "create_groups"])
-    subprocess.run(["gunicorn", "config.asgi:application", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8000", "--workers", "4", "--threads", "2", "--log-level", "info"])
+    run_server()
+
+
+def run_server():
+    environment = os.getenv("ENVIRONMENT", "dev").lower()
+
+    if environment == "prd":
+        print("Running Django in production mode with Gunicorn...")
+        subprocess.run(["gunicorn", "config.asgi:application", "-k", "uvicorn.workers.UvicornWorker",
+                        "-b", "0.0.0.0:8000", "--workers", "4", "--threads", "2", "--log-level", "info"])
+    else:
+        print("Running Django in development mode...")
+        subprocess.run(["python", "manage.py", "runserver", "0.0.0.0:8000"])
 
 
 def load_fixture(file):
