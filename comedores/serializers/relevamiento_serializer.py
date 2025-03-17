@@ -122,17 +122,25 @@ class RelevamientoSerializer(serializers.ModelSerializer):
             self.initial_data["responsable_es_referente"] = (
                 self.initial_data["responsable_es_referente"] == "Y"
             )
-        
-        if "referente_comedor" in self.initial_data or "responsable_relevamiento" in self.initial_data:
-            responsable_relevamiento_id, referente_comedor_id = RelevamientoService.create_or_update_responsable_y_referente(
-                self.initial_data.get("responsable_es_referente", False),
-                self.initial_data.get("responsable_relevamiento", {}),  # Antes: "responsable"
-                self.initial_data.get("referente_comedor", {}),  # Antes: "entrevistado"
-                self.initial_data.get("gestionar_uid"),
+
+        if (
+            "referente_comedor" in self.initial_data
+            or "responsable_relevamiento" in self.initial_data
+        ):
+            responsable_relevamiento_id, referente_comedor_id = (
+                RelevamientoService.create_or_update_responsable_y_referente(
+                    self.initial_data.get("responsable_es_referente", False),
+                    self.initial_data.get(
+                        "responsable_relevamiento", {}
+                    ),  # Antes: "responsable"
+                    self.initial_data.get(
+                        "referente_comedor", {}
+                    ),  # Antes: "entrevistado"
+                    self.initial_data.get("gestionar_uid"),
+                )
             )
             self.initial_data["responsable_relevamiento"] = responsable_relevamiento_id
             self.initial_data["referente_comedor"] = referente_comedor_id
-        
 
         if "imagenes" in self.initial_data:
             self.initial_data["imagenes"] = [
