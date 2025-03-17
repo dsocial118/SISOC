@@ -7,7 +7,7 @@ class UserCreationForm(forms.ModelForm):
     groups = forms.ModelMultipleChoiceField(
         queryset=Group.objects.all(),
         required=False,
-        widget=forms.SelectMultiple(attrs={'class': 'select2'})
+        widget=forms.SelectMultiple(attrs={"class": "select2"}),
     )
 
     class Meta:
@@ -21,4 +21,3 @@ class UserCreationForm(forms.ModelForm):
             user.save()
             user.groups.set(self.cleaned_data["groups"])
         return user
-    
