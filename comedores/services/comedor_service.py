@@ -1,18 +1,75 @@
-import os
 import re
 from typing import Union
 
 from django.db.models import Q
-import requests
 
 from comedores.models.relevamiento import Relevamiento
 from comedores.forms.comedor_form import ImagenComedorForm
-from comedores.models.comedor import Comedor, Referente, ValorComida
+from comedores.models.comedor import (
+    Comedor,
+    Referente,
+    ValorComida,
+    Intervencion,
+    Nomina,
+)
 from configuraciones.models import Municipio, Provincia
 from configuraciones.models import Localidad
+from comedores.models.comedor import ImagenComedor
 
 
 class ComedorService:
+    @staticmethod
+    def get_comedor(pk_send):
+        comedor = Comedor.objects.values(
+            "id", "nombre", "provincia", "barrio", "calle", "numero"
+        ).get(pk=pk_send)
+        return comedor
+
+    @staticmethod
+    def detalle_de_intervencion(kwargs):
+        intervenciones = Intervencion.objects.filter(fk_comedor=kwargs["pk"])
+        cantidad_intervenciones = Intervencion.objects.filter(
+            fk_comedor=kwargs["pk"]
+        ).count()
+
+        return intervenciones, cantidad_intervenciones
+
+    @staticmethod
+    def detalle_de_nomina(kwargs):
+        nomina = Nomina.objects.filter(fk_comedor=kwargs["pk"])
+        cantidad_nomina_m = Nomina.objects.filter(
+            fk_comedor=kwargs["pk"], fk_sexo__sexo="Masculino"
+        ).count()
+        cantidad_nomina_f = Nomina.objects.filter(
+            fk_comedor=kwargs["pk"], fk_sexo__sexo="Femenino"
+        ).count()
+        espera = Nomina.objects.filter(
+            fk_comedor=kwargs["pk"], fk_estado__nombre="Lista de espera"
+        ).count()
+        cantidad_intervenciones = Nomina.objects.filter(fk_comedor=kwargs["pk"]).count()
+        return (
+            nomina,
+            cantidad_nomina_m,
+            cantidad_nomina_f,
+            espera,
+            cantidad_intervenciones,
+        )
+
+    @staticmethod
+    def borrar_imagenes(post):
+        pattern = re.compile(
+            r"^imagen_legajo-borrar-(\d+)$"
+        )  # Patron para encontrar los campos de imagenes a borrar
+        imagenes_ids = []
+        # Itera sobre los datos POST para encontrar los campos coincidentes con el patron
+        for key in post:
+            match = pattern.match(key)
+            if match:
+                imagen_id = match.group(1)  # Extrae el id al final del nombre del campo
+                imagenes_ids.append(imagen_id)
+
+        ImagenComedor.objects.filter(id__in=imagenes_ids).delete()
+
     @staticmethod
     def get_comedores_filtrados(query: Union[str, None] = None):
         queryset = Comedor.objects.prefetch_related("provincia", "referente").values(
@@ -131,144 +188,6 @@ class ComedorService:
             return imagen_comedor.save()
         else:
             return imagen_comedor.errors
-
-    @staticmethod
-    def send_to_gestionar(comedor: Comedor):
-        data = {
-            "Action": "Add",
-            "Properties": {"Locale": "es-ES"},
-            "Rows": [
-                {
-                    "ComedorID": comedor.id,
-                    "ID_Sisoc": comedor.id,
-                    "nombre": comedor.nombre,
-                    "comienzo": (
-                        f"01/01/{comedor.comienzo}"
-                        if comedor.comienzo
-                        else "01/01/1900"
-                    ),
-                    "TipoComedor": (
-                        comedor.tipocomedor.nombre if comedor.tipocomedor else ""
-                    ),
-                    "calle": comedor.calle if comedor.calle else "",
-                    "numero": comedor.numero if comedor.numero else "",
-                    "entre_calle_1": (
-                        comedor.entre_calle_1 if comedor.entre_calle_1 else ""
-                    ),
-                    "entre_calle_2": (
-                        comedor.entre_calle_2 if comedor.entre_calle_2 else ""
-                    ),
-                    "provincia": (
-                        comedor.provincia.nombre if comedor.provincia else ""
-                    ),
-                    "municipio": (
-                        comedor.municipio.nombre if comedor.municipio else ""
-                    ),
-                    "localidad": (
-                        comedor.localidad.nombre if comedor.localidad else ""
-                    ),
-                    "partido": comedor.partido if comedor.partido else "",
-                    "barrio": comedor.barrio if comedor.barrio else "",
-                    "codigo_postal": (
-                        comedor.codigo_postal if comedor.codigo_postal else ""
-                    ),
-                    "Referente": (
-                        comedor.referente.documento
-                        if comedor.referente and comedor.referente.documento
-                        else ""
-                    ),
-                    "Imagen": (
-                        f"{os.getenv('DOMINIO')}/media/{comedor.foto_legajo}"
-                        if comedor.foto_legajo
-                        else ""
-                    ),
-                }
-            ],
-        }
-
-        headers = {
-            "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
-        }
-
-        try:
-            response = requests.post(
-                os.getenv("GESTIONAR_API_CREAR_COMEDOR"),
-                json=data,
-                headers=headers,
-            )
-            response.raise_for_status()
-            response = response.json()
-
-            gestionar_uid = response["Rows"][0]["ComedorID"]
-            if comedor.gestionar_uid != gestionar_uid:
-                comedor.gestionar_uid = gestionar_uid
-                comedor.save()
-        except requests.exceptions.RequestException as e:
-            print("!!! Error al sincronizar creacion de COMEDOR con GESTIONAR:")
-            print(e)
-            print("!!! Con la data:")
-            print(data)
-
-    @staticmethod
-    def send_referente_to_gestionar(referente: Referente):
-        data = {
-            "Action": "Add",
-            "Properties": {"Locale": "es-ES"},
-            "Rows": [
-                {
-                    "documento": referente.documento,
-                    "nombre": referente.nombre,
-                    "apellido": referente.apellido,
-                    "mail": referente.mail,
-                    "celular": referente.celular,
-                }
-            ],
-        }
-
-        headers = {
-            "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
-        }
-
-        try:
-            if referente.documento is not None:
-                response = requests.post(
-                    os.getenv("GESTIONAR_API_CREAR_REFERENTE"),
-                    json=data,
-                    headers=headers,
-                )
-                response.raise_for_status()
-                response = response.json()
-
-        except requests.exceptions.RequestException as e:
-            print("!!! Error al sincronizar REFERENTE con GESTIONAR:")
-            print(e)
-            print("!!! Con la data:")
-            print(data)
-
-    @staticmethod
-    def remove_to_gestionar(comedor: Comedor):
-        data = {
-            "Action": "Delete",
-            "Properties": {"Locale": "es-ES"},
-            "Rows": [{"ComedorID": f"{comedor.id}"}],
-        }
-
-        headers = {
-            "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
-        }
-
-        try:
-            response = requests.post(
-                os.getenv("GESTIONAR_API_BORRAR_COMEDOR"),
-                json=data,
-                headers=headers,
-            )
-            response.raise_for_status()
-        except requests.exceptions.RequestException as e:
-            print("!!! Error al sincronizar eliminacion de COMEDOR con GESTIONAR:")
-            print(e)
-            print("!!! Con la data:")
-            print(data)
 
     @staticmethod
     def get_presupuestos(comedor_id: int):

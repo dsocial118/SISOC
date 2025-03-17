@@ -1,12 +1,10 @@
-import os
 import json
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.db import models
-import requests
 
 from comedores.models.comedor import (
     Comedor,
+    TipoDeComedor,
 )
 from comedores.models.relevamiento import (
     Anexo,
@@ -38,8 +36,12 @@ from comedores.models.relevamiento import (
     TipoModalidadPrestacion,
     TipoRecurso,
     TipoTecnologia,
+    PuntoEntregas,
+    TipoModuloBolsones,
+    FrecuenciaRecepcionRecursos,
+    TipoFrecuenciaBolsones,
 )
-from comedores.utils import format_fecha_gestionar
+from comedores.tasks import AsyncSendRelevamientoToGestionar
 
 
 class RelevamientoService:
@@ -78,7 +80,7 @@ class RelevamientoService:
 
         relevamiento.save()
 
-        RelevamientoService.send_relevamiento_to_gestionar(relevamiento)
+        AsyncSendRelevamientoToGestionar(relevamiento.id).start()
 
         return relevamiento
 
@@ -121,6 +123,8 @@ class RelevamientoService:
         relevamiento.responsable_es_referente = (
             relevamiento_form.cleaned_data["responsable_es_referente"] == "True"
         )
+        PuntoEntregas = extra_forms["punto_entregas_form"].save()
+        relevamiento.punto_entregas = PuntoEntregas
 
         relevamiento.fecha_visita = timezone.now()
 
@@ -154,6 +158,7 @@ class RelevamientoService:
                     "compras",
                     "referente",
                     "anexo",
+                    "punto_entregas",
                 )
                 .values(
                     "id",
@@ -229,19 +234,14 @@ class RelevamientoService:
                     "colaboradores__colaboradores_recibieron_capacitacion_violencia",
                     "recursos__recibe_donaciones_particulares",
                     "recursos__frecuencia_donaciones_particulares__nombre",
-                    "recursos__recursos_donaciones_particulares__nombre",
                     "recursos__recibe_estado_nacional",
                     "recursos__frecuencia_estado_nacional__nombre",
-                    "recursos__recursos_estado_nacional__nombre",
                     "recursos__recibe_estado_provincial",
                     "recursos__frecuencia_estado_provincial__nombre",
-                    "recursos__recursos_estado_provincial__nombre",
                     "recursos__recibe_estado_municipal",
                     "recursos__frecuencia_estado_municipal__nombre",
-                    "recursos__recursos_estado_municipal__nombre",
                     "recursos__recibe_otros",
                     "recursos__frecuencia_otros__nombre",
-                    "recursos__recursos_otros__nombre",
                     "compras__almacen_cercano",
                     "compras__verduleria",
                     "compras__granja",
@@ -286,6 +286,18 @@ class RelevamientoService:
                     "excepcion__latitud",
                     "excepcion__firma",
                     "imagenes",
+                    "punto_entregas__tipo_comedor__nombre",
+                    "punto_entregas__reciben_otros_recepcion",
+                    "punto_entregas__frecuencia_entrega_bolsones__nombre",
+                    "punto_entregas__tipo_modulo_bolsones__nombre",
+                    "punto_entregas__otros_punto_entregas",
+                    "punto_entregas__existe_punto_entregas",
+                    "punto_entregas__funciona_punto_entregas",
+                    "punto_entregas__observa_entregas",
+                    "punto_entregas__retiran_mercaderias_distribucion",
+                    "punto_entregas__retiran_mercaderias_comercio",
+                    "punto_entregas__reciben_dinero",
+                    "punto_entregas__registran_entrega_bolsones",
                 )
                 .get(pk=relevamiento_id)
             )
@@ -585,11 +597,42 @@ class RelevamientoService:
         recursos_data = RelevamientoService.populate_recursos_data(recursos_data)
 
         if recursos_instance is None:
-            recursos_instance = FuenteRecursos.objects.create(**recursos_data)
+            recursos_instance = FuenteRecursos.objects.create()
         else:
             for field, value in recursos_data.items():
-                setattr(recursos_instance, field, value)
-            recursos_instance.save()
+                if field not in [
+                    "recursos_donaciones_particulares",
+                    "recursos_estado_nacional",
+                    "recursos_estado_provincial",
+                    "recursos_estado_municipal",
+                    "recursos_otros",
+                ]:
+                    setattr(recursos_instance, field, value)
+
+        if "recursos_donaciones_particulares" in recursos_data:
+            recursos_instance.recursos_donaciones_particulares.set(
+                recursos_data["recursos_donaciones_particulares"]
+            )
+
+        if "recursos_estado_nacional" in recursos_data:
+            recursos_instance.recursos_estado_nacional.set(
+                recursos_data["recursos_estado_nacional"]
+            )
+
+        if "recursos_estado_provincial" in recursos_data:
+            recursos_instance.recursos_estado_provincial.set(
+                recursos_data["recursos_estado_provincial"]
+            )
+
+        if "recursos_estado_municipal" in recursos_data:
+            recursos_instance.recursos_estado_municipal.set(
+                recursos_data["recursos_estado_municipal"]
+            )
+
+        if "recursos_otros" in recursos_data:
+            recursos_instance.recursos_otros.set(recursos_data["recursos_otros"])
+
+        recursos_instance.save()
 
         return recursos_instance
 
@@ -605,11 +648,11 @@ class RelevamientoService:
             )
 
         def get_recursos(nombre):
-            return (
-                TipoRecurso.objects.get(nombre__iexact=recursos_data[f"{nombre}"])
-                if recursos_data[f"{nombre}"] != ""
-                else None
-            )
+            recursos_str = recursos_data.pop(nombre, "")
+            if recursos_str:
+                recursos_arr = [nombre.strip() for nombre in recursos_str.split(",")]
+                return TipoRecurso.objects.filter(nombre__in=recursos_arr)
+            return TipoRecurso.objects.none()
 
         if "recibe_donaciones_particulares" in recursos_data:
             recursos_data["recibe_donaciones_particulares"] = (
@@ -681,6 +724,7 @@ class RelevamientoService:
 
         if "recursos_otros" in recursos_data:
             recursos_data["recursos_otros"] = get_recursos("recursos_otros")
+
         return recursos_data
 
     @staticmethod
@@ -848,6 +892,119 @@ class RelevamientoService:
             )
 
         return anexo_data
+
+    @staticmethod
+    def create_or_update_punto_entregas(
+        punto_entregas_data, punto_entregas_instance=None
+    ):
+        punto_entregas_data = RelevamientoService.populate_punto_entregas_data(
+            punto_entregas_data
+        )
+
+        frecuencia_recepcion_mercaderias_queryset = (
+            TipoFrecuenciaBolsones.objects.none()
+        )
+        if "frecuencia_recepcion_mercaderias" in punto_entregas_data:
+            frecuencia_str = punto_entregas_data.pop(
+                "frecuencia_recepcion_mercaderias", ""
+            )
+            frecuencia_arr = [nombre.strip() for nombre in frecuencia_str.split(",")]
+            frecuencia_recepcion_mercaderias_queryset = (
+                TipoFrecuenciaBolsones.objects.filter(nombre__in=frecuencia_arr)
+            )
+
+        if punto_entregas_instance is None:
+            punto_entregas_instance = PuntoEntregas.objects.create(
+                **punto_entregas_data
+            )
+        else:
+            for field, value in punto_entregas_data.items():
+                if field not in [
+                    "frecuencia_recepcion_mercaderias",
+                ]:
+                    setattr(punto_entregas_instance, field, value)
+
+        if frecuencia_recepcion_mercaderias_queryset.exists():
+            punto_entregas_instance.frecuencia_recepcion_mercaderias.set(
+                frecuencia_recepcion_mercaderias_queryset
+            )
+
+        punto_entregas_instance.save()
+
+        return punto_entregas_instance
+
+    @staticmethod
+    def populate_punto_entregas_data(punto_entregas_data):
+        def get_frecuencia_entrega(nombre):
+            return (
+                TipoFrecuenciaBolsones.objects.get(
+                    nombre__iexact=punto_entregas_data[f"{nombre}"]
+                )
+                if punto_entregas_data[f"{nombre}"] != ""
+                else None
+            )
+
+        if "tipo_comedor" in punto_entregas_data:
+            punto_entregas_data["tipo_comedor"] = (
+                TipoDeComedor.objects.get(
+                    nombre__iexact=punto_entregas_data["tipo_comedor"]
+                )
+                if punto_entregas_data["tipo_comedor"]
+                else None
+            )
+
+        if "frecuencia_entrega_bolsones" in punto_entregas_data:
+            punto_entregas_data["frecuencia_entrega_bolsones"] = get_frecuencia_entrega(
+                "frecuencia_entrega_bolsones"
+            )
+
+        if "tipo_modulo_bolsones" in punto_entregas_data:
+            punto_entregas_data["tipo_modulo_bolsones"] = (
+                TipoModuloBolsones.objects.get(
+                    nombre__iexact=punto_entregas_data["tipo_modulo_bolsones"]
+                )
+                if punto_entregas_data["tipo_modulo_bolsones"] != ""
+                else None
+            )
+        else:
+            punto_entregas_data["tipo_modulo_bolsones"] = None
+
+        if "existe_punto_entregas" in punto_entregas_data:
+            punto_entregas_data["existe_punto_entregas"] = (
+                punto_entregas_data["existe_punto_entregas"] == "Y"
+            )
+
+        if "funciona_punto_entregas" in punto_entregas_data:
+            punto_entregas_data["funciona_punto_entregas"] = (
+                punto_entregas_data["funciona_punto_entregas"] == "Y"
+            )
+
+        if "observa_entregas" in punto_entregas_data:
+            punto_entregas_data["observa_entregas"] = (
+                punto_entregas_data["observa_entregas"] == "Y"
+            )
+
+        if "retiran_mercaderias_distribucion" in punto_entregas_data:
+            punto_entregas_data["retiran_mercaderias_distribucion"] = (
+                punto_entregas_data["retiran_mercaderias_distribucion"] == "Y"
+            )
+
+        if "retiran_mercaderias_comercio" in punto_entregas_data:
+            punto_entregas_data["retiran_mercaderias_comercio"] = (
+                punto_entregas_data["retiran_mercaderias_comercio"] == "Y"
+            )
+
+        if "reciben_dinero" in punto_entregas_data:
+            punto_entregas_data["reciben_dinero"] = (
+                punto_entregas_data["reciben_dinero"] == "Y"
+            )
+
+        if "registran_entrega_bolsones" in punto_entregas_data:
+            punto_entregas_data["registran_entrega_bolsones"] = (
+                punto_entregas_data["registran_entrega_bolsones"] == "Y"
+            )
+            
+        return punto_entregas_data
 
     @staticmethod
     def populate_compras_data(compras_data):
@@ -1247,8 +1404,7 @@ class RelevamientoService:
                     comedor.referente = responsable
                     comedor.save()
                 except Comedor.DoesNotExist:
-                    pass
-                
+                    pass # FIXME:
                 
         else:
             if responsable_data and any(responsable_data.values()):
@@ -1327,82 +1483,3 @@ class RelevamientoService:
             ]
 
         return excepcion_data
-
-    @staticmethod
-    def send_to_gestionar(relevamiento: Relevamiento):
-        try:
-            RelevamientoService.send_relevamiento_to_gestionar(relevamiento)
-
-        except Exception as e:
-            print(f"!!! Error al sincronizar creacion de RELEVAMIENTO con GESTIONAR:")
-            print(e)
-            print("!!! Con la data:")
-            print(data)
-
-    @staticmethod
-    def send_relevamiento_to_gestionar(relevamiento: Relevamiento):
-        data = {
-            "Action": "Add",
-            "Properties": {"Locale": "es-ES"},
-            "Rows": [
-                {
-                    "Relevamiento id": f"{relevamiento.id}",
-                    "Id_SISOC": f"{relevamiento.id}",
-                    "ESTADO": relevamiento.estado,
-                    "TecnicoRelevador": (
-                        f"{relevamiento.territorial_uid}"
-                        if relevamiento.territorial_uid is not None
-                        else ""
-                    ),
-                    "Fecha de visita": (
-                        format_fecha_gestionar(relevamiento.fecha_visita)
-                        if relevamiento.fecha_visita
-                        else ""
-                    ),
-                    "Id_Comedor": f"{relevamiento.comedor.id}",
-                }
-            ],
-        }
-
-        headers = {
-            "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
-        }
-
-        response = requests.post(
-            os.getenv("GESTIONAR_API_CREAR_RELEVAMIENTO"),
-            json=data,
-            headers=headers,
-        )
-        response.raise_for_status()
-        response = response.json()
-
-        gestionar_uid = response["Rows"][0]["Relevamiento id"]
-        if relevamiento.gestionar_uid != gestionar_uid:
-            relevamiento.gestionar_uid = gestionar_uid
-            relevamiento.docPDF = response["Rows"][0]["docPDF"]
-            relevamiento.save()
-
-    @staticmethod
-    def remove_to_gestionar(relevamiento: Relevamiento):
-        data = {
-            "Action": "Delete",
-            "Properties": {"Locale": "es-ES"},
-            "Rows": [{"Relevamiento id": f"{relevamiento.gestionar_uid}"}],
-        }
-
-        headers = {
-            "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
-        }
-
-        try:
-            response = requests.post(
-                os.getenv("GESTIONAR_API_BORRAR_RELEVAMIENTO"),
-                json=data,
-                headers=headers,
-            )
-            response.raise_for_status()
-        except requests.exceptions.RequestException as e:
-            print("!!! Error al sincronizar eliminacion de RELEVAMIENTO con GESTIONAR:")
-            print(e)
-            print("!!! Con la data:")
-            print(data)
