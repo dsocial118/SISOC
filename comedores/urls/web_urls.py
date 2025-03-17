@@ -23,7 +23,7 @@ from comedores.views.web_views import (
     NominaCreateView,
     NominaDeleteView,
     NominaUpdateView,
-    SubEstadosIntervencionesAJax,
+    sub_estados_intervenciones_ajax,
 )
 from configuraciones.decorators import group_required
 
@@ -140,7 +140,7 @@ urlpatterns = [
     ),
     path(
         "comedores/ajax/load-subestadosintervenciones/",
-        SubEstadosIntervencionesAJax,
+        sub_estados_intervenciones_ajax,
         name="ajax_load_subestadosintervenciones",
     ),
 ]

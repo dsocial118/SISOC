@@ -1,0 +1,23 @@
+[
+    {
+        "model": "comedores.tipomodulobolsones",
+        "pk": 1,
+        "fields": {
+            "nombre": "Alimentos secos"
+        }
+    },
+    {
+        "model": "comedores.tipomodulobolsones",
+        "pk": 2,
+        "fields": {
+            "nombre": "Alimentos frescos"
+        }
+    },
+    {
+        "model": "comedores.tipomodulobolsones",
+        "pk": 3,
+        "fields": {
+            "nombre": "Mixto"
+        }
+    }
+]
