@@ -806,9 +806,14 @@ class RelevamientoService:
             anexo_data["insumos_organizacion"] = (
                 anexo_data["insumos_organizacion"] == "Y"
             )
-
+        
         if "servicio_internet" in anexo_data:
-            anexo_data["servicio_internet"] = anexo_data["servicio_internet"] == "Y"
+            if anexo_data["servicio_internet"] != "" and anexo_data["servicio_internet"] == "Y":
+                anexo_data["servicio_internet"] = (anexo_data["servicio_internet"] == "Y")
+            elif anexo_data["servicio_internet"] != "" and anexo_data["servicio_internet"] == "N":
+                anexo_data["servicio_internet"] = False
+            elif anexo_data["servicio_internet"] == "":
+                anexo_data["servicio_internet"] = True
 
         if "zona_inundable" in anexo_data:
             anexo_data["zona_inundable"] = anexo_data["zona_inundable"] == "Y"
