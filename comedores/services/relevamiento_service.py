@@ -1002,7 +1002,7 @@ class RelevamientoService:
             punto_entregas_data["registran_entrega_bolsones"] = (
                 punto_entregas_data["registran_entrega_bolsones"] == "Y"
             )
-            
+
         return punto_entregas_data
 
     @staticmethod
@@ -1361,14 +1361,18 @@ class RelevamientoService:
         return prestacion_data
 
     @staticmethod
-    def create_or_update_responsable_y_referente(responsable_es_referente, responsable_data, referente_data, gestionar_uid):
+    def create_or_update_responsable_y_referente(
+        responsable_es_referente, responsable_data, referente_data, gestionar_uid
+    ):
         responsable = None
         referente = None
 
         # Procesar Responsable
         if responsable_data and any(responsable_data.values()):
             try:
-                responsable = Referente.objects.get(documento=responsable_data.get("documento"))
+                responsable = Referente.objects.get(
+                    documento=responsable_data.get("documento")
+                )
                 for key, value in responsable_data.items():
                     if value:
                         setattr(responsable, key, value)
@@ -1388,7 +1392,9 @@ class RelevamientoService:
             referente = responsable  # Referente y Responsable son el mismo
         elif referente_data and any(referente_data.values()):
             try:
-                referente = Referente.objects.get(documento=referente_data.get("documento"))
+                referente = Referente.objects.get(
+                    documento=referente_data.get("documento")
+                )
                 for key, value in referente_data.items():
                     if value:
                         setattr(referente, key, value)
@@ -1406,15 +1412,15 @@ class RelevamientoService:
         # Actualizar Referente del Comedor si es necesario
         if gestionar_uid and referente:
             try:
-                comedor = Comedor.objects.get(gestionar_uid=gestionar_uid)
+                comedor = Comedor.objects.get(pk=gestionar_uid)
                 comedor.referente = referente
                 comedor.save()
             except Comedor.DoesNotExist:
                 pass
 
-        return responsable.id if responsable else None, referente.id if referente else None
-
-
+        return responsable.id if responsable else None, (
+            referente.id if referente else None
+        )
 
     @staticmethod
     def create_or_update_excepcion(excepcion_data, excepcion_instance=None):
