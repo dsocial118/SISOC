@@ -1,9 +1,14 @@
 from django import forms
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 
 
 class UserCreationForm(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput, label="Contraseña")
+    groups = forms.ModelMultipleChoiceField(
+        queryset=Group.objects.all(),
+        required=False,
+        widget=forms.SelectMultiple(attrs={'class': 'select2'})
+    )
 
     class Meta:
         model = User
@@ -14,6 +19,6 @@ class UserCreationForm(forms.ModelForm):
         user.set_password(self.cleaned_data["password"])
         if commit:
             user.save()
-            for group in self.cleaned_data["groups"]:
-                group.user_set.add(user)
+            user.groups.set(self.cleaned_data["groups"])
         return user
+    
