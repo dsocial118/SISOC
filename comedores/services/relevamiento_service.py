@@ -1002,7 +1002,7 @@ class RelevamientoService:
             punto_entregas_data["registran_entrega_bolsones"] = (
                 punto_entregas_data["registran_entrega_bolsones"] == "Y"
             )
-            
+
         return punto_entregas_data
 
     @staticmethod
