@@ -8,26 +8,6 @@ from comedores.models.comedor import (
     Referente,
 )
 
-class Entrevistado(models.Model):
-
-    nombre = models.CharField(
-        max_length=255, verbose_name="Nombre del entrevistado", blank=True, null=True
-    )
-    apellido = models.CharField(
-        max_length=255, verbose_name="Apellido del entrevistado", blank=True, null=True
-    )
-    mail = models.EmailField(verbose_name="Mail del entrevistado", blank=True, null=True)
-    celular = models.BigIntegerField(
-        verbose_name="Celular del entrevistado", blank=True, null=True
-    )
-    documento = models.BigIntegerField(
-        verbose_name="Documento del entrevistado", blank=True, null=True
-    )
-    class Meta:
-        verbose_name = "Entrevistado"
-        verbose_name_plural = "Entrevistados"
-
-
 class TipoInsumos(models.Model):
     """
     Opciones de tipos de insumos recibidos por un Comedor/Merendero
@@ -825,11 +805,11 @@ class Relevamiento(models.Model):
     observacion = models.TextField(blank=True, null=True)
     docPDF = models.URLField(blank=True, null=True)
     responsable_es_referente = models.BooleanField(default=True)
-    responsable = models.ForeignKey(
-        to=Referente, on_delete=models.PROTECT, null=True, blank=True
+    responsable_relevamiento = models.ForeignKey(
+        to=Referente, on_delete=models.PROTECT, null=True, blank=True, related_name="responsable_relevamientos"
     )
-    entrevistado = models.ForeignKey(
-        to=Entrevistado, on_delete=models.PROTECT, null=True, blank=True
+    referente_comedor = models.ForeignKey(
+        to=Referente, on_delete=models.PROTECT, null=True, blank=True, related_name="referente_comedores"
     )
     anexo = models.OneToOneField(
         to=Anexo, on_delete=models.PROTECT, blank=True, null=True
