@@ -43,22 +43,22 @@ def run_server():
 
     if environment == "prd":
         print("Running Django in production mode with Gunicorn...")
-    subprocess.run(
-        [
-            "gunicorn",
-            "config.asgi:application",
-            "-k",
-            "uvicorn.workers.UvicornWorker",
-            "-b",
-            "0.0.0.0:8000",
-            "--workers",
-            "4",
-            "--threads",
-            "2",
-            "--log-level",
-            "info",
-        ]
-    )
+        subprocess.run(
+            [
+                "gunicorn",
+                "config.asgi:application",
+                "-k",
+                "uvicorn.workers.UvicornWorker",
+                "-b",
+                "0.0.0.0:8000",
+                "--workers",
+                "4",
+                "--threads",
+                "2",
+                "--log-level",
+                "info",
+            ]
+        )
     else:
         print("Running Django in development mode...")
         subprocess.run(["python", "manage.py", "runserver", "0.0.0.0:8000"])
