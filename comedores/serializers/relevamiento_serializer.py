@@ -82,6 +82,18 @@ class RelevamientoSerializer(serializers.ModelSerializer):
             self.initial_data["anexo"] = RelevamientoService.create_or_update_anexo(
                 self.initial_data["anexo"], anexo_instance
             ).id
+        if "punto_entregas" in self.initial_data:
+            punto_entregas_instance = (
+                self.instance.punto_entregas
+                if self.instance and self.instance.punto_entregas
+                else None
+            )
+            self.initial_data["punto_entregas"] = (
+                RelevamientoService.create_or_update_punto_entregas(
+                    self.initial_data["punto_entregas"], punto_entregas_instance
+                ).id
+            )
+
         if "prestacion" in self.initial_data:
             prestacion_instance = (
                 self.instance.prestacion
@@ -121,18 +133,6 @@ class RelevamientoSerializer(serializers.ModelSerializer):
             self.initial_data["responsable_relevamiento"] = responsable_relevamiento_id
             self.initial_data["referente_comedor"] = referente_comedor_id
         
-
-        if "gestionar_uid" in self.initial_data:
-            if (
-                Relevamiento.objects.filter(
-                    gestionar_uid=self.initial_data["gestionar_uid"]
-                )
-                .exclude(id=self.initial_data["sisoc_id"])
-                .exists()
-            ):
-                raise serializers.ValidationError(
-                    {"error": "gestionar_uid debe ser único si no es nulo."}
-                )
 
         if "imagenes" in self.initial_data:
             self.initial_data["imagenes"] = [

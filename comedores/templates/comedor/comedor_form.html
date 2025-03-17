@@ -38,7 +38,11 @@
     </div>
     <div class="row comedor-form">
         <div class="col-12">
-            <form method="post" class="w-100" enctype="multipart/form-data">
+            <form method="post"
+                  id="comedorForm"
+                  class="w-100"
+                  enctype="multipart/form-data"
+                  onsubmit="return confirmSubmit()">
                 <div class="card card-primary card-outline">
                     <div class="bs-stepper">
                         <div class="card-header mb-3">
@@ -111,6 +115,25 @@
                             <h3 class="card-title">Imágenes</h3>
                         </div>
                         <div class="card-body">
+                            {% for imagen in imagenes_borrar %}
+                                <div class="input-group mb-2">
+                                    <span class="input-group-text">Actualmente</span>
+                                    <div class="form-control d-flex h-auto">
+                                        <span class="text-break flex-grow-1">
+                                            <a href="" target=__blank>{{ imagen.imagen }}</a>
+                                        </span>
+                                        <span class="align-self-center ml-2">
+                                            <span class="form-check">
+                                                <input type="checkbox"
+                                                       name="imagen_legajo-borrar-{{ imagen.id }}"
+                                                       id="imagen_legajo-id-borrar"
+                                                       class="form-check-input" />
+                                                <label class="form-check-label mb-0" for="imagen_legajo-clear_id">Eliminar</label>
+                                            </span>
+                                        </span>
+                                    </div>
+                                </div>
+                            {% endfor %}
                             <input type="file" name="imagenes" class="form-control" multiple />
                             <div class="d-flex justify-content-end">
                                 <div class="card-tools d-flex align-items-start my-3">

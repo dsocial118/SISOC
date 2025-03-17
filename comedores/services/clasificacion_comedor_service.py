@@ -3,6 +3,7 @@ from comedores.models.relevamiento import (
     ClasificacionComedor,
     CategoriaComedor,
 )
+from django.db.models import Case, When, IntegerField
 
 
 class ClasificacionComedorService:
@@ -63,9 +64,33 @@ class ClasificacionComedorService:
             )
 
             if cocina.abastecimiento_combustible:
-                puntuacion += {"Gas envasado": 1, "Leña": 3, "Otro": 2}.get(
-                    cocina.abastecimiento_combustible.filter().first(), 0
-                )
+                respuesta = cocina.abastecimiento_combustible.annotate(
+                    order=Case(
+                        When(nombre="Leña", then=1),
+                        When(nombre="Otro", then=2),
+                        When(nombre="Gas envasado", then=3),
+                        default=4,
+                        output_field=IntegerField(),
+                    )
+                ).order_by("order")
+
+                for item in respuesta:
+                    respuesta_str = str(item)  # Convertir cada item a cadena
+
+                    if "Leña" in respuesta_str:
+                        puntuacion += 3
+                        break
+
+                    if "Otro" in respuesta_str:
+                        puntuacion += 2
+                        break
+
+                    if "Gas envasado" in respuesta_str:
+                        puntuacion += 1
+                        break
+                    else:
+                        puntuacion += 0
+                        break
 
             if cocina.abastecimiento_agua:
                 if cocina.abastecimiento_agua.nombre == "Pozo":
