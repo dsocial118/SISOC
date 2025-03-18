@@ -744,7 +744,7 @@ class Anexo(models.Model):
     )
     comedor_merendero = models.BooleanField(default=False)
     insumos_organizacion = models.BooleanField(default=False)
-    servicio_internet = models.BooleanField(default=False,null=True)
+    servicio_internet = models.BooleanField(default=False, null=True)
     zona_inundable = models.BooleanField(default=False)
     actividades_jardin_maternal = models.BooleanField(default=False)
     actividades_jardin_infantes = models.BooleanField(default=False)
