@@ -108,6 +108,7 @@ class ComedorService:
                 "foto_legajo",
                 "nombre",
                 "comienzo",
+                "id_externo",
                 "organizacion__nombre",
                 "programa__nombre",
                 "provincia__nombre",
