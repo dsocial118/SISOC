@@ -893,8 +893,12 @@ class Relevamiento(models.Model):
     observacion = models.TextField(blank=True, null=True)
     docPDF = models.URLField(blank=True, null=True)
     responsable_es_referente = models.BooleanField(default=True)
-    responsable = models.ForeignKey(
-        to=Referente, on_delete=models.PROTECT, null=True, blank=True
+    responsable_relevamiento = models.ForeignKey(
+        to=Referente,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="responsable_relevamientos",
     )
     anexo = models.OneToOneField(
         to=Anexo, on_delete=models.PROTECT, blank=True, null=True

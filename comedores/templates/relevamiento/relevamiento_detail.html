@@ -163,6 +163,12 @@
                                 <span class="username fw-bold fs-5">{{ relevamiento.comedor__referente__celular | default_if_none:"-" }}</span>
                             </div>
                         </div>
+                        <div class="nav-item col-6 d-flex ">
+                            <div class="comment-text comment-text d-flex flex-column text-sm">
+                                Función
+                                <span class="username fw-bold fs-5">{{ relevamiento.comedor__referente__funcion | default_if_none:"-" }}</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -254,40 +260,40 @@
             </div>
             <div class="card-body card-comments p-0 pb-1">
                 <div class="nav nav-pills row my-3">
-                    <div class="nav-item col-2 d-flex justify-content-center">
+                    <div class="nav-item col d-flex justify-content-center">
                         <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                             Es el referente del comedor/merendero
                             <span class="username fw-bold fs-5">{{ relevamiento.responsable_es_referente | yesno:"Si,No,-" }}</span>
                         </div>
                     </div>
-                    <div class="nav-item col-2 d-flex justify-content-center">
+                    <div class="nav-item col d-flex justify-content-center">
                         <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                             Nombre completo
-                            <span class="username fw-bold fs-5">{{ relevamiento.responsable__nombre | default_if_none:"-" }}, {{ relevamiento.responsable__apellido | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.responsable_relevamiento__nombre | default_if_none:"-" }}, {{ relevamiento.responsable_relevamiento__apellido | default_if_none:"-" }}</span>
                         </div>
                     </div>
-                    <div class="nav-item col-2 d-flex justify-content-center">
+                    <div class="nav-item col d-flex justify-content-center">
                         <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                             Mail
-                            <span class="username fw-bold fs-5">{{ relevamiento.responsable__mail | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.responsable_relevamiento__mail | default_if_none:"-" }}</span>
                         </div>
                     </div>
-                    <div class="nav-item col-2 d-flex justify-content-center">
+                    <div class="nav-item col d-flex justify-content-center">
                         <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                             Celular
-                            <span class="username fw-bold fs-5">{{ relevamiento.responsable__celular | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.responsable_relevamiento__celular | default_if_none:"-" }}</span>
                         </div>
                     </div>
-                    <div class="nav-item col-2 d-flex justify-content-center">
+                    <div class="nav-item col d-flex justify-content-center">
                         <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                             Documento
-                            <span class="username fw-bold fs-5">{{ relevamiento.responsable__documento | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.responsable_relevamiento__documento | default_if_none:"-" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-2 d-flex justify-content-center">
                         <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                             Funcion
-                            <span class="username fw-bold fs-5">{{ relevamiento.responsable__funcion | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.responsable_relevamiento__funcion | default_if_none:"-" }}</span>
                         </div>
                     </div>
                 </div>

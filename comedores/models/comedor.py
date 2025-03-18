@@ -149,6 +149,11 @@ class Comedor(models.Model):
     programa = models.ForeignKey(
         to=Programas, blank=True, null=True, on_delete=models.PROTECT
     )
+    id_externo = models.IntegerField(
+        verbose_name="Id Externo",
+        blank=True,
+        null=True,
+    )
     comienzo = models.IntegerField(
         validators=[
             MinValueValidator(1900),

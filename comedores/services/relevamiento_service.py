@@ -10,7 +10,6 @@ from comedores.models.relevamiento import (
     Anexo,
     CantidadColaboradores,
     Colaboradores,
-    Espacio,
     EspacioCocina,
     EspacioPrestacion,
     Excepcion,
@@ -171,12 +170,12 @@ class RelevamientoService:
                     "funcionamiento__cantidad_turnos",
                     "territorial_nombre",
                     "responsable_es_referente",
-                    "responsable__nombre",
-                    "responsable__apellido",
-                    "responsable__mail",
-                    "responsable__celular",
-                    "responsable__documento",
-                    "responsable__funcion",
+                    "responsable_relevamiento__nombre",
+                    "responsable_relevamiento__apellido",
+                    "responsable_relevamiento__mail",
+                    "responsable_relevamiento__celular",
+                    "responsable_relevamiento__documento",
+                    "responsable_relevamiento__funcion",
                     "comedor__comienzo",
                     "comedor__id",
                     "comedor__calle",
@@ -1367,24 +1366,64 @@ class RelevamientoService:
         return prestacion_data
 
     @staticmethod
-    def create_or_update_responsable_relevamiento(
-        responsable_data, responsable_es_referente, getionar_uid_send
+    def create_or_update_responsable_y_referente(
+        responsable_es_referente, responsable_data, referente_data, sisoc_id
     ):
-        if responsable_es_referente:
-            relevamiento_gestionar = Relevamiento.objects.get(pk=getionar_uid_send)
-            responsable = relevamiento_gestionar.responsable
-        elif responsable_es_referente is False:
+        responsable = None
+        referente = None
+
+        # Procesar Responsable
+        if responsable_data and any(responsable_data.values()):
             try:
                 responsable = Referente.objects.get(
-                    documento=responsable_data["documento"]
+                    documento=responsable_data.get("documento")
                 )
+                for key, value in responsable_data.items():
+                    if value:
+                        setattr(responsable, key, value)
+                responsable.save()
             except Referente.DoesNotExist:
-                responsable = Referente.objects.create(**responsable_data)
-            except Exception as e:
-                return None
-        else:
-            return None
-        return responsable.id
+                responsable = Referente.objects.create(
+                    nombre=responsable_data.get("nombre", ""),
+                    apellido=responsable_data.get("apellido", ""),
+                    mail=responsable_data.get("mail", ""),
+                    celular=responsable_data.get("celular", ""),
+                    documento=responsable_data.get("documento", ""),
+                    funcion=responsable_data.get("funcion", ""),
+                )
+
+        # Procesar Referente según responsable_es_referente
+        if responsable_es_referente:
+            referente = responsable  # Referente y Responsable son el mismo
+        elif referente_data and any(referente_data.values()):
+            try:
+                referente = Referente.objects.get(
+                    documento=referente_data.get("documento")
+                )
+                for key, value in referente_data.items():
+                    if value:
+                        setattr(referente, key, value)
+                referente.save()
+            except Referente.DoesNotExist:
+                referente = Referente.objects.create(
+                    nombre=referente_data.get("nombre", ""),
+                    apellido=referente_data.get("apellido", ""),
+                    mail=referente_data.get("mail", ""),
+                    celular=referente_data.get("celular", ""),
+                    documento=referente_data.get("documento", ""),
+                    funcion=referente_data.get("funcion", ""),
+                )
+
+        # Actualizar Referente del Comedor si es necesario
+        if sisoc_id and referente:
+            com_rel = Relevamiento.objects.get(pk=sisoc_id)
+            comedor = com_rel.comedor
+            comedor.referente = referente
+            comedor.save()
+
+        return responsable.id if responsable else None, (
+            referente.id if referente else None
+        )
 
     @staticmethod
     def create_or_update_excepcion(excepcion_data, excepcion_instance=None):
