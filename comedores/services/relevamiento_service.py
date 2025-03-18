@@ -176,12 +176,6 @@ class RelevamientoService:
                     "responsable_relevamiento__celular",
                     "responsable_relevamiento__documento",
                     "responsable_relevamiento__funcion",
-                    "referente_comedor__nombre",
-                    "referente_comedor__apellido",
-                    "referente_comedor__mail",
-                    "referente_comedor__celular",
-                    "referente_comedor__documento",
-                    "referente_comedor__funcion",
                     "comedor__comienzo",
                     "comedor__id",
                     "comedor__calle",
@@ -1362,7 +1356,7 @@ class RelevamientoService:
 
     @staticmethod
     def create_or_update_responsable_y_referente(
-        responsable_es_referente, responsable_data, referente_data, gestionar_uid
+        responsable_es_referente, responsable_data, referente_data, sisoc_id
     ):
         responsable = None
         referente = None
@@ -1410,12 +1404,13 @@ class RelevamientoService:
                 )
 
         # Actualizar Referente del Comedor si es necesario
-        if gestionar_uid and referente:
+        if sisoc_id and referente:
             try:
-                comedor = Comedor.objects.get(pk=gestionar_uid)
+                com_rel = Relevamiento.objects.get(pk=sisoc_id)
+                comedor = com_rel.comedor
                 comedor.referente = referente
                 comedor.save()
-            except Comedor.DoesNotExist:
+            except ComedoresRelevamiento.DoesNotExist:
                 pass
 
         return responsable.id if responsable else None, (

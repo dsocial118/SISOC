@@ -900,13 +900,6 @@ class Relevamiento(models.Model):
         blank=True,
         related_name="responsable_relevamientos",
     )
-    referente_comedor = models.ForeignKey(
-        to=Referente,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name="referente_comedores",
-    )
     anexo = models.OneToOneField(
         to=Anexo, on_delete=models.PROTECT, blank=True, null=True
     )

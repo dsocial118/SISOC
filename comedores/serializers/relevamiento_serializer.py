@@ -132,11 +132,11 @@ class RelevamientoSerializer(serializers.ModelSerializer):
                     self.initial_data.get("responsable_es_referente", False),
                     self.initial_data.get(
                         "responsable_relevamiento", {}
-                    ),  # Antes: "responsable"
+                    ),
                     self.initial_data.get(
                         "referente_comedor", {}
-                    ),  # Antes: "entrevistado"
-                    self.initial_data.get("gestionar_uid"),
+                    ),
+                    self.initial_data.get("sisoc_id"),
                 )
             )
             self.initial_data["responsable_relevamiento"] = responsable_relevamiento_id
