@@ -149,7 +149,7 @@ class Comedor(models.Model):
     programa = models.ForeignKey(
         to=Programas, blank=True, null=True, on_delete=models.PROTECT
     )
-    idExterno = models.IntegerField(
+    id_externo = models.IntegerField(
         verbose_name="Id Externo",
         blank=True,
         null=True,

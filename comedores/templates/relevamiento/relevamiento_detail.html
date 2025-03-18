@@ -140,13 +140,13 @@
                         <div class="nav-item col-6 d-flex">
                             <div class="comment-text comment-text d-flex flex-column text-sm">
                                 Nombre y Apellido
-                                <span class="username fw-bold fs-5">{{ relevamiento.referente_comedor__nombre | default_if_none:"-" }} {{ relevamiento.referente_comedor__apellido | default_if_none:"-" }}</span>
+                                <span class="username fw-bold fs-5">{{ relevamiento.comedor__referente__nombre | default_if_none:"-" }} {{ relevamiento.comedor__referente__apellido | default_if_none:"-" }}</span>
                             </div>
                         </div>
                         <div class="nav-item col-6 d-flex">
                             <div class="comment-text comment-text d-flex flex-column text-sm">
                                 DNI de referente/responsable
-                                <span class="username fw-bold fs-5">{{ relevamiento.referente_comedor__documento | default_if_none:"-" }}</span>
+                                <span class="username fw-bold fs-5">{{ relevamiento.comedor__referente__documento | default_if_none:"-" }}</span>
                             </div>
                         </div>
                     </div>
@@ -154,19 +154,19 @@
                         <div class="nav-item col-6 d-flex">
                             <div class="comment-text comment-text d-flex flex-column text-sm">
                                 Mail de referente/responsable
-                                <span class="username fw-bold fs-5"><a href="mailto:{{ relevamiento.referente_comedor__mail }}">{{ relevamiento.referente_comedor__mail | default_if_none:"-" }}</a></span>
+                                <span class="username fw-bold fs-5"><a href="mailto:{{ relevamiento.comedor__referente__mail }}">{{ relevamiento.comedor__referente__mail | default_if_none:"-" }}</a></span>
                             </div>
                         </div>
                         <div class="nav-item col-6 d-flex ">
                             <div class="comment-text comment-text d-flex flex-column text-sm">
                                 Numero de referente/responsable
-                                <span class="username fw-bold fs-5">{{ relevamiento.referente_comedor__celular | default_if_none:"-" }}</span>
+                                <span class="username fw-bold fs-5">{{ relevamiento.comedor__referente__celular | default_if_none:"-" }}</span>
                             </div>
                         </div>
                         <div class="nav-item col-6 d-flex ">
                             <div class="comment-text comment-text d-flex flex-column text-sm">
                                 Función
-                                <span class="username fw-bold fs-5">{{ relevamiento.referente_comedor__funcion | default_if_none:"-" }}</span>
+                                <span class="username fw-bold fs-5">{{ relevamiento.comedor__referente__funcion | default_if_none:"-" }}</span>
                             </div>
                         </div>
                     </div>
