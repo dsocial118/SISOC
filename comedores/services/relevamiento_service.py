@@ -819,7 +819,7 @@ class RelevamientoService:
             ):
                 anexo_data["servicio_internet"] = False
             elif anexo_data["servicio_internet"] == "":
-                anexo_data["servicio_internet"] = True
+                anexo_data["servicio_internet"] = None
 
         if "zona_inundable" in anexo_data:
             anexo_data["zona_inundable"] = anexo_data["zona_inundable"] == "Y"
