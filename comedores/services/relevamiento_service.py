@@ -812,7 +812,7 @@ class RelevamientoService:
                 anexo_data["servicio_internet"] != ""
                 and anexo_data["servicio_internet"] == "Y"
             ):
-                anexo_data["servicio_internet"] = anexo_data["servicio_internet"] == "Y"
+                anexo_data["servicio_internet"] = True
             elif (
                 anexo_data["servicio_internet"] != ""
                 and anexo_data["servicio_internet"] == "N"
