@@ -1405,13 +1405,10 @@ class RelevamientoService:
 
         # Actualizar Referente del Comedor si es necesario
         if sisoc_id and referente:
-            try:
-                com_rel = Relevamiento.objects.get(pk=sisoc_id)
-                comedor = com_rel.comedor
-                comedor.referente = referente
-                comedor.save()
-            except ComedoresRelevamiento.DoesNotExist:
-                pass
+            com_rel = Relevamiento.objects.get(pk=sisoc_id)
+            comedor = com_rel.comedor
+            comedor.referente = referente
+            comedor.save()
 
         return responsable.id if responsable else None, (
             referente.id if referente else None
