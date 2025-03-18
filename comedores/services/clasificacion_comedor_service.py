@@ -159,7 +159,7 @@ class ClasificacionComedorService:
                     anexo.tecnologia.nombre, 0
                 )
 
-            if not anexo.servicio_internet:
+            if anexo.servicio_internet is False:
                 puntuacion += 1
 
             if anexo.acceso_comedor:
