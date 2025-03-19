@@ -10,6 +10,7 @@ from comedores.models.relevamiento import (
     Anexo,
     CantidadColaboradores,
     Colaboradores,
+    Espacio,
     EspacioCocina,
     EspacioPrestacion,
     Excepcion,
