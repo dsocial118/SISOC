@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import sys
 
 from django.contrib.messages import constants as messages
 from dotenv import load_dotenv
@@ -193,6 +194,13 @@ DATABASES = {
         "CONN_MAX_AGE": 300,
     }
 }
+if "pytest" in sys.argv:  # DB para testing
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": ":memory:",
+        }
+    }
 
 
 # Configuracion de logging
