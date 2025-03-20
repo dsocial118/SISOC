@@ -130,12 +130,8 @@ class RelevamientoSerializer(serializers.ModelSerializer):
             responsable_relevamiento_id, referente_comedor_id = (
                 RelevamientoService.create_or_update_responsable_y_referente(
                     self.initial_data.get("responsable_es_referente", False),
-                    self.initial_data.get(
-                        "responsable_relevamiento", {}
-                    ),
-                    self.initial_data.get(
-                        "referente_comedor", {}
-                    ),
+                    self.initial_data.get("responsable_relevamiento", {}),
+                    self.initial_data.get("referente_comedor", {}),
                     self.initial_data.get("sisoc_id"),
                 )
             )
