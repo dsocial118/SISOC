@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import sys
 
 from django.contrib.messages import constants as messages
 from dotenv import load_dotenv
@@ -110,11 +111,9 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.admindocs",
-    # Cotton
+    # Librerias
     "django_cotton",
-    # Librerías de terceros
     "crispy_forms",
-    # "crispy_bootstrap4",
     "crispy_bootstrap5",
     "django_extensions",
     "import_export",
@@ -195,6 +194,13 @@ DATABASES = {
         "CONN_MAX_AGE": 300,
     }
 }
+if "pytest" in sys.argv:  # DB para testing
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": ":memory:",
+        }
+    }
 
 
 # Configuracion de logging
