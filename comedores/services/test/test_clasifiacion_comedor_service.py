@@ -1,3 +1,5 @@
+import sys
+import os
 import pytest
 from comedores.services.clasificacion_comedor_service import ClasificacionComedorService
 from comedores.models.relevamiento import (
@@ -37,7 +39,9 @@ from comedores.models.relevamiento import (
 from comedores.models.comedor import (
     Comedor
 )
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 @pytest.mark.django_db
+
 
 def test_get_puntuacion_total():
     # Preparacion: Crear un relevamiento en la BD de prueba
