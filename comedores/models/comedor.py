@@ -44,7 +44,7 @@ class SubIntervencion(models.Model):
     """
 
     nombre = models.CharField(max_length=255)
-    fk_subintervencion = models.ForeignKey(
+    subintervencion = models.ForeignKey(
         TipoIntervencion, on_delete=models.SET_NULL, default=1, null=True
     )
 
@@ -223,15 +223,15 @@ class Intervencion(models.Model):
     Guardado de las intervenciones realizadas a un legajo.
     """
 
-    fk_comedor = models.ForeignKey(Comedor, on_delete=models.SET_NULL, null=True)
-    fk_subintervencion = models.ForeignKey(
+    comedor = models.ForeignKey(Comedor, on_delete=models.SET_NULL, null=True)
+    subintervencion = models.ForeignKey(
         SubIntervencion, on_delete=models.SET_NULL, null=True
     )
-    fk_tipo_intervencion = models.ForeignKey(
+    tipo_intervencion = models.ForeignKey(
         TipoIntervencion, on_delete=models.SET_NULL, null=True
     )
     fecha = models.DateTimeField(auto_now_add=True)
-    fk_estado = models.ForeignKey(
+    estado = models.ForeignKey(
         EstadosIntervencion, on_delete=models.SET_NULL, default=1, null=True
     )
     observaciones = models.TextField(blank=True, null=True)
@@ -240,7 +240,7 @@ class Intervencion(models.Model):
         ordering = ["-fecha"]
         verbose_name = "Intervencion"
         verbose_name_plural = "Intervenciones"
-        indexes = [models.Index(fields=["fk_comedor"])]
+        indexes = [models.Index(fields=["comedor"])]
 
 
 class Nomina(models.Model):
@@ -248,22 +248,22 @@ class Nomina(models.Model):
     Guardado de las intervenciones realizadas a un legajo.
     """
 
-    fk_comedor = models.ForeignKey(Comedor, on_delete=models.SET_NULL, null=True)
+    comedor = models.ForeignKey(Comedor, on_delete=models.SET_NULL, null=True)
     fecha = models.DateTimeField(auto_now_add=True)
-    fk_estado = models.ForeignKey(
+    estado = models.ForeignKey(
         EstadosIntervencion, on_delete=models.SET_NULL, default=1, null=True
     )
     observaciones = models.TextField(blank=True, null=True)
     nombre = models.TextField(blank=True, null=True)
     apellido = models.TextField(blank=True, null=True)
     dni = models.IntegerField(blank=True, null=True)
-    fk_sexo = models.ForeignKey(Sexo, on_delete=models.SET_NULL, default=1, null=True)
+    sexo = models.ForeignKey(Sexo, on_delete=models.SET_NULL, default=1, null=True)
 
     class Meta:
         ordering = ["-fecha"]
         verbose_name = "Nomina"
         verbose_name_plural = "Nominas"
-        indexes = [models.Index(fields=["fk_comedor"])]
+        indexes = [models.Index(fields=["comedor"])]
 
 
 class ImagenComedor(models.Model):

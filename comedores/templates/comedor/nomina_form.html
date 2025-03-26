@@ -63,7 +63,7 @@
                     </div>
                     <div class="card-body ">
                         <div class="row m-0 p-0">
-                            <input type="hidden" name="fk_comedor" value="{{ object.id }}" />
+                            <input type="hidden" name="comedor" value="{{ object.id }}" />
                             <div class="col-sm-6">
                                 <div class="form-group">{{ form.nombre| as_crispy_field }}</div>
                             </div>
@@ -74,10 +74,10 @@
                                 <div class="form-group">{{ form.dni| as_crispy_field }}</div>
                             </div>
                             <div class="col-sm-3">
-                                <div class="form-group">{{ form.fk_estado| as_crispy_field }}</div>
+                                <div class="form-group">{{ form.estado| as_crispy_field }}</div>
                             </div>
                             <div class="col-sm-3">
-                                <div class="form-group">{{ form.fk_sexo| as_crispy_field }}</div>
+                                <div class="form-group">{{ form.sexo| as_crispy_field }}</div>
                             </div>
                             <div class="col-sm-12">
                                 <div class="form-group">{{ form.observaciones| as_crispy_field }}</div>

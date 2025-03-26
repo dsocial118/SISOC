@@ -1,9 +1,6 @@
 from django.db import models
 
 
-# -------------------------------CONFIGURACIONES GENERALES (se usan en tod
-
-
 class Provincia(models.Model):
     """
     Guardado de las provincias de los vecinos y vecinas registrados.
@@ -65,7 +62,7 @@ class Municipio(models.Model):
     """
 
     nombre = models.CharField(max_length=255)
-    fk_provincia = models.ForeignKey(
+    provincia = models.ForeignKey(
         Provincia, on_delete=models.SET_NULL, null=True, blank=True
     )
 
@@ -80,7 +77,7 @@ class Municipio(models.Model):
 
 class Departamento(models.Model):  # Se usa comedores ya que lo hereda localidades
     nombre = models.CharField(max_length=255)
-    fk_provincia = models.ForeignKey(
+    provincia = models.ForeignKey(
         Provincia, on_delete=models.SET_NULL, null=True, blank=True
     )
 
@@ -99,10 +96,10 @@ class Localidad(models.Model):
     """
 
     nombre = models.CharField(max_length=255)
-    fk_municipio = models.ForeignKey(
+    municipio = models.ForeignKey(
         Municipio, on_delete=models.SET_NULL, null=True, blank=True
     )
-    fk_departamento = models.ForeignKey(
+    departamento = models.ForeignKey(
         Departamento, on_delete=models.SET_NULL, null=True, blank=True
     )
 
@@ -120,13 +117,13 @@ class Asentamiento(models.Model):  # solo se usa en configuraciones
     """
 
     nombre = models.CharField(max_length=255)
-    fk_departamento = models.ForeignKey(
+    departamento = models.ForeignKey(
         Departamento, on_delete=models.SET_NULL, null=True, blank=True
     )
-    fk_municipio = models.ForeignKey(
+    municipio = models.ForeignKey(
         Municipio, on_delete=models.SET_NULL, null=True, blank=True
     )
-    fk_localidad = models.ForeignKey(
+    localidad = models.ForeignKey(
         Localidad, on_delete=models.SET_NULL, null=True, blank=True
     )
 
@@ -147,3 +144,4 @@ class Sexo(models.Model):
     class Meta:
         verbose_name = "Sexo"
         verbose_name_plural = "Sexos"
+

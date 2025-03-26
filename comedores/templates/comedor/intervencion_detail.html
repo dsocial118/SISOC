@@ -114,10 +114,10 @@
                             {% for e in intervenciones %}
                                 <tr>
                                     <td>{{ e.fecha|date:'d/m/Y' }}</td>
-                                    <td>{{ e.fk_comedor }}</td>
-                                    <td>{{ e.fk_subintervencion }}</td>
-                                    <td>{{ e.fk_tipo_intervencion }}</td>
-                                    <td>{{ e.fk_estado }}</td>
+                                    <td>{{ e.comedor }}</td>
+                                    <td>{{ e.subintervencion }}</td>
+                                    <td>{{ e.tipo_intervencion }}</td>
+                                    <td>{{ e.estado }}</td>
                                     <td>
                                         <a href="{% url 'intervencion_editar' e.id object.id %}">Editar</a>
                                     </td>
