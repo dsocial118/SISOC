@@ -59,7 +59,7 @@ from comedores.services.relevamiento_service import RelevamientoService
 def sub_estados_intervenciones_ajax(request):
     request_id = request.GET.get("id")
     if request_id:
-        sub_estados = SubIntervencion.objects.filter(fk_subintervencion=request_id)
+        sub_estados = SubIntervencion.objects.filter(subintervencion=request_id)
     else:
         sub_estados = SubIntervencion.objects.all()
 
