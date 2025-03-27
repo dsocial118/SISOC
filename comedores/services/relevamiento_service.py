@@ -1377,20 +1377,20 @@ class RelevamientoService:
         if responsable_data and any(responsable_data.values()):
             try:
                 responsable = Referente.objects.get(
-                    documento=responsable_data.get("documento")
-                )
+                    documento=responsable_data.filter("documento")
+                ).last()
                 for key, value in responsable_data.items():
                     if value:
                         setattr(responsable, key, value)
                 responsable.save()
             except Referente.DoesNotExist:
                 responsable = Referente.objects.create(
-                    nombre=responsable_data.get("nombre", ""),
-                    apellido=responsable_data.get("apellido", ""),
-                    mail=responsable_data.get("mail", ""),
-                    celular=responsable_data.get("celular", ""),
-                    documento=responsable_data.get("documento", ""),
-                    funcion=responsable_data.get("funcion", ""),
+                    nombre=responsable_data.get("nombre", None),
+                    apellido=responsable_data.get("apellido", None),
+                    mail=responsable_data.get("mail", None),
+                    celular=responsable_data.get("celular", None),
+                    documento=responsable_data.get("documento", None),
+                    funcion=responsable_data.get("funcion", None),
                 )
 
         # Procesar Referente según responsable_es_referente
@@ -1398,21 +1398,21 @@ class RelevamientoService:
             referente = responsable  # Referente y Responsable son el mismo
         elif referente_data and any(referente_data.values()):
             try:
-                referente = Referente.objects.get(
+                referente = Referente.objects.filter(
                     documento=referente_data.get("documento")
-                )
+                ).last()
                 for key, value in referente_data.items():
                     if value:
                         setattr(referente, key, value)
                 referente.save()
             except Referente.DoesNotExist:
                 referente = Referente.objects.create(
-                    nombre=referente_data.get("nombre", ""),
-                    apellido=referente_data.get("apellido", ""),
-                    mail=referente_data.get("mail", ""),
-                    celular=referente_data.get("celular", ""),
-                    documento=referente_data.get("documento", ""),
-                    funcion=referente_data.get("funcion", ""),
+                    nombre=referente_data.get("nombre", None),
+                    apellido=referente_data.get("apellido", None),
+                    mail=referente_data.get("mail", None),
+                    celular=referente_data.get("celular", None),
+                    documento=referente_data.get("documento", None),
+                    funcion=referente_data.get("funcion", None),
                 )
 
         # Actualizar Referente del Comedor si es necesario
