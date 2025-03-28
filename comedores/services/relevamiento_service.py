@@ -1373,17 +1373,17 @@ class RelevamientoService:
         responsable = None
         referente = None
 
-        # Procesar Responsable
         if responsable_data and any(responsable_data.values()):
-            try:
-                responsable = Referente.objects.filter(
-                    documento=responsable_data.get("documento")
-                ).last()
+            responsable = Referente.objects.filter(
+                documento=responsable_data.get("documento")
+            ).last()
+            
+            if responsable:
                 for key, value in responsable_data.items():
                     if value:
                         setattr(responsable, key, value)
                 responsable.save()
-            except Referente.DoesNotExist:
+            else:
                 responsable = Referente.objects.create(
                     nombre=responsable_data.get("nombre", None),
                     apellido=responsable_data.get("apellido", None),
@@ -1393,19 +1393,20 @@ class RelevamientoService:
                     funcion=responsable_data.get("funcion", None),
                 )
 
-        # Procesar Referente según responsable_es_referente
         if responsable_es_referente:
             referente = responsable  # Referente y Responsable son el mismo
         elif referente_data and any(referente_data.values()):
-            try:
-                referente = Referente.objects.filter(
-                    documento=referente_data.get("documento")
-                ).last()
+            referente = Referente.objects.filter(
+                documento=referente_data.get("documento")
+            ).last()
+
+            if referente:
                 for key, value in referente_data.items():
                     if value:
                         setattr(referente, key, value)
                 referente.save()
-            except Referente.DoesNotExist:
+
+            else:
                 referente = Referente.objects.create(
                     nombre=referente_data.get("nombre", None),
                     apellido=referente_data.get("apellido", None),
@@ -1415,7 +1416,6 @@ class RelevamientoService:
                     funcion=referente_data.get("funcion", None),
                 )
 
-        # Actualizar Referente del Comedor si es necesario
         if sisoc_id and referente:
             com_rel = Relevamiento.objects.get(pk=sisoc_id)
             comedor = com_rel.comedor
