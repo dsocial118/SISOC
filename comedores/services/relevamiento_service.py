@@ -1376,8 +1376,8 @@ class RelevamientoService:
         # Procesar Responsable
         if responsable_data and any(responsable_data.values()):
             try:
-                responsable = Referente.objects.get(
-                    documento=responsable_data.filter("documento")
+                responsable = Referente.objects.filter(
+                    documento=responsable_data.get("documento")
                 ).last()
                 for key, value in responsable_data.items():
                     if value:
