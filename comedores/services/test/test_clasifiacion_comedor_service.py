@@ -39,15 +39,86 @@ from comedores.models.relevamiento import (
 from comedores.models.comedor import (
     Comedor
 )
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 @pytest.mark.django_db
 
 
 def test_get_puntuacion_total():
     # Preparacion: Crear un relevamiento en la BD de prueba
-    relevamiento = Relevamiento.objects.create(
-        estado="Finalizado",
-        comedor=Comedor.objects.create(
+    espacio_abastecimiento_agua = TipoAgua.objects.create(nombre="Red pública")
+    espacio_prestacio_frecuencia_limpieza = FrecuenciaLimpieza.objects.create(nombre="Diaria")
+    frecuencia_recepcion_recursos = FrecuenciaRecepcionRecursos.objects.create(nombre="Diaria")
+    recursos_tipo_recursos = TipoRecurso.objects.create(nombre="Alimentos")
+    frecuencia_tipo_bolsones = TipoFrecuenciaBolsones.objects.create(nombre="Diaria")
+
+    fuente_recursos = FuenteRecursos.objects.create(
+            recibe_donaciones_particulares=False,
+            frecuencia_donaciones_particulares=frecuencia_recepcion_recursos,
+            recibe_estado_nacional=False,
+            frecuencia_estado_nacional=frecuencia_recepcion_recursos,
+            recibe_estado_provincial=False,
+            frecuencia_estado_provincial=frecuencia_recepcion_recursos,
+            recibe_estado_municipal=False,
+            frecuencia_estado_municipal=frecuencia_recepcion_recursos,
+            recibe_otros=False,
+            frecuencia_otros=frecuencia_recepcion_recursos,
+    )
+    fuente_recursos.recursos_donaciones_particulares.set([recursos_tipo_recursos])
+    fuente_recursos.recursos_estado_nacional.set([recursos_tipo_recursos])
+    fuente_recursos.recursos_estado_provincial.set([recursos_tipo_recursos])
+    fuente_recursos.recursos_estado_municipal.set([recursos_tipo_recursos])
+    fuente_recursos.recursos_otros.set([recursos_tipo_recursos])
+
+    punto_de_entrega = PuntoEntregas.objects.create(
+            tipo_comedor= TipoDeComedor.objects.create(nombre="Comedor"),
+            reciben_otros_recepcion=None,
+            frecuencia_entrega_bolsones=frecuencia_tipo_bolsones,
+            tipo_modulo_bolsones=TipoModuloBolsones.objects.create(nombre="Bolsón"),
+            otros_punto_entregas=None,
+            existe_punto_entregas=False,
+            funciona_punto_entregas=False,
+            observa_entregas=False,
+            retiran_mercaderias_distribucion=False,
+            retiran_mercaderias_comercio=False,
+            reciben_dinero=False,
+            registran_entrega_bolsones=False,
+    )
+    punto_de_entrega.frecuencia_recepcion_mercaderias.set([frecuencia_tipo_bolsones])
+
+    espacio_cocina = EspacioCocina.objects.create(
+        espacio_elaboracion_alimentos=False,
+        almacenamiento_alimentos_secos=False,
+        heladera=False,
+        freezer=False,
+        recipiente_residuos_organicos=False,
+        recipiente_residuos_reciclables=False,
+        otros_residuos=False,
+        recipiente_otros_residuos=False,
+        instalacion_electrica=False,
+        abastecimiento_agua=espacio_abastecimiento_agua,
+        abastecimiento_agua_otro=None,
+    )
+    tipo_combustible = TipoCombustible.objects.create(nombre="Gas")
+    espacio_cocina.abastecimiento_combustible.set([tipo_combustible])
+
+    espacio_prestacion = EspacioPrestacion.objects.create(
+        espacio_equipado=False,
+        tiene_ventilacion=False,
+        tiene_salida_emergencia=False,
+        salida_emergencia_senializada=False,
+        tiene_equipacion_incendio=False,
+        tiene_botiquin=False,
+        tiene_buena_iluminacion=False,
+        tiene_sanitarios=False,
+        desague_hinodoro=TipoDesague.objects.create(nombre="Cloacal"),
+        gestion_quejas=TipoGestionQuejas.objects.create(nombre="Libro de quejas"),
+        gestion_quejas_otro=None,
+        informacion_quejas=False,
+        frecuencia_limpieza=espacio_prestacio_frecuencia_limpieza,   
+    )
+
+    espacio_tipo_espacio_fisico = TipoEspacio.objects.create(nombre="Espacio alquilado")
+    comedor_test = Comedor.objects.create(
             nombre="Comedor Test",
             organizacion=None,
             programa=None,
@@ -72,7 +143,11 @@ def test_get_puntuacion_total():
             codigo_postal=None,
             referente=None,
             foto_legajo=None,
-        ),
+        )
+    
+    relevamiento = Relevamiento.objects.create(
+        estado="Finalizado",
+        comedor=comedor_test,
         fecha_visita=None,
         territorial_nombre=None,
         territorial_uid=None,
@@ -82,41 +157,14 @@ def test_get_puntuacion_total():
             cantidad_turnos=1,
         ),
         espacio=Espacio.objects.create(
-            tipo_espacio_fisico=TipoEspacio.objects.create(nombre="Espacio alquilado"),
+            tipo_espacio_fisico=espacio_tipo_espacio_fisico,
             espacio_fisico_otro="Otro espacio",
-            cocina=EspacioCocina.objects.create(
-                espacio_elaboracion_alimentos=False,
-                almacenamiento_alimentos_secos=False,
-                heladera=False,
-                freezer=False,
-                recipiente_residuos_organicos=False,
-                recipiente_residuos_reciclables=False,
-                otros_residuos=False,
-                recipiente_otros_residuos=False,
-                abastecimiento_combustible=TipoCombustible.objects.create(nombre="Gas"),
-                abastecimiento_agua=TipoAgua.objects.create(nombre="Red pública"),
-                abastecimiento_agua_otro=None,
-                instalacion_electrica=False,
-            ),
-            prestacion=EspacioPrestacion.objects.create(
-                espacio_equipado=False,
-                tiene_ventilacion=False,
-                tiene_salida_emergencia=False,
-                salida_emergencia_senializada=False,
-                tiene_equipacion_incendio=False,
-                tiene_botiquin=False,
-                tiene_buena_iluminacion=False,
-                tiene_sanitarios=False,
-                desague_hinodoro=TipoDesague.objects.create(nombre="Cloacal"),
-                gestion_quejas=TipoGestionQuejas.objects.create(nombre="Libro de quejas"),
-                gestion_quejas_otro=None,
-                informacion_quejas=False,
-                frecuencia_limpieza=FrecuenciaLimpieza.objects.create(nombre="Diaria"),
-            ),
+            cocina=espacio_cocina,
+            prestacion=espacio_prestacion,
         ),
         colaboradores=Colaboradores.objects.create(
             cantidad_colaboradores=CantidadColaboradores.objects.create(
-                cantidad=1,
+                nombre="1",
             ),
             colaboradores_capacitados_alimentos=False,
             colaboradores_recibieron_capacitacion_alimentos=False,
@@ -124,23 +172,7 @@ def test_get_puntuacion_total():
             colaboradores_recibieron_capacitacion_emergencias=False,
             colaboradores_recibieron_capacitacion_violencia=False,
         ),
-        recursos=FuenteRecursos.objects.create(
-            recibe_donaciones_particulares=False,
-            frecuencia_donaciones_particulares=FrecuenciaRecepcionRecursos.objects.create(nombre="Diaria"),
-            recursos_donaciones_particulares=TipoRecurso.objects.create(nombre="Alimentos"),
-            recibe_estado_nacional=False,
-            frecuencia_estado_nacional=FrecuenciaRecepcionRecursos.objects.create(nombre="Diaria"),
-            recursos_estado_nacional=TipoRecurso.objects.create(nombre="Alimentos"),
-            recibe_estado_provincial=False,
-            frecuencia_estado_provincial=FrecuenciaRecepcionRecursos.objects.create(nombre="Diaria"),
-            recursos_estado_provincial=TipoRecurso.objects.create(nombre="Alimentos"),
-            recibe_estado_municipal=False,
-            frecuencia_estado_municipal=FrecuenciaRecepcionRecursos.objects.create(nombre="Diaria"),
-            recursos_estado_municipal=TipoRecurso.objects.create(nombre="Alimentos"),
-            recibe_otros=False,
-            frecuencia_otros=FrecuenciaRecepcionRecursos.objects.create(nombre="Diaria"),
-            recursos_otros=TipoRecurso.objects.create(nombre="Alimentos"),
-        ),
+        recursos=fuente_recursos,
         compras=FuenteCompras.objects.create(
             almacen_cercano=False,
             verduleria=False,
@@ -151,7 +183,7 @@ def test_get_puntuacion_total():
             mercado_central=False,
             ferias_comunales=False,
             mayoristas=False,
-            otros=False,
+            otro=False,
         ),
         prestacion=Prestacion.objects.create(
             lunes_desayuno_actual = None,
@@ -217,21 +249,7 @@ def test_get_puntuacion_total():
             domingo_cena_actual = None,
             domingo_cena_espera = None,
         ),
-        punto_entregas = PuntoEntregas.objects.create(
-            tipo_comedor= TipoDeComedor.objects.create(nombre="Comedor"),
-            reciben_otros_recepcion=None,
-            frecuencia_recepcion_mercaderias=TipoFrecuenciaBolsones.objects.create(nombre="Diaria"),
-            frecuencia_entrega_bolsones=TipoFrecuenciaBolsones.objects.create(nombre="Diaria"),
-            tipo_modulo_bolsones=TipoModuloBolsones.objects.create(nombre="Bolsón"),
-            otros_punto_entregas=None,
-            existe_punto_entregas=False,
-            funciona_punto_entregas=False,
-            observa_entregas=False,
-            retiran_mercaderias_distribucion=False,
-            retiran_mercaderias_comercio=False,
-            reciben_dinero=False,
-            registran_entrega_bolsones=False,
-        ),
+        punto_entregas = punto_de_entrega,
         excepcion=Excepcion.objects.create(
             motivo=MotivoExcepcion.objects.create(nombre="No hay personal"),
             descripcion=None,
