@@ -1,14 +1,18 @@
 import pytest
 from comedores.models.comedor import Comedor
-from comedores.models.relevamiento import Relevamiento, TipoEspacio, TipoModalidadPrestacion, CantidadColaboradores
+from comedores.models.relevamiento import (
+    Relevamiento,
+    TipoEspacio,
+    TipoModalidadPrestacion,
+    CantidadColaboradores,
+)
 from comedores.serializers.relevamiento_serializer import RelevamientoSerializer
 from configuraciones.models import Provincia
 
 
-
 @pytest.mark.django_db
 def test_clean_relevamiento_serializer():
-    
+
     # Preparación: Crear un comedor y un relevamiento en la BD de prueba
     provincia = Provincia.objects.create(nombre="Provincia Test")
     comedor = Comedor.objects.create(
@@ -19,7 +23,9 @@ def test_clean_relevamiento_serializer():
         numero=123,
     )
 
-    modalidad_prestacion = TipoModalidadPrestacion.objects.create(nombre="Servicio en el lugar")
+    modalidad_prestacion = TipoModalidadPrestacion.objects.create(
+        nombre="Servicio en el lugar"
+    )
     cantidad_colaboradores = CantidadColaboradores.objects.create(nombre="1 a 3")
     tipo_espacio = TipoEspacio.objects.create(nombre="Espacio Propio")
 
@@ -51,7 +57,7 @@ def test_clean_relevamiento_serializer():
             "recibe_donaciones_particulares": True,
         },
         "compras": {
-        "almacen_cercano": True,
+            "almacen_cercano": True,
         },
         "anexo": {
             "comedor_merendero": True,
@@ -69,12 +75,17 @@ def test_clean_relevamiento_serializer():
     }
 
     # Crear el serializer con los datos iniciales y el relevamiento existente
-    serializer = RelevamientoSerializer(instance=relevamiento, data=initial_data, partial=True).clean()
+    serializer = RelevamientoSerializer(
+        instance=relevamiento, data=initial_data, partial=True
+    ).clean()
     if serializer.is_valid(raise_exception=True):
         serializer.save()
-    
+
     # Verificar los valores procesados por el método clean
-    assert serializer.instance.fecha_visita.strftime("%-d/%-m/%Y %H:%M") == "5/3/2025 14:29"
+    assert (
+        serializer.instance.fecha_visita.strftime("%-d/%-m/%Y %H:%M")
+        == "5/3/2025 14:29"
+    )
     assert serializer.instance.territorial_nombre == "Territorial Test"
     assert serializer.instance.territorial_uid == "12345"
     assert serializer.instance.imagenes == [

@@ -6,6 +6,7 @@ from comedores.models.relevamiento import Relevamiento
 
 TIMEOUT = 360  # Segundos máximos de espera por respuesta
 
+
 # FIXME: Evitar que se ejecute el hilo al correr los tests
 class AsyncSendRelevamientoToGestionar(threading.Thread):
     """Hilo para enviar relevamiento a GESTIONAR asincronamente"""
