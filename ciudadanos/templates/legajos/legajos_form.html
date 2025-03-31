@@ -3,12 +3,12 @@
 {% load static %}
 ;
 {% block head %}{% endblock %}
-{% block title %}Legajos{% endblock %}
-{% block titulo-pagina %}Legajos{% endblock %}
+{% block title %}Ciudadano{% endblock %}
+{% block titulo-pagina %}Ciudadano{% endblock %}
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right px-3">
         <li class="breadcrumb-item">
-            <a href="{% url 'legajos_listar' %}">Legajos</a>
+            <a href="{% url 'legajos_listar' %}">Ciudadano</a>
         </li>
         {% if request.resolver_match.url_name == "legajos_editar" %}
             <li class="breadcrumb-item">

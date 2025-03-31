@@ -3,10 +3,9 @@ from datetime import date
 from django import forms
 from django.core.validators import MaxValueValidator, MinValueValidator
 
-from legajos.models import EstadoRelacion, Legajos, VinculoFamiliar
-from usuarios.validators import MaxSizeFileValidator
-
-from .models import (
+from ciudadanos.models import (
+    CategoriaAlertas,
+    Ciudadano,
     DimensionEconomia,
     DimensionEducacion,
     DimensionFamilia,
@@ -14,18 +13,20 @@ from .models import (
     DimensionTrabajo,
     DimensionVivienda,
     Intervencion,
-    LegajoAlertas,
-    LegajoAsentamientos,
-    LegajoDepartamento,
-    LegajoGrupoFamiliar,
-    LegajoGrupoHogar,
-    LegajoLocalidad,
-    LegajoMunicipio,
-    Legajos,
-    LegajosArchivos,
-    LegajosDerivaciones,
+    Alerta,
+    GrupoFamiliar,
     Llamado,
-    LegajoProgramas,
+    CiudadanoPrograma,
+    EstadoRelacion,
+    VinculoFamiliar,
+)
+from config.validators import MaxSizeFileValidator
+from configuraciones.models import (
+    Asentamiento,
+    Departamento,
+    Localidad,
+    Municipio,
+    Provincia,
 )
 
 BOOLEAN_CHOICE = [
@@ -52,7 +53,7 @@ class MultipleFileField(forms.FileField):
         return result
 
 
-class LegajosForm(forms.ModelForm):
+class CiudadanoForm(forms.ModelForm):
     foto = forms.ImageField(
         required=False,
         label="Foto Legajo",
@@ -71,22 +72,22 @@ class LegajosForm(forms.ModelForm):
     municipio = forms.ModelChoiceField(
         required=False,
         label="Municipio",
-        queryset=LegajoMunicipio.objects.none(),
+        queryset=Municipio.objects.none(),
     )
     localidad = forms.ModelChoiceField(
         required=False,
         label="Localidad",
-        queryset=LegajoLocalidad.objects.none(),
+        queryset=Localidad.objects.none(),
     )
     departamento = forms.ModelChoiceField(
         required=False,
         label="Departamento",
-        queryset=LegajoDepartamento.objects.none(),
+        queryset=Departamento.objects.none(),
     )
     asentamiento = forms.ModelChoiceField(
         required=False,
         label="Asentamiento",
-        queryset=LegajoAsentamientos.objects.none(),
+        queryset=Asentamiento.objects.none(),
     )
 
     def __init__(self, *args, **kwargs):
@@ -94,54 +95,46 @@ class LegajosForm(forms.ModelForm):
         # Configurar el queryset del campo 'provincia' para cargar solo las provincias
         self.fields["provincia"].queryset = Provincia.objects.all()
         # Configurar los querysets de los campos 'municipio' y 'localidad' para que estén vacíos inicialmente
-        self.fields["municipio"].queryset = LegajoMunicipio.objects.none()
-        self.fields["localidad"].queryset = LegajoLocalidad.objects.none()
-        self.fields["departamento"].queryset = LegajoDepartamento.objects.none()
-        self.fields["asentamiento"].queryset = LegajoAsentamientos.objects.none()
+        self.fields["municipio"].queryset = Municipio.objects.none()
+        self.fields["localidad"].queryset = Localidad.objects.none()
+        self.fields["departamento"].queryset = Departamento.objects.none()
+        self.fields["asentamiento"].queryset = Asentamiento.objects.none()
         # Actualizar los querysets si los datos están presentes en el formulario
         if "municipio" in self.data:
             try:
                 municipio_id = int(self.data.get("municipio"))
-                self.fields["municipio"].queryset = LegajoMunicipio.objects.filter(
+                self.fields["municipio"].queryset = Municipio.objects.filter(
                     id=municipio_id
                 ).order_by("nombre")
             except (ValueError, TypeError):
-                self.fields["municipio"].queryset = LegajoMunicipio.objects.none()
+                self.fields["municipio"].queryset = Municipio.objects.none()
 
         if "localidad" in self.data:
             try:
                 localidad_id = int(self.data.get("localidad"))
-                self.fields["localidad"].queryset = LegajoLocalidad.objects.filter(
+                self.fields["localidad"].queryset = Localidad.objects.filter(
                     id=localidad_id
                 ).order_by("nombre")
             except (ValueError, TypeError):
-                self.fields["localidad"].queryset = LegajoLocalidad.objects.none()
+                self.fields["localidad"].queryset = Localidad.objects.none()
 
         if "departamento" in self.data:
             try:
                 departamento_id = int(self.data.get("departamento"))
-                self.fields["departamento"].queryset = (
-                    LegajoDepartamento.objects.filter(id=departamento_id).order_by(
-                        "nombre"
-                    )
-                )
+                self.fields["departamento"].queryset = Departamento.objects.filter(
+                    id=departamento_id
+                ).order_by("nombre")
             except (ValueError, TypeError):
-                self.fields["departamento"].queryset = (
-                    LegajoDepartamento.objects.none()
-                )
+                self.fields["departamento"].queryset = Departamento.objects.none()
 
         if "asentamiento" in self.data:
             try:
                 asentameinto_id = int(self.data.get("asentamiento"))
-                self.fields["asentamiento"].queryset = (
-                    LegajoAsentamientos.objects.filter(id=asentameinto_id).order_by(
-                        "nombre"
-                    )
-                )
+                self.fields["asentamiento"].queryset = Asentamiento.objects.filter(
+                    id=asentameinto_id
+                ).order_by("nombre")
             except (ValueError, TypeError):
-                self.fields["asentamiento"].queryset = (
-                    LegajoAsentamientos.objects.none()
-                )
+                self.fields["asentamiento"].queryset = Asentamiento.objects.none()
 
     def clean(self):
         cleaned_data = super().clean()
@@ -158,7 +151,7 @@ class LegajosForm(forms.ModelForm):
             and fecha_nacimiento
             and apellido
             and nombre
-            and Legajos.objects.filter(
+            and Ciudadano.objects.filter(
                 tipo_doc=tipo_doc,
                 documento=documento,
                 apellido=apellido,
@@ -180,7 +173,7 @@ class LegajosForm(forms.ModelForm):
         return cleaned_data
 
     class Meta:
-        model = Legajos
+        model = Ciudadano
         exclude = (
             "creado",
             "modificado",
@@ -236,22 +229,22 @@ class LegajosUpdateForm(forms.ModelForm):
     municipio = forms.ModelChoiceField(
         required=False,
         label="Municipio",
-        queryset=LegajoMunicipio.objects.all(),
+        queryset=Municipio.objects.all(),
     )
     localidad = forms.ModelChoiceField(
         required=False,
         label="Localidad",
-        queryset=LegajoLocalidad.objects.all(),
+        queryset=Localidad.objects.all(),
     )
     departamento = forms.ModelChoiceField(
         required=False,
         label="Departamento",
-        queryset=LegajoDepartamento.objects.all(),
+        queryset=Departamento.objects.all(),
     )
     asentamiento = forms.ModelChoiceField(
         required=False,
         label="Asentamiento",
-        queryset=LegajoAsentamientos.objects.all(),
+        queryset=Asentamiento.objects.all(),
     )
 
     def __init__(self, *args, **kwargs):
@@ -292,7 +285,7 @@ class LegajosUpdateForm(forms.ModelForm):
             # Verificar si el tipo o el documento han cambiado
             if (
                 tipo_doc != instance.tipo_doc or documento != instance.documento
-            ) and Legajos.objects.filter(
+            ) and Ciudadano.objects.filter(
                 tipo_doc=tipo_doc, documento=documento
             ).exists():
                 self.add_error(
@@ -308,7 +301,7 @@ class LegajosUpdateForm(forms.ModelForm):
         return cleaned_data
 
     class Meta:
-        model = Legajos
+        model = Ciudadano
         exclude = ("creado", "modificado", "m2m_familiares", "m2m_alertas")
         widgets = {
             "estado": forms.Select(choices=[(True, "Activo"), (False, "Inactivo")]),
@@ -339,7 +332,7 @@ class LegajosUpdateForm(forms.ModelForm):
 
 class LegajoGrupoFamiliarForm(forms.ModelForm):
     class Meta:
-        model = LegajoGrupoFamiliar
+        model = GrupoFamiliar
         fields = "__all__"
 
 
@@ -359,7 +352,7 @@ class NuevoLegajoFamiliarForm(forms.ModelForm):
     )
 
     class Meta:
-        model = Legajos
+        model = Ciudadano
         fields = [
             "apellido",
             "nombre",
@@ -385,7 +378,7 @@ class NuevoLegajoFamiliarForm(forms.ModelForm):
         fecha_nacimiento = cleaned_data.get("fecha_nacimiento")
 
         # Validación de campo único, combinación de DNI + Tipo DNI
-        if Legajos.objects.filter(tipo_doc=tipo_doc, documento=documento).exists():
+        if Ciudadano.objects.filter(tipo_doc=tipo_doc, documento=documento).exists():
             self.add_error(
                 "documento", "Ya existe un legajo con ese TIPO y NÚMERO de documento."
             )
@@ -409,7 +402,7 @@ class NuevoLegajoFamiliarForm(forms.ModelForm):
 #############HOGAR###########
 
 
-class LegajoGrupoHogarForm(forms.ModelForm):
+class GrupoHogarForm(forms.ModelForm):
     vinculo = forms.ModelChoiceField(
         queryset=VinculoFamiliar.objects.all(), required=True, label="Vínculo Familiar"
     )
@@ -437,7 +430,7 @@ class LegajoGrupoHogarForm(forms.ModelForm):
         documento = cleaned_data.get("documento")
         fecha_nacimiento = cleaned_data.get("fecha_nacimiento")
         # Validación de campo unico, combinación de DNI + Tipo DNI
-        if Legajos.objects.filter(tipo_doc=tipo_doc, documento=documento).exists():
+        if Ciudadano.objects.filter(tipo_doc=tipo_doc, documento=documento).exists():
             self.add_error(
                 "documento", "Ya existe un legajo con ese TIPO y NÚMERO de documento."
             )
@@ -450,7 +443,7 @@ class LegajoGrupoHogarForm(forms.ModelForm):
         return cleaned_data
 
 
-class LegajosAlertasForm(forms.ModelForm):
+class AlertasForm(forms.ModelForm):
     categoria = forms.ModelChoiceField(
         required=True,
         label="Categoría",
@@ -470,15 +463,13 @@ class LegajosAlertasForm(forms.ModelForm):
         if (
             alerta
             and legajo
-            and LegajoAlertas.objects.filter(
-                alerta=alerta, legajo=legajo
-            ).exists()
+            and Alerta.objects.filter(alerta=alerta, legajo=legajo).exists()
         ):
             self.add_error("alerta", "Ya existe esa alerta en el legajo")
         return cleaned_data
 
     class Meta:
-        model = LegajoAlertas
+        model = Alerta
         fields = "__all__"
         widgets = {
             "alerta": forms.Select(attrs={"class": "select2"}),
@@ -651,11 +642,11 @@ class DimensionEducacionForm(forms.ModelForm):
     )
     municipioInstitucion = forms.ModelChoiceField(
         label="Municipio",
-        queryset=LegajoMunicipio.objects.none(),
+        queryset=Municipio.objects.none(),
     )
     localidadInstitucion = forms.ModelChoiceField(
         label="Localidad",
-        queryset=LegajoLocalidad.objects.none(),
+        queryset=Localidad.objects.none(),
     )
     interesCapLab = forms.ChoiceField(
         choices=BOOLEAN_CHOICE,
@@ -688,31 +679,27 @@ class DimensionEducacionForm(forms.ModelForm):
         # Configurar el queryset del campo 'provinciaInstitucion' para cargar solo las provincias
         self.fields["provinciaInstitucion"].queryset = Provincia.objects.all()
         # Configurar los querysets de los campos 'municipioInstitucion' y 'localidadInstitucion' para que estén vacíos inicialmente
-        self.fields["municipioInstitucion"].queryset = LegajoMunicipio.objects.none()
-        self.fields["localidadInstitucion"].queryset = LegajoLocalidad.objects.none()
+        self.fields["municipioInstitucion"].queryset = Municipio.objects.none()
+        self.fields["localidadInstitucion"].queryset = Localidad.objects.none()
 
         # Actualizar los querysets si los datos están presentes en el formulario
         if "municipioInstitucion" in self.data:
             try:
                 municipio_id = int(self.data.get("municipioInstitucion"))
-                self.fields["municipioInstitucion"].queryset = (
-                    LegajoMunicipio.objects.filter(id=municipio_id).order_by("nombre")
-                )
+                self.fields["municipioInstitucion"].queryset = Municipio.objects.filter(
+                    id=municipio_id
+                ).order_by("nombre")
             except (ValueError, TypeError):
-                self.fields["municipioInstitucion"].queryset = (
-                    LegajoMunicipio.objects.none()
-                )
+                self.fields["municipioInstitucion"].queryset = Municipio.objects.none()
 
         if "localidadInstitucion" in self.data:
             try:
                 localidad_id = int(self.data.get("localidadInstitucion"))
-                self.fields["localidadInstitucion"].queryset = (
-                    LegajoLocalidad.objects.filter(id=localidad_id).order_by("nombre")
-                )
+                self.fields["localidadInstitucion"].queryset = Localidad.objects.filter(
+                    id=localidad_id
+                ).order_by("nombre")
             except (ValueError, TypeError):
-                self.fields["localidadInstitucion"].queryset = (
-                    LegajoLocalidad.objects.none()
-                )
+                self.fields["localidadInstitucion"].queryset = Localidad.objects.none()
 
     class Meta:
         model = DimensionEducacion
@@ -889,7 +876,7 @@ class LlamadoForm(forms.ModelForm):
 
 class LegajoProgramasForm(forms.ModelForm):
     class Meta:
-        model = LegajoProgramas
+        model = CiudadanoPrograma
         fields = ["programas"]
         widgets = {
             "programas": forms.SelectMultiple(

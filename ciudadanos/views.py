@@ -1,7 +1,6 @@
 import calendar  # pylint: disable=too-many-lines
 import json
 
-# Configurar el locale para usar el idioma español
 import locale
 import logging
 from datetime import date, datetime, timedelta
@@ -20,7 +19,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.contrib.messages import get_messages
 
-# Paginacion
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -32,15 +30,11 @@ from django.views.generic import (
 )
 
 from configuraciones.models import (
-    Alertas,
-    CategoriaAlertas,
-    Circuito,
-    Dimension,
-    Organismos,
-    Programas,
+    Municipio,
+    Provincia,
 )
-from legajos.choices import EMOJIS_BANDERAS
-from legajos.forms import (
+from ciudadanos.constants import EMOJIS_BANDERAS
+from ciudadanos.forms import (
     DimensionEconomiaForm,
     DimensionEducacionForm,
     DimensionFamiliaForm,
@@ -48,17 +42,17 @@ from legajos.forms import (
     DimensionTrabajoForm,
     DimensionViviendaForm,
     IntervencionForm,
-    LegajoGrupoHogarForm,
-    LegajosAlertasForm,
+    GrupoHogarForm,
+    AlertasForm,
     LegajosArchivosForm,
     LegajosDerivacionesForm,
-    LegajosForm,
+    CiudadanoForm,
     LegajosUpdateForm,
     LlamadoForm,
     NuevoLegajoFamiliarForm,
     LegajoProgramasForm,
 )
-from legajos.models import (
+from ciudadanos.models import (
     ActividadRealizada,
     Agua,
     AportesJubilacion,
@@ -86,14 +80,14 @@ from legajos.models import (
     Inodoro,
     InstitucionesEducativas,
     Intervencion,
-    LegajoAlertas,
-    LegajoAsentamientos,
-    LegajoDepartamento,
-    LegajoGrupoFamiliar,
+    Alerta,
+    Asentamiento,
+    Departamento,
+    GrupoFamiliar,
     LegajoGrupoHogar,
-    LegajoLocalidad,
+    Localidad,
     LegajoMunicipio,
-    Legajos,
+    Ciudadano,
     LegajosArchivos,
     LegajosDerivaciones,
     Llamado,
@@ -114,9 +108,8 @@ from legajos.models import (
     TipoVivienda,
     Turno,
     VinculoFamiliar,
-    LegajoProgramas,
+    CiudadanoPrograma,
 )
-from usuarios.mixins import PermisosMixin
 from usuarios.utils import recortar_imagen
 
 locale.setlocale(locale.LC_ALL, "es_AR.UTF-8")
@@ -139,15 +132,15 @@ def load_localidad(request):
     departamento_id = request.GET.get("departamento_id")
 
     if municipio_id:
-        localidades = LegajoLocalidad.objects.filter(municipio=municipio_id)
+        localidades = Localidad.objects.filter(municipio=municipio_id)
     else:
-        localidades = LegajoLocalidad.objects.filter(departamento=departamento_id)
+        localidades = Localidad.objects.filter(departamento=departamento_id)
     return JsonResponse(list(localidades.values("id", "nombre")), safe=False)
 
 
 def load_departamento(request):
     provincia_id = request.GET.get("provincia_id")
-    departamentos = LegajoDepartamento.objects.filter(provincia=provincia_id)
+    departamentos = Departamento.objects.filter(provincia=provincia_id)
     return JsonResponse(list(departamentos.values("id", "nombre")), safe=False)
 
 
@@ -156,18 +149,16 @@ def load_asentamiento(request):
     departamento_id = request.GET.get("departamento_id")
 
     if municipio_id:
-        asentamientos = LegajoAsentamientos.objects.filter(localidad=municipio_id)
+        asentamientos = Asentamiento.objects.filter(localidad=municipio_id)
     else:
-        asentamientos = LegajoAsentamientos.objects.filter(
-            departamento=departamento_id
-        )
+        asentamientos = Asentamiento.objects.filter(departamento=departamento_id)
     return JsonResponse(list(asentamientos.values("id", "nombre")), safe=False)
 
 
 @csrf_exempt
 @require_POST
 def actualizar_programas(request, legajo_id):
-    legajo = get_object_or_404(Legajos, id=legajo_id)
+    legajo = get_object_or_404(Ciudadano, id=legajo_id)
     form = LegajoProgramasForm(request.POST)
     if request.POST:
         programas_ids = request.POST.getlist("programas")
@@ -176,12 +167,12 @@ def actualizar_programas(request, legajo_id):
 
         for programa_id in programas_ids:
             programa = Programas.objects.get(id=programa_id)
-            if LegajoProgramas.objects.filter(
+            if CiudadanoPrograma.objects.filter(
                 legajo=legajo, programas=programa
             ).exists():
                 programas_duplicados.append(programa.nombre)
             else:
-                legajo_programa = LegajoProgramas.objects.create(
+                legajo_programa = CiudadanoPrograma.objects.create(
                     legajo=legajo,
                     programas=programa,
                     creado_por=request.user,
@@ -237,14 +228,14 @@ def eliminar_programa(request):
 
         try:
             # Intentamos eliminar el programa específico de la tabla LegajoProgramas
-            programa = LegajoProgramas.objects.get(id=program_id)
+            programa = CiudadanoPrograma.objects.get(id=program_id)
             programa.delete()
 
             return JsonResponse(
                 {"success": True, "message": "Programa eliminado correctamente."}
             )
 
-        except LegajoProgramas.DoesNotExist:
+        except CiudadanoPrograma.DoesNotExist:
             return JsonResponse(
                 {"success": False, "message": "No se encontró el programa."}, status=404
             )
@@ -328,7 +319,7 @@ class LegajosReportesListView(ListView):
 
 
 class LegajosListView(ListView):
-    model = Legajos
+    model = Ciudadano
     template_name = "legajos/legajos_list.html"
     context_object_name = "legajos"
     paginate_by = 10  # Número de objetos por página
@@ -398,7 +389,7 @@ class LegajosListView(ListView):
 
 
 class LegajosDetailView(DetailView):
-    model = Legajos
+    model = Ciudadano
     template_name = "legajos/legajos_detail.html"
 
     def get_context_data(
@@ -434,7 +425,7 @@ class LegajosDetailView(DetailView):
         emoji_nacionalidad = cache.get("emoji_nacionalidad")
 
         if not legajo_alertas:
-            legajo_alertas = LegajoAlertas.objects.filter(legajo=pk).select_related(
+            legajo_alertas = Alerta.objects.filter(legajo=pk).select_related(
                 "alerta__categoria"
             )
             cache.set("legajo_alertas", legajo_alertas, 60)
@@ -444,7 +435,7 @@ class LegajosDetailView(DetailView):
             )
             cache.set("alertas", alertas, 60)
         if not familiares:
-            familiares = LegajoGrupoFamiliar.objects.filter(
+            familiares = GrupoFamiliar.objects.filter(
                 Q(legajo_1=pk) | Q(legajo_2=pk)
             ).values(
                 "legajo_1__nombre",
@@ -523,9 +514,7 @@ class LegajosDetailView(DetailView):
             historial_alertas = alertas.exists()
             cache.set("historial_alertas", historial_alertas, 60)
         if not count_intervenciones:
-            count_intervenciones = LegajosDerivaciones.objects.filter(
-                legajo=pk
-            ).count()
+            count_intervenciones = LegajosDerivaciones.objects.filter(legajo=pk).count()
             cache.set("count_intervenciones", count_intervenciones, 60)
         if not dimensionfamilia:
             dimensionfamilia = (
@@ -605,14 +594,10 @@ class LegajosDetailView(DetailView):
             cache.set("emoji_nacionalidad", emoji_nacionalidad, 60)
 
         context["familiares_fk1"] = [
-            familiar
-            for familiar in familiares
-            if familiar["legajo_1__id"] == int(pk)
+            familiar for familiar in familiares if familiar["legajo_1__id"] == int(pk)
         ]
         context["familiares_fk2"] = [
-            familiar
-            for familiar in familiares
-            if familiar["legajo_2__id"] == int(pk)
+            familiar for familiar in familiares if familiar["legajo_2__id"] == int(pk)
         ]
         context["count_familia"] = len(familiares)
 
@@ -658,7 +643,7 @@ class LegajosDetailView(DetailView):
 
         # PROGRAMAS
         context["form_prog"] = LegajoProgramasForm()
-        legajo_programas = LegajoProgramas.objects.filter(legajo=pk)
+        legajo_programas = CiudadanoPrograma.objects.filter(legajo=pk)
         if legajo_programas.exists():
             context["legajos_programas"] = legajo_programas
 
@@ -728,9 +713,8 @@ class LegajosDetailView(DetailView):
         return datos_json
 
 
-class LegajosDeleteView(PermisosMixin, DeleteView):
-    permission_required = ROL_ADMIN
-    model = Legajos
+class LegajosDeleteView(DeleteView):
+    model = Ciudadano
     success_url = reverse_lazy("legajos_listar")
 
     def get_context_data(self, **kwargs):
@@ -747,15 +731,15 @@ class LegajosDeleteView(PermisosMixin, DeleteView):
         if LegajosDerivaciones.objects.filter(legajo=legajo).exists():
             relaciones_existentes.append("Derivaciones")
 
-        if LegajoAlertas.objects.filter(legajo=legajo).exists():
+        if Alerta.objects.filter(legajo=legajo).exists():
             relaciones_existentes.append("Alertas")
 
         if HistorialLegajoAlertas.objects.filter(legajo=legajo).exists():
             relaciones_existentes.append("Historial de Alertas")
 
         if (
-            LegajoGrupoFamiliar.objects.filter(legajo_1=legajo).exists()
-            or LegajoGrupoFamiliar.objects.filter(legajo_2=legajo).exists()
+            GrupoFamiliar.objects.filter(legajo_1=legajo).exists()
+            or GrupoFamiliar.objects.filter(legajo_2=legajo).exists()
         ):
             relaciones_existentes.append("Grupo Familiar")
 
@@ -776,10 +760,9 @@ class LegajosDeleteView(PermisosMixin, DeleteView):
         return super().form_valid(form)
 
 
-class LegajosCreateView(PermisosMixin, CreateView):
-    permission_required = ROL_ADMIN
-    model = Legajos
-    form_class = LegajosForm
+class LegajosCreateView(CreateView):
+    model = Ciudadano
+    form_class = CiudadanoForm
 
     def form_invalid(self, form):
         print("form.errors", form.errors)
@@ -801,9 +784,7 @@ class LegajosCreateView(PermisosMixin, CreateView):
                 legajo.save()
 
                 # Crear las dimensiones
-                dimensionfamilia = DimensionFamilia.objects.create(
-                    legajo_id=legajo.id
-                )
+                dimensionfamilia = DimensionFamilia.objects.create(legajo_id=legajo.id)
                 print("dimensionfamilia", dimensionfamilia)
                 dimensionvivienda = DimensionVivienda.objects.create(
                     legajo_id=legajo.id
@@ -819,9 +800,7 @@ class LegajosCreateView(PermisosMixin, CreateView):
                     legajo_id=legajo.id
                 )
                 print("dimensioneducacion", dimensioneducacion)
-                dimensiontrabajo = DimensionTrabajo.objects.create(
-                    legajo_id=legajo.id
-                )
+                dimensiontrabajo = DimensionTrabajo.objects.create(legajo_id=legajo.id)
                 print("dimensiontrabajo", dimensiontrabajo)
 
             # Redireccionar según el botón presionado
@@ -839,9 +818,8 @@ class LegajosCreateView(PermisosMixin, CreateView):
             return redirect("legajos_crear")
 
 
-class LegajosUpdateView(PermisosMixin, UpdateView):
-    permission_required = ROL_ADMIN
-    model = Legajos
+class LegajosUpdateView(UpdateView):
+    model = Ciudadano
     form_class = LegajosUpdateForm
 
     def form_valid(self, form):
@@ -856,7 +834,7 @@ class LegajosUpdateView(PermisosMixin, UpdateView):
 
             self.object = (
                 form.save()
-            )  # Guardamos el objeto Legajos con la imagen recortada (si corresponde)
+            )  # Guardamos el objeto Ciudadano con la imagen recortada (si corresponde)
 
         if "form_legajos" in self.request.POST:
             return redirect("legajos_ver", pk=self.object.id)
@@ -874,8 +852,7 @@ class LegajosUpdateView(PermisosMixin, UpdateView):
 
 
 class LegajosGrupoFamiliarCreateView(CreateView):
-    permission_required = ROL_ADMIN
-    model = LegajoGrupoFamiliar
+    model = GrupoFamiliar
     form_class = NuevoLegajoFamiliarForm
     paginate_by = 8  # Número de elementos por página
 
@@ -884,7 +861,7 @@ class LegajosGrupoFamiliarCreateView(CreateView):
 
         context = super().get_context_data(**kwargs)
         pk = self.kwargs["pk"]
-        legajo_principal = Legajos.objects.get(pk=pk)
+        legajo_principal = Ciudadano.objects.get(pk=pk)
         # Calcula la edad utilizando la función 'edad' del modelo
         edad_calculada = legajo_principal.edad()
 
@@ -896,12 +873,12 @@ class LegajosGrupoFamiliarCreateView(CreateView):
                 es_menor_de_18 = False
 
         # Verificar si tiene un cuidador principal asignado utilizando el método que agregaste al modelo
-        tiene_cuidador_ppal = LegajoGrupoFamiliar.objects.filter(
+        tiene_cuidador_ppal = GrupoFamiliar.objects.filter(
             legajo_1=legajo_principal, cuidador_principal=True
         ).exists()
 
         # Obtiene los familiares asociados al legajo principal
-        familiares = LegajoGrupoFamiliar.objects.filter(
+        familiares = GrupoFamiliar.objects.filter(
             Q(legajo_1=pk) | Q(legajo_2=pk)
         ).values(
             "id",
@@ -948,7 +925,7 @@ class LegajosGrupoFamiliarCreateView(CreateView):
         estado_relacion = form.cleaned_data["estado_relacion"].id
         cuidador_principal = form.cleaned_data["cuidador_principal"]
 
-        # Crea el objeto Legajos
+        # Crea el objeto Ciudadano
         try:
             nuevo_legajo = form.save()
             DimensionFamilia.objects.create(legajo=nuevo_legajo)
@@ -968,8 +945,8 @@ class LegajosGrupoFamiliarCreateView(CreateView):
         try:
             vinculo_instance = VinculoFamiliar.objects.get(vinculo=vinculo)
             estado_relacion_instance = EstadoRelacion.objects.get(pk=estado_relacion)
-            legajo_principal = Legajos.objects.get(id=pk)
-            LegajoGrupoFamiliar.objects.create(
+            legajo_principal = Ciudadano.objects.get(id=pk)
+            GrupoFamiliar.objects.create(
                 legajo_1=legajo_principal,
                 legajo_2=nuevo_legajo,
                 vinculo=vinculo_instance,
@@ -999,7 +976,7 @@ def busqueda_familiares(request):
             {"error": "ID del legajo principal no proporcionado"}, status=400
         )
 
-    legajos_asociados = LegajoGrupoFamiliar.objects.filter(
+    legajos_asociados = GrupoFamiliar.objects.filter(
         Q(legajo_1_id=legajo_principal_id) | Q(legajo_2_id=legajo_principal_id)
     ).values_list("legajo_1_id", "legajo_2_id")
 
@@ -1011,7 +988,7 @@ def busqueda_familiares(request):
             legajos_asociados_ids.add(legajo_2_id)
 
     paginate_by = 10
-    familiares = Legajos.objects.filter(
+    familiares = Ciudadano.objects.filter(
         ~Q(id=legajo_principal_id)
         & (Q(apellido__icontains=busqueda) | Q(documento__icontains=busqueda))
     ).exclude(id__in=legajos_asociados_ids)
@@ -1052,17 +1029,17 @@ def busqueda_familiares(request):
 
 
 class LegajoGrupoFamiliarList(ListView):
-    model = LegajoGrupoFamiliar
+    model = GrupoFamiliar
 
     def get_context_data(self, **kwargs):
         pk = self.kwargs["pk"]
         context = super().get_context_data(**kwargs)
-        context["familiares_fk1"] = LegajoGrupoFamiliar.objects.filter(legajo_1=pk)
-        context["familiares_fk2"] = LegajoGrupoFamiliar.objects.filter(legajo_2=pk)
+        context["familiares_fk1"] = GrupoFamiliar.objects.filter(legajo_1=pk)
+        context["familiares_fk2"] = GrupoFamiliar.objects.filter(legajo_2=pk)
         context["count_familia"] = (
             context["familiares_fk1"].count() + context["familiares_fk1"].count()
         )
-        context["nombre"] = Legajos.objects.filter(pk=pk).first()
+        context["nombre"] = Ciudadano.objects.filter(pk=pk).first()
         context["pk"] = pk
         return context
 
@@ -1085,7 +1062,7 @@ class CreateGrupoFamiliar(View):
         except EstadoRelacion.DoesNotExist:
             return JsonResponse({"error": "EstadoRelacion no encontrado"}, status=400)
 
-        obj = LegajoGrupoFamiliar.objects.create(
+        obj = GrupoFamiliar.objects.create(
             legajo_1_id=legajo_1,
             legajo_2_id=legajo_2,
             vinculo=vinculo_instance,
@@ -1117,7 +1094,7 @@ class DeleteGrupoFamiliar(View):
     def get(self, request):
         pk = request.GET.get("id", None)
         try:
-            familiar = get_object_or_404(LegajoGrupoFamiliar, pk=pk)
+            familiar = get_object_or_404(GrupoFamiliar, pk=pk)
             familiar.delete()
             data = {
                 "deleted": True,
@@ -1134,14 +1111,7 @@ class DeleteGrupoFamiliar(View):
         return JsonResponse(data)
 
 
-# endregion
-
-
-# region ############################################################### DERIVACIONES
-
-
-class LegajosDerivacionesBuscar(PermisosMixin, TemplateView):
-    permission_required = ROL_ADMIN
+class LegajosDerivacionesBuscar(TemplateView):
     template_name = "legajos/legajosderivaciones_buscar.html"
 
     def get(self, request, *args, **kwargs):  # pylint: disable=too-many-locals
@@ -1152,7 +1122,7 @@ class LegajosDerivacionesBuscar(PermisosMixin, TemplateView):
         sin_derivaciones = cache.get("sin_derivaciones")
 
         if not legajos:
-            legajos = Legajos.objects.all()
+            legajos = Ciudadano.objects.all()
             cache.set("legajos", legajos, 60)
         if not derivaciones:
             derivaciones = LegajosDerivaciones.objects.all()
@@ -1161,7 +1131,7 @@ class LegajosDerivacionesBuscar(PermisosMixin, TemplateView):
             con_derivaciones = LegajosDerivaciones.objects.none()
             cache.set("con_derivaciones", con_derivaciones, 60)
         if not sin_derivaciones:
-            sin_derivaciones = Legajos.objects.none()
+            sin_derivaciones = Ciudadano.objects.none()
             cache.set("sin_derivaciones", sin_derivaciones, 60)
 
         barrios = legajos.values_list("barrio")
@@ -1208,8 +1178,7 @@ class LegajosDerivacionesBuscar(PermisosMixin, TemplateView):
         return self.render_to_response(context)
 
 
-class LegajosDerivacionesListView(PermisosMixin, ListView):
-    permission_required = ROL_ADMIN
+class LegajosDerivacionesListView(ListView):
     model = LegajosDerivaciones
     paginate_by = 25
 
@@ -1258,8 +1227,7 @@ class LegajosDerivacionesListView(PermisosMixin, ListView):
         return object_list.order_by("-estado")
 
 
-class LegajosDerivacionesCreateView(PermisosMixin, CreateView):
-    permission_required = ROL_ADMIN
+class LegajosDerivacionesCreateView(CreateView):
     model = LegajosDerivaciones
     form_class = LegajosDerivacionesForm
     success_message = "Derivación registrada con éxito"
@@ -1290,12 +1258,11 @@ class LegajosDerivacionesCreateView(PermisosMixin, CreateView):
     def get_context_data(self, **kwargs):
         pk = self.kwargs["pk"]
         context = super().get_context_data(**kwargs)
-        context["legajo"] = Legajos.objects.filter(id=pk).first()
+        context["legajo"] = Ciudadano.objects.filter(id=pk).first()
         return context
 
 
-class LegajosDerivacionesUpdateView(PermisosMixin, UpdateView):
-    permission_required = ROL_ADMIN
+class LegajosDerivacionesUpdateView(UpdateView):
     model = LegajosDerivaciones
     form_class = LegajosDerivacionesForm
     success_message = "Derivación editada con éxito"
@@ -1309,12 +1276,11 @@ class LegajosDerivacionesUpdateView(PermisosMixin, UpdateView):
         pk = self.kwargs["pk"]
         context = super().get_context_data(**kwargs)
         legajo = LegajosDerivaciones.objects.filter(id=pk).first()
-        context["legajo"] = Legajos.objects.filter(id=legajo.legajo.id).first()
+        context["legajo"] = Ciudadano.objects.filter(id=legajo.legajo.id).first()
         return context
 
 
-class LegajosDerivacionesHistorial(PermisosMixin, ListView):
-    permission_required = ROL_ADMIN
+class LegajosDerivacionesHistorial(ListView):
     model = LegajosDerivaciones
     template_name = "legajos/legajosderivaciones_historial.html"
 
@@ -1322,7 +1288,7 @@ class LegajosDerivacionesHistorial(PermisosMixin, ListView):
         context = super(LegajosDerivacionesHistorial, self).get_context_data(**kwargs)
         pk = self.kwargs.get("pk")
 
-        legajo = Legajos.objects.filter(id=pk).first()
+        legajo = Ciudadano.objects.filter(id=pk).first()
         historial = LegajosDerivaciones.objects.filter(legajo_id=pk)
 
         context["historial"] = historial
@@ -1339,8 +1305,7 @@ class LegajosDerivacionesHistorial(PermisosMixin, ListView):
         return context
 
 
-class LegajosDerivacionesDeleteView(PermisosMixin, DeleteView):
-    permission_required = ROL_ADMIN
+class LegajosDerivacionesDeleteView(DeleteView):
     model = LegajosDerivaciones
 
     def form_valid(self, form):
@@ -1370,8 +1335,7 @@ class LegajosDerivacionesDeleteView(PermisosMixin, DeleteView):
             return redirect("legajosderivaciones_historial", pk=legajo.legajo_id)
 
 
-class LegajosDerivacionesDetailView(PermisosMixin, DetailView):
-    permission_required = ROL_ADMIN
+class LegajosDerivacionesDetailView(DetailView):
     model = LegajosDerivaciones
 
 
@@ -1381,8 +1345,7 @@ class LegajosDerivacionesDetailView(PermisosMixin, DetailView):
 # region ############################################################### ALERTAS
 
 
-class LegajosAlertasListView(PermisosMixin, ListView):
-    permission_required = ROL_ADMIN
+class LegajosAlertasListView(ListView):
     model = HistorialLegajoAlertas
     template_name = "legajos/legajoalertas_list.html"
 
@@ -1391,24 +1354,23 @@ class LegajosAlertasListView(PermisosMixin, ListView):
         context = super().get_context_data(**kwargs)
         context["legajo_alertas"] = HistorialLegajoAlertas.objects.filter(legajo=pk)
         context["legajo"] = (
-            Legajos.objects.filter(id=pk).values("apellido", "nombre", "id").first()
+            Ciudadano.objects.filter(id=pk).values("apellido", "nombre", "id").first()
         )
         return context
 
 
-class LegajosAlertasCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
-    permission_required = ROL_ADMIN
-    model = LegajoAlertas
-    form_class = LegajosAlertasForm
+class LegajosAlertasCreateView(SuccessMessageMixin, CreateView):
+    model = Alerta
+    form_class = AlertasForm
     success_message = "Alerta asignada correctamente."
 
     def get_context_data(self, **kwargs):
         pk = self.kwargs["pk"]
         context = super().get_context_data(**kwargs)
 
-        alertas = LegajoAlertas.objects.filter(legajo=pk)
+        alertas = Alerta.objects.filter(legajo=pk)
 
-        legajo = Legajos.objects.values(
+        legajo = Ciudadano.objects.values(
             "pk", "dimensionfamilia__id", "nombre", "apellido"
         ).get(pk=pk)
 
@@ -1429,13 +1391,12 @@ class LegajosAlertasCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
         return self.request.path
 
 
-class DeleteAlerta(PermisosMixin, View):
-    permission_required = ROL_ADMIN
+class DeleteAlerta(View):
 
     def get(self, request):
         try:
             pk = request.GET.get("id", None)
-            legajo_alerta = get_object_or_404(LegajoAlertas, pk=pk)
+            legajo_alerta = get_object_or_404(Alerta, pk=pk)
             legajo = legajo_alerta.legajo
             alerta = legajo_alerta.alerta
             legajo_alerta.delete()
@@ -1503,9 +1464,8 @@ class AlertasSelectView(View):
 # region ############################################################### DIMENSIONES
 
 
-class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
+class DimensionesUpdateView(SuccessMessageMixin, UpdateView):
     # FIXME: Crear updateView por cada formulario
-    permission_required = ROL_ADMIN
     template_name = "legajos/legajosdimensiones_form.html"
     model = DimensionFamilia
     form_class = DimensionFamiliaForm
@@ -1518,7 +1478,7 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
 
     def get_object(self, queryset=None):
         pk = self.kwargs["pk"]
-        legajo = Legajos.objects.only("id").get(id=pk)
+        legajo = Ciudadano.objects.only("id").get(id=pk)
         return DimensionFamilia.objects.get(legajo=legajo.id)
 
     def get_context_data(self, **kwargs):
@@ -1526,7 +1486,7 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
 
         pk = self.kwargs["pk"]
         legajo = (
-            Legajos.objects.select_related(
+            Ciudadano.objects.select_related(
                 "dimensionvivienda",
                 "dimensionsalud",
                 "dimensioneducacion",
@@ -1690,7 +1650,7 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
             "grado": Grado,
             "turno": Turno,
             "obs_educacion": "obs_educacion",
-            "provinciaInstitucion": Provincias,
+            "provinciaInstitucion": Provincia,
             "localidadInstitucion": Localidad,
             "municipioInstitucion": Municipio,
             "barrioInstitucion": "barrioInstitucion",
@@ -1804,9 +1764,8 @@ class DimensionesUpdateView(PermisosMixin, SuccessMessageMixin, UpdateView):
         return super().form_valid(form)
 
 
-class DimensionesDetailView(PermisosMixin, DetailView):
-    permission_required = ROL_ADMIN
-    model = Legajos
+class DimensionesDetailView(DetailView):
+    model = Ciudadano
     template_name = "legajos/legajosdimensiones_detail.html"
 
 
@@ -1814,8 +1773,7 @@ class DimensionesDetailView(PermisosMixin, DetailView):
 
 
 # region ################################################################ ARCHIVOS
-class LegajosArchivosListView(PermisosMixin, ListView):
-    permission_required = ROL_ADMIN
+class LegajosArchivosListView(ListView):
     model = LegajosArchivos
     template_name = "legajos/legajosarchivos_list.html"
 
@@ -1823,12 +1781,11 @@ class LegajosArchivosListView(PermisosMixin, ListView):
         pk = self.kwargs["pk"]
         context = super().get_context_data(**kwargs)
         context["legajo_archivos"] = LegajosArchivos.objects.filter(legajo=pk)
-        context["legajo"] = Legajos.objects.filter(id=pk).first()
+        context["legajo"] = Ciudadano.objects.filter(id=pk).first()
         return context
 
 
-class LegajosArchivosCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
-    permission_required = ROL_ADMIN
+class LegajosArchivosCreateView(SuccessMessageMixin, CreateView):
     model = LegajosArchivos
     form_class = LegajosArchivosForm
     success_message = "Archivo actualizado correctamente."
@@ -1839,7 +1796,7 @@ class LegajosArchivosCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
         archivos = LegajosArchivos.objects.filter(legajo=pk)
         imagenes = archivos.filter(tipo="Imagen")
         documentos = archivos.filter(tipo="Documento")
-        legajo = Legajos.objects.filter(pk=pk).first()
+        legajo = Ciudadano.objects.filter(pk=pk).first()
         context["imagenes"] = imagenes
         context["documentos"] = documentos
         context["legajo"] = legajo
@@ -1849,7 +1806,7 @@ class LegajosArchivosCreateView(PermisosMixin, SuccessMessageMixin, CreateView):
 class CreateArchivo(TemplateView):
     def post(self, request):
         pk = request.POST.get("pk")
-        legajo = Legajos.objects.get(id=pk)
+        legajo = Ciudadano.objects.get(id=pk)
         response_data_list = []  # Lista para almacenar las respuestas de los archivos
 
         files = request.FILES.getlist(
@@ -1883,8 +1840,7 @@ class CreateArchivo(TemplateView):
         )  # Devolver la lista completa de respuestas como JSON
 
 
-class DeleteArchivo(PermisosMixin, View):
-    permission_required = ROL_ADMIN
+class DeleteArchivo(View):
 
     def get(self, request):
         try:
@@ -1909,12 +1865,12 @@ class DeleteArchivo(PermisosMixin, View):
 
 class ProgramasIntervencionesView(TemplateView):
     template_name = "legajos/programas_intervencion.html"
-    model = Legajos
+    model = Ciudadano
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        legajo = Legajos.objects.filter(pk=self.kwargs["pk"]).first()
+        legajo = Ciudadano.objects.filter(pk=self.kwargs["pk"]).first()
 
         context["legajo"] = legajo
 
@@ -1923,13 +1879,13 @@ class ProgramasIntervencionesView(TemplateView):
 
 class AccionesSocialesView(TemplateView):
     template_name = "legajos/acciones_sociales.html"
-    model = Legajos
+    model = Ciudadano
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         legajo_id = self.kwargs["pk"]
 
-        legajo = Legajos.objects.only(
+        legajo = Ciudadano.objects.only(
             "apellido",
             "nombre",
             "id",
@@ -1946,12 +1902,12 @@ class AccionesSocialesView(TemplateView):
 
 class IntervencionesSaludView(TemplateView):
     template_name = "legajos/intervenciones_salud.html"
-    model = Legajos
+    model = Ciudadano
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        legajo = Legajos.objects.filter(pk=self.kwargs["pk"]).first()
+        legajo = Ciudadano.objects.filter(pk=self.kwargs["pk"]).first()
 
         context["legajo"] = legajo
 
@@ -1960,12 +1916,12 @@ class IntervencionesSaludView(TemplateView):
 
 class IndicesView(TemplateView):
     template_name = "legajos/indices.html"
-    model = Legajos
+    model = Ciudadano
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        legajo = Legajos.objects.filter(pk=self.kwargs["pk"]).first()
+        legajo = Ciudadano.objects.filter(pk=self.kwargs["pk"]).first()
 
         context["legajo"] = legajo
 
@@ -1974,12 +1930,12 @@ class IndicesView(TemplateView):
 
 class IndicesDetalleView(TemplateView):
     template_name = "legajos/indices_detalle.html"
-    model = Legajos
+    model = Ciudadano
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        legajo = Legajos.objects.filter(pk=self.kwargs["pk"]).first()
+        legajo = Ciudadano.objects.filter(pk=self.kwargs["pk"]).first()
 
         context["legajo"] = legajo
 
@@ -1992,14 +1948,13 @@ class IndicesDetalleView(TemplateView):
 
 
 class LegajosGrupoHogarCreateView(CreateView):
-    permission_required = ROL_ADMIN
     model = LegajoGrupoHogar
-    form_class = LegajoGrupoHogarForm
+    form_class = GrupoHogarForm
     paginate_by = 8
 
     def get_context_data(self, **kwargs):
         pk = self.kwargs["pk"]
-        legajo_principal = Legajos.objects.filter(pk=pk).first()
+        legajo_principal = Ciudadano.objects.filter(pk=pk).first()
 
         context = super().get_context_data(**kwargs)
 
@@ -2046,7 +2001,7 @@ class LegajosGrupoHogarCreateView(CreateView):
         pk = self.kwargs["pk"]
         estado_relacion = form.cleaned_data["estado_relacion"]
 
-        # Crea el objeto Legajos
+        # Crea el objeto Ciudadano
         try:
             nuevo_legajo = form.save()
             DimensionFamilia.objects.create(legajo=nuevo_legajo)
@@ -2065,9 +2020,9 @@ class LegajosGrupoHogarCreateView(CreateView):
         # crea la relacion de grupo familiar
         estado_relacion_instance = EstadoRelacion.objects.get(pk=estado_relacion)
 
-        legajo_principal = Legajos.objects.get(id=pk)
+        legajo_principal = Ciudadano.objects.get(id=pk)
         try:
-            LegajoGrupoFamiliar.objects.create(
+            GrupoFamiliar.objects.create(
                 legajo_1=legajo_principal,
                 legajo_2=nuevo_legajo,
                 #  vinculo=vinculo_data["vinculo"],
@@ -2105,7 +2060,7 @@ def busqueda_hogar(request):
             legajos_asociados_ids.add(legajo_2)
 
     paginate_by = 10
-    hogares = Legajos.objects.filter(
+    hogares = Ciudadano.objects.filter(
         ~Q(id=legajo_principal_id)
         & (Q(apellido__icontains=busqueda) | Q(documento__icontains=busqueda))
     ).exclude(id__in=legajos_asociados_ids)
@@ -2145,14 +2100,14 @@ def busqueda_hogar(request):
 
 
 class LegajoGrupoHogarList(ListView):
-    model = LegajoGrupoFamiliar
+    model = GrupoFamiliar
 
     def get_context_data(self, **kwargs):
         pk = self.kwargs["pk"]
         context = super().get_context_data(**kwargs)
 
         # FIXME: Esta query optimizada de "familiares" no se termino de implementar
-        familiares = LegajoGrupoFamiliar.objects.filter(
+        familiares = GrupoFamiliar.objects.filter(
             Q(legajo_1=pk) | Q(legajo_2=pk)
         ).values(
             "legajo2__id",
@@ -2176,19 +2131,15 @@ class LegajoGrupoHogarList(ListView):
             "vinculo",
         )
         context["familiares_fk1"] = [
-            familiar
-            for familiar in familiares
-            if familiar["legajo_1__id"] == int(pk)
+            familiar for familiar in familiares if familiar["legajo_1__id"] == int(pk)
         ]
         context["familiares_fk2"] = [
-            familiar
-            for familiar in familiares
-            if familiar["legajo_1__id"] == int(pk)
+            familiar for familiar in familiares if familiar["legajo_1__id"] == int(pk)
         ]
         context["count_familia"] = (
             context["familiares_fk1"].count() + context["familiares_fk1"].count()
         )
-        context["nombre"] = Legajos.objects.filter(pk=pk).values("nombre").first()
+        context["nombre"] = Ciudadano.objects.filter(pk=pk).values("nombre").first()
         context["pk"] = pk
         return context
 
@@ -2219,9 +2170,7 @@ class CreateGrupoHogar(View):
             "estado_relacion": obj.estado_relacion.estado,
             "nombre": obj.legajo_2Hogar.nombre,
             "apellido": obj.legajo_2Hogar.apellido,
-            "foto": (
-                obj.legajo_2Hogar.foto.url if obj.legajo_2Hogar.foto else None
-            ),
+            "foto": (obj.legajo_2Hogar.foto.url if obj.legajo_2Hogar.foto else None),
         }
         data = {
             "tipo_mensaje": "success",
@@ -2253,13 +2202,12 @@ class DeleteGrupoHogar(View):
 
 
 class IntervencionDetail(TemplateView):
-    permission_required = ROL_ADMIN
     template_name = "legajos/intervencion_detail.html"
     model = Intervencion
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        legajo = Legajos.objects.values(
+        legajo = Ciudadano.objects.values(
             "id", "nombre", "apellido", "documento", "fecha_nacimiento", "sexo"
         ).get(pk=self.kwargs["pk"])
         intervenciones = Intervencion.objects.filter(legajo=self.kwargs["pk"])
@@ -2274,7 +2222,6 @@ class IntervencionDetail(TemplateView):
 
 
 class IntervencionCreateView(CreateView):
-    permission_required = ROL_ADMIN
     model = Intervencion
     template_name = "legajos/intervencion_form.html"
     form_class = IntervencionForm
@@ -2286,7 +2233,7 @@ class IntervencionCreateView(CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        legajo = Legajos.objects.values(
+        legajo = Ciudadano.objects.values(
             "id", "nombre", "apellido", "documento", "fecha_nacimiento", "sexo"
         ).get(pk=self.kwargs["pk"])
 
@@ -2297,7 +2244,6 @@ class IntervencionCreateView(CreateView):
 
 
 class IntervencionDeleteView(DeleteView):
-    permission_required = ROL_ADMIN
     model = Intervencion
     template_name = "legajos/intervencion_confirm_delete.html"
 
@@ -2307,7 +2253,6 @@ class IntervencionDeleteView(DeleteView):
 
 
 class IntervencionUpdateView(UpdateView):
-    permission_required = ROL_ADMIN
     model = Intervencion
     form_class = IntervencionForm
     template_name = "legajos/intervencion_form.html"
@@ -2319,7 +2264,7 @@ class IntervencionUpdateView(UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        legajo = Legajos.objects.values(
+        legajo = Ciudadano.objects.values(
             "id", "nombre", "apellido", "documento", "fecha_nacimiento", "sexo"
         ).get(pk=self.kwargs["pk2"])
         context["form"] = self.get_form()
@@ -2328,13 +2273,12 @@ class IntervencionUpdateView(UpdateView):
 
 
 class LlamadoDetail(TemplateView):
-    permission_required = ROL_ADMIN
     template_name = "legajos/llamado_detail.html"
     model = Llamado
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        legajo = Legajos.objects.values(
+        legajo = Ciudadano.objects.values(
             "id", "nombre", "apellido", "documento", "fecha_nacimiento", "sexo"
         ).get(pk=self.kwargs["pk"])
         llamados = Llamado.objects.filter(legajo=self.kwargs["pk"])
@@ -2346,7 +2290,6 @@ class LlamadoDetail(TemplateView):
 
 
 class LlamadoDeleteView(DeleteView):
-    permission_required = ROL_ADMIN
     model = Llamado
 
     def form_valid(self, form):
@@ -2355,7 +2298,6 @@ class LlamadoDeleteView(DeleteView):
 
 
 class LlamadoCreateView(CreateView):
-    permission_required = ROL_ADMIN
     model = Llamado
     template_name = "legajos/llamado_form.html"
     form_class = LlamadoForm
@@ -2367,7 +2309,7 @@ class LlamadoCreateView(CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        legajo = Legajos.objects.values(
+        legajo = Ciudadano.objects.values(
             "id", "nombre", "apellido", "documento", "fecha_nacimiento", "sexo"
         ).get(pk=self.kwargs["pk"])
         context["form"] = self.get_form()
@@ -2376,7 +2318,6 @@ class LlamadoCreateView(CreateView):
 
 
 class LlamadoUpdateView(UpdateView):
-    permission_required = ROL_ADMIN
     model = Llamado
     form_class = LlamadoForm
     template_name = "legajos/llamado_form.html"
@@ -2388,7 +2329,7 @@ class LlamadoUpdateView(UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        legajo = Legajos.objects.values(
+        legajo = Ciudadano.objects.values(
             "id", "nombre", "apellido", "documento", "fecha_nacimiento", "sexo"
         ).get(pk=self.kwargs["pk2"])
         context["form"] = self.get_form()

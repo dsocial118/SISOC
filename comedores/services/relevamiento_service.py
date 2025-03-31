@@ -1377,7 +1377,7 @@ class RelevamientoService:
             responsable = Referente.objects.filter(
                 documento=responsable_data.get("documento")
             ).last()
-            
+
             if responsable:
                 for key, value in responsable_data.items():
                     if value:

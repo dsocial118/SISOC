@@ -5,8 +5,8 @@ from django.dispatch import receiver
 
 from .models import (
     HistorialLegajoAlertas,
-    LegajoAlertas,
-    LegajoProgramas,
+    Alerta,
+    CiudadanoPrograma,
     HistorialLegajoProgramas,
 )
 
@@ -14,7 +14,7 @@ from .models import (
 logger = logging.getLogger("django")
 
 
-@receiver(post_save, sender=LegajoAlertas)
+@receiver(post_save, sender=Alerta)
 def legajoalertas_is_created(sender, instance, created, **kwargs):
     """
     Guardado de historial cuando se produzca la creación o modificación de un alerta asociadas a un Legajo.
@@ -28,7 +28,7 @@ def legajoalertas_is_created(sender, instance, created, **kwargs):
     registro.save()
 
 
-@receiver(post_save, sender=LegajoProgramas)
+@receiver(post_save, sender=CiudadanoPrograma)
 def registrar_agregado_en_historial(sender, instance, created, **kwargs):
     if created:  # Solo registrar si es un nuevo registro
         HistorialLegajoProgramas.objects.create(
@@ -39,7 +39,7 @@ def registrar_agregado_en_historial(sender, instance, created, **kwargs):
         )
 
 
-@receiver(post_delete, sender=LegajoProgramas)
+@receiver(post_delete, sender=CiudadanoPrograma)
 def registrar_eliminacion_en_historial(sender, instance, **kwargs):
     HistorialLegajoProgramas.objects.create(
         programa=instance.programas,
