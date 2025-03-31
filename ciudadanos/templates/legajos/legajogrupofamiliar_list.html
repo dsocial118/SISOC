@@ -6,7 +6,7 @@
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right mt-2 mr-2">
         <li class="breadcrumb-item">
-            <a href="{% url 'legajos_listar' %}">Legajos</a>
+            <a href="{% url 'legajos_listar' %}">Ciudadano</a>
         </li>
         <li class="breadcrumb-item">
             <a href="{% url 'legajos_ver' pk %}">{{ nombre }}</a>
@@ -32,7 +32,7 @@
                 <div class="card bg-solid d-flex flex-fill">
                     <div class="card-header border-bottom-0">
                         <h1 class="card-title">
-                            <b class="pr-2">{{ f.legajo_2__nombre }} {{ f.legajo_2__apellido }}</b>| {{ f.vinculo }}
+                            <b class="pr-2">{{ f.legajo_2 }} </b>| {{ f.vinculo }}
                         </h1>
                     </div>
                     <div class="card-body">
@@ -41,12 +41,12 @@
                                 <dl class="row mb-0">
                                     <dt class="col-lg-5 font-weight-normal">Dirección</dt>
                                     <dd class="col-lg-7 font-weight-bold">
-                                        {{ f.legajo_2__calle|default_if_none:"-" }}
-                                        {{ f.legajo_2__altura|default_if_none:"" }}
+                                        {{ f.legajo_2.calle|default_if_none:"-" }}
+                                        {{ f.legajo_2.altura|default_if_none:"" }}
                                     </dd>
                                     <dt class="col-lg-5 font-weight-normal">Teléfono</dt>
                                     <dd class="col-lg-7 font-weight-bold">
-                                        {{ f.legajo_2__telefono|default_if_none:"-" }}
+                                        {{ f.legajo_2.telefono|default_if_none:"-" }}
                                     </dd>
                                     <dt class="col-lg-5 font-weight-normal">Relación</dt>
                                     <dd class="col-lg-7 font-weight-bold ">
@@ -80,7 +80,7 @@
                             </div>
                             <div class="col-5 text-center">
                                 {% if f.legajo_2.foto %}
-                                    <img src="{{ f.legajo_2__foto.url }}"
+                                    <img src="{{ f.legajo_2.foto.url }}"
                                          alt="user-avatar"
                                          class="img-circle img-fluid  justify-content-center" />
                                 {% else %}
@@ -93,7 +93,7 @@
                     </div>
                     <div class="card-footer">
                         <div class="text-right">
-                            <a href="{% url 'legajos_ver' f.legajo_2__id %}"
+                            <a href="{% url 'legajos_ver' f.legajo_2_id %}"
                                class="btn btn-sm btn-primary d-print-none">Ver legajo</a>
                         </div>
                     </div>
@@ -106,7 +106,7 @@
                 <div class="card bg-solid d-flex flex-fill">
                     <div class="card-header border-bottom-0">
                         <h1 class="card-title">
-                            <b class="pr-2">{{ f.legajo_1__nombre }} {{ f.legajo_1__apellido }}</b>| {{ f.vinculo_inverso }}
+                            <b class="pr-2">{{ f.legajo_1 }} </b>| {{ f.vinculo_inverso }}
                         </h1>
                     </div>
                     <div class="card-body">
@@ -115,12 +115,12 @@
                                 <dl class="row mb-0">
                                     <dt class="col-lg-5 font-weight-normal">Dirección</dt>
                                     <dd class="col-lg-7 font-weight-bold">
-                                        {{ f.legajo_1__calle|default_if_none:"-" }}
+                                        {{ f.legajo_1.calle|default_if_none:"-" }}
                                         {{ f.legajo_2.altura|default_if_none:"" }}
                                     </dd>
                                     <dt class="col-lg-5 font-weight-normal">Teléfono</dt>
                                     <dd class="col-lg-7 font-weight-bold">
-                                        {{ f.legajo_1__telefono|default_if_none:"-" }}
+                                        {{ f.legajo_1.telefono|default_if_none:"-" }}
                                     </dd>
                                     <dt class="col-lg-5 font-weight-normal">Relación</dt>
                                     <dd class="col-lg-7 font-weight-bold ">
@@ -153,8 +153,8 @@
                                 </dl>
                             </div>
                             <div class="col-5 text-center">
-                                {% if f.legajo_1__foto %}
-                                    <img src="{{ f.legajo_1__foto.url }}"
+                                {% if f.legajo_1.foto %}
+                                    <img src="{{ f.legajo_1.foto.url }}"
                                          alt="user-avatar"
                                          class="img-circle img-fluid  justify-content-center" />
                                 {% else %}

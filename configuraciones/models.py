@@ -144,4 +144,3 @@ class Sexo(models.Model):
     class Meta:
         verbose_name = "Sexo"
         verbose_name_plural = "Sexos"
-

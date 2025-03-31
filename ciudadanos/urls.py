@@ -1,7 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.urls import path
 
-from legajos.views import (
+from ciudadanos.views import (
     AccionesSocialesView,
     AlertasSelectView,
     CategoriasSelectView,
@@ -61,7 +61,7 @@ from legajos.views import (
 )
 
 urlpatterns = [
-    # Legajos
+    # Ciudadano
     path(
         "legajos/reportes",
         login_required(LegajosReportesListView.as_view()),
@@ -98,7 +98,7 @@ urlpatterns = [
         login_required(LegajosDeleteView.as_view()),
         name="legajos_eliminar",
     ),
-    # Legajos Grupo Familiar
+    # Ciudadano Grupo Familiar
     path(
         "legajos/grupofamiliar/listar/<pk>",
         login_required(LegajoGrupoFamiliarList.as_view()),
@@ -140,7 +140,7 @@ urlpatterns = [
         login_required(DimensionesUpdateView.as_view()),
         name="legajosdimensiones_editar",
     ),
-    # Legajos Alertas
+    # Ciudadano Alertas
     path(
         "legajos/alertas/listar/<pk>",
         login_required(LegajosAlertasListView.as_view()),
@@ -162,7 +162,7 @@ urlpatterns = [
     path(
         "categorias-select/", CategoriasSelectView.as_view(), name="categorias_select"
     ),
-    # Legajos Archivos
+    # Ciudadano Archivos
     path(
         "legajos/archivos/listar/<pk>",
         login_required(LegajosArchivosListView.as_view()),
@@ -250,7 +250,7 @@ urlpatterns = [
         login_required(IndicesDetalleView.as_view()),
         name="indices_detalle",
     ),
-    # Legajos Hogar
+    # Ciudadano Hogar
     path(
         "legajos/grupoHogar/listar/<pk>",
         login_required(LegajoGrupoHogarList.as_view()),

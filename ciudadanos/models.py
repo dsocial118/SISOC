@@ -6,7 +6,14 @@ from django.db import models
 from django.urls import reverse
 from django.contrib.auth.models import User
 
-from configuraciones.models import Asentamiento, Provincia, Localidad, Departamento, Municipio
+from configuraciones.models import (
+    Asentamiento,
+    Provincia,
+    Localidad,
+    Departamento,
+    Municipio,
+)
+
 
 class Dimension(models.Model):
     dimension = models.CharField(max_length=255)
@@ -48,7 +55,8 @@ class Secretarias(models.Model):
 
     def get_absolute_url(self):
         return reverse("secretarias_ver", kwargs={"pk": self.pk})
-    
+
+
 class Subsecretarias(models.Model):
     secretaria = models.ForeignKey(Secretarias, on_delete=models.CASCADE)
     nombre = models.CharField(max_length=255, unique=True)
@@ -74,7 +82,7 @@ class Subsecretarias(models.Model):
         return reverse("subsecretarias_ver", kwargs={"pk": self.pk})
 
 
-class Programas(models.Model):
+class Programa(models.Model):
     subsecretaria = models.ForeignKey(Subsecretarias, on_delete=models.CASCADE)
     nombre = models.CharField(max_length=255, unique=True)
     estado = models.BooleanField(default=True)
@@ -93,7 +101,6 @@ class Programas(models.Model):
 
     def get_absolute_url(self):
         return reverse("programas_ver", kwargs={"pk": self.pk})
-
 
 
 class PlanesSociales(models.Model):
@@ -118,6 +125,7 @@ class PlanesSociales(models.Model):
     def get_absolute_url(self):
         return reverse("planes_sociales_ver", kwargs={"pk": self.pk})
 
+
 class TipoOrganismo(models.Model):
     tipo = models.CharField(max_length=255)
 
@@ -127,6 +135,8 @@ class TipoOrganismo(models.Model):
     class Meta:
         verbose_name = "Tipo de Organismo"
         verbose_name_plural = "Tipos de Organismos"
+
+
 class Barrio(models.Model):
     barrio = models.CharField(max_length=255)
 
@@ -136,6 +146,8 @@ class Barrio(models.Model):
     class Meta:
         verbose_name = "Barrio"
         verbose_name_plural = "Barrios"
+
+
 class Organismos(models.Model):
     nombre = models.CharField(max_length=255, unique=True)
     tipo = models.ForeignKey(
@@ -177,6 +189,7 @@ class Circuito(models.Model):
     class Meta:
         verbose_name = "Circuito"
         verbose_name_plural = "Circuitos"
+
 
 class CategoriaAlertas(models.Model):
     """
@@ -660,7 +673,7 @@ class Importancia(models.Model):
         verbose_name_plural = "Importancias"
 
 
-class Legajos(models.Model):
+class Ciudadano(models.Model):
     """
 
     Guardao de los perfiles de las personas con las que interviene el Municipio.
@@ -766,7 +779,7 @@ class Legajos(models.Model):
         return f"{self.apellido}, {self.nombre}"
 
     def validate_unique(self, exclude=None):
-        qs = Legajos.objects.filter(
+        qs = Ciudadano.objects.filter(
             tipo_doc=self.tipo_doc,
             documento=self.documento,
             apellido=self.apellido,
@@ -827,7 +840,7 @@ class Legajos(models.Model):
         unique_together = ["tipo_doc", "documento"]
         ordering = ["apellido"]
         verbose_name = "Legajo"
-        verbose_name_plural = "Legajos"
+        verbose_name_plural = "Ciudadano"
         indexes = [
             models.Index(fields=["apellido"]),
             models.Index(fields=["fecha_nacimiento"]),
@@ -839,7 +852,7 @@ class Legajos(models.Model):
         return reverse("legajos_ver", kwargs={"pk": self.pk})
 
 
-class LegajoGrupoFamiliar(models.Model):
+class GrupoFamiliar(models.Model):
     """
     Guardado de las relaciones familiares de los vecinos y vecinas registrados, con una valoración que permita conocer el estado
 
@@ -847,10 +860,10 @@ class LegajoGrupoFamiliar(models.Model):
     """
 
     legajo_1 = models.ForeignKey(
-        Legajos, related_name="legajo1", on_delete=models.CASCADE
+        Ciudadano, related_name="legajo1", on_delete=models.CASCADE
     )
     legajo_2 = models.ForeignKey(
-        Legajos, related_name="legajo2", on_delete=models.CASCADE
+        Ciudadano, related_name="legajo2", on_delete=models.CASCADE
     )
     vinculo = models.ForeignKey(
         VinculoFamiliar, on_delete=models.SET_NULL, null=True, blank=True
@@ -893,7 +906,7 @@ class DimensionFamilia(models.Model):
     Guardado de la informacion de salud asociada a un Legajo.
     """
 
-    legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
+    legajo = models.OneToOneField(Ciudadano, on_delete=models.CASCADE)
     cant_hijos = models.SmallIntegerField(
         verbose_name="Cantidad de hijos", null=True, blank=True
     )
@@ -953,7 +966,7 @@ class DimensionVivienda(models.Model):
     Guardado de los datos de vivienda asociados a un Legajo.
     """
 
-    legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
+    legajo = models.OneToOneField(Ciudadano, on_delete=models.CASCADE)
     tipo = models.ForeignKey(
         TipoVivienda,
         on_delete=models.SET_NULL,
@@ -1090,7 +1103,7 @@ class DimensionSalud(models.Model):
     Guardado de la informacion de salud asociada a un Legajo.
     """
 
-    legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
+    legajo = models.OneToOneField(Ciudadano, on_delete=models.CASCADE)
     lugares_atencion = models.ForeignKey(
         CentrosSalud,
         verbose_name="Centro de Salud en donde se atiende",
@@ -1139,7 +1152,7 @@ class DimensionSalud(models.Model):
 
 
 class DimensionEducacion(models.Model):
-    legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
+    legajo = models.OneToOneField(Ciudadano, on_delete=models.CASCADE)
     max_nivel = models.ForeignKey(
         NivelEducativo,
         verbose_name="Máximo nivel educativo alcanzado",
@@ -1301,7 +1314,7 @@ class DimensionEconomia(models.Model):
     Guardado de los datos económicos asociados a un Legajo.
     """
 
-    legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
+    legajo = models.OneToOneField(Ciudadano, on_delete=models.CASCADE)
     m2m_planes = models.ManyToManyField(PlanesSociales, blank=True)
     cant_aportantes = models.SmallIntegerField(
         verbose_name="¿Cuántos miembros reciben ingresos por plan social o aportan al grupo familiar?",
@@ -1343,7 +1356,7 @@ class DimensionEconomia(models.Model):
 
 
 class DimensionTrabajo(models.Model):
-    legajo = models.OneToOneField(Legajos, on_delete=models.CASCADE)
+    legajo = models.OneToOneField(Ciudadano, on_delete=models.CASCADE)
     modo_contratacion = models.ForeignKey(
         ModoContratacion, on_delete=models.SET_NULL, null=True, blank=True
     )
@@ -1430,16 +1443,14 @@ class DimensionTrabajo(models.Model):
         return reverse("dimensionlaboral_ver", kwargs={"pk": self.pk})
 
 
-class LegajoAlertas(models.Model):
+class Alerta(models.Model):
     """
     Registro de Alertas de vulnerabilidad asociadas a un Legajo determinado Tanto el alta como la baja se guardan en un historial del alertas.
     """
 
-    alerta = models.ForeignKey(
-        Alertas, related_name="alerta", on_delete=models.CASCADE
-    )
+    alerta = models.ForeignKey(Alertas, related_name="alerta", on_delete=models.CASCADE)
     legajo = models.ForeignKey(
-        Legajos, related_name="legajo_alerta", on_delete=models.CASCADE
+        Ciudadano, related_name="legajo_alerta", on_delete=models.CASCADE
     )
     fecha_inicio = models.DateField(auto_now=True)
     creada_por = models.ForeignKey(
@@ -1471,12 +1482,12 @@ class LegajoAlertas(models.Model):
         return reverse("legajoalertas_ver", kwargs={"pk": self.pk})
 
 
-class LegajoProgramas(models.Model):
+class CiudadanoPrograma(models.Model):
     programas = models.ForeignKey(
-        Programas, related_name="programa_legajo", on_delete=models.CASCADE
+        Programa, related_name="programa_legajo", on_delete=models.CASCADE
     )
     legajo = models.ForeignKey(
-        Legajos, related_name="legajo_programa", on_delete=models.CASCADE
+        Ciudadano, related_name="legajo_programa", on_delete=models.CASCADE
     )
     fecha_creado = models.DateField(auto_now=True)
     creado_por = models.ForeignKey(
@@ -1499,10 +1510,10 @@ class HistorialLegajoProgramas(models.Model):
         max_length=10, choices=[("agregado", "Agregado"), ("eliminado", "Eliminado")]
     )
     programa = models.ForeignKey(
-        Programas, related_name="hist_prog_legajo", on_delete=models.CASCADE
+        Programa, related_name="hist_prog_legajo", on_delete=models.CASCADE
     )
     legajo = models.ForeignKey(
-        Legajos, related_name="hist_legajo_programa", on_delete=models.CASCADE
+        Ciudadano, related_name="hist_legajo_programa", on_delete=models.CASCADE
     )
     usuario = models.ForeignKey(User, on_delete=models.CASCADE)
 
@@ -1525,7 +1536,7 @@ class HistorialLegajoAlertas(models.Model):
         Alertas, related_name="hist_alerta", on_delete=models.CASCADE
     )
     legajo = models.ForeignKey(
-        Legajos, related_name="hist_legajo_alerta", on_delete=models.CASCADE
+        Ciudadano, related_name="hist_legajo_alerta", on_delete=models.CASCADE
     )
     observaciones = models.CharField(max_length=255, null=True, blank=True)
     creada_por = models.ForeignKey(
@@ -1562,17 +1573,17 @@ class HistorialLegajoAlertas(models.Model):
         indexes = [models.Index(fields=["legajo"])]
 
 
-class LegajosDerivaciones(models.Model):
+class Derivaciones(models.Model):
     """
     Registro de todas las derivaciones a programas que funcionen dentro del sistema.
     """
 
-    legajo = models.ForeignKey(Legajos, on_delete=models.CASCADE)
+    legajo = models.ForeignKey(Ciudadano, on_delete=models.CASCADE)
     programa_solicitante = models.ForeignKey(
-        Programas, related_name="programa_solicitante", on_delete=models.CASCADE
+        Programa, related_name="programa_solicitante", on_delete=models.CASCADE
     )
     programa = models.ForeignKey(
-        Programas, related_name="programa_derivado", on_delete=models.CASCADE
+        Programa, related_name="programa_derivado", on_delete=models.CASCADE
     )
     organismo = models.ForeignKey(
         Organismos, on_delete=models.CASCADE, null=True, blank=True
@@ -1612,12 +1623,12 @@ class LegajosDerivaciones(models.Model):
         return reverse("legajosderivaciones_ver", kwargs={"pk": self.pk})
 
 
-class LegajosArchivos(models.Model):
+class Archivo(models.Model):
     """
     Archivos asociados a un legajo. En la view se separaran los archivos de imagen de los documentos (para mostrar los primeros enun carousel)
     """
 
-    legajo = models.ForeignKey(Legajos, on_delete=models.CASCADE)
+    legajo = models.ForeignKey(Ciudadano, on_delete=models.CASCADE)
     archivo = models.FileField(upload_to="legajos/archivos/")
     fecha = models.DateTimeField(auto_now_add=True)
     tipo = models.CharField(max_length=255)
@@ -1629,7 +1640,7 @@ class LegajosArchivos(models.Model):
         return f"Archivo {self.id} del legajo {self.legajo}"
 
 
-class LegajoGrupoHogar(models.Model):
+class GrupoHogar(models.Model):
     """
     Guardado de las relaciones familiares de los vecinos y vecinas registrados,
     con una valoración que permita conocer el estado del vínculo desde la
@@ -1637,10 +1648,10 @@ class LegajoGrupoHogar(models.Model):
     """
 
     legajo_1Hogar = models.ForeignKey(
-        Legajos, on_delete=models.CASCADE, related_name="hogar_1"
+        Ciudadano, on_delete=models.CASCADE, related_name="hogar_1"
     )
     legajo_2Hogar = models.ForeignKey(
-        Legajos, on_delete=models.CASCADE, related_name="hogar_2"
+        Ciudadano, on_delete=models.CASCADE, related_name="hogar_2"
     )
     estado_relacion = models.ForeignKey(
         EstadoRelacion, on_delete=models.SET_NULL, null=True, blank=True
@@ -1722,7 +1733,7 @@ class Intervencion(models.Model):
     Guardado de las intervenciones realizadas a un legajo.
     """
 
-    legajo = models.ForeignKey(Legajos, on_delete=models.SET_NULL, null=True)
+    legajo = models.ForeignKey(Ciudadano, on_delete=models.SET_NULL, null=True)
     usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     subintervencion = models.ForeignKey(
         SubIntervencion, on_delete=models.SET_NULL, null=True
@@ -1814,14 +1825,12 @@ class Llamado(models.Model):
     Guardado de los llamados realizados a un legajo.
     """
 
-    legajo = models.ForeignKey(Legajos, on_delete=models.SET_NULL, null=True)
+    legajo = models.ForeignKey(Ciudadano, on_delete=models.SET_NULL, null=True)
     usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     subtipollamado = models.ForeignKey(
         SubTipoLlamado, on_delete=models.SET_NULL, null=True
     )
-    tipo_llamado = models.ForeignKey(
-        TipoLlamado, on_delete=models.SET_NULL, null=True
-    )
+    tipo_llamado = models.ForeignKey(TipoLlamado, on_delete=models.SET_NULL, null=True)
     fecha = models.DateTimeField(auto_now_add=True)
     estado = models.ForeignKey(
         EstadosLlamados, on_delete=models.SET_NULL, default=1, null=True
