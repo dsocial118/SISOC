@@ -134,3 +134,24 @@ def test_clean_relevamiento_serializer_datos_minimos():
         serializer.save()
 
     assert serializer.instance.comedor.id == datos["comedor"].id
+
+@pytest.mark.django_db
+def test_clean_relevamiento_serializer_datos_extra():
+    """
+    Caso: Datos adicionales no esperados.
+    """
+    datos = RelevamientoTestHelper.crear_datos_relevamiento()
+
+    initial_data = {
+        "comedor": datos["comedor"].id,
+        "fecha_visita": "5/3/2025 14:29",
+        "extra_field": "valor_no_esperado",  # Campo no definido en el serializer
+    }
+
+    serializer = RelevamientoSerializer(
+        instance=datos["relevamiento"], data=initial_data, partial=True
+    ).clean()
+    if serializer.is_valid(raise_exception=True):
+        serializer.save()
+
+    assert serializer.instance.fecha_visita.strftime("%-d/%-m/%Y %H:%M") == "5/3/2025 14:29"
