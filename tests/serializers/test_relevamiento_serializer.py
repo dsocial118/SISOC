@@ -94,3 +94,24 @@ def test_clean_relevamiento_serializer_datos_completos():
         "http://example.com/image1.jpg",
         "http://example.com/image2.jpg",
     ]
+
+@pytest.mark.django_db
+def test_clean_relevamiento_serializer_datos_incompletos():
+    """
+    Caso: Datos incompletos (faltan campos opcionales).
+    """
+    datos = RelevamientoTestHelper.crear_datos_relevamiento()
+
+    initial_data = {
+        "comedor": datos["comedor"].id,
+        "fecha_visita": "5/3/2025 14:29",
+        # Faltan campos opcionales como "territorial", "funcionamiento", etc.
+    }
+
+    serializer = RelevamientoSerializer(
+        instance=datos["relevamiento"], data=initial_data, partial=True
+    ).clean()
+    if serializer.is_valid(raise_exception=True):
+        serializer.save()
+
+    assert serializer.instance.fecha_visita.strftime("%-d/%-m/%Y %H:%M") == "5/3/2025 14:29"
