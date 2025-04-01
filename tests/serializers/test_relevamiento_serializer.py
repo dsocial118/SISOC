@@ -10,47 +10,68 @@ from comedores.serializers.relevamiento_serializer import RelevamientoSerializer
 from configuraciones.models import Provincia
 
 
+class RelevamientoTestHelper:
+    """
+    Clase auxiliar para crear datos de prueba relacionados con Relevamiento.
+    """
+
+    @staticmethod
+    def crear_datos_relevamiento():
+        """
+        Crea y retorna las instancias necesarias para un relevamiento de prueba.
+        """
+        provincia = Provincia.objects.create(nombre="Provincia Test")
+        comedor = Comedor.objects.create(
+            nombre="Comedor Test",
+            provincia=provincia,
+            barrio="Centro",
+            calle="Av. Siempre Viva",
+            numero=123,
+        )
+
+        modalidad_prestacion = TipoModalidadPrestacion.objects.create(
+            nombre="Servicio en el lugar"
+        )
+        cantidad_colaboradores = CantidadColaboradores.objects.create(nombre="1 a 3")
+        tipo_espacio = TipoEspacio.objects.create(nombre="Espacio Propio")
+
+        relevamiento = Relevamiento.objects.create(
+            comedor=comedor,
+            estado="Pendiente",
+            territorial_uid="1",
+            territorial_nombre="Territorial Test",
+        )
+
+        return {
+            "provincia": provincia,
+            "comedor": comedor,
+            "modalidad_prestacion": modalidad_prestacion,
+            "cantidad_colaboradores": cantidad_colaboradores,
+            "tipo_espacio": tipo_espacio,
+            "relevamiento": relevamiento,
+        }
+
+
 @pytest.mark.django_db
 def test_clean_relevamiento_serializer():
-
-    # Preparación: Crear un comedor y un relevamiento en la BD de prueba
-    provincia = Provincia.objects.create(nombre="Provincia Test")
-    comedor = Comedor.objects.create(
-        nombre="Comedor Test",
-        provincia=provincia,
-        barrio="Centro",
-        calle="Av. Siempre Viva",
-        numero=123,
-    )
-
-    modalidad_prestacion = TipoModalidadPrestacion.objects.create(
-        nombre="Servicio en el lugar"
-    )
-    cantidad_colaboradores = CantidadColaboradores.objects.create(nombre="1 a 3")
-    tipo_espacio = TipoEspacio.objects.create(nombre="Espacio Propio")
-
-    relevamiento = Relevamiento.objects.create(
-        comedor=comedor,
-        estado="Pendiente",
-        territorial_uid="1",
-        territorial_nombre="Territorial Test",
-    )
+    # Usar la clase auxiliar para crear los datos
+    datos = RelevamientoTestHelper.crear_datos_relevamiento()
 
     # Datos iniciales para el serializer
     initial_data = {
-        "comedor": comedor.id,
+        "comedor": datos["comedor"].id,
         "fecha_visita": "5/3/2025 14:29",
         "territorial": {"nombre": "Territorial Test", "gestionar_uid": "12345"},
         "funcionamiento": {
-            "modalidad_prestacion": modalidad_prestacion.nombre,
+            "modalidad_prestacion": datos["modalidad_prestacion"].nombre,
             "servicio_por_turnos": False,
             "cantidad_turnos": 2,
         },
         "espacio": {
-            "tipo_espacio_fisico": tipo_espacio.nombre,
+            "tipo_espacio_fisico": datos["tipo_espacio"].nombre,
         },
         "colaboradores": {
-            "cantidad_colaboradores": cantidad_colaboradores.nombre,
+            "cantidad_colaboradores": datos["cantidad_colaboradores"].nombre,
             "colaboradores_capacitados_alimentos": True,
         },
         "recursos": {
@@ -76,7 +97,7 @@ def test_clean_relevamiento_serializer():
 
     # Crear el serializer con los datos iniciales y el relevamiento existente
     serializer = RelevamientoSerializer(
-        instance=relevamiento, data=initial_data, partial=True
+        instance=datos["relevamiento"], data=initial_data, partial=True
     ).clean()
     if serializer.is_valid(raise_exception=True):
         serializer.save()
