@@ -178,3 +178,24 @@ def test_clean_relevamiento_serializer_valores_limite():
 
     assert serializer.instance.fecha_visita.strftime("%-d/%-m/%Y %H:%M") == "1/1/1900 00:00"
     assert serializer.instance.prestacion.lunes_desayuno_actual == 0
+
+@pytest.mark.django_db
+def test_clean_relevamiento_serializer_listas_vacias():
+    """
+    Caso: Listas vacías o nulas.
+    """
+    datos = RelevamientoTestHelper.crear_datos_relevamiento()
+
+    initial_data = {
+        "comedor": datos["comedor"].id,
+        "imagenes": "",  # Lista vacía
+    }
+
+    serializer = RelevamientoSerializer(
+        instance=datos["relevamiento"], data=initial_data, partial=True
+    ).clean()
+    if serializer.is_valid(raise_exception=True):
+        serializer.save()
+
+    assert serializer.instance.imagenes == []
+
