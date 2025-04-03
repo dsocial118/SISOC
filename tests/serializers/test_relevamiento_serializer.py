@@ -155,3 +155,26 @@ def test_clean_relevamiento_serializer_datos_extra():
         serializer.save()
 
     assert serializer.instance.fecha_visita.strftime("%-d/%-m/%Y %H:%M") == "5/3/2025 14:29"
+
+
+@pytest.mark.django_db
+def test_clean_relevamiento_serializer_valores_limite():
+    """
+    Caso: Valores límite en los datos.
+    """
+    datos = RelevamientoTestHelper.crear_datos_relevamiento()
+
+    initial_data = {
+        "comedor": datos["comedor"].id,
+        "fecha_visita": "1/1/1900 00:00",  # Fecha límite inferior
+        "prestacion": {"lunes_desayuno_actual": 0},  # Valor límite inferior
+    }
+
+    serializer = RelevamientoSerializer(
+        instance=datos["relevamiento"], data=initial_data, partial=True
+    ).clean()
+    if serializer.is_valid(raise_exception=True):
+        serializer.save()
+
+    assert serializer.instance.fecha_visita.strftime("%-d/%-m/%Y %H:%M") == "1/1/1900 00:00"
+    assert serializer.instance.prestacion.lunes_desayuno_actual == 0
