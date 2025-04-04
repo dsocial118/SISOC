@@ -175,14 +175,22 @@ class EspacioCocina(models.Model):
     Informacion relacionada a la cocina y almacenamiento de alimentos
     """
 
-    espacio_elaboracion_alimentos = models.BooleanField(default=False)
-    almacenamiento_alimentos_secos = models.BooleanField(default=False)
-    heladera = models.BooleanField(default=False)
-    freezer = models.BooleanField(default=False)
-    recipiente_residuos_organicos = models.BooleanField(default=False)
-    recipiente_residuos_reciclables = models.BooleanField(default=False)
-    otros_residuos = models.BooleanField(default=False)
-    recipiente_otros_residuos = models.BooleanField(default=False)
+    espacio_elaboracion_alimentos = models.BooleanField(default=False,blank=True,
+        null=True)
+    almacenamiento_alimentos_secos = models.BooleanField(default=False,blank=True,
+        null=True)
+    heladera = models.BooleanField(default=False,blank=True,
+        null=True)
+    freezer = models.BooleanField(default=False,blank=True,
+        null=True)
+    recipiente_residuos_organicos = models.BooleanField(default=False,blank=True,
+        null=True)
+    recipiente_residuos_reciclables = models.BooleanField(default=False,blank=True,
+        null=True)
+    otros_residuos = models.BooleanField(default=False,blank=True,
+        null=True)
+    recipiente_otros_residuos = models.BooleanField(default=False,blank=True,
+        null=True)
     abastecimiento_combustible = models.ManyToManyField(
         TipoCombustible,
         related_name="espacios",
@@ -202,7 +210,8 @@ class EspacioCocina(models.Model):
         null=True,
         verbose_name="En caso de otro, especificar",
     )
-    instalacion_electrica = models.BooleanField(default=False)
+    instalacion_electrica = models.BooleanField(default=False,blank=True,
+        null=True)
 
     class Meta:
         verbose_name = "Espacio de cocina y almacenamiento de alimentos"
@@ -300,14 +309,22 @@ class EspacioPrestacion(models.Model):
     Informacion relacionada al espacio donde se brinda la prestacion del Comedor/Merendero
     """
 
-    espacio_equipado = models.BooleanField(default=False)
-    tiene_ventilacion = models.BooleanField(default=False)
-    tiene_salida_emergencia = models.BooleanField(default=False)
-    salida_emergencia_senializada = models.BooleanField(default=False)
-    tiene_equipacion_incendio = models.BooleanField(default=False)
-    tiene_botiquin = models.BooleanField(default=False)
-    tiene_buena_iluminacion = models.BooleanField(default=False)
-    tiene_sanitarios = models.BooleanField(default=False)
+    espacio_equipado = models.BooleanField(default=False,blank=True,
+        null=True)
+    tiene_ventilacion = models.BooleanField(default=False,blank=True,
+        null=True)
+    tiene_salida_emergencia = models.BooleanField(default=False,blank=True,
+        null=True)
+    salida_emergencia_senializada = models.BooleanField(default=False,blank=True,
+        null=True)
+    tiene_equipacion_incendio = models.BooleanField(default=False,blank=True,
+        null=True)
+    tiene_botiquin = models.BooleanField(default=False,blank=True,
+        null=True)
+    tiene_buena_iluminacion = models.BooleanField(default=False,blank=True,
+        null=True)
+    tiene_sanitarios = models.BooleanField(default=False,blank=True,
+        null=True)
     desague_hinodoro = models.ForeignKey(
         to=TipoDesague,
         on_delete=models.PROTECT,
@@ -434,13 +451,17 @@ class Colaboradores(models.Model):
         default=False,
         verbose_name="3.1.2 ¿El Comedor/Merendero cuentan con personas que realizan tareas capacitadas para la manipulación de alimentos?",
     )
-    colaboradores_recibieron_capacitacion_alimentos = models.BooleanField(default=False)
-    colaboradores_capacitados_salud_seguridad = models.BooleanField(default=False)
+    colaboradores_recibieron_capacitacion_alimentos = models.BooleanField(default=False,blank=True,
+        null=True)
+    colaboradores_capacitados_salud_seguridad = models.BooleanField(default=False,blank=True,
+        null=True)
     colaboradores_recibieron_capacitacion_emergencias = models.BooleanField(
-        default=False
+        default=False,blank=True,
+        null=True
     )
     colaboradores_recibieron_capacitacion_violencia = models.BooleanField(
-        default=False,
+        default=False,blank=True,
+        null=True,
         verbose_name=(
             "¿Los colaboradores recibieron capacitación sobre prevención de violencia de género "
             "incluyendo acoso sexual, explotación sexual y abuso infantil?"
@@ -612,16 +633,26 @@ class FuenteCompras(models.Model):
     Informacion relacionada a la realizacion de compras para abastecer el Comedor/Merendero
     """
 
-    almacen_cercano = models.BooleanField(default=False)
-    verduleria = models.BooleanField(default=False)
-    granja = models.BooleanField(default=False)
-    carniceria = models.BooleanField(default=False)
-    pescaderia = models.BooleanField(default=False)
-    supermercado = models.BooleanField(default=False)
-    mercado_central = models.BooleanField(default=False)
-    ferias_comunales = models.BooleanField(default=False)
-    mayoristas = models.BooleanField(default=False)
-    otro = models.BooleanField(default=False)
+    almacen_cercano = models.BooleanField(default=False,blank=True,
+        null=True)
+    verduleria = models.BooleanField(default=False,blank=True,
+        null=True)
+    granja = models.BooleanField(default=False,blank=True,
+        null=True)
+    carniceria = models.BooleanField(default=False,blank=True,
+        null=True)
+    pescaderia = models.BooleanField(default=False,blank=True,
+        null=True)
+    supermercado = models.BooleanField(default=False,blank=True,
+        null=True)
+    mercado_central = models.BooleanField(default=False,blank=True,
+        null=True)
+    ferias_comunales = models.BooleanField(default=False,blank=True,
+        null=True)
+    mayoristas = models.BooleanField(default=False,blank=True,
+        null=True)
+    otro = models.BooleanField(default=False,blank=True,
+        null=True)
 
     class Meta:
         verbose_name = "Fuente de compras"
@@ -742,25 +773,43 @@ class Anexo(models.Model):
         blank=True,
         null=True,
     )
-    comedor_merendero = models.BooleanField(default=False)
-    insumos_organizacion = models.BooleanField(default=False)
-    servicio_internet = models.BooleanField(default=False, null=True)
-    zona_inundable = models.BooleanField(default=False)
-    actividades_jardin_maternal = models.BooleanField(default=False)
-    actividades_jardin_infantes = models.BooleanField(default=False)
-    apoyo_escolar = models.BooleanField(default=False)
-    alfabetizacion_terminalidad = models.BooleanField(default=False)
-    capacitaciones_talleres = models.BooleanField(default=False)
-    promocion_salud = models.BooleanField(default=False)
-    actividades_discapacidad = models.BooleanField(default=False)
-    necesidades_alimentarias = models.BooleanField(default=False)
-    actividades_recreativas = models.BooleanField(default=False)
-    actividades_culturales = models.BooleanField(default=False)
-    emprendimientos_productivos = models.BooleanField(default=False)
-    actividades_religiosas = models.BooleanField(default=False)
-    actividades_huerta = models.BooleanField(default=False)
-    espacio_huerta = models.BooleanField(default=False)
-    otras_actividades = models.BooleanField(default=False)
+    comedor_merendero = models.BooleanField(default=False,blank=True,
+        null=True)
+    insumos_organizacion = models.BooleanField(default=False,blank=True,
+        null=True)
+    servicio_internet = models.BooleanField(default=False, null=True,blank=True)
+    zona_inundable = models.BooleanField(default=False,blank=True,
+        null=True)
+    actividades_jardin_maternal = models.BooleanField(default=False,blank=True,
+        null=True)
+    actividades_jardin_infantes = models.BooleanField(default=False,blank=True,
+        null=True)
+    apoyo_escolar = models.BooleanField(default=False,blank=True,
+        null=True)
+    alfabetizacion_terminalidad = models.BooleanField(default=False,blank=True,
+        null=True)
+    capacitaciones_talleres = models.BooleanField(default=False,blank=True,
+        null=True)
+    promocion_salud = models.BooleanField(default=False,blank=True,
+        null=True)
+    actividades_discapacidad = models.BooleanField(default=False,blank=True,
+        null=True)
+    necesidades_alimentarias = models.BooleanField(default=False,blank=True,
+        null=True)
+    actividades_recreativas = models.BooleanField(default=False,blank=True,
+        null=True)
+    actividades_culturales = models.BooleanField(default=False,blank=True,
+        null=True)
+    emprendimientos_productivos = models.BooleanField(default=False,blank=True,
+        null=True)
+    actividades_religiosas = models.BooleanField(default=False,blank=True,
+        null=True)
+    actividades_huerta = models.BooleanField(default=False,blank=True,
+        null=True)
+    espacio_huerta = models.BooleanField(default=False,blank=True,
+        null=True)
+    otras_actividades = models.BooleanField(default=False,blank=True,
+        null=True)
     cuales_otras_actividades = models.TextField(blank=True, null=True)
     veces_recibio_insumos_2024 = models.IntegerField(
         default=0,
@@ -853,13 +902,20 @@ class PuntoEntregas(models.Model):
         null=True,
         verbose_name="Otros punto de entrega",
     )
-    existe_punto_entregas = models.BooleanField(default=False)
-    funciona_punto_entregas = models.BooleanField(default=False)
-    observa_entregas = models.BooleanField(default=False)
-    retiran_mercaderias_distribucion = models.BooleanField(default=False)
-    retiran_mercaderias_comercio = models.BooleanField(default=False)
-    reciben_dinero = models.BooleanField(default=False)
-    registran_entrega_bolsones = models.BooleanField(default=False)
+    existe_punto_entregas = models.BooleanField(default=False,blank=True,
+        null=True)
+    funciona_punto_entregas = models.BooleanField(default=False,blank=True,
+        null=True)
+    observa_entregas = models.BooleanField(default=False,blank=True,
+        null=True)
+    retiran_mercaderias_distribucion = models.BooleanField(default=False,blank=True,
+        null=True)
+    retiran_mercaderias_comercio = models.BooleanField(default=False,blank=True,
+        null=True)
+    reciben_dinero = models.BooleanField(default=False,blank=True,
+        null=True)
+    registran_entrega_bolsones = models.BooleanField(default=False,blank=True,
+        null=True)
 
 
 class Relevamiento(models.Model):
@@ -892,7 +948,8 @@ class Relevamiento(models.Model):
     )
     observacion = models.TextField(blank=True, null=True)
     docPDF = models.URLField(blank=True, null=True)
-    responsable_es_referente = models.BooleanField(default=True)
+    responsable_es_referente = models.BooleanField(default=True,blank=True,
+        null=True)
     responsable_relevamiento = models.ForeignKey(
         to=Referente,
         on_delete=models.PROTECT,
