@@ -20,8 +20,6 @@ def normalize_json(data):
         return False
     elif data == "Y":
         return True
-    elif data == "":
-        return False
     return data
 
 
