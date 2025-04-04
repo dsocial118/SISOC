@@ -35,7 +35,9 @@ def test_get_puntuacion_total():
     # Normalizar los valores del JSON
     data = normalize_json(data)
 
-    fecha_visita = datetime.strptime(data["fecha_visita"], "%d/%m/%Y %H:%M").strftime("%Y-%m-%d %H:%M:%S")
+    fecha_visita = datetime.strptime(data["fecha_visita"], "%d/%m/%Y %H:%M").strftime(
+        "%Y-%m-%d %H:%M:%S"
+    )
     # Extraer variables del JSON
     sisoc_id = data["sisoc_id"]
     gestionar_uid = data["gestionar_uid"]
@@ -86,4 +88,3 @@ def test_get_puntuacion_total():
 
     # Verificación: Verificar que el resultado es el esperado
     assert resultado == suma_prueba
-
