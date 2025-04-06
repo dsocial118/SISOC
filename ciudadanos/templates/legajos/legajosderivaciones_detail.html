@@ -60,10 +60,10 @@
                             <dd class="col-sm-9 font-weight-bold">
                                 <span class="badge badge-gb-color">{{ object.importancia }}</span>
                             </dd>
-                            {% if object.m2m_alertas.all.count %}
+                            {% if object.alertas.all.count %}
                                 <dt class="col-sm-3 font-weight-normal">Alertas</dt>
                                 <dd class="col-sm-9 font-weight-bold">
-                                    {{ object.m2m_alertas.all|join:', ' }}
+                                    {{ object.alertas.all|join:', ' }}
                                 </dd>
                             {% endif %}
                             <dt class="col-sm-3 font-weight-normal">Usuario que solicitó</dt>

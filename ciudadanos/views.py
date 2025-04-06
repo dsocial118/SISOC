@@ -43,14 +43,14 @@ from ciudadanos.forms import (
     DimensionViviendaForm,
     IntervencionForm,
     GrupoHogarForm,
-    AlertasForm,
-    LegajosArchivosForm,
+    AlertaForm,
+    ArchivoForm,
     LegajosDerivacionesForm,
     CiudadanoForm,
-    LegajosUpdateForm,
+    CiudadanoUpdateForm,
     LlamadoForm,
-    NuevoLegajoFamiliarForm,
-    LegajoProgramasForm,
+    FamiliarForm,
+    ProgramasForm,
 )
 from ciudadanos.models import (
     ActividadRealizada,
@@ -60,8 +60,8 @@ from ciudadanos.models import (
     AsisteEscuela,
     CantidadAmbientes,
     CentrosSalud,
-    CondicionDe,
-    ContextoCasa,
+    Condicion,
+    UbicacionVivienda,
     Desague,
     DimensionEconomia,
     DimensionEducacion,
@@ -78,7 +78,7 @@ from ciudadanos.models import (
     Grado,
     HistorialLegajoAlertas,
     Inodoro,
-    InstitucionesEducativas,
+    InstitucionEducativas,
     Intervencion,
     Alerta,
     Asentamiento,
@@ -159,7 +159,7 @@ def load_asentamiento(request):
 @require_POST
 def actualizar_programas(request, legajo_id):
     legajo = get_object_or_404(Ciudadano, id=legajo_id)
-    form = LegajoProgramasForm(request.POST)
+    form = ProgramasForm(request.POST)
     if request.POST:
         programas_ids = request.POST.getlist("programas")
         programas_duplicados = []
@@ -334,7 +334,7 @@ class LegajosListView(ListView):
                     "apellido",
                     "nombre",
                     "documento",
-                    "tipo_doc",
+                    "tipo_documento",
                     "sexo",
                     "estado",
                 )
@@ -548,7 +548,7 @@ class LegajosDetailView(DetailView):
                     "hay_banio",
                     "hay_agua_caliente",
                     "hay_desmoronamiento",
-                    "ContextoCasa",
+                    "ubicacion_vivienda",
                     "PoseenPC",
                     "Poseeninternet",
                     "PoseenCelular",
@@ -642,7 +642,7 @@ class LegajosDetailView(DetailView):
         context["emoji_nacionalidad"] = emoji_nacionalidad
 
         # PROGRAMAS
-        context["form_prog"] = LegajoProgramasForm()
+        context["form_prog"] = ProgramasForm()
         legajo_programas = CiudadanoPrograma.objects.filter(legajo=pk)
         if legajo_programas.exists():
             context["legajos_programas"] = legajo_programas
@@ -754,7 +754,7 @@ class LegajosDeleteView(DeleteView):
         # Graba la data del usuario que realiza la eliminacion en el LOG
         mensaje = (
             f"Legajo borrado - Nombre: {legajo.nombre}, Apellido: {legajo.apellido}, "
-            f"Tipo de documento: {legajo.tipo_doc}, Documento: {legajo.documento}"
+            f"Tipo de documento: {legajo.tipo_documento}, Documento: {legajo.documento}"
         )
         logger.info(f"Username: {usuario_eliminacion} - {mensaje}")
         return super().form_valid(form)
@@ -820,7 +820,7 @@ class LegajosCreateView(CreateView):
 
 class LegajosUpdateView(UpdateView):
     model = Ciudadano
-    form_class = LegajosUpdateForm
+    form_class = CiudadanoUpdateForm
 
     def form_valid(self, form):
         legajo = form.save(commit=False)  # Guardamos sin persistir en la base de datos
@@ -853,7 +853,7 @@ class LegajosUpdateView(UpdateView):
 
 class LegajosGrupoFamiliarCreateView(CreateView):
     model = GrupoFamiliar
-    form_class = NuevoLegajoFamiliarForm
+    form_class = FamiliarForm
     paginate_by = 8  # Número de elementos por página
 
     def get_context_data(self, **kwargs):
@@ -1008,7 +1008,9 @@ def busqueda_familiares(request):
                 "nombre": familiar.nombre,
                 "apellido": familiar.apellido,
                 "documento": familiar.documento,
-                "tipo_doc": familiar.tipo_doc.tipo if familiar.tipo_doc else None,
+                "tipo_documento": (
+                    familiar.tipo_documento.tipo if familiar.tipo_documento else None
+                ),
                 "fecha_nacimiento": familiar.fecha_nacimiento,
                 "sexo": familiar.sexo.sexo if familiar.sexo else None,
                 # Otros campos
@@ -1361,7 +1363,7 @@ class LegajosAlertasListView(ListView):
 
 class LegajosAlertasCreateView(SuccessMessageMixin, CreateView):
     model = Alerta
-    form_class = AlertasForm
+    form_class = AlertaForm
     success_message = "Alerta asignada correctamente."
 
     def get_context_data(self, **kwargs):
@@ -1506,9 +1508,9 @@ class DimensionesUpdateView(SuccessMessageMixin, UpdateView):
                 "dimensionsalud__hay_discapacidad",
                 "dimensionsalud__hay_cud",
                 "dimensioneducacion__legajo",
-                "dimensioneducacion__obs_educacion",
-                "dimensioneducacion__areaCurso",
-                "dimensioneducacion__areaOficio",
+                "dimensioneducacion__observaciones",
+                "dimensioneducacion__area_curso",
+                "dimensioneducacion__area_oficio",
                 "dimensioneconomia__legajo",
                 "dimensioneconomia__obs_economia",
                 "dimensioneconomia__m2m_planes",
@@ -1583,8 +1585,8 @@ class DimensionesUpdateView(SuccessMessageMixin, UpdateView):
             "PoseenCelular": "PoseenCelular",
             "PoseenPC": "PoseenPC",
             "Poseeninternet": "Poseeninternet",
-            "ContextoCasa": ContextoCasa,
-            "CondicionDe": CondicionDe,
+            "ubicacion_vivienda": UbicacionVivienda,
+            "Condicion": Condicion,
             "CantidadAmbientes": "CantidadAmbientes",
             "gas": Gas,
             "techos": TipoTechoVivienda,
@@ -1644,26 +1646,26 @@ class DimensionesUpdateView(SuccessMessageMixin, UpdateView):
             "max_nivel": NivelEducativo,
             "estado_nivel": EstadoNivelEducativo,
             "asiste_escuela": AsisteEscuela,
-            "institucion": InstitucionesEducativas,
+            "institucion": InstitucionEducativas,
             "gestion": TipoGestion,
             "ciclo": NivelEducativo,
             "grado": Grado,
             "turno": Turno,
-            "obs_educacion": "obs_educacion",
+            "observaciones": "observaciones",
             "provinciaInstitucion": Provincia,
             "localidadInstitucion": Localidad,
             "municipioInstitucion": Municipio,
-            "barrioInstitucion": "barrioInstitucion",
-            "calleInstitucion": "calleInstitucion",
-            "numeroInstitucion": "numeroInstitucion",
-            "interesEstudio": "interesEstudio",
-            "interesCurso": "interesCurso",
-            "nivelIncompleto": MotivoNivelIncompleto,
-            "sinEduFormal": MotivoNivelIncompleto,
-            "realizandoCurso": "realizandoCurso",
-            "areaCurso": AreaCurso,
-            "interesCapLab": "interesCapLab",
-            "areaOficio": AreaCurso,
+            "barrio_institucion": "barrio_institucion",
+            "calle_institucion": "calle_institucion",
+            "numero_institucion": "numero_institucion",
+            "interes_estudio": "interes_estudio",
+            "interes_curso": "interes_curso",
+            "nivel_incompleto": MotivoNivelIncompleto,
+            "sin_educacion_formal": MotivoNivelIncompleto,
+            "realizando_curso": "realizando_curso",
+            "area_curso": AreaCurso,
+            "interes_capacitacion_laboral": "interes_capacitacion_laboral",
+            "area_oficio": AreaCurso,
             "oficio": "oficio",
         }
 
@@ -1787,7 +1789,7 @@ class LegajosArchivosListView(ListView):
 
 class LegajosArchivosCreateView(SuccessMessageMixin, CreateView):
     model = LegajosArchivos
-    form_class = LegajosArchivosForm
+    form_class = ArchivoForm
     success_message = "Archivo actualizado correctamente."
 
     def get_context_data(self, **kwargs):
@@ -1889,7 +1891,7 @@ class AccionesSocialesView(TemplateView):
             "apellido",
             "nombre",
             "id",
-            "tipo_doc",
+            "tipo_documento",
             "documento",
             "fecha_nacimiento",
             "sexo",
@@ -2080,7 +2082,9 @@ def busqueda_hogar(request):
                 "nombre": hogar.nombre,
                 "apellido": hogar.apellido,
                 "documento": hogar.documento,
-                "tipo_doc": hogar.tipo_doc.tipo if hogar.tipo_doc else None,
+                "tipo_documento": (
+                    hogar.tipo_documento.tipo if hogar.tipo_documento else None
+                ),
                 "fecha_nacimiento": hogar.fecha_nacimiento,
                 "sexo": hogar.sexo.sexo if hogar.sexo else None,
             }
