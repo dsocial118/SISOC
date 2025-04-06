@@ -93,27 +93,6 @@ class Localidad(models.Model):
         verbose_name_plural = "Localidad"
 
 
-class Asentamiento(models.Model):  # solo se usa en configuraciones
-    """
-    Guardado de los asentamientos de los vecinos y vecinas registrados.
-    """
-
-    nombre = models.CharField(max_length=255)
-    fk_municipio = models.ForeignKey(
-        Municipio, on_delete=models.SET_NULL, null=True, blank=True
-    )
-    fk_localidad = models.ForeignKey(
-        Localidad, on_delete=models.SET_NULL, null=True, blank=True
-    )
-
-    def __str__(self):
-        return str(self.nombre)
-
-    class Meta:
-        verbose_name = "Asentamiento"
-        verbose_name_plural = "Asentamientos"
-
-
 class Sexo(models.Model):
     sexo = models.CharField(max_length=10)
 

@@ -4,14 +4,17 @@ from django import forms
 from django.core.validators import MaxValueValidator, MinValueValidator
 
 from ciudadanos.models import (
+    Archivo,
     CategoriaAlertas,
     Ciudadano,
+    Derivacion,
     DimensionEconomia,
     DimensionEducacion,
     DimensionFamilia,
     DimensionSalud,
     DimensionTrabajo,
     DimensionVivienda,
+    GrupoHogar,
     Intervencion,
     Alerta,
     GrupoFamiliar,
@@ -22,8 +25,6 @@ from ciudadanos.models import (
 )
 from config.validators import MaxSizeFileValidator
 from configuraciones.models import (
-    Asentamiento,
-    Departamento,
     Localidad,
     Municipio,
     Provincia,
@@ -79,16 +80,6 @@ class CiudadanoForm(forms.ModelForm):
         label="Localidad",
         queryset=Localidad.objects.none(),
     )
-    departamento = forms.ModelChoiceField(
-        required=False,
-        label="Departamento",
-        queryset=Departamento.objects.none(),
-    )
-    asentamiento = forms.ModelChoiceField(
-        required=False,
-        label="Asentamiento",
-        queryset=Asentamiento.objects.none(),
-    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -97,8 +88,6 @@ class CiudadanoForm(forms.ModelForm):
         # Configurar los querysets de los campos 'municipio' y 'localidad' para que estén vacíos inicialmente
         self.fields["municipio"].queryset = Municipio.objects.none()
         self.fields["localidad"].queryset = Localidad.objects.none()
-        self.fields["departamento"].queryset = Departamento.objects.none()
-        self.fields["asentamiento"].queryset = Asentamiento.objects.none()
         # Actualizar los querysets si los datos están presentes en el formulario
         if "municipio" in self.data:
             try:
@@ -118,27 +107,9 @@ class CiudadanoForm(forms.ModelForm):
             except (ValueError, TypeError):
                 self.fields["localidad"].queryset = Localidad.objects.none()
 
-        if "departamento" in self.data:
-            try:
-                departamento_id = int(self.data.get("departamento"))
-                self.fields["departamento"].queryset = Departamento.objects.filter(
-                    id=departamento_id
-                ).order_by("nombre")
-            except (ValueError, TypeError):
-                self.fields["departamento"].queryset = Departamento.objects.none()
-
-        if "asentamiento" in self.data:
-            try:
-                asentameinto_id = int(self.data.get("asentamiento"))
-                self.fields["asentamiento"].queryset = Asentamiento.objects.filter(
-                    id=asentameinto_id
-                ).order_by("nombre")
-            except (ValueError, TypeError):
-                self.fields["asentamiento"].queryset = Asentamiento.objects.none()
-
     def clean(self):
         cleaned_data = super().clean()
-        tipo_doc = cleaned_data.get("tipo_doc")
+        tipo_documento = cleaned_data.get("tipo_documento")
         documento = cleaned_data.get("documento")
         apellido = cleaned_data.get("apellido")
         nombre = cleaned_data.get("nombre")
@@ -146,13 +117,13 @@ class CiudadanoForm(forms.ModelForm):
 
         # Validación de campo unico, combinación de DNI + Tipo DNI
         existente = (
-            tipo_doc
+            tipo_documento
             and documento
             and fecha_nacimiento
             and apellido
             and nombre
             and Ciudadano.objects.filter(
-                tipo_doc=tipo_doc,
+                tipo_documento=tipo_documento,
                 documento=documento,
                 apellido=apellido,
                 nombre=nombre,
@@ -182,17 +153,11 @@ class CiudadanoForm(forms.ModelForm):
             "fecha_nacimiento": forms.DateInput(
                 attrs={"type": "date", "required": True}, format="%Y-%m-%d"
             ),
-            "m2m_alertas": forms.Select(attrs={"class": "select2"}),
-            "m2m_familiares": forms.Select(attrs={"class": "select2"}),
+            "alertas": forms.Select(attrs={"class": "select2"}),
+            "familiares": forms.Select(attrs={"class": "select2"}),
             "municipio": forms.Select(attrs={"class": "select2 municipio-select"}),
             "localidad": forms.Select(attrs={"class": "select2 localidad-select"}),
             "provincia": forms.Select(attrs={"class": "select2 provincia-select"}),
-            "departamento": forms.Select(
-                attrs={"class": "select2 departamento-select"}
-            ),
-            "asentamiento": forms.Select(
-                attrs={"class": "select2 asentamiento-select"}
-            ),
         }
         labels = {
             "provincia": "Provincia",
@@ -201,15 +166,13 @@ class CiudadanoForm(forms.ModelForm):
             "nombre": "Nombre",
             "apellido": "Apellidos",
             "foto": "",
-            "m2m_alertas": "",
+            "alertas": "",
             "Longitud": "Longitud",
             "Latitud": "Latitud",
-            "departamento": "Departamento",
-            "asentamiento": "Asentamiento",
         }
 
 
-class LegajosUpdateForm(forms.ModelForm):
+class CiudadanoUpdateForm(forms.ModelForm):
     foto = forms.ImageField(
         required=False,
         label="Foto Legajo",
@@ -220,7 +183,6 @@ class LegajosUpdateForm(forms.ModelForm):
         validators=[MinValueValidator(3000000), MaxValueValidator(100000000)],
         widget=forms.NumberInput(),
     )
-
     provincia = forms.ModelChoiceField(
         required=True,
         label="Provincia",
@@ -236,16 +198,6 @@ class LegajosUpdateForm(forms.ModelForm):
         label="Localidad",
         queryset=Localidad.objects.all(),
     )
-    departamento = forms.ModelChoiceField(
-        required=False,
-        label="Departamento",
-        queryset=Departamento.objects.all(),
-    )
-    asentamiento = forms.ModelChoiceField(
-        required=False,
-        label="Asentamiento",
-        queryset=Asentamiento.objects.all(),
-    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -253,8 +205,6 @@ class LegajosUpdateForm(forms.ModelForm):
         if self.instance and self.instance.pk:
             municipio_actual = self.instance.municipio
             localidad_actual = self.instance.localidad
-            departamento_actual = self.instance.departamento
-            asentamiento_actual = self.instance.asentamiento
 
             if municipio_actual:
                 self.fields["municipio"].choices = [
@@ -264,29 +214,21 @@ class LegajosUpdateForm(forms.ModelForm):
                 self.fields["localidad"].choices = [
                     (localidad_actual.id, localidad_actual.nombre)
                 ]
-            if departamento_actual:
-                self.fields["departamento"].choices = [
-                    (departamento_actual.id, departamento_actual.nombre)
-                ]
-            if asentamiento_actual:
-                self.fields["asentamiento"].choices = [
-                    (asentamiento_actual.id, asentamiento_actual.nombre)
-                ]
 
     def clean(self):
         cleaned_data = super().clean()
-        tipo_doc = cleaned_data.get("tipo_doc")
+        tipo_documento = cleaned_data.get("tipo_documento")
         documento = cleaned_data.get("documento")
         fecha_nacimiento = cleaned_data.get("fecha_nacimiento")
         instance = self.instance  # Obtener la instancia del objeto actual
 
         # Validación de campo unico, combinación de DNI + Tipo DNI
-        if tipo_doc and documento:
-            # Verificar si el tipo o el documento han cambiado
+        if tipo_documento and documento:
             if (
-                tipo_doc != instance.tipo_doc or documento != instance.documento
+                tipo_documento != instance.tipo_documento
+                or documento != instance.documento
             ) and Ciudadano.objects.filter(
-                tipo_doc=tipo_doc, documento=documento
+                tipo_documento=tipo_documento, documento=documento
             ).exists():
                 self.add_error(
                     "tipo", "Ya existe otro objeto con el mismo tipo y documento"
@@ -302,19 +244,13 @@ class LegajosUpdateForm(forms.ModelForm):
 
     class Meta:
         model = Ciudadano
-        exclude = ("creado", "modificado", "m2m_familiares", "m2m_alertas")
+        exclude = ("creado", "modificado", "familiares", "alertas")
         widgets = {
             "estado": forms.Select(choices=[(True, "Activo"), (False, "Inactivo")]),
             "fecha_nacimiento": forms.DateInput(
                 attrs={"type": "date"}, format="%Y-%m-%d"
             ),
             "municipio": forms.Select(attrs={"class": "select2 municipio-select"}),
-            "departamento": forms.Select(
-                attrs={"class": "select2 departamento-select"}
-            ),
-            "asentamiento": forms.Select(
-                attrs={"class": "select2 asentamiento-select"}
-            ),
             "localidad": forms.Select(attrs={"class": "select2 localidad-select"}),
             "provincia": forms.Select(attrs={"class": "select2 provincia-select"}),
         }
@@ -325,18 +261,16 @@ class LegajosUpdateForm(forms.ModelForm):
             "provincia": "Provincia",
             "localidad": "Localidad",
             "municipio": "Municipio",
-            "departamento": "Departamento",
-            "asentamiento": "Asentamiento",
         }
 
 
-class LegajoGrupoFamiliarForm(forms.ModelForm):
+class GrupoFamiliarForm(forms.ModelForm):
     class Meta:
         model = GrupoFamiliar
         fields = "__all__"
 
 
-class NuevoLegajoFamiliarForm(forms.ModelForm):
+class FamiliarForm(forms.ModelForm):
     vinculo = forms.ModelChoiceField(
         queryset=VinculoFamiliar.objects.all(), required=True, label="Vínculo Familiar"
     )
@@ -357,7 +291,7 @@ class NuevoLegajoFamiliarForm(forms.ModelForm):
             "apellido",
             "nombre",
             "fecha_nacimiento",
-            "tipo_doc",
+            "tipo_documento",
             "documento",
             "sexo",
             "vinculo",
@@ -373,12 +307,14 @@ class NuevoLegajoFamiliarForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        tipo_doc = cleaned_data.get("tipo_doc")
+        tipo_documento = cleaned_data.get("tipo_documento")
         documento = cleaned_data.get("documento")
         fecha_nacimiento = cleaned_data.get("fecha_nacimiento")
 
         # Validación de campo único, combinación de DNI + Tipo DNI
-        if Ciudadano.objects.filter(tipo_doc=tipo_doc, documento=documento).exists():
+        if Ciudadano.objects.filter(
+            tipo_documento=tipo_documento, documento=documento
+        ).exists():
             self.add_error(
                 "documento", "Ya existe un legajo con ese TIPO y NÚMERO de documento."
             )
@@ -399,9 +335,6 @@ class NuevoLegajoFamiliarForm(forms.ModelForm):
         return cleaned_data
 
 
-#############HOGAR###########
-
-
 class GrupoHogarForm(forms.ModelForm):
     vinculo = forms.ModelChoiceField(
         queryset=VinculoFamiliar.objects.all(), required=True, label="Vínculo Familiar"
@@ -416,7 +349,7 @@ class GrupoHogarForm(forms.ModelForm):
     )
 
     class Meta:
-        model = LegajoGrupoHogar
+        model = GrupoHogar
         fields = ["vinculo", "documento", "estado_relacion"]
         widgets = {
             "fecha_nacimiento": forms.DateInput(
@@ -426,11 +359,13 @@ class GrupoHogarForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        tipo_doc = cleaned_data.get("tipo_doc")
+        tipo_documento = cleaned_data.get("tipo_documento")
         documento = cleaned_data.get("documento")
         fecha_nacimiento = cleaned_data.get("fecha_nacimiento")
         # Validación de campo unico, combinación de DNI + Tipo DNI
-        if Ciudadano.objects.filter(tipo_doc=tipo_doc, documento=documento).exists():
+        if Ciudadano.objects.filter(
+            tipo_documento=tipo_documento, documento=documento
+        ).exists():
             self.add_error(
                 "documento", "Ya existe un legajo con ese TIPO y NÚMERO de documento."
             )
@@ -443,7 +378,7 @@ class GrupoHogarForm(forms.ModelForm):
         return cleaned_data
 
 
-class AlertasForm(forms.ModelForm):
+class AlertaForm(forms.ModelForm):
     categoria = forms.ModelChoiceField(
         required=True,
         label="Categoría",
@@ -477,28 +412,20 @@ class AlertasForm(forms.ModelForm):
         labels = {"alerta": "Alerta"}
 
 
-class LegajosArchivosForm(forms.ModelForm):
+class ArchivoForm(forms.ModelForm):
     class Meta:
-        model = LegajosArchivos
+        model = Archivo
         fields = ["legajo", "archivo"]
 
 
-class LegajosDerivacionesForm(forms.ModelForm):
+class DerivacionForm(forms.ModelForm):
     archivos = MultipleFileField(label="Seleccionar archivos", required=False)
-    # archivos = forms.FileField(
-    #     widget=forms.ClearableFileInput(
-    #         attrs={
-    #             "multiple": True,
-    #         }
-    #     ),
-    #     required=False,
-    # )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     class Meta:
-        model = LegajosDerivaciones
+        model = Derivacion
         fields = "__all__"
         exclude = ["motivo_rechazo", "obs_rechazo", "fecha_rechazo"]
         widgets = {
@@ -512,13 +439,12 @@ class LegajosDerivacionesForm(forms.ModelForm):
         labels = {
             "legajo": "Legajo",
             "organismo": "Organismo relacionado",
-            "m2m_alertas": "Alertas detectadas",
+            "alertas": "Alertas detectadas",
             "programa": "Derivar a",
             "programa_solicitante": "Derivar de",
         }
 
 
-# Dimensiones
 class DimensionFamiliaForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -535,7 +461,6 @@ class DimensionFamiliaForm(forms.ModelForm):
                 }
             ),
             "otro_responsable": forms.CheckboxInput(),
-            #  'otro_responsable': forms.CheckboxInput(attrs={'class':'icheck-primary '}),
             "hay_embarazadas": forms.CheckboxInput(),
             "hay_prbl_smental": forms.CheckboxInput(),
             "hay_fam_discapacidad": forms.CheckboxInput(),
@@ -594,7 +519,7 @@ class DimensionViviendaForm(forms.ModelForm):
             "cant_camas": "¿Cuántas camas/ colchones tienen?",
             "cant_hogares": "¿Cuantos hogares hay en la vivienda?",
             "obs_vivienda": "Observaciones",
-            "ContextoCasa": "La vivienda está ubicada...",
+            "ubicacion_vivienda": "La vivienda está ubicada...",
             "gas": "¿Que utilizan principalmente para cocinar?",
             "techos": "Material de la cubierta exterior de la vivienda",
             "agua": "El agua que utilizan para cocinar proviene de...",
@@ -609,8 +534,6 @@ class DimensionViviendaForm(forms.ModelForm):
                 }
             ),
         }
-
-    # <!-- ./Nuevos campos vivienda Form Editar o cargar -->
 
 
 class DimensionSaludForm(forms.ModelForm):
@@ -648,12 +571,12 @@ class DimensionEducacionForm(forms.ModelForm):
         label="Localidad",
         queryset=Localidad.objects.none(),
     )
-    interesCapLab = forms.ChoiceField(
+    interes_capacitacion_laboral = forms.ChoiceField(
         choices=BOOLEAN_CHOICE,
         widget=forms.Select,
         label="¿Tenés interés en realizar cursos de capacitación laboral?",
     )
-    realizandoCurso = forms.ChoiceField(
+    realizando_curso = forms.ChoiceField(
         choices=BOOLEAN_CHOICE,
         widget=forms.Select,
         label="¿Actualmente te encontrás haciendo algún curso de capacitación?",
@@ -663,10 +586,10 @@ class DimensionEducacionForm(forms.ModelForm):
         widget=forms.Select,
         label="¿Tenés conocimiento de algún oficio?",
     )
-    interesEstudio = forms.ChoiceField(
+    interes_estudio = forms.ChoiceField(
         choices=BOOLEAN_CHOICE, widget=forms.Select, label="¿Tenés interés en estudiar?"
     )
-    interesCurso = forms.ChoiceField(
+    interes_curso = forms.ChoiceField(
         choices=BOOLEAN_CHOICE,
         widget=forms.Select,
         label="¿Tenés interés en realizar algún curso?",
@@ -705,19 +628,19 @@ class DimensionEducacionForm(forms.ModelForm):
         model = DimensionEducacion
         fields = "__all__"
         widgets = {
-            "obs_educacion": forms.Textarea(
+            "observaciones": forms.Textarea(
                 attrs={
                     "class": "form-control",
                     "rows": 3,
                 }
             ),
-            "areaCurso": forms.SelectMultiple(
+            "area_curso": forms.SelectMultiple(
                 attrs={
                     "class": "form-control",
                     "style": "width: 100%;",
                 }
             ),
-            "areaOficio": forms.SelectMultiple(
+            "area_oficio": forms.SelectMultiple(
                 attrs={
                     "class": "form-control",
                     "style": "width: 100%;",
@@ -726,7 +649,7 @@ class DimensionEducacionForm(forms.ModelForm):
         }
 
     def clean_area_curso(self):
-        data = self.cleaned_data["areaCurso"]
+        data = self.cleaned_data["area_curso"]
         if len(data) > 3:
             raise forms.ValidationError("Solo puedes seleccionar hasta 3 opciones.")
         return data
@@ -792,14 +715,12 @@ class DimensionTrabajoForm(forms.ModelForm):
                     "rows": 3,
                 }
             ),
-            #'tiene_trabajo': forms.CheckboxInput(),
-            #'conviviente_trabaja': forms.CheckboxInput(),
         }
 
 
-class DerivacionesRechazoForm(forms.ModelForm):
+class DerivacionRechazoForm(forms.ModelForm):
     class Meta:
-        model = LegajosDerivaciones
+        model = Derivacion
         fields = ["motivo_rechazo", "obs_rechazo", "fecha_rechazo"]
         widgets = {
             "obs_rechazo": forms.Textarea(
@@ -874,7 +795,7 @@ class LlamadoForm(forms.ModelForm):
         }
 
 
-class LegajoProgramasForm(forms.ModelForm):
+class ProgramasForm(forms.ModelForm):
     class Meta:
         model = CiudadanoPrograma
         fields = ["programas"]

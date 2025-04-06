@@ -8,8 +8,8 @@ from .models import (
     AsisteEscuela,
     CantidadAmbientes,
     CentrosSalud,
-    CondicionDe,
-    ContextoCasa,
+    Condicion,
+    UbicacionVivienda,
     Desague,
     DuracionTrabajo,
     EstadoCivil,
@@ -29,7 +29,7 @@ from .models import (
     Sexo,
     TiempoBusquedaLaboral,
     TipoConstruccionVivienda,
-    TipoDoc,
+    TipoDocumento,
     TipoGestion,
     TipoPisosVivienda,
     TipoPosesionVivienda,
@@ -49,8 +49,8 @@ admin.site.register(TipoGestion)
 admin.site.register(Grado)
 admin.site.register(Turno)
 admin.site.register(CantidadAmbientes)
-admin.site.register(CondicionDe)
-admin.site.register(ContextoCasa)
+admin.site.register(Condicion)
+admin.site.register(UbicacionVivienda)
 admin.site.register(TipoVivienda)
 admin.site.register(TipoPosesionVivienda)
 admin.site.register(TipoPisosVivienda)
@@ -61,7 +61,7 @@ admin.site.register(Inodoro)
 admin.site.register(TipoConstruccionVivienda)
 admin.site.register(EstadoCivil)
 admin.site.register(Sexo)
-admin.site.register(TipoDoc)
+admin.site.register(TipoDocumento)
 admin.site.register(Nacionalidad)
 admin.site.register(CentrosSalud)
 admin.site.register(Frecuencia)

@@ -39,7 +39,7 @@
                         </dd>
                         <dt class="col-sm-3 font-weight-normal">Documento</dt>
                         <dd class="col-sm-9 font-weight-bold">
-                            {{ object.tipo_doc }} {{ object.documento }}
+                            {{ object.tipo_documento }} {{ object.documento }}
                         </dd>
                         <dt class="col-sm-3 font-weight-normal">Fecha de nacimiento</dt>
                         <dd class="col-sm-9 font-weight-bold">
@@ -155,7 +155,7 @@
                         <dd class="col-sm-8">
                             La vivienda está ubicada...
                         </dd>
-                        <dt class="col-sm-4">{{ object.dimensionvivienda.ContextoCasa|default_if_none:"-" }}</dt>
+                        <dt class="col-sm-4">{{ object.dimensionvivienda.ubicacion_vivienda|default_if_none:"-" }}</dt>
                         <dd class="col-sm-8">
                             Posee Celular
                         </dd>
@@ -239,11 +239,11 @@
                         <dd class="col-sm-8">
                             Motivo principal por el que no terminaste tus estudios
                         </dd>
-                        <dt class="col-sm-4">{{ object.dimensioneducacion.nivelIncompleto|default_if_none:"-" }}</dt>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.nivel_incompleto|default_if_none:"-" }}</dt>
                         <dd class="col-sm-8">
                             Motivo principal por el que no tuviste educación formal
                         </dd>
-                        <dt class="col-sm-4">{{ object.dimensioneducacion.sinEduFormal|default_if_none:"-" }}</dt>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.sin_educacion_formal|default_if_none:"-" }}</dt>
                         <dd class="col-sm-8">
                             Estado del nivel
                         </dd>
@@ -263,15 +263,15 @@
                         <dd class="col-sm-8">
                             barrio Institucion
                         </dd>
-                        <dt class="col-sm-4">{{ object.dimensioneducacion.barrioInstitucion|default_if_none:"-" }}</dt>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.barrio_institucion|default_if_none:"-" }}</dt>
                         <dd class="col-sm-8">
                             calle Institucion
                         </dd>
-                        <dt class="col-sm-4">{{ object.dimensioneducacion.calleInstitucion|default_if_none:"-" }}</dt>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.calle_institucion|default_if_none:"-" }}</dt>
                         <dd class="col-sm-8">
                             numero Institucion
                         </dd>
-                        <dt class="col-sm-4">{{ object.dimensioneducacion.numeroInstitucion|default_if_none:"-" }}</dt>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.numero_institucion|default_if_none:"-" }}</dt>
                         <dd class="col-sm-8">
                             Institución
                         </dd>
@@ -295,21 +295,21 @@
                         <dd class="col-sm-8">
                             interes Estudio
                         </dd>
-                        <dt class="col-sm-4">{{ object.dimensioneducacion.interesEstudio|yesno:'Sí,No,-' }}</dt>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.interes_estudio|yesno:'Sí,No,-' }}</dt>
                         <dd class="col-sm-8">
                             interes Curso
                         </dd>
-                        <dt class="col-sm-4">{{ object.dimensioneducacion.interesCurso|yesno:'Sí,No,-' }}</dt>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.interes_curso|yesno:'Sí,No,-' }}</dt>
                         <dd class="col-sm-8">
                             Actualmente te encontrás haciendo algún curso de capacitación
                         </dd>
-                        <dt class="col-sm-4">{{ object.dimensioneducacion.realizandoCurso|yesno:'Sí,No,-' }}</dt>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.realizando_curso|yesno:'Sí,No,-' }}</dt>
                         <dd class="col-sm-8">
                             En qué Área
                         </dd>
                         <dt class="col-sm-4">
-                            {% if object.dimensioneducacion.areaCurso %}
-                                {% for area in object.dimensioneducacion.areaCurso %}
+                            {% if object.dimensioneducacion.area_curso %}
+                                {% for area in object.dimensioneducacion.area_curso %}
                                     {{ area }}
                                     {% if not forloop.last %},{% endif %}
                                 {% endfor %}
@@ -324,11 +324,11 @@
                         <dd class="col-sm-8">
                             En que Area
                         </dd>
-                        <dt class="col-sm-4">{{ object.dimensioneducacion.areaOficio|default_if_none:"-" }}</dt>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.area_oficio|default_if_none:"-" }}</dt>
                         <dd class="col-sm-8">
                             Observaciones
                         </dd>
-                        <dt class="col-sm-4">{{ object.dimensioneducacion.obs_educacion|default_if_none:"-" }}</dt>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.observaciones|default_if_none:"-" }}</dt>
                     </dl>
                     <!-- /dimension educacion -->
                     <hr class="mt-4 mb-3 border-secondary" />

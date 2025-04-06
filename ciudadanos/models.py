@@ -7,10 +7,8 @@ from django.urls import reverse
 from django.contrib.auth.models import User
 
 from configuraciones.models import (
-    Asentamiento,
     Provincia,
     Localidad,
-    Departamento,
     Municipio,
 )
 
@@ -103,7 +101,7 @@ class Programa(models.Model):
         return reverse("programas_ver", kwargs={"pk": self.pk})
 
 
-class PlanesSociales(models.Model):
+class PlanSocial(models.Model):
     nombre = models.CharField(max_length=255, unique=True)
     jurisdiccion = models.ForeignKey(
         Jurisdiccion, on_delete=models.CASCADE, null=True, blank=True
@@ -137,18 +135,7 @@ class TipoOrganismo(models.Model):
         verbose_name_plural = "Tipos de Organismos"
 
 
-class Barrio(models.Model):
-    barrio = models.CharField(max_length=255)
-
-    def __str__(self):
-        return str(self.barrio)
-
-    class Meta:
-        verbose_name = "Barrio"
-        verbose_name_plural = "Barrios"
-
-
-class Organismos(models.Model):
+class Organismo(models.Model):
     nombre = models.CharField(max_length=255, unique=True)
     tipo = models.ForeignKey(
         TipoOrganismo, on_delete=models.CASCADE, null=True, blank=True
@@ -156,7 +143,7 @@ class Organismos(models.Model):
     calle = models.CharField(max_length=255, null=True, blank=True)
     altura = models.IntegerField(null=True, blank=True)
     piso = models.CharField(max_length=255, null=True, blank=True)
-    barrio = models.ForeignKey(Barrio, on_delete=models.CASCADE, null=True, blank=True)
+    barrio = models.CharField(max_length=255, null=True, blank=True)
     localidad = models.ForeignKey(
         Localidad, on_delete=models.CASCADE, null=True, blank=True
     )
@@ -217,7 +204,7 @@ class CategoriaAlertas(models.Model):
         return reverse("categoriaalertas_ver", kwargs={"pk": self.pk})
 
 
-class Alertas(models.Model):
+class Alerta(models.Model):
     """
     Indicadores de vulnerabilidad, relacionados a una categoría específica a traves de una FK.
     """
@@ -334,8 +321,7 @@ class Turno(models.Model):
         verbose_name_plural = "Turnos"
 
 
-# TODO : Crear choices para instituciones educativas
-class InstitucionesEducativas(models.Model):
+class InstitucionEducativas(models.Model):
     institucion = models.CharField(
         max_length=255,
     )
@@ -346,11 +332,6 @@ class InstitucionesEducativas(models.Model):
     class Meta:
         verbose_name = "Institucion Educativa"
         verbose_name_plural = "Instituciones Educativas"
-
-
-# Fin de modelo para choices de dimension educacion
-
-# Modelo para choices de dimension Vivienda
 
 
 class CantidadAmbientes(models.Model):
@@ -364,7 +345,7 @@ class CantidadAmbientes(models.Model):
         verbose_name_plural = "Cantidades de Ambientes"
 
 
-class CondicionDe(models.Model):
+class Condicion(models.Model):
     condicion = models.CharField(max_length=255)
 
     def __str__(self):
@@ -375,7 +356,7 @@ class CondicionDe(models.Model):
         verbose_name_plural = "Condiciones de"
 
 
-class ContextoCasa(models.Model):
+class UbicacionVivienda(models.Model):
     contexto = models.CharField(max_length=255)
 
     def __str__(self):
@@ -507,7 +488,7 @@ class Sexo(models.Model):
         verbose_name_plural = "Sexos"
 
 
-class TipoDoc(models.Model):
+class TipoDocumento(models.Model):
     tipo = models.CharField(max_length=20)
 
     def __str__(self):
@@ -682,8 +663,8 @@ class Ciudadano(models.Model):
     apellido = models.CharField(max_length=255)
     nombre = models.CharField(max_length=255)
     fecha_nacimiento = models.DateField()
-    tipo_doc = models.ForeignKey(
-        TipoDoc,
+    tipo_documento = models.ForeignKey(
+        TipoDocumento,
         verbose_name="Tipo documento",
         on_delete=models.SET_NULL,
         null=True,
@@ -709,34 +690,33 @@ class Ciudadano(models.Model):
     altura = models.IntegerField(null=True, blank=True)
     latitud = models.CharField(max_length=255, null=True, blank=True)
     longitud = models.CharField(max_length=255, null=True, blank=True)
-    pisodpto = models.CharField(
+    piso_departamento = models.CharField(
         max_length=255, null=True, blank=True, verbose_name="Piso/Dpto (optativo)"
     )
-    # TODO: choice viene de configuraciones.choices remplazar despues.
     circuito = models.ForeignKey(
         Circuito, on_delete=models.SET_NULL, null=True, blank=True
     )
-    torrepasillo = models.CharField(
+    torre_pasillo = models.CharField(
         max_length=255, null=True, blank=True, verbose_name="Torre / Pasillo (optativo)"
     )
-    escaleramanzana = models.CharField(
+    escalera_manzana = models.CharField(
         max_length=255,
         null=True,
         blank=True,
         verbose_name="Escalera / Manzana (optativo)",
     )
 
-    codigopostal = models.IntegerField(
+    codigo_postal = models.IntegerField(
         null=True, blank=True, verbose_name="Código Postal"
     )
     telefono = models.IntegerField(null=True, blank=True)
-    telefonoalt = models.IntegerField(
+    telefono_alternativo = models.IntegerField(
         null=True, blank=True, verbose_name="Telefono Alternativo"
     )
     email = models.EmailField(null=True, blank=True)
     foto = models.ImageField(upload_to="legajos", blank=True, null=True)
-    m2m_alertas = models.ManyToManyField(Alertas, through="LegajoAlertas", blank=True)
-    m2m_familiares = models.ManyToManyField(
+    alertas = models.ManyToManyField(Alerta, through="LegajoAlertas", blank=True)
+    familiares = models.ManyToManyField(
         "self", through="LegajoGrupoFamiliar", symmetrical=True, blank=True
     )
     observaciones = models.CharField(
@@ -768,19 +748,13 @@ class Ciudadano(models.Model):
     localidad = models.ForeignKey(
         Localidad, on_delete=models.SET_NULL, null=True, blank=True
     )
-    departamento = models.ForeignKey(
-        Departamento, on_delete=models.SET_NULL, null=True, blank=True
-    )
-    asentamiento = models.ForeignKey(
-        Asentamiento, on_delete=models.SET_NULL, null=True, blank=True
-    )
 
     def __str__(self):
         return f"{self.apellido}, {self.nombre}"
 
     def validate_unique(self, exclude=None):
         qs = Ciudadano.objects.filter(
-            tipo_doc=self.tipo_doc,
+            tipo_documento=self.tipo_documento,
             documento=self.documento,
             apellido=self.apellido,
             nombre=self.nombre,
@@ -837,7 +811,7 @@ class Ciudadano(models.Model):
         return "-"
 
     class Meta:
-        unique_together = ["tipo_doc", "documento"]
+        unique_together = ["tipo_documento", "documento"]
         ordering = ["apellido"]
         verbose_name = "Legajo"
         verbose_name_plural = "Ciudadano"
@@ -1019,8 +993,8 @@ class DimensionVivienda(models.Model):
     modificado = models.DateField(auto_now=True)
     # Nuevos campos
 
-    ContextoCasa = models.ForeignKey(
-        ContextoCasa,
+    ubicacion_vivienda = models.ForeignKey(
+        UbicacionVivienda,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -1176,9 +1150,8 @@ class DimensionEducacion(models.Model):
         blank=True,
     )
 
-    # TODO: Crear choices para instituciones educativas
     institucion = models.ForeignKey(
-        InstitucionesEducativas,
+        InstitucionEducativas,
         verbose_name="Escuela",
         on_delete=models.SET_NULL,
         null=True,
@@ -1202,7 +1175,7 @@ class DimensionEducacion(models.Model):
     turno = models.ForeignKey(
         Turno, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Turno"
     )
-    obs_educacion = models.CharField(
+    observaciones = models.CharField(
         max_length=500, verbose_name="Observaciones", null=True, blank=True
     )
     creado = models.DateField(auto_now_add=True)
@@ -1232,16 +1205,16 @@ class DimensionEducacion(models.Model):
         null=True,
         blank=True,
     )
-    barrioInstitucion = models.CharField(
+    barrio_institucion = models.CharField(
         verbose_name="Barrio", max_length=255, null=True, blank=True
     )
-    calleInstitucion = models.CharField(
+    calle_institucion = models.CharField(
         verbose_name="Calle", max_length=255, null=True, blank=True
     )
-    numeroInstitucion = models.CharField(
+    numero_institucion = models.CharField(
         verbose_name="Número", max_length=255, null=True, blank=True
     )
-    nivelIncompleto = models.ForeignKey(
+    nivel_incompleto = models.ForeignKey(
         MotivoNivelIncompleto,
         verbose_name="¿Cuál fue el motivo principal por el que no terminaste tus estudios?",
         on_delete=models.SET_NULL,
@@ -1249,7 +1222,7 @@ class DimensionEducacion(models.Model):
         blank=True,
         related_name="nivel_incompleto_dimension",
     )
-    sinEduFormal = models.ForeignKey(
+    sin_educacion_formal = models.ForeignKey(
         MotivoNivelIncompleto,
         verbose_name="¿Cuál fue el motivo principal por el que nunca asististe a un establecimiento educativo?",
         on_delete=models.SET_NULL,
@@ -1257,11 +1230,11 @@ class DimensionEducacion(models.Model):
         blank=True,
         related_name="sin_edu_formal_dimension",
     )
-    realizandoCurso = models.BooleanField(
+    realizando_curso = models.BooleanField(
         verbose_name="¿Actualmente te encontrás haciendo algún curso de capacitación?",
         default=False,
     )
-    areaCurso = models.ForeignKey(
+    area_curso = models.ForeignKey(
         AreaCurso,
         verbose_name="¿En qué áreas?",
         on_delete=models.SET_NULL,
@@ -1269,7 +1242,7 @@ class DimensionEducacion(models.Model):
         blank=True,
         related_name="area_curso_dimension",
     )
-    interesCapLab = models.BooleanField(
+    interes_capacitacion_laboral = models.BooleanField(
         verbose_name="¿Tenés interés en realizar cursos de capacitación laboral?",
         default=False,
     )
@@ -1277,7 +1250,7 @@ class DimensionEducacion(models.Model):
         verbose_name="¿Tenés conocimiento de algún oficio?",
         default=False,
     )
-    areaOficio = models.ForeignKey(
+    area_oficio = models.ForeignKey(
         AreaCurso,
         verbose_name="¿En qué áreas?",
         on_delete=models.SET_NULL,
@@ -1286,12 +1259,11 @@ class DimensionEducacion(models.Model):
         related_name="area_oficio_dimension",
     )
 
-    # Migraciones para fix de DAD-118
-    interesEstudio = models.BooleanField(
+    interes_estudio = models.BooleanField(
         verbose_name="¿Le interesa estudiar?",
         default=False,
     )
-    interesCurso = models.BooleanField(
+    interes_curso = models.BooleanField(
         verbose_name="¿le interesa algun curso?",
         default=False,
     )
@@ -1315,7 +1287,7 @@ class DimensionEconomia(models.Model):
     """
 
     legajo = models.OneToOneField(Ciudadano, on_delete=models.CASCADE)
-    m2m_planes = models.ManyToManyField(PlanesSociales, blank=True)
+    m2m_planes = models.ManyToManyField(PlanSocial, blank=True)
     cant_aportantes = models.SmallIntegerField(
         verbose_name="¿Cuántos miembros reciben ingresos por plan social o aportan al grupo familiar?",
         null=True,
@@ -1448,7 +1420,7 @@ class Alerta(models.Model):
     Registro de Alertas de vulnerabilidad asociadas a un Legajo determinado Tanto el alta como la baja se guardan en un historial del alertas.
     """
 
-    alerta = models.ForeignKey(Alertas, related_name="alerta", on_delete=models.CASCADE)
+    alerta = models.ForeignKey(Alerta, related_name="alerta", on_delete=models.CASCADE)
     legajo = models.ForeignKey(
         Ciudadano, related_name="legajo_alerta", on_delete=models.CASCADE
     )
@@ -1533,7 +1505,7 @@ class HistorialLegajoAlertas(models.Model):
     """
 
     alerta = models.ForeignKey(
-        Alertas, related_name="hist_alerta", on_delete=models.CASCADE
+        Alerta, related_name="hist_alerta", on_delete=models.CASCADE
     )
     legajo = models.ForeignKey(
         Ciudadano, related_name="hist_legajo_alerta", on_delete=models.CASCADE
@@ -1573,7 +1545,7 @@ class HistorialLegajoAlertas(models.Model):
         indexes = [models.Index(fields=["legajo"])]
 
 
-class Derivaciones(models.Model):
+class Derivacion(models.Model):
     """
     Registro de todas las derivaciones a programas que funcionen dentro del sistema.
     """
@@ -1586,7 +1558,7 @@ class Derivaciones(models.Model):
         Programa, related_name="programa_derivado", on_delete=models.CASCADE
     )
     organismo = models.ForeignKey(
-        Organismos, on_delete=models.CASCADE, null=True, blank=True
+        Organismo, on_delete=models.CASCADE, null=True, blank=True
     )
     detalles = models.CharField(max_length=500, null=True, blank=True)
     usuario = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -1600,7 +1572,7 @@ class Derivaciones(models.Model):
         blank=True,
         default="Pendiente",
     )
-    m2m_alertas = models.ManyToManyField(CategoriaAlertas, blank=True)
+    alertas = models.ManyToManyField(CategoriaAlertas, blank=True)
     archivos = models.FileField(upload_to="legajos/archivos", null=True, blank=True)
     motivo_rechazo = models.ForeignKey(
         Rechazo, on_delete=models.SET_NULL, null=True, blank=True

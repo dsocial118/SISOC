@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const ID_PLAN_SOCIAL = "#container_plan_social";
 
   // Selecciones múltiples con límite
-  var selects = document.querySelectorAll('select[name="areaCurso"], select[name="areaOficio"], select[name="m2m_planes"]');
+  var selects = document.querySelectorAll('select[name="area_curso"], select[name="area_oficio"], select[name="m2m_planes"]');
   selects.forEach(function (select) {
     select.setAttribute('multiple', 'multiple');
     select.addEventListener('change', function () {
@@ -39,7 +39,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Formularios
   let estadoNivelForm = document.querySelector('#id_estado_nivel');
   let asisteEscuelaForm = document.querySelector('#id_asiste_escuela');
-  let realizandoCursoForm = document.querySelector('#id_realizandoCurso');
+  let realizando_cursoForm = document.querySelector('#id_realizando_curso');
   let hayBanioForm = document.querySelector("#div_id_hay_banio");
   let tieneTrabajoForm = document.querySelector("#div_id_tiene_trabajo");
   let busquedaLaboralForm = document.querySelector("#id_busquedaLaboral");
@@ -57,7 +57,7 @@ document.addEventListener("DOMContentLoaded", function () {
     { valor: null, mostrar: [], ocultar: [] }
   ];
 
-  let realizandoCursoFormEstados = [
+  let realizando_cursoFormEstados = [
     { valor: "True", mostrar: [ID_AREA_CURSO], ocultar: [] },
     { valor: "False", mostrar: [], ocultar: [ID_AREA_CURSO] }
   ];
@@ -86,7 +86,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Condiciones de cambio
   FormUtils.manejarCambioMostrarOcultar(asisteEscuelaForm, asisteEscuelaFormEstados);
   FormUtils.manejarCambioMostrarOcultar(estadoNivelForm, estadoNivelFormEstados);
-  FormUtils.manejarCambioMostrarOcultar(realizandoCursoForm, realizandoCursoFormEstados);
+  FormUtils.manejarCambioMostrarOcultar(realizando_cursoForm, realizando_cursoFormEstados);
   FormUtils.manejarCambioMostrarOcultar(hayBanioForm, hayBanioFormEstados);
   FormUtils.manejarCambioMostrarOcultar(tieneTrabajoForm, tieneTrabajoFormEstados);
   FormUtils.manejarCambioMostrarOcultar(busquedaLaboralForm, busquedaLaboralFormEstados);
@@ -95,13 +95,13 @@ document.addEventListener("DOMContentLoaded", function () {
   // Inicializar estado de formularios
   FormUtils.mostrarOcultar(asisteEscuelaForm.value, asisteEscuelaFormEstados);
   FormUtils.mostrarOcultar(estadoNivelForm.value, estadoNivelFormEstados);
-  FormUtils.mostrarOcultar(realizandoCursoForm.value, realizandoCursoFormEstados);
+  FormUtils.mostrarOcultar(realizando_cursoForm.value, realizando_cursoFormEstados);
   FormUtils.mostrarOcultar(hayBanioForm.value, hayBanioFormEstados);
   FormUtils.mostrarOcultar(tieneTrabajoForm.value, tieneTrabajoFormEstados);
   FormUtils.mostrarOcultar(busquedaLaboralForm.value, busquedaLaboralFormEstados);
   FormUtils.mostrarOcultar(planSocialForm.value, planSocialFormEstados);
 
-  // Manejo de pregunta id_nivelIncompleto, se maneja aparte
+  // Manejo de pregunta id_nivel_incompleto, se maneja aparte
   let preguntasVinculadas = document.querySelectorAll(
     "#id_asiste_escuela, #id_max_nivel, #id_estado_nivel"
   );
@@ -130,7 +130,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Llamamos al inicio para dejar correcta su visualización
   mostrarOcultarPreguntaEducacionIncompleta();
-  // Fin manejo de pregunta id_nivelIncompleto
+  // Fin manejo de pregunta id_nivel_incompleto
 
   // Si asisteEscuelaForm es "a", estadoNivel se oculta y por default queda su valor en "En curso"
 

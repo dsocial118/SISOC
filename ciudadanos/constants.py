@@ -1,4 +1,4 @@
-# ---------- CHOICES--------------------- # pylint: disable=too-many-lines
+# pylint: disable=too-many-lines
 # Diccionario con emojis de banderitas
 EMOJIS_BANDERAS = {
     "Argentina": "flag-icon-ar",

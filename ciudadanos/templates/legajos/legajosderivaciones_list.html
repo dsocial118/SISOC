@@ -126,10 +126,10 @@
                                         <span class="badge badge-gb-color">{{ o.importancia }}</span>
                                     </td>
                                     <td>
-                                        {% if o.m2m_alertas.all.count == 1 %}
+                                        {% if o.alertas.all.count == 1 %}
                                             1 alerta
-                                        {% elif o.m2m_alertas.all.count >= 2 %}
-                                            {{ o.m2m_alertas.all.count }} alertas
+                                        {% elif o.alertas.all.count >= 2 %}
+                                            {{ o.alertas.all.count }} alertas
                                         {% else %}
                                             sin alertas
                                         {% endif %}

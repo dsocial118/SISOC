@@ -193,7 +193,7 @@
                                                     {{ form.fecha_nacimiento| as_crispy_field }}
                                                     {{ form.estado_civil| as_crispy_field }}
                                                     {{ form.telefono| as_crispy_field }}
-                                                    {{ form.telefonoalt| as_crispy_field }}
+                                                    {{ form.telefono_alternativo| as_crispy_field }}
                                                     {{ form.email| as_crispy_field }}
                                                     {{ form.provincia| as_crispy_field }}
                                                     {{ form.municipio| as_crispy_field }}
@@ -204,11 +204,11 @@
                                                     {{ form.altura| as_crispy_field }}
                                                     {{ form.longitud| as_crispy_field }}
                                                     {{ form.latitud| as_crispy_field }}
-                                                    {{ form.pisodpto| as_crispy_field }}
-                                                    {{ form.torrepasillo| as_crispy_field }}
-                                                    {{ form.escaleramanzana| as_crispy_field }}
+                                                    {{ form.piso_departamento| as_crispy_field }}
+                                                    {{ form.torre_pasillo| as_crispy_field }}
+                                                    {{ form.escalera_manzana| as_crispy_field }}
                                                     {{ form.circuito| as_crispy_field }}
-                                                    {{ form.codigopostal| as_crispy_field }}
+                                                    {{ form.codigo_postal| as_crispy_field }}
                                                     <div class="form-group col-4 {% if request.resolver_match.url_name != 'legajos_editar' %}d-none{% endif %}">
                                                         {{ form.estado| as_crispy_field }}
                                                     </div>
