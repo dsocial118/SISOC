@@ -16,10 +16,10 @@ class TestUtils:
     """
 
     @staticmethod
-    def cargar_initial_data(jsonFile, datos):
+    def cargar_initial_data(json_file, datos):
         # Obtener la ruta al archivo JSON
         data_dir = Path(__file__).parent / "mocked_data"
-        json_path = data_dir / jsonFile
+        json_path = data_dir / json_file
 
         # Cargar el JSON
         with open(json_path, "r", encoding="utf-8") as f:
