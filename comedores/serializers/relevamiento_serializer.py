@@ -141,7 +141,9 @@ class RelevamientoSerializer(serializers.ModelSerializer):
         if "imagenes" in self.initial_data:
             imagenes = self.initial_data["imagenes"]
             if isinstance(imagenes, str):
-                self.initial_data["imagenes"] = [img.strip() for img in imagenes.split(",") if img.strip()]
+                self.initial_data["imagenes"] = [
+                    img.strip() for img in imagenes.split(",") if img.strip()
+                ]
             else:
                 self.initial_data["imagenes"] = []
 
