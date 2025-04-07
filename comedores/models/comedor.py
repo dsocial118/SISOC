@@ -6,6 +6,7 @@ from configuraciones.models import Municipio, Provincia
 from configuraciones.models import Localidad
 from configuraciones.models import Sexo
 from organizaciones.models import Organizacion
+from users.models import User
 
 
 class EstadosIntervencion(models.Model):
@@ -303,3 +304,77 @@ class ValorComida(models.Model):
     tipo = models.CharField(max_length=50)
     valor = models.DecimalField(max_digits=10, decimal_places=2)
     fecha = models.DateField()
+
+
+###---------- Admisiones Tecnico -------------
+
+class EstadosAdmisiones(models.Model):
+    nombre = models.CharField(max_length=255)
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=["nombre"]),
+        ]
+        verbose_name = "estadosadmision"
+        verbose_name_plural = "estadosadmisiones"
+
+class TipoConvenio(models.Model):
+    nombre = models.CharField(max_length=255)
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=["nombre"]),
+        ]
+        verbose_name = "tipoconvenio"
+        verbose_name_plural = "tiposconvenios"
+
+class Admisiones(models.Model):
+    fk_comedor = models.ForeignKey(Comedor, on_delete=models.SET_NULL, null=True)
+    estado = models.ForeignKey(EstadosAdmisiones, on_delete=models.SET_NULL, null=True)
+    tipo_convenio = models.ForeignKey(TipoConvenio, on_delete=models.SET_NULL, null=True)
+    creado = models.DateField(auto_now_add=True, null=True, blank=True)
+    modificado = models.DateField(auto_now=True, null=True, blank=True)
+        
+    class Meta:
+        indexes = [
+            models.Index(fields=["fk_comedor"]),
+        ]
+        verbose_name = "admisiontecnico"
+        verbose_name_plural = "admisionestecnicos"
+        ordering = ["-creado"]
+
+class TipoDocumentacion(models.TextChoices):
+    TODOS = "todos", "Todos"
+    ESPECIFICO = "especifico", "Específico"
+
+class Documentacion(models.Model):
+    nombre = models.CharField(max_length=255)
+    tipo = models.CharField(max_length=20, choices=TipoDocumentacion.choices, default=TipoDocumentacion.ESPECIFICO)
+    convenios = models.ManyToManyField("TipoConvenio", blank=True)
+    
+    def __str__(self):
+        return self.nombre
+
+class ArchivosAdmision(models.Model):
+    admision = models.ForeignKey(Admisiones, on_delete=models.CASCADE)
+    documentacion = models.ForeignKey(Documentacion, on_delete=models.CASCADE)
+    archivo = models.FileField(upload_to="comedor/admisiones_archivos/", null=True, blank=True)
+    estado = models.CharField(
+        max_length=20,
+        choices=[("pendiente", "Pendiente"), ("validar", "A Validar")],
+        default="pendiente",
+    )
+
+    def __str__(self):
+        return f"{self.admision.id} - {self.documentacion.nombre}"
+    
+class DuplaContacto(models.Model):
+    comedor = models.ForeignKey(Comedor, on_delete=models.SET_NULL, null=True)
+    usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    fecha = models.DateField()
+    tipo = models.CharField(
+        max_length=20,
+        choices=[("whatsapp", "Whatsapp"), ("email", "Email"), ("llamada", "Llamada")], 
+        blank=False, null=False
+    )
+    observaciones = models.TextField()
