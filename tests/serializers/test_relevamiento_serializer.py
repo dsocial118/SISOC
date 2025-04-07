@@ -1,7 +1,7 @@
 import pytest
 from comedores.serializers.relevamiento_serializer import RelevamientoSerializer
 
-from tests.utils import RelevamientoTestHelper
+from tests.utils import TestUtils
 
 
 @pytest.mark.django_db
@@ -9,30 +9,7 @@ def test_clean_relevamiento_serializer_datos_completos():
     """
     Caso base: Datos completos y válidos.
     """
-    datos = RelevamientoTestHelper.crear_datos_relevamiento()
-
-    initial_data = {
-        "comedor": datos["comedor"].id,
-        "fecha_visita": "5/3/2025 14:29",
-        "territorial": {"nombre": "Territorial Test", "gestionar_uid": "12345"},
-        "funcionamiento": {
-            "modalidad_prestacion": datos["modalidad_prestacion"].nombre,
-            "servicio_por_turnos": False,
-            "cantidad_turnos": 2,
-        },
-        "espacio": {"tipo_espacio_fisico": datos["tipo_espacio"].nombre},
-        "colaboradores": {
-            "cantidad_colaboradores": datos["cantidad_colaboradores"].nombre,
-            "colaboradores_capacitados_alimentos": True,
-        },
-        "recursos": {"recibe_donaciones_particulares": True},
-        "compras": {"almacen_cercano": True},
-        "anexo": {"comedor_merendero": True},
-        "punto_entregas": {"existe_punto_entregas": True},
-        "prestacion": {"lunes_desayuno_actual": 10},
-        "excepcion": {"descripcion": "Excepción Test"},
-        "imagenes": "http://example.com/image1.jpg, http://example.com/image2.jpg",
-    }
+    datos, initial_data = TestUtils.crear_datos_completos('test_clean_relevamiento_serializer_datos_completos.json')
 
     serializer = RelevamientoSerializer(
         instance=datos["relevamiento"], data=initial_data, partial=True
@@ -56,7 +33,7 @@ def test_clean_relevamiento_serializer_datos_incompletos():
     """
     Caso: Datos incompletos (faltan campos opcionales).
     """
-    datos = RelevamientoTestHelper.crear_datos_relevamiento()
+    datos = TestUtils.crear_datos_relevamiento()
 
     initial_data = {
         "comedor": datos["comedor"].id,
@@ -81,7 +58,7 @@ def test_clean_relevamiento_serializer_datos_minimos():
     """
     Caso: Datos mínimos necesarios.
     """
-    datos = RelevamientoTestHelper.crear_datos_relevamiento()
+    datos = TestUtils.crear_datos_relevamiento()
 
     initial_data = {
         "comedor": datos["comedor"].id,
@@ -101,7 +78,7 @@ def test_clean_relevamiento_serializer_datos_extra():
     """
     Caso: Datos adicionales no esperados.
     """
-    datos = RelevamientoTestHelper.crear_datos_relevamiento()
+    datos = TestUtils.crear_datos_relevamiento()
 
     initial_data = {
         "comedor": datos["comedor"].id,
@@ -126,7 +103,7 @@ def test_clean_relevamiento_serializer_valores_limite():
     """
     Caso: Valores límite en los datos.
     """
-    datos = RelevamientoTestHelper.crear_datos_relevamiento()
+    datos = TestUtils.crear_datos_relevamiento()
 
     initial_data = {
         "comedor": datos["comedor"].id,
@@ -152,7 +129,7 @@ def test_clean_relevamiento_serializer_listas_vacias():
     """
     Caso: Listas vacías o nulas.
     """
-    datos = RelevamientoTestHelper.crear_datos_relevamiento()
+    datos = TestUtils.crear_datos_relevamiento()
 
     initial_data = {
         "comedor": datos["comedor"].id,
