@@ -9,7 +9,9 @@ def test_clean_relevamiento_serializer_datos_completos():
     """
     Caso base: Datos completos y válidos.
     """
-    datos, initial_data = TestUtils.crear_datos_completos('test_clean_relevamiento_serializer_datos_completos.json')
+    datos, initial_data = TestUtils.crear_datos_completos(
+        "test_clean_relevamiento_serializer_datos_completos.json"
+    )
 
     serializer = RelevamientoSerializer(
         instance=datos["relevamiento"], data=initial_data, partial=True
