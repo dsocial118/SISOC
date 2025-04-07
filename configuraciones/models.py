@@ -78,21 +78,6 @@ class Municipio(models.Model):
         verbose_name_plural = "Municipio"
 
 
-class Departamento(models.Model):  # Se usa comedores ya que lo hereda localidades
-    nombre = models.CharField(max_length=255)
-    fk_provincia = models.ForeignKey(
-        Provincia, on_delete=models.SET_NULL, null=True, blank=True
-    )
-
-    def __str__(self):
-        return str(self.nombre)
-
-    class Meta:
-        ordering = ["id"]
-        verbose_name = "Departamento"
-        verbose_name_plural = "Departamento"
-
-
 class Localidad(models.Model):
     """
     Guardado de las localidades de los vecinos y vecinas registrados.
@@ -102,9 +87,6 @@ class Localidad(models.Model):
     fk_municipio = models.ForeignKey(
         Municipio, on_delete=models.SET_NULL, null=True, blank=True
     )
-    fk_departamento = models.ForeignKey(
-        Departamento, on_delete=models.SET_NULL, null=True, blank=True
-    )
 
     def __str__(self):
         return str(self.nombre)
@@ -112,30 +94,6 @@ class Localidad(models.Model):
     class Meta:
         verbose_name = "Localidad"
         verbose_name_plural = "Localidad"
-
-
-class Asentamiento(models.Model):  # solo se usa en configuraciones
-    """
-    Guardado de los asentamientos de los vecinos y vecinas registrados.
-    """
-
-    nombre = models.CharField(max_length=255)
-    fk_departamento = models.ForeignKey(
-        Departamento, on_delete=models.SET_NULL, null=True, blank=True
-    )
-    fk_municipio = models.ForeignKey(
-        Municipio, on_delete=models.SET_NULL, null=True, blank=True
-    )
-    fk_localidad = models.ForeignKey(
-        Localidad, on_delete=models.SET_NULL, null=True, blank=True
-    )
-
-    def __str__(self):
-        return str(self.nombre)
-
-    class Meta:
-        verbose_name = "Asentamiento"
-        verbose_name_plural = "Asentamientos"
 
 
 class Sexo(models.Model):
