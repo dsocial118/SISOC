@@ -7,6 +7,8 @@ from comedores.models.comedor import (
     Intervencion,
     ImagenComedor,
     Nomina,
+    Admisiones,
+    DuplaContacto,
 )
 
 from configuraciones.models import Municipio, Provincia
@@ -175,4 +177,14 @@ class ComedorForm(forms.ModelForm):
 class ImagenComedorForm(forms.ModelForm):
     class Meta:
         model = ImagenComedor
+        fields = "__all__"
+
+class AdmisionesForm(forms.ModelForm):
+    class Meta:
+        model = Admisiones
+        fields = "__all__"
+
+class DuplaContactoForm(forms.ModelForm):
+    class Meta:
+        model = DuplaContacto
         fields = "__all__"

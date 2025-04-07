@@ -6,8 +6,10 @@ from django.contrib import messages
 from django.db.models.base import Model
 from django.forms import BaseModelForm
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import redirect
+from django.shortcuts import redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
+from django.db.models import OuterRef, Subquery
+from django.db import models
 from django.utils import timezone
 from django.views.generic import (
     CreateView,
@@ -26,6 +28,8 @@ from comedores.forms.comedor_form import (
     ReferenteForm,
     IntervencionForm,
     NominaForm,
+    AdmisionesForm,
+    DuplaContactoForm,
 )
 
 from comedores.forms.observacion_form import ObservacionForm
@@ -49,12 +53,56 @@ from comedores.models.comedor import (
     Intervencion,
     SubIntervencion,
     Nomina,
+    Admisiones,
+    TipoConvenio,
+    Documentacion,
+    ArchivosAdmision,
+    DuplaContacto,
 )
 
 from comedores.models.relevamiento import Prestacion
 from comedores.services.comedor_service import ComedorService
 from comedores.services.relevamiento_service import RelevamientoService
+from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
 
+
+@csrf_exempt
+def subir_archivo_admision(request, admision_id, documentacion_id):
+    if request.method == "POST" and request.FILES.get("archivo"):
+        archivo = request.FILES["archivo"]
+        admision = get_object_or_404(Admisiones, pk=admision_id)
+        documentacion = get_object_or_404(Documentacion, pk=documentacion_id)
+
+        # Guardamos el archivo en el modelo ArchivosAdmision
+        archivo_admision, created = ArchivosAdmision.objects.update_or_create(
+            admision=admision,
+            documentacion=documentacion,
+            defaults={"archivo": archivo, "estado": "A Validar"},
+        )
+
+        # Respuesta JSON correcta
+        return JsonResponse({"success": True, "estado": archivo_admision.estado})
+
+    # Si no es POST o no hay archivo
+    return JsonResponse({"success": False, "error": "No se recibió un archivo"}, status=400)
+
+def eliminar_archivo_admision(request, admision_id, documentacion_id):
+    if request.method == "DELETE":
+        archivo = get_object_or_404(ArchivosAdmision, admision_id=admision_id, documentacion_id=documentacion_id)
+
+        # Eliminar el archivo físico del servidor
+        if archivo.archivo:
+            archivo_path = os.path.join(settings.MEDIA_ROOT, str(archivo.archivo))
+            if os.path.exists(archivo_path):
+                os.remove(archivo_path)
+
+        # Eliminar de la base de datos
+        archivo.delete()
+
+        return JsonResponse({"success": True, "nombre": archivo.documentacion.nombre})
+
+    return JsonResponse({"success": False, "error": "Método no permitido"}, status=405)
 
 def sub_estados_intervenciones_ajax(request):
     request_id = request.GET.get("id")
@@ -296,35 +344,55 @@ class ComedorDetailView(DetailView):
             }
         )
 
+        context["contactos_duplas_cargados"] = DuplaContacto.objects.filter(comedor=self.object["id"]).order_by("-fecha").all()
+        ####---- Hacer IF para que aparezca el boton Contacto Dupla si el comedor ya tiene una dupla cargada---
+        context["contacto_dupla_form"] = DuplaContactoForm()
+        context["contacto_dupla"] = True
+
         return context
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
-        try:
-            relevamiento = None
-            is_new_relevamiento = "territorial" in request.POST
-            is_edit_relevamiento = "territorial_editar" in request.POST
 
-            if is_new_relevamiento:
-                relevamiento = RelevamientoService.create_pendiente(
-                    request, self.object["id"]
-                )
+        is_new_relevamiento = "territorial" in request.POST
+        is_edit_relevamiento = "territorial_editar" in request.POST
+        is_contacto_dupla = "btnContactoDupla" in request.POST
 
-            elif is_edit_relevamiento:
-                relevamiento = RelevamientoService.update_territorial(request)
-
-            return redirect(
-                reverse(
-                    "relevamiento_detalle",
-                    kwargs={
-                        "pk": relevamiento.pk,
-                        "comedor_pk": relevamiento.comedor.pk,
-                    },
-                )
-            )
-        except Exception as e:
-            messages.error(request, f"Error al crear el relevamiento: {e}")
+        if is_contacto_dupla:
+            print("lalala")
+            form = DuplaContactoForm(request.POST)
+            if form.is_valid():
+                form.save()
+                messages.success(request, "Contacto guardado correctamente.")
+            else:
+                messages.error(request, "Error al guardar el contacto.")
+                print("Errores del formulario:", form.errors)
             return redirect("comedor_detalle", pk=self.object["id"])
+
+        if is_new_relevamiento or is_edit_relevamiento:
+            print("asdadsasad")
+            try:
+                relevamiento = None 
+                if is_new_relevamiento:
+                    relevamiento = RelevamientoService.create_pendiente(
+                        request, self.object["id"]
+                    )
+
+                elif is_edit_relevamiento:
+                    relevamiento = RelevamientoService.update_territorial(request)
+
+                return redirect(
+                    reverse(
+                        "relevamiento_detalle",
+                        kwargs={
+                            "pk": relevamiento.pk,
+                            "comedor_pk": relevamiento.comedor.pk,
+                        },
+                    )
+                )
+            except Exception as e:
+                messages.error(request, f"Error al crear el relevamiento: {e}")
+                return redirect("comedor_detalle", pk=self.object["id"])
 
 
 class ComedorUpdateView(UpdateView):
@@ -746,3 +814,103 @@ class ObservacionDeleteView(DeleteView):
         comedor = self.object.comedor
 
         return reverse_lazy("comedor_detalle", kwargs={"pk": comedor.id})
+
+class AdmisionesTecnicosListView(ListView):
+    model = Comedor
+    template_name = "comedor/admisiones_tecnicos_list.html"
+    context_object_name = "comedores"
+
+    def get_queryset(self):
+        admision_subquery = Admisiones.objects.filter(fk_comedor=OuterRef("pk")).values("id")[:1]
+        return Comedor.objects.annotate(admision_id=Subquery(admision_subquery))
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        return context
+
+
+class AdmisionesTecnicosCreateView(CreateView):
+    model = Admisiones
+    template_name = "comedor/admisiones_tecnicos_form.html"
+    form_class = AdmisionesForm
+    context_object_name = "admision"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        pk = self.kwargs["pk"]
+        comedor = get_object_or_404(Comedor, pk=pk)
+        convenios = TipoConvenio.objects.all()
+
+        context["comedor"] = comedor
+        context["convenios"] = convenios
+        context["es_crear"] = True
+
+        return context
+
+    def post(self, request, *args, **kwargs):
+        pk = self.kwargs["pk"]
+        comedor = get_object_or_404(Comedor, pk=pk)
+        tipo_convenio_id = request.POST.get("tipo_convenio")
+
+        if tipo_convenio_id:
+            tipo_convenio = get_object_or_404(TipoConvenio, pk=tipo_convenio_id)
+            admision = Admisiones.objects.create(fk_comedor=comedor, tipo_convenio=tipo_convenio)
+            return redirect("admisiones_tecnicos_editar", pk=admision.pk)  # Redirige a la edición
+
+        return self.get(request, *args, **kwargs)  # Si hay un error, recarga la página
+
+class AdmisionesTecnicosUpdateView(UpdateView):
+    model = Admisiones
+    template_name = "comedor/admisiones_tecnicos_form.html"
+    form_class = AdmisionesForm
+    context_object_name = "admision"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        admision = self.get_object()
+        comedor = Comedor.objects.get(pk=admision.fk_comedor_id)
+        convenios = TipoConvenio.objects.all()
+
+        # Obtener documentación requerida para el convenio actual
+        documentaciones = Documentacion.objects.filter(
+            models.Q(tipo="todos") | models.Q(convenios=admision.tipo_convenio)
+        ).distinct()
+
+        # Obtener archivos subidos para el convenio actual
+        archivos_subidos = ArchivosAdmision.objects.filter(admision=admision)
+        archivos_dict = {archivo.documentacion.id: archivo for archivo in archivos_subidos}
+        
+        # Crear lista de documentos del convenio actual
+        documentos_info = []
+        for doc in documentaciones:
+            archivo_info = archivos_dict.get(doc.id)
+            documentos_info.append({
+                "id": doc.id,
+                "nombre": doc.nombre,
+                "estado": archivo_info.estado if archivo_info else "Pendiente",
+                "archivo_url": archivo_info.archivo.url if archivo_info else None,
+            })
+        
+        
+        context["documentos"] = documentos_info
+        context["comedor"] = comedor
+        context["convenios"] = convenios
+
+        return context
+
+    def post(self, request, *args, **kwargs):
+        admision = self.get_object()
+
+        if "tipo_convenio" in request.POST:  # Si viene del modal
+            nuevo_convenio_id = request.POST.get("tipo_convenio")
+            if nuevo_convenio_id:
+                nuevo_convenio = TipoConvenio.objects.get(pk=nuevo_convenio_id)
+                admision.tipo_convenio = nuevo_convenio
+                admision.save()
+                archivos = ArchivosAdmision.objects.filter(admision=admision).all()
+                archivos.delete()
+                messages.success(request, "Tipo de convenio actualizado correctamente.")
+
+            return redirect(self.request.path_info)  # Recarga la misma página
+
+        return super().post(request, *args, **kwargs)  # Manejo normal del formulario
