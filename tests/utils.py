@@ -85,7 +85,7 @@ class TestUtils:
         }
 
     @staticmethod
-    def crear_datos_completos(jsonFile):
+    def crear_datos_completos(json_file):
         datos = TestUtils.crear_datos_relevamiento()
-        initial_data = TestUtils.cargar_initial_data(jsonFile, datos)
+        initial_data = TestUtils.cargar_initial_data(json_file, datos)
         return datos, initial_data
