@@ -88,12 +88,16 @@ def test_clean_relevamiento_serializer_datos_completos():
     if serializer.is_valid(raise_exception=True):
         serializer.save()
 
-    assert serializer.instance.fecha_visita.strftime("%-d/%-m/%Y %H:%M") == "5/3/2025 14:29"
+    assert (
+        serializer.instance.fecha_visita.strftime("%-d/%-m/%Y %H:%M")
+        == "5/3/2025 14:29"
+    )
     assert serializer.instance.territorial_nombre == "Territorial Test"
     assert serializer.instance.imagenes == [
         "http://example.com/image1.jpg",
         "http://example.com/image2.jpg",
     ]
+
 
 @pytest.mark.django_db
 def test_clean_relevamiento_serializer_datos_incompletos():
@@ -114,7 +118,11 @@ def test_clean_relevamiento_serializer_datos_incompletos():
     if serializer.is_valid(raise_exception=True):
         serializer.save()
 
-    assert serializer.instance.fecha_visita.strftime("%-d/%-m/%Y %H:%M") == "5/3/2025 14:29"
+    assert (
+        serializer.instance.fecha_visita.strftime("%-d/%-m/%Y %H:%M")
+        == "5/3/2025 14:29"
+    )
+
 
 @pytest.mark.django_db
 def test_clean_relevamiento_serializer_datos_minimos():
@@ -135,6 +143,7 @@ def test_clean_relevamiento_serializer_datos_minimos():
 
     assert serializer.instance.comedor.id == datos["comedor"].id
 
+
 @pytest.mark.django_db
 def test_clean_relevamiento_serializer_datos_extra():
     """
@@ -154,7 +163,10 @@ def test_clean_relevamiento_serializer_datos_extra():
     if serializer.is_valid(raise_exception=True):
         serializer.save()
 
-    assert serializer.instance.fecha_visita.strftime("%-d/%-m/%Y %H:%M") == "5/3/2025 14:29"
+    assert (
+        serializer.instance.fecha_visita.strftime("%-d/%-m/%Y %H:%M")
+        == "5/3/2025 14:29"
+    )
 
 
 @pytest.mark.django_db
@@ -176,8 +188,12 @@ def test_clean_relevamiento_serializer_valores_limite():
     if serializer.is_valid(raise_exception=True):
         serializer.save()
 
-    assert serializer.instance.fecha_visita.strftime("%-d/%-m/%Y %H:%M") == "1/1/1900 00:00"
+    assert (
+        serializer.instance.fecha_visita.strftime("%-d/%-m/%Y %H:%M")
+        == "1/1/1900 00:00"
+    )
     assert serializer.instance.prestacion.lunes_desayuno_actual == 0
+
 
 @pytest.mark.django_db
 def test_clean_relevamiento_serializer_listas_vacias():
@@ -198,4 +214,3 @@ def test_clean_relevamiento_serializer_listas_vacias():
         serializer.save()
 
     assert serializer.instance.imagenes == []
-
