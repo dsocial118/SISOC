@@ -18,8 +18,8 @@ class TestUtils:
     @staticmethod
     def cargar_initial_data(jsonFile, datos):
         # Obtener la ruta al archivo JSON
-        fixtures_dir = Path(__file__).parent / "fixtures"
-        json_path = fixtures_dir / jsonFile
+        data_dir = Path(__file__).parent / "mocked_data"
+        json_path = data_dir / jsonFile
 
         # Cargar el JSON
         with open(json_path, "r", encoding="utf-8") as f:
