@@ -13,5 +13,5 @@ class Dupla(models.Model):
     )
     fecha = models.DateField()
     abogado = models.ForeignKey(
-        User, on_delete=models.PROTECT, blank=False, null=False
+        User, on_delete=models.PROTECT, blank=False
     )

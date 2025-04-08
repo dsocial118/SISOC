@@ -11,27 +11,27 @@ from dupla.views import (
 urlpatterns = [
     path(
         "dupla/",
-        DuplaListView.as_view(),
+        group_required("Dupla")(DuplaListView.as_view()),
         name="dupla_list",
     ),
     path(
         "dupla/crear/",
-        DuplaCreateView.as_view(),
+        group_required("Dupla")(DuplaCreateView.as_view()),
         name="dupla_crear",
     ),
     path(
         "dupla/<int:pk>/actualizar/",
-        DuplaUpdateView.as_view(),
+        group_required("Dupla")(DuplaUpdateView.as_view()),
         name="dupla_actualizar",
     ),
     path(
         "dupla/<int:pk>/",
-        DuplaDetailView.as_view(),
+        group_required("Dupla")(DuplaDetailView.as_view()),
         name="dupla_detalle",
     ),
     path(
         "dupla/<int:pk>/eliminar/",
-        DuplaDeleteView.as_view(),
+        group_required("Dupla")(DuplaDeleteView.as_view()),
         name="dupla_eliminar",
     ),
 
