@@ -131,6 +131,7 @@ INSTALLED_APPS = [
     "organizaciones",
     "provincias",
     "cdi",
+    "dupla",
 ]
 
 # Definición del middleware utilizado por el proyecto

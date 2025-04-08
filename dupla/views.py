@@ -12,7 +12,7 @@ from django.views.generic import (
     ListView,
     UpdateView,
 )
-
+from dupla.dupla_service import DuplaService
 from dupla.models import Dupla
 
 class DuplaListView(ListView):
@@ -21,18 +21,11 @@ class DuplaListView(ListView):
     context_object_name = "duplas"
     paginate_by = 10
 
-    def get_queryset(self):
-        query = self.request.GET.get("busqueda")
-        queryset = Dupla.objects.all()
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["duplas"] = DuplaService.get_all_duplas()
+        return context
 
-        if query:
-            queryset = queryset.filter(
-                Q(nombre__icontains=query)
-                | Q(tecnico__username__icontains=query)
-                | Q(abogado__username__icontains=query)
-            )
-
-        return queryset
     
 class DuplaCreateView(CreateView):
     model = Dupla
