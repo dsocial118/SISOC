@@ -131,7 +131,7 @@ class RelevamientoSerializer(serializers.ModelSerializer):
             if "celular" in self.initial_data["responsable_relevamiento"]:
                 if self.initial_data["responsable_relevamiento"]["celular"] == "":
                     self.initial_data["responsable_relevamiento"]["celular"] = None
-                    
+
         if (
             "referente_comedor" in self.initial_data
             or "responsable_relevamiento" in self.initial_data

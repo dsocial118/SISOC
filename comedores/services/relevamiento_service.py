@@ -1377,7 +1377,7 @@ class RelevamientoService:
             responsable = Referente.objects.filter(
                 documento=responsable_data.get("documento")
             ).last()
-            
+
             if responsable:
                 for key, value in responsable_data.items():
                     setattr(responsable, key, value)
@@ -1401,7 +1401,9 @@ class RelevamientoService:
 
             if referente:
                 for key, value in referente_data.items():
-                  setattr(referente, key, value)  # Asignar incluso si el valor es None
+                    setattr(
+                        referente, key, value
+                    )  # Asignar incluso si el valor es None
                 referente.save()
 
             else:
