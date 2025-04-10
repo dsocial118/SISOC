@@ -8,7 +8,6 @@ class Dupla(models.Model):
     tecnico = models.ManyToManyField(
         User,
         blank=False,
-        null=False,
         related_name="dupla_tecnico",
     )
     fecha = models.DateField()

@@ -31,9 +31,30 @@ class DuplaCreateView(CreateView):
     model = Dupla
     template_name = "dupla_form.html"
     fields = ["nombre", "tecnico", "fecha", "abogado"]
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["form"] = self.get_form()
+        return context
+    
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        if form.is_valid():
+            try:
+                self.object = self.form_valid(form)
+                messages.success(request, "Dupla creada correctamente.")
+                return HttpResponseRedirect(self.get_success_url())
+            except ValidationError as e:
+                messages.error(request, str(e))
+                return self.form_invalid(form)
+        else:
+            messages.error(request, "Error al crear la Dupla.")
+            return self.form_invalid(form)
 
     def get_success_url(self):
-        return reverse("dupla_detalle", kwargs={"pk": self.object.pk})
+        return reverse("dupla_list")
+    
 class DuplaUpdateView(UpdateView):
     model = Dupla
     template_name = "dupla_form.html"
@@ -59,3 +80,5 @@ class DuplaDeleteView(DeleteView):
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         self.object.delete()
+        messages.success(request, "Dupla eliminada correctamente.")
+        return HttpResponseRedirect(self.get_success_url())

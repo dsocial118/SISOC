@@ -20,9 +20,9 @@ urlpatterns = [
         name="dupla_crear",
     ),
     path(
-        "dupla/<int:pk>/actualizar/",
+        "dupla/<int:pk>/editar/",
         group_required("Dupla")(DuplaUpdateView.as_view()),
-        name="dupla_actualizar",
+        name="dupla_editar",
     ),
     path(
         "dupla/<int:pk>/",
