@@ -179,10 +179,12 @@ class ImagenComedorForm(forms.ModelForm):
         model = ImagenComedor
         fields = "__all__"
 
+
 class AdmisionesForm(forms.ModelForm):
     class Meta:
         model = Admisiones
         fields = "__all__"
+
 
 class DuplaContactoForm(forms.ModelForm):
     class Meta:
