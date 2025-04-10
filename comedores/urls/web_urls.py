@@ -166,8 +166,11 @@ urlpatterns = [
     path(
         "admision/<int:admision_id>/documentacion/<int:documentacion_id>/subir/",
         subir_archivo_admision,
-        name="subir_archivo_admision"
+        name="subir_archivo_admision",
     ),
-    path("admision/<int:admision_id>/documentacion/<int:documentacion_id>/eliminar/", eliminar_archivo_admision, name="eliminar_archivo_admision"),
+    path(
+        "admision/<int:admision_id>/documentacion/<int:documentacion_id>/eliminar/",
+        eliminar_archivo_admision,
+        name="eliminar_archivo_admision",
+    ),
 ]
-
