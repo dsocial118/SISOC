@@ -32,36 +32,35 @@
                         </thead>
                         <tbody>
                             {% for comedor in comedores %}
-                            <tr>
-                                <td>
-                                    <a href="{% url 'comedor_detalle' comedor.id %}" class="font-weight-bold link-handler" title="Ver detalles">{{ comedor.nombre }}</a>
-                                </td>
-                                <td>{{ comedor.tipocomedor }}</td>
-                                <td>
-                                    {{ comedor.provincia | default_if_none:"-" }},
-                                    {{ comedor.municipio | default_if_none:"-" }},
-                                    {{ comedor.localidad | default_if_none:"-" }},
-                                    {{ comedor.barrio | default_if_none:"-" }}
-                                </td>
-                                <td>
-                                    {{ comedor.calle | default_if_none:"-" }} {{ comedor.numero | default_if_none:"-" }}
-                                </td>
-                                <td>
-                                    {{ comedor.referente.nombre| default_if_none:"-" }}, {{ comedor.referente.apellido | default_if_none:"-" }}
-                                </td>
-                                <td>{{ comedor.referente.celular | default_if_none:"-" }}</td>
-                                <td>
-                                    <div class="btn-group" role="group">
-                                        {% if comedor.admision_id %}
-                                            <a href="{% url 'admisiones_tecnicos_editar' comedor.admision_id %}" class="btn btn-primary btn-sm">Ver</a>
-                                        {% else %}
-                                            <a href="{% url 'admisiones_tecnicos_crear' comedor.id %}" class="btn btn-primary btn-sm">Ver</a>
-                                        {% endif %}
-                                    </div>
-                                </td>
-                            </tr>
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'comedor_detalle' comedor.id %}"
+                                           class="font-weight-bold link-handler"
+                                           title="Ver detalles">{{ comedor.nombre }}</a>
+                                    </td>
+                                    <td>{{ comedor.tipocomedor }}</td>
+                                    <td>
+                                        {{ comedor.provincia | default_if_none:"-" }},
+                                        {{ comedor.municipio | default_if_none:"-" }},
+                                        {{ comedor.localidad | default_if_none:"-" }},
+                                        {{ comedor.barrio | default_if_none:"-" }}
+                                    </td>
+                                    <td>{{ comedor.calle | default_if_none:"-" }} {{ comedor.numero | default_if_none:"-" }}</td>
+                                    <td>{{ comedor.referente.nombre| default_if_none:"-" }}, {{ comedor.referente.apellido | default_if_none:"-" }}</td>
+                                    <td>{{ comedor.referente.celular | default_if_none:"-" }}</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            {% if comedor.admision_id %}
+                                                <a href="{% url 'admisiones_tecnicos_editar' comedor.admision_id %}"
+                                                   class="btn btn-primary btn-sm">Ver</a>
+                                            {% else %}
+                                                <a href="{% url 'admisiones_tecnicos_crear' comedor.id %}"
+                                                   class="btn btn-primary btn-sm">Ver</a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
                             {% endfor %}
-                            
                         </tbody>
                     </table>
                     {% if is_paginated %}

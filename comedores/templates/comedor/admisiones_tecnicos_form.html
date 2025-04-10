@@ -3,10 +3,7 @@
 ;
 {% block title %}Admision: {{ comedor.nombre }}{% endblock %}
 ;
-
-{% block titulo-pagina %}
-    {{ comedor.nombre }}
-{% endblock %}
+{% block titulo-pagina %}{{ comedor.nombre }}{% endblock %}
 ;
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
@@ -18,230 +15,262 @@
 {% endblock %}
 ;
 {% block content %}
-
-{% if es_crear %}
-<!-- MODAL DE SELECCIÓN INICIAL -->
-<div class="modal fade" id="seleccionModal" tabindex="-1" aria-labelledby="seleccionModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <form method="POST" action="{% url 'admisiones_tecnicos_crear' pk=comedor.pk %}">
-                {% csrf_token %}
-                <div class="modal-header">
-                    <h5 class="modal-title">Seleccione el tipo de convenio</h5>
-                </div>
-                <div class="modal-body">
-                    <select name="tipo_convenio" id="tipoConvenio" class="form-control" required>
-                        <option value="">-- Seleccione --</option>
-                        {% for c in convenios %}
-                        <option value="{{ c.id }}">{{ c.nombre }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="modal-footer">
-                    <a href="{% url 'admisiones_tecnicos_listar' %}" class="btn btn-secondary">Cancelar</a>
-                    <button type="submit" class="btn btn-primary" id="confirmarSeleccion" disabled>Continuar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-{% endif %}
-<div class="row mb-3">
-    {% if not es_crear %}
-    <div class="col-5">
-        <div class="card card-primary card-outline h-100">
-            <div class="card-header">
-                <h2 class="card-title fw-bold fs-3">Admisión</h2>
-            </div>
-            <div class="card-body card-comments">
-                <ul class="nav nav-pills flex-column">
-                    <li class="nav-item">
-                        <div class="comment-text">
-                            Tipo Convenio: 
-                            <span class="fw-bold">{{ admision.tipo_convenio.nombre| default_if_none:"-" }} <button type="button" class="btn btn-primary btn-sm ms-3 mb-1" data-bs-toggle="modal" data-bs-target="#nuevoSeleccionModal">
-                                Cambiar
-                            </button>
-                            </span>
-                        </div>
-                    </li>
-                    <li class="nav-item">
-                        <div class="comment-text">
-                            Estado: 
-                            <span class="fw-bold">{{ admision.estado| default_if_none:"-" }}</span>
-                        </div>
-                    </li>
-                    <li class="nav-item">
-                        <div class="comment-text">
-                            Fecha: 
-                            <span class="fw-bold">{{ admision.creado |date:'d/m/Y' }}</span>
-                        </div>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
-
     {% if es_crear %}
-    <div class="col-12">
-    {% else %}
-    <div class="col-7">
+        <!-- MODAL DE SELECCIÓN INICIAL -->
+        <div class="modal fade"
+             id="seleccionModal"
+             tabindex="-1"
+             aria-labelledby="seleccionModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form method="POST"
+                          action="{% url 'admisiones_tecnicos_crear' pk=comedor.pk %}">
+                        {% csrf_token %}
+                        <div class="modal-header">
+                            <h5 class="modal-title">Seleccione el tipo de convenio</h5>
+                        </div>
+                        <div class="modal-body">
+                            <select name="tipo_convenio" id="tipoConvenio" class="form-control" required>
+                                <option value="">-- Seleccione --</option>
+                                {% for c in convenios %}<option value="{{ c.id }}">{{ c.nombre }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="modal-footer">
+                            <a href="{% url 'admisiones_tecnicos_listar' %}"
+                               class="btn btn-secondary">Cancelar</a>
+                            <button type="submit"
+                                    class="btn btn-primary"
+                                    id="confirmarSeleccion"
+                                    disabled>Continuar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     {% endif %}
-        <div class="card card-primary card-outline">
-            <div class="card-header">
-                <h2 class="card-title fw-bold fs-3">Comedor</h2>
+    <div class="row mb-3">
+        {% if not es_crear %}
+            <div class="col-5">
+                <div class="card card-primary card-outline h-100">
+                    <div class="card-header">
+                        <h2 class="card-title fw-bold fs-3">Admisión</h2>
+                    </div>
+                    <div class="card-body card-comments">
+                        <ul class="nav nav-pills flex-column">
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Tipo Convenio:
+                                    <span class="fw-bold">{{ admision.tipo_convenio.nombre| default_if_none:"-" }}
+                                        <button type="button"
+                                                class="btn btn-primary btn-sm ms-3 mb-1"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#nuevoSeleccionModal">Cambiar</button>
+                                    </span>
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Estado:
+                                    <span class="fw-bold">{{ admision.estado| default_if_none:"-" }}</span>
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Fecha:
+                                    <span class="fw-bold">{{ admision.creado |date:'d/m/Y' }}</span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
             </div>
-            <div class="card-body card-comments p-3">
-                <ul class="nav nav-pills flex-column">
-                    <li class="nav-item">
-                        <div class="comment-text ">
-                            Nombre: 
-                            <a href="{% url 'comedor_detalle' comedor.id %}"><span class="fw-bold">{{ comedor.nombre }}</span></a>
-                            
-                        </div>
-                    </li>
-                    <li class="nav-item">
-                        <div class="comment-text">
-                            Tipo Comedor: 
-                            <span class="fw-bold">{{ comedor.tipocomedor| default_if_none:"-" }}</span>
-                        </div>
-                    </li>
-                    <li class="nav-item">
-                        <div class="comment-text">
-                            Programa: 
-                            <span class="fw-bold">{{ comedor.programa| default_if_none:"-" }}</span>
-                        </div>
-                    </li>
-                    <li class="nav-item">
-                        <div class="comment-text">
-                            Organización: 
-                            <span class="fw-bold">{{ comedor.organizacion | default_if_none:"-" }}</span>
-                        </div>
-                    </li>
-
-                    <li class="nav-item">
-                        <div class="comment-text">
-                            Provincia: 
-                            <span class="fw-bold">{{ comedor.provincia | default_if_none:"-" }} - {{ comedor.municipio | default_if_none:"-" }} - {{ comedor.localidad | default_if_none:"-" }}</span>
-                        </div>
-                    </li>
-                    <li class="nav-item">
-                        <div class="comment-text">
-                            Calle: 
-                            <span class="fw-bold">{{ comedor.calle | default_if_none:"-" }} {{ comedor.numero | default_if_none:"-" }} - Piso: {{ comedor.piso | default_if_none:"-" }} {{ comedor.departamento | default_if_none:"" }}</span>
-                        </div>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </div>
-</div>
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h2 class="card-title fw-bold fs-3">Documentos requeridos</h2>
-            </div>
-            <div class="card-body card-comments p-0 pb-1">
-                <!-- CONTENEDOR DE DOCUMENTOS -->
-                <div class="container mt-2 table-responsive">
-                    <table class="table table-striped table-bordered table-hover table-sm" id="tablaDocumentos">
-                        <thead>
-                            <tr>
-                                <th>Documento</th>
-                                <th>Estado</th>
-                                <th>Archivo</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for doc in documentos %}
-                            <tr id="fila-{{ doc.id }}">
-                                <td class="ps-3">{{ doc.nombre }}</td>
-                                <td class="px-3" id="estado-{{ doc.id }}">{{ doc.estado }}</td>
-                                <td>
-                                    {% if doc.archivo_url %}
-                                        <a href="{{ doc.archivo_url }}" target="_blank" class="btn btn-primary btn-sm">Ver Archivo</a>
-                                        <button class="btn btn-secondary btn-sm" disabled>Archivado</button>
-                                        <button class="btn btn-sm btn-danger fw-bold px-3" onclick="confirmarEliminar({{ admision.id }}, {{ doc.id }})">
-                                            X
-                                        </button>
-                                    {% else %}
-                                        <input type="file" id="file-{{ doc.id }}">
-                                        <button class="btn btn-primary btn-sm" onclick="subirArchivo({{ admision.id }}, {{ doc.id }})">Archivar</button>
-                                    
-                                        <!-- Barra de progreso que se muestra cuando se sube un archivo -->
-                                        <div class="progress mt-2" id="progress-container-{{ doc.id }}" style="display:none; height: 3px;">
-                                            <div class="progress-bar  progress-bar-striped" role="progressbar" id="progress-bar-{{ doc.id }}" style="width: 0%;">0%</div>
-                                        </div>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>       
+        {% endif %}
+        {% if es_crear %}
+            <div class="col-12">
+            {% else %}
+                <div class="col-7">
+                {% endif %}
+                <div class="card card-primary card-outline">
+                    <div class="card-header">
+                        <h2 class="card-title fw-bold fs-3">Comedor</h2>
+                    </div>
+                    <div class="card-body card-comments p-3">
+                        <ul class="nav nav-pills flex-column">
+                            <li class="nav-item">
+                                <div class="comment-text ">
+                                    Nombre:
+                                    <a href="{% url 'comedor_detalle' comedor.id %}"><span class="fw-bold">{{ comedor.nombre }}</span></a>
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Tipo Comedor:
+                                    <span class="fw-bold">{{ comedor.tipocomedor| default_if_none:"-" }}</span>
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Programa:
+                                    <span class="fw-bold">{{ comedor.programa| default_if_none:"-" }}</span>
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Organización:
+                                    <span class="fw-bold">{{ comedor.organizacion | default_if_none:"-" }}</span>
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Provincia:
+                                    <span class="fw-bold">{{ comedor.provincia | default_if_none:"-" }} - {{ comedor.municipio | default_if_none:"-" }} - {{ comedor.localidad | default_if_none:"-" }}</span>
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Calle:
+                                    <span class="fw-bold">{{ comedor.calle | default_if_none:"-" }} {{ comedor.numero | default_if_none:"-" }} - Piso: {{ comedor.piso | default_if_none:"-" }} {{ comedor.departamento | default_if_none:"" }}</span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-</div>
-
-
-<!-- MODAL DE CONFIRMACIÓN -->
-<div class="modal fade" id="modalConfirmarEliminar" tabindex="-1" role="dialog" aria-labelledby="modalConfirmarEliminarLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalConfirmarEliminarLabel">Eliminar Archivo</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                ¿Estás seguro de que deseas eliminar este archivo? Esta acción no se puede deshacer.
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-danger" id="btnConfirmarEliminar">Eliminar</button>
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title fw-bold fs-3">Documentos requeridos</h2>
+                    </div>
+                    <div class="card-body card-comments p-0 pb-1">
+                        <!-- CONTENEDOR DE DOCUMENTOS -->
+                        <div class="container mt-2 table-responsive">
+                            <table class="table table-striped table-bordered table-hover table-sm"
+                                   id="tablaDocumentos">
+                                <thead>
+                                    <tr>
+                                        <th>Documento</th>
+                                        <th>Estado</th>
+                                        <th>Archivo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for doc in documentos %}
+                                        <tr id="fila-{{ doc.id }}">
+                                            <td class="ps-3">{{ doc.nombre }}</td>
+                                            <td class="px-3" id="estado-{{ doc.id }}">{{ doc.estado }}</td>
+                                            <td>
+                                                {% if doc.archivo_url %}
+                                                    <a href="{{ doc.archivo_url }}"
+                                                       target="_blank"
+                                                       class="btn btn-primary btn-sm">Ver Archivo</a>
+                                                    <button class="btn btn-secondary btn-sm" disabled>Archivado</button>
+                                                    <button class="btn btn-sm btn-danger fw-bold px-3"
+                                                            onclick="confirmarEliminar({{ admision.id }}, {{ doc.id }})">
+                                                        X
+                                                    </button>
+                                                {% else %}
+                                                    <input type="file" id="file-{{ doc.id }}" />
+                                                    <button class="btn btn-primary btn-sm"
+                                                            onclick="subirArchivo({{ admision.id }}, {{ doc.id }})">
+                                                        Archivar
+                                                    </button>
+                                                    <!-- Barra de progreso que se muestra cuando se sube un archivo -->
+                                                    <div class="progress mt-2"
+                                                         id="progress-container-{{ doc.id }}"
+                                                         style="display:none;
+                                                                height: 3px">
+                                                        <div class="progress-bar  progress-bar-striped"
+                                                             role="progressbar"
+                                                             id="progress-bar-{{ doc.id }}"
+                                                             style="width: 0%">0%</div>
+                                                    </div>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-</div>
-
-<!-- MODAL DE SELECCIÓN DE CONVENIO -->
-<div class="modal fade" id="nuevoSeleccionModal" tabindex="-1" aria-labelledby="nuevoSeleccionModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <form method="POST" action="">
-                {% csrf_token %}
-                <div class="modal-header">
-                    <h5 class="modal-title">Seleccione el tipo de convenio</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <!-- MODAL DE CONFIRMACIÓN -->
+        <div class="modal fade"
+             id="modalConfirmarEliminar"
+             tabindex="-1"
+             role="dialog"
+             aria-labelledby="modalConfirmarEliminarLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalConfirmarEliminarLabel">Eliminar Archivo</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">¿Estás seguro de que deseas eliminar este archivo? Esta acción no se puede deshacer.</div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-danger" id="btnConfirmarEliminar">Eliminar</button>
+                    </div>
                 </div>
-                <div class="modal-body">
-                    <div class="alert alert-danger h6 text-white" role="alert">
-                        Al cambiar el Convenio se perderan todos los archivos cargados. Esta seguro que quiere continuar?
-                      </div>
-                    <select name="tipo_convenio" id="nuevoTipoConvenio" class="form-control" required>
-                        <option value="">-- Seleccione --</option>
-                        {% for c in convenios %}
-                        <option value="{{ c.id }}" {% if c.id == admision.tipo_convenio.id %}selected{% endif %}>
-                            {{ c.nombre }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-danger" id="nuevoConfirmarSeleccion" disabled>Cambiar y eliminar</button>
-                </div>
-            </form>
+            </div>
         </div>
-    </div>
-</div>
-
-{% endblock %}
-{% block customJS %}
-{% if es_crear %}
-<script>
+        <!-- MODAL DE SELECCIÓN DE CONVENIO -->
+        <div class="modal fade"
+             id="nuevoSeleccionModal"
+             tabindex="-1"
+             aria-labelledby="nuevoSeleccionModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form method="POST" action="">
+                        {% csrf_token %}
+                        <div class="modal-header">
+                            <h5 class="modal-title">Seleccione el tipo de convenio</h5>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-danger h6 text-white" role="alert">
+                                Al cambiar el Convenio se perderan todos los archivos cargados. Esta seguro que quiere continuar?
+                            </div>
+                            <select name="tipo_convenio"
+                                    id="nuevoTipoConvenio"
+                                    class="form-control"
+                                    required>
+                                <option value="">-- Seleccione --</option>
+                                {% for c in convenios %}
+                                    <option value="{{ c.id }}"
+                                            {% if c.id == admision.tipo_convenio.id %}selected{% endif %}>
+                                        {{ c.nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit"
+                                    class="btn btn-danger"
+                                    id="nuevoConfirmarSeleccion"
+                                    disabled>Cambiar y eliminar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endblock %}
+    {% block customJS %}
+        {% if es_crear %}
+            <script>
     $(document).ready(function() {
 
         // Mostrar el modal al inicio
@@ -262,9 +291,9 @@
         });
 
     });
-</script>
-{% endif %}
-<script>
+            </script>
+        {% endif %}
+        <script>
     document.addEventListener("DOMContentLoaded", function () {
         let selectConvenio = document.getElementById("nuevoTipoConvenio");
         let confirmarBtn = document.getElementById("nuevoConfirmarSeleccion");
@@ -273,10 +302,8 @@
             confirmarBtn.disabled = !selectConvenio.value;
         });
     });
-</script>
-
-
-<script>
+        </script>
+        <script>
     function subirArchivo(admisionId, documentoId) {
         let inputFile = document.getElementById(`file-${documentoId}`);
         let file = inputFile.files[0];
@@ -380,7 +407,7 @@
                     <td class="ps-3">${data.nombre}</td>
                     <td class="px-3" id="estado-${documentoId}">Pendiente</td>
                     <td>
-                        <input type="file" id="file-${documentoId}">
+                        <input type="file" id="file-${documentoId}" />
                         <button class="btn btn-primary btn-sm" onclick="subirArchivo(${admisionId}, ${documentoId})">Archivar</button>
                         <!-- Volver a agregar la barra de progreso -->
                         <div class="progress mt-2" style="display:none; height: 3px;"" id="progress-container-${documentoId}">
@@ -395,6 +422,5 @@
         })
         .catch(error => console.error("Error al eliminar:", error));
     }
-</script>
-
-{% endblock %}
+        </script>
+    {% endblock %}
