@@ -107,7 +107,7 @@
                 </div>
                 <div class="row info-card-label">
                     <h5 class="mt-2">
-                        <a href="{% url 'legajoalertas_listar' object.id %}"
+                        <a href="{% url 'alertas_listar' object.id %}"
                            class="small-box-footer">
                             Alertas <i class="fas fa-arrow-circle-right"></i>
                         </a>
@@ -134,7 +134,7 @@
                 </div>
                 <div class="row info-card-label">
                     <h5 class="mt-2">
-                        <a href="{% url 'legajoalertas_listar' object.id %}"
+                        <a href="{% url 'alertas_listar' object.id %}"
                            class="small-box-footer">
                             Indicadores de riesgo <i class="fas fa-arrow-circle-right"></i>
                         </a>
@@ -434,7 +434,7 @@
                 <dd class="col-sm-10">
                     Frecuencia de controles médicos
                 </dd>
-                <dt class="col-sm-2">{{ dimensionsalud.frec_controles|default_if_none:"-" }}</dt>
+                <dt class="col-sm-2">{{ dimensionsalud.frecuencia_controles_medicos|default_if_none:"-" }}</dt>
                 <dd class="col-sm-10">
                     Posee alguna enfermedad recurrente o algún diagnóstico de
                     enfermedad crónic?
@@ -577,8 +577,8 @@
                     Planes sociales que recibe
                 </dd>
                 <dt class="col-sm-2">
-                    {% if object.dimensioneconomia.m2m_planes.all.count > 0 %}
-                        {{ object.dimensioneconomia.m2m_planes.all|join:', ' }}
+                    {% if object.dimensioneconomia.planes.all.count > 0 %}
+                        {{ object.dimensioneconomia.planes.all|join:', ' }}
                     {% else %}
                         -
                     {% endif %}
@@ -666,7 +666,7 @@
                     </div>
                 </div>
                 <div class="px-4 pt-0 mt-0 pb-2" id="form-programas" style="display: none">
-                    <form id="programasForm"
+                    <form id="ProgramaForm"
                           method="POST"
                           action="{% url 'actualizar_programas' object.id %}">
                         {% csrf_token %}
@@ -909,7 +909,7 @@
     </script>
     <script>
     document.addEventListener("DOMContentLoaded", function () {
-        const form = document.getElementById('programasForm');
+        const form = document.getElementById('ProgramaForm');
         const programasDiv = document.getElementById('progamas_legajos');
     
         form.addEventListener('submit', function (e) {
