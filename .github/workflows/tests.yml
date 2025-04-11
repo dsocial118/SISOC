@@ -1,41 +1,33 @@
-name: Testing automatico
+name: Run Django Tests
 
 on:
   pull_request:
-    branches:
-      - main
-      - development
+    branches: [main]
   push:
-    branches:
-      - main
-      - development
+    branches: [main]
 
 jobs:
   test:
     runs-on: ubuntu-latest
 
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: root1-password2
-          MYSQL_DATABASE: sisoc-local
-        ports:
-          - 3307:3307
-        options: >-
-          --health-cmd="mysqladmin ping -h localhost -P 3307"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-
     steps:
-      - name: Checkout code
+      - name: Checkout repo
         uses: actions/checkout@v3
+
+      - name: Generate dummy .env
+        run: |
+          echo "DEBUG=False" >> .env
+          echo "SECRET_KEY=test-key" >> .env
+          echo "DATABASE_NAME=sisoc-local" >> .env
+          echo "DATABASE_USER=root" >> .env
+          echo "DATABASE_PASSWORD=root1-password2" >> .env
+          echo "DATABASE_HOST=mysql" >> .env
+          echo "DATABASE_PORT=3307" >> .env
 
       - name: Set up Docker Compose
         run: docker compose up -d
 
-      - name: Wait for DB to be healthy
+      - name: Wait for MySQL to be ready
         run: |
           for i in {1..20}; do
             if docker compose exec -T mysql mysqladmin ping -h "localhost" -P 3307 --silent; then
@@ -46,5 +38,5 @@ jobs:
             sleep 5
           done
 
-      - name: Run tests
+      - name: Run Django tests
         run: docker compose exec -T django pytest -n auto
