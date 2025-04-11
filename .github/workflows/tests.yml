@@ -1,0 +1,50 @@
+name: Testing automatico
+
+on:
+  pull_request:
+    branches:
+      - main
+      - development
+  push:
+    branches:
+      - main
+      - development
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root1-password2
+          MYSQL_DATABASE: sisoc-local
+        ports:
+          - 3307:3307
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -P 3307"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Compose
+        run: docker-compose up -d
+
+      - name: Wait for DB to be healthy
+        run: |
+          for i in {1..20}; do
+            if docker-compose exec -T mysql mysqladmin ping -h "localhost" -P 3307 --silent; then
+              echo "MySQL is ready!"
+              break
+            fi
+            echo "Waiting for MySQL..."
+            sleep 5
+          done
+
+      - name: Run tests
+        run: docker-compose exec -T django pytest -n auto
