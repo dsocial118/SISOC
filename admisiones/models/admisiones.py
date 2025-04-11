@@ -1,4 +1,3 @@
-
 from django.db import models
 from users.models import User
 from comedores.models.comedor import Comedor
@@ -60,6 +59,7 @@ class Documentacion(models.Model):
 
     def __str__(self):
         return self.nombre if self.nombre else "Sin nombre"
+
 
 class ArchivoAdmision(models.Model):
     admision = models.ForeignKey(Admision, on_delete=models.CASCADE)
