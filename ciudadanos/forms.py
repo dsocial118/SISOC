@@ -5,7 +5,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 
 from ciudadanos.models import (
     Archivo,
-    CategoriaAlertas,
+    CategoriaAlerta,
     Ciudadano,
     Derivacion,
     DimensionEconomia,
@@ -382,7 +382,7 @@ class AlertaForm(forms.ModelForm):
     categoria = forms.ModelChoiceField(
         required=True,
         label="Categoría",
-        queryset=CategoriaAlertas.objects.all(),
+        queryset=CategoriaAlerta.objects.all(),
         widget=forms.Select(attrs={"class": "select2"}),
     )
 
@@ -674,8 +674,7 @@ class DimensionEconomiaForm(forms.ModelForm):
                     "rows": 3,
                 }
             ),
-            #'recibe_plan': forms.CheckboxInput(),
-            "m2m_planes": forms.SelectMultiple(
+            "planes": forms.SelectMultiple(
                 attrs={
                     "class": "select2 w-100",
                     "style": "width: 100%;",
@@ -683,11 +682,11 @@ class DimensionEconomiaForm(forms.ModelForm):
                 }
             ),
         }
-        labels = {"m2m_planes": "Planes sociales que recibe"}
+        labels = {"planes": "Planes sociales que recibe"}
 
 
 class DimensionTrabajoForm(forms.ModelForm):
-    busquedaLaboral = forms.ChoiceField(
+    busqueda_laboral = forms.ChoiceField(
         choices=BOOLEAN_CHOICE,
         widget=forms.Select,
         label="¿Buscaste trabajo en los últimos 30 días?",
@@ -764,8 +763,8 @@ class IntervencionForm(forms.ModelForm):
 
 
 class LlamadoForm(forms.ModelForm):
-    subtipollamado = forms.FileField(
-        widget=forms.Select(attrs={"class": "select2 subtipollamado-select"}),
+    subtipo_llamado = forms.FileField(
+        widget=forms.Select(attrs={"class": "select2 subtipo_llamado-select"}),
         required=False,
         label="Subtipo de llamado",
     )
@@ -788,14 +787,14 @@ class LlamadoForm(forms.ModelForm):
             ),
         }
         labels = {
-            "subtipollamado": "Subtipo de llamado",
+            "subtipo_llamado": "Subtipo de llamado",
             "tipo_llamado": "Tipo de llamado",
             "estado": "Estado",
             "programas_llamados": "Programa llamado",
         }
 
 
-class ProgramasForm(forms.ModelForm):
+class ProgramaForm(forms.ModelForm):
     class Meta:
         model = CiudadanoPrograma
         fields = ["programas"]

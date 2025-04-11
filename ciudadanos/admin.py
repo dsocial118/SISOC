@@ -24,7 +24,7 @@ from .models import (
     MotivoNivelIncompleto,
     Nacionalidad,
     NivelEducativo,
-    NoBusquedaLaboral,
+    NobusquedaLaboral,
     Rechazo,
     Sexo,
     TiempoBusquedaLaboral,
@@ -70,7 +70,7 @@ admin.site.register(ActividadRealizada)
 admin.site.register(DuracionTrabajo)
 admin.site.register(AportesJubilacion)
 admin.site.register(TiempoBusquedaLaboral)
-admin.site.register(NoBusquedaLaboral)
+admin.site.register(NobusquedaLaboral)
 admin.site.register(EstadoRelacion)
 admin.site.register(EstadoDerivacion)
 admin.site.register(VinculoFamiliar)

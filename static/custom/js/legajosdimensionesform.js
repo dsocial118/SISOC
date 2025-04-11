@@ -16,14 +16,14 @@ document.addEventListener("DOMContentLoaded", function () {
   const ID_DURACION_TRABAJO = "#container_duracion_trabajo";
   const ID_APORTE_JUBILACION = "#container_jubilacion";
   const ID_MODO_CONTRATACION = "#container_contratacion";
-  const ID_BUSQUEDA_LABORAL = "#container_busquedaLaboral";
+  const ID_BUSQUEDA_LABORAL = "#container_busqueda_laboral";
   const ID_TIEMPO_BUSQUEDA = "#container_tiempo_busqueda";
   const ID_NO_BUSQUEDA = "#container_no_busqueda";
   const ID_OCUPACION = "#container_ocupacion";
   const ID_PLAN_SOCIAL = "#container_plan_social";
 
   // Selecciones múltiples con límite
-  var selects = document.querySelectorAll('select[name="area_curso"], select[name="area_oficio"], select[name="m2m_planes"]');
+  var selects = document.querySelectorAll('select[name="area_curso"], select[name="area_oficio"], select[name="planes"]');
   selects.forEach(function (select) {
     select.setAttribute('multiple', 'multiple');
     select.addEventListener('change', function () {
@@ -42,7 +42,7 @@ document.addEventListener("DOMContentLoaded", function () {
   let realizando_cursoForm = document.querySelector('#id_realizando_curso');
   let hayBanioForm = document.querySelector("#div_id_hay_banio");
   let tieneTrabajoForm = document.querySelector("#div_id_tiene_trabajo");
-  let busquedaLaboralForm = document.querySelector("#id_busquedaLaboral");
+  let busqueda_laboralForm = document.querySelector("#id_busqueda_laboral");
   let planSocialForm = document.querySelector("#id_recibe_plan");
 
   // Estados de formulario
@@ -73,7 +73,7 @@ document.addEventListener("DOMContentLoaded", function () {
     { valor: "False", mostrar: [ID_BUSQUEDA_LABORAL], ocultar: [ID_HS_SEMANALES, ID_ACT_REALIZADA_COMO, ID_DURACION_TRABAJO, ID_APORTE_JUBILACION, ID_MODO_CONTRATACION, ID_TIEMPO_BUSQUEDA, ID_NO_BUSQUEDA] }
   ];
 
-  let busquedaLaboralFormEstados = [
+  let busqueda_laboralFormEstados = [
     { valor: "True", mostrar: [ID_TIEMPO_BUSQUEDA, ID_OCUPACION], ocultar: [ID_NO_BUSQUEDA] },
     { valor: "False", mostrar: [ID_NO_BUSQUEDA], ocultar: [ID_TIEMPO_BUSQUEDA, ID_OCUPACION] }
   ];
@@ -89,7 +89,7 @@ document.addEventListener("DOMContentLoaded", function () {
   FormUtils.manejarCambioMostrarOcultar(realizando_cursoForm, realizando_cursoFormEstados);
   FormUtils.manejarCambioMostrarOcultar(hayBanioForm, hayBanioFormEstados);
   FormUtils.manejarCambioMostrarOcultar(tieneTrabajoForm, tieneTrabajoFormEstados);
-  FormUtils.manejarCambioMostrarOcultar(busquedaLaboralForm, busquedaLaboralFormEstados);
+  FormUtils.manejarCambioMostrarOcultar(busqueda_laboralForm, busqueda_laboralFormEstados);
   FormUtils.manejarCambioMostrarOcultar(planSocialForm, planSocialFormEstados);
 
   // Inicializar estado de formularios
@@ -98,7 +98,7 @@ document.addEventListener("DOMContentLoaded", function () {
   FormUtils.mostrarOcultar(realizando_cursoForm.value, realizando_cursoFormEstados);
   FormUtils.mostrarOcultar(hayBanioForm.value, hayBanioFormEstados);
   FormUtils.mostrarOcultar(tieneTrabajoForm.value, tieneTrabajoFormEstados);
-  FormUtils.mostrarOcultar(busquedaLaboralForm.value, busquedaLaboralFormEstados);
+  FormUtils.mostrarOcultar(busqueda_laboralForm.value, busqueda_laboralFormEstados);
   FormUtils.mostrarOcultar(planSocialForm.value, planSocialFormEstados);
 
   // Manejo de pregunta id_nivel_incompleto, se maneja aparte

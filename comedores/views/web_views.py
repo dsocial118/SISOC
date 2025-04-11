@@ -486,7 +486,7 @@ class RelevamientoDetailView(DetailView):
 
         relevamiento = Relevamiento.objects.get(pk=self.get_object()["id"])
         context["relevamiento"]["gas"] = (
-            RelevamientoService.separate_m2m_string(
+            RelevamientoService.separate_string(
                 relevamiento.espacio.cocina.abastecimiento_combustible.all()
             )
             if relevamiento.espacio
@@ -498,7 +498,7 @@ class RelevamientoDetailView(DetailView):
             else None
         )
         context["relevamiento"]["donaciones"] = (
-            RelevamientoService.separate_m2m_string(
+            RelevamientoService.separate_string(
                 relevamiento.recursos.recursos_donaciones_particulares.all()
             )
             if relevamiento.recursos
@@ -506,7 +506,7 @@ class RelevamientoDetailView(DetailView):
         )
 
         context["relevamiento"]["nacional"] = (
-            RelevamientoService.separate_m2m_string(
+            RelevamientoService.separate_string(
                 relevamiento.recursos.recursos_estado_nacional.all()
             )
             if relevamiento.recursos
@@ -514,7 +514,7 @@ class RelevamientoDetailView(DetailView):
         )
 
         context["relevamiento"]["provincial"] = (
-            RelevamientoService.separate_m2m_string(
+            RelevamientoService.separate_string(
                 relevamiento.recursos.recursos_estado_provincial.all()
             )
             if relevamiento.recursos
@@ -522,7 +522,7 @@ class RelevamientoDetailView(DetailView):
         )
 
         context["relevamiento"]["municipal"] = (
-            RelevamientoService.separate_m2m_string(
+            RelevamientoService.separate_string(
                 relevamiento.recursos.recursos_estado_municipal.all()
             )
             if relevamiento.recursos
@@ -530,7 +530,7 @@ class RelevamientoDetailView(DetailView):
         )
 
         context["relevamiento"]["otras"] = (
-            RelevamientoService.separate_m2m_string(
+            RelevamientoService.separate_string(
                 relevamiento.recursos.recursos_otros.all()
             )
             if relevamiento.recursos
@@ -538,7 +538,7 @@ class RelevamientoDetailView(DetailView):
         )
 
         context["relevamiento"]["Entregas"] = (
-            RelevamientoService.separate_m2m_string(
+            RelevamientoService.separate_string(
                 relevamiento.punto_entregas.frecuencia_recepcion_mercaderias.all()
             )
             if relevamiento.punto_entregas

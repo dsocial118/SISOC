@@ -2,14 +2,14 @@
 
 document.addEventListener('DOMContentLoaded', function () {
 
-    document.getElementById('id_fk_provincia').addEventListener('change', function () {
+    document.getElementById('id_provincia').addEventListener('change', function () {
         var url = ajaxLoadMunicipiosUrl;  // Obtén la URL de la vista
         var provinciaId = this.value;  // Obtén el ID de la provincia seleccionada
         var url2 = ajaxLoadDepartamentosUrl;  // Obtén la URL de la vista
         fetch(url + '?provincia_id=' + provinciaId)
             .then(response => response.json())
             .then(data => {
-                var municipioSelect = document.getElementById('id_fk_municipio');
+                var municipioSelect = document.getElementById('id_municipio');
                 municipioSelect.innerHTML = '';  // Limpia el campo de municipios
 
                 data.forEach(function (municipio) {
@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     });
 
-    document.getElementById('id_fk_municipio').addEventListener('change', function () {
+    document.getElementById('id_municipio').addEventListener('change', function () {
         var url = ajaxLoadLocalidadesUrl;  // Obtén la URL de la vista
         var localidadId = this.options[this.selectedIndex].getAttribute('data-municipio-id');;  // Obtén el ID de la provincia seleccionada
         var url2 = ajaxLoadAsentameintosUrl;

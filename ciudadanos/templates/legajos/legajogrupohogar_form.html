@@ -70,7 +70,7 @@
                             </div>
                             <div class="line"></div>
                             <div class="step">
-                                <a href="{% url 'legajoalertas_crear' pk %}"
+                                <a href="{% url 'alertas_crear' pk %}"
                                    class="step-trigger"
                                    role="tab">
                                     <span class="bs-stepper-circle">5</span>
@@ -279,7 +279,7 @@
                                 <div class="col-md-12">
                                     <div class="form-group mb-0 mt-3 d-flex justify-content-between">
                                         <a href="{% url 'legajos_ver' pk %}" class="btn btn-primary mb-3">Guardar</a>
-                                        <a href="{% url 'legajoalertas_crear' pk %}"
+                                        <a href="{% url 'alertas_crear' pk %}"
                                            class="btn btn-secondary mb-3 float-right">Continuar</a>
                                     </div>
                                 </div>
@@ -303,6 +303,6 @@
     const mediaUrl = "{{ MEDIA_URL }}";
     const staticUrl = "{% static '' %}";
     </script>
-    <script src="{% static 'custom/js/legajogrupohogarform.js' %}"></script>
+    <script src="{% static 'custom/js/grupohogarform.js' %}"></script>
 {% endblock %}
 ;

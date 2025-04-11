@@ -178,7 +178,7 @@ class Circuito(models.Model):
         verbose_name_plural = "Circuitos"
 
 
-class CategoriaAlertas(models.Model):
+class CategoriaAlerta(models.Model):
     """
     Descripciones cortas que agrupan distintos tipos de alertas de vulnerabilidad.
     """
@@ -210,7 +210,7 @@ class Alerta(models.Model):
     """
 
     nombre = models.CharField(max_length=255, unique=True)
-    categoria = models.ForeignKey(CategoriaAlertas, on_delete=models.CASCADE)
+    categoria = models.ForeignKey(CategoriaAlerta, on_delete=models.CASCADE)
     estado = models.BooleanField(default=True)
     gravedad = models.CharField(max_length=500, null=False, blank=False)
 
@@ -587,7 +587,7 @@ class TiempoBusquedaLaboral(models.Model):
         verbose_name_plural = "Tiempos de Búsqueda Laboral"
 
 
-class NoBusquedaLaboral(models.Model):
+class NobusquedaLaboral(models.Model):
     motivo = models.CharField(max_length=255)
 
     def __str__(self):
@@ -715,9 +715,9 @@ class Ciudadano(models.Model):
     )
     email = models.EmailField(null=True, blank=True)
     foto = models.ImageField(upload_to="legajos", blank=True, null=True)
-    alertas = models.ManyToManyField(Alerta, through="LegajoAlertas", blank=True)
+    alertas = models.ManyToManyField(Alerta, blank=True)
     familiares = models.ManyToManyField(
-        "self", through="LegajoGrupoFamiliar", symmetrical=True, blank=True
+        "self", through="GrupoFamiliar", symmetrical=True, blank=True
     )
     observaciones = models.CharField(
         max_length=500, blank=True, null=True, verbose_name="Observaciones (optativo)"
@@ -856,7 +856,7 @@ class GrupoFamiliar(models.Model):
     class Meta:
         ordering = ["legajo_2"]
         unique_together = ["legajo_1", "legajo_2"]
-        verbose_name = "LegajoGrupoFamiliar"
+        verbose_name = "GrupoFamiliar"
         verbose_name_plural = "LegajosGrupoFamiliar"
         indexes = [
             models.Index(fields=["legajo_1_id"]),
@@ -864,7 +864,7 @@ class GrupoFamiliar(models.Model):
         ]
 
     def get_absolute_url(self):
-        return reverse("legajogrupofamiliar_ver", kwargs={"pk": self.pk})
+        return reverse("grupofamiliar_ver", kwargs={"pk": self.pk})
 
 
 def convertir_positivo(value):
@@ -1085,7 +1085,7 @@ class DimensionSalud(models.Model):
         null=True,
         blank=True,
     )
-    frec_controles = models.ForeignKey(
+    frecuencia_controles_medicos = models.ForeignKey(
         Frecuencia,
         verbose_name="¿Con qué frecuencia realiza controles médicos?",
         on_delete=models.SET_NULL,
@@ -1287,7 +1287,7 @@ class DimensionEconomia(models.Model):
     """
 
     legajo = models.OneToOneField(Ciudadano, on_delete=models.CASCADE)
-    m2m_planes = models.ManyToManyField(PlanSocial, blank=True)
+    planes = models.ManyToManyField(PlanSocial, blank=True)
     cant_aportantes = models.SmallIntegerField(
         verbose_name="¿Cuántos miembros reciben ingresos por plan social o aportan al grupo familiar?",
         null=True,
@@ -1370,20 +1370,20 @@ class DimensionTrabajo(models.Model):
         null=True,
         blank=True,
     )
-    TiempoBusquedaLaboral = models.ForeignKey(
+    Tiempobusqueda_laboral = models.ForeignKey(
         TiempoBusquedaLaboral,
         verbose_name="¿Cuánto hace que buscás trabajo?",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
-    busquedaLaboral = models.BooleanField(
+    busqueda_laboral = models.BooleanField(
         verbose_name="¿Buscaste trabajo en los últimos 30 días?",
         null=True,
         blank=True,
     )
-    noBusquedaLaboral = models.ForeignKey(
-        NoBusquedaLaboral,
+    nobusqueda_laboral = models.ForeignKey(
+        NobusquedaLaboral,
         verbose_name="¿Por qué motivo no buscaste trabajo? (Indicá el motivo principal)",
         on_delete=models.SET_NULL,
         null=True,
@@ -1413,45 +1413,6 @@ class DimensionTrabajo(models.Model):
 
     def get_absolute_url(self):
         return reverse("dimensionlaboral_ver", kwargs={"pk": self.pk})
-
-
-class Alerta(models.Model):
-    """
-    Registro de Alertas de vulnerabilidad asociadas a un Legajo determinado Tanto el alta como la baja se guardan en un historial del alertas.
-    """
-
-    alerta = models.ForeignKey(Alerta, related_name="alerta", on_delete=models.CASCADE)
-    legajo = models.ForeignKey(
-        Ciudadano, related_name="legajo_alerta", on_delete=models.CASCADE
-    )
-    fecha_inicio = models.DateField(auto_now=True)
-    creada_por = models.ForeignKey(
-        User,
-        related_name="creada_por",
-        on_delete=models.CASCADE,
-        blank=True,
-        null=True,
-    )
-    observaciones = models.CharField(max_length=255, null=True, blank=True)
-
-    def __str__(self):
-        return str(
-            f"'alerta': {self.alerta}, 'legajo': {self.legajo}"
-            f"'observaciones': {self.observaciones}, 'fecha_inicio': {self.fecha_inicio}, 'creada_por':{self.creada_por}",
-        )
-
-    class Meta:
-        ordering = ["-fecha_inicio"]
-        unique_together = ["legajo", "alerta"]
-        verbose_name = "LegajoAlertas"
-        verbose_name_plural = "LegajosAlertas"
-        indexes = [
-            models.Index(fields=["alerta"]),
-            models.Index(fields=["legajo"]),
-        ]
-
-    def get_absolute_url(self):
-        return reverse("legajoalertas_ver", kwargs={"pk": self.pk})
 
 
 class CiudadanoPrograma(models.Model):
@@ -1498,7 +1459,7 @@ class HistorialLegajoProgramas(models.Model):
         return f"{self.fecha} - {self.accion} - {self.programa} - {self.legajo}"
 
 
-class HistorialLegajoAlertas(models.Model):
+class HistorialAlerta(models.Model):
     """
     Guardado de historial de los distintos movimientos (CREACION/ELIMINACION)  de alertas de vulnerabilidad asociadas a un Legajo.
     Se graban a traves funciones detalladas en el archivo signals.py de esta app.
@@ -1540,8 +1501,8 @@ class HistorialLegajoAlertas(models.Model):
 
     class Meta:
         ordering = ["-fecha_inicio"]
-        verbose_name = "HistorialLegajoAlertas"
-        verbose_name_plural = "HistorialesLegajoAlertas"
+        verbose_name = "HistorialAlerta"
+        verbose_name_plural = "HistorialesAlerta"
         indexes = [models.Index(fields=["legajo"])]
 
 
@@ -1572,7 +1533,7 @@ class Derivacion(models.Model):
         blank=True,
         default="Pendiente",
     )
-    alertas = models.ManyToManyField(CategoriaAlertas, blank=True)
+    alertas = models.ManyToManyField(CategoriaAlerta, blank=True)
     archivos = models.FileField(upload_to="legajos/archivos", null=True, blank=True)
     motivo_rechazo = models.ForeignKey(
         Rechazo, on_delete=models.SET_NULL, null=True, blank=True
@@ -1634,15 +1595,15 @@ class GrupoHogar(models.Model):
 
     class Meta:
         ordering = ["legajo_2Hogar"]
-        verbose_name = "LegajoGrupoHogarForm"
-        verbose_name_plural = "LegajoGrupoHogarForm"
+        verbose_name = "GrupoHogarForm"
+        verbose_name_plural = "GrupoHogarForm"
         indexes = [
             models.Index(fields=["legajo_1Hogar"]),
             models.Index(fields=["legajo_2Hogar"]),
         ]
 
     def get_absolute_url(self):
-        return reverse("LegajoGrupoHogarForm_ver", kwargs={"pk": self.pk})
+        return reverse("GrupoHogarForm_ver", kwargs={"pk": self.pk})
 
 
 class TipoIntervencion(models.Model):
@@ -1774,9 +1735,9 @@ class TipoLlamado(models.Model):
         verbose_name_plural = "TiposLammado"
 
 
-class SubTipoLlamado(models.Model):
+class SubtipoLlamado(models.Model):
     """
-    Guardado de los SubTipoLlamado realizados a un legajo.
+    Guardado de los subtipo_llamado realizados a un legajo.
     """
 
     def __str__(self):
@@ -1788,7 +1749,7 @@ class SubTipoLlamado(models.Model):
     )
 
     class Meta:
-        verbose_name = "SubTipoLlamado"
+        verbose_name = "subtipo_llamado"
         verbose_name_plural = "SubTiposLlamado"
 
 
@@ -1799,13 +1760,13 @@ class Llamado(models.Model):
 
     legajo = models.ForeignKey(Ciudadano, on_delete=models.SET_NULL, null=True)
     usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    subtipollamado = models.ForeignKey(
-        SubTipoLlamado, on_delete=models.SET_NULL, null=True
+    subtipo_llamado = models.ForeignKey(
+        SubtipoLlamado, on_delete=models.SET_NULL, null=True
     )
     tipo_llamado = models.ForeignKey(TipoLlamado, on_delete=models.SET_NULL, null=True)
     fecha = models.DateTimeField(auto_now_add=True)
     estado = models.ForeignKey(
-        EstadosLlamados, on_delete=models.SET_NULL, default=1, null=True
+        EstadoLlamado, on_delete=models.SET_NULL, default=1, null=True
     )
     programas_llamados = models.ForeignKey(
         ProgramasLlamados, on_delete=models.SET_NULL, null=True

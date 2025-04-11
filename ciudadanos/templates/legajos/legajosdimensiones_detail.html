@@ -201,7 +201,7 @@
                         <dd class="col-sm-8">
                             Frecuencia de controles médicos
                         </dd>
-                        <dt class="col-sm-4">{{ object.dimensionsalud.frec_controles|default_if_none:"-" }}</dt>
+                        <dt class="col-sm-4">{{ object.dimensionsalud.frecuencia_controles_medicos|default_if_none:"-" }}</dt>
                         <dd class="col-sm-8">
                             Posee alguna enfermedad recurrente o algún diagnóstico de enfermedad crónico?
                         </dd>
@@ -347,8 +347,8 @@
                             Planes sociales que recibe
                         </dd>
                         <dt class="col-sm-4">
-                            {% if object.dimensioneconomia.m2m_planes.all.count > 0 %}
-                                {{ object.dimensioneconomia.m2m_planes.all|join:', ' }}
+                            {% if object.dimensioneconomia.planes.all.count > 0 %}
+                                {{ object.dimensioneconomia.planes.all|join:', ' }}
                             {% else %}
                                 -
                             {% endif %}
@@ -399,15 +399,15 @@
                         <dd class="col-sm-8">
                             ¿Buscaste trabajo en los últimos 30 días?
                         </dd>
-                        <dt class="col-sm-4">{{ object.dimensiontrabajo.busquedaLaboral|yesno:'Sí,No,-' }}</dt>
+                        <dt class="col-sm-4">{{ object.dimensiontrabajo.busqueda_laboral|yesno:'Sí,No,-' }}</dt>
                         <dd class="col-sm-8">
                             ¿Cuánto hace que buscás trabajo?
                         </dd>
-                        <dt class="col-sm-4">{{ object.dimensiontrabajo.TiempoBusquedaLaboral|default_if_none:"-" }}</dt>
+                        <dt class="col-sm-4">{{ object.dimensiontrabajo.Tiempobusqueda_laboral|default_if_none:"-" }}</dt>
                         <dd class="col-sm-8">
                             ¿Por qué motivo no buscaste trabajo? (Indicá el motivo principal)
                         </dd>
-                        <dt class="col-sm-4">{{ object.dimensiontrabajo.noBusquedaLaboral|default_if_none:"-" }}</dt>
+                        <dt class="col-sm-4">{{ object.dimensiontrabajo.nobusqueda_laboral|default_if_none:"-" }}</dt>
                         <dd class="col-sm-8">
                             ¿Conviviente trabaja?
                         </dd>

@@ -59,7 +59,7 @@
                             </div>
                             <div class="line d-none d-sm-inline"></div>
                             <div class="step d-none d-sm-inline">
-                                <a href="{% url 'legajoalertas_crear' legajo.id %}"
+                                <a href="{% url 'alertas_crear' legajo.id %}"
                                    class="step-trigger"
                                    role="tab">
                                     <span class="bs-stepper-circle">5</span>
@@ -224,7 +224,7 @@
                                                             <div class="form-group">{{ form_salud.lugares_atencion| as_crispy_field }}</div>
                                                         </div>
                                                         <div class="col-sm-6">
-                                                            <div class="form-group">{{ form_salud.frec_controles| as_crispy_field }}</div>
+                                                            <div class="form-group">{{ form_salud.frecuencia_controles_medicos| as_crispy_field }}</div>
                                                         </div>
                                                         <div class="col-sm-6 mb-3">
                                                             <div class="form-group">{{ form_salud.hay_obra_social| as_crispy_field }}</div>
@@ -333,7 +333,7 @@
                                                             <div class="form-group">{{ form_economia.recibe_plan| as_crispy_field }}</div>
                                                         </div>
                                                         <div class="col-sm-6" id="container_plan_social">
-                                                            <div class="form-group">{{ form_economia.m2m_planes| as_crispy_field }}</div>
+                                                            <div class="form-group">{{ form_economia.planes| as_crispy_field }}</div>
                                                         </div>
                                                         <div class="col-sm-6">
                                                             <div class="form-group">{{ form_economia.ingresos| as_crispy_field }}</div>
@@ -356,17 +356,17 @@
                                                         <div class="col-sm my-6">
                                                             <div class="form-group">{{ form_trabajo.tiene_trabajo| as_crispy_field }}</div>
                                                         </div>
-                                                        <div class="col-sm-6 mb-0" id="container_busquedaLaboral">
-                                                            <div class="form-group">{{ form_trabajo.busquedaLaboral| as_crispy_field }}</div>
+                                                        <div class="col-sm-6 mb-0" id="container_busqueda_laboral">
+                                                            <div class="form-group">{{ form_trabajo.busqueda_laboral| as_crispy_field }}</div>
                                                         </div>
                                                         <div class="col-sm-6" id="container_ocupacion">
                                                             <div class="form-group">{{ form_trabajo.ocupacion| as_crispy_field }}</div>
                                                         </div>
                                                         <div class="col-sm-6 mb-0" id="container_tiempo_busqueda">
-                                                            <div class="form-group">{{ form_trabajo.TiempoBusquedaLaboral| as_crispy_field }}</div>
+                                                            <div class="form-group">{{ form_trabajo.Tiempobusqueda_laboral| as_crispy_field }}</div>
                                                         </div>
                                                         <div class="col-sm-6 mb-0" id="container_no_busqueda">
-                                                            <div class="form-group">{{ form_trabajo.noBusquedaLaboral| as_crispy_field }}</div>
+                                                            <div class="form-group">{{ form_trabajo.nobusqueda_laboral| as_crispy_field }}</div>
                                                         </div>
                                                         <div class="col-sm-6" id="container_contratacion">
                                                             <div class="form-group">{{ form_trabajo.modo_contratacion| as_crispy_field }}</div>
