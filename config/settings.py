@@ -264,8 +264,8 @@ DOMINIO = os.environ.get("DOMINIO", default="localhost:8001")
 CSRF_TRUSTED_ORIGINS = [
     "http://com.sisoc.secretarianaf.gob.ar",
     "https://com.sisoc.secretarianaf.gob.ar",
-    "10.80.9.15",
-    "10.80.5.45",
+    "http://10.80.9.15",
+    "http://10.80.5.45",
     "https://api.appsheet.com",
 ]
 
