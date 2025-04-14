@@ -57,7 +57,7 @@ class MultipleFileField(forms.FileField):
 class CiudadanoForm(forms.ModelForm):
     foto = forms.ImageField(
         required=False,
-        label="Foto Legajo",
+        label="Foto Ciudadano",
         validators=[MaxSizeFileValidator(max_file_size=2)],
     )
     documento = forms.IntegerField(
@@ -133,7 +133,8 @@ class CiudadanoForm(forms.ModelForm):
 
         if existente:
             self.add_error(
-                "documento", "Ya existe un legajo con ese TIPO y NÚMERO de documento."
+                "documento",
+                "Ya existe un ciudadano con ese TIPO y NÚMERO de documento.",
             )
         # validación de fecha de nacimiento
         if fecha_nacimiento and fecha_nacimiento > date.today():
@@ -175,7 +176,7 @@ class CiudadanoForm(forms.ModelForm):
 class CiudadanoUpdateForm(forms.ModelForm):
     foto = forms.ImageField(
         required=False,
-        label="Foto Legajo",
+        label="Foto Ciudadano",
         validators=[MaxSizeFileValidator(max_file_size=2)],
     )
     documento = forms.IntegerField(
@@ -316,7 +317,8 @@ class FamiliarForm(forms.ModelForm):
             tipo_documento=tipo_documento, documento=documento
         ).exists():
             self.add_error(
-                "documento", "Ya existe un legajo con ese TIPO y NÚMERO de documento."
+                "documento",
+                "Ya existe un ciudadano con ese TIPO y NÚMERO de documento.",
             )
 
         # Validación de fecha de nacimiento
@@ -367,7 +369,8 @@ class GrupoHogarForm(forms.ModelForm):
             tipo_documento=tipo_documento, documento=documento
         ).exists():
             self.add_error(
-                "documento", "Ya existe un legajo con ese TIPO y NÚMERO de documento."
+                "documento",
+                "Ya existe un ciudadano con ese TIPO y NÚMERO de documento.",
             )
         # validación de fecha de nacimiento
         if fecha_nacimiento and fecha_nacimiento > date.today():
@@ -388,19 +391,19 @@ class AlertaForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["legajo"].widget = forms.HiddenInput()
+        self.fields["ciudadano"].widget = forms.HiddenInput()
         self.fields["creada_por"].widget = forms.HiddenInput()
 
     def clean(self):
         cleaned_data = super().clean()
         alerta = cleaned_data.get("alerta")
-        legajo = cleaned_data.get("legajo")
+        ciudadano = cleaned_data.get("ciudadano")
         if (
             alerta
-            and legajo
-            and Alerta.objects.filter(alerta=alerta, legajo=legajo).exists()
+            and ciudadano
+            and Alerta.objects.filter(alerta=alerta, ciudadano=ciudadano).exists()
         ):
-            self.add_error("alerta", "Ya existe esa alerta en el legajo")
+            self.add_error("alerta", "Ya existe esa alerta en el ciudadano")
         return cleaned_data
 
     class Meta:
@@ -415,7 +418,7 @@ class AlertaForm(forms.ModelForm):
 class ArchivoForm(forms.ModelForm):
     class Meta:
         model = Archivo
-        fields = ["legajo", "archivo"]
+        fields = ["ciudadano", "archivo"]
 
 
 class DerivacionForm(forms.ModelForm):
@@ -437,7 +440,7 @@ class DerivacionForm(forms.ModelForm):
             ),
         }
         labels = {
-            "legajo": "Legajo",
+            "ciudadano": "Ciudadano",
             "organismo": "Organismo relacionado",
             "alertas": "Alertas detectadas",
             "programa": "Derivar a",
@@ -448,7 +451,7 @@ class DerivacionForm(forms.ModelForm):
 class DimensionFamiliaForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["legajo"].widget = forms.HiddenInput()
+        self.fields["ciudadano"].widget = forms.HiddenInput()
 
     class Meta:
         model = DimensionFamilia
@@ -503,7 +506,7 @@ class DimensionViviendaForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["legajo"].widget = forms.HiddenInput()
+        self.fields["ciudadano"].widget = forms.HiddenInput()
 
     class Meta:
         model = DimensionVivienda
@@ -539,7 +542,7 @@ class DimensionViviendaForm(forms.ModelForm):
 class DimensionSaludForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["legajo"].widget = forms.HiddenInput()
+        self.fields["ciudadano"].widget = forms.HiddenInput()
 
     class Meta:
         model = DimensionSalud
@@ -597,7 +600,7 @@ class DimensionEducacionForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["legajo"].widget = forms.HiddenInput()
+        self.fields["ciudadano"].widget = forms.HiddenInput()
 
         # Configurar el queryset del campo 'provinciaInstitucion' para cargar solo las provincias
         self.fields["provinciaInstitucion"].queryset = Provincia.objects.all()
@@ -662,7 +665,7 @@ class DimensionEconomiaForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["legajo"].widget = forms.HiddenInput()
+        self.fields["ciudadano"].widget = forms.HiddenInput()
 
     class Meta:
         model = DimensionEconomia
@@ -702,7 +705,7 @@ class DimensionTrabajoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["legajo"].widget = forms.HiddenInput()
+        self.fields["ciudadano"].widget = forms.HiddenInput()
 
     class Meta:
         model = DimensionTrabajo

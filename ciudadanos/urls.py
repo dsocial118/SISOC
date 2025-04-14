@@ -27,8 +27,8 @@ from ciudadanos.views import (
     AlertaListView,
     ArchivosCreateView,
     ArchivosListView,
-    LegajosCreateView,
-    LegajosDeleteView,
+    CiudadanosCreateView,
+    CiudadanosDeleteView,
     DerivacionBuscar,
     DerivacionCreateView,
     DerivacionDeleteView,
@@ -36,12 +36,12 @@ from ciudadanos.views import (
     DerivacionHistorial,
     DerivacionListView,
     DerivacionUpdateView,
-    LegajosDetailView,
-    LegajosGrupoFamiliarCreateView,
-    LegajosGrupoHogarCreateView,
-    LegajosListView,
-    LegajosReportesListView,
-    LegajosUpdateView,
+    CiudadanosDetailView,
+    CiudadanosGrupoFamiliarCreateView,
+    CiudadanosGrupoHogarCreateView,
+    CiudadanosListView,
+    CiudadanosReportesListView,
+    CiudadanosUpdateView,
     LlamadoCreateView,
     LlamadoDeleteView,
     LlamadoDetail,
@@ -60,37 +60,37 @@ urlpatterns = [
     # Ciudadano
     path(
         "ciudadanos/reportes",
-        login_required(LegajosReportesListView.as_view()),
+        login_required(CiudadanosReportesListView.as_view()),
         name="ciudadanos_reportes",
     ),
     path(
         "ciudadanos/listar",
-        login_required(LegajosListView.as_view()),
-        name="ciudadanos_listar",
+        login_required(CiudadanosListView.as_view()),
+        name="ciudadanos",
     ),
-    path(
+    path(  # TODO: Eliminar esta URL y migrar la busqueda via query string
         "ciudadanos/listar/<busqueda>",
-        login_required(LegajosListView.as_view()),
-        name="ciudadanos_listar",
+        login_required(CiudadanosListView.as_view()),
+        name="ciudadanos",
     ),
     path(
         "ciudadanos/crear/",
-        login_required(LegajosCreateView.as_view()),
+        login_required(CiudadanosCreateView.as_view()),
         name="ciudadanos_crear",
     ),
     path(
         "ciudadanos/ver/<pk>",
-        login_required(LegajosDetailView.as_view()),
+        login_required(CiudadanosDetailView.as_view()),
         name="ciudadanos_ver",
     ),
     path(
         "ciudadanos/editar/<pk>",
-        login_required(LegajosUpdateView.as_view()),
+        login_required(CiudadanosUpdateView.as_view()),
         name="ciudadanos_editar",
     ),
     path(
         "ciudadanos/eliminar/<pk>",
-        login_required(LegajosDeleteView.as_view()),
+        login_required(CiudadanosDeleteView.as_view()),
         name="ciudadanos_eliminar",
     ),
     # Grupo Familiar
@@ -101,7 +101,7 @@ urlpatterns = [
     ),
     path(
         "ciudadanos/grupofamiliar/crear/<pk>",
-        login_required(LegajosGrupoFamiliarCreateView.as_view()),
+        login_required(CiudadanosGrupoFamiliarCreateView.as_view()),
         name="grupofamiliar_crear",
     ),
     path(
@@ -121,8 +121,8 @@ urlpatterns = [
     ),
     path(
         "ciudadanos/grupofamiliar/nuevo/",
-        login_required(LegajosGrupoFamiliarCreateView.as_view()),
-        name="nuevoLegajoFamiliar_ajax",
+        login_required(CiudadanosGrupoFamiliarCreateView.as_view()),
+        name="nuevoCiudadanoFamiliar_ajax",
     ),
     # Dimensiones
     path(
@@ -254,7 +254,7 @@ urlpatterns = [
     ),
     path(
         "ciudadanos/grupoHogar/crear/<pk>",
-        login_required(LegajosGrupoHogarCreateView.as_view()),
+        login_required(CiudadanosGrupoHogarCreateView.as_view()),
         name="grupohogar_crear",
     ),
     path(
@@ -274,12 +274,12 @@ urlpatterns = [
     ),
     path(
         "ciudadanos/grupoHogar/nuevo/",
-        login_required(LegajosGrupoHogarCreateView.as_view()),
-        name="nuevoLegajoFamiliar_ajax",
+        login_required(CiudadanosGrupoHogarCreateView.as_view()),
+        name="nuevoCiudadanoFamiliar_ajax",
     ),
     path(
         "ciudadanos/hogar/crear/<pk>",
-        login_required(LegajosGrupoHogarCreateView.as_view()),
+        login_required(CiudadanosGrupoHogarCreateView.as_view()),
         name="ciudadanosgrupohogar_crear",
     ),
     path(
@@ -338,7 +338,7 @@ urlpatterns = [
         name="llamados_borrar",
     ),
     path(
-        "ciudadanos/<int:legajo_id>/actualizar_programas/",
+        "ciudadanos/<int:ciudadano_id>/actualizar_programas/",
         actualizar_programas,
         name="actualizar_programas",
     ),

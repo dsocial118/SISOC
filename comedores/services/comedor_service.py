@@ -58,7 +58,7 @@ class ComedorService:
     @staticmethod
     def borrar_imagenes(post):
         pattern = re.compile(
-            r"^imagen_legajo-borrar-(\d+)$"
+            r"^imagen_ciudadano-borrar-(\d+)$"
         )  # Patron para encontrar los campos de imagenes a borrar
         imagenes_ids = []
         # Itera sobre los datos POST para encontrar los campos coincidentes con el patron
@@ -105,7 +105,7 @@ class ComedorService:
             Comedor.objects.select_related("provincia", "referente")
             .values(
                 "id",
-                "foto_legajo",
+                "foto_ciudadano",
                 "nombre",
                 "comienzo",
                 "id_externo",

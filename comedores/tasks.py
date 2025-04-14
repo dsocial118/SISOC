@@ -163,8 +163,8 @@ class AsyncSendComedorToGestionar(threading.Thread):
                         else ""
                     ),
                     "Imagen": (
-                        f"{os.getenv('DOMINIO')}/media/{comedor.foto_legajo}"
-                        if comedor.foto_legajo
+                        f"{os.getenv('DOMINIO')}/media/{comedor.foto_ciudadano}"
+                        if comedor.foto_ciudadano
                         else ""
                     ),
                 }

@@ -26,7 +26,6 @@ from .models import (
     NivelEducativo,
     NobusquedaLaboral,
     Rechazo,
-    Sexo,
     TiempoBusquedaLaboral,
     TipoConstruccionVivienda,
     TipoDocumento,
@@ -60,7 +59,6 @@ admin.site.register(Desague)
 admin.site.register(Inodoro)
 admin.site.register(TipoConstruccionVivienda)
 admin.site.register(EstadoCivil)
-admin.site.register(Sexo)
 admin.site.register(TipoDocumento)
 admin.site.register(Nacionalidad)
 admin.site.register(CentrosSalud)

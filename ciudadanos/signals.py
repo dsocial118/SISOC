@@ -7,7 +7,7 @@ from .models import (
     HistorialAlerta,
     Alerta,
     CiudadanoPrograma,
-    HistorialLegajoProgramas,
+    HistorialCiudadanoProgramas,
 )
 
 # guardado de log de usuarios
@@ -17,11 +17,11 @@ logger = logging.getLogger("django")
 @receiver(post_save, sender=Alerta)
 def alertas_is_created(sender, instance, created, **kwargs):
     """
-    Guardado de historial cuando se produzca la creación o modificación de un alerta asociadas a un Legajo.
+    Guardado de historial cuando se produzca la creación o modificación de un alerta asociadas a un Ciudadano.
     """
     registro = HistorialAlerta.objects.create(
         alerta=instance.alerta,
-        legajo=instance.legajo,
+        ciudadano=instance.ciudadano,
         observaciones=instance.observaciones,
         creada_por=instance.creada_por,
     )
@@ -31,9 +31,9 @@ def alertas_is_created(sender, instance, created, **kwargs):
 @receiver(post_save, sender=CiudadanoPrograma)
 def registrar_agregado_en_historial(sender, instance, created, **kwargs):
     if created:  # Solo registrar si es un nuevo registro
-        HistorialLegajoProgramas.objects.create(
+        HistorialCiudadanoProgramas.objects.create(
             programa=instance.programas,
-            legajo=instance.legajo,
+            ciudadano=instance.ciudadano,
             accion="agregado",
             usuario=(instance.creado_por if instance.creado_por else "Desconocido"),
         )
@@ -41,9 +41,9 @@ def registrar_agregado_en_historial(sender, instance, created, **kwargs):
 
 @receiver(post_delete, sender=CiudadanoPrograma)
 def registrar_eliminacion_en_historial(sender, instance, **kwargs):
-    HistorialLegajoProgramas.objects.create(
+    HistorialCiudadanoProgramas.objects.create(
         programa=instance.programas,
-        legajo=instance.legajo,
+        ciudadano=instance.ciudadano,
         accion="eliminado",
         usuario=instance.creado_por if instance.creado_por else "Desconocido",
     )

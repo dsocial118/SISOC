@@ -5,7 +5,6 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('id_provincia').addEventListener('change', function () {
         var url = ajaxLoadMunicipiosUrl;  // Obtén la URL de la vista
         var provinciaId = this.value;  // Obtén el ID de la provincia seleccionada
-        var url2 = ajaxLoadDepartamentosUrl;  // Obtén la URL de la vista
         fetch(url + '?provincia_id=' + provinciaId)
             .then(response => response.json())
             .then(data => {
@@ -18,21 +17,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     option.setAttribute('data-municipio-id', municipio.id);  // Añadir propiedad personalizada
                     option.textContent = municipio.nombre;
                     municipioSelect.appendChild(option);
-                });
-            });
-
-        fetch(url2 + '?provincia_id=' + provinciaId)
-            .then(response => response.json())
-            .then(data => {
-                var departamentoSelect = document.getElementById('id_fk_departamento');
-                departamentoSelect.innerHTML = '';  // Limpia el campo de departamentos
-
-                data.forEach(function (departamento) {
-                    var option = document.createElement('option');
-                    option.value = departamento.id;
-                    option.setAttribute('data-departamento-id', departamento.id);  // Añadir propiedad personalizada
-                    option.textContent = departamento.nombre;
-                    departamentoSelect.appendChild(option);
                 });
             });
     });

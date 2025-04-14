@@ -1,0 +1,185 @@
+{% extends "includes/main.html" %};
+{% load static %}
+;
+{% block head %}{% endblock %}
+{% block title %}Derivaciones{% endblock %}
+;
+{% block titulo-pagina %}Derivaciones{% endblock %}
+;
+{% block menu-adicional %}{% endblock %}
+;
+{% block content %}
+    <div class="row">
+        <div class="col-md-3">
+            <a href="{% url 'ciudadanosderivaciones_buscar' %}"
+               class="btn btn-primary btn-block mb-3">Derivar</a>
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Carpetas</h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus pr-2"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0 d-block">
+                    <ul class="nav nav-pills flex-column">
+                        <li class="nav-item active">
+                            <a href="{% url 'ciudadanosderivaciones_listar' 'pendientes' %}"
+                               class="nav-link">
+                                <i class="fas fa-inbox pr-2"></i> Pendientes
+                                <span class="badge bg-primary float-right">{{ pendientes|length }}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link carpeta">
+                                <input type="text" hidden name="enviadas" />
+                                <i class="far fa-envelope pr-2"></i> Enviadas
+                                <span class="badge badge-secondary float-right">{{ enviadas|length }}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link carpeta">
+                                <input type="text" hidden name="analisis" />
+                                <i class="far fa-eye pr-2"></i> En análisis
+                                <span class="badge badge-secondary float-right">{{ analisis|length }}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link carpeta">
+                                <input type="text" hidden name="aceptadas" />
+                                <i class="fas fa-thumbs-up pr-2"></i> Aceptadas
+                                <span class="badge badge-secondary float-right">{{ aceptadas|length }}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link carpeta">
+                                <input type="text" hidden name="asesoradas" />
+                                <i class="fas fa-info-circle pr-2"></i> Asesoradas
+                                <span class="badge badge-secondary float-right">{{ asesoradas|length }}</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-9">
+            <div class="card card-primary card-outline">
+                <div class="card-header mt-2">
+                    <h3 class="card-title">Bandeja de derivaciones</h3>
+                    <div class="card-tools">
+                        <form method='GET'>
+                            <div class="input-group input-group-sm">
+                                <input type="text"
+                                       class="form-control"
+                                       name='busqueda'
+                                       value='{{ request.GET.busqueda }}'
+                                       placeholder="Buscar"
+                                       aria-label="Search" />
+                                <div class="input-group-append">
+                                    <button class="btn btn-primary " role="submit">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="mailbox-controls">
+                    <!-- paginado -->
+                    <div class="float-right mb-2">
+                        {{ page_obj.number }} | {{ page_obj.paginator.num_pages }}
+                        <div class="btn-group ml-2">
+                            {% if page_obj.has_previous %}
+                                <a href="?page={{ page_obj.previous_page_number }}"
+                                   class="btn btn-default btn-sm">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                                <a href="?page=1" class="btn btn-primary btn-sm">Primera</a>
+                            </div>
+                        {% endif %}
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}"
+                               class="btn btn-default btn-sm">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                            <a href="?page={{ page_obj.paginator.num_pages }}"
+                               class="btn btn-primary btn-sm">Última</a>
+                        {% endif %}
+                    </div>
+                    <!-- ./paginado -->
+                </div>
+                <div class="table-responsive mailbox-messages mt-2">
+                    <table class="table table-hover table-striped">
+                        <tbody>
+                            {% for o in object_list %}
+                                <tr>
+                                    <td>
+                                        <span class="badge badge-gb-color">{{ o.estado }}</span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'ciudadanosderivaciones_ver' o.id %}">{{ o.ciudadano }}</a>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-gb-color">{{ o.importancia }}</span>
+                                    </td>
+                                    <td>
+                                        {% if o.alertas.all.count == 1 %}
+                                            1 alerta
+                                        {% elif o.alertas.all.count >= 2 %}
+                                            {{ o.alertas.all.count }} alertas
+                                        {% else %}
+                                            sin alertas
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        enviado por <a href="#">{{ o.usuario }}</a>
+                                    </td>
+                                    <td>
+                                        {% if o.archivos %}<i class="fas fa-paperclip"></i>{% endif %}
+                                    </td>
+                                    <td>{{ o.fecha|date:"d/m/Y" }}</td>
+                                </tr>
+                            {% empty %}
+                                <div class="tr">
+                                    <tr>
+                                        <td colspan="5" class="text-muted">Sin resultados</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="mailbox-controls">
+                        <!-- paginado -->
+                        <div class="float-right mb-3">
+                            {{ page_obj.number }}| {{ page_obj.paginator.num_pages }}
+                            <div class="btn-group ml-2">
+                                {% if page_obj.has_previous %}
+                                    <a href="?page={{ page_obj.previous_page_number }}"
+                                       class="btn btn-default btn-sm">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </a>
+                                    <a href="?page=1" class="btn btn-primary btn-sm">Primera</a>
+                                </div>
+                            {% endif %}
+                            {% if page_obj.has_next %}
+                                <a href="?page={{ page_obj.next_page_number }}"
+                                   class="btn btn-default btn-sm">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                                <a href="?page={{ page_obj.paginator.num_pages }}"
+                                   class="btn btn-primary btn-sm">Última</a>
+                            {% endif %}
+                        </div>
+                        <!-- ./paginado -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
+{% block customJS %}{% endblock %}

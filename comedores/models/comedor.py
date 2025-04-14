@@ -10,7 +10,7 @@ from organizaciones.models import Organizacion
 
 class EstadosIntervencion(models.Model):
     """
-    Guardado de los estados de las intervenciones realizadas a un legajo.
+    Guardado de los estados de las intervenciones realizadas a un ciudadano.
     """
 
     nombre = models.CharField(max_length=255)
@@ -25,7 +25,7 @@ class EstadosIntervencion(models.Model):
 
 class TipoIntervencion(models.Model):
     """
-    Guardado de los tipos de intervenciones realizadas a un legajo.
+    Guardado de los tipos de intervenciones realizadas a un ciudadano.
     """
 
     nombre = models.CharField(max_length=255)
@@ -40,7 +40,7 @@ class TipoIntervencion(models.Model):
 
 class SubIntervencion(models.Model):
     """
-    Guardado de las SubIntervencion realizadas a un legajo.
+    Guardado de las SubIntervencion realizadas a un ciudadano.
     """
 
     nombre = models.CharField(max_length=255)
@@ -74,7 +74,7 @@ class TipoDeComedor(models.Model):
 
 class Referente(models.Model):
     """
-    Modelo que representa a un referente, en algun futuro se migrara a Legajo.
+    Modelo que representa a un referente, en algun futuro se migrara a Ciudadano.
 
     Atributos:
         nombre (CharField): Nombre del referente.
@@ -204,7 +204,7 @@ class Comedor(models.Model):
     referente = models.ForeignKey(
         to=Referente, on_delete=models.SET_NULL, null=True, blank=True
     )
-    foto_legajo = models.ImageField(upload_to="comedor/", blank=True, null=True)
+    foto_ciudadano = models.ImageField(upload_to="comedor/", blank=True, null=True)
 
     def __str__(self) -> str:
         return str(self.nombre)
@@ -220,7 +220,7 @@ class Comedor(models.Model):
 
 class Intervencion(models.Model):
     """
-    Guardado de las intervenciones realizadas a un legajo.
+    Guardado de las intervenciones realizadas a un ciudadano.
     """
 
     comedor = models.ForeignKey(Comedor, on_delete=models.SET_NULL, null=True)
@@ -245,7 +245,7 @@ class Intervencion(models.Model):
 
 class Nomina(models.Model):
     """
-    Guardado de las intervenciones realizadas a un legajo.
+    Guardado de las intervenciones realizadas a un ciudadano.
     """
 
     comedor = models.ForeignKey(Comedor, on_delete=models.SET_NULL, null=True)
