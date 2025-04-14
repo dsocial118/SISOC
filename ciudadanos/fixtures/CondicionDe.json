@@ -1,0 +1,51 @@
+[
+    {
+        "model": "ciudadanos.condicion",
+        "pk": 1,
+        "fields": {
+            "condicion": "Propietario del terreno y la vivienda"
+        }
+    },
+    {
+        "model": "ciudadanos.condicion",
+        "pk": 2,
+        "fields": {
+            "condicion": "Propietario de la vivienda solamente"
+        }
+    },
+    {
+        "model": "ciudadanos.condicion",
+        "pk": 3,
+        "fields": {
+            "condicion": "Inquilino"
+        }
+    },
+    {
+        "model": "ciudadanos.condicion",
+        "pk": 4,
+        "fields": {
+            "condicion": "beneficios laborales"
+        }
+    },
+    {
+        "model": "ciudadanos.condicion",
+        "pk": 5,
+        "fields": {
+            "condicion": "Préstamo o cesión (de un conocido, familiar, etc.)"
+        }
+    },
+    {
+        "model": "ciudadanos.condicion",
+        "pk": 6,
+        "fields": {
+            "condicion": "Ocupante de hecho"
+        }
+    },
+    {
+        "model": "ciudadanos.condicion",
+        "pk": 7,
+        "fields": {
+            "condicion": "Otro"
+        }
+    }
+]

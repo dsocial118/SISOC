@@ -1624,7 +1624,7 @@ class SubIntervencion(models.Model):
         verbose_name_plural = "SubIntervenciones"
 
 
-class EstadosIntervencion(models.Model):
+class EstadoIntervencion(models.Model):
     """
     Guardado de los estados de las intervenciones realizadas a un ciudadano.
     """
@@ -1662,7 +1662,7 @@ class Intervencion(models.Model):
     fecha = models.DateTimeField(auto_now_add=True)
     direccion = models.ManyToManyField(Direccion)
     estado = models.ForeignKey(
-        EstadosIntervencion, on_delete=models.SET_NULL, default=1, null=True
+        EstadoIntervencion, on_delete=models.SET_NULL, default=1, null=True
     )
 
     class Meta:

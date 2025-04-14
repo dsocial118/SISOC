@@ -1,0 +1,30 @@
+[
+    {
+        "model": "ciudadanos.duraciontrabajo",
+        "pk": 1,
+        "fields": {
+            "duracion": "Permanente"
+        }
+    },
+    {
+        "model": "ciudadanos.duraciontrabajo",
+        "pk": 2,
+        "fields": {
+            "duracion": "Temporario (plazo fijo/ obra) por más de un mes"
+        }
+    },
+    {
+        "model": "ciudadanos.duraciontrabajo",
+        "pk": 3,
+        "fields": {
+            "duracion": "Changa (1 mes o menos)"
+        }
+    },
+    {
+        "model": "ciudadanos.duraciontrabajo",
+        "pk": 4,
+        "fields": {
+            "duracion": "Duración desconocida (inestable)"
+        }
+    }
+]

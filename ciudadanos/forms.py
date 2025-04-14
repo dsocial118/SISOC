@@ -389,19 +389,14 @@ class AlertaForm(forms.ModelForm):
         widget=forms.Select(attrs={"class": "select2"}),
     )
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["ciudadano"].widget = forms.HiddenInput()
-        self.fields["creada_por"].widget = forms.HiddenInput()
-
     def clean(self):
         cleaned_data = super().clean()
-        alerta = cleaned_data.get("alerta")
+        nombre = cleaned_data.get("nombre")
         ciudadano = cleaned_data.get("ciudadano")
         if (
-            alerta
+            nombre
             and ciudadano
-            and Alerta.objects.filter(alerta=alerta, ciudadano=ciudadano).exists()
+            and Alerta.objects.filter(nombre=nombre, ciudadano=ciudadano).exists()
         ):
             self.add_error("alerta", "Ya existe esa alerta en el ciudadano")
         return cleaned_data
@@ -410,9 +405,9 @@ class AlertaForm(forms.ModelForm):
         model = Alerta
         fields = "__all__"
         widgets = {
-            "alerta": forms.Select(attrs={"class": "select2"}),
+            "nombre": forms.Select(attrs={"class": "select2"}),
         }
-        labels = {"alerta": "Alerta"}
+        labels = {"nombre": "Nombre"}
 
 
 class ArchivoForm(forms.ModelForm):

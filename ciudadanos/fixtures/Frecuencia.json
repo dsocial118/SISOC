@@ -1,0 +1,37 @@
+[
+    {
+        "model": "ciudadanos.frecuencia",
+        "pk": 1,
+        "fields": {
+            "frecuencia": "6 meses o menos"
+        }
+    },
+    {
+        "model": "ciudadanos.frecuencia",
+        "pk": 2,
+        "fields": {
+            "frecuencia": "1 año"
+        }
+    },
+    {
+        "model": "ciudadanos.frecuencia",
+        "pk": 3,
+        "fields": {
+            "frecuencia": "5 años"
+        }
+    },
+    {
+        "model": "ciudadanos.frecuencia",
+        "pk": 4,
+        "fields": {
+            "frecuencia": "Solo ante afecciones"
+        }
+    },
+    {
+        "model": "ciudadanos.frecuencia",
+        "pk": 5,
+        "fields": {
+            "frecuencia": "No realiza controles"
+        }
+    }
+]
