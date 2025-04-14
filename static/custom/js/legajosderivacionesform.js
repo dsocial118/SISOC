@@ -1,3 +1,3 @@
 
-    var a = $('#id_fk_legajo :selected').text();
-    $('#legajo').text(a);
+var a = $('#id_fk_ciudadano :selected').text();
+$('#ciudadano').text(a);

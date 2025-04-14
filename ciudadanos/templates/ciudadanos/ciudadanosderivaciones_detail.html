@@ -1,0 +1,167 @@
+{% extends "includes/main.html" %};
+{% load static %}
+;
+{% block title %}Vista de detalle{% endblock %}
+;
+{% block titulo-pagina %}Derivaciones{% endblock %}
+;
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanosderivaciones_historial'  object.ciudadano.id %}">Historial derivaciones</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanos_ver' object.ciudadano.id %}">{{ object.ciudadano }}</a>
+        </li>
+        <li class="breadcrumb-item active">Detalle</li>
+    </ol>
+{% endblock %}
+;
+{% block menu-adicional %}{% endblock %}
+;
+{% block content %}
+    <!-- card-info -->
+    <div class="row">
+        <!-- botones -->
+        <div class="col-12 my-3 mx-2 d-print-none">
+            {% if request.user.id == object.usuario.id and object.estado == 'Pendiente' %}
+                <a href="{% url 'ciudadanosderivaciones_editar' object.id %}"
+                   class="btn btn-primary mr-1">Editar</a>
+            {% endif %}
+            <a href="" class="btn btn-secondary mr-1 print">Imprimir</a>
+            {% if request.user.id == object.usuario.id and object.estado == 'Pendiente' %}
+                <a href="{% url 'ciudadanosderivaciones_eliminar' object.id %}"
+                   class="btn btn-danger mr-1">Eliminar</a>
+            {% endif %}
+        </div>
+        <!-- ./botones -->
+        <div class="row p-0 m-0" id="seleccion">
+            <div class="col-md-6">
+                <div class="card card-outline card-primary h-100 mt-3 mt-sm-0">
+                    <div class="card-header">
+                        <h3 class="card-title">Datos de la derivación</h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-3 font-weight-normal">Fecha de solicitud</dt>
+                            <dd class="col-sm-9 font-weight-bold">
+                                {{ object.fecha_creado|date:"d/m/Y" }}
+                            </dd>
+                            <dt class="col-sm-3 font-weight-normal">Estado</dt>
+                            <dd class="col-sm-9 font-weight-bold ">
+                                <span class="badge badge-{% if object.estado == "Pendiente" %}warning{% endif %}{% if object.estado == "Aceptada" %}success{% endif %}{% if object.estado == "Rechazada" %}danger{% endif %}"> {{ object.estado }} </span>
+                            </dd>
+                            <dt class="col-sm-3 font-weight-normal">Importancia</dt>
+                            <dd class="col-sm-9 font-weight-bold">
+                                <span class="badge badge-gb-color">{{ object.importancia }}</span>
+                            </dd>
+                            {% if object.alertas.all.count %}
+                                <dt class="col-sm-3 font-weight-normal">Alertas</dt>
+                                <dd class="col-sm-9 font-weight-bold">
+                                    {{ object.alertas.all|join:', ' }}
+                                </dd>
+                            {% endif %}
+                            <dt class="col-sm-3 font-weight-normal">Usuario que solicitó</dt>
+                            <dd class="col-sm-9 font-weight-bold">
+                                {{ object.usuario }}
+                            </dd>
+                            <dt class="col-sm-3 font-weight-normal">Teléfono del usuario</dt>
+                            <dd class="col-sm-9 font-weight-bold">
+                                {{ object.usuario.usuarios.telefono|default_if_none:'-' }}
+                            </dd>
+                            <dt class="col-sm-3 font-weight-normal">Email del usuario</dt>
+                            <dd class="col-sm-9 font-weight-bold">
+                                {{ object.usuario.email }}
+                            </dd>
+                            <dt class="col-sm-3 font-weight-normal">Organismo relacionado</dt>
+                            <dd class="col-sm-9 font-weight-bold">
+                                {{ object.organismo|default_if_none:'-' }}
+                            </dd>
+                            <dt class="col-sm-3 font-weight-normal">Observaciones</dt>
+                            <dd class="col-sm-9 font-weight-bold">
+                                {{ object.detalles }}
+                            </dd>
+                            {% if object.archivos %}
+                                <dt class="col-sm-3 font-weight-normal">Archivos adjuntos</dt>
+                                <dd class="col-sm-9 font-weight-bold">
+                                    <a href="{{ object.archivos.url }}" target="_blank">{{ object.archivos|cut:'ciudadanos/archivos/' }}</a>
+                                </dd>
+                            {% endif %}
+                            {% if object.estado == "Rechazada" %}
+                                <dt class="col-sm-3 font-weight-normal">Fecha de rechazo</dt>
+                                <dd class="col-sm-9 font-weight-bold">
+                                    {{ object.fecha_rechazo|date:"d/m/Y" }}
+                                </dd>
+                                <dt class="col-sm-3 font-weight-normal">Motivo de rechazo</dt>
+                                <dd class="col-sm-9 font-weight-bold">
+                                    {{ object.motivo_rechazo }}
+                                </dd>
+                                <dt class="col-sm-3 font-weight-normal">Observaciones de rechazo</dt>
+                                <dd class="col-sm-9 font-weight-bold">
+                                    {{ object.obs_rechazo }}
+                                </dd>
+                            {% endif %}
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card card-outline card-primary h-100">
+                    <div class="card-header">
+                        <h3 class="card-title">Ciudadano derivado</h3>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-3 font-weight-normal">Nombre</dt>
+                            <dd class="col-sm-9 font-weight-bold">
+                                <a href="{% url 'ciudadanos_ver' object.ciudadano.id %}"
+                                   title="Ver ciudadano">{{ object.ciudadano }}</a>
+                            </dd>
+                            <dt class="col-sm-3 font-weight-normal">DNI</dt>
+                            <dd class="col-sm-9 font-weight-bold">
+                                {{ object.ciudadano.documento }}
+                            </dd>
+                            <dt class="col-sm-3 font-weight-normal">Fecha de nacimiento</dt>
+                            <dd class="col-sm-9 font-weight-bold">
+                                {{ object.ciudadano.fecha_nacimiento|date:'d/m/Y' }}
+                            </dd>
+                            <dt class="col-sm-3 font-weight-normal">Sexo</dt>
+                            <dd class="col-sm-9 font-weight-bold">
+                                {{ object.ciudadano.sexo }}
+                            </dd>
+                            <dt class="col-sm-3 font-weight-normal">Teléfono</dt>
+                            <dd class="col-sm-9 font-weight-bold">
+                                {{ object.ciudadano.telefono|default_if_none:'-' }}
+                            </dd>
+                            <dt class="col-sm-3 font-weight-normal">Email</dt>
+                            <dd class="col-sm-9 font-weight-bold">
+                                {{ object.ciudadano.email|default_if_none:'-' }}
+                            </dd>
+                            <dt class="col-sm-3 font-weight-normal">Observaciones</dt>
+                            <dd class="col-sm-9 font-weight-bold">
+                                {{ object.ciudadano.observaciones|default_if_none:'-' }}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            <!-- /card-info  -->
+            <!-- card-info -->
+        </div>
+        <!-- /card-info  -->
+    </div>
+    <!-- /card-info  -->
+    <div class="row mt-4 d-print-none">
+        <div class="col-12 mx-2">
+            <a href="{% url 'ciudadanosderivaciones_historial'  object.ciudadano.id %}"
+               class="btn btn-secondary">Volver</a>
+        </div>
+    </div>
+{% endblock %}
+;
+{% block customJS %}{% endblock %}
