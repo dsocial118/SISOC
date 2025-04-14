@@ -69,14 +69,14 @@
                 </li>
             {% endif %}
             {% if user|has_group:"Ciudadanos" %}
-            <li class="nav-item">
-                <a href="{% url 'ciudadanos' %}"
-                   class="nav-link {% if 'ciudadanos/listar' in pagina_actual %}active{% endif %}">
-                    <i class="nav-icon bi bi-people-fill"></i>
-                    <p>Ciudadanos</p>
-                </a>
-            </li>
-        {% endif %}
+                <li class="nav-item">
+                    <a href="{% url 'ciudadanos' %}"
+                       class="nav-link {% if 'ciudadanos/listar' in pagina_actual %}active{% endif %}">
+                        <i class="nav-icon bi bi-people-fill"></i>
+                        <p>Ciudadanos</p>
+                    </a>
+                </li>
+            {% endif %}
         </ul>
     </li>
 {% endwith %}
