@@ -1,0 +1,37 @@
+[
+    {
+        "model": "ciudadanos.ubicacionvivienda",
+        "pk": 1,
+        "fields": {
+            "contexto": "En una zona inundable (en el último año)"
+        }
+    },
+    {
+        "model": "ciudadanos.ubicacionvivienda",
+        "pk": 2,
+        "fields": {
+            "contexto": "Cerca de basurales (a 3 cuadras o menos)"
+        }
+    },
+    {
+        "model": "ciudadanos.ubicacionvivienda",
+        "pk": 3,
+        "fields": {
+            "contexto": "En una cuadra con alumbrado público"
+        }
+    },
+    {
+        "model": "ciudadanos.ubicacionvivienda",
+        "pk": 4,
+        "fields": {
+            "contexto": "En una cuadra pavimentada o empedrada"
+        }
+    },
+    {
+        "model": "ciudadanos.ubicacionvivienda",
+        "pk": 5,
+        "fields": {
+            "contexto": "En una cuadra con servicio regular de recolección de residuos"
+        }
+    }
+]

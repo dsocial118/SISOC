@@ -3,7 +3,7 @@
     const searchForm = document.getElementById('search-form');
     const searchInput = document.getElementById('search-input');
     const resultsBox = $('#results-box');
-    const formNuevo = $('#nuevo_legajo_familiar');
+const formNuevo = $('#nuevo_ciudadano_familiar');
 
     if (!searchForm || !searchInput || !resultsBox.length || !formNuevo.length) {
         console.error("One or more elements not found:", { searchForm, searchInput, resultsBox, formNuevo });
@@ -135,8 +135,8 @@
             $.ajax({
                 url: createUrl,
                 data: {
-                    'fk_legajo_1': pk1,
-                    'fk_legajo_2': pk,
+                    'fk_ciudadano_1': pk1,
+                    'fk_ciudadano_2': pk,
                     'vinculo': addParentesco,
                     'estado_relacion': addRelacion,
                     'conviven': addConviven,
@@ -246,7 +246,7 @@
     });
 
     if (hasErrors) {
-        document.getElementById('nuevo_legajo_familiar').classList.remove('d-none');
+        document.getElementById('nuevo_ciudadano_familiar').classList.remove('d-none');
     } else {
-        document.getElementById('nuevo_legajo_familiar').classList.add('d-none');
+        document.getElementById('nuevo_ciudadano_familiar').classList.add('d-none');
     }

@@ -28,8 +28,8 @@ def update_comedor_in_gestionar(sender, instance, **kwargs):
             new_value = getattr(instance, field_name)
             old_value = getattr(previous_instance, field_name)
 
-            if field_name == "foto_legajo" and not new_value:
-                continue  # Ignorar cambios en foto_legajo si está vacío
+            if field_name == "foto_ciudadano" and not new_value:
+                continue  # Ignorar cambios en foto_ciudadano si está vacío
 
             if new_value != old_value:
                 AsyncSendComedorToGestionar(instance.id).start()

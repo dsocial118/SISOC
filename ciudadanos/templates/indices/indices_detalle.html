@@ -1,0 +1,282 @@
+{% extends "includes/main.html" %};
+{% load static %}
+;
+{% block title %}Índices{% endblock %}
+;
+{% block titulo-pagina %}Índices{% endblock %}
+;
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right ">
+        <li class="breadcrumb-item">Índices</li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanos_ver' ciudadano.id %}" title="Ver ciudadano">{{ ciudadano.apellido }} {{ ciudadano.nombre }}</a>
+        </li>
+        <li class="breadcrumb-item active">Detalle</li>
+    </ol>
+{% endblock %}
+;
+{% block menu-adicional %}{% endblock %}
+;
+{% block content %}
+    <!-- card-info -->
+    <div class="row">
+        <!-- botones -->
+        <div class="col-12 my-3 mx-2 d-print-none">
+            <!-- <a href="{% url 'admisiones_historial'%}" class="btn btn-primary mr-1">Ver admisiones</a> -->
+            <a href="{% url 'indice_ivi_form_ciudadano' %}"
+               class="btn btn-primary mr-1">Agregar nuevo</a>
+            <a href="" class="btn btn-secondary mr-1 print">Imprimir</a>
+        </div>
+    </div>
+    <!-- ./botones -->
+    {% comment %} #FIXME: Esto esta todo hardcodeado {% endcomment %}
+    <div class="row p-0 m-0 " id="seleccion">
+        <!-- Datos de indice -->
+        <div class="col-sm-8">
+            <div class="card card-outline card-primary ">
+                <div class="card-header">
+                    <h3 class="card-title">Detalle Índice</h3>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dd class="col-sm-3 mb-2">
+                            Índice
+                        </dd>
+                        <dt class="col-sm-9 mb-2">Índice de vulnerabilidad infantil (IVI)</dt>
+                        <dd class="col-sm-3 mb-2">
+                            Tipo
+                        </dd>
+                        <dt class="col-sm-9 mb-2">
+                            <span class="badge badge-secondary">Ingreso</span>
+                        </dt>
+                        <dd class="col-sm-3 mb-2">
+                            Fecha
+                        </dd>
+                        <dt class="col-sm-9 mb-2">10/07/2020</dt>
+                        <dd class="col-sm-3 mb-2">
+                            Programa
+                        </dd>
+                        <dt class="col-sm-9 mb-2">CDLE</dt>
+                        <dd class="col-sm-3 mb-2">
+                            Interviniente
+                        </dd>
+                        <dt class="col-sm-9 mb-2">Azcurra Maria Luz</dt>
+                        <dd class="col-sm-3 mb-2">
+                            Observaciones
+                        </dd>
+                        <dt class="col-sm-9 mb-2">
+                            En fecha 10/07/2020 se realiza la valoración de Jessica Baez, para su ingreso al programa Camino de la embarazada.
+                            Jessica es una adolescente de 15 años con familia disfuncional, escolaridad irregular y desempleo.
+                            Además se sospecha violencia doméstica.
+                        </dt>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <!-- Datos ciudadano -->
+        <div class="col-sm-4 pb-3">
+            <div class="card card-outline card-primary h-100 ">
+                <div class="card-header">
+                    <h3 class="card-title">Datos personales</h3>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dd class="col-sm-5 mb-2">
+                            Nombre
+                        </dd>
+                        <dt class="col-sm-7 mb-2">
+                            <a href="{% url 'ciudadanos_ver' ciudadano.id %}" title="Ver ciudadano">{{ ciudadano.apellido }} {{ ciudadano.nombre }}</a>
+                        </dt>
+                        <dd class="col-sm-5 mb-2">
+                            DNI
+                        </dd>
+                        <dt class="col-sm-7 mb-2">{{ ciudadano.documento }}</dt>
+                        <dd class="col-sm-5 mb-2">
+                            Fecha de nacimiento
+                        </dd>
+                        <dt class="col-sm-7 mb-2">{{ ciudadano.fecha_nacimiento|date:'d/m/Y' }}</dt>
+                        <dd class="col-sm-5 mb-2">
+                            Sexo
+                        </dd>
+                        <dt class="col-sm-7 mb-2">{{ ciudadano.sexo }}</dt>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <!-- /  -->
+        <!-- Detalle puntajes del indice -->
+        <div class="col-sm-4">
+            <div class="info-box mb-2 ">
+                <span class="info-box-icon bg-danger">40</span>
+                <div class="info-box-content h5 my-0">
+                    <span class="info-box-text">Puntaje</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="info-box mb-2 ">
+                <span class="info-box-icon bg-secondary">10</span>
+                <div class="info-box-content h5 my-0">
+                    <span class="info-box-text">Criterios presentes</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="info-box mb-2 ">
+                <span class="info-box-icon bg-secondary">6</span>
+                <div class="info-box-content h5 my-0">
+                    <span class="info-box-text">Criterios modificables</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="info-box mb-2 ">
+                <span class="info-box-icon bg-secondary">111</span>
+                <div class="info-box-content h5 my-0">
+                    <span class="info-box-text">Puntaje máximo posible</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="info-box mb-2 ">
+                <span class="info-box-icon bg-secondary">10</span>
+                <div class="info-box-content h5 my-0">
+                    <span class="info-box-text">Puntaje modificable total</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="info-box mb-2 ">
+                <span class="info-box-icon bg-secondary">1</span>
+                <div class="info-box-content h5 my-0">
+                    <span class="info-box-text">Ajustes</span>
+                </div>
+            </div>
+        </div>
+        <!-- /  -->
+    </div>
+    <div class="col-12 mt-3 mt-sm-5">
+        <div class="card card-outline card-primary">
+            <div class="card-header">
+                <h3 class="card-title">Criterios presentes</h3>
+            </div>
+            <div class="card-body table-responsive p-0">
+                <table class="table table-head-fixed table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Criterio</th>
+                            <th class="text-center px-1" width="8%">Puntaje</th>
+                            <th class="text-center px-1" width="8%">Modificable</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="3" class="text-center bg-secondary py-1">Madre o Cuidador principal</td>
+                        </tr>
+                        <tr>
+                            <td>Madre o Cuidador principal no posee DNI</td>
+                            <td class="text-center">3</td>
+                            <td class="text-center">
+                                <span class=" badge badge-info px-2">SI</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Madre o Cuidador principal con capacidades reducidas o
+                                afectadas
+                            </td>
+                            <td class="text-center">3</td>
+                            <td class="text-center">
+                                <span class=" badge badge-primary px-1">NO</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Madre o Cuidador principal sin ocupación</td>
+                            <td class="text-center">2</td>
+                            <td class="text-center">
+                                <span class=" badge badge-info px-2">SI</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Madre o Cuidador principal con sospecha de sufrir violencia familiar</td>
+                            <td class="text-center">4</td>
+                            <td class="text-center">
+                                <span class=" badge badge-info px-2">SI</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Madre o Cuidador principal no sabe leer o escribir</td>
+                            <td class="text-center">4</td>
+                            <td class="text-center">
+                                <span class=" badge badge-info px-2">SI</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" class="text-center bg-secondary py-1">Bebé, niño o niña</td>
+                        </tr>
+                        <tr>
+                            <td>Bebé, niño o niña sin DNI</td>
+                            <td class="text-center">4</td>
+                            <td class="text-center">
+                                <span class="badge badge-info px-2">SI</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Bebé, niño o niña padeciendo patología en seguimiento</td>
+                            <td class="text-center">2</td>
+                            <td class="text-center ">
+                                <span class="badge badge-primary px-1">NO</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Bebé, niño o niña sin controles pediátricos o sin calendario vacunacion
+                                completo
+                            </td>
+                            <td class="text-center">4</td>
+                            <td class="text-center ">
+                                <span class="badge badge-info px-2">SI</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" class="text-center bg-secondary py-1">Familia</td>
+                        </tr>
+                        <tr>
+                            <td>Familiar conviviente privado de su libertad</td>
+                            <td class="text-center">4</td>
+                            <td class="text-center ">
+                                <span class="badge badge-primary px-1">NO</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Familiar conviviente padeciendo problemas de consumo de sustancias</td>
+                            <td class="text-center">3</td>
+                            <td class="text-center ">
+                                <span class="badge badge-primary px-1">NO</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" class="text-center bg-secondary py-1">Ajustes</td>
+                        </tr>
+                        <tr>
+                            <td>Ajuste por derivación o hermano en el Programa</td>
+                            <td class="text-center">5</td>
+                            <td class="text-center ">
+                                <span class="badge badge-primary px-1">NO</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="row mt-4 d-print-none">
+        <div class="col-12 mx-2">
+            <div class="form-group  d-flex justify-content-between">
+                <a href="{% url 'preadmisiones_list' %}" class="btn btn-secondary">Volver</a>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+;
+{% block customJS %}{% endblock %}

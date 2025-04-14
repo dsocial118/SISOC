@@ -1,38 +1,16 @@
-import re
-
-import django
-from django.core.exceptions import ValidationError
-from django.utils.translation import gettext
-from django.utils.translation import ugettext as _
-
-django.utils.translation.ugettext = gettext
+from django.forms import ValidationError
 
 
-class UppercaseValidator:
-    """La contraseña debe tener por lo menos 1 letra mayuscula, A-Z."""
+class MaxSizeFileValidator:
 
-    #  The password must contain at least 1 uppercase letter, A-Z.
-    def validate(self, password, user=None):
-        if not re.findall("[A-Z]", password):
-            raise ValidationError(
-                _("La contraseña debe tener por lo menos 1 letra mayuscula, A-Z."),
-                code="password_no_upper",
-            )
+    def __init__(self, max_file_size=5):
+        self.max_file_size = max_file_size
 
-    def get_help_text(self):
-        return _("La contraseña debe tener por lo menos 1 letra mayuscula, A-Z.")
+    def __call__(self, value):
+        size = value.size
+        max_size = self.max_file_size * 1048576
 
+        if size > max_size:
+            raise ValidationError(f"Tamaño maximo archivo: {self.max_file_size}MB")
 
-class LowercaseValidator:
-    """La contraseña debe tener por lo menos 1 letra minuscula, a-z."""
-
-    #  The password must contain at least 1 uppercase letter, A-Z.
-    def validate(self, password, user=None):
-        if not re.findall("[a-z]", password):
-            raise ValidationError(
-                _("La contraseña debe tener por lo menos 1 letra minuscula, a-z."),
-                code="password_no_lower",
-            )
-
-    def get_help_text(self):
-        return _("La contraseña debe tener por lo menos 1 letra minuscula, a-z.")
+        return value

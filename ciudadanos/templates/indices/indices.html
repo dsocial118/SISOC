@@ -1,0 +1,118 @@
+{% extends "includes/main.html" %};
+{% load static %}
+;
+{% block title %}Indices{% endblock %}
+;
+{% block titulo-pagina %}Indices{% endblock %}
+;
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="">Plantilla</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanos_ver' ciudadano.id %}">{{ ciudadano }}</a>
+        </li>
+        <li class="breadcrumb-item active">Indices</li>
+    </ol>
+{% endblock %}
+;
+{% block menu-adicional %}{% endblock %}
+;
+{% block content %}
+    <!-- Datos de ciudadano -->
+    <div class="row">
+        <div class="col-12 pb-3">
+            <div class="card card-outline card-primary h-100 mb-0">
+                <div class="card-header">
+                    <h3 class="card-title">Datos personales</h3>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dd class="col-sm-2 mb-2">
+                            Nombre
+                        </dd>
+                        <dt class="col-sm-10 mb-2">
+                            <a href="{% url 'ciudadanos_ver' ciudadano.id %}" title="Ver ciudadano">{{ ciudadano }}</a>
+                        </dt>
+                        <dd class="col-sm-2 mb-2">
+                            DNI
+                        </dd>
+                        <dt class="col-sm-10 mb-2">{{ ciudadano.documento }}</dt>
+                        <dd class="col-sm-2 mb-2">
+                            Fecha de nacimiento
+                        </dd>
+                        <dt class="col-sm-10 mb-2">{{ ciudadano.fecha_nacimiento|date:'d/m/Y' }}</dt>
+                        <dd class="col-sm-2 mb-2">
+                            Sexo
+                        </dd>
+                        <dt class="col-sm-10">{{ ciudadano.sexo }}</dt>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-2">
+            <div class="row h-100"></div>
+        </div>
+    </div>
+    <!-- tabla derivaciones -->
+    <div class="row ">
+        <div class="col-12">
+            <div class="card">
+                <!-- /.card-header -->
+                <div class="card-body">
+                    <table class="table table-bordered table-striped projects tabladt">
+                        <thead>
+                            <tr>
+                                <th>Indice</th>
+                                <th>Programa</th>
+                                <th>Tipo</th>
+                                <th>Fecha</th>
+                                <th>Puntaje</th>
+                                <th>Criterios presentes</th>
+                                <th>Criterios modificables</th>
+                                <th width="5%" class="notexport">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Índice de vulnerabilidad infantil (IVI)</td>
+                                <td>Camino de la embarazada</td>
+                                <td>Ingreso</td>
+                                <td>10/07/2020</td>
+                                <td>11</td>
+                                <td>5</td>
+                                <td>2</td>
+                                <td class="text-right">
+                                    <a href="{% url 'indice_ivi_ciudadano' %}"
+                                       class="btn btn-secondary btn-sm ver"
+                                       title="Ver admisión">Ver</a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Índice de vulnerabilidad infantil (IVI)</td>
+                                <td>Camino de la embarazada</td>
+                                <td>Egreso</td>
+                                <td>11/06/2023</td>
+                                <td>6</td>
+                                <td>5</td>
+                                <td>2</td>
+                                <td class="text-right">
+                                    <a href="{% url 'indice_ivi_ciudadano' %}"
+                                       class="btn btn-secondary btn-sm ver"
+                                       title="Ver admisión">Ver</a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- /.card-body -->
+            </div>
+            <!-- /.card -->
+        </div>
+        <!-- /.col -->
+    </div>
+    <!-- /.row -->
+{% endblock %}
+;
+{% block customJS %}{% endblock %}

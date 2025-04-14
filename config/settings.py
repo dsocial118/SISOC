@@ -131,6 +131,7 @@ INSTALLED_APPS = [
     "organizaciones",
     "provincias",
     "cdi",
+    "ciudadanos",
 ]
 
 # Definición del middleware utilizado por el proyecto
@@ -265,5 +266,11 @@ CSRF_TRUSTED_ORIGINS = [
     "https://com.sisoc.secretarianaf.gob.ar",
 ]
 
-# Configuración de hosts permitidos desde variables de entorno
-ALLOWED_HOSTS = ["com.sisoc.secretarianaf.gob.ar", "localhost", "127.0.0.1"]
+# Configuración de hosts permitidos TODO: que se haga desde el .env
+ALLOWED_HOSTS = [
+    "com.sisoc.secretarianaf.gob.ar",
+    "localhost",
+    "127.0.0.1",
+    "10.80.9.15",
+    "10.80.5.45",
+]

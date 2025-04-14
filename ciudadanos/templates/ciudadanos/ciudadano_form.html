@@ -1,0 +1,272 @@
+{% extends "includes/main.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+;
+{% block head %}{% endblock %}
+{% block title %}Ciudadano{% endblock %}
+{% block titulo-pagina %}Ciudadano{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right px-3">
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanos' %}">Ciudadano</a>
+        </li>
+        {% if request.resolver_match.url_name == "ciudadanos_editar" %}
+            <li class="breadcrumb-item">
+                <a href="{% url 'ciudadanos_ver' object.id %}">{{ object }}</a>
+            </li>
+            <li class="breadcrumb-item active">Editar</li>
+        {% else %}
+            <li class="breadcrumb-item active">Agregar</li>
+        {% endif %}
+    </ol>
+{% endblock %}
+;
+{% block menu-adicional %}{% endblock %}
+;
+{% block content %}
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="card card-primary card-outline mb-4">
+                <div class="card-body">
+                    <div class="bs-stepper">
+                        {% if request.resolver_match.url_name == "ciudadanos_editar" %}
+                            <div class="bs-stepper-header" role="tablist">
+                                <div class="step active">
+                                    <a type="button" class="step-trigger  text-primary" role="tab" href="">
+                                        <span class="bs-stepper-circle">1</span>
+                                        <span class="bs-stepper-label">Datos Personales</span>
+                                    </a>
+                                </div>
+                                <div class="line"></div>
+                                <div class="step">
+                                    <a href="{% url 'ciudadanosdimensiones_editar' object.id %}"
+                                       class="step-trigger"
+                                       role="tab">
+                                        <span class="bs-stepper-circle">2</span>
+                                        <span class="bs-stepper-label">Dimensiones</span>
+                                    </a>
+                                </div>
+                                <div class="line d-none d-sm-inline"></div>
+                                <div class="step d-none d-sm-inline">
+                                    <a href="{% url 'grupofamiliar_crear' object.id %}"
+                                       class="step-trigger"
+                                       role="tab">
+                                        <span class="bs-stepper-circle">3</span>
+                                        <span class="bs-stepper-label">Grupo Familiar</span>
+                                    </a>
+                                </div>
+                                <div class="line d-none d-sm-inline"></div>
+                                <div class="step d-none d-sm-inline">
+                                    <a href="{% url 'ciudadanosgrupohogar_crear' object.id %}"
+                                       class="step-trigger"
+                                       role="tab">
+                                        <span class="bs-stepper-circle">4</span>
+                                        <span class="bs-stepper-label">Grupo Hogar</span>
+                                    </a>
+                                </div>
+                                <div class="line d-none d-sm-inline "></div>
+                                <div class="step  d-none d-sm-inline">
+                                    <a href="{% url 'alertas_crear' object.id %}"
+                                       class="step-trigger"
+                                       role="tab">
+                                        <span class="bs-stepper-circle">5</span>
+                                        <span class="bs-stepper-label">Alertas</span>
+                                    </a>
+                                </div>
+                                <div class="line d-none d-sm-inline"></div>
+                                <div class="step d-none d-sm-inline">
+                                    <a href="{% url 'ciudadanosarchivos_crear' object.id %}"
+                                       class="step-trigger"
+                                       role="tab">
+                                        <span class="bs-stepper-circle">6</span>
+                                        <span class="bs-stepper-label">Archivos</span>
+                                    </a>
+                                </div>
+                            {% else %}
+                                <div class="bs-stepper-header" role="tablist">
+                                    <div class="step active">
+                                        <button type="button" class="step-trigger" role="tab">
+                                            <span class="bs-stepper-circle">1</span>
+                                            <span class="bs-stepper-label text-primary">Datos Personales</span>
+                                        </button>
+                                    </div>
+                                    <div class="line"></div>
+                                    <div class="step">
+                                        <button type="button" class="step-trigger disabled" role="tab">
+                                            <span class="bs-stepper-circle">2</span>
+                                            <span class="bs-stepper-label">Dimensiones</span>
+                                        </button>
+                                    </div>
+                                    <div class="line d-none d-sm-inline"></div>
+                                    <div class="step  d-none d-sm-inline">
+                                        <button type="button" class="step-trigger disabled" role="tab">
+                                            <span class="bs-stepper-circle">3</span>
+                                            <span class="bs-stepper-label">Grupo Familiar</span>
+                                        </button>
+                                    </div>
+                                    <!--Formulario boton hogar-->
+                                    <div class="line d-none d-sm-inline"></div>
+                                    <div class="step d-none d-sm-inline">
+                                        <button type="button" class="step-trigger disabled" role="tab">
+                                            <span class="bs-stepper-circle">4</span>
+                                            <span class="bs-stepper-label">Grupo Hogar</span>
+                                        </button>
+                                    </div>
+                                    <div class="line d-none d-sm-inline"></div>
+                                    <div class="step d-none d-sm-inline">
+                                        <button type="button" class="step-trigger disabled" role="tab">
+                                            <span class="bs-stepper-circle">5</span>
+                                            <span class="bs-stepper-label">Alertas</span>
+                                        </button>
+                                    </div>
+                                    <div class="line d-none d-sm-inline"></div>
+                                    <div class="step d-none d-sm-inline">
+                                        <button type="button" class="step-trigger disabled" role="tab">
+                                            <span class="bs-stepper-circle">6</span>
+                                            <span class="bs-stepper-label">Archivos</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="row mt-5">
+                            <div class="col-12">
+                                <form action="#"
+                                      method="POST"
+                                      class="dropzone p-0 m-0"
+                                      name="upload"
+                                      id="upload"
+                                      novalidate
+                                      enctype="multipart/form-data"
+                                      autocomplete="off">
+                                    {% csrf_token %}
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <div class="row mt-3">
+                                                <div class="col-sm-3">
+                                                    <div class="card">
+                                                        <div class="card-header box-profile">
+                                                            <div class="text-center">
+                                                                {% if object.foto %}
+                                                                    <img src="{{ object.foto.url }}"
+                                                                         data-holder-rendered="true"
+                                                                         alt="avatar"
+                                                                         class="avatar p-1"
+                                                                         height="150"
+                                                                         id="blah" />
+                                                                {% else %}
+                                                                    <img src="{% static 'custom/img/default.png' %}"
+                                                                         data-holder-rendered="true"
+                                                                         alt="avatar"
+                                                                         class="avatar p-1"
+                                                                         height="150"
+                                                                         id="blah" />
+                                                                {% endif %}
+                                                                {% if form.foto.errors %}
+                                                                    <div class="error-message">
+                                                                        {% for error in form.foto.errors %}<span class="text-danger">{{ error }}</span>{% endfor %}
+                                                                    </div>
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                        <div class="card-footer pb-1 mb-0">
+                                                            <label for="id_foto" class="btn btn-primary btn-block font-weight-normal">
+                                                                <span>
+                                                                    {% if request.resolver_match.url_name == "ciudadanos_editar" %}
+                                                                        Cambiar
+                                                                        foto
+                                                                    {% else %}
+                                                                        Agregar foto
+                                                                    {% endif %}
+                                                                </span>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-9 px-0 px-sm-2">
+                                                <div class="form-row">
+                                                    {{ form.apellido| as_crispy_field }}
+                                                    {{ form.nombre| as_crispy_field }}
+                                                    {{ form.sexo| as_crispy_field }}
+                                                    <!-- FIXME: Esta fecha debe ser dd-mm-yyyy -->
+                                                    {{ form.fecha_nacimiento| as_crispy_field }}
+                                                    {{ form.estado_civil| as_crispy_field }}
+                                                    {{ form.telefono| as_crispy_field }}
+                                                    {{ form.telefono_alternativo| as_crispy_field }}
+                                                    {{ form.email| as_crispy_field }}
+                                                    {{ form.provincia| as_crispy_field }}
+                                                    {{ form.municipio| as_crispy_field }}
+                                                    {{ form.localidad| as_crispy_field }}
+                                                    {{ form.calle| as_crispy_field }}
+                                                    {{ form.altura| as_crispy_field }}
+                                                    {{ form.longitud| as_crispy_field }}
+                                                    {{ form.latitud| as_crispy_field }}
+                                                    {{ form.piso_departamento| as_crispy_field }}
+                                                    {{ form.torre_pasillo| as_crispy_field }}
+                                                    {{ form.escalera_manzana| as_crispy_field }}
+                                                    {{ form.circuito| as_crispy_field }}
+                                                    {{ form.codigo_postal| as_crispy_field }}
+                                                    <div class="form-group col-4 {% if request.resolver_match.url_name != 'ciudadanos_editar' %}d-none{% endif %}">
+                                                        {{ form.estado| as_crispy_field }}
+                                                    </div>
+                                                    <div class="form-group col-12">{{ form.observaciones|as_crispy_field }}</div>
+                                                </div>
+                                            </div>
+                                            <input type="file"
+                                                   name="foto"
+                                                   id="id_foto"
+                                                   class="input-file"
+                                                   id="id_foto"
+                                                   accept="image/*"
+                                                   hidden />
+                                        </div>
+                                    </div>
+                                    <!-- botones del pie -->
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="form-group mb-0 mt-3 d-flex justify-content-between">
+                                                {% if request.resolver_match.url_name == "ciudadanos_editar" %}
+                                                    <a href="{% url 'ciudadanos_ver' object.id %}"
+                                                       class="btn btn-secondary mb-3">Cancelar</a>
+                                                    <button type="submit"
+                                                            id="form_ciudadanos"
+                                                            name="form_ciudadanos"
+                                                            class="btn btn-primary mb-3 form_ciudadano">
+                                                        Guardar
+                                                    </button>
+                                                    <button type="submit"
+                                                            id="form_step2"
+                                                            name="form_step2"
+                                                            class="btn btn-secondary mb-3 form_ciudadano">
+                                                        Continuar
+                                                    </button>
+                                                {% else %}
+                                                    <a href="{% url 'ciudadanos' %}" class="btn btn-secondary mb-3">Cancelar</a>
+                                                    <button type="submit"
+                                                            id="form_step2"
+                                                            name="form_step2"
+                                                            class="btn btn-primary mb-3  form_ciudadano">
+                                                        Continuar
+                                                    </button>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- /botones del pie -->
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block customJS %}
+    <script>
+        var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
+        var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
+    </script>
+    <script src="{% static 'custom/js/ciudadanosform.js' %}"></script>
+{% endblock %}
