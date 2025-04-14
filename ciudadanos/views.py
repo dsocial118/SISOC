@@ -739,7 +739,7 @@ class CiudadanosDeleteView(DeleteView):
 class CiudadanosCreateView(CreateView):
     model = Ciudadano
     form_class = CiudadanoForm
-    template_name = "ciudadanos/ciudadanos_form.html"
+    template_name = "ciudadanos/ciudadano_form.html"
 
     def form_invalid(self, form):
         print("form.errors", form.errors)
@@ -1092,7 +1092,7 @@ class DeleteGrupoFamiliar(View):
 
 
 class DerivacionBuscar(TemplateView):
-    template_name = "ciudadanos/ciudadanosderivaciones_buscar.html"
+    template_name = "ciudadanos/derivacion_buscar.html"
 
     def get(self, request, *args, **kwargs):  # pylint: disable=too-many-locals
         context = self.get_context_data(**kwargs)
@@ -1266,7 +1266,7 @@ class DerivacionUpdateView(UpdateView):
 
 class DerivacionHistorial(ListView):
     model = Derivacion
-    template_name = "ciudadanos/ciudadanosderivaciones_historial.html"
+    template_name = "ciudadanos/derivacion_historial.html"
 
     def get_context_data(self, **kwargs):
         context = super(DerivacionHistorial, self).get_context_data(**kwargs)
@@ -1358,14 +1358,6 @@ class AlertaCreateView(SuccessMessageMixin, CreateView):
         context["ciudadano"] = ciudadano
         return context
 
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-        pk = self.kwargs.get("pk")
-        if pk:
-            form.fields["ciudadano"].initial = pk
-            form.fields["creada_por"].initial = self.request.user.usuarios.id
-        return form
-
     def get_success_url(self):
         # Redirige a la misma página después de agregar la alerta
         return self.request.path
@@ -1440,7 +1432,7 @@ class AlertaSelectView(View):
 
 class DimensionesUpdateView(SuccessMessageMixin, UpdateView):
     # FIXME: Crear updateView por cada formulario
-    template_name = "ciudadanos/ciudadanosdimensiones_form.html"
+    template_name = "ciudadanos/dimension_form.html"
     model = DimensionFamilia
     form_class = DimensionFamiliaForm
     form_vivienda = DimensionViviendaForm
@@ -1740,12 +1732,12 @@ class DimensionesUpdateView(SuccessMessageMixin, UpdateView):
 
 class DimensionesDetailView(DetailView):
     model = Ciudadano
-    template_name = "ciudadanos/ciudadanosdimensiones_detail.html"
+    template_name = "ciudadanos/dimensiones_detail.html"
 
 
 class ArchivosListView(ListView):
     model = Archivo
-    template_name = "ciudadanos/ciudadanosarchivos_list.html"
+    template_name = "ciudadanos/archivos_list.html"
 
     def get_context_data(self, **kwargs):
         pk = self.kwargs["pk"]

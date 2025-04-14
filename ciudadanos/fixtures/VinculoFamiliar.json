@@ -1,0 +1,84 @@
+[
+    {
+        "model": "ciudadanos.vinculofamiliar",
+        "pk": 1,
+        "fields": {
+            "vinculo": "Padre",
+            "inverso": "Hijo/a"
+        }
+    },
+    {
+        "model": "ciudadanos.vinculofamiliar",
+        "pk": 2,
+        "fields": {
+            "vinculo": "Madre",
+            "inverso": "Hijo/a"
+        }
+    },
+    {
+        "model": "ciudadanos.vinculofamiliar",
+        "pk": 3,
+        "fields": {
+            "vinculo": "Hijo/a",
+            "inverso": "Padre/Madre"
+        }
+    },
+    {
+        "model": "ciudadanos.vinculofamiliar",
+        "pk": 4,
+        "fields": {
+            "vinculo": "Hermano/a",
+            "inverso": "Hermano/a"
+
+        }
+    },
+    {
+        "model": "ciudadanos.vinculofamiliar",
+        "pk": 5,
+        "fields": {
+            "vinculo": "Abuelo/a",
+            "inverso": "Nieto/a"
+        }
+    },
+    {
+        "model": "ciudadanos.vinculofamiliar",
+        "pk": 6,
+        "fields": {
+            "vinculo": "Nieto/a",
+            "inverso": "Abuelo/a"
+        }
+    },
+    {
+        "model": "ciudadanos.vinculofamiliar",
+        "pk": 7,
+        "fields": {
+            "vinculo": "Tío/a",
+            "inverso": "Sobrino/a"
+        }
+    },
+    {
+        "model": "ciudadanos.vinculofamiliar",
+        "pk": 8,
+        "fields": {
+            "vinculo": "Sobrino/a",
+            "inverso": "Tío/a"
+        }
+    },
+    {
+        "model": "ciudadanos.vinculofamiliar",
+        "pk": 9,
+        "fields": {
+            "vinculo": "Pareja",
+            "inverso": "Pareja"
+        }
+    },
+    {
+        "model": "ciudadanos.vinculofamiliar",
+        "pk": 10,
+        "fields": {
+            "vinculo": "Otro",
+            "inverso": "Otro"
+        }
+    }
+  
+]

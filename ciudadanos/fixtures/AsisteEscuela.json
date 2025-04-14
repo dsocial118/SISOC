@@ -1,0 +1,24 @@
+[
+    {
+        "model": "ciudadanos.asisteescuela",
+        "pk": 1,
+        "fields": {
+            "asiste": "Sí, asisto actualmente"
+        }
+
+    },
+    {
+        "model": "ciudadanos.asisteescuela",
+        "pk": 2,
+        "fields": {
+            "asiste": "Sí, asistí en algún momento"
+        }
+    },
+    {
+        "model": "ciudadanos.asisteescuela",
+        "pk": 3,
+        "fields": {
+            "asiste": "No, nunca asistí"
+        }
+    }
+]

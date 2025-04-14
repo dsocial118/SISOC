@@ -1,0 +1,58 @@
+[
+    {
+        "model": "ciudadanos.gas",
+        "pk": 1,
+        "fields": {
+            "tipo": "Gas de red"
+        }
+    },
+    {
+        "model": "ciudadanos.gas",
+        "pk": 2,
+        "fields": {
+            "tipo": "Gas a granel"
+        }
+    },
+    {
+        "model": "ciudadanos.gas",
+        "pk": 3,
+        "fields": {
+            "tipo": "Gas en tubo"
+        }
+    },
+    {
+        "model": "ciudadanos.gas",
+        "pk": 4,
+        "fields": {
+            "tipo": "Gas en garrafa sin subsidio"
+        }
+    },
+    {
+        "model": "ciudadanos.gas",
+        "pk": 5,
+        "fields": {
+            "tipo": "Gas en garrafa con subsidio estatal"
+        }
+    },
+    {
+        "model": "ciudadanos.gas",
+        "pk": 6,
+        "fields": {
+            "tipo": "Electricidad"
+        }
+    },
+    {
+        "model": "ciudadanos.gas",
+        "pk": 7,
+        "fields": {
+            "tipo": "Leña o carbón"
+        }
+    },
+    {
+        "model": "ciudadanos.gas",
+        "pk": 8,
+        "fields": {
+            "tipo": "Otro"
+        }
+    }
+]

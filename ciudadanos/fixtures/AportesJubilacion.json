@@ -1,0 +1,30 @@
+[
+    {
+        "model": "ciudadanos.aportesjubilacion",
+        "pk": 1,
+        "fields": {
+            "aporte": "Me descuentan"
+        }
+    },
+    {
+        "model": "ciudadanos.aportesjubilacion",
+        "pk": 2,
+        "fields": {
+            "aporte": "Soy monotributista o autónomo"
+        }
+    },
+    {
+        "model": "ciudadanos.aportesjubilacion",
+        "pk": 3,
+        "fields": {
+            "aporte": "Soy monotributista social"
+        }
+    },
+    {
+        "model": "ciudadanos.aportesjubilacion",
+        "pk": 4,
+        "fields": {
+            "aporte": "Ni me descuentan ni aporto"
+        }
+    }
+]

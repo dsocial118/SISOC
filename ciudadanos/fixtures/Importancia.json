@@ -1,0 +1,23 @@
+[
+    {
+        "model": "ciudadanos.importancia",
+        "pk": 1,
+        "fields": {
+            "importancia": "Alta"
+        }
+    },
+    {
+        "model": "ciudadanos.importancia",
+        "pk": 2,
+        "fields": {
+            "importancia": "Urgente"
+        }
+    },
+    {
+        "model": "ciudadanos.importancia",
+        "pk": 3,
+        "fields": {
+            "importancia": "Muy urgente"
+        }
+    }
+]
