@@ -6,6 +6,7 @@ from configuraciones.models import Municipio, Provincia
 from configuraciones.models import Localidad
 from configuraciones.models import Sexo
 from organizaciones.models import Organizacion
+from dupla.models import Dupla
 
 
 class EstadosIntervencion(models.Model):
@@ -138,6 +139,7 @@ class Comedor(models.Model):
         barrio (CharField): Barrio donde se encuentra el Comedor/Merendero.
         codigo_postal (IntegerField): Código postal del Comedor/Merendero.
         referente (ForeignKey): Referente del Comedor/Merendero.
+        dupla (ForeignKey): Dúpla del Comedor/Merendero.
     """
 
     nombre = models.CharField(
@@ -166,6 +168,22 @@ class Comedor(models.Model):
     tipocomedor = models.ForeignKey(
         to=TipoDeComedor, on_delete=models.PROTECT, null=True, blank=True
     )
+    dupla = models.ForeignKey(
+        to=Dupla,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
+
+    # Se agrego el estado del comedor para poder filtrar los que no tienen ingreso
+    # y los que tienen ingreso asignado a dupla tecnica
+    estadosComedor = [
+        ("Sin Ingreso", "Sin Ingreso"),
+        ("Asignado a Dupla Técnica", "Asignado a Dupla Técnica"),
+    ]
+    estado = models.CharField(choices=estadosComedor,max_length=255, blank=True, null=True)
+
+
     calle = models.CharField(max_length=255, blank=True, null=True)
     numero = models.PositiveIntegerField(blank=True, null=True)
     piso = models.CharField(max_length=255, blank=True, null=True)

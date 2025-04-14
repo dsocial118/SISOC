@@ -59,7 +59,7 @@ class DuplaCreateView(CreateView):
 class DuplaUpdateView(UpdateView):
     model = Dupla
     template_name = "dupla_form.html"
-    fields = ["nombre", "tecnico", "fecha", "abogado"]
+    fields = ["nombre", "tecnico", "estado", "abogado"]
     success_url = reverse_lazy("dupla_list")
 
     def get_success_url(self):

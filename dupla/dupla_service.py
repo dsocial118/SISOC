@@ -16,6 +16,10 @@ class DuplaService:
         return Dupla.objects.all()
 
     @staticmethod
+    def get_duplas_by_estado_activo():
+        return Dupla.objects.filter(estado="Activo")
+
+    @staticmethod
     def create_dupla(data):
         try:
             dupla = Dupla.objects.create(**data)
