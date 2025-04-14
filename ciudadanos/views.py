@@ -936,11 +936,13 @@ class CiudadanosGrupoFamiliarCreateView(CreateView):
 
         except Exception as e:
             messages.error(self.request, f"Error al crear el familiar. Error: {e}")
-            allowed_hosts = ['example.com', 'another-trusted-site.com']
-            if url_has_allowed_host_and_scheme(self.request.path_info, allowed_hosts=allowed_hosts):
+            allowed_hosts = ["example.com", "another-trusted-site.com"]
+            if url_has_allowed_host_and_scheme(
+                self.request.path_info, allowed_hosts=allowed_hosts
+            ):
                 return redirect(self.request.path_info)
             else:
-                return redirect('/')
+                return redirect("/")
 
         messages.success(self.request, "Familiar agregado correctamente.")
         return HttpResponseRedirect(self.request.path_info)

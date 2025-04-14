@@ -6,7 +6,8 @@
     <!-- Timeline -->
     <link rel="stylesheet" href="{% static 'custom/css/timeline.css' %}" />
     <link rel="stylesheet" href="{% static 'custom/css/alertas.css' %}" />
-    <link rel="stylesheet" href="{% static 'custom/css/ciudadanos_detail.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/ciudadanos_detail.css' %}" />
     <style>
         /* Oculta el formulario por defecto */
         #form-programas {
@@ -89,7 +90,8 @@
             <a href="{% url 'llamados_ver' object.id %}"
                class="btn btn-primary me-2">Llamados</a>
             {% if perms.Usuarios.rol_admin %}
-                <a href="{% url 'ciudadanos_eliminar' object.id %}" class="btn btn-danger">Eliminar</a>
+                <a href="{% url 'ciudadanos_eliminar' object.id %}"
+                   class="btn btn-danger">Eliminar</a>
             {% endif %}
         </div>
     </div>
@@ -107,8 +109,7 @@
                 </div>
                 <div class="row info-card-label">
                     <h5 class="mt-2">
-                        <a href="{% url 'alertas_listar' object.id %}"
-                           class="small-box-footer">
+                        <a href="{% url 'alertas_listar' object.id %}" class="small-box-footer">
                             Alertas <i class="fas fa-arrow-circle-right"></i>
                         </a>
                     </h5>
@@ -134,8 +135,7 @@
                 </div>
                 <div class="row info-card-label">
                     <h5 class="mt-2">
-                        <a href="{% url 'alertas_listar' object.id %}"
-                           class="small-box-footer">
+                        <a href="{% url 'alertas_listar' object.id %}" class="small-box-footer">
                             Indicadores de riesgo <i class="fas fa-arrow-circle-right"></i>
                         </a>
                     </h5>
