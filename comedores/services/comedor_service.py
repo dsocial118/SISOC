@@ -175,7 +175,7 @@ class ComedorService:
         else:  # Actualizar referente
             for field, value in referente_data.items():
                 setattr(referente_instance, field, value)
-            referente_instance.save()
+            referente_instance.save(update_fields=referente_data.keys())
 
         return referente_instance
 
