@@ -82,6 +82,18 @@ class RelevamientoSerializer(serializers.ModelSerializer):
             self.initial_data["anexo"] = RelevamientoService.create_or_update_anexo(
                 self.initial_data["anexo"], anexo_instance
             ).id
+        if "punto_entregas" in self.initial_data:
+            punto_entregas_instance = (
+                self.instance.punto_entregas
+                if self.instance and self.instance.punto_entregas
+                else None
+            )
+            self.initial_data["punto_entregas"] = (
+                RelevamientoService.create_or_update_punto_entregas(
+                    self.initial_data["punto_entregas"], punto_entregas_instance
+                ).id
+            )
+
         if "prestacion" in self.initial_data:
             prestacion_instance = (
                 self.instance.prestacion
@@ -110,20 +122,39 @@ class RelevamientoSerializer(serializers.ModelSerializer):
             self.initial_data["responsable_es_referente"] = (
                 self.initial_data["responsable_es_referente"] == "Y"
             )
+        if "referente_comedor" in self.initial_data:
+            if "celular" in self.initial_data["referente_comedor"]:
+                if self.initial_data["referente_comedor"]["celular"] == "":
+                    self.initial_data["referente_comedor"]["celular"] = None
 
-        if "responsable" in self.initial_data:
-            self.initial_data["responsable"] = (
-                RelevamientoService.create_or_update_responsable_relevamiento(
-                    self.initial_data["responsable"],
-                    self.initial_data["responsable_es_referente"],
-                    self.initial_data["sisoc_id"],
+        if "responsable_relevamiento" in self.initial_data:
+            if "celular" in self.initial_data["responsable_relevamiento"]:
+                if self.initial_data["responsable_relevamiento"]["celular"] == "":
+                    self.initial_data["responsable_relevamiento"]["celular"] = None
+
+        if (
+            "referente_comedor" in self.initial_data
+            or "responsable_relevamiento" in self.initial_data
+        ):
+            responsable_relevamiento_id, referente_comedor_id = (
+                RelevamientoService.create_or_update_responsable_y_referente(
+                    self.initial_data.get("responsable_es_referente", False),
+                    self.initial_data.get("responsable_relevamiento", {}),
+                    self.initial_data.get("referente_comedor", {}),
+                    self.initial_data.get("sisoc_id"),
                 )
             )
+            self.initial_data["responsable_relevamiento"] = responsable_relevamiento_id
+            self.initial_data["referente_comedor"] = referente_comedor_id
 
         if "imagenes" in self.initial_data:
-            self.initial_data["imagenes"] = [
-                url.strip() for url in self.initial_data["imagenes"].split(",")
-            ]
+            imagenes = self.initial_data["imagenes"]
+            if isinstance(imagenes, str):
+                self.initial_data["imagenes"] = [
+                    img.strip() for img in imagenes.split(",") if img.strip()
+                ]
+            else:
+                self.initial_data["imagenes"] = []
 
         return self
 
