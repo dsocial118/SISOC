@@ -34,6 +34,4 @@ urlpatterns = [
         group_required("Dupla")(DuplaDeleteView.as_view()),
         name="dupla_eliminar",
     ),
-
-
 ]

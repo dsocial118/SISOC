@@ -5,10 +5,6 @@ from dupla.models import Dupla
 
 
 class DuplaForm(forms.ModelForm):
-    fecha = forms.CharField(
-        disabled=False,
-        initial=dateformat.format(timezone.now(), "H:i d/m/Y"),
-    )
     class Meta:
         model = Dupla
         fields = "__all__"
@@ -21,6 +17,6 @@ class DuplaForm(forms.ModelForm):
         labels = {
             "nombre": "Nombre",
             "tecnico": "Técnico",
-            "fecha": "Fecha",
             "abogado": "Abogado",
+            "estado": "Estado",
         }

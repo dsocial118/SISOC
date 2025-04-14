@@ -2,6 +2,7 @@ from dupla.models import Dupla
 from django.db.models import Case, When, IntegerField
 from django.forms import ValidationError
 
+
 class DuplaService:
     @staticmethod
     def get_dupla_by_id(dupla_id):
@@ -9,11 +10,11 @@ class DuplaService:
             return Dupla.objects.get(pk=dupla_id)
         except Dupla.DoesNotExist:
             return None
-    
+
     @staticmethod
     def get_all_duplas():
         return Dupla.objects.all()
-    
+
     @staticmethod
     def create_dupla(data):
         try:
@@ -21,7 +22,7 @@ class DuplaService:
             return dupla
         except Exception as e:
             raise ValidationError(f"Error al crear la Dupla: {e}")
-    
+
     @staticmethod
     def update_dupla(dupla_id, data):
         try:
