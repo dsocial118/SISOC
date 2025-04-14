@@ -15,6 +15,7 @@ from django.db.models import Case, IntegerField, Q, Value, When
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.contrib.messages import get_messages
@@ -935,7 +936,10 @@ class CiudadanosGrupoFamiliarCreateView(CreateView):
 
         except Exception as e:
             messages.error(self.request, f"Error al crear el familiar. Error: {e}")
-            return redirect(self.request.path_info)
+            if url_has_allowed_host_and_scheme(self.request.path_info, allowed_hosts=None):
+                return redirect(self.request.path_info)
+            else:
+                return redirect('/')
 
         messages.success(self.request, "Familiar agregado correctamente.")
         return HttpResponseRedirect(self.request.path_info)
