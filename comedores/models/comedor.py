@@ -181,7 +181,7 @@ class Comedor(models.Model):
         ("Sin Ingreso", "Sin Ingreso"),
         ("Asignado a Dupla Técnica", "Asignado a Dupla Técnica"),
     ]
-    estado = models.CharField(choices=estadosComedor,max_length=255, blank=True, null=True)
+    estado = models.CharField(choices=estadosComedor,max_length=255, blank=True, null=True,default="Sin Ingreso")
 
 
     calle = models.CharField(max_length=255, blank=True, null=True)
