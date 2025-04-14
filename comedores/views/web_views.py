@@ -353,7 +353,7 @@ class AsignarDuplaListView(ListView):
         else:
             messages.error(request, "No se seleccionó ninguna dupla.")
 
-        return redirect("asignar_dupla", pk=comedor_id)
+        return redirect("dupla_asignar", pk=comedor_id)
 
 class ComedorUpdateView(UpdateView):
     model = Comedor
