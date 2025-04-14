@@ -1,0 +1,308 @@
+{% extends "includes/main.html" %};
+{% load crispy_forms_tags %}
+{% load static %}
+;
+{% block head %}
+    <!--jquery confirm-->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/jquery-confirm/3.3.2/jquery-confirm.min.css" />
+{% endblock %}
+{% block title %}Grupo Hogar{% endblock %}
+;
+{% block titulo-pagina %}Ciudadano{% endblock %}
+;
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right mt-2 mr-2">
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanos' %}">Ciudadano</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanos_ver' pk %}">{{ ciudadano_principal }}</a>
+        </li>
+        <li class="breadcrumb-item active">Grupo Hogar</li>
+    </ol>
+{% endblock %}
+;
+{% block menu-adicional %}{% endblock %}
+;
+{% block content %}
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card card-primary card-outline">
+                <div class="card-body">
+                    <div class="bs-stepper">
+                        <div class="bs-stepper-header" role="tablist">
+                            <div class="step d-none d-sm-inline">
+                                <a href="{% url 'ciudadanos_editar' pk %}"
+                                   class="step-trigger"
+                                   role="tab">
+                                    <span class="bs-stepper-circle">1</span>
+                                    <span class="bs-stepper-label">Datos Personales</span>
+                                </a>
+                            </div>
+                            <div class="line d-none d-sm-inline"></div>
+                            <div class="step d-none d-sm-inline">
+                                <a href="{% url 'ciudadanosdimensiones_editar' pk %}"
+                                   class="step-trigger"
+                                   role="tab">
+                                    <span class="bs-stepper-circle">2</span>
+                                    <span class="bs-stepper-label">Dimensiones</span>
+                                </a>
+                            </div>
+                            <div class="line d-none d-sm-inline"></div>
+                            <div class="step d-none d-sm-inline">
+                                <a type="button"
+                                   class="step-trigger "
+                                   role="tab"
+                                   href="{% url 'grupofamiliar_crear' pk %}">
+                                    <span class="bs-stepper-circle">3</span>
+                                    <span class="bs-stepper-label">Grupo Familiar</span>
+                                </a>
+                            </div>
+                            <!--Formulario boton hogar-->
+                            <div class="line d-none d-sm-inline"></div>
+                            <div class="step active">
+                                <a type="button"
+                                   href="{% url 'ciudadanosgrupohogar_crear' pk %}"
+                                   class="step-trigger text-primary"
+                                   role="tab">
+                                    <span class="bs-stepper-circle">4</span>
+                                    <span class="bs-stepper-label">Grupo Hogar</span>
+                                </a>
+                            </div>
+                            <div class="line"></div>
+                            <div class="step">
+                                <a href="{% url 'alertas_crear' pk %}" class="step-trigger" role="tab">
+                                    <span class="bs-stepper-circle">5</span>
+                                    <span class="bs-stepper-label">Alertas</span>
+                                </a>
+                            </div>
+                            <div class="line d-none d-sm-inline"></div>
+                            <div class="step d-none d-sm-inline">
+                                <a href="{% url 'ciudadanosarchivos_crear' pk %}"
+                                   class="step-trigger"
+                                   role="tab">
+                                    <span class="bs-stepper-circle">6</span>
+                                    <span class="bs-stepper-label">Archivos</span>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="row mt-5">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h3 class="card-title font-weight-bold">Grupo Hogar</h3>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="tablaResultado"
+                                             class="row text-center d-flex justify-content-center justify-content-sm-start px-2">
+                                            {% if hogar_1 or hogar_2 %}
+                                                {% for f in hogar_1 %}
+                                                    <div id="familiar-{{ f.ciudadano_2Hogar__id }}" class="px-2">
+                                                        <ul class="users-list">
+                                                            <li style="width:auto">
+                                                                {% if f.ciudadano_2Hogar__foto %}
+                                                                    <img src="{{ MEDIA_URL }}{{ f.ciudadano_2Hogar__foto.url }}"
+                                                                         alt="User Image"
+                                                                         width="60px" />
+                                                                {% else %}
+                                                                    <img src="{% static 'custom/img/default.png' %}"
+                                                                         alt="User Image"
+                                                                         width="60px" />
+                                                                {% endif %}
+                                                                <span class="users-list-name">{{ f.ciudadano_2Hogar__apellido }}, {{ f.ciudadano_2Hogar__nombre }}</span>
+                                                                <span class="users-list-date">{{ f.vinculo }}</span>
+                                                                <span class="users-list-date">
+                                                                    <button class="btn btn-danger btn-sm"
+                                                                            onclick='deleteHogar("{{ f.id }}")'
+                                                                            type="submit">Eliminar</button>
+                                                                </span>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                {% empty %}
+                                                {% endfor %}
+                                                {% for f in hogar_2 %}
+                                                    <div id="familiar-{{ f.id }}" class="px-2">
+                                                        <ul class="users-list">
+                                                            <li style="width:auto">
+                                                                {% if f.ciudadano_1__foto %}
+                                                                    <img src="{{ MEDIA_URL }}{{ f.ciudadano_1__foto.url }}"
+                                                                         alt="User Image"
+                                                                         width="60px" />
+                                                                {% else %}
+                                                                    <img src="{% static 'custom/img/default.png' %}"
+                                                                         alt="User Image"
+                                                                         width="60px" />
+                                                                {% endif %}
+                                                                <span class="users-list-name">{{ f.ciudadano_2Hogar__nombre }}, {{ f.ciudadano_2Hogar__apellido }}</span>
+                                                                <span class="users-list-date">{{ f.vinculo_inverso }}</span>
+                                                                <span class="users-list-date">
+                                                                    <button class="btn btn-danger btn-sm"
+                                                                            onclick='deleteHogar("{{ f.id }}")'
+                                                                            type="submit">Eliminar</button>
+                                                                </span>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                {% empty %}
+                                                {% endfor %}
+                                            {% else %}
+                                                <div class="col-12 text-center" id="sin-familiares">
+                                                    <h6 class="text-muted">Sin grupo Hogar</h6>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <nav>
+                                                    <ul class="pagination justify-content-center">
+                                                        {% if hogares.has_previous %}
+                                                            <li class="page-item">
+                                                                <a class="page-link"
+                                                                   href="?page={{ hogares.previous_page_number }}"
+                                                                   aria-label="Previous">
+                                                                    <span aria-hidden="true">&laquo;</span>
+                                                                </a>
+                                                            </li>
+                                                        {% endif %}
+                                                        {% for num in hogares.paginator.page_range %}
+                                                            <li class="page-item {% if hogares.number == num %}active{% endif %}">
+                                                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                                            </li>
+                                                        {% endfor %}
+                                                        {% if hogares.has_next %}
+                                                            <li class="page-item">
+                                                                <a class="page-link"
+                                                                   href="?page={{ hogares.next_page_number }}"
+                                                                   aria-label="Next">
+                                                                    <span aria-hidden="true">&raquo;</span>
+                                                                </a>
+                                                            </li>
+                                                        {% endif %}
+                                                    </ul>
+                                                </nav>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-12 mt-3">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <div class="row align-items-between">
+                                                <div class="col mb-3 mb-sm-none ">
+                                                    <h3 class="card-title font-weight-bold pt-1 mr-3">Agregar Convivente de hogar</h3>
+                                                </div>
+                                                <div class="col-sm-8">
+                                                    <form id="search-form" autocomplete="off">
+                                                        {% csrf_token %}
+                                                        <div class="form-row justify-content-sm-end">
+                                                            <div class="form-group col-sm-3 mb-0 mb-0 pb-0">
+                                                                <input type="text"
+                                                                       class="form-control "
+                                                                       id="search-input"
+                                                                       placeholder="Buscar" />
+                                                            </div>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="card-body p-0">
+                                            <div class="table-responsive text-nowrap">
+                                                <table id="tabla" class="table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Apellido</th>
+                                                            <th>Nombre</th>
+                                                            <th>Documento</th>
+                                                            <th>Estado Relación</th>
+                                                            <th class="text-right"></th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="results-box">
+                                                    </tbody>
+                                                </table>
+                                                <nav aria-label="Page navigation">
+                                                    <ul class="pagination justify-content-center">
+                                                        <li class="page-item">
+                                                            <a class="page-link" href="#" id="prevPage">Anterior</a>
+                                                        </li>
+                                                        <li class="page-item disabled">
+                                                            <span class="page-link" id="currentPage"></span>
+                                                        </li>
+                                                        <li class="page-item">
+                                                            <a class="page-link" href="#" id="nextPage">Siguiente</a>
+                                                        </li>
+                                                    </ul>
+                                                </nav>
+                                                <div class="text-center" id="loadingIndicator" style="display: none;">
+                                                    <div class="spinner-border" role="status">
+                                                        <span class="sr-only">Cargando...</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row d-none" id="nuevo_ciudadano_familiar">
+                                                <form autocomplete="off" method="POST" novalidate id="formulario-nuevo">
+                                                    {% csrf_token %}
+                                                    <div class="form-row px-3 px-sm-5 mt-3">
+                                                        <div class="form-group col-12">
+                                                            <div class="text-center text-muted h4 pt-3">
+                                                                La búsqueda no arrojó
+                                                                resultados.
+                                                            </div>
+                                                            <div class="text-center text-muted h4 pb-3">
+                                                                Realice una nueva
+                                                                búsqueda o bien utilice el siguiente formulario para agregar un
+                                                                familiar nuevo.
+                                                            </div>
+                                                        </div>
+                                                        <input type="hidden" name="pk" value="{{ pk }}" />
+                                                        <div class="form-group col-sm-6">{{ form.vinculo|as_crispy_field }}</div>
+                                                        <div class="form-group col-sm-6">{{ form.documento|as_crispy_field }}</div>
+                                                        <div class="form-group col-sm-3">{{ form.estado_relacion|as_crispy_field }}</div>
+                                                        <div class="form-group col-12 text-right">
+                                                            <button type="submit"
+                                                                    name="form_nuevo"
+                                                                    id="form_nuevo"
+                                                                    class="btn btn-primary mb-3">Agregar</button>
+                                                        </div>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- botones del pie -->
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group mb-0 mt-3 d-flex justify-content-between">
+                                        <a href="{% url 'ciudadanos_ver' pk %}" class="btn btn-primary mb-3">Guardar</a>
+                                        <a href="{% url 'alertas_crear' pk %}"
+                                           class="btn btn-secondary mb-3 float-right">Continuar</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- /botones del pie -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+;
+{% block customJS %}
+    <script>
+    const searchUrl = "{% url 'hogar_buscar' %}";
+    const createUrl = "{% url 'grupohogar_ajax_crear' %}";
+    const deleteUrl = "{% url 'grupohogar_ajax_borrar' %}";
+    const pk1 = "{{ pk }}";
+    const formEstadoRelacion = '{{ form.estado_relacion|escapejs }}';
+    const mediaUrl = "{{ MEDIA_URL }}";
+    const staticUrl = "{% static '' %}";
+    </script>
+    <script src="{% static 'custom/js/grupohogarform.js' %}"></script>
+{% endblock %}
+;

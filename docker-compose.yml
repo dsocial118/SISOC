@@ -33,7 +33,6 @@ services:
         condition: service_healthy
     volumes:
       - .:/sisoc/
-    restart: always
 
 volumes:
   mysql_data:

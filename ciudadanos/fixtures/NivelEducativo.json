@@ -1,0 +1,65 @@
+[
+    {
+        "model": "ciudadanos.niveleducativo",
+        "pk": 1,
+        "fields": {
+            "nivel": "No aplica"
+        }
+    },
+    {
+        "model": "ciudadanos.niveleducativo",
+        "pk": 2,
+        "fields": {
+            "nivel": "Educación especial"
+        }
+    },
+    {
+        "model": "ciudadanos.niveleducativo",
+        "pk": 3,
+        "fields": {
+            "nivel": "Jardín"
+        }
+    },
+    {
+        "model": "ciudadanos.niveleducativo",
+        "pk": 4,
+        "fields": {
+            "nivel": "Primario"
+        }
+    },
+    {
+        "model": "ciudadanos.niveleducativo",
+        "pk": 5,
+        "fields": {
+            "nivel": "EGB"
+        }
+    },
+    {
+        "model": "ciudadanos.niveleducativo",
+        "pk": 6,
+        "fields": {
+            "nivel": "Secundario"
+        }
+    },
+    {
+        "model": "ciudadanos.niveleducativo",
+        "pk": 7,
+        "fields": {
+            "nivel": "Polimodal"
+        }
+    },
+    {
+        "model": "ciudadanos.niveleducativo",
+        "pk": 8,
+        "fields": {
+            "nivel": "Terciario"
+        }
+    },
+    {
+        "model": "ciudadanos.niveleducativo",
+        "pk": 9,
+        "fields": {
+            "nivel": "Universitario"
+        }
+    }
+]

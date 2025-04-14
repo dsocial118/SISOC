@@ -1,0 +1,134 @@
+{% extends "includes/main.html" %};
+{% load static %}
+;
+{% block title %}Historial de derivaciones{% endblock %}
+;
+{% block titulo-pagina %}Historial de derivaciones{% endblock %}
+;
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanos' %}">Ciudadano</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanos_ver' ciudadano.id %}">{{ ciudadano.apellido }}, {{ ciudadano.nombre }}</a>
+        </li>
+        <li class="breadcrumb-item active">Derivaciones</li>
+    </ol>
+{% endblock %}
+;
+{% block menu-adicional %}{% endblock %}
+;
+{% block content %}
+    <div class="row">
+        <!-- botones -->
+        <div class="col-12 my-3 mx-2">
+            <a href="{% url 'ciudadanosderivaciones_crear' ciudadano.id %}"
+               class="btn btn-primary mr-1">Derivar</a>
+        </div>
+    </div>
+    <!-- ./botones -->
+    <!-- Datos de ciudadano -->
+    <div class="row">
+        <div class="col-sm-9">
+            <div class="card card-outline card-primary ">
+                <div class="card-header">
+                    <h3 class="card-title">Detalle Ciudadano</h3>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dd class="col-sm-3 mb-2">
+                            Nombre
+                        </dd>
+                        <dt class="col-sm-9 mb-2">
+                            <a href="{% url 'ciudadanos_ver' ciudadano.id %}" title="Ver ciudadano">{{ ciudadano.apellido }}, {{ ciudadano.nombre }}</a>
+                        </dt>
+                        <dd class="col-sm-3 mb-2">
+                            DNI
+                        </dd>
+                        <dt class="col-sm-9 mb-2">{{ ciudadano.documento }}</dt>
+                        <dd class="col-sm-3 mb-2">
+                            Fecha de nacimiento
+                        </dd>
+                        <dt class="col-sm-9 mb-2">{{ ciudadano.fecha_nacimiento|date:'d/m/Y' }}</dt>
+                        <dd class="col-sm-3 mb-2">
+                            Sexo
+                        </dd>
+                        <dt class="col-sm-9 mb-2">{{ ciudadano.sexo }}</dt>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-3">
+            <div class="row h-100">
+                <div class="col-sm-12">
+                    <div class="info-box py-3 mb-2">
+                        <span class="info-box-icon bg-success"><i class="far fa-thumbs-up"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Admitidas</span>
+                            <span class="info-box-number h5">{{ admitidas|default_if_none:"0" }}</span>
+                        </div>
+                    </div>
+                    <div class="info-box py-3 mb-2">
+                        <span class="info-box-icon bg-warning"><i class="far fa-clock"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Pendientes</span>
+                            <span class="info-box-number h5">{{ pendientes|default_if_none:"0" }}</span>
+                        </div>
+                    </div>
+                    <div class="info-box py-3 mb-2">
+                        <span class="info-box-icon bg-danger"><i class="fas fa-thumbs-down"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Rechazadas</span>
+                            <span class="info-box-number h5">{{ rechazadas|default_if_none:"0" }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- tabla derivaciones -->
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card">
+                <!-- /.card-header -->
+                <div class="card-body">
+                    <table class="table table-bordered table-striped projects tabladt">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Derivado de:</th>
+                                <th>Derivado a:</th>
+                                <th>Estado</th>
+                                <th width="5%" class="notexport">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for h in historial %}
+                                <tr>
+                                    <td>{{ h.fecha_creado|date:'d/m/Y' }}</td>
+                                    <td>{{ h.programa_solicitante }}</td>
+                                    <td class="project_progress">{{ h.programa }}</td>
+                                    <td>
+                                        <span class="badge badge-{% if h.estado == "Pendiente" %}warning{% endif %}{% if h.estado == "Aceptada" %}success{% endif %}{% if h.estado == "Rechazada" %}danger{% endif %}"> {{ h.estado }} </span>
+                                    </td>
+                                    <td class="text-right">
+                                        <a href="{% url 'ciudadanosderivaciones_ver' h.id %}"
+                                           class="btn btn-secondary btn-sm ver"
+                                           title="Ver derivación">Ver</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <!-- /.card-body -->
+            </div>
+            <!-- /.card -->
+        </div>
+        <!-- /.col -->
+    </div>
+    <!-- /.row -->
+{% endblock %}
+;
+{% block customJS %}{% endblock %}

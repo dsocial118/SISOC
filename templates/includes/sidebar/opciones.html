@@ -45,7 +45,7 @@
                 <li class="nav-item">
                     <a href="{% url 'comedores' %}"
                        class="nav-link {% if 'comedores/listar' in pagina_actual %}active{% endif %}">
-                        <i class="nav-icon fas fa-user"></i>
+                        <i class="nav-icon bi bi-house-heart-fill"></i>
                         <p>Comedores</p>
                     </a>
                 </li>
@@ -63,8 +63,17 @@
                 <li class="nav-item">
                     <a href="{% url 'cdi' %}"
                        class="nav-link {% if 'cdi/listar' in pagina_actual %}active{% endif %}">
-                        <i class="nav-icon bi bi-building-fill"></i>
+                        <i class="nav-icon bi bi-emoji-smile-fill"></i>
                         <p>Centro Desarrollo Infantil</p>
+                    </a>
+                </li>
+            {% endif %}
+            {% if user|has_group:"Ciudadanos" %}
+                <li class="nav-item">
+                    <a href="{% url 'ciudadanos' %}"
+                       class="nav-link {% if 'ciudadanos/listar' in pagina_actual %}active{% endif %}">
+                        <i class="nav-icon bi bi-people-fill"></i>
+                        <p>Ciudadanos</p>
                     </a>
                 </li>
             {% endif %}

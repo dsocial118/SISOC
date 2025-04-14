@@ -1,0 +1,86 @@
+[
+    {
+        "model": "ciudadanos.nobusquedalaboral",
+        "pk": 1,
+        "fields": {
+            "motivo": "Espero respuesta de un empleador"
+        }
+    },
+    {
+        "model": "ciudadanos.nobusquedalaboral",
+        "pk": 2,
+        "fields": {
+            "motivo": "Espero comienzo de un nuevo trabajo (trabajo estacional)"
+        }
+    },
+    {
+        "model": "ciudadanos.nobusquedalaboral",
+        "pk": 3,
+        "fields": {
+            "motivo": "Soy estudiante/ me estoy capacitando"
+        }
+    },
+    {
+        "model": "ciudadanos.nobusquedalaboral",
+        "pk": 4,
+        "fields": {
+            "motivo": "Por motivos de edad (menor o anciano)"
+        }
+    },
+    {
+        "model": "ciudadanos.nobusquedalaboral",
+        "pk": 5,
+        "fields": {
+            "motivo": "Me dedico a quehaceres del hogar/ cuido personas en el hogar"
+        }
+    },
+    {
+        "model": "ciudadanos.nobusquedalaboral",
+        "pk": 6,
+        "fields": {
+            "motivo": "Soy pensionado/ jubilado"
+        }
+    },
+    {
+        "model": "ciudadanos.nobusquedalaboral",
+        "pk": 7,
+        "fields": {
+            "motivo": "Soy rentista"
+        }
+    },
+    {
+        "model": "ciudadanos.nobusquedalaboral",
+        "pk": 8,
+        "fields": {
+            "motivo": "Soy discapacitado"
+        }
+    },
+    {
+        "model": "ciudadanos.nobusquedalaboral",
+        "pk": 9,
+        "fields": {
+            "motivo": "Estoy enfermo"
+        }
+    },
+    {
+        "model": "ciudadanos.nobusquedalaboral",
+        "pk": 10,
+        "fields": {
+            "motivo": "Creo no poder encontrarlo/ no hay"
+        }
+    },
+    {
+        "model": "ciudadanos.nobusquedalaboral",
+        "pk": 11,
+        "fields": {
+            "motivo": "No tengo dinero para viajar"
+        }
+    },
+    {
+        "model": "ciudadanos.nobusquedalaboral",
+        "pk": 12,
+        "fields": {
+            "motivo": "Otro motivo"
+        }
+    }
+]

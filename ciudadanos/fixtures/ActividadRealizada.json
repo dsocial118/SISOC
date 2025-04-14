@@ -1,0 +1,58 @@
+[
+    {
+        "model": "ciudadanos.actividadrealizada",
+        "pk": 1,
+        "fields": {
+            "actividad": "Patrón o empleador"
+        }
+    },
+    {
+        "model": "ciudadanos.actividadrealizada",
+        "pk": 2,
+        "fields": {
+            "actividad": "Trabajador por cuenta propia solo"
+        }
+    },
+    {
+        "model": "ciudadanos.actividadrealizada",
+        "pk": 3,
+        "fields": {
+            "actividad": "Trabajador por cuenta propia asociado (en cooperativa, en emprendimiento familiar, etc.)"
+        }
+    },
+    {
+        "model": "ciudadanos.actividadrealizada",
+        "pk": 4,
+        "fields": {
+            "actividad": "Obrero o empleado del sector privado (asalariado)"
+        }
+    },
+    {
+        "model": "ciudadanos.actividadrealizada",
+        "pk": 5,
+        "fields": {
+            "actividad": "Obrero o empleado del sector público (asalariado)"
+        }
+    },
+    {
+        "model": "ciudadanos.actividadrealizada",
+        "pk": 6,
+        "fields": {
+            "actividad": "Servicio doméstico"
+        }
+    },
+    {
+        "model": "ciudadanos.actividadrealizada",
+        "pk": 7,
+        "fields": {
+            "actividad": "Trabajador sin remuneración"
+        }
+    },
+    {
+        "model": "ciudadanos.actividadrealizada",
+        "pk": 8,
+        "fields": {
+            "actividad": "Cuenta con un programa de empleo o comunitario"
+        }
+    }
+]
