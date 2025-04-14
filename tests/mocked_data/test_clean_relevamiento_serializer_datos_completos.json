@@ -1,0 +1,41 @@
+{
+    "initial_data": {
+      "comedor": "{{comedor_id}}",
+      "fecha_visita": "5/3/2025 14:29",
+      "territorial": {
+        "nombre": "Territorial Test",
+        "gestionar_uid": "12345"
+      },
+      "funcionamiento": {
+        "modalidad_prestacion": "{{modalidad_prestacion_nombre}}",
+        "servicio_por_turnos": false,
+        "cantidad_turnos": 2
+      },
+      "espacio": {
+        "tipo_espacio_fisico": "{{tipo_espacio_nombre}}"
+      },
+      "colaboradores": {
+        "cantidad_colaboradores": "{{cantidad_colaboradores_nombre}}",
+        "colaboradores_capacitados_alimentos": true
+      },
+      "recursos": {
+        "recibe_donaciones_particulares": true
+      },
+      "compras": {
+        "almacen_cercano": true
+      },
+      "anexo": {
+        "comedor_merendero": true
+      },
+      "punto_entregas": {
+        "existe_punto_entregas": true
+      },
+      "prestacion": {
+        "lunes_desayuno_actual": 10
+      },
+      "excepcion": {
+        "descripcion": "Excepción Test"
+      },
+      "imagenes": "http://example.com/image1.jpg, http://example.com/image2.jpg"
+    }
+  }
