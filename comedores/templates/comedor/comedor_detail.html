@@ -35,9 +35,7 @@
         <div class="col-auto">
             <a href="{% url 'nomina_ver' pk=comedor.id %}"
                class="btn btn-primary mr-1">Nomina</a>
-            {% if comedor.estado == "Sin Ingreso" %}
-                <a href="{% url 'dupla_asignar' pk=comedor.id %}" class="btn btn-primary mr-1">Asignar Dupla</a>
-            {% endif %}
+            <a href="{% url 'dupla_asignar' pk=comedor.id %}" class="btn btn-primary mr-1">Asignar Dupla</a>
             <a href="{% url 'intervencion_ver' comedor.id %}"
                class="btn btn-primary mr-1">Intervenciones</a>
             <a href="{% url 'comedor_editar' comedor.id %}"
