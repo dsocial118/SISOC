@@ -3,6 +3,7 @@ import pytest
 from comedores.services.comedor_service import ComedorService
 from comedores.models.comedor import Comedor
 
+
 @pytest.mark.django_db
 def test_get_comedor():
     # Preparacion: Crear un comedor en la BD de prueba
@@ -12,7 +13,7 @@ def test_get_comedor():
         provincia=provincia,
         barrio="Centro",
         calle="Av. Siempre Viva",
-        numero=123
+        numero=123,
     )
 
     # Ejecución: Llamar al método que queremos probar

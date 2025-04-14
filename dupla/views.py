@@ -15,6 +15,7 @@ from django.views.generic import (
 from dupla.dupla_service import DuplaService
 from dupla.models import Dupla
 
+
 class DuplaListView(ListView):
     model = Dupla
     template_name = "dupla_list.html"
@@ -26,17 +27,16 @@ class DuplaListView(ListView):
         context["duplas"] = DuplaService.get_all_duplas()
         return context
 
-    
+
 class DuplaCreateView(CreateView):
     model = Dupla
     template_name = "dupla_form.html"
-    fields = ["nombre", "tecnico", "fecha", "abogado"]
-    
+    fields = ["nombre", "tecnico", "estado", "abogado"]
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["form"] = self.get_form()
         return context
-    
 
     def post(self, request, *args, **kwargs):
         form = self.get_form()
@@ -54,29 +54,37 @@ class DuplaCreateView(CreateView):
 
     def get_success_url(self):
         return reverse("dupla_list")
-    
+
+
 class DuplaUpdateView(UpdateView):
     model = Dupla
     template_name = "dupla_form.html"
     fields = ["nombre", "tecnico", "fecha", "abogado"]
     success_url = reverse_lazy("dupla_list")
+
     def get_success_url(self):
         return reverse("dupla_detalle", kwargs={"pk": self.object.pk})
-    
+
+
 class DuplaDetailView(DetailView):
     model = Dupla
     template_name = "dupla_detail.html"
     context_object_name = "dupla"
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["dupla"] = self.object
         return context
+
+
 class DuplaDeleteView(DeleteView):
     model = Dupla
     template_name = "dupla_confirm_delete.html"
     success_url = reverse_lazy("dupla_list")
+
     def get_success_url(self):
         return reverse("dupla_list")
+
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         self.object.delete()
