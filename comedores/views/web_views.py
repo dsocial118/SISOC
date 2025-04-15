@@ -1,15 +1,12 @@
 import os
-import re
 from typing import Any
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.db.models.base import Model
 from django.forms import BaseModelForm
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import redirect, get_object_or_404
+from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
-from django.db.models import OuterRef, Subquery
-from django.db import models
 from django.utils import timezone
 from django.views.generic import (
     CreateView,
@@ -21,6 +18,8 @@ from django.views.generic import (
 )
 from comedores.forms.relevamiento_form import PuntosEntregaForm
 
+from admisiones.models.admisiones import DuplaContacto
+from admisiones.forms.admisiones_forms import DuplaContactoForm
 
 from comedores.models.relevamiento import Relevamiento, ClasificacionComedor
 from comedores.forms.comedor_form import (
@@ -28,8 +27,6 @@ from comedores.forms.comedor_form import (
     ReferenteForm,
     IntervencionForm,
     NominaForm,
-    AdmisionesForm,
-    DuplaContactoForm,
 )
 
 from comedores.forms.observacion_form import ObservacionForm
@@ -53,18 +50,12 @@ from comedores.models.comedor import (
     Intervencion,
     SubIntervencion,
     Nomina,
-    Admisiones,
-    TipoConvenio,
-    Documentacion,
-    ArchivosAdmision,
-    DuplaContacto,
 )
 
 from comedores.models.relevamiento import Prestacion
 from comedores.services.comedor_service import ComedorService
 from comedores.services.relevamiento_service import RelevamientoService
 from django.views.decorators.csrf import csrf_exempt
-from django.conf import settings
 
 
 @csrf_exempt
