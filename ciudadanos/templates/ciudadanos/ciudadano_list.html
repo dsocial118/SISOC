@@ -47,103 +47,101 @@
             {% endif %}
         </div>
     </div>
-    {% if mostrar_resultados %}
-        <div class="row mt-5">
-            <div class="col-12">
-                <div class="card">
-                    <!-- /.card-header -->
-                    <div class="card-body">
-                        <table class="table table-bordered table-striped projects">
-                            <thead>
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card">
+                <!-- /.card-header -->
+                <div class="card-body">
+                    <table class="table table-bordered table-striped projects">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Documento</th>
+                                <th>Sexo</th>
+                                <th>Localidad</th>
+                                <th>Estado</th>
+                                <th style="width: 15%" class="notexport">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for o in object_list %}
                                 <tr>
-                                    <th>Nombre</th>
-                                    <th>Documento</th>
-                                    <th>Sexo</th>
-                                    <th>Localidad</th>
-                                    <th>Estado</th>
-                                    <th style="width: 15%" class="notexport">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for o in object_list %}
-                                    <tr>
-                                        <td>
-                                            <a href="{% url 'ciudadanos_ver' o.id %}"
-                                               class="font-weight-bold"
-                                               title="Ver detalles">{{ o.apellido }} {{ o.nombre }}</a>
-                                        </td>
-                                        <td>{{ o.tipo_documento }} {{ o.documento }}</td>
-                                        <td>{{ o.sexo }}</td>
-                                        <td>{{ o.localidad }}</td>
-                                        <td>
-                                            {% if o.estado %}
-                                                <span class="text-success font-weight-bold">Activo</span>
-                                            {% else %}
-                                                <span class="text-danger font-weight-bold">Inactivo</span>
-                                            {% endif %}
-                                        </td>
-                                        <td class="project-actions text-right">
-                                            {% if perms.Usuarios.rol_admin %}
-                                                <div class="btn-group" role="group">
-                                                    <a href="{% url 'ciudadanos_ver' o.id %}"
-                                                       class="btn btn-primary btn-sm ver">Ver</a>
-                                                    <a href="{% url 'ciudadanos_editar' o.id %}"
-                                                       class="btn btn-primary btn-sm editar">Editar</a>
-                                                    <a href="{% url 'ciudadanos_eliminar' o.id %}"
-                                                       class="btn btn-danger btn-sm eliminar">Eliminar</a>
-                                                </div>
-                                            {% endif %}
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                        {% if is_paginated %}
-                            <div class="mt-2">
-                                <ul class="pagination">
-                                    {% if page_obj.has_previous %}
-                                        <li class="page-item">
-                                            <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ page_obj.previous_page_number }}"
-                                               class="page-link">Volver</a>
-                                        </li>
-                                    {% else %}
-                                        <li class="page-item disabled">
-                                            <a href="#" class="page-link">Volver</a>
-                                        </li>
-                                    {% endif %}
-                                    {% for i in page_range %}
-                                        {% if i == '…' %}
-                                            <li class="page-item disabled">
-                                                <a href="#" class="page-link">…</a>
-                                            </li>
+                                    <td>
+                                        <a href="{% url 'ciudadanos_ver' o.id %}"
+                                            class="font-weight-bold"
+                                            title="Ver detalles">{{ o.apellido }} {{ o.nombre }}</a>
+                                    </td>
+                                    <td>{{ o.tipo_documento }} {{ o.documento }}</td>
+                                    <td>{{ o.sexo }}</td>
+                                    <td>{{ o.localidad }}</td>
+                                    <td>
+                                        {% if o.estado %}
+                                            <span class="text-success font-weight-bold">Activo</span>
                                         {% else %}
-                                            <li class="page-item {% if page_obj.number == i %}active{% endif %}">
-                                                <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ i }}"
-                                                   class="page-link">{{ i }}</a>
-                                            </li>
+                                            <span class="text-danger font-weight-bold">Inactivo</span>
                                         {% endif %}
-                                    {% endfor %}
-                                    {% if page_obj.has_next %}
-                                        <li class="page-item">
-                                            <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ page_obj.next_page_number }}"
-                                               class="page-link">Continuar</a>
+                                    </td>
+                                    <td class="project-actions text-right">
+                                        {% if perms.Usuarios.rol_admin %}
+                                            <div class="btn-group" role="group">
+                                                <a href="{% url 'ciudadanos_ver' o.id %}"
+                                                    class="btn btn-primary btn-sm ver">Ver</a>
+                                                <a href="{% url 'ciudadanos_editar' o.id %}"
+                                                    class="btn btn-primary btn-sm editar">Editar</a>
+                                                <a href="{% url 'ciudadanos_eliminar' o.id %}"
+                                                    class="btn btn-danger btn-sm eliminar">Eliminar</a>
+                                            </div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% if is_paginated %}
+                        <div class="mt-2">
+                            <ul class="pagination">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ page_obj.previous_page_number }}"
+                                            class="page-link">Volver</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <a href="#" class="page-link">Volver</a>
+                                    </li>
+                                {% endif %}
+                                {% for i in page_range %}
+                                    {% if i == '…' %}
+                                        <li class="page-item disabled">
+                                            <a href="#" class="page-link">…</a>
                                         </li>
                                     {% else %}
-                                        <li class="page-item disabled">
-                                            <a href="#" class="page-link">Continuar</a>
+                                        <li class="page-item {% if page_obj.number == i %}active{% endif %}">
+                                            <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ i }}"
+                                                class="page-link">{{ i }}</a>
                                         </li>
                                     {% endif %}
-                                </ul>
-                            </div>
-                        {% endif %}
-                    </div>
-                    <!-- /.card-body -->
+                                {% endfor %}
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ page_obj.next_page_number }}"
+                                            class="page-link">Continuar</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <a href="#" class="page-link">Continuar</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    {% endif %}
                 </div>
-                <!-- /.card -->
+                <!-- /.card-body -->
             </div>
-            <!-- /.col -->
+            <!-- /.card -->
         </div>
-        <!--paginacion-->
-    {% endif %}
+        <!-- /.col -->
+    </div>
+    <!--paginacion-->
 {% endblock %}
 {% block customJS %}{% endblock %}
