@@ -1,5 +1,4 @@
 import os
-import re
 from django.contrib import messages
 from django.http import JsonResponse
 from django.shortcuts import redirect, get_object_or_404
@@ -10,16 +9,16 @@ from django.views.generic import (
     ListView,
     UpdateView,
 )
-from comedores.forms.comedor_form import (
-    AdmisionesForm,
+from admisiones.forms.admisiones_forms import (
+    AdmisionForm,
 )
-from comedores.models.comedor import (
-    Comedor,
-    Admisiones,
+from admisiones.models.admisiones import (
+    Admision,
     TipoConvenio,
     Documentacion,
-    ArchivosAdmision,
+    ArchivoAdmision,
 )
+from comedores.models.comedor import Comedor  # Confirmar con Juani: si el Modelo Comedor sigue vigente y utilizable o no.
 
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
@@ -29,11 +28,11 @@ from django.conf import settings
 def subir_archivo_admision(request, admision_id, documentacion_id):
     if request.method == "POST" and request.FILES.get("archivo"):
         archivo = request.FILES["archivo"]
-        admision = get_object_or_404(Admisiones, pk=admision_id)
+        admision = get_object_or_404(Admision, pk=admision_id)
         documentacion = get_object_or_404(Documentacion, pk=documentacion_id)
 
-        # Guardamos el archivo en el modelo ArchivosAdmision
-        archivo_admision, created = ArchivosAdmision.objects.update_or_create(
+        # Guardamos el archivo en el modelo ArchivoAdmision
+        archivo_admision, created = ArchivoAdmision.objects.update_or_create(
             admision=admision,
             documentacion=documentacion,
             defaults={"archivo": archivo, "estado": "A Validar"},
@@ -51,7 +50,7 @@ def subir_archivo_admision(request, admision_id, documentacion_id):
 def eliminar_archivo_admision(request, admision_id, documentacion_id):
     if request.method == "DELETE":
         archivo = get_object_or_404(
-            ArchivosAdmision, admision_id=admision_id, documentacion_id=documentacion_id
+            ArchivoAdmision, admision_id=admision_id, documentacion_id=documentacion_id
         )
 
         # Eliminar el archivo físico del servidor
@@ -74,7 +73,7 @@ class AdmisionesTecnicosListView(ListView):
     context_object_name = "comedores"
 
     def get_queryset(self):
-        admision_subquery = Admisiones.objects.filter(fk_comedor=OuterRef("pk")).values(
+        admision_subquery = Admision.objects.filter(fk_comedor=OuterRef("pk")).values(
             "id"
         )[:1]
         return Comedor.objects.annotate(admision_id=Subquery(admision_subquery))
@@ -85,9 +84,9 @@ class AdmisionesTecnicosListView(ListView):
 
 
 class AdmisionesTecnicosCreateView(CreateView):
-    model = Admisiones
+    model = Admision
     template_name = "comedor/admisiones_tecnicos_form.html"
-    form_class = AdmisionesForm
+    form_class = AdmisionForm
     context_object_name = "admision"
 
     def get_context_data(self, **kwargs):
@@ -109,7 +108,7 @@ class AdmisionesTecnicosCreateView(CreateView):
 
         if tipo_convenio_id:
             tipo_convenio = get_object_or_404(TipoConvenio, pk=tipo_convenio_id)
-            admision = Admisiones.objects.create(
+            admision = Admision.objects.create(
                 fk_comedor=comedor, tipo_convenio=tipo_convenio
             )
             return redirect(
@@ -120,9 +119,9 @@ class AdmisionesTecnicosCreateView(CreateView):
 
 
 class AdmisionesTecnicosUpdateView(UpdateView):
-    model = Admisiones
+    model = Admision
     template_name = "comedor/admisiones_tecnicos_form.html"
-    form_class = AdmisionesForm
+    form_class = AdmisionForm
     context_object_name = "admision"
 
     def get_context_data(self, **kwargs):
@@ -137,7 +136,7 @@ class AdmisionesTecnicosUpdateView(UpdateView):
         ).distinct()
 
         # Obtener archivos subidos para el convenio actual
-        archivos_subidos = ArchivosAdmision.objects.filter(admision=admision)
+        archivos_subidos = ArchivoAdmision.objects.filter(admision=admision)
         archivos_dict = {
             archivo.documentacion.id: archivo for archivo in archivos_subidos
         }
@@ -170,7 +169,7 @@ class AdmisionesTecnicosUpdateView(UpdateView):
                 nuevo_convenio = TipoConvenio.objects.get(pk=nuevo_convenio_id)
                 admision.tipo_convenio = nuevo_convenio
                 admision.save()
-                archivos = ArchivosAdmision.objects.filter(admision=admision).all()
+                archivos = ArchivoAdmision.objects.filter(admision=admision).all()
                 archivos.delete()
                 messages.success(request, "Tipo de convenio actualizado correctamente.")
 
