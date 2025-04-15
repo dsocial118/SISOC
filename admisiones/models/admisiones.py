@@ -58,7 +58,7 @@ class Documentacion(models.Model):
     convenios = models.ManyToManyField("TipoConvenio", blank=True)
 
     def __str__(self):
-        return self.nombre if self.nombre else "Sin nombre"
+        return str (self.nombre) if self.nombre else "Sin nombre"
 
 
 class ArchivoAdmision(models.Model):
