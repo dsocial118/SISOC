@@ -18,7 +18,7 @@
     "pk": 1,
     "fields": {
       "nombre": "1",
-      "fk_subintervencion": 1
+      "subintervencion": 1
     }
   },
   {
@@ -26,7 +26,7 @@
     "pk": 2,
     "fields": {
       "nombre": "2",
-      "fk_subintervencion": 1
+      "subintervencion": 1
     }
   },
   {
@@ -34,7 +34,7 @@
     "pk": 3,
     "fields": {
       "nombre": "3",
-      "fk_subintervencion": 2
+      "subintervencion": 2
     }
   },
   {
@@ -42,7 +42,7 @@
     "pk": 4,
     "fields": {
       "nombre": "4",
-      "fk_subintervencion": 2
+      "subintervencion": 2
     }
   }
 ]

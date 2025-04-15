@@ -1,0 +1,37 @@
+[
+    {
+        "model": "ciudadanos.tiempobusquedalaboral",
+        "pk": 1,
+        "fields": {
+            "tiempo": "Menos de un mes"
+        }
+    },
+    {
+        "model": "ciudadanos.tiempobusquedalaboral",
+        "pk": 2,
+        "fields": {
+            "tiempo": "De 1 a 3 meses"
+        }
+    },
+    {
+        "model": "ciudadanos.tiempobusquedalaboral",
+        "pk": 3,
+        "fields": {
+            "tiempo": "Más de 3 a 6 meses"
+        }
+    },
+    {
+        "model": "ciudadanos.tiempobusquedalaboral",
+        "pk": 4,
+        "fields": {
+            "tiempo": "Más de 6 meses a 1 año"
+        }
+    },
+    {
+        "model": "ciudadanos.tiempobusquedalaboral",
+        "pk": 5,
+        "fields": {
+            "tiempo": "Más de 1 año"
+        }
+    }
+]

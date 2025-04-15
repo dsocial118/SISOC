@@ -1,0 +1,149 @@
+{% extends "includes/main.html" %};
+{% load static %}
+;
+{% block head %}{% endblock %}
+{% block title %}Ciudadano{% endblock %}
+;
+{% block titulo-pagina %}{% endblock %}
+;
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanos' %}">Ciudadano</a>
+        </li>
+        <li class="breadcrumb-item active">Listar</li>
+    </ol>
+{% endblock %}
+;
+{% block menu-adicional %}{% endblock %}
+;
+{% block content %}
+    <h2 class="text-center display-4 mb-4">Obtener reportes</h2>
+    <form method="GET">
+        <div class="row">
+            <div class="col-md-10 m-auto">
+                <div class="row">
+                    <div class="col-sm-3">
+                        <div class="form-group">
+                            <label>Programa</label>
+                            <select name="data_programa" class="select2 w-100">
+                                <option disabled selected></option>
+                                {% for programa in programas %}
+                                    <option value={{ programa.id }}>{{ programa.nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-sm-3">
+                        <div class="form-group">
+                            <label>Organismo</label>
+                            <select name="data_organismo" class="select2 w-100">
+                                <option disabled selected></option>
+                                {% for organismo in organismos %}
+                                    <option value={{ organismo.id }}>{{ organismo.nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-sm-3">
+                        <div class="form-group">
+                            <label>Estado</label>
+                            <select name="data_estado" class="select2 w-100">
+                                <option disabled selected></option>
+                                {% for clave,valor in estados %}<option>{{ valor }}</option>{% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-sm-3">
+                        <div class="form-group">
+                            <label>Desde</label>
+                            {% comment %} <select class="select2 w-100">
+                            <option disabled selected></option>
+                            {% for derivacion in derivaciones %}<option>{{derivacion.fecha_creado}}</option>{% endfor %}
+                            </select> {% endcomment %}
+                            <input selected
+                                   type="date"
+                                   name="data_fecha_derivacion"
+                                   class="select2 w-100 form-control"
+                                   id="fecha_derivacion" />
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="form-group">
+                            <div class="input-group input-group-lg">
+                                <input type="search"
+                                       class="form-control form-control-lg"
+                                       placeholder="Buscar"
+                                       title="Ingresar DNI o apellido."
+                                       name="busqueda" />
+                                <div class="input-group-append">
+                                    <button type="submit" class="btn btn-lg btn-primary">
+                                        <i class="fa fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card">
+                <!-- /.card-header -->
+                <div class="card-body">
+                    <table class="table table-bordered table-striped projects {% if perms.Usuarios.rol_admin or perms.Usuarios.rol_consultante %}tabladt{% endif %}">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Documento</th>
+                                <th>Sexo</th>
+                                <th>Programa</th>
+                                <th>Centro</th>
+                                <th>Estado</th>
+                                <th style="width: 15%" class="notexport">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for o in object_list %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'ciudadanos_ver' o.ciudadano.id %}"
+                                           class="font-weight-bold"
+                                           title="Ver detalles">{{ o.ciudadano }}</a>
+                                    </td>
+                                    <td>{{ o.tipo_documento }} {{ o.ciudadano.documento }}</td>
+                                    <td>{{ o.ciudadano.sexo }}</td>
+                                    <td>{{ o.programa }}</td>
+                                    <td>{{ o.organismo }}</td>
+                                    <td>{{ o.estado }}</td>
+                                    <td class="project-actions text-right">
+                                        {% if perms.Usuarios.rol_admin %}
+                                            <div class="btn-group" role="group">
+                                                <a href="{% url 'ciudadanos_ver' o.ciudadano.id %}"
+                                                   class="btn btn-primary btn-sm ver">Ver</a>
+                                                <a href="{% url 'ciudadanos_editar' o.ciudadano.id %}"
+                                                   class="btn btn-primary btn-sm editar">Editar</a>
+                                                <a href="{% url 'ciudadanos_eliminar' o.ciudadano.id %}"
+                                                   class="btn btn-danger btn-sm eliminar">Eliminar</a>
+                                            </div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <!-- /.card-body -->
+            </div>
+            <!-- /.card -->
+        </div>
+        <!-- /.col -->
+    </div>
+{% endblock %}
+{% block customJS %}{% endblock %}

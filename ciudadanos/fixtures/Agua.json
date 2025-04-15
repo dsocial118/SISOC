@@ -1,0 +1,51 @@
+[
+    {
+        "model": "ciudadanos.agua",
+        "pk": 1,
+        "fields": {
+            "tipo": "Red pública"
+        }
+    },
+    {
+        "model": "ciudadanos.agua",
+        "pk": 2,
+        "fields": {
+            "tipo": "Perforación bomba a motor"
+        }
+    },
+    {
+        "model": "ciudadanos.agua",
+        "pk": 3,
+        "fields": {
+            "tipo": "Perforación bomba manual"
+        }
+    },
+    {
+        "model": "ciudadanos.agua",
+        "pk": 4,
+        "fields": {
+            "tipo": "Pozo"
+        }
+    },
+    {
+        "model": "ciudadanos.agua",
+        "pk": 5,
+        "fields": {
+            "tipo": "Transporte con cisterna"
+        }
+    },
+    {
+        "model": "ciudadanos.agua",
+        "pk": 6,
+        "fields": {
+            "tipo": "Agua de lluvia, canal, río, arroyo o acequia"
+        }
+    },
+    {
+        "model": "ciudadanos.agua",
+        "pk": 7,
+        "fields": {
+            "tipo": "Otro"
+        }
+    }
+]

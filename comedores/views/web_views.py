@@ -60,7 +60,7 @@ from dupla.dupla_service import DuplaService
 def sub_estados_intervenciones_ajax(request):
     request_id = request.GET.get("id")
     if request_id:
-        sub_estados = SubIntervencion.objects.filter(fk_subintervencion=request_id)
+        sub_estados = SubIntervencion.objects.filter(subintervencion=request_id)
     else:
         sub_estados = SubIntervencion.objects.all()
 
@@ -516,7 +516,7 @@ class RelevamientoDetailView(DetailView):
 
         relevamiento = Relevamiento.objects.get(pk=self.get_object()["id"])
         context["relevamiento"]["gas"] = (
-            RelevamientoService.separate_m2m_string(
+            RelevamientoService.separate_string(
                 relevamiento.espacio.cocina.abastecimiento_combustible.all()
             )
             if relevamiento.espacio
@@ -528,7 +528,7 @@ class RelevamientoDetailView(DetailView):
             else None
         )
         context["relevamiento"]["donaciones"] = (
-            RelevamientoService.separate_m2m_string(
+            RelevamientoService.separate_string(
                 relevamiento.recursos.recursos_donaciones_particulares.all()
             )
             if relevamiento.recursos
@@ -536,7 +536,7 @@ class RelevamientoDetailView(DetailView):
         )
 
         context["relevamiento"]["nacional"] = (
-            RelevamientoService.separate_m2m_string(
+            RelevamientoService.separate_string(
                 relevamiento.recursos.recursos_estado_nacional.all()
             )
             if relevamiento.recursos
@@ -544,7 +544,7 @@ class RelevamientoDetailView(DetailView):
         )
 
         context["relevamiento"]["provincial"] = (
-            RelevamientoService.separate_m2m_string(
+            RelevamientoService.separate_string(
                 relevamiento.recursos.recursos_estado_provincial.all()
             )
             if relevamiento.recursos
@@ -552,7 +552,7 @@ class RelevamientoDetailView(DetailView):
         )
 
         context["relevamiento"]["municipal"] = (
-            RelevamientoService.separate_m2m_string(
+            RelevamientoService.separate_string(
                 relevamiento.recursos.recursos_estado_municipal.all()
             )
             if relevamiento.recursos
@@ -560,7 +560,7 @@ class RelevamientoDetailView(DetailView):
         )
 
         context["relevamiento"]["otras"] = (
-            RelevamientoService.separate_m2m_string(
+            RelevamientoService.separate_string(
                 relevamiento.recursos.recursos_otros.all()
             )
             if relevamiento.recursos
@@ -568,7 +568,7 @@ class RelevamientoDetailView(DetailView):
         )
 
         context["relevamiento"]["Entregas"] = (
-            RelevamientoService.separate_m2m_string(
+            RelevamientoService.separate_string(
                 relevamiento.punto_entregas.frecuencia_recepcion_mercaderias.all()
             )
             if relevamiento.punto_entregas

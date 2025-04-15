@@ -7,7 +7,7 @@ $(document).ready(function () {
                 'id': estadoId
             },
             success: function (data) {
-                var $subIntervencion = $('.subtipollamado-select');
+                var $subIntervencion = $('.subtipo_llamado-select');
                 $subIntervencion.empty();
                 $.each(data, function (index, item) {
                     $subIntervencion.append($('<option>', {
