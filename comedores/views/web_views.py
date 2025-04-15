@@ -327,6 +327,7 @@ class ComedorDetailView(DetailView):
             messages.error(request, f"Error al crear el relevamiento: {e}")
             return redirect("comedor_detalle", pk=self.object["id"])
 
+
 class AsignarDuplaListView(ListView):
     model = Comedor
     template_name = "comedor/asignar_dupla_form.html"
@@ -338,7 +339,7 @@ class AsignarDuplaListView(ListView):
         data["comedor"] = comedor
         data["duplas"] = duplas
         return data
-        
+
     def post(self, request, *args, **kwargs):
         dupla_id = request.POST.get("dupla_id")
         comedor_id = self.kwargs["pk"]
@@ -354,6 +355,7 @@ class AsignarDuplaListView(ListView):
             messages.error(request, "No se seleccionó ninguna dupla.")
 
         return redirect("dupla_asignar", pk=comedor_id)
+
 
 class ComedorUpdateView(UpdateView):
     model = Comedor
