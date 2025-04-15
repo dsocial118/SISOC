@@ -1,6 +1,6 @@
 [
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 1,
         "fields": {
             "nombre": "Nota de Solicitud e inclusión al programa",
@@ -9,7 +9,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 2,
         "fields": {
             "nombre": "Acta constitutiva",
@@ -18,7 +18,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 3,
         "fields": {
             "nombre": "Estatuto",
@@ -27,7 +27,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 4,
         "fields": {
             "nombre": "Reso Personería Jurídica",
@@ -36,7 +36,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 5,
         "fields": {
             "nombre": "Acta Designación",
@@ -45,7 +45,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 6,
         "fields": {
             "nombre": "Declaración Jurada",
@@ -54,7 +54,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 7,
         "fields": {
             "nombre": "DNI Autoridades",
@@ -63,7 +63,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 8,
         "fields": {
             "nombre": "Acta Solicitud de Subsidio",
@@ -72,7 +72,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 9,
         "fields": {
             "nombre": "Constancia AFIP",
@@ -81,7 +81,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 10,
         "fields": {
             "nombre": "Preinscripción RENACOM",
@@ -90,7 +90,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 11,
         "fields": {
             "nombre": "Validación RENACOM",
@@ -99,7 +99,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 12,
         "fields": {
             "nombre": "Inscripción RENACOM",
@@ -108,7 +108,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 13,
         "fields": {
             "nombre": "DNI Responsable del Comedor",
@@ -117,7 +117,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 14,
         "fields": {
             "nombre": "DNI Titular Tarjeta",
@@ -126,7 +126,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 15,
         "fields": {
             "nombre": "Informe Comedores y Merenderos",
@@ -135,7 +135,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 16,
         "fields": {
             "nombre": "Memo PNUD",
@@ -144,7 +144,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 17,
         "fields": {
             "nombre": "Respuesta Memo PNUD",
@@ -153,7 +153,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 18,
         "fields": {
             "nombre": "Acto de reconocimiento (de culto)",
@@ -162,7 +162,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 19,
         "fields": {
             "nombre": "Designación Organismos Públicos / Acta constitutiva (conformación)",
@@ -171,7 +171,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 20,
         "fields": {
             "nombre": "DNIs - Organización Base",
@@ -180,7 +180,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 21,
         "fields": {
             "nombre": "Nombre Aval 1",
@@ -189,7 +189,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 22,
         "fields": {
             "nombre": "Acta constitutiva - Aval 1",
@@ -198,7 +198,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 23,
         "fields": {
             "nombre": "Estatuto - Aval 1",
@@ -207,7 +207,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 24,
         "fields": {
             "nombre": "Reso Personería Jurídica - Aval 1",
@@ -216,7 +216,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 25,
         "fields": {
             "nombre": "Acta Designación - Aval 1",
@@ -225,7 +225,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 26,
         "fields": {
             "nombre": "DNI Autoridades - Aval 1",
@@ -234,7 +234,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 27,
         "fields": {
             "nombre": "Nombre Aval 2",
@@ -243,7 +243,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 28,
         "fields": {
             "nombre": "Acta constitutiva - Aval 2",
@@ -252,7 +252,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 29,
         "fields": {
             "nombre": "Estatuto - Aval 2",
@@ -261,7 +261,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 30,
         "fields": {
             "nombre": "Reso Personería Jurídica - Aval 2",
@@ -270,7 +270,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 31,
         "fields": {
             "nombre": "Acta Designación - Aval 2",
@@ -279,7 +279,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 32,
         "fields": {
             "nombre": "DNI Autoridades - Aval 2",
@@ -288,7 +288,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 33,
         "fields": {
             "nombre": "Inscripción RENACOM",
@@ -297,7 +297,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 34,
         "fields": {
             "nombre": "Relevamiento al Programa (PAC)",
@@ -306,7 +306,7 @@
         }
     },
     {
-        "model": "comedores.documentacion",
+        "model": "admisiones.documentacion",
         "pk": 35,
         "fields": {
             "nombre": "Material de difusión",
