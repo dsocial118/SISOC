@@ -328,7 +328,7 @@
         let url = `/admision/${admisionId}/documentacion/${documentoId}/subir/`;
 
         let xhr = new XMLHttpRequest();
-        xhr.open("POST", url, true);
+        xhr.open("POST", url, true); // ver lo de crftoken aca mas tarde {% csrf_token %}*
 
         // Enviar la solicitud con el progreso
         xhr.upload.onprogress = function (event) {
