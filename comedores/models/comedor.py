@@ -204,7 +204,7 @@ class Comedor(models.Model):
     referente = models.ForeignKey(
         to=Referente, on_delete=models.SET_NULL, null=True, blank=True
     )
-    foto_ciudadano = models.ImageField(upload_to="comedor/", blank=True, null=True)
+    foto_legajo = models.ImageField(upload_to="comedor/", blank=True, null=True)
 
     def __str__(self) -> str:
         return str(self.nombre)
