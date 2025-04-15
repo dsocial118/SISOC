@@ -63,7 +63,7 @@ class DuplaUpdateView(UpdateView):
     success_url = reverse_lazy("dupla_list")
 
     def get_success_url(self):
-        return reverse("dupla_detalle", kwargs={"pk": self.object.pk})
+        return reverse("dupla_list")
 
 
 class DuplaDetailView(DetailView):
