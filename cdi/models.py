@@ -127,4 +127,4 @@ class CentroDesarrolloInfantil(models.Model):
         blank=True,
         null=True,
     )
-    foto_ciudadano = models.ImageField(upload_to="cdi/", blank=True, null=True)
+    foto_legajo = models.ImageField(upload_to="cdi/", blank=True, null=True)
