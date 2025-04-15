@@ -1,14 +1,14 @@
 from django import forms
 
-from comedores.models.comedor import (
-    Admisiones,
+from admisiones.models.admisiones import (
+    Admision,
     DuplaContacto,
 )
 
 
-class AdmisionesForm(forms.ModelForm):
+class AdmisionForm(forms.ModelForm):
     class Meta:
-        model = Admisiones
+        model = Admision
         fields = "__all__"
 
 
