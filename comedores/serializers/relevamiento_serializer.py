@@ -122,6 +122,15 @@ class RelevamientoSerializer(serializers.ModelSerializer):
             self.initial_data["responsable_es_referente"] = (
                 self.initial_data["responsable_es_referente"] == "Y"
             )
+        if "referente_comedor" in self.initial_data:
+            if "celular" in self.initial_data["referente_comedor"]:
+                if self.initial_data["referente_comedor"]["celular"] == "":
+                    self.initial_data["referente_comedor"]["celular"] = None
+
+        if "responsable_relevamiento" in self.initial_data:
+            if "celular" in self.initial_data["responsable_relevamiento"]:
+                if self.initial_data["responsable_relevamiento"]["celular"] == "":
+                    self.initial_data["responsable_relevamiento"]["celular"] = None
 
         if (
             "referente_comedor" in self.initial_data
@@ -139,9 +148,13 @@ class RelevamientoSerializer(serializers.ModelSerializer):
             self.initial_data["referente_comedor"] = referente_comedor_id
 
         if "imagenes" in self.initial_data:
-            self.initial_data["imagenes"] = [
-                url.strip() for url in self.initial_data["imagenes"].split(",")
-            ]
+            imagenes = self.initial_data["imagenes"]
+            if isinstance(imagenes, str):
+                self.initial_data["imagenes"] = [
+                    img.strip() for img in imagenes.split(",") if img.strip()
+                ]
+            else:
+                self.initial_data["imagenes"] = []
 
         return self
 

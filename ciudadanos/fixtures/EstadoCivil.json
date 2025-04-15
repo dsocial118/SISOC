@@ -1,0 +1,51 @@
+[
+    {
+        "model": "ciudadanos.estadocivil",
+        "pk": 1,
+        "fields": {
+            "estado": "Soltero"
+        }
+    },
+    {
+        "model": "ciudadanos.estadocivil",
+        "pk": 2,
+        "fields": {
+            "estado": "Casado"
+        }
+    },
+    {
+        "model": "ciudadanos.estadocivil",
+        "pk": 3,
+        "fields": {
+            "estado": "Divorciado/Separado"
+        }
+    },
+    {
+        "model": "ciudadanos.estadocivil",
+        "pk": 4,
+        "fields": {
+            "estado": "Viudo"
+        }
+    },
+    {
+        "model": "ciudadanos.estadocivil",
+        "pk": 5,
+        "fields": {
+            "estado": "Conviviendo"
+        }
+    },
+    {
+        "model": "ciudadanos.estadocivil",
+        "pk": 6,
+        "fields": {
+            "estado": "En pareja"
+        }
+    },
+    {
+        "model": "ciudadanos.estadocivil",
+        "pk": 7,
+        "fields": {
+            "estado": "Otro"
+        }
+    }
+]

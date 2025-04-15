@@ -1,0 +1,80 @@
+{% extends "includes/main.html" %};
+{% load static %}
+;
+{% block title %}Historial de alertas{% endblock %}
+;
+{% block titulo-pagina %}Historial de alertas{% endblock %}
+;
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right mt-2 mr-2">
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanos' %}">Ciudadano</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanos_ver' ciudadano.id %}">{{ ciudadano.apellido }}, {{ ciudadano.nombre }}</a>
+        </li>
+        <li class="breadcrumb-item active">Historial de alertas</li>
+    </ol>
+{% endblock %}
+;
+{% block menu-adicional %}{% endblock %}
+;
+{% block content %}
+    <div class="row ">
+        <!-- botones -->
+        <div class="col-12 my-3 mx-2 d-print-none">
+            <a href="{% url 'alertas_crear' ciudadano.id %}"
+               class="btn btn-primary mr-1">Editar</a>
+        </div>
+        <!-- ./botones -->
+    </div>
+    <div class="row ">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <table class="table table-striped table-bordered table-hover tabladt">
+                        <thead>
+                            <tr>
+                                <th>Estado</th>
+                                <th>Alerta</th>
+                                <th>Categoría</th>
+                                <th>Dimensión</th>
+                                <th>Gravedad</th>
+                                <th>Creada por</th>
+                                <th>Fecha Inicio</th>
+                                <th>Eliminada por</th>
+                                <th>Fecha Fin</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for a in ciudadano_alertas %}
+                                <tr>
+                                    <td class="font-weight-bold {% if a.estado == 'Activa' %} text-success {% else %} text-danger {% endif %}">
+                                        {{ a.estado }}
+                                    </td>
+                                    <td>{{ a.alerta }}</td>
+                                    <td>{{ a.alerta.categoria }}</td>
+                                    <td>{{ a.alerta.categoria.dimension }}</td>
+                                    <td>
+                                        <span class="badge badge-{{ a.alerta.gravedad }} p-2">{{ a.alerta.gravedad }}</span>
+                                    </td>
+                                    <td>{{ a.creada_por }}</td>
+                                    <td>{{ a.fecha_inicio|date:"d/m/Y" }}</td>
+                                    <td>{{ a.eliminada_por|default_if_none:"-" }}</td>
+                                    <td>{{ a.fecha_fin|date:"d/m/Y" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mt-4 d-print-none">
+        <div class="col-12 mx-2">
+            <a href="{% url 'ciudadanos_ver' ciudadano.id %}"
+               class="btn btn-secondary">Volver</a>
+        </div>
+    </div>
+{% endblock %}
+{% block customJS %}{% endblock %}

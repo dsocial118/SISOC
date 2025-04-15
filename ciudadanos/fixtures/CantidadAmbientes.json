@@ -1,0 +1,30 @@
+[
+    {
+        "model": "ciudadanos.cantidadambientes",
+        "pk": 1,
+        "fields": {
+            "cantidad": "1"
+        }
+    },
+    {
+        "model": "ciudadanos.cantidadambientes",
+        "pk": 2,
+        "fields": {
+            "cantidad": "2"
+        }
+    },
+    {
+        "model": "ciudadanos.cantidadambientes",
+        "pk": 3,
+        "fields": {
+            "cantidad": "3"
+        }
+    },
+    {
+        "model": "ciudadanos.cantidadambientes",
+        "pk": 4,
+        "fields": {
+            "cantidad": "4"
+        }
+    }
+]
