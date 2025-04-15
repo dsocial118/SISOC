@@ -6,9 +6,7 @@ from comedores.models.comedor import (
     Referente,
     Intervencion,
     ImagenComedor,
-    Nomina,
-    Admisiones,
-    DuplaContacto,
+    Nomina
 )
 
 from configuraciones.models import Municipio, Provincia
