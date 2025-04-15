@@ -36,7 +36,7 @@ class Admision(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=["fk_comedor"]),
+            models.Index(fields=["comedor"]),
         ]
         verbose_name = "admisiontecnico"
         verbose_name_plural = "admisionestecnicos"
@@ -58,7 +58,7 @@ class Documentacion(models.Model):
     convenios = models.ManyToManyField("TipoConvenio", blank=True)
 
     def __str__(self):
-        return str (self.nombre) if self.nombre else "Sin nombre"
+        return str(self.nombre) if self.nombre else "Sin nombre"
 
 
 class ArchivoAdmision(models.Model):

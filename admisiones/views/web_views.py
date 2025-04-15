@@ -68,12 +68,12 @@ def eliminar_archivo_admision(request, admision_id, documentacion_id):
 
 
 class AdmisionesTecnicosListView(ListView):
-    model = Comedor
-    template_name = "comedor/admisiones_tecnicos_list.html"
+    model = Admision
+    template_name = "comedores/admisiones_tecnicos_list.html"
     context_object_name = "comedores"
 
     def get_queryset(self):
-        admision_subquery = Admision.objects.filter(fk_comedor=OuterRef("pk")).values(
+        admision_subquery = Admision.objects.filter(comedor=OuterRef("pk")).values(
             "id"
         )[:1]
         return Comedor.objects.annotate(admision_id=Subquery(admision_subquery))
@@ -109,7 +109,7 @@ class AdmisionesTecnicosCreateView(CreateView):
         if tipo_convenio_id:
             tipo_convenio = get_object_or_404(TipoConvenio, pk=tipo_convenio_id)
             admision = Admision.objects.create(
-                fk_comedor=comedor, tipo_convenio=tipo_convenio
+                comedor=comedor, tipo_convenio=tipo_convenio
             )
             return redirect(
                 "admisiones_tecnicos_editar", pk=admision.pk
@@ -127,7 +127,7 @@ class AdmisionesTecnicosUpdateView(UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         admision = self.get_object()
-        comedor = Comedor.objects.get(pk=admision.fk_comedor_id)
+        comedor = Comedor.objects.get(pk=admision.comedor_id)
         convenios = TipoConvenio.objects.all()
 
         # Obtener documentación requerida para el convenio actual
