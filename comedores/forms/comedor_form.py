@@ -180,13 +180,3 @@ class ImagenComedorForm(forms.ModelForm):
         fields = "__all__"
 
 
-class AdmisionesForm(forms.ModelForm):
-    class Meta:
-        model = Admisiones
-        fields = "__all__"
-
-
-class DuplaContactoForm(forms.ModelForm):
-    class Meta:
-        model = DuplaContacto
-        fields = "__all__"
