@@ -1,20 +1,20 @@
 [
     {
-        "model": "comedores.tipoconvenio",
+        "model": "admisiones.tipoconvenio",
         "pk": 1,
         "fields": {
             "nombre": "Organización Base"
         }
     },
     {
-        "model": "comedores.tipoconvenio",
+        "model": "admisiones.tipoconvenio",
         "pk": 2,
         "fields": {
             "nombre": "Personería Jurídica Eclesiástica"
         }
     },
     {
-        "model": "comedores.tipoconvenio",
+        "model": "admisiones.tipoconvenio",
         "pk": 3,
         "fields": {
             "nombre": "Personería Jurídica"
