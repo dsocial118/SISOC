@@ -1,0 +1,93 @@
+[
+    {
+        "model": "ciudadanos.grado",
+        "pk": 1,
+        "fields": {
+            "grado": "1º Grado"
+        }
+    },
+    {
+        "model": "ciudadanos.grado",
+        "pk": 2,
+        "fields": {
+            "grado": "2º Grado"
+        }
+    },
+    {
+        "model": "ciudadanos.grado",
+        "pk": 3,
+        "fields": {
+            "grado": "3º Grado"
+        }
+    },
+    {
+        "model": "ciudadanos.grado",
+        "pk": 4,
+        "fields": {
+            "grado": "4º Grado"
+        }
+    },
+    {
+        "model": "ciudadanos.grado",
+        "pk": 5,
+        "fields": {
+            "grado": "5º Grado"
+        }
+    },
+    {
+        "model": "ciudadanos.grado",
+        "pk": 6,
+        "fields": {
+            "grado": "6º Grado"
+        }
+    },
+    {
+        "model": "ciudadanos.grado",
+        "pk": 7,
+        "fields": {
+            "grado": "1º año"
+        }
+    },
+    {
+        "model": "ciudadanos.grado",
+        "pk": 8,
+        "fields": {
+            "grado": "2º año"
+        }
+    },
+    {
+        "model": "ciudadanos.grado",
+        "pk": 9,
+        "fields": {
+            "grado": "3º año"
+        }
+    },
+    {
+        "model": "ciudadanos.grado",
+        "pk": 10,
+        "fields": {
+            "grado": "4º año"
+        }
+    },
+    {
+        "model": "ciudadanos.grado",
+        "pk": 11,
+        "fields": {
+            "grado": "5º año"
+        }
+    },
+    {
+        "model": "ciudadanos.grado",
+        "pk": 12,
+        "fields": {
+            "grado": "6º año"
+        }
+    },
+    {
+        "model": "ciudadanos.grado",
+        "pk": 13,
+        "fields": {
+            "grado": "Otro"
+        }
+    }
+]

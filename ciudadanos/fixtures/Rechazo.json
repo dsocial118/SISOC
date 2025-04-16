@@ -1,0 +1,16 @@
+[
+    {
+        "model": "ciudadanos.rechazo",
+        "pk": 1,
+        "fields": {
+            "motivo": "No corresponde"
+        }
+    },
+    {
+        "model": "ciudadanos.rechazo",
+        "pk": 2,
+        "fields": {
+            "motivo": "Fuera de edad requerida"
+        }
+    }
+]

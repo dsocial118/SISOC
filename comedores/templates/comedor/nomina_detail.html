@@ -84,7 +84,7 @@
         </div>
     </div>
     <div class="row p-0 m-0 " id="seleccion">
-        <!-- Datos de legajo -->
+        <!-- Datos de ciudadano -->
         <div class="col-sm-4 pb-3">
             <div class="card card-outline card-primary h-100 mb-0">
                 <div class="card-header">
@@ -104,7 +104,7 @@
                             Nombre
                         </dd>
                         <dt class="col-sm-7 mb-2">
-                            <a href="{% url 'comedor_detalle' object.id %}" title="Ver legajo">{{ object.nombre }}</a>
+                            <a href="{% url 'comedor_detalle' object.id %}" title="Ver ciudadano">{{ object.nombre }}</a>
                         </dt>
                         <dd class="col-sm-5 mb-2">
                             Gestionar
@@ -163,9 +163,9 @@
                                     <td>{{ e.fecha|date:'d/m/Y' }}</td>
                                     <td>{{ e.nombre }}</td>
                                     <td>{{ e.apellido }}</td>
-                                    <td>{{ e.fk_sexo }}</td>
+                                    <td>{{ e.o }}</td>
                                     <td>{{ e.dni }}</td>
-                                    <td>{{ e.fk_estado }}</td>
+                                    <td>{{ e.ado }}</td>
                                     <td>
                                         <a href="{% url 'nomina_editar' e.id object.id %}">Editar</a>
                                     </td>

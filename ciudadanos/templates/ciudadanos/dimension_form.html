@@ -1,0 +1,444 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Dimensiones{% endblock %}
+{% block titulo-pagina %}Ciudadano{% endblock %}
+;
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right mt-2 mr-2">
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanos' %}">Ciudadano</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanos_ver' ciudadano.id %}">{{ ciudadano.apellido }} {{ ciudadano.nombre }}</a>
+        </li>
+        <li class="breadcrumb-item active">Dimensiones</li>
+    </ol>
+{% endblock %}
+;
+{% load crispy_forms_tags %}
+{% block content %}
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card card-primary card-outline">
+                <div class="card-body">
+                    <!-- stepper -->
+                    <div class="bs-stepper">
+                        <div class="bs-stepper-header mb-3" role="tablist">
+                            <div class="step d-none d-sm-inline">
+                                <a href="{% url 'ciudadanos_editar' ciudadano.id %}"
+                                   class="step-trigger"
+                                   role="tab">
+                                    <span class="bs-stepper-circle">1</span>
+                                    <span class="bs-stepper-label">Datos Personales</span>
+                                </a>
+                            </div>
+                            <div class="line d-none d-sm-inline"></div>
+                            <div class="step active">
+                                <a type="button" class="step-trigger text-primary " role="tab">
+                                    <span class="bs-stepper-circle">2</span>
+                                    <span class="bs-stepper-label">Dimensiones</span>
+                                </a>
+                            </div>
+                            <div class="line"></div>
+                            <div class="step">
+                                <a href="{% url 'grupofamiliar_crear' ciudadano.id %}"
+                                   class="step-trigger"
+                                   role="tab">
+                                    <span class="bs-stepper-circle">3</span>
+                                    <span class="bs-stepper-label">Grupo Familiar</span>
+                                </a>
+                            </div>
+                            <div class="line d-none d-sm-inline"></div>
+                            <div class="step d-none d-sm-inline">
+                                <a href="{% url 'ciudadanosgrupohogar_crear' object.id %}"
+                                   class="step-trigger"
+                                   role="tab">
+                                    <span class="bs-stepper-circle">4</span>
+                                    <span class="bs-stepper-label">Grupo Hogar</span>
+                                </a>
+                            </div>
+                            <div class="line d-none d-sm-inline"></div>
+                            <div class="step d-none d-sm-inline">
+                                <a href="{% url 'alertas_crear' ciudadano.id %}"
+                                   class="step-trigger"
+                                   role="tab">
+                                    <span class="bs-stepper-circle">5</span>
+                                    <span class="bs-stepper-label">Alertas</span>
+                                </a>
+                            </div>
+                            <div class="line d-none d-sm-inline"></div>
+                            <div class="step d-none d-sm-inline">
+                                <a href="{% url 'ciudadanosgrupohogar_crear' ciudadano.id %}"
+                                   class="step-trigger"
+                                   role="tab">
+                                    <span class="bs-stepper-circle">6</span>
+                                    <span class="bs-stepper-label">Archivos</span>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="row mt-5">
+                            <div class="col-12 px-0">
+                                <form novalidate method="POST" enctype="multipart/form-data">
+                                    <!-- Security token -->
+                                    {% csrf_token %}
+                                    <div class="card">
+                                        <div class="card-header ml-sm-3 px-0">
+                                            <ul class="nav nav-pills card-title justify-content-between">
+                                                <li class="nav-item">
+                                                    <a class="nav-link py-0 active"
+                                                       href="#dimensionfamilia"
+                                                       data-bs-toggle="tab">Familia</a>
+                                                </li>
+                                                <li class="nav-item">
+                                                    <a class="nav-link py-0" href="#dimensionvivienda" data-bs-toggle="tab">Vivienda</a>
+                                                </li>
+                                                <li class="nav-item">
+                                                    <a class="nav-link py-0" href="#dimensionsalud" data-bs-toggle="tab">Salud</a>
+                                                </li>
+                                                <li class="nav-item">
+                                                    <a class="nav-link py-0" href="#dimensioneducacion" data-bs-toggle="tab">Educación</a>
+                                                </li>
+                                                <li class="nav-item">
+                                                    <a class="nav-link py-0" href="#dimensioneconomia" data-bs-toggle="tab">Economía</a>
+                                                </li>
+                                                <li class="nav-item">
+                                                    <a class="nav-link py-0" href="#dimensiontrabajo" data-bs-toggle="tab">Trabajo</a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="card-body ">
+                                            <div class="tab-content">
+                                                <!-- dimension familia -->
+                                                <div class="active tab-pane" id="dimensionfamilia">
+                                                    <div class="row">
+                                                        <div class="col-12 d-none">
+                                                            <div class="form-group">{{ form.ciudadano| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6">
+                                                            <div class="form-group">{{ form.cant_hijos| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6">
+                                                            <div class="form-group ">{{ form.otro_responsable| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6">
+                                                            <div class="form-group">{{ form.hay_prbl_smental| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6">
+                                                            <div class="form-group">{{ form.hay_priv_libertad| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6">
+                                                            <div class="form-group">{{ form.hay_enf_cronica| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6">
+                                                            <div class="form-group">{{ form.hay_embarazadas| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6">
+                                                            <div class="form-group">{{ form.hay_fam_discapacidad| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-12">
+                                                            <div class="form-group">{{ form.obs_familia| as_crispy_field }}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- ./dimension familia  -->
+                                                <!-- dimension vivienda -->
+                                                <div class=" tab-pane" id="dimensionvivienda">
+                                                    <div class="row">
+                                                        <div class="col-12 d-none">
+                                                            <div class="form-group">{{ form_vivienda.ciudadano| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-4">
+                                                            <div class="form-group">{{ form_vivienda.posesion| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-4">
+                                                            <div class="form-group">{{ form_vivienda.tipo| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-4">
+                                                            <div class="form-group">{{ form_vivienda.material| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-4">
+                                                            <div class="form-group ">{{ form_vivienda.pisos| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-4">
+                                                            <div class="form-group">{{ form_vivienda.cant_ambientes| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-4">
+                                                            <div class="form-group">{{ form_vivienda.cant_camas| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-4">
+                                                            <div class="form-group">{{ form_vivienda.cant_hogares| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-4">
+                                                            <div class="form-group">{{ form_vivienda.cant_convivientes| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-4">
+                                                            <div class="form-group">{{ form_vivienda.cant_menores| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-4">
+                                                            <div class="form-group">{{ form_vivienda.ubicacion_vivienda| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-4 mb-3">
+                                                            <div class="form-group">{{ form_vivienda.hay_banio| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-4">
+                                                            <div class="form-group">{{ form_vivienda.hay_agua_caliente| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-4">
+                                                            <div class="form-group">{{ form_vivienda.hay_desmoronamiento| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-4">
+                                                            <div class="form-group">{{ form_vivienda.gas| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-4">
+                                                            <div class="form-group">{{ form_vivienda.techos| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-4">
+                                                            <div class="form-group">{{ form_vivienda.agua| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-4" id="container_desague">
+                                                            <div class="form-group">{{ form_vivienda.desague| as_crispy_field }}</div>
+                                                        </div>
+                                                        <!-- ./Nuevos campos vivienda Form Editar o cargar -->
+                                                        <div class="col-sm-4 mb-3">
+                                                            <div class="form-group">{{ form_vivienda.PoseenPC| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-4 mb-3">
+                                                            <div class="form-group">{{ form_vivienda.Poseeninternet| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-4 mb-3">
+                                                            <div class="form-group">{{ form_vivienda.PoseenCelular| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-12">
+                                                            <div class="form-group">{{ form_vivienda.obs_vivienda| as_crispy_field }}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- ./dimension vivienda -->
+                                                <!-- dimension salud -->
+                                                <div class=" tab-pane" id="dimensionsalud">
+                                                    <div class="row">
+                                                        <div class="col-12 d-none">
+                                                            <div class="form-group">{{ form_salud.ciudadano| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6">
+                                                            <div class="form-group">{{ form_salud.lugares_atencion| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6">
+                                                            <div class="form-group">{{ form_salud.frecuencia_controles_medicos| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6 mb-3">
+                                                            <div class="form-group">{{ form_salud.hay_obra_social| as_crispy_field }}</div>
+                                                            <div class="form-group">{{ form_salud.hay_enfermedad| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6 mb-3">
+                                                            <div class="form-group">{{ form_salud.hay_discapacidad| as_crispy_field }}</div>
+                                                            <div class="form-group">{{ form_salud.hay_cud| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-12">
+                                                            <div class="form-group">{{ form_salud.obs_salud| as_crispy_field }}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- ./dimension salud -->
+                                                <!-- deimension educacion -->
+                                                <div class=" tab-pane" id="dimensioneducacion">
+                                                    <div class="row">
+                                                        <div class="col-12 d-none">
+                                                            <div class="form-group">{{ form_educacion.ciudadano| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm my-6">
+                                                            <div class="form-group">{{ form_educacion.asiste_escuela| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6" id="container_max_nivel">
+                                                            <div class="form-group">{{ form_educacion.max_nivel| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6" id="container_nivel">
+                                                            <div class="form-group">{{ form_educacion.estado_nivel| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6" id="container_incompleto">
+                                                            <div class="form-group">{{ form_educacion.nivel_incompleto| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6" id="container_sin_edu">
+                                                            <div class="form-group">{{ form_educacion.sin_educacion_formal| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6">
+                                                            <div class="form-group">{{ form_educacion.realizando_curso| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6" id="container_area_curso">
+                                                            <div class="form-group">{{ form_educacion.area_curso| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6">
+                                                            <div class="form-group">{{ form_educacion.interes_capacitacion_laboral| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6">
+                                                            <div class="form-group">{{ form_educacion.oficio| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6">
+                                                            <div class="form-group">{{ form_educacion.area_oficio| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6">
+                                                            <div class="form-group">{{ form_educacion.interes_estudio| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6">
+                                                            <div class="form-group">{{ form_educacion.interes_curso| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-3">
+                                                            <div class="form-group">{{ form_educacion.provinciaInstitucion | as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-3">
+                                                            <div class="form-group">{{ form_educacion.municipioInstitucion | as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-3">
+                                                            <div class="form-group">{{ form_educacion.localidadInstitucion | as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-3">
+                                                            <div class="form-group">{{ form_educacion.barrio_institucion | as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="row" id="container_institucion">
+                                                            <div class="col-sm-6">
+                                                                <div class="form-group">{{ form_educacion.institucion| as_crispy_field }}</div>
+                                                            </div>
+                                                            <div class="col-sm-6">
+                                                                <div class="form-group">{{ form_educacion.gestion| as_crispy_field }}</div>
+                                                            </div>
+                                                            <div class="col-sm-4">
+                                                                <div class="form-group">{{ form_educacion.ciclo| as_crispy_field }}</div>
+                                                            </div>
+                                                            <div class="col-sm-4">
+                                                                <div class="form-group">{{ form_educacion.grado| as_crispy_field }}</div>
+                                                            </div>
+                                                            <div class="col-sm-4">
+                                                                <div class="form-group">{{ form_educacion.turno| as_crispy_field }}</div>
+                                                            </div>
+                                                            <div class="col-sm-6">
+                                                                <div class="form-group">{{ form_educacion.calle_institucion | as_crispy_field }}</div>
+                                                            </div>
+                                                            <div class="col-sm-6">
+                                                                <div class="form-group">{{ form_educacion.numero_institucion | as_crispy_field }}</div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-12">
+                                                            <div class="form-group">{{ form_educacion.observaciones| as_crispy_field }}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- ./dimension educacion -->
+                                                <!-- dimension economia -->
+                                                <div class=" tab-pane" id="dimensioneconomia">
+                                                    <div class="row">
+                                                        <div class="col-12 d-none">
+                                                            <div class="form-group">{{ form_economia.ciudadano| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6">
+                                                            <div class="form-group">{{ form_economia.recibe_plan| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6" id="container_plan_social">
+                                                            <div class="form-group">{{ form_economia.planes| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6">
+                                                            <div class="form-group">{{ form_economia.ingresos| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6">
+                                                            <div class="form-group">{{ form_economia.cant_aportantes| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-12">
+                                                            <div class="form-group">{{ form_economia.obs_economia| as_crispy_field }}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- ./dimension economia  -->
+                                                <!-- dimension trabajo -->
+                                                <div class=" tab-pane" id="dimensiontrabajo">
+                                                    <div class="row">
+                                                        <div class="col-12 d-none">
+                                                            <div class="form-group">{{ form_trabajo.ciudadano| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm my-6">
+                                                            <div class="form-group">{{ form_trabajo.tiene_trabajo| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6 mb-0" id="container_busqueda_laboral">
+                                                            <div class="form-group">{{ form_trabajo.busqueda_laboral| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6" id="container_ocupacion">
+                                                            <div class="form-group">{{ form_trabajo.ocupacion| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6 mb-0" id="container_tiempo_busqueda">
+                                                            <div class="form-group">{{ form_trabajo.Tiempobusqueda_laboral| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6 mb-0" id="container_no_busqueda">
+                                                            <div class="form-group">{{ form_trabajo.nobusqueda_laboral| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6" id="container_contratacion">
+                                                            <div class="form-group">{{ form_trabajo.modo_contratacion| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6" id="container_horas_semanales">
+                                                            <div class="form-group">{{ form_trabajo.horasSemanales| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6" id="container_actividad_realizada">
+                                                            <div class="form-group">{{ form_trabajo.actividadRealizadaComo| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6" id="container_duracion_trabajo">
+                                                            <div class="form-group">{{ form_trabajo.duracionTrabajo| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6" id="container_jubilacion">
+                                                            <div class="form-group">{{ form_trabajo.aportesJubilacion| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-sm-6 mb-0" id="container_conviviente">
+                                                            <div class="form-group">{{ form_trabajo.conviviente_trabaja| as_crispy_field }}</div>
+                                                        </div>
+                                                        <div class="col-12">
+                                                            <div class="form-group">{{ form_trabajo.obs_trabajo| as_crispy_field }}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- ./dimension trabajo -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- botones del pie -->
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="form-group mb-0 mt-3 d-flex justify-content-between">
+                                                <button type="submit"
+                                                        id="form_step1"
+                                                        name="form_step1"
+                                                        class="btn btn-secondary mb-3">Volver</button>
+                                                <button type="submit"
+                                                        id="form_step2"
+                                                        name="form_step2"
+                                                        class="btn btn-primary mb-3">Guardar</button>
+                                                <button type="submit"
+                                                        id="form_step3"
+                                                        name="form_step3"
+                                                        class="btn btn-secondary mb-3">Continuar</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- /botones del pie -->
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% load crispy_forms_tags %}
+<form method="post">
+    {% csrf_token %}
+    {{ form|crispy }}
+    <button type="submit">Enviar</button>
+</form>
+{% block customCSS %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/ciudadanosdimensionesform.css' %}" />
+{% endblock %}
+{% block customJS %}
+    <script>
+        var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
+        var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
+    </script>
+    <script src="{% static 'custom/js/formutils.js' %}"></script>
+    <script src="{% static 'custom/js/ciudadanosdimensionesform.js' %}"></script>
+{% endblock %}

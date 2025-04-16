@@ -1,0 +1,65 @@
+[
+    {
+        "model": "ciudadanos.tipotechovivienda",
+        "pk": 1,
+        "fields": {
+            "tipo": "Cubierta asfáltica o membrana"
+        }
+    },
+    {
+        "model": "ciudadanos.tipotechovivienda",
+        "pk": 2,
+        "fields": {
+            "tipo": "Baldosa o losa (sin cubierta)"
+        }
+    },
+    {
+        "model": "ciudadanos.tipotechovivienda",
+        "pk": 3,
+        "fields": {
+            "tipo": "Pizarra o teja"
+        }
+    },
+    {
+        "model": "ciudadanos.tipotechovivienda",
+        "pk": 4,
+        "fields": {
+            "tipo": "Chapa de metal (sin cubierta)"
+        }
+    },
+    {
+        "model": "ciudadanos.tipotechovivienda",
+        "pk": 5,
+        "fields": {
+            "tipo": "Chapa de fibrocemento o plástico"
+        }
+    },
+    {
+        "model": "ciudadanos.tipotechovivienda",
+        "pk": 6,
+        "fields": {
+            "tipo": "Chapa de cartón"
+        }
+    },
+    {
+        "model": "ciudadanos.tipotechovivienda",
+        "pk": 7,
+        "fields": {
+            "tipo": "Caña, palma, tabla o paja con o sin barro"
+        }
+    },
+    {
+        "model": "ciudadanos.tipotechovivienda",
+        "pk": 8,
+        "fields": {
+            "tipo": "Otro"
+        }
+    },
+    {
+        "model": "ciudadanos.tipotechovivienda",
+        "pk": 9,
+        "fields": {
+            "tipo": "Ns/Nc"
+        }
+    }
+]

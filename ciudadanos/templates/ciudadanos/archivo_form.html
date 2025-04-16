@@ -1,0 +1,265 @@
+{% extends "includes/main.html" %};
+{% load static %}
+;
+{% load crispy_forms_tags %}
+{% block head %}
+    <!-- Dropzone plugin -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.css" />
+{% endblock %}
+{% block title %}Archivo{% endblock %}
+;
+{% block titulo-pagina %}Ciudadano{% endblock %}
+;
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right mt-2 mr-2">
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanos' %}">Ciudadano</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanos_ver' ciudadano.pk %}">{{ ciudadano }}</a>
+        </li>
+        <li class="breadcrumb-item active ">Archivo</li>
+    </ol>
+{% endblock %}
+;
+{% block menu-adicional %}{% endblock %}
+;
+{% block content %}
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card card-primary card-outline">
+                <div class="card-body">
+                    <div class="bs-stepper">
+                        <div class="bs-stepper-header" role="tablist">
+                            <div class="step d-none d-sm-inline">
+                                <a href="{% url 'ciudadanos_editar' ciudadano.pk %}"
+                                   class="step-trigger"
+                                   role="tab">
+                                    <span class="bs-stepper-circle">1</span>
+                                    <span class="bs-stepper-label">Datos Personales</span>
+                                </a>
+                            </div>
+                            <div class="line d-none d-sm-inline"></div>
+                            <div class="step d-none d-sm-inline">
+                                <a href="{% url 'ciudadanosdimensiones_editar' ciudadano.pk %}"
+                                   class="step-trigger"
+                                   role="tab">
+                                    <span class="bs-stepper-circle">2</span>
+                                    <span class="bs-stepper-label">Dimensiones</span>
+                                </a>
+                            </div>
+                            <div class="line d-none d-sm-inline"></div>
+                            <div class="step d-none d-sm-inline">
+                                <a href="{% url 'grupofamiliar_crear' ciudadano.pk %}"
+                                   class="step-trigger"
+                                   role="tab">
+                                    <span class="bs-stepper-circle">3</span>
+                                    <span class="bs-stepper-label">Grupo Familiar</span>
+                                </a>
+                            </div>
+                            <div class="line d-none d-sm-inline"></div>
+                            <div class="step d-none d-sm-inline">
+                                <a href="{% url 'ciudadanosgrupohogar_crear' ciudadano.pk %}"
+                                   class="step-trigger"
+                                   role="tab">
+                                    <span class="bs-stepper-circle">4</span>
+                                    <span class="bs-stepper-label">Grupo Hogar</span>
+                                </a>
+                            </div>
+                            <div class="line d-none d-sm-inline"></div>
+                            <div class="step ">
+                                <a href="{% url 'alertas_crear' ciudadano.pk %}"
+                                   class="step-trigger"
+                                   role="tab">
+                                    <span class="bs-stepper-circle">5</span>
+                                    <span class="bs-stepper-label">Alertas</span>
+                                </a>
+                            </div>
+                            <div class="line"></div>
+                            <div class="step active">
+                                <a type="button" class="step-trigger  text-primary" role="tab">
+                                    <span class="bs-stepper-circle">6</span>
+                                    <span class="bs-stepper-label">Archivos</span>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="row mt-5">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h3 class="card-title font-weight-bold">Archivos</h3>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row" id="resultado">
+                                            {% if imagenes or documentos %}
+                                                {% if imagenes %}
+                                                    {% for f in imagenes %}
+                                                        <ul class="list-unstyled">
+                                                            <li class="p-2 text-center" id="archivo-{{ f.id }}">
+                                                                <a href="{{ MEDIA_URL }}{{ f.archivo.url }}"
+                                                                   class=""
+                                                                   target="_blank"
+                                                                   title='{{ f.archivo|cut:"ciudadanos/archivos/" }}'>
+                                                                    <img src="{{ MEDIA_URL }}{{ f.archivo.url }}"
+                                                                         alt="archivo de imagen"
+                                                                         class="rounded"
+                                                                         style="width: 60px;
+                                                                                height: 60px" />
+                                                                    <span class="users-list-name">{{ f.archivo|cut:"ciudadanos/archivos/"|truncatechars:7 }}</span>
+                                                                </a>
+                                                                <span class="users-list-date">
+                                                                    <button class="btn btn-danger btn-sm"
+                                                                            onclick='deleteArchivo("{{ f.id }}")'
+                                                                            type="button">Eliminar</button>
+                                                                </span>
+                                                            </li>
+                                                        </ul>
+                                                    {% endfor %}
+                                                {% endif %}
+                                                {% if documentos %}
+                                                    {% for f in documentos %}
+                                                        <ul class="list-unstyled" id="archivo-{{ f.id }}">
+                                                            <li class="p-2 text-center">
+                                                                <a href="{{ MEDIA_URL }}{{ f.archivo.url }}"
+                                                                   class=""
+                                                                   target="_blank"
+                                                                   title='{{ f.archivo|cut:"ciudadanos/archivos/" }}'>
+                                                                    <i class="fas fa-file text-dark"
+                                                                       style="width: 60px;
+                                                                              height: 60px;
+                                                                              font-size: 60px"></i>
+                                                                    <span class="users-list-name">{{ f.archivo|cut:"ciudadanos/archivos/"|truncatechars:7 }}</span>
+                                                                </a>
+                                                                <span class="users-list-date">
+                                                                    <button class="btn btn-danger btn-sm"
+                                                                            onclick='deleteArchivo("{{ f.id }}")'
+                                                                            type="button">Eliminar</button>
+                                                                </span>
+                                                            </li>
+                                                        </ul>
+                                                    {% endfor %}
+                                                {% endif %}
+                                            {% else %}
+                                                <div class="col-12 text-center">
+                                                    <h6 class="text-muted">Sin archivos</h6>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <div class="card card-default">
+                                <div class="card-header">
+                                    <h3 class="card-title font-weight-bold">Agregar archivos</h3>
+                                </div>
+                                <div class="card-body">
+                                    <form method="post" enctype="multipart/form-data">
+                                        {% csrf_token %}
+                                        <div id="actions" class="row">
+                                            <div class="col-lg-6">
+                                                <div class="btn-group w-100">
+                                                    <span class="btn btn-light col fileinput-button dz-clickable">
+                                                        <span class="pl-1">Seleccionar achivos</span>
+                                                    </span>
+                                                    <button type="submit" class="btn btn-primary col start">
+                                                        <span class="pl-1">Agregar todos</span>
+                                                    </button>
+                                                    <button type="remove" class="btn btn-secondary col cancel">
+                                                        <span class="pl-1">Cancelar todos</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6 d-flex align-items-center">
+                                                <div class="fileupload-process w-100">
+                                                    <div id="total-progress"
+                                                         class="progress progress-striped active"
+                                                         role="progressbar"
+                                                         aria-valuemin="0"
+                                                         aria-valuemax="100"
+                                                         aria-valuenow="0">
+                                                        <div class="progress-bar progress-bar-success"
+                                                             style="width:0%"
+                                                             data-dz-uploadprogress=""></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="table table-striped files" id="previews">
+                                            <div id="template" class="row mt-2">
+                                                <div class="col-auto">
+                                                    <span class="preview">
+                                                        <img src="data:," alt="" data-dz-thumbnail />
+                                                    </span>
+                                                </div>
+                                                <div class="col d-flex align-items-center">
+                                                    <p class="mb-0">
+                                                        <span class="lead" data-dz-name></span>
+                                                        (<span data-dz-size></span>)
+                                                    </p>
+                                                    <strong class="error text-danger" data-dz-errormessage></strong>
+                                                </div>
+                                                <div class="col-4 d-flex align-items-center">
+                                                    <div class="progress progress-striped active w-100"
+                                                         role="progressbar"
+                                                         aria-valuemin="0"
+                                                         aria-valuemax="100"
+                                                         aria-valuenow="0">
+                                                        <div class="progress-bar progress-bar-success"
+                                                             style="width:0%"
+                                                             data-dz-uploadprogress></div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-auto d-flex align-items-center">
+                                                    <div class="btn-group">
+                                                        <button class="btn btn-primary start">
+                                                            <span class="pl-1">Agregar</span>
+                                                        </button>
+                                                        <button data-dz-remove class="btn btn-secondary cancel">
+                                                            <span class="pl-1">Cancelar</span>
+                                                        </button>
+                                                        <button data-dz-remove class="btn btn-danger delete">
+                                                            <span class="pl-1">Eliminar</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- botones del pie -->
+            <div class="row mt-3">
+                <div class="col-md-12">
+                    <div class="form-group mb-0 mt-3 d-flex justify-content-between">
+                        <a href="{% url 'alertas_crear' ciudadano.pk %}"
+                           class="btn btn-secondary mb-3">Volver</a>
+                        <a href="{% url 'ciudadanos_ver' ciudadano.pk %}"
+                           class="btn btn-primary mb-3">Guardar</a>
+                        <a href="#" class="mx-5 d-none d-sm-inline"></a>
+                    </div>
+                </div>
+            </div>
+            <!-- /botones del pie -->
+        </div>
+    </div>
+{% endblock %}
+{% block customJS %}
+    <!-- Dropzone plugin -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/min/dropzone.min.js"></script>
+    <script>
+        const csrf = document.getElementsByName('csrfmiddlewaretoken')[0].value
+        const pk = '{{ciudadano.pk}}';
+        const createUrl = "{% url 'archivo_ajax_crear' %}";
+        const deleteUrl = '{% url "archivo_ajax_borrar" %}';
+    </script>
+    <script src="{% static 'custom/js/ciudadanosarchivosform.js' %}"></script>
+{% endblock %}
