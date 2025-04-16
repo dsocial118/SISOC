@@ -4,14 +4,12 @@ from duplas.models import Dupla
 
 
 class DuplaForm(forms.ModelForm):
-    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.filtrar_campos_tecnico_abogado()
 
-        self.filtrar_campos_tecnico_aboagdo()
-
-    def filtrar_campos_tecnico_aboagdo(self):
-        # Filtrar usuarios que pertenezcan al grupo "Tecnico Comedor"
+    def filtrar_campos_tecnico_abogado(self):
+        # Filtrar usuarios que pertenezcan al grupo "Técnico Comedor"
         grupo_tecnico = Group.objects.filter(name="Tecnico Comedor").first()
         if grupo_tecnico:
             self.fields["tecnico"].queryset = grupo_tecnico.user_set.all()
@@ -25,12 +23,10 @@ class DuplaForm(forms.ModelForm):
         else:
             self.fields["abogado"].queryset = self.fields["abogado"].queryset.none()
 
-
     class Meta:
         model = Dupla
         fields = "__all__"
         widgets = {
-            "tecnico": forms.CheckboxSelectMultiple(),
             "abogado": forms.Select(attrs={"class": "form-control"}),
         }
         labels = {

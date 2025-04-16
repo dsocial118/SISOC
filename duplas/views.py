@@ -14,6 +14,7 @@ from django.views.generic import (
 )
 from duplas.dupla_service import DuplaService
 from duplas.models import Dupla
+from duplas.forms import DuplaForm
 
 
 class DuplaListView(ListView):
@@ -31,7 +32,7 @@ class DuplaListView(ListView):
 class DuplaCreateView(CreateView):
     model = Dupla
     template_name = "dupla_form.html"
-    fields = ["nombre", "tecnico", "estado", "abogado"]
+    form_class = DuplaForm
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
