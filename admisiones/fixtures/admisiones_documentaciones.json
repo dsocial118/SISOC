@@ -4,7 +4,7 @@
         "pk": 1,
         "fields": {
             "nombre": "Nota de Solicitud e inclusión al programa",
-            "tipo": "todos",
+            "tipo": 1,
             "convenios": []
         }
     },
@@ -13,7 +13,7 @@
         "pk": 2,
         "fields": {
             "nombre": "Acta constitutiva",
-            "tipo": "todos",
+            "tipo": 1,
             "convenios": []
         }
     },
@@ -22,7 +22,7 @@
         "pk": 3,
         "fields": {
             "nombre": "Estatuto",
-            "tipo": "todos",
+            "tipo": 1,
             "convenios": []
         }
     },
@@ -31,7 +31,7 @@
         "pk": 4,
         "fields": {
             "nombre": "Reso Personería Jurídica",
-            "tipo": "todos",
+            "tipo": 1,
             "convenios": []
         }
     },
@@ -40,7 +40,7 @@
         "pk": 5,
         "fields": {
             "nombre": "Acta Designación",
-            "tipo": "todos",
+            "tipo": 1,
             "convenios": []
         }
     },
@@ -49,7 +49,7 @@
         "pk": 6,
         "fields": {
             "nombre": "Declaración Jurada",
-            "tipo": "todos",
+            "tipo": 1,
             "convenios": []
         }
     },
@@ -58,7 +58,7 @@
         "pk": 7,
         "fields": {
             "nombre": "DNI Autoridades",
-            "tipo": "todos",
+            "tipo": 1,
             "convenios": []
         }
     },
@@ -67,7 +67,7 @@
         "pk": 8,
         "fields": {
             "nombre": "Acta Solicitud de Subsidio",
-            "tipo": "todos",
+            "tipo": 1,
             "convenios": []
         }
     },
@@ -76,7 +76,7 @@
         "pk": 9,
         "fields": {
             "nombre": "Constancia AFIP",
-            "tipo": "todos",
+            "tipo": 1,
             "convenios": []
         }
     },
@@ -85,7 +85,7 @@
         "pk": 10,
         "fields": {
             "nombre": "Preinscripción RENACOM",
-            "tipo": "todos",
+            "tipo": 1,
             "convenios": []
         }
     },
@@ -94,7 +94,7 @@
         "pk": 11,
         "fields": {
             "nombre": "Validación RENACOM",
-            "tipo": "todos",
+            "tipo": 1,
             "convenios": []
         }
     },
@@ -103,7 +103,7 @@
         "pk": 12,
         "fields": {
             "nombre": "Inscripción RENACOM",
-            "tipo": "todos",
+            "tipo": 1,
             "convenios": []
         }
     },
@@ -112,7 +112,7 @@
         "pk": 13,
         "fields": {
             "nombre": "DNI Responsable del Comedor",
-            "tipo": "todos",
+            "tipo": 1,
             "convenios": []
         }
     },
@@ -121,7 +121,7 @@
         "pk": 14,
         "fields": {
             "nombre": "DNI Titular Tarjeta",
-            "tipo": "todos",
+            "tipo": 1,
             "convenios": []
         }
     },
@@ -130,7 +130,7 @@
         "pk": 15,
         "fields": {
             "nombre": "Informe Comedores y Merenderos",
-            "tipo": "todos",
+            "tipo": 1,
             "convenios": []
         }
     },
@@ -139,7 +139,7 @@
         "pk": 16,
         "fields": {
             "nombre": "Memo PNUD",
-            "tipo": "todos",
+            "tipo": 1,
             "convenios": []
         }
     },
@@ -148,7 +148,7 @@
         "pk": 17,
         "fields": {
             "nombre": "Respuesta Memo PNUD",
-            "tipo": "todos",
+            "tipo": 1,
             "convenios": []
         }
     },
@@ -157,7 +157,7 @@
         "pk": 18,
         "fields": {
             "nombre": "Acto de reconocimiento (de culto)",
-            "tipo": "especifico",
+            "tipo": 2,
             "convenios": [2]
         }
     },
@@ -166,7 +166,7 @@
         "pk": 19,
         "fields": {
             "nombre": "Designación Organismos Públicos / Acta constitutiva (conformación)",
-            "tipo": "especifico",
+            "tipo": 2,
             "convenios": [1]
         }
     },
@@ -175,7 +175,7 @@
         "pk": 20,
         "fields": {
             "nombre": "DNIs - Organización Base",
-            "tipo": "especifico",
+            "tipo": 2,
             "convenios": [1]
         }
     },
@@ -184,7 +184,7 @@
         "pk": 21,
         "fields": {
             "nombre": "Nombre Aval 1",
-            "tipo": "especifico",
+            "tipo": 2,
             "convenios": [1]
         }
     },
@@ -193,7 +193,7 @@
         "pk": 22,
         "fields": {
             "nombre": "Acta constitutiva - Aval 1",
-            "tipo": "especifico",
+            "tipo": 2,
             "convenios": [1]
         }
     },
@@ -202,7 +202,7 @@
         "pk": 23,
         "fields": {
             "nombre": "Estatuto - Aval 1",
-            "tipo": "especifico",
+            "tipo": 2,
             "convenios": [1]
         }
     },
@@ -211,7 +211,7 @@
         "pk": 24,
         "fields": {
             "nombre": "Reso Personería Jurídica - Aval 1",
-            "tipo": "especifico",
+            "tipo": 2,
             "convenios": [1]
         }
     },
@@ -220,7 +220,7 @@
         "pk": 25,
         "fields": {
             "nombre": "Acta Designación - Aval 1",
-            "tipo": "especifico",
+            "tipo": 2,
             "convenios": [1]
         }
     },
@@ -229,7 +229,7 @@
         "pk": 26,
         "fields": {
             "nombre": "DNI Autoridades - Aval 1",
-            "tipo": "especifico",
+            "tipo": 2,
             "convenios": [1]
         }
     },
@@ -238,7 +238,7 @@
         "pk": 27,
         "fields": {
             "nombre": "Nombre Aval 2",
-            "tipo": "especifico",
+            "tipo": 2,
             "convenios": [1]
         }
     },
@@ -247,7 +247,7 @@
         "pk": 28,
         "fields": {
             "nombre": "Acta constitutiva - Aval 2",
-            "tipo": "especifico",
+            "tipo": 2,
             "convenios": [1]
         }
     },
@@ -256,7 +256,7 @@
         "pk": 29,
         "fields": {
             "nombre": "Estatuto - Aval 2",
-            "tipo": "especifico",
+            "tipo": 2,
             "convenios": [1]
         }
     },
@@ -265,7 +265,7 @@
         "pk": 30,
         "fields": {
             "nombre": "Reso Personería Jurídica - Aval 2",
-            "tipo": "especifico",
+            "tipo": 2,
             "convenios": [1]
         }
     },
@@ -274,7 +274,7 @@
         "pk": 31,
         "fields": {
             "nombre": "Acta Designación - Aval 2",
-            "tipo": "especifico",
+            "tipo": 2,
             "convenios": [1]
         }
     },
@@ -283,7 +283,7 @@
         "pk": 32,
         "fields": {
             "nombre": "DNI Autoridades - Aval 2",
-            "tipo": "especifico",
+            "tipo": 2,
             "convenios": [1]
         }
     },
@@ -292,7 +292,7 @@
         "pk": 33,
         "fields": {
             "nombre": "Inscripción RENACOM",
-            "tipo": "especifico",
+            "tipo": 2,
             "convenios": [1]
         }
     },
@@ -301,7 +301,7 @@
         "pk": 34,
         "fields": {
             "nombre": "Relevamiento al Programa (PAC)",
-            "tipo": "especifico",
+            "tipo": 2,
             "convenios": [1]
         }
     },
@@ -310,7 +310,7 @@
         "pk": 35,
         "fields": {
             "nombre": "Material de difusión",
-            "tipo": "especifico",
+            "tipo": 2,
             "convenios": [1]
         }
     }
