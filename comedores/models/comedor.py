@@ -6,7 +6,7 @@ from configuraciones.models import Municipio, Provincia
 from configuraciones.models import Localidad
 from configuraciones.models import Sexo
 from organizaciones.models import Organizacion
-from dupla.models import Dupla
+from duplas.models import Dupla
 
 
 class EstadosIntervencion(models.Model):

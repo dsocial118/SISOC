@@ -1,4 +1,4 @@
-from dupla.models import Dupla
+from duplas.models import Dupla
 from django.db.models import Case, When, IntegerField
 from django.forms import ValidationError
 

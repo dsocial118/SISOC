@@ -12,8 +12,8 @@ from django.views.generic import (
     ListView,
     UpdateView,
 )
-from dupla.dupla_service import DuplaService
-from dupla.models import Dupla
+from duplas.dupla_service import DuplaService
+from duplas.models import Dupla
 
 
 class DuplaListView(ListView):

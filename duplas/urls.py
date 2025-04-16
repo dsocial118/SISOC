@@ -1,6 +1,6 @@
 from django.urls import path
 from configuraciones.decorators import group_required
-from dupla.views import (
+from duplas.views import (
     DuplaCreateView,
     DuplaDeleteView,
     DuplaDetailView,
