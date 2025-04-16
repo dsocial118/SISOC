@@ -54,7 +54,7 @@ from comedores.models.comedor import (
 from comedores.models.relevamiento import Prestacion
 from comedores.services.comedor_service import ComedorService
 from comedores.services.relevamiento_service import RelevamientoService
-from dupla.dupla_service import DuplaService
+from duplas.dupla_service import DuplaService
 
 
 def sub_estados_intervenciones_ajax(request):

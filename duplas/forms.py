@@ -1,7 +1,7 @@
 from django import forms
 from django.utils import timezone
 from django.utils import dateformat
-from dupla.models import Dupla
+from duplas.models import Dupla
 
 
 class DuplaForm(forms.ModelForm):
