@@ -7,7 +7,7 @@ class Command(BaseCommand):
     help = "Crea los grupos de usuario predeterminados"
 
     def handle(self, *args, **kwargs):
-        groups = ["Admin", "Comedores", "Organizaciones", "CDI", "Ciudadanos"]
+        groups = ["Admin", "Comedores", "Organizaciones", "CDI", "Ciudadanos","Tecnico Comedor","Abogado Dupla"]
         for group_name in groups:
             _group, created = Group.objects.get_or_create(name=group_name)
             if created:

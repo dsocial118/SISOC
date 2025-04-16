@@ -7,7 +7,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("dupla", "0002_dupla_estado_alter_dupla_fecha"),
+        ("duplas", "0002_dupla_estado_alter_dupla_fecha"),
         ("comedores", "0022_merge_20250318_1554"),
     ]
 
@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
                 blank=True,
                 null=True,
                 on_delete=django.db.models.deletion.PROTECT,
-                to="dupla.dupla",
+                to="duplas.dupla",
             ),
         ),
     ]
