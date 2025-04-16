@@ -269,11 +269,9 @@
         </div>
     {% endblock %}
     {% block customJS %}
-        <script>
-            window.CSRF_TOKEN = "{{ csrf_token }}";
-        </script>
+        <script>window.CSRF_TOKEN = "{{ csrf_token }}";</script>
         {% if es_crear %}
-        <script src="{% static 'custom/js/admisionesTecnicoCrear.js' %}"></script>
+            <script src="{% static 'custom/js/admisionesTecnicoCrear.js' %}"></script>
         {% endif %}
         <script src="{% static 'custom/js/admisionestecnico.js' %}"></script>
     {% endblock %}
