@@ -1,0 +1,18 @@
+[
+    {
+        "model": "admisiones.tipodocumentacion",
+        "pk": 1,
+        "fields": {
+            "nombre": "todos",
+            "descripcion": "Todos"
+        }
+    },
+    {
+        "model": "admisiones.tipodocumentacion",
+        "pk": 2,
+        "fields": {
+            "nombre": "especifico",
+            "descripcion": "Específico"
+        }
+    }
+]
