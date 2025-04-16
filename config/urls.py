@@ -15,7 +15,7 @@ urlpatterns = [
     path("", include("organizaciones.urls")),
     path("", include("provincias.urls")),
     path("", include("cdi.urls")),
-    path("", include("dupla.urls")),
+    path("", include("duplas.urls")),
     path("", include("ciudadanos.urls")),
     # Django Debug Toolbar
     path("__debug__/", include("debug_toolbar.urls")),

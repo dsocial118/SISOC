@@ -10,28 +10,28 @@ from duplas.views import (
 
 urlpatterns = [
     path(
-        "dupla/",
-        group_required("Dupla")(DuplaListView.as_view()),
+        "duplas/",
+        group_required("Duplas")(DuplaListView.as_view()),
         name="dupla_list",
     ),
     path(
-        "dupla/crear/",
-        group_required("Dupla")(DuplaCreateView.as_view()),
+        "duplas/crear/",
+        group_required("Duplas")(DuplaCreateView.as_view()),
         name="dupla_crear",
     ),
     path(
-        "dupla/<int:pk>/editar/",
-        group_required("Dupla")(DuplaUpdateView.as_view()),
+        "duplas/<int:pk>/editar/",
+        group_required("Duplas")(DuplaUpdateView.as_view()),
         name="dupla_editar",
     ),
     path(
-        "dupla/<int:pk>/",
-        group_required("Dupla")(DuplaDetailView.as_view()),
+        "duplas/<int:pk>/",
+        group_required("Duplas")(DuplaDetailView.as_view()),
         name="dupla_detalle",
     ),
     path(
-        "dupla/<int:pk>/eliminar/",
-        group_required("Dupla")(DuplaDeleteView.as_view()),
+        "duplas/<int:pk>/eliminar/",
+        group_required("Duplas")(DuplaDeleteView.as_view()),
         name="dupla_eliminar",
     ),
 ]
