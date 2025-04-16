@@ -8,9 +8,6 @@ from configuraciones.models import (
     Municipio,
 )
 
-# region ###############################################################
-# Secretarías
-
 
 def load_municipios(request):
     provincia_id = request.GET.get("provincia_id")

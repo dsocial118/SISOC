@@ -6,7 +6,7 @@ from comedores.models.comedor import (
     Referente,
     Intervencion,
     ImagenComedor,
-    Nomina
+    Nomina,
 )
 
 from configuraciones.models import Municipio, Provincia
@@ -176,5 +176,3 @@ class ImagenComedorForm(forms.ModelForm):
     class Meta:
         model = ImagenComedor
         fields = "__all__"
-
-
