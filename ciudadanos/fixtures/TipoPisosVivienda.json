@@ -1,0 +1,30 @@
+[
+    {
+        "model": "ciudadanos.tipopisosvivienda",
+        "pk": 1,
+        "fields": {
+            "tipo": "Mosaico / baldosa / madera / cerámica"
+        }
+    },
+    {
+        "model": "ciudadanos.tipopisosvivienda",
+        "pk": 2,
+        "fields": {
+            "tipo": "Cemento / ladrillo fijo"
+        }
+    },
+    {
+        "model": "ciudadanos.tipopisosvivienda",
+        "pk": 3,
+        "fields": {
+            "tipo": "Ladrillo suelto / tierra"
+        }
+    },
+    {
+        "model": "ciudadanos.tipopisosvivienda",
+        "pk": 4,
+        "fields": {
+            "tipo": "Otro"
+        }
+    }
+]

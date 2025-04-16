@@ -1,9 +1,6 @@
 from django.db import models
 
 
-# -------------------------------CONFIGURACIONES GENERALES (se usan en tod
-
-
 class Provincia(models.Model):
     """
     Guardado de las provincias de los vecinos y vecinas registrados.
@@ -65,7 +62,7 @@ class Municipio(models.Model):
     """
 
     nombre = models.CharField(max_length=255)
-    fk_provincia = models.ForeignKey(
+    provincia = models.ForeignKey(
         Provincia, on_delete=models.SET_NULL, null=True, blank=True
     )
 
@@ -84,7 +81,7 @@ class Localidad(models.Model):
     """
 
     nombre = models.CharField(max_length=255)
-    fk_municipio = models.ForeignKey(
+    municipio = models.ForeignKey(
         Municipio, on_delete=models.SET_NULL, null=True, blank=True
     )
 

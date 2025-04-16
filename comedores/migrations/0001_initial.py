@@ -138,7 +138,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
-                    "foto_legajo",
+                    "foto_ciudadano",
                     models.ImageField(blank=True, null=True, upload_to="comedor/"),
                 ),
                 (

@@ -1,0 +1,30 @@
+[
+    {
+        "model": "ciudadanos.estadorelacion",
+        "pk": 1,
+        "fields": {
+            "estado": "Buena"
+        }
+    },
+    {
+        "model": "ciudadanos.estadorelacion",
+        "pk": 2,
+        "fields": {
+            "estado": "Mala"
+        }
+    },
+    {
+        "model": "ciudadanos.estadorelacion",
+        "pk": 3,
+        "fields": {
+            "estado": "Indiferente"
+        }
+    },
+    {
+        "model": "ciudadanos.estadorelacion",
+        "pk": 4,
+        "fields": {
+            "estado": "Sin Datos"
+        }
+    }
+]

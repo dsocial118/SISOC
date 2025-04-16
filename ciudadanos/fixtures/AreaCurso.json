@@ -1,0 +1,128 @@
+[
+    {
+        "model": "ciudadanos.areacurso",
+        "pk": 1,
+        "fields": {
+            "area": "Albañilería"
+        }
+    },
+    {
+        "model": "ciudadanos.areacurso",
+        "pk": 2,
+        "fields": {
+            "area": "Mecánica Automotor básica"
+        }
+    },
+    {
+        "model": "ciudadanos.areacurso",
+        "pk": 3,
+        "fields": {
+            "area": "Venta en comercio"
+        }
+    },
+    {
+        "model": "ciudadanos.areacurso",
+        "pk": 4,
+        "fields": {
+            "area": "Elaboración de alimentos"
+        }
+    },
+    {
+        "model": "ciudadanos.areacurso",
+        "pk": 5,
+        "fields": {
+            "area": "Colocación de cerámicos"
+        }
+    },
+    {
+        "model": "ciudadanos.areacurso",
+        "pk": 6,
+        "fields": {
+            "area": "Instalaciones eléctricas domiciliarias"
+        }
+    },
+    {
+        "model": "ciudadanos.areacurso",
+        "pk": 7,
+        "fields": {
+            "area": "Instalación de gas domiciliario"
+        }
+    },
+    {
+        "model": "ciudadanos.areacurso",
+        "pk": 8,
+        "fields": {
+            "area": "Instalación de sanitarios en casas"
+        }
+    },
+    {
+        "model": "ciudadanos.areacurso",
+        "pk": 9,
+        "fields": {
+            "area": "Jardinería y mantenimiento espacios verdes"
+        }
+    },
+    {
+        "model": "ciudadanos.areacurso",
+        "pk": 10,
+        "fields": {
+            "area": "Mecánica de Motos"
+        }
+    },
+    {
+        "model": "ciudadanos.areacurso",
+        "pk": 11,
+        "fields": {
+            "area": "Atención en bares y restaurantes"
+        }
+    },
+    {
+        "model": "ciudadanos.areacurso",
+        "pk": 12,
+        "fields": {
+            "area": "Mucamo/a de hotel"
+        }
+    },
+    {
+        "model": "ciudadanos.areacurso",
+        "pk": 13,
+        "fields": {
+            "area": "Confección de indumentaria"
+        }
+    },
+    {
+        "model": "ciudadanos.areacurso",
+        "pk": 14,
+        "fields": {
+            "area": "Industrias de la carne"
+        }
+    },
+    {
+        "model": "ciudadanos.areacurso",
+        "pk": 15,
+        "fields": {
+            "area": "Tareas generales en Industrias varias"
+        }
+    },
+    {
+        "model": "ciudadanos.areacurso",
+        "pk": 16,
+        "fields": {
+            "area": "Cuidado de personas"
+        }
+    },
+    {
+        "model": "ciudadanos.areacurso",
+        "pk": 17,
+        "fields": {
+            "area": "Servicios generales en casas particulares"
+        }
+    },
+    {
+        "model": "ciudadanos.areacurso",
+        "pk": 18,
+        "fields": {
+            "area": "Pintura de Obra"
+        }
+    }
+]

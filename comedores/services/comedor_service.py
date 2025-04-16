@@ -27,26 +27,26 @@ class ComedorService:
 
     @staticmethod
     def detalle_de_intervencion(kwargs):
-        intervenciones = Intervencion.objects.filter(fk_comedor=kwargs["pk"])
+        intervenciones = Intervencion.objects.filter(comedor=kwargs["pk"])
         cantidad_intervenciones = Intervencion.objects.filter(
-            fk_comedor=kwargs["pk"]
+            comedor=kwargs["pk"]
         ).count()
 
         return intervenciones, cantidad_intervenciones
 
     @staticmethod
     def detalle_de_nomina(kwargs):
-        nomina = Nomina.objects.filter(fk_comedor=kwargs["pk"])
+        nomina = Nomina.objects.filter(comedor=kwargs["pk"])
         cantidad_nomina_m = Nomina.objects.filter(
-            fk_comedor=kwargs["pk"], fk_sexo__sexo="Masculino"
+            comedor=kwargs["pk"], sexo__sexo="Masculino"
         ).count()
         cantidad_nomina_f = Nomina.objects.filter(
-            fk_comedor=kwargs["pk"], fk_sexo__sexo="Femenino"
+            comedor=kwargs["pk"], sexo__sexo="Femenino"
         ).count()
         espera = Nomina.objects.filter(
-            fk_comedor=kwargs["pk"], fk_estado__nombre="Lista de espera"
+            comedor=kwargs["pk"], estado__nombre="Lista de espera"
         ).count()
-        cantidad_intervenciones = Nomina.objects.filter(fk_comedor=kwargs["pk"]).count()
+        cantidad_intervenciones = Nomina.objects.filter(comedor=kwargs["pk"]).count()
         return (
             nomina,
             cantidad_nomina_m,
@@ -58,7 +58,7 @@ class ComedorService:
     @staticmethod
     def borrar_imagenes(post):
         pattern = re.compile(
-            r"^imagen_legajo-borrar-(\d+)$"
+            r"^imagen_ciudadano-borrar-(\d+)$"
         )  # Patron para encontrar los campos de imagenes a borrar
         imagenes_ids = []
         # Itera sobre los datos POST para encontrar los campos coincidentes con el patron
@@ -105,7 +105,7 @@ class ComedorService:
             Comedor.objects.select_related("provincia", "referente")
             .values(
                 "id",
-                "foto_legajo",
+                "foto_ciudadano",
                 "nombre",
                 "comienzo",
                 "id_externo",
@@ -175,7 +175,7 @@ class ComedorService:
         else:  # Actualizar referente
             for field, value in referente_data.items():
                 setattr(referente_instance, field, value)
-            referente_instance.save()
+            referente_instance.save(update_fields=referente_data.keys())
 
         return referente_instance
 

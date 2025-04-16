@@ -44,19 +44,19 @@ class IntervencionForm(forms.ModelForm):
                     "rows": 3,
                 }
             ),
-            "fk_subintervencion": forms.Select(
+            "subintervencion": forms.Select(
                 attrs={"class": "select2 subintervencion-select"}
             ),
-            "fk_tipo_intervencion": forms.Select(
+            "tipo_intervencion": forms.Select(
                 attrs={"class": "select2 tipo_intervencion-select"}
             ),
         }
         labels = {
             "detalles": "Detalles de la intervención",
-            "fk_subintervencion": "Subintervención",
-            "fk_tipo_intervencion": "Tipo de intervención",
-            "fk_estado": "Estado",
-            "fk_direccion": "Dirección",
+            "subintervencion": "Subintervención",
+            "tipo_intervencion": "Tipo de intervención",
+            "estado": "Estado",
+            "direccion": "Dirección",
         }
 
 
@@ -83,12 +83,12 @@ class NominaForm(forms.ModelForm):
                     "placeholder": "Documento de Identidad",
                 }
             ),
-            "fk_sexo": forms.Select(
+            "sexo": forms.Select(
                 attrs={
                     "class": "form-control",
                 }
             ),
-            "fk_estado": forms.Select(
+            "estado": forms.Select(
                 attrs={
                     "class": "form-control",
                 }
@@ -102,11 +102,11 @@ class NominaForm(forms.ModelForm):
             ),
         }
         labels = {
-            "fk_estado": "Estado",
+            "estado": "Estado",
             "nombre": "Nombre",
             "apellido": "Apellido",
             "dni": "Documento de Identidad",
-            "fk_sexo": "Sexo",
+            "sexo": "Sexo",
         }
 
 
@@ -143,7 +143,7 @@ class ComedorForm(forms.ModelForm):
             self.fields["provincia"].initial = Provincia.objects.get(id=provincia.id)
             self.fields["provincia"].queryset = Provincia.objects.all()
             self.fields["municipio"].queryset = Municipio.objects.filter(
-                fk_provincia=provincia
+                provincia=provincia
             )
         else:
             self.fields["provincia"].queryset = Provincia.objects.all()
@@ -157,7 +157,7 @@ class ComedorForm(forms.ModelForm):
         if municipio:
             self.fields["municipio"].initial = municipio
             self.fields["localidad"].queryset = Localidad.objects.filter(
-                fk_municipio=municipio
+                municipio=municipio
             )
 
         if localidad:

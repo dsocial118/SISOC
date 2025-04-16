@@ -1,0 +1,30 @@
+[
+    {
+        "model": "ciudadanos.turno",
+        "pk": 1,
+        "fields": {
+            "turno": "Mañana"
+        }
+    },
+    {
+        "model": "ciudadanos.turno",
+        "pk": 2,
+        "fields": {
+            "turno": "Tarde"
+        }
+    },
+    {
+        "model": "ciudadanos.turno",
+        "pk": 3,
+        "fields": {
+            "turno": "Noche"
+        }
+    },
+    {
+        "model": "ciudadanos.turno",
+        "pk": 4,
+        "fields": {
+            "turno": "Jornada Completa"
+        }
+    }
+]

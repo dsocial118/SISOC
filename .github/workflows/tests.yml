@@ -1,0 +1,45 @@
+name: Run Django Tests
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    branches: 
+      - main
+      - development
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Generate dummy .env
+        run: |
+          echo "DEBUG=False" >> .env
+          echo "SECRET_KEY=test-key" >> .env
+          echo "DATABASE_NAME=sisoc-local" >> .env
+          echo "DATABASE_USER=root" >> .env
+          echo "DATABASE_PASSWORD=root1-password2" >> .env
+          echo "DATABASE_HOST=mysql" >> .env
+          echo "DATABASE_PORT=3307" >> .env
+
+      - name: Set up Docker Compose
+        run: docker compose up -d
+
+      - name: Wait for MySQL to be ready
+        run: |
+          for i in {1..20}; do
+            if docker compose exec -T mysql mysqladmin ping -h "localhost" -P 3307 --silent; then
+              echo "MySQL is ready!"
+              break
+            fi
+            echo "Waiting for MySQL..."
+            sleep 5
+          done
+
+      - name: Run Django tests
+        run: docker compose exec -T django pytest -n auto
