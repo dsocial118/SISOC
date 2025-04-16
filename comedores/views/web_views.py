@@ -304,7 +304,7 @@ class ComedorDetailView(DetailView):
             .order_by("-fecha")
             .all()
         )
-        ####---- Hacer IF para que aparezca el boton Contacto Dupla si el comedor ya tiene una dupla cargada---
+        # TODO: Hacer IF para que aparezca el boton Contacto Dupla si el comedor ya tiene una dupla cargada
         context["contacto_dupla_form"] = DuplaContactoForm()
         context["contacto_dupla"] = True
 

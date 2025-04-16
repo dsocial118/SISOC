@@ -144,7 +144,8 @@ urlpatterns = [
         "comedores/nomina/borrar/<pk>/<pk2>",
         group_required("Comedores")(NominaDeleteView.as_view()),
         name="nomina_borrar",
-    ),path( 
+    ),
+    path(
         "comedores/admisiones/tecnicos/listar",
         group_required("Comedores")(AdmisionesTecnicosListView.as_view()),
         name="admisiones_tecnicos_listar",
