@@ -43,18 +43,26 @@ class Admision(models.Model):
         ordering = ["-creado"]
 
 
-class TipoDocumentacion(models.TextChoices):
-    TODOS = "todos", "Todos"
-    ESPECIFICO = "especifico", "Específico"
+class TipoDocumentacion(models.Model):
+    """
+    Opciones de tipos de documentación asociadas a una admisión.
+    """
+
+    nombre = models.CharField(max_length=255, unique=True)
+    descripcion = models.CharField(max_length=255, blank=True, null=True)
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        verbose_name = "Tipo de Documentación"
+        verbose_name_plural = "Tipos de Documentación"
+        ordering = ["nombre"]
 
 
 class Documentacion(models.Model):
     nombre = models.CharField(max_length=255)
-    tipo = models.CharField(
-        max_length=20,
-        choices=TipoDocumentacion.choices,
-        default=TipoDocumentacion.ESPECIFICO,
-    )
+    tipo = models.ForeignKey(TipoDocumentacion, on_delete=models.SET_NULL, null=True)
     convenios = models.ManyToManyField("TipoConvenio", blank=True)
 
     def __str__(self):
