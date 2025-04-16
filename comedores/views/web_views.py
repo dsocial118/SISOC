@@ -346,7 +346,6 @@ class AsignarDuplaListView(ListView):
 
         if dupla_id:
             try:
-                # Asignar la dupla al comedor
                 ComedorService.asignar_dupla_a_comedor(dupla_id, comedor_id)
                 messages.success(request, "Dupla asignada correctamente.")
             except Exception as e:
