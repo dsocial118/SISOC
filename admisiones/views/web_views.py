@@ -81,8 +81,9 @@ class AdmisionesTecnicosUpdateView(UpdateView):
                 admision, request.POST.get("tipo_convenio")
             ):
                 messages.success(request, "Tipo de convenio actualizado correctamente.")
+            allowed_hosts = [self.request.get_host()]  # Define trusted hosts
             if url_has_allowed_host_and_scheme(
-                self.request.path_info, allowed_hosts=None
+                self.request.path_info, allowed_hosts=allowed_hosts
             ):
                 return redirect(self.request.path_info)
             else:
