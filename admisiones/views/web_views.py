@@ -2,6 +2,7 @@ import os
 from django.contrib import messages
 from django.http import JsonResponse
 from django.shortcuts import redirect, get_object_or_404
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import CreateView, ListView, UpdateView
 from admisiones.forms.admisiones_forms import AdmisionForm
@@ -80,6 +81,9 @@ class AdmisionesTecnicosUpdateView(UpdateView):
                 admision, request.POST.get("tipo_convenio")
             ):
                 messages.success(request, "Tipo de convenio actualizado correctamente.")
-            return redirect(self.request.path_info)
+            if url_has_allowed_host_and_scheme(self.request.path_info, allowed_hosts=None):
+                return redirect(self.request.path_info)
+            else:
+                return redirect('/')
 
         return super().post(request, *args, **kwargs)
