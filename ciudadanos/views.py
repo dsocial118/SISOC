@@ -357,7 +357,7 @@ class CiudadanosListView(ListView):
 
 class CiudadanosDetailView(DetailView):
     model = Ciudadano
-    template_name = "ciudadanos/ciudadanos_detail.html"
+    template_name = "ciudadanos/ciudadano_detail.html"
 
     def get_context_data(
         self, **kwargs
@@ -393,7 +393,7 @@ class CiudadanosDetailView(DetailView):
 
         if not ciudadano_alertas:
             ciudadano_alertas = Alerta.objects.filter(ciudadano=pk).select_related(
-                "alerta__categoria"
+                "categoria"
             )
             cache.set("ciudadano_alertas", ciudadano_alertas, 60)
         if not alertas:
@@ -440,17 +440,17 @@ class CiudadanosDetailView(DetailView):
         if not ciudadano_alertas_organizadas:
             ciudadano_alertas_organizadas = ciudadano_alertas.annotate(
                 es_critica=Case(
-                    When(alerta__gravedad="Critica", then=Value(1)),
+                    When(gravedad="Critica", then=Value(1)),
                     default=Value(0),
                     output_field=IntegerField(),
                 ),
                 es_importante=Case(
-                    When(alerta__gravedad="Importante", then=Value(1)),
+                    When(gravedad="Importante", then=Value(1)),
                     default=Value(0),
                     output_field=IntegerField(),
                 ),
                 es_precaucion=Case(
-                    When(alerta__gravedad="Precaución", then=Value(1)),
+                    When(gravedad="Precaución", then=Value(1)),
                     default=Value(0),
                     output_field=IntegerField(),
                 ),
