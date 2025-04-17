@@ -938,9 +938,7 @@ class CiudadanosGrupoFamiliarCreateView(CreateView):
             messages.error(self.request, f"Error al crear el familiar. Error: {e}")
             allowed_hosts = ["example.com", "another-trusted-site.com"]
             full_url = self.request.build_absolute_uri(self.request.path_info)
-            if url_has_allowed_host_and_scheme(
-                full_url, allowed_hosts=allowed_hosts
-            ):
+            if url_has_allowed_host_and_scheme(full_url, allowed_hosts=allowed_hosts):
                 return redirect(full_url)
             else:
                 return redirect("/")
