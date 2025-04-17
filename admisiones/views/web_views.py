@@ -81,9 +81,11 @@ class AdmisionesTecnicosUpdateView(UpdateView):
                 admision, request.POST.get("tipo_convenio")
             ):
                 messages.success(request, "Tipo de convenio actualizado correctamente.")
-            if url_has_allowed_host_and_scheme(self.request.path_info, allowed_hosts=None):
+            if url_has_allowed_host_and_scheme(
+                self.request.path_info, allowed_hosts=None
+            ):
                 return redirect(self.request.path_info)
             else:
-                return redirect('/')
+                return redirect("/")
 
         return super().post(request, *args, **kwargs)
