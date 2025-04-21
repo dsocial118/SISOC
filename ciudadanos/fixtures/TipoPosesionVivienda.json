@@ -1,0 +1,37 @@
+[
+    {
+        "model": "ciudadanos.tipoposesionvivienda",
+        "pk": 1,
+        "fields": {
+            "tipo": "Propia"
+        }
+    },
+    {
+        "model": "ciudadanos.tipoposesionvivienda",
+        "pk": 2,
+        "fields": {
+            "tipo": "Alquilada"
+        }
+    },
+    {
+        "model": "ciudadanos.tipoposesionvivienda",
+        "pk": 3,
+        "fields": {
+            "tipo": "Cedida"
+        }
+    },
+    {
+        "model": "ciudadanos.tipoposesionvivienda",
+        "pk": 4,
+        "fields": {
+            "tipo": "Posesión de Hecho"
+        }
+    },
+    {
+        "model": "ciudadanos.tipoposesionvivienda",
+        "pk": 5,
+        "fields": {
+            "tipo": "Otro"
+        }
+    }
+]

@@ -1,5 +1,4 @@
 import os
-import re
 from typing import Any
 from django.contrib.auth.models import User
 from django.contrib import messages
@@ -19,6 +18,8 @@ from django.views.generic import (
 )
 from comedores.forms.relevamiento_form import PuntosEntregaForm
 
+from admisiones.models.admisiones import DuplaContacto
+from admisiones.forms.admisiones_forms import DuplaContactoForm
 
 from comedores.models.relevamiento import Relevamiento, ClasificacionComedor
 from comedores.forms.comedor_form import (
@@ -54,12 +55,14 @@ from comedores.models.comedor import (
 from comedores.models.relevamiento import Prestacion
 from comedores.services.comedor_service import ComedorService
 from comedores.services.relevamiento_service import RelevamientoService
+from django.views.decorators.csrf import csrf_exempt
 
 
+@csrf_exempt
 def sub_estados_intervenciones_ajax(request):
     request_id = request.GET.get("id")
     if request_id:
-        sub_estados = SubIntervencion.objects.filter(fk_subintervencion=request_id)
+        sub_estados = SubIntervencion.objects.filter(subintervencion=request_id)
     else:
         sub_estados = SubIntervencion.objects.all()
 
@@ -296,35 +299,59 @@ class ComedorDetailView(DetailView):
             }
         )
 
+        context["contactos_duplas_cargados"] = (
+            DuplaContacto.objects.filter(comedor=self.object["id"])
+            .order_by("-fecha")
+            .all()
+        )
+        # TODO: Hacer IF para que aparezca el boton Contacto Dupla si el comedor ya tiene una dupla cargada
+        context["contacto_dupla_form"] = DuplaContactoForm()
+        context["contacto_dupla"] = True
+
         return context
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
-        try:
-            relevamiento = None
-            is_new_relevamiento = "territorial" in request.POST
-            is_edit_relevamiento = "territorial_editar" in request.POST
 
-            if is_new_relevamiento:
-                relevamiento = RelevamientoService.create_pendiente(
-                    request, self.object["id"]
-                )
+        is_new_relevamiento = "territorial" in request.POST
+        is_edit_relevamiento = "territorial_editar" in request.POST
+        is_contacto_dupla = "btnContactoDupla" in request.POST
 
-            elif is_edit_relevamiento:
-                relevamiento = RelevamientoService.update_territorial(request)
-
-            return redirect(
-                reverse(
-                    "relevamiento_detalle",
-                    kwargs={
-                        "pk": relevamiento.pk,
-                        "comedor_pk": relevamiento.comedor.pk,
-                    },
-                )
-            )
-        except Exception as e:
-            messages.error(request, f"Error al crear el relevamiento: {e}")
+        if is_contacto_dupla:
+            print("lalala")
+            form = DuplaContactoForm(request.POST)
+            if form.is_valid():
+                form.save()
+                messages.success(request, "Contacto guardado correctamente.")
+            else:
+                messages.error(request, "Error al guardar el contacto.")
+                print("Errores del formulario:", form.errors)
             return redirect("comedor_detalle", pk=self.object["id"])
+
+        if is_new_relevamiento or is_edit_relevamiento:
+            print("asdadsasad")
+            try:
+                relevamiento = None
+                if is_new_relevamiento:
+                    relevamiento = RelevamientoService.create_pendiente(
+                        request, self.object["id"]
+                    )
+
+                elif is_edit_relevamiento:
+                    relevamiento = RelevamientoService.update_territorial(request)
+
+                return redirect(
+                    reverse(
+                        "relevamiento_detalle",
+                        kwargs={
+                            "pk": relevamiento.pk,
+                            "comedor_pk": relevamiento.comedor.pk,
+                        },
+                    )
+                )
+            except Exception as e:
+                messages.error(request, f"Error al crear el relevamiento: {e}")
+                return redirect("comedor_detalle", pk=self.object["id"])
 
 
 class ComedorUpdateView(UpdateView):
@@ -486,7 +513,7 @@ class RelevamientoDetailView(DetailView):
 
         relevamiento = Relevamiento.objects.get(pk=self.get_object()["id"])
         context["relevamiento"]["gas"] = (
-            RelevamientoService.separate_m2m_string(
+            RelevamientoService.separate_string(
                 relevamiento.espacio.cocina.abastecimiento_combustible.all()
             )
             if relevamiento.espacio
@@ -498,7 +525,7 @@ class RelevamientoDetailView(DetailView):
             else None
         )
         context["relevamiento"]["donaciones"] = (
-            RelevamientoService.separate_m2m_string(
+            RelevamientoService.separate_string(
                 relevamiento.recursos.recursos_donaciones_particulares.all()
             )
             if relevamiento.recursos
@@ -506,7 +533,7 @@ class RelevamientoDetailView(DetailView):
         )
 
         context["relevamiento"]["nacional"] = (
-            RelevamientoService.separate_m2m_string(
+            RelevamientoService.separate_string(
                 relevamiento.recursos.recursos_estado_nacional.all()
             )
             if relevamiento.recursos
@@ -514,7 +541,7 @@ class RelevamientoDetailView(DetailView):
         )
 
         context["relevamiento"]["provincial"] = (
-            RelevamientoService.separate_m2m_string(
+            RelevamientoService.separate_string(
                 relevamiento.recursos.recursos_estado_provincial.all()
             )
             if relevamiento.recursos
@@ -522,7 +549,7 @@ class RelevamientoDetailView(DetailView):
         )
 
         context["relevamiento"]["municipal"] = (
-            RelevamientoService.separate_m2m_string(
+            RelevamientoService.separate_string(
                 relevamiento.recursos.recursos_estado_municipal.all()
             )
             if relevamiento.recursos
@@ -530,7 +557,7 @@ class RelevamientoDetailView(DetailView):
         )
 
         context["relevamiento"]["otras"] = (
-            RelevamientoService.separate_m2m_string(
+            RelevamientoService.separate_string(
                 relevamiento.recursos.recursos_otros.all()
             )
             if relevamiento.recursos
@@ -538,7 +565,7 @@ class RelevamientoDetailView(DetailView):
         )
 
         context["relevamiento"]["Entregas"] = (
-            RelevamientoService.separate_m2m_string(
+            RelevamientoService.separate_string(
                 relevamiento.punto_entregas.frecuencia_recepcion_mercaderias.all()
             )
             if relevamiento.punto_entregas

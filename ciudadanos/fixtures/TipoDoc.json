@@ -1,0 +1,30 @@
+[
+    {
+        "model": "ciudadanos.tipodocumento",
+        "pk": 1,
+        "fields": {
+            "tipo": "DNI"
+        }
+    },
+    {
+        "model": "ciudadanos.tipodocumento",
+        "pk": 2,
+        "fields": {
+            "tipo": "DOCUMENTO EXTRANJERO"
+        }
+    },
+    {
+        "model": "ciudadanos.tipodocumento",
+        "pk": 3,
+        "fields": {
+            "tipo": "PASAPORTE"
+        }
+    },
+    {
+        "model": "ciudadanos.tipodocumento",
+        "pk": 4,
+        "fields": {
+            "tipo": "SIN DOCUMENTO"
+        }
+    }
+]

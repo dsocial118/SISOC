@@ -1,0 +1,1314 @@
+[
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 1,
+        "fields": {
+            "nacionalidad": "Afgana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 2,
+        "fields": {
+            "nacionalidad": "Albanesa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 3,
+        "fields": {
+            "nacionalidad": "Argelina"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 4,
+        "fields": {
+            "nacionalidad": "Andorrana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 5,
+        "fields": {
+            "nacionalidad": "Angoleña"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 6,
+        "fields": {
+            "nacionalidad": "Antiguana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 7,
+        "fields": {
+            "nacionalidad": "Argentina"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 8,
+        "fields": {
+            "nacionalidad": "Armenia"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 9,
+        "fields": {
+            "nacionalidad": "Australiana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 10,
+        "fields": {
+            "nacionalidad": "Austriaca"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 11,
+        "fields": {
+            "nacionalidad": "Azerbaiyana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 12,
+        "fields": {
+            "nacionalidad": "Bahameña"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 13,
+        "fields": {
+            "nacionalidad": "Bareiní"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 14,
+        "fields": {
+            "nacionalidad": "Bangladesí"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 15,
+        "fields": {
+            "nacionalidad": "Barbadense"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 16,
+        "fields": {
+            "nacionalidad": "Bielorrusa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 17,
+        "fields": {
+            "nacionalidad": "Belga"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 18,
+        "fields": {
+            "nacionalidad": "Beliceña"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 19,
+        "fields": {
+            "nacionalidad": "Beninesa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 20,
+        "fields": {
+            "nacionalidad": "Butanesa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 21,
+        "fields": {
+            "nacionalidad": "Boliviana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 22,
+        "fields": {
+            "nacionalidad": "Bosnia"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 23,
+        "fields": {
+            "nacionalidad": "Botsuanesa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 24,
+        "fields": {
+            "nacionalidad": "Brasileña"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 25,
+        "fields": {
+            "nacionalidad": "Bruneana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 26,
+        "fields": {
+            "nacionalidad": "Búlgara"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 27,
+        "fields": {
+            "nacionalidad": "Burkinesa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 28,
+        "fields": {
+            "nacionalidad": "Burundesa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 29,
+        "fields": {
+            "nacionalidad": "Caboverdiana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 30,
+        "fields": {
+            "nacionalidad": "Camboyana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 31,
+        "fields": {
+            "nacionalidad": "Camerunesa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 32,
+        "fields": {
+            "nacionalidad": "Canadiense"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 33,
+        "fields": {
+            "nacionalidad": "Chadiana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 34,
+        "fields": {
+            "nacionalidad": "Chilena"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 35,
+        "fields": {
+            "nacionalidad": "China"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 36,
+        "fields": {
+            "nacionalidad": "Colombiana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 37,
+        "fields": {
+            "nacionalidad": "Comorense"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 38,
+        "fields": {
+            "nacionalidad": "Congolesa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 39,
+        "fields": {
+            "nacionalidad": "Norcoreana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 40,
+        "fields": {
+            "nacionalidad": "Surcoreana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 41,
+        "fields": {
+            "nacionalidad": "Costarricense"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 42,
+        "fields": {
+            "nacionalidad": "Marfileña"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 43,
+        "fields": {
+            "nacionalidad": "Croata"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 44,
+        "fields": {
+            "nacionalidad": "Cubana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 45,
+        "fields": {
+            "nacionalidad": "Danesa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 46,
+        "fields": {
+            "nacionalidad": "Dominiquesa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 47,
+        "fields": {
+            "nacionalidad": "Ecuatoriana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 48,
+        "fields": {
+            "nacionalidad": "Egipcia"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 49,
+        "fields": {
+            "nacionalidad": "Salvadoreña"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 50,
+        "fields": {
+            "nacionalidad": "Emiratí"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 51,
+        "fields": {
+            "nacionalidad": "Eritrea"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 52,
+        "fields": {
+            "nacionalidad": "Eslovaca"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 53,
+        "fields": {
+            "nacionalidad": "Eslovena"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 54,
+        "fields": {
+            "nacionalidad": "Española"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 55,
+        "fields": {
+            "nacionalidad": "Estadounidense"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 56,
+        "fields": {
+            "nacionalidad": "Estonia"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 57,
+        "fields": {
+            "nacionalidad": "Etíope"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 58,
+        "fields": {
+            "nacionalidad": "Filipina"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 59,
+        "fields": {
+            "nacionalidad": "Finlandesa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 60,
+        "fields": {
+            "nacionalidad": "Fiyiana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 61,
+        "fields": {
+            "nacionalidad": "Francesa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 62,
+        "fields": {
+            "nacionalidad": "Gabonense"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 63,
+        "fields": {
+            "nacionalidad": "Gambiana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 64,
+        "fields": {
+            "nacionalidad": "Georgiana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 65,
+        "fields": {
+            "nacionalidad": "Ghanesa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 66,
+        "fields": {
+            "nacionalidad": "Granadina"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 67,
+        "fields": {
+            "nacionalidad": "Griega"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 68,
+        "fields": {
+            "nacionalidad": "Guatemalteca"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 69,
+        "fields": {
+            "nacionalidad": "Guineana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 70,
+        "fields": {
+            "nacionalidad": "Guineana-Bisáu"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 71,
+        "fields": {
+            "nacionalidad": "Ecuatoguineana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 72,
+        "fields": {
+            "nacionalidad": "Guyanesa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 73,
+        "fields": {
+            "nacionalidad": "Haitiana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 74,
+        "fields": {
+            "nacionalidad": "Hondureña"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 75,
+        "fields": {
+            "nacionalidad": "Húngara"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 76,
+        "fields": {
+            "nacionalidad": "India"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 77,
+        "fields": {
+            "nacionalidad": "Indonesia"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 78,
+        "fields": {
+            "nacionalidad": "Iraní"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 79,
+        "fields": {
+            "nacionalidad": "Iraquí"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 80,
+        "fields": {
+            "nacionalidad": "Irlandesa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 81,
+        "fields": {
+            "nacionalidad": "Islandesa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 82,
+        "fields": {
+            "nacionalidad": "Marshalesa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 83,
+        "fields": {
+            "nacionalidad": "Salomonense"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 84,
+        "fields": {
+            "nacionalidad": "Israelí"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 85,
+        "fields": {
+            "nacionalidad": "Italiana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 86,
+        "fields": {
+            "nacionalidad": "Jamaiquina"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 87,
+        "fields": {
+            "nacionalidad": "Japonesa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 88,
+        "fields": {
+            "nacionalidad": "Jordana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 89,
+        "fields": {
+            "nacionalidad": "Kazaja"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 90,
+        "fields": {
+            "nacionalidad": "Keniata"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 91,
+        "fields": {
+            "nacionalidad": "Kirguís"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 92,
+        "fields": {
+            "nacionalidad": "Kiribatiana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 93,
+        "fields": {
+            "nacionalidad": "Kuwaití"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 94,
+        "fields": {
+            "nacionalidad": "Laosiana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 95,
+        "fields": {
+            "nacionalidad": "Lesotense"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 96,
+        "fields": {
+            "nacionalidad": "Letona"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 97,
+        "fields": {
+            "nacionalidad": "Libanesa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 98,
+        "fields": {
+            "nacionalidad": "Liberiana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 99,
+        "fields": {
+            "nacionalidad": "Libia"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 100,
+        "fields": {
+            "nacionalidad": "Liechtensteiniana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 101,
+        "fields": {
+            "nacionalidad": "Lituana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 102,
+        "fields": {
+            "nacionalidad": "Luxemburguesa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 103,
+        "fields": {
+            "nacionalidad": "Malgache"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 104,
+        "fields": {
+            "nacionalidad": "Malasia"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 105,
+        "fields": {
+            "nacionalidad": "Malauí"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 106,
+        "fields": {
+            "nacionalidad": "Maldiva"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 107,
+        "fields": {
+            "nacionalidad": "Maliense"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 108,
+        "fields": {
+            "nacionalidad": "Maltés"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 109,
+        "fields": {
+            "nacionalidad": "Marroquí"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 110,
+        "fields": {
+            "nacionalidad": "Mauriciana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 111,
+        "fields": {
+            "nacionalidad": "Mauritana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 112,
+        "fields": {
+            "nacionalidad": "Mexicana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 113,
+        "fields": {
+            "nacionalidad": "Micronesia"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 114,
+        "fields": {
+            "nacionalidad": "Moldava"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 115,
+        "fields": {
+            "nacionalidad": "Monegasca"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 116,
+        "fields": {
+            "nacionalidad": "Mongola"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 117,
+        "fields": {
+            "nacionalidad": "Montenegrina"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 118,
+        "fields": {
+            "nacionalidad": "Mozambiqueña"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 119,
+        "fields": {
+            "nacionalidad": "Namibia"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 120,
+        "fields": {
+            "nacionalidad": "Nauruana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 121,
+        "fields": {
+            "nacionalidad": "Nepalí"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 122,
+        "fields": {
+            "nacionalidad": "Nicaragüense"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 123,
+        "fields": {
+            "nacionalidad": "Nigeriana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 124,
+        "fields": {
+            "nacionalidad": "Nigerina"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 125,
+        "fields": {
+            "nacionalidad": "Noruega"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 126,
+        "fields": {
+            "nacionalidad": "Neozelandesa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 127,
+        "fields": {
+            "nacionalidad": "Omaní"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 128,
+        "fields": {
+            "nacionalidad": "Neerlandesa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 129,
+        "fields": {
+            "nacionalidad": "Paquistaní"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 130,
+        "fields": {
+            "nacionalidad": "Palauana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 131,
+        "fields": {
+            "nacionalidad": "Panameña"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 132,
+        "fields": {
+            "nacionalidad": "Papú"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 133,
+        "fields": {
+            "nacionalidad": "Paraguaya"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 134,
+        "fields": {
+            "nacionalidad": "Peruana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 135,
+        "fields": {
+            "nacionalidad": "Polaca"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 136,
+        "fields": {
+            "nacionalidad": "Portuguesa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 137,
+        "fields": {
+            "nacionalidad": "Británica"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 138,
+        "fields": {
+            "nacionalidad": "Centroafricana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 139,
+        "fields": {
+            "nacionalidad": "Checa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 140,
+        "fields": {
+            "nacionalidad": "Dominicana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 141,
+        "fields": {
+            "nacionalidad": "Ruandesa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 142,
+        "fields": {
+            "nacionalidad": "Rumana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 143,
+        "fields": {
+            "nacionalidad": "Rusa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 144,
+        "fields": {
+            "nacionalidad": "Samoana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 145,
+        "fields": {
+            "nacionalidad": "Sancristobaleña"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 146,
+        "fields": {
+            "nacionalidad": "Sanmarinense"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 147,
+        "fields": {
+            "nacionalidad": "Sanvicentina"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 148,
+        "fields": {
+            "nacionalidad": "Santa Luciana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 149,
+        "fields": {
+            "nacionalidad": "Santomense"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 150,
+        "fields": {
+            "nacionalidad": "Senegalesa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 151,
+        "fields": {
+            "nacionalidad": "Serbia"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 152,
+        "fields": {
+            "nacionalidad": "Seychellense"
+        }
+    },
+    
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 153,
+        "fields": {
+            "nacionalidad": "Sierraleonesa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 154,
+        "fields": {
+            "nacionalidad": "Singapurense"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 155,
+        "fields": {
+            "nacionalidad": "Siria"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 156,
+        "fields": {
+            "nacionalidad": "Somalí"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 157,
+        "fields": {
+            "nacionalidad": "Esrilanquesa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 158,
+        "fields": {
+            "nacionalidad": "Suazi"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 159,
+        "fields": {
+            "nacionalidad": "Sudafricana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 160,
+        "fields": {
+            "nacionalidad": "Sudanesa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 161,
+        "fields": {
+            "nacionalidad": "Surisudanesa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 162,
+        "fields": {
+            "nacionalidad": "Sueca"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 163,
+        "fields": {
+            "nacionalidad": "Suiza"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 164,
+        "fields": {
+            "nacionalidad": "Surinamesa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 165,
+        "fields": {
+            "nacionalidad": "Tailandesa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 166,
+        "fields": {
+            "nacionalidad": "Tanzana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 167,
+        "fields": {
+            "nacionalidad": "Tayika"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 168,
+        "fields": {
+            "nacionalidad": "Timorense"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 169,
+        "fields": {
+            "nacionalidad": "Togolesa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 170,
+        "fields": {
+            "nacionalidad": "Tongana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 171,
+        "fields": {
+            "nacionalidad": "Trinitense"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 172,
+        "fields": {
+            "nacionalidad": "Tunecina"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 173,
+        "fields": {
+            "nacionalidad": "Turkmena"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 174,
+        "fields": {
+            "nacionalidad": "Turca"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 175,
+        "fields": {
+            "nacionalidad": "Tuvaluana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 176,
+        "fields": {
+            "nacionalidad": "Ucraniana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 177,
+        "fields": {
+            "nacionalidad": "Ugandesa"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 178,
+        "fields": {
+            "nacionalidad": "Uruguaya"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 179,
+        "fields": {
+            "nacionalidad": "Uzbeca"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 180,
+        "fields": {
+            "nacionalidad": "Vanuatuense"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 181,
+        "fields": {
+            "nacionalidad": "Vaticana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 182,
+        "fields": {
+            "nacionalidad": "Venezolana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 183,
+        "fields": {
+            "nacionalidad": "Vietnamita"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 184,
+        "fields": {
+            "nacionalidad": "Yemení"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 185,
+        "fields": {
+            "nacionalidad": "Yibutiana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 186,
+        "fields": {
+            "nacionalidad": "Zambiana"
+        }
+    },
+    {
+        "model": "ciudadanos.nacionalidad",
+        "pk": 187,
+        "fields": {
+            "nacionalidad": "Zimbabuense"
+        }
+    }
+ 
+]
+    

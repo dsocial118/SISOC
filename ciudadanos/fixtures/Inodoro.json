@@ -1,0 +1,30 @@
+[
+    {
+        "model": "ciudadanos.inodoro",
+        "pk": 1,
+        "fields": {
+            "tipo": "Inodoro con botón o cadena"
+        }
+    },
+    {
+        "model": "ciudadanos.inodoro",
+        "pk": 2,
+        "fields": {
+            "tipo": "Inodoro sin botón o cadena"
+        }
+    },
+    {
+        "model": "ciudadanos.inodoro",
+        "pk": 3,
+        "fields": {
+            "tipo": "No tiene inodoro"
+        }
+    },
+    {
+        "model": "ciudadanos.inodoro",
+        "pk": 4,
+        "fields": {
+            "tipo": "No tiene baño"
+        }
+    }
+]

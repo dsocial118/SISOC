@@ -1,0 +1,30 @@
+[
+    {
+        "model": "ciudadanos.tipoconstruccionvivienda",
+        "pk": 1,
+        "fields": {
+            "tipo": "Material"
+        }
+    },
+    {
+        "model": "ciudadanos.tipoconstruccionvivienda",
+        "pk": 2,
+        "fields": {
+            "tipo": "Mixta (chapa y madera)"
+        }
+    },
+    {
+        "model": "ciudadanos.tipoconstruccionvivienda",
+        "pk": 3,
+        "fields": {
+            "tipo": "Casilla (otros materiales)"
+        }
+    },
+    {
+        "model": "ciudadanos.tipoconstruccionvivienda",
+        "pk": 4,
+        "fields": {
+            "tipo": "Otro"
+        }
+    }
+]
