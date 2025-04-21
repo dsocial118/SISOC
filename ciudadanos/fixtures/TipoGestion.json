@@ -1,0 +1,16 @@
+[
+    {
+        "model": "ciudadanos.tipogestion",
+        "pk": 1,
+        "fields": {
+            "gestion": "Estatal"
+        }
+    },
+    {
+        "model": "ciudadanos.tipogestion",
+        "pk": 2,
+        "fields": {
+            "gestion": "Privada o subvencionada"
+        }
+    }
+]

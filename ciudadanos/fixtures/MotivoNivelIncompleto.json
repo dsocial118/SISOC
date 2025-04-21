@@ -1,0 +1,58 @@
+[
+    {
+        "model": "ciudadanos.motivonivelincompleto",
+        "pk": 1,
+        "fields": {
+            "motivo": "El establecimiento quedaba lejos y/o no tenía cómo llegar"
+        }
+    },
+    {
+        "model": "ciudadanos.motivonivelincompleto",
+        "pk": 2,
+        "fields": {
+            "motivo": "Necesitaba trabajar"
+        }
+    },
+    {
+        "model": "ciudadanos.motivonivelincompleto",
+        "pk": 3,
+        "fields": {
+            "motivo": "No podía pagar los gastos"
+        }
+    },
+    {
+        "model": "ciudadanos.motivonivelincompleto",
+        "pk": 4,
+        "fields": {
+            "motivo": "Tenía que cuidar a otras personas del hogar (niños/as, personas mayores, otras)"
+        }
+    },
+    {
+        "model": "ciudadanos.motivonivelincompleto",
+        "pk": 5,
+        "fields": {
+            "motivo": "Estaba embarazada"
+        }
+    },
+    {
+        "model": "ciudadanos.motivonivelincompleto",
+        "pk": 6,
+        "fields": {
+            "motivo": "No tenía de interés"
+        }
+    },
+    {
+        "model": "ciudadanos.motivonivelincompleto",
+        "pk": 7,
+        "fields": {
+            "motivo": "Tenía dificultades para aprender o estudiar"
+        }
+    },
+    {
+        "model": "ciudadanos.motivonivelincompleto",
+        "pk": 8,
+        "fields": {
+            "motivo": "Tenía problemas de salud"
+        }
+    }
+]

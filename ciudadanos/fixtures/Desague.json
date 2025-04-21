@@ -1,0 +1,44 @@
+[
+    {
+        "model": "ciudadanos.desague",
+        "pk": 1,
+        "fields": {
+            "tipo": "A red pública"
+        }
+    },
+    {
+        "model": "ciudadanos.desague",
+        "pk": 2,
+        "fields": {
+            "tipo": "A cámara séptica"
+        }
+    },
+    {
+        "model": "ciudadanos.desague",
+        "pk": 3,
+        "fields": {
+            "tipo": "A pozo ciego"
+        }
+    },
+    {
+        "model": "ciudadanos.desague",
+        "pk": 4,
+        "fields": {
+            "tipo": "A hoyo, excavación en la tierra, etc"
+        }
+    },
+    {
+        "model": "ciudadanos.desague",
+        "pk": 5,
+        "fields": {
+            "tipo": "Otro"
+        }
+    },
+    {
+        "model": "ciudadanos.desague",
+        "pk": 6,
+        "fields": {
+            "tipo": "Ns/Nc"
+        }
+    }
+]
