@@ -58,7 +58,7 @@ def test_get_puntuacion_total_56():
     excepcion = data["excepcion"]
     punto_entregas = data["punto_entregas"]
     imagenes = data["imagenes"]
-    suma_prueba = 48
+    suma_prueba = 56
 
     relevamiento = crear_test_relevamiento(
         sisoc_id=sisoc_id,

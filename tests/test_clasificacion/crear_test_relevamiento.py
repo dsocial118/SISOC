@@ -230,7 +230,6 @@ def crear_test_relevamiento(
                 nombre=funcionamiento["modalidad_prestacion"]
             ),
             servicio_por_turnos=funcionamiento["servicio_por_turnos"],
-            cantidad_turnos=funcionamiento["cantidad_turnos"],
         ),
         espacio=Espacio.objects.create(
             tipo_espacio_fisico=espacio_tipo_espacio_fisico,
