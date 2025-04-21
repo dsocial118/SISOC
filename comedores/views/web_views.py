@@ -55,6 +55,7 @@ from comedores.models.comedor import (
 from comedores.models.relevamiento import Prestacion
 from comedores.services.comedor_service import ComedorService
 from comedores.services.relevamiento_service import RelevamientoService
+from duplas.dupla_service import DuplaService
 from django.views.decorators.csrf import csrf_exempt
 
 
@@ -352,6 +353,34 @@ class ComedorDetailView(DetailView):
             except Exception as e:
                 messages.error(request, f"Error al crear el relevamiento: {e}")
                 return redirect("comedor_detalle", pk=self.object["id"])
+
+
+class AsignarDuplaListView(ListView):
+    model = Comedor
+    template_name = "comedor/asignar_dupla_form.html"
+
+    def get_context_data(self, **kwargs):
+        data = super().get_context_data(**kwargs)
+        comedor = ComedorService.get_comedor(self.kwargs["pk"])
+        duplas = DuplaService.get_duplas_by_estado_activo()
+        data["comedor"] = comedor
+        data["duplas"] = duplas
+        return data
+
+    def post(self, request, *args, **kwargs):
+        dupla_id = request.POST.get("dupla_id")
+        comedor_id = self.kwargs["pk"]
+
+        if dupla_id:
+            try:
+                ComedorService.asignar_dupla_a_comedor(dupla_id, comedor_id)
+                messages.success(request, "Dupla asignada correctamente.")
+            except Exception as e:
+                messages.error(request, f"Error al asignar la dupla: {e}")
+        else:
+            messages.error(request, "No se seleccionó ninguna dupla.")
+
+        return redirect("dupla_asignar", pk=comedor_id)
 
 
 class ComedorUpdateView(UpdateView):

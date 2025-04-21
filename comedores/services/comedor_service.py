@@ -35,6 +35,14 @@ class ComedorService:
         return intervenciones, cantidad_intervenciones
 
     @staticmethod
+    def asignar_dupla_a_comedor(dupla_id, comedor_id):
+        comedor = Comedor.objects.get(id=comedor_id)
+        comedor.dupla_id = dupla_id
+        comedor.estado = "Asignado a Dupla Técnica"
+        comedor.save()
+        return comedor
+
+    @staticmethod
     def detalle_de_nomina(kwargs):
         nomina = Nomina.objects.filter(comedor=kwargs["pk"])
         cantidad_nomina_m = Nomina.objects.filter(
