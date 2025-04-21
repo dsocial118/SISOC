@@ -1,9 +1,10 @@
 import os
 import json
+from datetime import datetime
 import pytest
 from comedores.services.clasificacion_comedor_service import ClasificacionComedorService
-from tests.test_clasificacion import crear_test_relevamiento
-from datetime import datetime
+from tests.test_clasificacion.crear_test_relevamiento import crear_test_relevamiento
+
 
 
 def normalize_json(data):

@@ -1,9 +1,11 @@
 import os
 import json
+from datetime import datetime
 import pytest
 from comedores.services.clasificacion_comedor_service import ClasificacionComedorService
-from tests.test_clasificacion import crear_test_relevamiento
-from datetime import datetime
+from tests.test_clasificacion.crear_test_relevamiento import crear_test_relevamiento
+
+
 
 
 def normalize_json(data):
@@ -56,7 +58,7 @@ def test_get_puntuacion_total():
     excepcion = data["excepcion"]
     punto_entregas = data["punto_entregas"]
     imagenes = data["imagenes"]
-    suma_prueba = 0
+    suma_prueba = 48
 
     relevamiento = crear_test_relevamiento(
         sisoc_id=sisoc_id,
