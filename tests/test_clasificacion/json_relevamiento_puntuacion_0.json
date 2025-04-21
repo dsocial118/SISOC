@@ -19,8 +19,7 @@
   },
   "funcionamiento": {
     "modalidad_prestacion": "Vianda",
-    "servicio_por_turnos": "N",
-    "cantidad_turnos": "1"
+    "servicio_por_turnos": "N"
   },
   "espacio": {
     "tipo_espacio_fisico": "Espacio Propio",
