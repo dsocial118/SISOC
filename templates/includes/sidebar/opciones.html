@@ -54,6 +54,29 @@
                         <p>Comedores</p>
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="far fa-circle nav-icon"></i>
+                        <p>
+                            Admision - Comedores
+                            <i class="nav-arrow bi bi-chevron-right"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview" style="display: none;">
+                        <li class="nav-item">
+                            <a href="{% url 'admisiones_tecnicos_listar' %}" class="nav-link ms-3">
+                                <i class="far fa-dot-circle nav-icon"></i>
+                                <p>Técnicos</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link ms-3">
+                                <i class="far fa-dot-circle nav-icon"></i>
+                                <p>Legales</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
             {% endif %}
             {% if user|has_group:"Organizaciones" %}
                 <li class="nav-item">

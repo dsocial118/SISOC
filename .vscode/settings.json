@@ -14,5 +14,6 @@
             "username": "root",
             "password": "root1-password2"
         }
-    ]
+    ],
+    "postman.settings.dotenv-detection-notification-visibility": false
 }
