@@ -26,9 +26,9 @@ def normalize_json(data):
 
 
 @pytest.mark.django_db
-def test_get_puntuacion_total_48():
+def test_get_puntuacion_total_56():
     # Preparacion: Crear un relevamiento en la BD de prueba
-    json_file_path = os.path.join(os.path.dirname(__file__), "json_relevamiento_puntuacion_48.json")
+    json_file_path = os.path.join(os.path.dirname(__file__), "json_relevamiento_puntuacion_56.json")
     with open(json_file_path, "r", encoding="utf-8") as file:
         data = json.load(file)
 
