@@ -1,7 +1,4 @@
-from django.shortcuts import render
-
 from django.contrib import messages
-from django.db.models import Q
 from django.forms import ValidationError
 from django.http import HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
