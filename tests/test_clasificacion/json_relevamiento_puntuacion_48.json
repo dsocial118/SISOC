@@ -20,7 +20,7 @@
   "funcionamiento": {
     "modalidad_prestacion": "Vianda",
     "servicio_por_turnos": "N",
-    "cantidad_turnos": ""
+    "cantidad_turnos": "1"
   },
   "espacio": {
     "tipo_espacio_fisico": "Espacio Propio",
@@ -178,7 +178,7 @@
     "espacio_huerta": "",
     "otras_actividades": "",
     "cuales_otras_actividades": "",
-    "veces_recibio_insumos_2024": ""
+    "veces_recibio_insumos_2024": "N"
   },
   "excepcion": {
     "motivo": "",
