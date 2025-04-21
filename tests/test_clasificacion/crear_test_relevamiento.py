@@ -62,9 +62,7 @@ def crear_test_relevamiento(
         if nombre:
             return TipoRecurso.objects.create(nombre=nombre)
         # Buscar el último objeto con nombre vacío
-        return TipoRecurso.objects.filter(
-            nombre=""
-        ).last()
+        return TipoRecurso.objects.filter(nombre="").last()
 
     espacio_abastecimiento_agua = TipoAgua.objects.create(
         nombre=espacio["cocina"]["abastecimiento_agua"]

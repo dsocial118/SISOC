@@ -6,7 +6,6 @@ from comedores.services.clasificacion_comedor_service import ClasificacionComedo
 from tests.test_clasificacion.crear_test_relevamiento import crear_test_relevamiento
 
 
-
 def normalize_json(data):
     """
     Recorre recursivamente un diccionario o lista y reemplaza:
@@ -27,7 +26,9 @@ def normalize_json(data):
 @pytest.mark.django_db
 def test_get_puntuacion_total_0():
     # Preparacion: Crear un relevamiento en la BD de prueba
-    json_file_path = os.path.join(os.path.dirname(__file__), "json_relevamiento_puntuacion_0.json")
+    json_file_path = os.path.join(
+        os.path.dirname(__file__), "json_relevamiento_puntuacion_0.json"
+    )
     with open(json_file_path, "r", encoding="utf-8") as file:
         data = json.load(file)
 
@@ -81,7 +82,7 @@ def test_get_puntuacion_total_0():
         punto_entregas=punto_entregas,
         imagenes_json=imagenes,
     )
-    
+
     # Ejecución: Llamar al método que queremos probar
     resultado = ClasificacionComedorService.get_puntuacion_total(relevamiento)
 
