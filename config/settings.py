@@ -132,6 +132,7 @@ INSTALLED_APPS = [
     "provincias",
     "cdi",
     "ciudadanos",
+    "duplas",
     "admisiones",
 ]
 
