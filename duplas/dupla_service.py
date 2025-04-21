@@ -1,5 +1,5 @@
-from duplas.models import Dupla
 from django.forms import ValidationError
+from duplas.models import Dupla
 
 
 class DuplaService:
