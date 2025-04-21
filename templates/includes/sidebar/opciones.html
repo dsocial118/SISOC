@@ -28,6 +28,11 @@
                         <i class="fas fa-arrow-alt-circle-right nav-icon"></i>
                         <p>Grupos</p>
                     </a>
+                    <a href="{% url 'dupla_list' %}"
+                       class="nav-link {% if 'grupos' in pagina_actual %}active{% endif %}">
+                        <i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+                        <p>Duplas</p>
+                    </a>
                 </li>
             </ul>
         </li>

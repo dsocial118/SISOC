@@ -1,0 +1,17 @@
+{% extends "includes/main.html" %}
+{% load static crispy_forms_tags %}
+{% block title %}Editar Dupla{% endblock %}
+{% block content %}
+    <div class="container mt-4">
+        <h2>Editar Dupla</h2>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.nombre | as_crispy_field }}
+            {{ form.estado | as_crispy_field }}
+            {{ form.tecnico | as_crispy_field }}
+            {{ form.abogado | as_crispy_field }}
+            <button type="submit" class="btn btn-success">Guardar</button>
+            <a href="{% url 'dupla_list' %}" class="btn btn-secondary">Cancelar</a>
+        </form>
+    </div>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends "includes/main.html" %};
+{% load static %}
+;
+{% block title %}Comedor: {{ comedor.nombre }}{% endblock %}
+;
+<div class="col-md-2 pt-5">
+    <c-dashboard.v-info-box titulo='Beneficiarios' valor='{{ tipo_comedor }}' color='success'>
+    <i class="fa fa-user"></i>
+    </c-dashboard.v-info-box>
+</div>
+{% block titulo-pagina %}<span class="ml-2 h5">Asignar Dupla</span>{% endblock %}
+;
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <div class="breadcrumb-item">
+            <a href="{% url 'comedores' %}">Comedores</a>
+        </div>
+        <div class="breadcrumb-item active">
+            <a href="{% url 'comedor_detalle' comedor.id %}">{{ comedor.nombre }}</a>
+        </div>
+    </ol>
+{% endblock %}
+;
+{% block content %}
+    <div class="container mt-4">
+        <h2>Asignar Dupla</h2>
+        <!-- Filtro por nombre de dupla -->
+        <div class="mb-3">
+            <input type="text"
+                   id="duplaFilter"
+                   class="form-control"
+                   placeholder="Filtrar por nombre de dupla..."
+                   onkeyup="filterTable()" />
+        </div>
+        <!-- Tabla de duplas activas -->
+        <form method="post">
+            {% csrf_token %}
+            <table class="table table-striped" id="duplaTable">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Técnicos</th>
+                        <th>Abogado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for dupla in duplas %}
+                        <tr>
+                            <td>{{ dupla.nombre }}</td>
+                            <td>
+                                {% for tecnico in dupla.tecnico.all %}
+                                    {{ tecnico.nombre }}
+                                    {% if not forloop.last %},{% endif %}
+                                {% endfor %}
+                            </td>
+                            <td>{{ dupla.abogado }}</td>
+                            <td>
+                                <button type="submit"
+                                        name="dupla_id"
+                                        value="{{ dupla.id }}"
+                                        onclick="return confirm('¿Estás seguro de que deseas asignar esta dupla?')"
+                                        class="btn btn-primary btn-sm">Asignar</button>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5">No hay duplas activas disponibles.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </form>
+    </div>
+    <script>
+    // Filtrar la tabla por nombre de dupla
+    function filterTable() {
+        const filter = document.getElementById("duplaFilter").value.toUpperCase();
+        const table = document.getElementById("duplaTable");
+        const rows = table.getElementsByTagName("tr");
+
+        for (let i = 1; i < rows.length; i++) {
+            const cells = rows[i].getElementsByTagName("td");
+            const nameCell = cells[1]; // Columna de nombre
+            if (nameCell) {
+                const name = nameCell.textContent || nameCell.innerText;
+                rows[i].style.display = name.toUpperCase().indexOf(filter) > -1 ? "" : "none";
+            }
+        }
+    }
+    </script>
+{% endblock %}

@@ -23,6 +23,7 @@ from comedores.views.web_views import (
     NominaCreateView,
     NominaDeleteView,
     NominaUpdateView,
+    AsignarDuplaListView,
     sub_estados_intervenciones_ajax,
 )
 from configuraciones.decorators import group_required
@@ -169,6 +170,11 @@ urlpatterns = [
         "admision/<int:admision_id>/documentacion/<int:documentacion_id>/eliminar/",
         eliminar_archivo_admision,
         name="eliminar_archivo_admision",
+    ),
+    path(
+        "comedores/dupla/asignar/<pk>",
+        group_required("Comedores")(AsignarDuplaListView.as_view()),
+        name="dupla_asignar",
     ),
     path(
         "comedores/ajax/load-subestadosintervenciones/",
