@@ -116,7 +116,7 @@ class ComedorService:
             Comedor.objects.select_related("provincia", "referente")
             .values(
                 "id",
-                "foto_ciudadano",
+                "foto_legajo",
                 "nombre",
                 "comienzo",
                 "id_externo",
