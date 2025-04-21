@@ -36,11 +36,8 @@ class ComedorService:
 
     @staticmethod
     def asignar_dupla_a_comedor(dupla_id, comedor_id):
-        # Obtener el comedor con el id
         comedor = Comedor.objects.get(id=comedor_id)
-        # Asignar la dupla al comedor
         comedor.dupla_id = dupla_id
-        # cambiar el estado del comedor a "Asignado a Dupla Técnica"
         comedor.estado = "Asignado a Dupla Técnica"
         comedor.save()
         return comedor
