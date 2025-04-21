@@ -1,5 +1,4 @@
 from duplas.models import Dupla
-from django.db.models import Case, When, IntegerField
 from django.forms import ValidationError
 
 
@@ -25,7 +24,7 @@ class DuplaService:
             dupla = Dupla.objects.create(**data)
             return dupla
         except Exception as e:
-            raise ValidationError(f"Error al crear la Dupla: {e}")
+            raise ValidationError(f"Error al crear la Dupla: {e}") from e
 
     @staticmethod
     def update_dupla(dupla_id, data):
@@ -35,7 +34,7 @@ class DuplaService:
                 setattr(dupla, key, value)
             dupla.save()
             return dupla
-        except Dupla.DoesNotExist:
-            raise ValidationError("Dupla no encontrada")
+        except Dupla.DoesNotExist as exc:
+            raise ValidationError("Dupla no encontrada") from exc
         except Exception as e:
-            raise ValidationError(f"Error al editar la Dupla: {e}")
+            raise ValidationError(f"Error al editar la Dupla: {e}") from e
