@@ -300,7 +300,7 @@ urlpatterns = [
     path(
         "ciudadanos/intervencion/ver/<pk>",
         login_required(IntervencionDetail.as_view()),
-        name="intervencion_ver",
+        name="ciudadano_intervencion_ver",
     ),
     path(
         "ciudadanos/intervencion/crear/<pk>",
