@@ -41,7 +41,7 @@ class AdmisionService:
         convenios = TipoConvenio.objects.all()
 
         documentaciones = Documentacion.objects.filter(
-            models.Q(tipo="todos") | models.Q(convenios=admision.tipo_convenio)
+            models.Q(convenios=admision.tipo_convenio)
         ).distinct()
 
         archivos_subidos = ArchivoAdmision.objects.filter(admision=admision)
