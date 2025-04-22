@@ -1,6 +1,6 @@
 ---
-name: Fix Report
-about: Reporte para bugs, errores o crasheos
+name: Reporte de Bug / Error / Crash 
+about: Template para reportar bugs, errores o crasheos
 title: ''
 labels: FIX
 assignees: ''
