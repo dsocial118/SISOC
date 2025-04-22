@@ -24,11 +24,10 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('id_municipio').addEventListener('change', function () {
         var url = ajaxLoadLocalidadesUrl;  // Obtén la URL de la vista
         var localidadId = this.options[this.selectedIndex].getAttribute('data-municipio-id');;  // Obtén el ID de la provincia seleccionada
-        var url2 = ajaxLoadAsentameintosUrl;
         fetch(url + '?municipio_id=' + localidadId)
             .then(response => response.json())
             .then(data => {
-                var localidadSelect = document.getElementById('id_fk_localidad');
+                var localidadSelect = document.getElementById('id_localidad');
                 localidadSelect.innerHTML = '';  // Limpia el campo de municipios
 
                 data.forEach(function (localidad) {
@@ -38,55 +37,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     localidadSelect.appendChild(option);
                 });
             });
-
-        fetch(url2 + '?municipio_id=' + localidadId)
-            .then(response => response.json())
-            .then(data => {
-                var localidadSelect = document.getElementById('id_fk_asentamiento');
-                localidadSelect.innerHTML = '';  // Limpia el campo de municipios
-
-                data.forEach(function (asentamiento) {
-                    var option = document.createElement('option');
-                    option.value = asentamiento.id;
-                    option.textContent = asentamiento.nombre;
-                    localidadSelect.appendChild(option);
-                });
-            });
     });
-
-    document.getElementById('id_fk_departamento').addEventListener('change', function () {
-        var url = ajaxLoadLocalidadesUrl;  // Obtén la URL de la vista
-        var departamentodId = this.options[this.selectedIndex].getAttribute('data-departamento-id');;  // Obtén el ID de la provincia seleccionada
-        var url2 = ajaxLoadAsentameintosUrl;  // Obtén la URL de la vista
-        fetch(url + '?departamento_id=' + departamentodId)
-            .then(response => response.json())
-            .then(data => {
-                var localidadSelect = document.getElementById('id_fk_localidad');
-                localidadSelect.innerHTML = '';  // Limpia el campo de municipios
-
-                data.forEach(function (localidad) {
-                    var option = document.createElement('option');
-                    option.value = localidad.id;
-                    option.textContent = localidad.nombre;
-                    localidadSelect.appendChild(option);
-                });
-            });
-
-        fetch(url2 + '?departamento_id=' + departamentodId)
-            .then(response => response.json())
-            .then(data => {
-                var localidadSelect = document.getElementById('id_fk_asentamiento');
-                localidadSelect.innerHTML = '';  // Limpia el campo de municipios
-
-                data.forEach(function (asentamiento) {
-                    var option = document.createElement('option');
-                    option.value = asentamiento.id;
-                    option.textContent = asentamiento.nombre;
-                    localidadSelect.appendChild(option);
-                });
-            });
-    });
-
 });
 
 
