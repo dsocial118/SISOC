@@ -59,8 +59,10 @@ def crear_test_relevamiento(
 
     def create_tipo_recurso(nombre):
         if nombre:
-            return TipoRecurso.objects.create(nombre=nombre)
-        return TipoRecurso.objects.filter(nombre=nombre).last()
+            # Busca el recurso por nombre, si no existe, lo crea
+            tipo_recurso = TipoRecurso.objects.get_or_create(nombre=nombre)
+            return tipo_recurso
+        return None  # Devuelve None si el nombre es vacío o None
 
     espacio_abastecimiento_agua = TipoAgua.objects.create(
         nombre=espacio["cocina"]["abastecimiento_agua"]
