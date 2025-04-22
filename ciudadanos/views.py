@@ -743,7 +743,6 @@ class CiudadanosCreateView(CreateView):
     template_name = "ciudadanos/ciudadano_form.html"
 
     def form_invalid(self, form):
-        print("form.errors", form.errors)
         messages.error(
             self.request,
             "Se produjo un error al crear el ciudadano. Por favor, verifique los datos ingresados.",
@@ -1869,7 +1868,7 @@ class AccionesSocialesView(TemplateView):
 
 
 class IntervencionesSaludView(TemplateView):
-    template_name = "ciudadanos/intervenciones_salud.html"
+    template_name = "intervencion/intervenciones_salud.html"
     model = Ciudadano
 
     def get_context_data(self, **kwargs):
@@ -2173,7 +2172,7 @@ class DeleteGrupoHogar(View):
 
 
 class IntervencionDetail(TemplateView):
-    template_name = "ciudadanos/intervencion_detail.html"
+    template_name = "intervencion/intervencion_detail.html"
     model = Intervencion
 
     def get_context_data(self, **kwargs):
@@ -2194,7 +2193,7 @@ class IntervencionDetail(TemplateView):
 
 class IntervencionCreateView(CreateView):
     model = Intervencion
-    template_name = "ciudadanos/intervencion_form.html"
+    template_name = "intervencion/intervencion_form.html"
     form_class = IntervencionForm
 
     def form_valid(self, form):
@@ -2216,7 +2215,7 @@ class IntervencionCreateView(CreateView):
 
 class IntervencionDeleteView(DeleteView):
     model = Intervencion
-    template_name = "ciudadanos/intervencion_confirm_delete.html"
+    template_name = "intervencion/intervencion_confirm_delete.html"
 
     def form_valid(self, form):
         self.object.delete()
@@ -2226,7 +2225,7 @@ class IntervencionDeleteView(DeleteView):
 class IntervencionUpdateView(UpdateView):
     model = Intervencion
     form_class = IntervencionForm
-    template_name = "ciudadanos/intervencion_form.html"
+    template_name = "intervencion/intervencion_form.html"
 
     def form_valid(self, form):
         pk = self.kwargs["pk2"]
@@ -2244,7 +2243,7 @@ class IntervencionUpdateView(UpdateView):
 
 
 class LlamadoDetail(TemplateView):
-    template_name = "ciudadanos/llamado_detail.html"
+    template_name = "llamado/llamado_detail.html"
     model = Llamado
 
     def get_context_data(self, **kwargs):
@@ -2270,7 +2269,7 @@ class LlamadoDeleteView(DeleteView):
 
 class LlamadoCreateView(CreateView):
     model = Llamado
-    template_name = "ciudadanos/llamado_form.html"
+    template_name = "llamado/llamado_form.html"
     form_class = LlamadoForm
 
     def form_valid(self, form):
@@ -2291,7 +2290,7 @@ class LlamadoCreateView(CreateView):
 class LlamadoUpdateView(UpdateView):
     model = Llamado
     form_class = LlamadoForm
-    template_name = "ciudadanos/llamado_form.html"
+    template_name = "llamado/llamado_form.html"
 
     def form_valid(self, form):
         pk = self.kwargs["pk2"]
