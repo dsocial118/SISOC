@@ -31,6 +31,7 @@ def wait_for_mysql():
     time.sleep(10)
     print("✅ MySQL está listo.")
 
+
 def run_django_commands():
     """
     Ejecuta los comandos de Django necesarios para la preparación y el funcionamiento de la aplicación.
@@ -44,6 +45,7 @@ def run_django_commands():
     subprocess.run(["python", "manage.py", "create_local_superuser"])
     subprocess.run(["python", "manage.py", "create_groups"])
     run_server()
+
 
 def run_server():
     """
@@ -72,6 +74,7 @@ def run_server():
     else:
         print("🧪 Iniciando Django en modo desarrollo...")
         subprocess.run(["python", "manage.py", "runserver", "0.0.0.0:8000"])
+
 
 if __name__ == "__main__":
     wait_for_mysql()
