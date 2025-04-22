@@ -209,10 +209,10 @@ class Comedor(models.Model):
     )
     provincia = models.ForeignKey(to=Provincia, on_delete=models.PROTECT, null=True)
     municipio = models.ForeignKey(
-        to=Municipio, on_delete=models.PROTECT, null=True, blank=True
+        to=Municipio, on_delete=models.SET_NULL, null=True, blank=True
     )
     localidad = models.ForeignKey(
-        to=Localidad, on_delete=models.PROTECT, null=True, blank=True
+        to=Localidad, on_delete=models.SET_NULL, null=True, blank=True
     )
     partido = models.CharField(max_length=255, null=True, blank=True)
     barrio = models.CharField(max_length=255, null=True, blank=True)
