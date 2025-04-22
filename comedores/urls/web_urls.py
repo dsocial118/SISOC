@@ -109,7 +109,7 @@ urlpatterns = [
     path(
         "comedores/intervencion/ver/<pk>",
         group_required("Comedores")(IntervencionDetail.as_view()),
-        name="intervencion_ver",
+        name="comedor_intervencion_ver",
     ),
     path(
         "comedores/nomina/ver/<pk>",

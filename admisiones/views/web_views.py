@@ -64,7 +64,7 @@ class AdmisionesTecnicosCreateView(CreateView):
 
 class AdmisionesTecnicosUpdateView(UpdateView):
     model = Admision
-    template_name = "comedor/admisiones_tecnicos_form.html"
+    template_name = "admisiones_tecnicos_form.html"
     form_class = AdmisionForm
     context_object_name = "admision"
 

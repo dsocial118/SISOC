@@ -151,7 +151,7 @@ class IntervencionCreateView(CreateView):
     def form_valid(self, form):
         pk = self.kwargs["pk"]
         form.save()
-        return redirect("intervencion_ver", pk=pk)
+        return redirect("comedor_intervencion_ver", pk=pk)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -168,7 +168,7 @@ class IntervencionDeleteView(DeleteView):
 
     def form_valid(self, form):
         self.object.delete()
-        return redirect("intervencion_ver", pk=self.kwargs["pk2"])
+        return redirect("comedor_intervencion_ver", pk=self.kwargs["pk2"])
 
 
 class IntervencionUpdateView(UpdateView):
@@ -179,7 +179,7 @@ class IntervencionUpdateView(UpdateView):
     def form_valid(self, form):
         pk = self.kwargs["pk2"]
         form.save()
-        return redirect("intervencion_ver", pk=pk)
+        return redirect("comedor_intervencion_ver", pk=pk)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
