@@ -4,37 +4,39 @@ title: '[FIX] '
 labels: ['FIX']
 assignees: []
 body:
-  - type: markdown
-    attributes:
-      value: "### 🐞 Descripción de lo que se reporta"
-
   - type: textarea
     id: descripcion
     attributes:
       label: 🐞 Descripción de lo que se reporta
       description: Explicá brevemente qué ocurrió.
-      placeholder: "Al clickear en X botón, aparece un error: TemplateNotFound"
+      placeholder: "Ejemplo: Al clickear en X botón, aparece un error: TemplateNotFound"
     validations:
       required: true
-
-  - type: markdown
-    attributes:
-      value: "### 🔗 URLs relacionadas (si aplica)\n> Copiá y pegá la URL de la página donde pasó el error\n> Ejemplo: \"http://10.80.9.15/comedores/listar\""
 
   - type: input
     id: url
     attributes:
-      label: URL del error
-      placeholder: "http://10.80.9.15/comedores/listar"
+      label: 🔗 URLs relacionadas (si aplica)
+      description: Copiá y pegá la URL de la página donde pasó el error.
+      placeholder: "Ejemplo: \"http://10.80.9.15/comedores/listar\""
+    validations:
+      required: true
 
-  - type: markdown
+
+  - type: textarea
+    id: esperado
     attributes:
-      value: "### 🚩 Logs o tracebacks (si aplica)\nPegá cualquier mensaje de error que veas en pantalla o consola del navegador."
+      label: ✅ Comportamiento esperado
+      description: ¿Qué debería ocurrir en lugar del error?
+      placeholder: "Ejemplo: Que el formulario se guarde correctamente y me redirija al listado."
+    validations:
+      required: true
 
   - type: textarea
     id: logs
     attributes:
-      label: Logs o errores
+      label:  🚩 Logs o tracebacks (si aplica)
+      description: Pegá cualquier mensaje de error que veas en pantalla o consola del navegador.
       render: shell
       placeholder: |
         Traceback (most recent call last):
@@ -42,53 +44,33 @@ body:
     validations:
       required: false
 
-  - type: markdown
-    attributes:
-      value: "### 🔁 Pasos para reproducirlo (en caso de ser complejo)\n> Indicá paso a paso cómo repetir el problema.\n> Ejemplo:\n> 1. Ir a `http://10.80.9.15/comedores/editar/123`\n> 2. Añadir una organización cualquiera\n> 3. ..."
 
   - type: textarea
     id: pasos
     attributes:
-      label: Pasos para reproducirlo
+      label: 🔁 Pasos para reproducirlo (en caso de ser complejo)
+      decsription: Indicá paso a paso cómo repetir el problema.
       placeholder: |
+        Ejemplo:
         1. Ir a ...
         2. Click en ...
         3. ...
     validations:
       required: false
 
-  - type: markdown
-    attributes:
-      value: "### ✅ Comportamiento esperado\n> ¿Qué debería ocurrir en lugar del error?\n> Ejemplo: \"Que el formulario se guarde correctamente y me redirija al listado.\""
-
-  - type: textarea
-    id: esperado
-    attributes:
-      label: Comportamiento esperado
-      placeholder: "Que el formulario se guarde correctamente y me redirija al listado."
-    validations:
-      required: true
-
-  - type: markdown
-    attributes:
-      value: "### 📸 Capturas de pantalla\n> Cualquier captura que ayude a resolver el problema"
-
   - type: textarea
     id: capturas
     attributes:
-      label: Capturas de pantalla
+      label: 📸 Capturas de pantalla
       placeholder: "Pegá acá las URLs o arrastrá las imágenes al issue luego de crearlo."
     validations:
       required: false
-
-  - type: markdown
-    attributes:
-      value: "### 📎 Extras\n> Cualquier otra cosa que pueda ayudar a entender el problema."
 
   - type: textarea
     id: extras
     attributes:
       label: Extras
+      description: Cualquier otra cosa que pueda ayudar a entender el problema.
       placeholder: "Ej: Usuario afectado, navegador usado, sistema operativo, etc."
     validations:
       required: false
