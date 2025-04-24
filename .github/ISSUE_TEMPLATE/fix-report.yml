@@ -1,18 +1,18 @@
 name: Reporte de Bug / Error / Crash
 description: Template para reportar bugs, errores o crasheos
-title: '[BUG] '
+title: '[FIX] '
 labels: ['FIX']
 assignees: []
 body:
   - type: markdown
     attributes:
-      value: "### 🐞 Descripción de lo que se reporta\n> Explicá brevemente qué ocurrió.\n> Ejemplo: \"Al clickear en X botón, aparece un error: `TemplateNotFound`\""
+      value: "### 🐞 Descripción de lo que se reporta"
 
   - type: textarea
     id: descripcion
     attributes:
-      label: Descripción
-      description: ¿Qué ocurrió?
+      label: 🐞 Descripción de lo que se reporta
+      description: Explicá brevemente qué ocurrió.
       placeholder: "Al clickear en X botón, aparece un error: TemplateNotFound"
     validations:
       required: true
