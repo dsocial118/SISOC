@@ -1332,7 +1332,7 @@ class DerivacionDetailView(DetailView):
 
 class AlertaListView(ListView):
     model = HistorialAlerta
-    template_name = "ciudadanos/alertas_list.html"
+    template_name = "ciudadanos/alerta_list.html"
 
     def get_context_data(self, **kwargs):
         pk = self.kwargs["pk"]
@@ -1831,7 +1831,7 @@ class DeleteArchivo(View):
 
 
 class ProgramaIntervencionesView(TemplateView):
-    template_name = "ciudadanos/programas_intervencion.html"
+    template_name = "intervencion/programas_intervencion.html"
     model = Ciudadano
 
     def get_context_data(self, **kwargs):
@@ -1845,7 +1845,7 @@ class ProgramaIntervencionesView(TemplateView):
 
 
 class AccionesSocialesView(TemplateView):
-    template_name = "ciudadanos/acciones_sociales.html"
+    template_name = "acciones_sociales/acciones_sociales.html"
     model = Ciudadano
 
     def get_context_data(self, **kwargs):
@@ -1882,7 +1882,7 @@ class IntervencionesSaludView(TemplateView):
 
 
 class IndicesView(TemplateView):
-    template_name = "ciudadanos/indices.html"
+    template_name = "indices/indices.html"
     model = Ciudadano
 
     def get_context_data(self, **kwargs):
@@ -1896,7 +1896,7 @@ class IndicesView(TemplateView):
 
 
 class IndicesDetalleView(TemplateView):
-    template_name = "ciudadanos/indices_detalle.html"
+    template_name = "indices/indices_detalle.html"
     model = Ciudadano
 
     def get_context_data(self, **kwargs):
