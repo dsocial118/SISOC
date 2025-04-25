@@ -19,6 +19,11 @@ from comedores.models.comedor import ImagenComedor
 
 class ComedorService:
     @staticmethod
+    def get_comedores_para_una_dupla_por_id(id_dupla):
+        return Comedor.objects.filter(
+            dupla=id_dupla).first()
+    
+    @staticmethod
     def get_comedor(pk_send):
         comedor = Comedor.objects.values(
             "id", "nombre", "provincia", "barrio", "calle", "numero"
