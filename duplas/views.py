@@ -85,7 +85,7 @@ class DuplaDeleteView(DeleteView):
         return reverse("dupla_list")
 
     def post(self, request, *args, **kwargs):
-        comedor = ComedorService.get_comedores_para_una_dupla_por_id(kwargs["pk"])
+        comedor = ComedorService.get_comedor_by_dupla(kwargs["pk"])
         if comedor:
             messages.error(
                 request,
