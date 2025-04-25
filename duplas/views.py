@@ -9,9 +9,10 @@ from django.views.generic import (
     ListView,
     UpdateView,
 )
-from duplas.dupla_service import DuplaService
 from duplas.models import Dupla
 from duplas.forms import DuplaForm
+from duplas.dupla_service import DuplaService
+from comedores.services.comedor_service import ComedorService
 
 
 class DuplaListView(ListView):
@@ -84,6 +85,14 @@ class DuplaDeleteView(DeleteView):
         return reverse("dupla_list")
 
     def post(self, request, *args, **kwargs):
+        comedor = ComedorService.get_comedor_by_dupla(kwargs["pk"])
+        if comedor:
+            messages.error(
+                request,
+                "No se puede eliminar la dupla porque está asignada al comedor "
+                + str(comedor.nombre),
+            )
+            return HttpResponseRedirect(self.get_success_url())
         self.object = self.get_object()
         self.object.delete()
         messages.success(request, "Dupla eliminada correctamente.")
