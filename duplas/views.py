@@ -87,7 +87,11 @@ class DuplaDeleteView(DeleteView):
     def post(self, request, *args, **kwargs):
         comedor = ComedorService.get_comedores_para_una_dupla_por_id(kwargs["pk"])
         if comedor:
-            messages.error(request, "No se puede eliminar la dupla porque está asignada al comedor " + str(comedor.nombre))
+            messages.error(
+                request,
+                "No se puede eliminar la dupla porque está asignada al comedor "
+                + str(comedor.nombre),
+            )
             return HttpResponseRedirect(self.get_success_url())
         self.object = self.get_object()
         self.object.delete()
