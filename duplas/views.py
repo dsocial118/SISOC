@@ -14,6 +14,7 @@ from duplas.forms import DuplaForm
 from duplas.dupla_service import DuplaService
 from comedores.services.comedor_service import ComedorService
 
+
 class DuplaListView(ListView):
     model = Dupla
     template_name = "dupla_list.html"
