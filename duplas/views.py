@@ -9,11 +9,10 @@ from django.views.generic import (
     ListView,
     UpdateView,
 )
-from duplas.dupla_service import DuplaService
-from comedores.services.comedor_service import ComedorService
 from duplas.models import Dupla
 from duplas.forms import DuplaForm
-
+from duplas.dupla_service import DuplaService
+from comedores.services.comedor_service import ComedorService
 
 class DuplaListView(ListView):
     model = Dupla
