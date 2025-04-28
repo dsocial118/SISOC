@@ -1,20 +1,20 @@
 [
   {
-    "model": "comedores.tipointervencion",
+    "model": "intervenciones.tipointervencion",
     "pk": 1,
     "fields": {
       "nombre": "A"
     }
   },
   {
-    "model": "comedores.tipointervencion",
+    "model": "intervenciones.tipointervencion",
     "pk": 2,
     "fields": {
       "nombre": "B"
     }
   },
   {
-    "model": "comedores.subintervencion",
+    "model": "intervenciones.subintervencion",
     "pk": 1,
     "fields": {
       "nombre": "1",
@@ -22,7 +22,7 @@
     }
   },
   {
-    "model": "comedores.subintervencion",
+    "model": "intervenciones.subintervencion",
     "pk": 2,
     "fields": {
       "nombre": "2",
@@ -30,7 +30,7 @@
     }
   },
   {
-    "model": "comedores.subintervencion",
+    "model": "intervenciones.subintervencion",
     "pk": 3,
     "fields": {
       "nombre": "3",
@@ -38,7 +38,7 @@
     }
   },
   {
-    "model": "comedores.subintervencion",
+    "model": "intervenciones.subintervencion",
     "pk": 4,
     "fields": {
       "nombre": "4",

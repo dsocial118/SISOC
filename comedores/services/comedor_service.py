@@ -9,9 +9,10 @@ from comedores.models.comedor import (
     Comedor,
     Referente,
     ValorComida,
-    Intervencion,
     Nomina,
 )
+
+from intervenciones.models.intervenciones import Intervencion
 from configuraciones.models import Municipio, Provincia
 from configuraciones.models import Localidad
 from comedores.models.comedor import ImagenComedor

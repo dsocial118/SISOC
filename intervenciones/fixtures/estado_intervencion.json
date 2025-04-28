@@ -1,13 +1,13 @@
 [
 {
-  "model": "comedores.estadosintervencion",
+  "model": "intervenciones.estadosintervencion",
   "pk": 1,
   "fields": {
     "nombre": "Activo"
   }
 },
 {
-  "model": "comedores.estadosintervencion",
+  "model": "intervenciones.estadosintervencion",
   "pk": 2,
   "fields": {
     "nombre": "Inactivo"
