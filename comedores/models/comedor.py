@@ -7,7 +7,7 @@ from configuraciones.models import Localidad
 from configuraciones.models import Sexo
 from organizaciones.models import Organizacion
 from duplas.models import Dupla
-from intervenciones.models import EstadosIntervencion
+from intervenciones.models.intervenciones import EstadosIntervencion
 
 
 class TipoDeComedor(models.Model):
