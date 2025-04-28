@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.db.models.base import Model
 from django.forms import BaseModelForm
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
@@ -25,7 +25,6 @@ from comedores.models.relevamiento import Relevamiento, ClasificacionComedor
 from comedores.forms.comedor_form import (
     ComedorForm,
     ReferenteForm,
-    IntervencionForm,
     NominaForm,
 )
 
@@ -47,8 +46,6 @@ from comedores.models.comedor import (
     Comedor,
     ImagenComedor,
     Observacion,
-    Intervencion,
-    SubIntervencion,
     Nomina,
 )
 
@@ -60,34 +57,6 @@ from django.views.decorators.csrf import csrf_exempt
 
 
 @csrf_exempt
-def sub_estados_intervenciones_ajax(request):
-    request_id = request.GET.get("id")
-    if request_id:
-        sub_estados = SubIntervencion.objects.filter(subintervencion=request_id)
-    else:
-        sub_estados = SubIntervencion.objects.all()
-
-    data = [
-        {"id": sub_estado.id, "text": sub_estado.nombre} for sub_estado in sub_estados
-    ]
-    return JsonResponse(data, safe=False)
-
-
-class IntervencionDetail(TemplateView):
-    template_name = "comedor/intervencion_detail.html"
-    model = Intervencion
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        intervenciones, cantidad_intervenciones = (
-            ComedorService.detalle_de_intervencion(self.kwargs)
-        )
-        comedor = ComedorService.get_comedor(self.kwargs["pk"])
-        context["intervenciones"] = intervenciones
-        context["object"] = comedor
-        context["cantidad_intervenciones"] = cantidad_intervenciones
-
-        return context
 
 
 class NominaDetail(TemplateView):
@@ -141,52 +110,6 @@ class NominaDeleteView(DeleteView):
     def form_valid(self, form):
         self.object.delete()
         return redirect("nomina_ver", pk=self.kwargs["pk2"])
-
-
-class IntervencionCreateView(CreateView):
-    model = Intervencion
-    template_name = "comedor/intervencion_form.html"
-    form_class = IntervencionForm
-
-    def form_valid(self, form):
-        pk = self.kwargs["pk"]
-        form.save()
-        return redirect("comedor_intervencion_ver", pk=pk)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        comedor = ComedorService.get_comedor(self.kwargs["pk"])
-        context["form"] = self.get_form()
-        context["object"] = comedor
-
-        return context
-
-
-class IntervencionDeleteView(DeleteView):
-    model = Intervencion
-    template_name = "comedor/intervencion_confirm_delete.html"
-
-    def form_valid(self, form):
-        self.object.delete()
-        return redirect("comedor_intervencion_ver", pk=self.kwargs["pk2"])
-
-
-class IntervencionUpdateView(UpdateView):
-    model = Intervencion
-    form_class = IntervencionForm
-    template_name = "comedor/intervencion_form.html"
-
-    def form_valid(self, form):
-        pk = self.kwargs["pk2"]
-        form.save()
-        return redirect("comedor_intervencion_ver", pk=pk)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        comedor = ComedorService.get_comedor(self.kwargs["pk2"])
-        context["form"] = self.get_form()
-        context["object"] = comedor
-        return context
 
 
 class NominaUpdateView(UpdateView):
