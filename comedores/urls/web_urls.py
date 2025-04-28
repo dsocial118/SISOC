@@ -15,16 +15,19 @@ from comedores.views.web_views import (
     RelevamientoDeleteView,
     RelevamientoDetailView,
     RelevamientoUpdateView,
-    IntervencionDetail,
-    IntervencionCreateView,
-    IntervencionUpdateView,
-    IntervencionDeleteView,
     NominaDetail,
     NominaCreateView,
     NominaDeleteView,
     NominaUpdateView,
     AsignarDuplaListView,
+)
+
+from intervenciones.views import (
     sub_estados_intervenciones_ajax,
+    IntervencionDetail,
+    IntervencionCreateView,
+    IntervencionUpdateView,
+    IntervencionDeleteView,
 )
 from configuraciones.decorators import group_required
 from admisiones.views.web_views import (

@@ -6,13 +6,17 @@ from comedores.models.comedor import (
     Observacion,
     TipoDeComedor,
     ValorComida,
-    Intervencion,
-    SubIntervencion,
-    TipoIntervencion,
-    EstadosIntervencion,
     Programas,
     Nomina,
 )
+
+from intervenciones.models.intervenciones import (
+    Intervencion,
+    SubIntervencion,
+    EstadosIntervencion,
+    TipoIntervencion,
+)
+
 from comedores.models.relevamiento import (
     CantidadColaboradores,
     FrecuenciaLimpieza,
