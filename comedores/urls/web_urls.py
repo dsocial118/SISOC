@@ -124,7 +124,7 @@ urlpatterns = [
     path(
         "comedores/intervencion/crear/<pk>",
         group_required("Comedores")(IntervencionCreateView.as_view()),
-        name="intervencion_crear",
+        name="comedor_intervencion_crear",
     ),
     path(
         "comedores/intervencion/editar/<pk>/<pk2>",
