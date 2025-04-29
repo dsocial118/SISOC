@@ -116,7 +116,7 @@ urlpatterns = [
     ),
     path(
         "comedores/nomina/ver/<pk>",
-        group_required("Comedores")(NominaDetail.as_view()),
+        group_required("Comedores")(NominaDetail),
         name="nomina_ver",
     ),
     path(
