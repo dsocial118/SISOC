@@ -23,7 +23,7 @@ def sub_estados_intervenciones_ajax(request):
 
 
 class IntervencionDetail(TemplateView):
-    template_name = "intervenciones/intervencion_detail.html"
+    template_name = "intervencion_detail.html"
     model = Intervencion
 
     def get_context_data(self, **kwargs):
@@ -40,7 +40,7 @@ class IntervencionDetail(TemplateView):
 
 class IntervencionCreateView(CreateView):
     model = Intervencion
-    template_name = "intervenciones/intervencion_form.html"
+    template_name = "intervencion_form.html"
     form_class = IntervencionForm
 
     def form_valid(self, form):

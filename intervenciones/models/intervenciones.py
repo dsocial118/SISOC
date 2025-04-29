@@ -1,7 +1,6 @@
 # intervenciones/models.py
 from django.db import models
 from django.utils import timezone
-from comedores.models import Comedor  # Importamos Comedor desde la app de comedores
 
 class EstadosIntervencion(models.Model):
     """
@@ -57,7 +56,7 @@ class Intervencion(models.Model):
     Registro de intervenciones realizadas a comedores.
     """
     comedor = models.ForeignKey(
-        Comedor, 
+        'comedores.Comedor', 
         on_delete=models.SET_NULL, 
         null=True,
         related_name='intervenciones',

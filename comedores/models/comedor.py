@@ -7,7 +7,6 @@ from configuraciones.models import Localidad
 from configuraciones.models import Sexo
 from organizaciones.models import Organizacion
 from duplas.models import Dupla
-from intervenciones.models.intervenciones import EstadosIntervencion
 
 
 class TipoDeComedor(models.Model):
@@ -203,7 +202,7 @@ class Nomina(models.Model):
     comedor = models.ForeignKey(Comedor, on_delete=models.SET_NULL, null=True)
     fecha = models.DateTimeField(auto_now_add=True)
     estado = models.ForeignKey(
-        EstadosIntervencion, on_delete=models.SET_NULL, default=1, null=True
+        'intervenciones.EstadosIntervencion', on_delete=models.SET_NULL, default=1, null=True
     )
     observaciones = models.TextField(blank=True, null=True)
     nombre = models.TextField(blank=True, null=True)
