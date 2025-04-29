@@ -89,6 +89,22 @@ class Intervencion(models.Model):
         null=True,
         verbose_name="Observaciones"
     )
+    destinatario = models.CharField(
+        max_length=255,
+        verbose_name="Destinatario",
+        blank=True,
+        null=True
+    )
+    forma_contacto = models.CharField(
+        max_length=255,
+        verbose_name="Forma de contacto",
+        blank=True,
+        null=True
+    )
+    tiene_documentacion = models.BooleanField(
+        default=False,
+        verbose_name="Documentación adjunta"
+    )
 
     class Meta:
         verbose_name = "Intervención"

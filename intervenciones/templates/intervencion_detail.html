@@ -1,147 +1,93 @@
-{% extends "includes/main.html" %};
+{% extends "includes/main.html" %}
 {% load static %}
-;
-{% block title %}Intervenciones Formulario{% endblock %}
-;
+
+{% block title %}Intervenciones{% endblock %}
 {% block titulo-pagina %}Intervenciones{% endblock %}
-;
+
 {% block breadcrumb %}
-    <ol class="breadcrumb float-sm-right">
-        <li class="breadcrumb-item">
-            <a href="" title="Ver listado de admisiones">Comedores</a>
-        </li>
-        <li class="breadcrumb-item ">
-            <a href="{% url 'comedor_intervencion_ver' object.id %}"
-               title="Ver Comedor">{{ object.nombre }}</a>
-        </li>
-        <li class="breadcrumb-item active">Detalle</li>
-    </ol>
+<ol class="breadcrumb float-sm-right">
+    <li class="breadcrumb-item">
+        <a href="{% url 'comedor_detalle' object.id %}" title="Ver Comedor">{{ object.nombre }}</a>
+    </li>
+    <li class="breadcrumb-item active">Intervenciones</li>
+</ol>
 {% endblock %}
-;
-{% block menu-adicional %}{% endblock %}
-;
+
 {% block content %}
-    <!-- card-info -->
-    <div class="row">
-        <!-- botones -->
-        <div class="col-12 my-3 mx-2 d-print-none">
-            <a href="{% url 'comedor_intervencion_crear' object.id %}"
-               class="btn btn-primary mr-1">Agregar Intervención</a>
-            <a href="" class="btn btn-secondary mr-1 print">Imprimir</a>
-        </div>
-        <!-- ./botones -->
+<div class="row">
+    <div class="col-12 my-3 mx-2 d-print-none">
+        <a href="{% url 'comedor_intervencion_crear' object.id %}" class="btn btn-primary mr-1">Agregar Intervención</a>
     </div>
-    <div class="row p-0 m-0 " id="seleccion">
-        <!-- Datos de ciudadano -->
-        <div class="col-sm-4 pb-3">
-            <div class="card card-outline card-primary h-100 mb-0">
-                <div class="card-header">
-                    <h3 class="card-title">Detalle del Comedor</h3>
-                    <div class="card-tools d-inline">
-                        <a href="{% url 'comedor_detalle' object.id %}" class="ml-3 mr-2">Ver detalles</a>
-                        <button type="button"
-                                class="btn btn-tool d-md-none"
-                                data-card-widget="collapse">
-                            <i class="fas fa-minus"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <dl class="row">
-                        <dd class="col-sm-5 mb-2">
-                            Nombre
-                        </dd>
-                        <dt class="col-sm-7 mb-2">
-                            <a href="{% url 'comedor_detalle' object.id %}" title="Ver ciudadano">{{ object.nombre }}</a>
-                        </dt>
-                        <dd class="col-sm-5 mb-2">
-                            Gestionar
-                        </dd>
-                        <dt class="col-sm-7 mb-2">{{ object.id }}</dt>
-                        <dd class="col-sm-5 mb-2">
-                            Provincia
-                        </dd>
-                        <dt class="col-sm-7 mb-2">{{ object.provincia }}</dt>
-                        <dd class="col-sm-5 mb-2">
-                            Barrio
-                        </dd>
-                        <dt class="col-sm-7 mb-2">{{ object.barrio }}</dt>
-                    </dl>
-                </div>
+</div>
+
+<!-- Filtros -->
+<div class="row">
+    <div class="col-12">
+        <form method="get" class="form-inline mb-3">
+            <input type="date" name="fecha" class="form-control mr-2" placeholder="Fecha" value="{{ request.GET.fecha }}">
+            <select name="tipo_intervencion" class="form-control mr-2">
+                <option value="">Tipo de Intervención</option>
+                {% for tipo in tipos_intervencion %}
+                    <option value="{{ tipo.id }}" {% if tipo.id|stringformat:"s" == request.GET.tipo_intervencion %}selected{% endif %}>
+                        {{ tipo.nombre }}
+                    </option>
+                {% endfor %}
+            </select>
+            <input type="text" name="destinatario" class="form-control mr-2" placeholder="Destinatario" value="{{ request.GET.destinatario }}">
+            <button type="submit" class="btn btn-primary">Filtrar</button>
+        </form>
+    </div>
+</div>
+
+<!-- Tabla de intervenciones -->
+<div class="row">
+    <div class="col-12">
+        <div class="card card-primary card-outline">
+            <div class="card-header">
+                <h3 class="card-title">Historial de Intervenciones</h3>
             </div>
-        </div>
-        <!-- /  -->
-        <!-- Datos de indice -->
-        <div class="col-sm-3">
-            <div class="row h-100">
-                <div class="col-12">
-                    <div class="info-box py-3 ">
-                        <span class="info-box-icon bg-secondary">{{ cantidad_intervenciones }}</span>
-                        <div class="info-box-content">
-                            <span class="info-box-text">Intervenciones</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- /  -->
-        <!-- historial de Intervenciones -->
-        <div class="col-12 mt-3">
-            <div class="card card-primary card-outline">
-                <div class="card-header">
-                    <h3 class="card-title">Historial de Intervenciones</h3>
-                    <div class="card-tools ">
-                        <button type="button"
-                                class="btn btn-tool d-md-none"
-                                data-card-widget="collapse">
-                            <i class="fas fa-minus"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="card-body table-responsive p-0">
-                    <table class="table table-head-fixed table-bordered">
+            <div class="card-body table-responsive">
+                {% if intervenciones %}
+                    <table class="table table-bordered">
                         <thead>
                             <tr>
                                 <th>Fecha</th>
-                                <th>Comedor</th>
-                                <th>Sub Intervencion</th>
-                                <th>Tipo Intervencion</th>
-                                <th>Estado</th>
-                                <th></th>
-                                <th></th>
+                                <th>Tipo de Intervención</th>
+                                <th>Subtipo de Intervención</th>
+                                <th>Destinatario</th>
+                                <th>Forma de Contacto</th>
+                                <th>Documentación Adjunta</th>
+                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for e in intervenciones %}
+                            {% for intervencion in intervenciones %}
                                 <tr>
-                                    <td>{{ e.fecha|date:'d/m/Y' }}</td>
-                                    <td>{{ e.comedor }}</td>
-                                    <td>{{ e.subintervencion }}</td>
-                                    <td>{{ e.tipo_intervencion }}</td>
-                                    <td>{{ e.estado }}</td>
+                                    <td>{{ intervencion.fecha|date:"d/m/Y" }}</td>
+                                    <td>{{ intervencion.tipo_intervencion }}</td>
+                                    <td>{{ intervencion.subintervencion }}</td>
+                                    <td>{{ intervencion.destinatario }}</td>
+                                    <td>{{ intervencion.forma_contacto }}</td>
                                     <td>
-                                        <a href="{% url 'intervencion_editar' e.id object.id %}">Editar</a>
+                                        {% if intervencion.tiene_documentacion %}
+                                            Sí
+                                        {% else %}
+                                            No
+                                        {% endif %}
                                     </td>
                                     <td>
-                                        <a href="{% url 'intervencion_borrar' e.id object.id %}">Eliminiar</a>
+                                        <a href="{% url 'intervencion_editar' intervencion.id %}" class="btn btn-sm btn-warning">Editar</a>
+                                        <a href="{% url 'intervencion_borrar' intervencion.id %}" class="btn btn-sm btn-danger">Eliminar</a>
                                     </td>
                                 </tr>
                             {% endfor %}
                         </tbody>
                     </table>
-                </div>
-            </div>
-        </div>
-        <!-- / -->
-    </div>
-    <div class="row mt-4 d-print-none">
-        <div class="col-12 mx-2">
-            <div class="form-group  d-flex justify-content-between">
-                <a href="{% url 'comedor_detalle' object.id %}"
-                   class="btn btn-secondary">Volver</a>
+                {% else %}
+                    <p class="text-center">Aún no se han registrado intervenciones</p>
+                {% endif %}
             </div>
         </div>
     </div>
+</div>
 {% endblock %}
-;
-{% block customJS %}{% endblock %}
