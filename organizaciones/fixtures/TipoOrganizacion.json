@@ -1,0 +1,23 @@
+[
+    {
+        "model": "organizaciones.tipoorganizacion",
+        "pk": 1,
+        "fields": {
+            "nombre": "Personería jurídica"
+        }
+    },
+    {
+        "model": "organizaciones.tipoorganizacion",
+        "pk": 2,
+        "fields": {
+            "nombre": "Personería jurídica eclesiástica"
+        }
+    },
+    {
+        "model": "organizaciones.tipoorganizacion",
+        "pk": 3,
+        "fields": {
+            "nombre": "Asociación de hecho"
+        }
+    }
+]
