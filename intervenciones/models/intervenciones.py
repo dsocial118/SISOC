@@ -51,6 +51,20 @@ class SubIntervencion(models.Model):
         verbose_name_plural = "Sub-Intervenciones"
         ordering = ['tipo_intervencion', 'nombre']
 
+class TipoDestinatario(models.Model):
+    """
+    Guardado de los destinatarios de las intervenciones realizadas.
+    """
+    nombre = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"{self.nombre}"
+
+    class Meta:
+        verbose_name = "Destinatario"
+        verbose_name_plural = "Destinatarios"
+        ordering = ['id']
+
 class Intervencion(models.Model):
     """
     Registro de intervenciones realizadas a comedores.
@@ -89,11 +103,11 @@ class Intervencion(models.Model):
         null=True,
         verbose_name="Observaciones"
     )
-    destinatario = models.CharField(
-        max_length=255,
+    destinatario = models.ForeignKey(
+        TipoDestinatario,
+        on_delete=models.SET_NULL,
+        null=True,
         verbose_name="Destinatario",
-        blank=True,
-        null=True
     )
     forma_contacto = models.CharField(
         max_length=255,
