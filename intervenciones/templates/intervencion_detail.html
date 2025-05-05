@@ -21,20 +21,28 @@
 </div>
 
 <!-- Filtros -->
-<div class="row">
+<div class="row mb-4">
     <div class="col-12">
-        <form method="get" class="form-inline mb-3">
-            <input type="date" name="fecha" class="form-control mr-2" placeholder="Fecha" value="{{ request.GET.fecha }}">
-            <select name="tipo_intervencion" class="form-control mr-2">
-                <option value="">Tipo de Intervención</option>
-                {% for tipo in tipos_intervencion %}
-                    <option value="{{ tipo.id }}" {% if tipo.id|stringformat:"s" == request.GET.tipo_intervencion %}selected{% endif %}>
-                        {{ tipo.nombre }}
-                    </option>
-                {% endfor %}
-            </select>
-            <input type="text" name="destinatario" class="form-control mr-2" placeholder="Destinatario" value="{{ request.GET.destinatario }}">
-            <button type="submit" class="btn btn-primary">Filtrar</button>
+        <form method="get" class="row g-3 align-items-center">
+            <div class="col-md-3">
+                <input type="date" name="fecha" class="form-control" placeholder="Fecha" value="{{ request.GET.fecha }}">
+            </div>
+            <div class="col-md-4">
+                <select name="tipo_intervencion" class="form-select">
+                    <option value="">Tipo de Intervención</option>
+                    {% for tipo in tipos_intervencion %}
+                        <option value="{{ tipo.id }}" {% if tipo.id|stringformat:"s" == request.GET.tipo_intervencion %}selected{% endif %}>
+                            {{ tipo.nombre }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="text" name="destinatario" class="form-control" placeholder="Destinatario" value="{{ request.GET.destinatario }}">
+            </div>
+            <div class="col-md-2 text-end">
+                <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+            </div>
         </form>
     </div>
 </div>
@@ -77,7 +85,7 @@
                                     </td>
                                     <td>
                                         <td>
-                                            <a href="{% url 'intervencion_editar' object.id intervencion.id %}" class="btn btn-sm btn-warning">Editar</a>
+                                            <a href="{% url 'intervencion_editar' object.id intervencion.id %}" class="btn btn-sm btn-primary">Ver</a>
                                             <a href="{% url 'intervencion_borrar' object.id intervencion.id %}" class="btn btn-sm btn-danger">Eliminar</a>
                                         </td>
                                     </td>
