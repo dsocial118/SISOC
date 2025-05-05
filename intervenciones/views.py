@@ -4,7 +4,7 @@ from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import CreateView, DeleteView, UpdateView, TemplateView
 from comedores.services.comedor_service import ComedorService
-from intervenciones.models.intervenciones import Intervencion, SubIntervencion, TipoIntervencion, EstadosIntervencion
+from intervenciones.models.intervenciones import Intervencion, SubIntervencion, TipoIntervencion, EstadosIntervencion, TipoDestinatario
 from intervenciones.forms import IntervencionForm
 
 
@@ -47,6 +47,7 @@ class IntervencionDetail(TemplateView):
             intervenciones = intervenciones.filter(destinatario__icontains=destinatario)
 
         context["tipos_intervencion"] = TipoIntervencion.objects.all()
+        context["destinatarios"] = TipoDestinatario.objects.all()
         context["intervenciones"] = intervenciones
         context["object"] = comedor
         context["cantidad_intervenciones"] = cantidad_intervenciones

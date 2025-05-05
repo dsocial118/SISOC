@@ -38,7 +38,14 @@
                 </select>
             </div>
             <div class="col-md-3">
-                <input type="text" name="destinatario" class="form-control" placeholder="Destinatario" value="{{ request.GET.destinatario }}">
+                <select name="destinatario" class="form-select">
+                    <option value="">Destinatario</option>
+                    {% for tipo in destinatarios %}
+                        <option value="{{ tipo.id }}" {% if tipo.id|stringformat:"s" == request.GET.destinatario %}selected{% endif %}>
+                            {{ tipo.nombre }}
+                        </option>
+                    {% endfor %}
+                </select>
             </div>
             <div class="col-md-2 text-end">
                 <button type="submit" class="btn btn-primary w-100">Filtrar</button>

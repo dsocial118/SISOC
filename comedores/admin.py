@@ -15,6 +15,7 @@ from intervenciones.models.intervenciones import (
     SubIntervencion,
     EstadosIntervencion,
     TipoIntervencion,
+    TipoDestinatario,
 )
 
 from comedores.models.relevamiento import (
@@ -69,3 +70,4 @@ admin.site.register(TipoDistanciaTransporte)
 admin.site.register(MotivoExcepcion)
 admin.site.register(Excepcion)
 admin.site.register(Programas)
+admin.site.register(TipoDestinatario)
