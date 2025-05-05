@@ -131,6 +131,17 @@ class RelevamientoSerializer(serializers.ModelSerializer):
                         self.initial_data["referente_comedor"]["celular"]
                         .strip()
                         .replace("-", "")
+                        .replace(".", "")
+                    )
+            if "documento" in self.initial_data["referente_comedor"]:
+                if self.initial_data["referente_comedor"]["documento"] == "":
+                    self.initial_data["referente_comedor"]["documento"] = None
+                else:
+                    self.initial_data["referente_comedor"]["documento"] = (
+                        self.initial_data["referente_comedor"]["documento"]
+                        .strip()
+                        .replace("-", "")
+                        .replace(".", "")
                     )
 
         if "responsable_relevamiento" in self.initial_data:
@@ -142,6 +153,17 @@ class RelevamientoSerializer(serializers.ModelSerializer):
                         self.initial_data["referente_comedor"]["celular"]
                         .strip()
                         .replace("-", "")
+                        .replace(".", "")
+                    )
+            if "documento" in self.initial_data["responsable_relevamiento"]:
+                if self.initial_data["responsable_relevamiento"]["documento"] == "":
+                    self.initial_data["responsable_relevamiento"]["documento"] = None
+                else:
+                    self.initial_data["responsable_relevamiento"]["documento"] = (
+                        self.initial_data["responsable_relevamiento"]["documento"]
+                        .strip()
+                        .replace("-", "")
+                        .replace(".", "")
                     )
 
         if (
