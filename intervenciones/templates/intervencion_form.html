@@ -1,130 +1,60 @@
 {% extends "includes/main.html" %}
-{% load static %}
+{% load crispy_forms_tags %}
+
 {% block title %}Agregar Intervención{% endblock %}
-{% block titulo-pagina %}Agregar Intervención{% endblock %}
-
-{% block breadcrumb %}
-<ol class="breadcrumb float-sm-right">
-    <li class="breadcrumb-item"><a href="{% url 'comedor_detalle' object.id %}">Comedor</a></li>
-    <li class="breadcrumb-item active">Agregar Intervención</li>
-</ol>
-{% endblock %}
-
 {% block content %}
 <div class="row">
     <div class="col">
-        <form id="intervencion-form" method="POST" enctype="multipart/form-data" action="{% url 'comedor_intervencion_crear' object.id %}">
+        <form method="POST" enctype="multipart/form-data">
             {% csrf_token %}
-            <!-- Paso 1: Datos Iniciales -->
-            <div id="step-1" class="step">
-                <div class="card card-primary card-outline">
-                    <div class="card-header">
-                        <h3 class="card-title">Paso 1 - Datos Iniciales</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="form-group">
-                            <label for="tipo_intervencion">Tipo de Intervención</label>
-                            <select id="tipo_intervencion" name="tipo_intervencion" class="form-control" required>
-                                <option value="">Seleccione...</option>
-                                <option value="Visitas">Visitas</option>
-                                <option value="Presentación del programa">Presentación del programa</option>
-                                <option value="Solicitud de documentación">Solicitud de documentación</option>
-                                <option value="Coordinación para firma de convenio">Coordinación para firma de convenio</option>
-                                <option value="Aviso para retiro de tarjeta">Aviso para retiro de tarjeta</option>
-                                <option value="Habilitación de tarjeta">Habilitación de tarjeta</option>
-                                <option value="Alta de usuario en plataforma">Alta de usuario en plataforma</option>
-                                <option value="Invitación a capacitación">Invitación a capacitación</option>
-                                <option value="Asistencia a capacitación">Asistencia a capacitación</option>
-                                <option value="Aviso de acreditación de fondos">Aviso de acreditación de fondos</option>
-                                <option value="Consultas varias">Consultas varias</option>
-                                <option value="Aviso de utilización de saldo pendiente">Aviso de utilización de saldo pendiente</option>
-                                <option value="Certificación mensual">Certificación mensual</option>
-                                <option value="Listado de beneficiarios">Listado de beneficiarios</option>
-                                <option value="Tarjeta">Tarjeta</option>
-                                <option value="Rendición presentada al programa">Rendición presentada al programa</option>
-                                <option value="Giro de expediente a PNSA Contable">Giro de expediente a PNSA Contable</option>
-                                <option value="Informe técnico complementario">Informe técnico complementario</option>
-                                <option value="Otros">Otros</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="subintervencion">Subtipo de Intervención</label>
-                            <select id="subintervencion" name="subintervencion" class="form-control" required>
-                                <option value="">Seleccione...</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="destinatario">Destinatario</label>
-                            <select id="destinatario" name="destinatario" class="form-control" required>
-                                <option value="">Seleccione...</option>
-                                <option value="Organización">Organización</option>
-                                <option value="Comedor">Comedor</option>
-                                <option value="Otros">Otros</option>
-                            </select>
-                        </div>
-                    </div>
+            <!-- Paso 1 -->
+            <div id="step-1">
+                <h3>Paso 1 - Datos Iniciales</h3>
+                <div class="form-group">
+                    {{ form.tipo_intervencion|as_crispy_field }}
                 </div>
-                <button type="button" class="btn btn-primary" id="next-step">Siguiente</button>
+                <div class="form-group">
+                    {{ form.subintervencion|as_crispy_field }}
+                </div>
+                <div class="form-group">
+                    {{ form.estado|as_crispy_field }}
+                </div>
+                <div class="form-group">
+                    {{ form.destinatario|as_crispy_field }}
+                </div>
+                <button type="button" id="next-step" class="btn btn-primary">Siguiente</button>
             </div>
 
-            <!-- Paso 2: Datos de Contacto -->
-            <div id="step-2" class="step d-none">
-                <div class="card card-primary card-outline">
-                    <div class="card-header">
-                        <h3 class="card-title">Paso 2 - Datos de Contacto</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="form-group">
-                            <label for="fecha">Fecha</label>
-                            <input type="date" id="fecha" name="fecha" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="hora">Hora</label>
-                            <input type="time" id="hora" name="hora" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="forma_contacto">Forma de Contacto</label>
-                            <select id="forma_contacto" name="forma_contacto" class="form-control" required>
-                                <option value="">Seleccione...</option>
-                                <option value="Presencial">Presencial</option>
-                                <option value="Llamado">Llamado</option>
-                                <option value="Videollamada">Videollamada</option>
-                                <option value="Mensaje">Mensaje</option>
-                                <option value="Otro">Otro</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="descripcion">Descripción</label>
-                            <textarea id="descripcion" name="descripcion" class="form-control" rows="4" required></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label for="documentacion">Adjuntar Documentación</label>
-                            <input type="file" id="documentacion" name="documentacion" class="form-control">
-                        </div>
-                    </div>
+            <!-- Paso 2 -->
+            <div id="step-2" class="d-none">
+                <h3>Paso 2 - Datos de Contacto</h3>
+                <div class="form-group">
+                    {{ form.fecha|as_crispy_field }}
                 </div>
-                <button type="button" class="btn btn-secondary" id="prev-step">Anterior</button>
+                <div class="form-group">
+                    {{ form.forma_contacto|as_crispy_field }}
+                </div>
+                <div class="form-group">
+                    {{ form.observaciones|as_crispy_field }}
+                </div>
+                <div class="form-group">
+                    {{ form.tiene_documentacion|as_crispy_field }}
+                </div>
+                <button type="button" id="prev-step" class="btn btn-secondary">Anterior</button>
                 <button type="submit" class="btn btn-success">Guardar</button>
             </div>
         </form>
     </div>
 </div>
-{% endblock %}
 
-{% block customJS %}
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        const step1 = document.getElementById("step-1");
-        const step2 = document.getElementById("step-2");
         const nextStep = document.getElementById("next-step");
         const prevStep = document.getElementById("prev-step");
+        const step1 = document.getElementById("step-1");
+        const step2 = document.getElementById("step-2");
 
         nextStep.addEventListener("click", function () {
-            if (document.getElementById("tipo_intervencion").value === "" ||
-                document.getElementById("destinatario").value === "") {
-                alert("Por favor, complete todos los campos obligatorios en el Paso 1.");
-                return;
-            }
             step1.classList.add("d-none");
             step2.classList.remove("d-none");
         });

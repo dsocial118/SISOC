@@ -1,12 +1,12 @@
-# intervenciones/views.py
 from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import CreateView, DeleteView, UpdateView, TemplateView
 from comedores.services.comedor_service import ComedorService
-from intervenciones.models.intervenciones import Intervencion, SubIntervencion
+from intervenciones.models.intervenciones import Intervencion, SubIntervencion, TipoIntervencion, EstadosIntervencion
 from intervenciones.forms import IntervencionForm
+
 
 
 
@@ -54,14 +54,32 @@ class IntervencionDetail(TemplateView):
 
 class IntervencionCreateView(CreateView):
     model = Intervencion
-    template_name = "intervencion_form.html"
     form_class = IntervencionForm
+    template_name = "intervencion_form.html"
 
     def form_valid(self, form):
-        # Asociar la intervención con el comedor correspondiente
         form.instance.comedor_id = self.kwargs["pk"]
-        form.save()
-        # Redirigir al detalle de las intervenciones del comedor
+        field_mapping = {
+            "tipo_intervencion": TipoIntervencion,
+            "subintervencion": SubIntervencion,
+            "estado": EstadosIntervencion,
+            "destinatario": "Destinatario",
+            "fecha": "Fecha",
+            "forma_contacto": "Forma de Contacto",
+            "observaciones": "Descripción",
+            "tiene_documentacion": "Documentación Adjunta",
+        }
+
+        for field, model in field_mapping.items():
+            if isinstance(model, str):
+                setattr(form.instance, field, form.cleaned_data[field])
+            else:
+                # Asegúrate de que el valor sea un ID antes de buscar el objeto
+                value = form.cleaned_data[field]
+                if isinstance(value, model):
+                    value = value.id
+                setattr(form.instance, field, model.objects.get(id=value))
+        form.instance.save()
         return redirect(reverse("comedor_intervencion_ver", kwargs={"pk": self.kwargs["pk"]}))
 
     def get_context_data(self, **kwargs):
@@ -71,16 +89,20 @@ class IntervencionCreateView(CreateView):
         context["object"] = comedor
         return context
 
+    def get_success_url(self):
+        # Usa el pk del objeto recién creado para construir la URL
+        return reverse("comedor_intervencion_ver", kwargs={"pk": self.object.pk})
+
 
 class IntervencionUpdateView(UpdateView):
     model = Intervencion
     form_class = IntervencionForm
-    template_name = "intervenciones/intervencion_form.html"
+    template_name = "intervencion_form.html"
 
     def form_valid(self, form):
         pk = self.kwargs["pk2"]
         form.save()
-        return redirect("intervencion_ver", pk=pk)
+        return redirect("comedor_intervencion_ver", pk=pk)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -92,8 +114,8 @@ class IntervencionUpdateView(UpdateView):
 
 class IntervencionDeleteView(DeleteView):
     model = Intervencion
-    template_name = "intervenciones/intervencion_confirm_delete.html"
+    template_name = "intervencion_confirm_delete.html"
 
     def form_valid(self, form):
         self.object.delete()
-        return redirect("intervencion_ver", pk=self.kwargs["pk2"])
+        return redirect("comedor_intervencion_ver", pk=self.kwargs["pk2"])
