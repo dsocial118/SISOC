@@ -132,7 +132,7 @@ urlpatterns = [
     path(
         "comedores/intervencion/editar/<pk>/<pk2>",
         group_required("Comedores")(IntervencionUpdateView.as_view()),
-        name="intervencion_editar",
+        name="comedores_intervencion_editar",
     ),
     path(
         "comedores/nomina/editar/<pk>/<pk2>",

@@ -76,8 +76,10 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <a href="{% url 'intervencion_editar' intervencion.id %}" class="btn btn-sm btn-warning">Editar</a>
-                                        <a href="{% url 'intervencion_borrar' intervencion.id %}" class="btn btn-sm btn-danger">Eliminar</a>
+                                        <td>
+                                            <a href="{% url 'intervencion_editar' object.id intervencion.id %}" class="btn btn-sm btn-warning">Editar</a>
+                                            <a href="{% url 'intervencion_borrar' object.id intervencion.id %}" class="btn btn-sm btn-danger">Eliminar</a>
+                                        </td>
                                     </td>
                                 </tr>
                             {% endfor %}
