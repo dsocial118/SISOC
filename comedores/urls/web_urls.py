@@ -28,6 +28,8 @@ from intervenciones.views import (
     IntervencionCreateView,
     IntervencionUpdateView,
     IntervencionDeleteView,
+    subir_archivo_intervencion,
+    eliminar_archivo_intervencion,
 )
 from configuraciones.decorators import group_required
 from admisiones.views.web_views import (
@@ -183,5 +185,15 @@ urlpatterns = [
         "comedores/ajax/load-subestadosintervenciones/",
         sub_estados_intervenciones_ajax,
         name="ajax_load_subestadosintervenciones",
+    ),
+    path(
+        "intervencion/<int:intervencion_id>/documentacion/subir/",
+        subir_archivo_intervencion,
+        name="subir_archivo_intervencion",
+    ),
+    path(
+        "intervencion/<int:intervencion_id>/documentacion/eliminar/",
+        eliminar_archivo_intervencion,
+        name="eliminar_archivo_intervencion",
     ),
 ]

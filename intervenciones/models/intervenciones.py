@@ -119,6 +119,12 @@ class Intervencion(models.Model):
         default=False,
         verbose_name="Documentación adjunta"
     )
+    documentacion = models.FileField(
+        upload_to='documentacion/',
+        blank=True,
+        null=True,
+        verbose_name="Documentación Adjunta"
+    )
 
     class Meta:
         verbose_name = "Intervención"
