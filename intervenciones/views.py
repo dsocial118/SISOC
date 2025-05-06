@@ -46,7 +46,7 @@ class IntervencionDetail(TemplateView):
         if tipo_intervencion:
             intervenciones = intervenciones.filter(tipo_intervencion_id=tipo_intervencion)
         if destinatario:
-            intervenciones = intervenciones.filter(destinatario__icontains=destinatario)
+            intervenciones = intervenciones.filter(destinatario_id=destinatario)
 
         context["tipos_intervencion"] = TipoIntervencion.objects.all()
         context["destinatarios"] = TipoDestinatario.objects.all()
