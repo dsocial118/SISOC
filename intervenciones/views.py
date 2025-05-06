@@ -6,6 +6,8 @@ from django.views.generic import CreateView, DeleteView, UpdateView, TemplateVie
 from comedores.services.comedor_service import ComedorService
 from intervenciones.models.intervenciones import Intervencion, SubIntervencion, TipoIntervencion, EstadosIntervencion, TipoDestinatario
 from intervenciones.forms import IntervencionForm
+from django.shortcuts import get_object_or_404
+from django.http import JsonResponse
 
 
 
@@ -64,7 +66,6 @@ class IntervencionCreateView(CreateView):
         field_mapping = {
             "tipo_intervencion": TipoIntervencion,
             "subintervencion": SubIntervencion,
-            "estado": EstadosIntervencion,
             "destinatario": "Destinatario",
             "fecha": "Fecha",
             "forma_contacto": "Forma de Contacto",
@@ -121,3 +122,26 @@ class IntervencionDeleteView(DeleteView):
     def form_valid(self, form):
         self.object.delete()
         return redirect("comedor_intervencion_ver", pk=self.kwargs["pk2"])
+    
+
+def subir_archivo_intervencion(request, intervencion_id):
+    intervencion = get_object_or_404(Intervencion, id=intervencion_id)
+
+    if request.method == "POST" and request.FILES.get("documentacion"):
+        intervencion.documentacion = request.FILES["documentacion"]
+        intervencion.tiene_documentacion = True
+        intervencion.save()
+        return JsonResponse({"success": True, "message": "Archivo subido correctamente."})
+
+    return JsonResponse({"success": False, "message": "No se proporcionó un archivo."})
+
+def eliminar_archivo_intervencion(request, intervencion_id):
+    intervencion = get_object_or_404(Intervencion, id=intervencion_id)
+
+    if intervencion.documentacion:
+        intervencion.documentacion.delete()  # Elimina el archivo del sistema de archivos
+        intervencion.tiene_documentacion = False
+        intervencion.save()
+        return JsonResponse({"success": True, "message": "Archivo eliminado correctamente."})
+
+    return JsonResponse({"success": False, "message": "No hay archivo para eliminar."})

@@ -11,12 +11,12 @@ class IntervencionForm(forms.ModelForm):
         fields = [
             "tipo_intervencion",
             "subintervencion",
-            "estado",
             "destinatario",
             "fecha",
             "forma_contacto",
             "observaciones",
             "tiene_documentacion",
+            "documentacion",
         ]
         widgets = {
             "fecha": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
@@ -24,10 +24,10 @@ class IntervencionForm(forms.ModelForm):
         labels = {
             "tipo_intervencion": "Tipo de Intervención",
             "subintervencion": "Subtipo de Intervención",
-            "estado": "Estado",
             "destinatario": "Destinatario",
             "fecha": "Fecha",
             "forma_contacto": "Forma de Contacto",
             "observaciones": "Descripción",
             "tiene_documentacion": "Documentación Adjunta",
+            "documentacion": "Cargar Documentación",
         }
