@@ -64,6 +64,13 @@ class IntervencionCreateView(CreateView):
 
     def form_valid(self, form):
         form.instance.comedor_id = self.kwargs["pk"]
+
+        # Validar si el tipo_intervencion tiene subintervenciones asociadas
+        tipo_intervencion = form.cleaned_data.get("tipo_intervencion")
+        if tipo_intervencion and not tipo_intervencion.subintervenciones.exists():
+            form.cleaned_data["subintervencion"] = None
+
+        # Asignar valores al formulario
         field_mapping = {
             "tipo_intervencion": TipoIntervencion,
             "subintervencion": SubIntervencion,
@@ -75,14 +82,16 @@ class IntervencionCreateView(CreateView):
         }
 
         for field, model in field_mapping.items():
-            if isinstance(model, str):
-                setattr(form.instance, field, form.cleaned_data[field])
-            else:
-                # Asegúrate de que el valor sea un ID antes de buscar el objeto
-                value = form.cleaned_data[field]
-                if isinstance(value, model):
-                    value = value.id
-                setattr(form.instance, field, model.objects.get(id=value))
+            value = form.cleaned_data.get(field)
+            if value is not None:  # Solo procesar si el valor no es None
+                if isinstance(model, type):  # Verificar si 'model' es un tipo
+                    if isinstance(value, model):  # Si ya es una instancia del modelo
+                        setattr(form.instance, field, value)
+                    else:  # Si no es una instancia, buscarla en la base de datos
+                        setattr(form.instance, field, model.objects.get(id=value))
+                else:  # Si 'model' no es un tipo (es un string u otro valor)
+                    setattr(form.instance, field, value)
+
         form.instance.save()
         return redirect(reverse("comedor_intervencion_ver", kwargs={"pk": self.kwargs["pk"]}))
 

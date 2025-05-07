@@ -54,7 +54,6 @@
     </div>
 </div>
 
-<!-- Tabla de intervenciones -->
 <div class="row">
     <div class="col-12">
         <div class="card card-primary card-outline">
@@ -108,5 +107,10 @@
             </div>
         </div>
     </div>
+</div>
+<div class="col-md-2 text-start my-3">
+    <a href="{% url 'comedor_detalle' object.id %}" class="btn btn-secondary btn-lg">
+        <i class="fas fa-arrow-left"></i> 
+    </a>
 </div>
 {% endblock %}
