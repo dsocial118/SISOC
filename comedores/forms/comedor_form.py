@@ -32,7 +32,6 @@ class ReferenteForm(forms.ModelForm):
         fields = "__all__"
 
 
-
 class NominaForm(forms.ModelForm):
     class Meta:
         model = Nomina
