@@ -50,8 +50,15 @@
                                     <td>{{ comedor.referente.celular | default_if_none:"-" }}</td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            <a href="{% url 'admisiones_tecnicos_crear' comedor.id %}"
-                                               class="btn btn-primary btn-sm">Ver</a>
+                                            {% if comedor.admision_id %}
+                                            <a href="{% url 'admisiones_tecnicos_editar' comedor.admision_id %}" class="btn btn-warning btn-sm">
+                                                Editar
+                                            </a>
+                                            {% else %}
+                                            <a href="{% url 'admisiones_tecnicos_crear' comedor.id %}" class="btn btn-primary btn-sm">
+                                                Crear
+                                            </a>
+                                            {% endif %}
                                         </div>
                                     </td>
                                 </tr>
