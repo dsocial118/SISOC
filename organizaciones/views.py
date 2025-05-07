@@ -11,7 +11,12 @@ from django.views.generic import (
     UpdateView,
 )
 
-from organizaciones.forms import OrganizacionForm
+from organizaciones.forms import (
+    OrganizacionForm,
+    OrganizacionJuridicaForm,
+    OrganizacioneclEsiasticaForm,
+    OrganizacioneclHechoForm,
+)
 from organizaciones.models import Organizacion
 
 
@@ -41,6 +46,15 @@ class OrganizacionCreateView(CreateView):
     form_class = OrganizacionForm
     template_name = "organizacion_form.html"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["juridica_form"] = OrganizacionJuridicaForm(instance=self.object)
+        context["eclesiastica_form"] = OrganizacioneclEsiasticaForm(
+            instance=self.object
+        )
+        context["hecho_form"] = OrganizacioneclHechoForm(instance=self.object)
+        return context
+
     def get_success_url(self):
         return reverse("organizacion_detalle", kwargs={"pk": self.object.pk})
 
@@ -49,6 +63,15 @@ class OrganizacionUpdateView(UpdateView):
     model = Organizacion
     form_class = OrganizacionForm
     template_name = "organizacion_form.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["juridica_form"] = OrganizacionJuridicaForm(instance=self.object)
+        context["eclesiastica_form"] = OrganizacioneclEsiasticaForm(
+            instance=self.object
+        )
+        context["hecho_form"] = OrganizacioneclHechoForm(instance=self.object)
+        return context
 
     def get_success_url(self):
         return reverse("organizacion_detalle", kwargs={"pk": self.object.pk})

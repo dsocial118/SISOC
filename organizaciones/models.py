@@ -1,6 +1,7 @@
 from django.db import models
 from django.forms import ValidationError
 
+
 class TipoOrganizacion(models.Model):
     nombre = models.CharField(max_length=255, unique=True)
 
@@ -11,6 +12,7 @@ class TipoOrganizacion(models.Model):
         ordering = ["id"]
         verbose_name = "Tipo de Organización"
         verbose_name_plural = "Tipos de Organización"
+
 
 class Organizacion(models.Model):
     nombre = models.CharField(max_length=255)
@@ -27,6 +29,11 @@ class Organizacion(models.Model):
     firmante1 = models.CharField(max_length=255, blank=True, null=True)
     firmante2 = models.CharField(max_length=255, blank=True, null=True)
     firmante3 = models.CharField(max_length=255, blank=True, null=True)
+    aval1 = models.CharField(max_length=255, blank=True, null=True)
+    aval2 = models.CharField(max_length=255, blank=True, null=True)
+    cuitaval1 = models.BigIntegerField(blank=True, null=True)
+    cuitaval2 = models.BigIntegerField(blank=True, null=True)
+
     def delete(self, *args, **kwargs):
         from comedores.models.comedor import (  # pylint: disable=import-outside-toplevel
             Comedor,
