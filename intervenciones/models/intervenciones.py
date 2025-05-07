@@ -39,6 +39,7 @@ class SubIntervencion(models.Model):
         TipoIntervencion, 
         on_delete=models.SET_NULL, 
         null=True,
+        blank=True,
         related_name='subintervenciones',
         verbose_name="Tipo de Intervención asociada"
     )
@@ -94,6 +95,7 @@ class Intervencion(models.Model):
         SubIntervencion, 
         on_delete=models.SET_NULL, 
         null=True,
+        blank=True,
         verbose_name="Sub-tipo de intervención"
     )
     tipo_intervencion = models.ForeignKey(
