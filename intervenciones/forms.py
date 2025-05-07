@@ -1,9 +1,3 @@
-# intervenciones/forms.py
-from django import forms
-from intervenciones.models.intervenciones import (
-    Intervencion,
-)  # Adjust the import path if necessary
-
 from django import forms
 from intervenciones.models.intervenciones import Intervencion
 

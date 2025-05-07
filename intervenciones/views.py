@@ -1,35 +1,27 @@
 from django.http import JsonResponse
-from django.shortcuts import redirect
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import CreateView, DeleteView, UpdateView, TemplateView
+from django.contrib import messages
+from django.views.generic import CreateView, UpdateView, DeleteView, TemplateView
+
 from comedores.services.comedor_service import ComedorService
 from intervenciones.models.intervenciones import (
     Intervencion,
     SubIntervencion,
     TipoIntervencion,
-    EstadosIntervencion,
     TipoDestinatario,
 )
 from intervenciones.forms import IntervencionForm
-from django.shortcuts import get_object_or_404
-from django.http import JsonResponse
-from django.contrib import messages
 
 
 @csrf_exempt
 def sub_estados_intervenciones_ajax(request):
-    tipo_intervencion_id = request.GET.get(
-        "id"
-    )  # ID del tipo de intervención seleccionado
+    tipo_intervencion_id = request.GET.get("id")
     if tipo_intervencion_id:
-        sub_estados = SubIntervencion.objects.filter(
-            tipo_intervencion_id=tipo_intervencion_id
-        )
+        sub_estados = SubIntervencion.objects.filter(tipo_intervencion_id=tipo_intervencion_id)
     else:
-        sub_estados = (
-            SubIntervencion.objects.none()
-        )  # No devolver nada si no hay selección
+        sub_estados = SubIntervencion.objects.none()
 
     data = [
         {"id": sub_estado.id, "text": sub_estado.nombre} for sub_estado in sub_estados
@@ -44,9 +36,7 @@ class IntervencionDetail(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor = ComedorService.get_comedor(self.kwargs["pk"])
-        intervenciones, cantidad_intervenciones = (
-            ComedorService.detalle_de_intervencion(self.kwargs)
-        )
+        intervenciones, cantidad_intervenciones = ComedorService.detalle_de_intervencion(self.kwargs)
         intervenciones = Intervencion.objects.filter(comedor=comedor)
         fecha = self.request.GET.get("fecha")
         tipo_intervencion = self.request.GET.get("tipo_intervencion")
@@ -55,9 +45,7 @@ class IntervencionDetail(TemplateView):
         if fecha:
             intervenciones = intervenciones.filter(fecha__date=fecha)
         if tipo_intervencion:
-            intervenciones = intervenciones.filter(
-                tipo_intervencion_id=tipo_intervencion
-            )
+            intervenciones = intervenciones.filter(tipo_intervencion_id=tipo_intervencion)
         if destinatario:
             intervenciones = intervenciones.filter(destinatario_id=destinatario)
 
@@ -77,21 +65,17 @@ class IntervencionCreateView(CreateView):
     def form_valid(self, form):
         form.instance.comedor_id = self.kwargs["pk"]
 
-        # Validar si el tipo_intervencion tiene subintervenciones asociadas
         tipo_intervencion = form.cleaned_data.get("tipo_intervencion")
         if tipo_intervencion:
             subintervenciones = tipo_intervencion.subintervenciones.all()
-            if subintervenciones.exists():  # Si hay subintervenciones asociadas
+            if subintervenciones.exists():
                 subintervencion = form.cleaned_data.get("subintervencion")
-                if not subintervencion:  # Si no se seleccionó ninguna subintervención
-                    form.add_error(
-                        "subintervencion", "Debe seleccionar una subintervención."
-                    )
+                if not subintervencion:
+                    form.add_error("subintervencion", "Debe seleccionar una subintervención.")
                     return self.form_invalid(form)
-            else:  # Si no hay subintervenciones asociadas, permitir que sea None
+            else:
                 form.cleaned_data["subintervencion"] = None
 
-        # Asignar valores al formulario
         field_mapping = {
             "tipo_intervencion": TipoIntervencion,
             "subintervencion": SubIntervencion,
@@ -104,29 +88,25 @@ class IntervencionCreateView(CreateView):
 
         for field, model in field_mapping.items():
             value = form.cleaned_data.get(field)
-            if value is not None:  # Solo procesar si el valor no es None
-                if isinstance(model, type):  # Verificar si 'model' es un tipo
-                    if isinstance(value, model):  # Si ya es una instancia del modelo
+            if value is not None:
+                if isinstance(model, type):
+                    if isinstance(value, model):
                         setattr(form.instance, field, value)
-                    else:  # Si no es una instancia, buscarla en la base de datos
+                    else:
                         setattr(form.instance, field, model.objects.get(id=value))
-                else:  # Si 'model' no es un tipo (es un string u otro valor)
+                else:
                     setattr(form.instance, field, value)
 
         form.instance.save()
-        return redirect(
-            reverse("comedor_intervencion_ver", kwargs={"pk": self.kwargs["pk"]})
-        )
+        return redirect(reverse("comedor_intervencion_ver", kwargs={"pk": self.kwargs["pk"]}))
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Obtener el comedor asociado
         comedor = ComedorService.get_comedor(self.kwargs["pk"])
         context["object"] = comedor
         return context
 
     def get_success_url(self):
-        # Usa el pk del objeto recién creado para construir la URL
         return reverse("comedor_intervencion_ver", kwargs={"pk": self.object.pk})
 
 
@@ -156,9 +136,7 @@ class IntervencionDeleteView(DeleteView):
         return get_object_or_404(Intervencion, id=self.kwargs["intervencion_id"])
 
     def get_success_url(self):
-        return reverse(
-            "comedor_intervencion_ver", kwargs={"pk": self.kwargs["comedor_id"]}
-        )
+        return reverse("comedor_intervencion_ver", kwargs={"pk": self.kwargs["comedor_id"]})
 
 
 def subir_archivo_intervencion(request, intervencion_id):
@@ -168,9 +146,7 @@ def subir_archivo_intervencion(request, intervencion_id):
         intervencion.documentacion = request.FILES["documentacion"]
         intervencion.tiene_documentacion = True
         intervencion.save()
-        return JsonResponse(
-            {"success": True, "message": "Archivo subido correctamente."}
-        )
+        return JsonResponse({"success": True, "message": "Archivo subido correctamente."})
 
     return JsonResponse({"success": False, "message": "No se proporcionó un archivo."})
 
@@ -179,14 +155,13 @@ def eliminar_archivo_intervencion(request, intervencion_id):
     intervencion = get_object_or_404(Intervencion, id=intervencion_id)
 
     if intervencion.documentacion:
-        intervencion.documentacion.delete()  # Elimina el archivo del sistema de archivos
+        intervencion.documentacion.delete()
         intervencion.tiene_documentacion = False
         intervencion.save()
         messages.success(request, "El archivo fue eliminado correctamente.")
     else:
         messages.error(request, "No hay archivo para eliminar.")
 
-    # Redirige al detalle de la intervención
     return redirect("intervencion_detalle", pk=intervencion.id)
 
 

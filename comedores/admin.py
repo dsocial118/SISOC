@@ -1,23 +1,6 @@
 from django.contrib import admin
 
 from comedores.models.relevamiento import Excepcion, MotivoExcepcion, Relevamiento
-from comedores.models.comedor import (
-    Comedor,
-    Observacion,
-    TipoDeComedor,
-    ValorComida,
-    Programas,
-    Nomina,
-)
-
-from intervenciones.models.intervenciones import (
-    Intervencion,
-    SubIntervencion,
-    EstadosIntervencion,
-    TipoIntervencion,
-    TipoDestinatario,
-    TipoContacto,
-)
 
 from comedores.models.relevamiento import (
     CantidadColaboradores,
@@ -39,6 +22,26 @@ from comedores.models.relevamiento import (
     TipoAccesoComedor,
     TipoDistanciaTransporte,
 )
+
+from comedores.models.comedor import (
+    Comedor,
+    Observacion,
+    TipoDeComedor,
+    ValorComida,
+    Programas,
+    Nomina,
+)
+
+from intervenciones.models.intervenciones import (
+    Intervencion,
+    SubIntervencion,
+    EstadosIntervencion,
+    TipoIntervencion,
+    TipoDestinatario,
+    TipoContacto,
+)
+
+
 
 admin.site.register(TipoModalidadPrestacion)
 admin.site.register(TipoEspacio)
