@@ -33,12 +33,15 @@ from admisiones.views.web_views import (
     AdmisionesTecnicosListView,
     AdmisionesTecnicosCreateView,
     AdmisionesTecnicosUpdateView,
+    InformeTecnicosCreateView,
+    InformeTecnicosUpdateView,
+    InformeTecnicoDetailView,
 )
 
 urlpatterns = [
     path(
         "comedores/listar",
-        group_required("Comedores")(ComedorListView.as_view()),
+        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(ComedorListView.as_view()),
         name="comedores",
     ),
     path(
@@ -48,7 +51,7 @@ urlpatterns = [
     ),
     path(
         "comedores/<pk>",
-        group_required("Comedores")(ComedorDetailView.as_view()),
+        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(ComedorDetailView.as_view()),
         name="comedor_detalle",
     ),
     path(
@@ -148,17 +151,17 @@ urlpatterns = [
     ),
     path(
         "comedores/admisiones/tecnicos/listar",
-        group_required("Comedores")(AdmisionesTecnicosListView.as_view()),
+        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(AdmisionesTecnicosListView.as_view()),
         name="admisiones_tecnicos_listar",
     ),
     path(
         "comedores/admisiones/tecnicos/crear/<pk>",
-        group_required("Comedores")(AdmisionesTecnicosCreateView.as_view()),
+        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(AdmisionesTecnicosCreateView.as_view()),
         name="admisiones_tecnicos_crear",
     ),
     path(
         "comedores/admisiones/tecnicos/editar/<pk>",
-        group_required("Comedores")(AdmisionesTecnicosUpdateView.as_view()),
+        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(AdmisionesTecnicosUpdateView.as_view()),
         name="admisiones_tecnicos_editar",
     ),
     path(
@@ -181,4 +184,7 @@ urlpatterns = [
         sub_estados_intervenciones_ajax,
         name="ajax_load_subestadosintervenciones",
     ),
+    path("comedores/informe_tecnico/<str:tipo>/<int:admision_id>/crear/", InformeTecnicosCreateView.as_view(), name="informe_tecnico_crear"),
+    path('comedores/informe_tecnico/<str:tipo>/<int:pk>/editar/', InformeTecnicosUpdateView.as_view(), name='informe_tecnico_editar'),
+    path('comedores/informe_tecnico/<str:tipo>/<int:pk>/ver/', InformeTecnicoDetailView.as_view(), name='informe_tecnico_ver'),
 ]

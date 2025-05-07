@@ -145,6 +145,8 @@ class ComedorService:
                 "referente__mail",
                 "referente__celular",
                 "referente__documento",
+                "num_expediente",
+                "num_if",
             )
             .get(pk=comedor_id)
         )

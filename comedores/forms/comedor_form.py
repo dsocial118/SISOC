@@ -171,6 +171,14 @@ class ComedorForm(forms.ModelForm):
             "tipocomedor": "Tipo comedor",
         }
 
+class CaratularForm(forms.ModelForm):
+
+    num_expediente = forms.CharField(required=True, label="Número de Expediente")
+    num_if = forms.CharField(required=True, label="Número de IF")
+
+    class Meta:
+        model = Comedor
+        fields = ["num_expediente", "num_if"]
 
 class ImagenComedorForm(forms.ModelForm):
     class Meta:

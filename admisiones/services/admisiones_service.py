@@ -15,11 +15,17 @@ from comedores.models.comedor import Comedor
 class AdmisionService:
 
     @staticmethod
-    def get_comedores_with_admision():
-        admision_subquery = Admision.objects.filter(comedor=OuterRef("pk")).values(
-            "id"
-        )[:1]
-        return Comedor.objects.annotate(admision_id=Subquery(admision_subquery))
+    def get_comedores_with_admision(user):
+        admision_subquery = Admision.objects.filter(
+            comedor=OuterRef("pk")
+        ).values("id")[:1]
+
+        return Comedor.objects.filter(
+            dupla__tecnico=user,
+            dupla__estado="Activo"
+        ).annotate(
+            admision_id=Subquery(admision_subquery)
+        )
 
     @staticmethod
     def get_admision_create_context(pk):
@@ -32,19 +38,23 @@ class AdmisionService:
     def create_admision(comedor_pk, tipo_convenio_id):
         comedor = get_object_or_404(Comedor, pk=comedor_pk)
         tipo_convenio = get_object_or_404(TipoConvenio, pk=tipo_convenio_id)
+        estado = 1
 
-        return Admision.objects.create(comedor=comedor, tipo_convenio=tipo_convenio)
+        return Admision.objects.create(comedor=comedor, tipo_convenio=tipo_convenio, estado_id=estado)
 
     @staticmethod
     def get_admision_update_context(admision):
-        comedor = Comedor.objects.get(pk=admision.comedor_id)
-        convenios = TipoConvenio.objects.all()
-
         documentaciones = Documentacion.objects.filter(
             models.Q(convenios=admision.tipo_convenio)
         ).distinct()
 
+        estado_actualizado = False
         archivos_subidos = ArchivoAdmision.objects.filter(admision=admision)
+        if archivos_subidos.exists() and all(archivo.estado == "Aceptado" for archivo in archivos_subidos):
+            if admision.estado_id != 2:
+                admision.estado_id = 2
+                admision.save()
+                estado_actualizado = True
         archivos_dict = {
             archivo.documentacion.id: archivo for archivo in archivos_subidos
         }
@@ -66,11 +76,14 @@ class AdmisionService:
             }
             for doc in documentaciones
         ]
-
+        
+        comedor = Comedor.objects.get(pk=admision.comedor_id)
+        convenios = TipoConvenio.objects.all()
         return {
             "documentos": documentos_info,
             "comedor": comedor,
             "convenios": convenios,
+            "admision_todo_aceptado": estado_actualizado,
         }
 
     @staticmethod
@@ -104,3 +117,13 @@ class AdmisionService:
                 os.remove(file_path)
 
         archivo.delete()
+
+    @staticmethod
+    def update_estado_archivo(archivo, nuevo_estado):
+        if not archivo:
+            return False
+
+        # Actualiza el estado del archivo
+        archivo.estado = nuevo_estado
+        archivo.save()
+        return True

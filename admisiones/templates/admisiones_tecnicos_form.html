@@ -1,6 +1,7 @@
 {% extends "includes/main.html" %};
 {% load static %}
 ;
+{% load user_extras %};
 {% block title %}Admision: {{ comedor.nombre }}{% endblock %}
 ;
 {% block titulo-pagina %}{{ comedor.nombre }}{% endblock %}
@@ -62,17 +63,23 @@
                                 <div class="comment-text">
                                     Tipo Convenio:
                                     <span class="fw-bold">{{ admision.tipo_convenio.nombre| default_if_none:"-" }}
+                                        {% if admision.estado.nombre != "Finalizada" %}
                                         <button type="button"
                                                 class="btn btn-primary btn-sm ms-3 mb-1"
                                                 data-bs-toggle="modal"
                                                 data-bs-target="#nuevoSeleccionModal">Cambiar</button>
+                                        {% endif %}
                                     </span>
                                 </div>
                             </li>
                             <li class="nav-item">
                                 <div class="comment-text">
                                     Estado:
-                                    <span class="fw-bold">{{ admision.estado| default_if_none:"-" }}</span>
+                                    {% if admision_todo_aceptado %}
+                                    <span class="fw-bold">Finalizada</span>
+                                    {% else %}
+                                    <span class="fw-bold">{{ admision.estado.nombre| default_if_none:"-" }}</span>
+                                    {% endif %}
                                 </div>
                             </li>
                             <li class="nav-item">
@@ -100,7 +107,7 @@
                             <li class="nav-item">
                                 <div class="comment-text ">
                                     Nombre:
-                                    <a href=""><span class="fw-bold">{{ comedor.nombre }}</span></a>
+                                    <a href="{% url 'comedor_detalle' comedor.id %}"><span class="fw-bold">{{ comedor.nombre }}</span></a>
                                 </div>
                             </li>
                             <li class="nav-item">
@@ -160,18 +167,53 @@
                                     {% for doc in documentos %}
                                         <tr id="fila-{{ doc.id }}">
                                             <td class="ps-3">{{ doc.nombre }}</td>
-                                            <td class="px-3" id="estado-{{ doc.id }}">{{ doc.estado }}</td>
+                                            {% if doc.estado == "Aceptado"%}
+                                            <td class="ps-3 text-success" id="estado-{{ doc.id }}">Aceptado</td>
+                                            {% elif doc.estado == "Pendiente"%}
+                                            <td class="ps-3" id="estado-{{ doc.id }}">{{doc.estado}}</td>
+                                            {% elif doc.estado == "A Validar Abogado"%}
+                                                {% if user|has_group:"Tecnico Comedor" %}
+                                                <td class="ps-3" id="estado-{{ doc.id }}">A Validar Abogado</td>
+                                                {% endif %}
+                                                {% if user|has_group:"Abogado Dupla" %}
+                                                <td id="estado-{{ doc.id }}" >
+                                                    <select class="form-control" onchange="mostrarModal(this)" data-admision-id="{{ admision.id }}" data-documento-id="{{ doc.id }}">
+                                                        <option selected>Elegir opcion</option>
+                                                        <option value="Aceptado" {% if doc.estado == 'Aceptado' %}selected{% endif %}>Aceptado</option>
+                                                        <option value="Rectificar" {% if doc.estado == 'Rectificar' %}selected{% endif %}>Rectificar</option>
+                                                    </select>
+                                                </td>    
+                                                {% endif %}
+                                            {% else %}
+                                            {% if user|has_group:"Tecnico Comedor" %}
+                                                <td id="estado-{{ doc.id }}" >
+                                                    <select class="form-control" onchange="mostrarModal(this)" data-admision-id="{{ admision.id }}" data-documento-id="{{ doc.id }}">
+                                                        <option value="validar" {% if doc.estado == 'validar' %}selected{% endif %}>A Validar</option>
+                                                        <option value="A Validar Abogado" {% if doc.estado == 'A Validar Abogado' %}selected{% endif %}>A Validar Abogado</option>
+                                                        <option value="Rectificar" {% if doc.estado == 'Rectificar' %}selected{% endif %}>Rectificar</option>
+                                                    </select>
+                                                </td>                                
+                                            {% endif %}
+                                            {% if user|has_group:"Abogado Dupla" %}
+                                                <td class="ps-3" id="estado-{{ doc.id }}">{{doc.estado}}</td>                             
+                                            {% endif %}
+                                            {% endif %}                                         
                                             <td>
                                                 {% if doc.archivo_url %}
                                                     <a href="{{ doc.archivo_url }}"
                                                        target="_blank"
                                                        class="btn btn-primary btn-sm">Ver Archivo</a>
+                                                    {% if user|has_group:"Tecnico Comedor" %}
                                                     <button class="btn btn-secondary btn-sm" disabled>Archivado</button>
+                                                    {% if admision.estado.nombre != "Finalizada" %}
                                                     <button class="btn btn-sm btn-danger fw-bold px-3"
                                                             onclick="confirmarEliminar({{ admision.id }}, {{ doc.id }})">
                                                         X
                                                     </button>
+                                                    {% endif %}
+                                                    {% endif %}
                                                 {% else %}
+                                                    {% if user|has_group:"Tecnico Comedor" %}
                                                     <input type="file" id="file-{{ doc.id }}" />
                                                     <button class="btn btn-primary btn-sm"
                                                             onclick="subirArchivo({{ admision.id }}, {{ doc.id }})">
@@ -187,6 +229,7 @@
                                                              id="progress-bar-{{ doc.id }}"
                                                              style="width: 0%">0%</div>
                                                     </div>
+                                                    {% endif %}
                                                 {% endif %}
                                             </td>
                                         </tr>
@@ -264,6 +307,30 @@
                                     disabled>Cambiar y eliminar</button>
                         </div>
                     </form>
+                </div>
+            </div>
+        </div>
+        <!-- Modal para confirmar cambio de estado -->
+        <div class="modal fade" id="confirmarModal" tabindex="-1" aria-labelledby="confirmarModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="confirmarModalLabel">Confirmar cambio de estado</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        ¿Estás seguro de que quieres cambiar el estado?
+                        <form id="cambiarEstadoForm" method="POST" action="">
+                            {% csrf_token %}
+                            <input type="hidden" id="estadoSeleccionado" name="estado">
+                            <input type="hidden" id="admisionId" name="admision_id" value="{{ admision.id }}">
+                            <input type="hidden" id="documentoId" name="documento_id" value="{{ doc.id }}">
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-primary">Confirmar</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>

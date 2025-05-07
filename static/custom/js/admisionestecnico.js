@@ -31,7 +31,7 @@ function subirArchivo(admisionId, documentoId) {
     let url = `/admision/${admisionId}/documentacion/${documentoId}/subir/`;
 
     let xhr = new XMLHttpRequest();
-    xhr.open("POST", url, true); // ver lo de crftoken aca mas tarde {% csrf_token %}*
+    xhr.open("POST", url, true);
 
     // Enviar la solicitud con el progreso
     xhr.upload.onprogress = function (event) {
@@ -46,7 +46,16 @@ function subirArchivo(admisionId, documentoId) {
         if (xhr.status === 200) {
             let data = JSON.parse(xhr.responseText);
             if (data.success) {
-                document.getElementById(`estado-${documentoId}`).innerText = "A Validar";
+                document.getElementById(`estado-${documentoId}`).innerHTML = `
+                    <select class="form-control"
+                            onchange="mostrarModal(this)"
+                            data-documento-id="${documentoId}"
+                            data-admision-id="${admisionId}">
+                        <option value="validar">A Validar</option>
+                        <option value="A Validar Abogado">A Validar Abogado</option>
+                        <option value="Rectificar">Rectificar</option>
+                    </select>
+            `;
                 inputFile.disabled = true; 
                 let button = inputFile.nextElementSibling;
                 button.innerText = "Archivado";
@@ -83,6 +92,29 @@ function subirArchivo(admisionId, documentoId) {
 let admisionIdEliminar;
 let documentoIdEliminar;
 
+function mostrarModal(selectElement) {
+    const nuevoEstado = selectElement.value;
+    const admisionId = selectElement.getAttribute('data-admision-id');
+    const documentoId = selectElement.getAttribute('data-documento-id');
+    
+    // Establecer los valores en el formulario del modal
+    document.getElementById('estadoSeleccionado').value = nuevoEstado;
+    document.getElementById('admisionId').value = admisionId;
+    document.getElementById('documentoId').value = documentoId;
+
+    console.log("Estado:", nuevoEstado);
+    console.log("Documento ID:", documentoId);
+    console.log("Admision ID:", admisionId);
+
+    // Establecer la acción del formulario para que envíe a la URL correcta
+    const formAction = `#`;
+    document.getElementById('cambiarEstadoForm').action = formAction;
+
+    // Mostrar el modal
+    const modal = new bootstrap.Modal(document.getElementById('confirmarModal'));
+    modal.show();
+}
+
 function confirmarEliminar(admisionId, documentoId) {
     admisionIdEliminar = admisionId;
     documentoIdEliminar = documentoId;
@@ -113,7 +145,7 @@ function eliminarArchivo(admisionId, documentoId) {
                     <input type="file" id="file-${documentoId}" />
                     <button class="btn btn-primary btn-sm" onclick="subirArchivo(${admisionId}, ${documentoId})">Archivar</button>
                     <!-- Volver a agregar la barra de progreso -->
-                    <div class="progress mt-2" style="display:none; height: 3px;"" id="progress-container-${documentoId}">
+                    <div class="progress mt-2" style="display:none; height: 3px;" id="progress-container-${documentoId}">
                         <div class="progress-bar  progress-bar-striped" role="progressbar" id="progress-bar-${documentoId}" style="width: 0%;">0%</div>
                     </div>
                 </td>
