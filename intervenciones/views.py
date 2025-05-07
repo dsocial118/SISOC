@@ -67,8 +67,15 @@ class IntervencionCreateView(CreateView):
 
         # Validar si el tipo_intervencion tiene subintervenciones asociadas
         tipo_intervencion = form.cleaned_data.get("tipo_intervencion")
-        if tipo_intervencion and not tipo_intervencion.subintervenciones.exists():
-            form.cleaned_data["subintervencion"] = None
+        if tipo_intervencion:   
+            subintervenciones = tipo_intervencion.subintervenciones.all()
+            if subintervenciones.exists():  # Si hay subintervenciones asociadas
+                subintervencion = form.cleaned_data.get("subintervencion")
+                if not subintervencion:  # Si no se seleccionó ninguna subintervención
+                    form.add_error("subintervencion", "Debe seleccionar una subintervención.")
+                    return self.form_invalid(form)
+            else:  # Si no hay subintervenciones asociadas, permitir que sea None
+                form.cleaned_data["subintervencion"] = None
 
         # Asignar valores al formulario
         field_mapping = {

@@ -17,7 +17,7 @@
         "model": "intervenciones.TipoContacto",
         "pk": 3,
         "fields": {
-            "nombre": "Otros"
+            "nombre": "Mensaje"
         }
     },
     {
@@ -31,7 +31,7 @@
         "model": "intervenciones.TipoContacto",
         "pk": 5,
         "fields": {
-            "nombre": "Mensaje"
+            "nombre": "Otros"
         }
     }
 ]
