@@ -42,7 +42,6 @@ from intervenciones.models.intervenciones import (
 )
 
 
-
 admin.site.register(TipoModalidadPrestacion)
 admin.site.register(TipoEspacio)
 admin.site.register(TipoCombustible)
