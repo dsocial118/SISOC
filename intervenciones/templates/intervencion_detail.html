@@ -23,11 +23,11 @@
 <!-- Filtros -->
 <div class="row mb-4">
     <div class="col-12">
-        <form method="get" class="row g-3 align-items-center">
+        <form method="get" class="row g-3 align-items-center" id="filtros-form">
             <div class="col-md-3">
                 <input type="date" name="fecha" class="form-control" placeholder="Fecha" value="{{ request.GET.fecha }}">
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <select name="tipo_intervencion" class="form-select">
                     <option value="">Tipo de Intervención</option>
                     {% for tipo in tipos_intervencion %}
@@ -49,6 +49,9 @@
             </div>
             <div class="col-md-2 text-end">
                 <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+            </div>
+            <div class="col-md-1 text-end">
+                <button type="button" onclick="resetFilters()" class="btn btn-secondary w-100">Limpiar</button>
             </div>
         </form>
     </div>
@@ -113,4 +116,24 @@
         <i class="fas fa-arrow-left"></i> 
     </a>
 </div>
+
+<script>
+    function resetFilters() {
+        // Obtener el formulario
+        const form = document.getElementById('filtros-form');
+        
+        // Resetear los valores del formulario
+        form.reset();
+        
+        // Obtener la URL base sin parámetros
+        const url = window.location.pathname;
+        
+        // Redirigir a la URL limpia (sin parámetros GET)
+        window.location.href = url;
+    }
+</script>
 {% endblock %}
+
+
+
+
