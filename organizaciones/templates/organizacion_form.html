@@ -51,10 +51,31 @@
                                     <div class="col-3">{{ form.telefono|as_crispy_field }}</div>
                                     <div class="col-3">{{ form.email|as_crispy_field }}</div>
                                     <div class="col-3">{{ form.tipo_organizacion|as_crispy_field }}</div>
-                                    <div class="col-3">{{ form.firmante1|as_crispy_field }}</div>
-                                    <div class="col-3">{{ form.firmante2|as_crispy_field }}</div>
-                                    <div class="col-3">{{ form.firmante3|as_crispy_field }}</div>
-                                    
+                                    <!-- Formulario Jurídica -->
+                                    <div id="juridica-form" class="form-group row d-none">
+                                        <div class="col-3">{{ juridica_form.firmante1|as_crispy_field }}</div>
+                                        <div class="col-3">{{ juridica_form.firmante2|as_crispy_field }}</div>
+                                        <div class="col-3">{{ juridica_form.firmante3|as_crispy_field }}</div>
+                                    </div>
+                                    <!-- Formulario Eclesiástica -->
+                                    <div id="eclesiastica-form" class="form-group row d-none">
+                                        <div class="col-3">{{ eclesiastica_form.firmante1|as_crispy_field }}</div>
+                                        <div class="col-3">{{ eclesiastica_form.firmante2|as_crispy_field }}</div>
+                                        <div class="col-3">{{ eclesiastica_form.firmante3|as_crispy_field }}</div>
+                                    </div>
+                                    <!-- Formulario Hecho -->
+                                    <div id="hecho-form" class="form-group row d-none">
+                                        <div class="col-3">{{ hecho_form.firmante1|as_crispy_field }}</div>
+                                        <div class="col-3">{{ hecho_form.firmante2|as_crispy_field }}</div>
+                                        <div class="row">
+                                            <div class="col-3">{{ hecho_form.aval1|as_crispy_field }}</div>
+                                            <div class="col-3">{{ hecho_form.cuitaval1|as_crispy_field }}</div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-3">{{ hecho_form.aval2|as_crispy_field }}</div>
+                                            <div class="col-3">{{ hecho_form.cuitaval2|as_crispy_field }}</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -66,4 +87,7 @@
             </form>
         </div>
     </div>
+{% endblock %}
+{% block customJS %}
+    <script src="{% static 'custom/js/organizacionesform.js' %}"></script>
 {% endblock %}
