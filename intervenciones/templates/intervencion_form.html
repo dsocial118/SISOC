@@ -1,54 +1,37 @@
 {% extends "includes/main.html" %}
 {% load crispy_forms_tags %}
-
 {% block title %}Agregar Intervención{% endblock %}
 {% block content %}
-<div class="row">
-    <div class="col">
-        <form method="POST" enctype="multipart/form-data">
-            {% csrf_token %}
-            <!-- Paso 1 -->
-            <div id="step-1">
-                <h3>Paso 1 - Datos Iniciales</h3>
-                <div class="form-group">
-                    {{ form.tipo_intervencion|as_crispy_field }}
+    <div class="row">
+        <div class="col">
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <!-- Paso 1 -->
+                <div id="step-1">
+                    <h3>Paso 1 - Datos Iniciales</h3>
+                    <div class="form-group">{{ form.tipo_intervencion|as_crispy_field }}</div>
+                    <div class="form-group">{{ form.subintervencion|as_crispy_field }}</div>
+                    <div class="form-group">{{ form.destinatario|as_crispy_field }}</div>
+                    <button type="button" id="next-step" class="btn btn-primary">Siguiente</button>
                 </div>
-                <div class="form-group">
-                    {{ form.subintervencion|as_crispy_field }}
+                <!-- Paso 2 -->
+                <div id="step-2" class="d-none">
+                    <h3>Paso 2 - Datos de Contacto</h3>
+                    <div class="form-group">{{ form.fecha|as_crispy_field }}</div>
+                    <div class="form-group">{{ form.forma_contacto|as_crispy_field }}</div>
+                    <div class="form-group">{{ form.observaciones|as_crispy_field }}</div>
+                    <div class="form-group">{{ form.tiene_documentacion|as_crispy_field }}</div>
+                    <div class="form-group d-none" id="documentacion-field">
+                        <label for="documentacion"></label>
+                        {{ form.documentacion|as_crispy_field }}
+                    </div>
+                    <button type="button" id="prev-step" class="btn btn-secondary">Anterior</button>
+                    <button type="submit" class="btn btn-success">Guardar</button>
                 </div>
-                <div class="form-group">
-                    {{ form.destinatario|as_crispy_field }}
-                </div>
-                <button type="button" id="next-step" class="btn btn-primary">Siguiente</button>
-            </div>
-
-            <!-- Paso 2 -->
-            <div id="step-2" class="d-none">
-                <h3>Paso 2 - Datos de Contacto</h3>
-                <div class="form-group">
-                    {{ form.fecha|as_crispy_field }}
-                </div>
-                <div class="form-group">
-                    {{ form.forma_contacto|as_crispy_field }}
-                </div>
-                <div class="form-group">
-                    {{ form.observaciones|as_crispy_field }}
-                </div>
-                <div class="form-group">
-                    {{ form.tiene_documentacion|as_crispy_field }}
-                </div>
-                <div class="form-group d-none" id="documentacion-field">
-                    <label for="documentacion"></label>
-                    {{ form.documentacion|as_crispy_field }}
-                </div>
-                <button type="button" id="prev-step" class="btn btn-secondary">Anterior</button>
-                <button type="submit" class="btn btn-success">Guardar</button>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
-</div>
-
-<script>
+    <script>
     document.addEventListener("DOMContentLoaded", function () {
         const nextStep = document.getElementById("next-step");
         const prevStep = document.getElementById("prev-step");
@@ -101,5 +84,5 @@
             }
         });
     });
-</script>
+    </script>
 {% endblock %}
