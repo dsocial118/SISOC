@@ -1,123 +1,129 @@
 {% extends "includes/main.html" %}
 {% load static %}
-
 {% block title %}Intervenciones{% endblock %}
 {% block titulo-pagina %}Intervenciones{% endblock %}
-
 {% block breadcrumb %}
-<ol class="breadcrumb float-sm-right">
-    <li class="breadcrumb-item">
-        <a href="{% url 'comedor_detalle' object.id %}" title="Ver Comedor">{{ object.nombre }}</a>
-    </li>
-    <li class="breadcrumb-item active">Intervenciones</li>
-</ol>
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'comedor_detalle' object.id %}" title="Ver Comedor">{{ object.nombre }}</a>
+        </li>
+        <li class="breadcrumb-item active">Intervenciones</li>
+    </ol>
 {% endblock %}
-
 {% block content %}
-<div class="row">
-    <div class="col-12 my-3 mx-2 d-print-none">
-        <a href="{% url 'comedor_intervencion_crear' object.id %}" class="btn btn-primary mr-1">Agregar Intervención</a>
+    <div class="row">
+        <div class="col-12 my-3 mx-2 d-print-none">
+            <a href="{% url 'comedor_intervencion_crear' object.id %}"
+               class="btn btn-primary mr-1">Agregar Intervención</a>
+        </div>
     </div>
-</div>
-
-<!-- Filtros -->
-<div class="row mb-4">
-    <div class="col-12">
-        <form method="get" class="row g-3 align-items-center" id="filtros-form">
-            <div class="col-md-3">
-                <input type="date" name="fecha" class="form-control" placeholder="Fecha" value="{{ request.GET.fecha }}">
-            </div>
-            <div class="col-md-3">
-                <select name="tipo_intervencion" class="form-select">
-                    <option value="">Tipo de Intervención</option>
-                    {% for tipo in tipos_intervencion %}
-                        <option value="{{ tipo.id }}" {% if tipo.id|stringformat:"s" == request.GET.tipo_intervencion %}selected{% endif %}>
-                            {{ tipo.nombre }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-3">
-                <select name="destinatario" class="form-select">
-                    <option value="">Destinatario</option>
-                    {% for tipo in destinatarios %}
-                        <option value="{{ tipo.id }}" {% if tipo.id|stringformat:"s" == request.GET.destinatario %}selected{% endif %}>
-                            {{ tipo.nombre }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-2 text-end">
-                <button type="submit" class="btn btn-primary w-100">Filtrar</button>
-            </div>
-            <div class="col-md-1 text-end">
-                <button type="button" onclick="resetFilters()" class="btn btn-secondary w-100">Limpiar</button>
-            </div>
-        </form>
+    <!-- Filtros -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <form method="get" class="row g-3 align-items-center" id="filtros-form">
+                <div class="col-md-3">
+                    <input type="date"
+                           name="fecha"
+                           class="form-control"
+                           placeholder="Fecha"
+                           value="{{ request.GET.fecha }}" />
+                </div>
+                <div class="col-md-3">
+                    <select name="tipo_intervencion" class="form-select">
+                        <option value="">Tipo de Intervención</option>
+                        {% for tipo in tipos_intervencion %}
+                            <option value="{{ tipo.id }}"
+                                    {% if tipo.id|stringformat:"s" == request.GET.tipo_intervencion %}selected{% endif %}>
+                                {{ tipo.nombre }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select name="destinatario" class="form-select">
+                        <option value="">Destinatario</option>
+                        {% for tipo in destinatarios %}
+                            <option value="{{ tipo.id }}"
+                                    {% if tipo.id|stringformat:"s" == request.GET.destinatario %}selected{% endif %}>
+                                {{ tipo.nombre }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 text-end">
+                    <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+                </div>
+                <div class="col-md-1 text-end">
+                    <button type="button"
+                            onclick="resetFilters()"
+                            class="btn btn-secondary w-100">Limpiar</button>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
-
-<div class="row">
-    <div class="col-12">
-        <div class="card card-primary card-outline">
-            <div class="card-header">
-                <h3 class="card-title">Historial de Intervenciones</h3>
-            </div>
-            <div class="card-body table-responsive">
-                {% if intervenciones %}
-                    <table class="table table-bordered">
-                        <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Tipo de Intervención</th>
-                                <th>Subtipo de Intervención</th>
-                                <th>Destinatario</th>
-                                <th>Forma de Contacto</th>
-                                <th>Documentación Adjunta</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for intervencion in intervenciones %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card card-primary card-outline">
+                <div class="card-header">
+                    <h3 class="card-title">Historial de Intervenciones</h3>
+                </div>
+                <div class="card-body table-responsive">
+                    {% if intervenciones %}
+                        <table class="table table-bordered">
+                            <thead>
                                 <tr>
-                                    <td>{{ intervencion.fecha|date:"d/m/Y" }}</td>
-                                    <td>{{ intervencion.tipo_intervencion }}</td>
-                                    <td>{{ intervencion.subintervencion }}</td>
-                                    <td>{{ intervencion.destinatario }}</td>
-                                    <td>{{ intervencion.forma_contacto }}</td>
-                                    <td>
-                                        {% if intervencion.tiene_documentacion %}
-                                            Sí
-                                        {% else %}
-                                            No
-                                        {% endif %}
-                                    </td>
-                                    <td>
+                                    <th>Fecha</th>
+                                    <th>Tipo de Intervención</th>
+                                    <th>Subtipo de Intervención</th>
+                                    <th>Destinatario</th>
+                                    <th>Forma de Contacto</th>
+                                    <th>Documentación Adjunta</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for intervencion in intervenciones %}
+                                    <tr>
+                                        <td>{{ intervencion.fecha|date:"d/m/Y" }}</td>
+                                        <td>{{ intervencion.tipo_intervencion }}</td>
+                                        <td>{{ intervencion.subintervencion }}</td>
+                                        <td>{{ intervencion.destinatario }}</td>
+                                        <td>{{ intervencion.forma_contacto }}</td>
                                         <td>
-                                            <a href="{% url 'intervencion_detalle' intervencion.id %}" class="btn btn-sm btn-primary">Ver</a>
-                                            {% if request.user.is_superuser %}
-                                            <a href="{% url 'comedor_intervencion_borrar' object.id intervencion.id %}" class="btn btn-sm btn-danger">Eliminar</a>
+                                            {% if intervencion.tiene_documentacion %}
+                                                Sí
+                                            {% else %}
+                                                No
                                             {% endif %}
                                         </td>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                {% else %}
-                    <p class="text-center">Aún no se han registrado intervenciones</p>
-                {% endif %}
+                                        <td>
+                                            <td>
+                                                <a href="{% url 'intervencion_detalle' intervencion.id %}"
+                                                   class="btn btn-sm btn-primary">Ver</a>
+                                                {% if request.user.is_superuser %}
+                                                    <a href="{% url 'comedor_intervencion_borrar' object.id intervencion.id %}"
+                                                       class="btn btn-sm btn-danger">Eliminar</a>
+                                                {% endif %}
+                                            </td>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p class="text-center">Aún no se han registrado intervenciones</p>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
-</div>
-<div class="col-md-2 text-start my-3">
-    <a href="{% url 'comedor_detalle' object.id %}" class="btn btn-secondary btn-lg">
-        <i class="fas fa-arrow-left"></i> 
-    </a>
-</div>
-
-<script>
+    <div class="col-md-2 text-start my-3">
+        <a href="{% url 'comedor_detalle' object.id %}"
+           class="btn btn-secondary btn-lg">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+    </div>
+    <script>
     function resetFilters() {
         // Obtener el formulario
         const form = document.getElementById('filtros-form');
@@ -131,5 +137,5 @@
         // Redirigir a la URL limpia (sin parámetros GET)
         window.location.href = url;
     }
-</script>
+    </script>
 {% endblock %}
