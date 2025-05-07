@@ -30,6 +30,7 @@ from intervenciones.views import (
     IntervencionDeleteView,
     subir_archivo_intervencion,
     eliminar_archivo_intervencion,
+    IntervencionDetailView,
 )
 from configuraciones.decorators import group_required
 from admisiones.views.web_views import (
@@ -142,9 +143,9 @@ urlpatterns = [
         name="nomina_editar",
     ),
     path(
-        "comedores/intervencion/borrar/<pk>/<pk2>",
-        group_required("Comedores")(IntervencionDeleteView.as_view()),
-        name="intervencion_borrar",
+        "comedores/intervencion/borrar/<int:comedor_id>/<int:intervencion_id>/",
+        (IntervencionDeleteView.as_view()),
+        name="comedor_intervencion_borrar",
     ),
     path(
         "comedores/nomina/borrar/<pk>/<pk2>",
@@ -195,5 +196,10 @@ urlpatterns = [
         "intervencion/<int:intervencion_id>/documentacion/eliminar/",
         eliminar_archivo_intervencion,
         name="eliminar_archivo_intervencion",
+    ),
+    path(
+        "intervencion/detalle/<int:pk>/",
+        group_required("Comedores")(IntervencionDetailView.as_view()),
+        name="intervencion_detalle",
     ),
 ]

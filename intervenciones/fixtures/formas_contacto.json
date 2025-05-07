@@ -1,0 +1,37 @@
+[
+    {
+        "model": "intervenciones.TipoContacto",
+        "pk": 1,
+        "fields": {
+            "nombre": "Presencial"
+        }
+    },
+    {
+        "model": "intervenciones.TipoContacto",
+        "pk": 2,
+        "fields": {
+            "nombre": "Llamado"
+        }
+    },
+    {
+        "model": "intervenciones.TipoContacto",
+        "pk": 3,
+        "fields": {
+            "nombre": "Otros"
+        }
+    },
+    {
+        "model": "intervenciones.TipoContacto",
+        "pk": 4,
+        "fields": {
+            "nombre": "Videollamada"
+        }
+    },
+    {
+        "model": "intervenciones.TipoContacto",
+        "pk": 5,
+        "fields": {
+            "nombre": "Mensaje"
+        }
+    }
+]
