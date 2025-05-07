@@ -4,22 +4,32 @@ from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import CreateView, DeleteView, UpdateView, TemplateView
 from comedores.services.comedor_service import ComedorService
-from intervenciones.models.intervenciones import Intervencion, SubIntervencion, TipoIntervencion, EstadosIntervencion, TipoDestinatario
+from intervenciones.models.intervenciones import (
+    Intervencion,
+    SubIntervencion,
+    TipoIntervencion,
+    EstadosIntervencion,
+    TipoDestinatario,
+)
 from intervenciones.forms import IntervencionForm
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 from django.contrib import messages
 
 
-
-
 @csrf_exempt
 def sub_estados_intervenciones_ajax(request):
-    tipo_intervencion_id = request.GET.get("id")  # ID del tipo de intervención seleccionado
+    tipo_intervencion_id = request.GET.get(
+        "id"
+    )  # ID del tipo de intervención seleccionado
     if tipo_intervencion_id:
-        sub_estados = SubIntervencion.objects.filter(tipo_intervencion_id=tipo_intervencion_id)
+        sub_estados = SubIntervencion.objects.filter(
+            tipo_intervencion_id=tipo_intervencion_id
+        )
     else:
-        sub_estados = SubIntervencion.objects.none()  # No devolver nada si no hay selección
+        sub_estados = (
+            SubIntervencion.objects.none()
+        )  # No devolver nada si no hay selección
 
     data = [
         {"id": sub_estado.id, "text": sub_estado.nombre} for sub_estado in sub_estados
@@ -45,7 +55,9 @@ class IntervencionDetail(TemplateView):
         if fecha:
             intervenciones = intervenciones.filter(fecha__date=fecha)
         if tipo_intervencion:
-            intervenciones = intervenciones.filter(tipo_intervencion_id=tipo_intervencion)
+            intervenciones = intervenciones.filter(
+                tipo_intervencion_id=tipo_intervencion
+            )
         if destinatario:
             intervenciones = intervenciones.filter(destinatario_id=destinatario)
 
@@ -67,12 +79,14 @@ class IntervencionCreateView(CreateView):
 
         # Validar si el tipo_intervencion tiene subintervenciones asociadas
         tipo_intervencion = form.cleaned_data.get("tipo_intervencion")
-        if tipo_intervencion:   
+        if tipo_intervencion:
             subintervenciones = tipo_intervencion.subintervenciones.all()
             if subintervenciones.exists():  # Si hay subintervenciones asociadas
                 subintervencion = form.cleaned_data.get("subintervencion")
                 if not subintervencion:  # Si no se seleccionó ninguna subintervención
-                    form.add_error("subintervencion", "Debe seleccionar una subintervención.")
+                    form.add_error(
+                        "subintervencion", "Debe seleccionar una subintervención."
+                    )
                     return self.form_invalid(form)
             else:  # Si no hay subintervenciones asociadas, permitir que sea None
                 form.cleaned_data["subintervencion"] = None
@@ -100,7 +114,9 @@ class IntervencionCreateView(CreateView):
                     setattr(form.instance, field, value)
 
         form.instance.save()
-        return redirect(reverse("comedor_intervencion_ver", kwargs={"pk": self.kwargs["pk"]}))
+        return redirect(
+            reverse("comedor_intervencion_ver", kwargs={"pk": self.kwargs["pk"]})
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -140,8 +156,10 @@ class IntervencionDeleteView(DeleteView):
         return get_object_or_404(Intervencion, id=self.kwargs["intervencion_id"])
 
     def get_success_url(self):
-        return reverse("comedor_intervencion_ver", kwargs={"pk": self.kwargs["comedor_id"]})
-    
+        return reverse(
+            "comedor_intervencion_ver", kwargs={"pk": self.kwargs["comedor_id"]}
+        )
+
 
 def subir_archivo_intervencion(request, intervencion_id):
     intervencion = get_object_or_404(Intervencion, id=intervencion_id)
@@ -150,9 +168,12 @@ def subir_archivo_intervencion(request, intervencion_id):
         intervencion.documentacion = request.FILES["documentacion"]
         intervencion.tiene_documentacion = True
         intervencion.save()
-        return JsonResponse({"success": True, "message": "Archivo subido correctamente."})
+        return JsonResponse(
+            {"success": True, "message": "Archivo subido correctamente."}
+        )
 
     return JsonResponse({"success": False, "message": "No se proporcionó un archivo."})
+
 
 def eliminar_archivo_intervencion(request, intervencion_id):
     intervencion = get_object_or_404(Intervencion, id=intervencion_id)
@@ -167,6 +188,7 @@ def eliminar_archivo_intervencion(request, intervencion_id):
 
     # Redirige al detalle de la intervención
     return redirect("intervencion_detalle", pk=intervencion.id)
+
 
 class IntervencionDetailView(TemplateView):
     template_name = "intervencion_detail_view.html"

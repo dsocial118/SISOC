@@ -7,7 +7,7 @@ from admisiones.views.web_views import (
     subir_archivo_admision,
     eliminar_archivo_admision,
 )
-from intervenciones.views import sub_estados_intervenciones_ajax 
+from intervenciones.views import sub_estados_intervenciones_ajax
 from configuraciones.decorators import group_required
 
 urlspatterns = [

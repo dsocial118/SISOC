@@ -73,4 +73,3 @@ admin.site.register(Excepcion)
 admin.site.register(Programas)
 admin.site.register(TipoDestinatario)
 admin.site.register(TipoContacto)
-

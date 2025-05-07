@@ -2,10 +2,12 @@
 from django.db import models
 from django.utils import timezone
 
+
 class EstadosIntervencion(models.Model):
     """
     Guardado de los estados de las intervenciones realizadas.
     """
+
     nombre = models.CharField(max_length=255)
 
     def __str__(self):
@@ -14,12 +16,14 @@ class EstadosIntervencion(models.Model):
     class Meta:
         verbose_name = "Estado de Intervención"
         verbose_name_plural = "Estados de Intervención"
-        ordering = ['id']
+        ordering = ["id"]
+
 
 class TipoIntervencion(models.Model):
     """
     Guardado de los tipos de intervenciones realizadas.
     """
+
     nombre = models.CharField(max_length=255)
 
     def __str__(self):
@@ -28,20 +32,22 @@ class TipoIntervencion(models.Model):
     class Meta:
         verbose_name = "Tipo de Intervención"
         verbose_name_plural = "Tipos de Intervención"
-        ordering = ['id']
+        ordering = ["id"]
+
 
 class SubIntervencion(models.Model):
     """
     Guardado de las sub-intervenciones realizadas.
     """
+
     nombre = models.CharField(max_length=255)
     tipo_intervencion = models.ForeignKey(
-        TipoIntervencion, 
-        on_delete=models.SET_NULL, 
+        TipoIntervencion,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='subintervenciones',
-        verbose_name="Tipo de Intervención asociada"
+        related_name="subintervenciones",
+        verbose_name="Tipo de Intervención asociada",
     )
 
     def __str__(self):
@@ -50,12 +56,14 @@ class SubIntervencion(models.Model):
     class Meta:
         verbose_name = "Sub-Intervención"
         verbose_name_plural = "Sub-Intervenciones"
-        ordering = ['tipo_intervencion', 'nombre']
+        ordering = ["tipo_intervencion", "nombre"]
+
 
 class TipoDestinatario(models.Model):
     """
     Guardado de los destinatarios de las intervenciones realizadas.
     """
+
     nombre = models.CharField(max_length=255)
 
     def __str__(self):
@@ -64,12 +72,14 @@ class TipoDestinatario(models.Model):
     class Meta:
         verbose_name = "Destinatario"
         verbose_name_plural = "Destinatarios"
-        ordering = ['id']
+        ordering = ["id"]
+
 
 class TipoContacto(models.Model):
     """
     Guardado de los tipos de contacto de las intervenciones realizadas.
     """
+
     nombre = models.CharField(max_length=255)
 
     def __str__(self):
@@ -78,46 +88,45 @@ class TipoContacto(models.Model):
     class Meta:
         verbose_name = "Tipo de Contacto"
         verbose_name_plural = "Tipos de Contacto"
-        ordering = ['id']
+        ordering = ["id"]
+
 
 class Intervencion(models.Model):
     """
     Registro de intervenciones realizadas a comedores.
     """
+
     comedor = models.ForeignKey(
-        'comedores.Comedor', 
-        on_delete=models.SET_NULL, 
+        "comedores.Comedor",
+        on_delete=models.SET_NULL,
         null=True,
-        related_name='intervenciones',
-        verbose_name="Comedor intervenido"
+        related_name="intervenciones",
+        verbose_name="Comedor intervenido",
     )
     subintervencion = models.ForeignKey(
-        SubIntervencion, 
-        on_delete=models.SET_NULL, 
+        SubIntervencion,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name="Sub-tipo de intervención"
+        verbose_name="Sub-tipo de intervención",
     )
     tipo_intervencion = models.ForeignKey(
-        TipoIntervencion, 
-        on_delete=models.SET_NULL, 
+        TipoIntervencion,
+        on_delete=models.SET_NULL,
         null=True,
-        verbose_name="Tipo de intervención"
+        verbose_name="Tipo de intervención",
     )
     fecha = models.DateTimeField(
-        default=timezone.now,
-        verbose_name="Fecha y hora de intervención"
+        default=timezone.now, verbose_name="Fecha y hora de intervención"
     )
     estado = models.ForeignKey(
-        EstadosIntervencion, 
-        on_delete=models.SET_NULL, 
+        EstadosIntervencion,
+        on_delete=models.SET_NULL,
         null=True,
-        verbose_name="Estado actual"
+        verbose_name="Estado actual",
     )
     observaciones = models.TextField(
-        blank=True, 
-        null=True,
-        verbose_name="Observaciones"
+        blank=True, null=True, verbose_name="Observaciones"
     )
     destinatario = models.ForeignKey(
         TipoDestinatario,
@@ -132,14 +141,13 @@ class Intervencion(models.Model):
         verbose_name="Forma de contacto",
     )
     tiene_documentacion = models.BooleanField(
-        default=False,
-        verbose_name="Documentación adjunta"
+        default=False, verbose_name="Documentación adjunta"
     )
     documentacion = models.FileField(
-        upload_to='documentacion/',
+        upload_to="documentacion/",
         blank=True,
         null=True,
-        verbose_name="Documentación Adjunta"
+        verbose_name="Documentación Adjunta",
     )
 
     class Meta:
