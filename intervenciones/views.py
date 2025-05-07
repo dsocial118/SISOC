@@ -8,17 +8,18 @@ from intervenciones.models.intervenciones import Intervencion, SubIntervencion, 
 from intervenciones.forms import IntervencionForm
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
+from django.contrib import messages
 
 
 
 
 @csrf_exempt
 def sub_estados_intervenciones_ajax(request):
-    request_id = request.GET.get("id")
-    if request_id:
-        sub_estados = SubIntervencion.objects.filter(tipo_intervencion=request_id)
+    tipo_intervencion_id = request.GET.get("id")  # ID del tipo de intervención seleccionado
+    if tipo_intervencion_id:
+        sub_estados = SubIntervencion.objects.filter(tipo_intervencion_id=tipo_intervencion_id)
     else:
-        sub_estados = SubIntervencion.objects.all()
+        sub_estados = SubIntervencion.objects.none()  # No devolver nada si no hay selección
 
     data = [
         {"id": sub_estado.id, "text": sub_estado.nombre} for sub_estado in sub_estados
@@ -119,9 +120,11 @@ class IntervencionDeleteView(DeleteView):
     model = Intervencion
     template_name = "intervencion_confirm_delete.html"
 
-    def form_valid(self, form):
-        self.object.delete()
-        return redirect("comedor_intervencion_ver", pk=self.kwargs["pk2"])
+    def get_object(self, queryset=None):
+        return get_object_or_404(Intervencion, id=self.kwargs["intervencion_id"])
+
+    def get_success_url(self):
+        return reverse("comedor_intervencion_ver", kwargs={"pk": self.kwargs["comedor_id"]})
     
 
 def subir_archivo_intervencion(request, intervencion_id):
@@ -142,6 +145,18 @@ def eliminar_archivo_intervencion(request, intervencion_id):
         intervencion.documentacion.delete()  # Elimina el archivo del sistema de archivos
         intervencion.tiene_documentacion = False
         intervencion.save()
-        return JsonResponse({"success": True, "message": "Archivo eliminado correctamente."})
+        messages.success(request, "El archivo fue eliminado correctamente.")
+    else:
+        messages.error(request, "No hay archivo para eliminar.")
 
-    return JsonResponse({"success": False, "message": "No hay archivo para eliminar."})
+    # Redirige al detalle de la intervención
+    return redirect("intervencion_detalle", pk=intervencion.id)
+
+class IntervencionDetailView(TemplateView):
+    template_name = "intervencion_detail_view.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        intervencion = get_object_or_404(Intervencion, id=self.kwargs["pk"])
+        context["intervencion"] = intervencion
+        return context

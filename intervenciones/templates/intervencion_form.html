@@ -38,7 +38,7 @@
                     {{ form.tiene_documentacion|as_crispy_field }}
                 </div>
                 <div class="form-group d-none" id="documentacion-field">
-                    <label for="documentacion">Cargar Documentación</label>
+                    <label for="documentacion"></label>
                     {{ form.documentacion|as_crispy_field }}
                 </div>
                 <button type="button" id="prev-step" class="btn btn-secondary">Anterior</button>
@@ -56,6 +56,8 @@
         const step2 = document.getElementById("step-2");
         const tieneDocumentacion = document.getElementById("id_tiene_documentacion");
         const documentacionField = document.getElementById("documentacion-field");
+        const tipoIntervencionSelect = document.getElementById("id_tipo_intervencion");
+        const subIntervencionSelect = document.getElementById("id_subintervencion");
 
         nextStep.addEventListener("click", function () {
             step1.classList.add("d-none");
@@ -72,6 +74,31 @@
                 documentacionField.classList.remove("d-none");
             } else {
                 documentacionField.classList.add("d-none");
+            }
+        });
+
+        tipoIntervencionSelect.addEventListener("change", function () {
+            const tipoIntervencionId = this.value;
+
+            // Limpiar las opciones actuales del select de subintervenciones
+            subIntervencionSelect.innerHTML = '<option value="">Seleccione una opción</option>';
+            subIntervencionSelect.removeAttribute("required");
+
+            if (tipoIntervencionId) {
+                fetch(`/comedores/ajax/load-subestadosintervenciones/?id=${tipoIntervencionId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.length > 0) {
+                            data.forEach(subIntervencion => {
+                                const option = document.createElement("option");
+                                option.value = subIntervencion.id;
+                                option.textContent = subIntervencion.text;
+                                subIntervencionSelect.appendChild(option);
+                            });
+                            subIntervencionSelect.setAttribute("required", "required");
+                        }
+                    })
+                    .catch(error => console.error("Error al cargar subintervenciones:", error));
             }
         });
     });

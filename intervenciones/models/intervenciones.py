@@ -65,6 +65,20 @@ class TipoDestinatario(models.Model):
         verbose_name_plural = "Destinatarios"
         ordering = ['id']
 
+class TipoContacto(models.Model):
+    """
+    Guardado de los tipos de contacto de las intervenciones realizadas.
+    """
+    nombre = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"{self.nombre}"
+
+    class Meta:
+        verbose_name = "Tipo de Contacto"
+        verbose_name_plural = "Tipos de Contacto"
+        ordering = ['id']
+
 class Intervencion(models.Model):
     """
     Registro de intervenciones realizadas a comedores.
@@ -109,11 +123,11 @@ class Intervencion(models.Model):
         null=True,
         verbose_name="Destinatario",
     )
-    forma_contacto = models.CharField(
-        max_length=255,
+    forma_contacto = models.ForeignKey(
+        TipoContacto,
+        on_delete=models.SET_NULL,
+        null=True,
         verbose_name="Forma de contacto",
-        blank=True,
-        null=True
     )
     tiene_documentacion = models.BooleanField(
         default=False,

@@ -16,6 +16,7 @@ from intervenciones.models.intervenciones import (
     EstadosIntervencion,
     TipoIntervencion,
     TipoDestinatario,
+    TipoContacto,
 )
 
 from comedores.models.relevamiento import (
@@ -71,3 +72,5 @@ admin.site.register(MotivoExcepcion)
 admin.site.register(Excepcion)
 admin.site.register(Programas)
 admin.site.register(TipoDestinatario)
+admin.site.register(TipoContacto)
+
