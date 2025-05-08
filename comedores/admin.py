@@ -32,16 +32,6 @@ from comedores.models.comedor import (
     Nomina,
 )
 
-from intervenciones.models.intervenciones import (
-    Intervencion,
-    SubIntervencion,
-    EstadosIntervencion,
-    TipoIntervencion,
-    TipoDestinatario,
-    TipoContacto,
-)
-
-
 admin.site.register(TipoModalidadPrestacion)
 admin.site.register(TipoEspacio)
 admin.site.register(TipoCombustible)
@@ -59,10 +49,6 @@ admin.site.register(Comedor)
 admin.site.register(Relevamiento)
 admin.site.register(Observacion)
 admin.site.register(ValorComida)
-admin.site.register(Intervencion)
-admin.site.register(SubIntervencion)
-admin.site.register(TipoIntervencion)
-admin.site.register(EstadosIntervencion)
 admin.site.register(Nomina)
 admin.site.register(TipoDeComedor)
 admin.site.register(TipoInsumos)
@@ -73,5 +59,3 @@ admin.site.register(TipoDistanciaTransporte)
 admin.site.register(MotivoExcepcion)
 admin.site.register(Excepcion)
 admin.site.register(Programas)
-admin.site.register(TipoDestinatario)
-admin.site.register(TipoContacto)
