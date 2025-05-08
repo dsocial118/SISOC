@@ -14,8 +14,8 @@ from django.views.generic import (
 from organizaciones.forms import (
     OrganizacionForm,
     OrganizacionJuridicaForm,
-    OrganizacioneclEsiasticaForm,
-    OrganizacioneclHechoForm,
+    OrganizacionEclesiasticaForm,
+    OrganizacionHechoForm,
 )
 from organizaciones.models import Organizacion
 
@@ -49,10 +49,10 @@ class OrganizacionCreateView(CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["juridica_form"] = OrganizacionJuridicaForm(instance=self.object)
-        context["eclesiastica_form"] = OrganizacioneclEsiasticaForm(
+        context["eclesiastica_form"] = OrganizacionEclesiasticaForm(
             instance=self.object
         )
-        context["hecho_form"] = OrganizacioneclHechoForm(instance=self.object)
+        context["hecho_form"] = OrganizacionHechoForm(instance=self.object)
         return context
 
     def get_success_url(self):
@@ -67,10 +67,10 @@ class OrganizacionUpdateView(UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["juridica_form"] = OrganizacionJuridicaForm(instance=self.object)
-        context["eclesiastica_form"] = OrganizacioneclEsiasticaForm(
+        context["eclesiastica_form"] = OrganizacionEclesiasticaForm(
             instance=self.object
         )
-        context["hecho_form"] = OrganizacioneclHechoForm(instance=self.object)
+        context["hecho_form"] = OrganizacionHechoForm(instance=self.object)
         return context
 
     def get_success_url(self):

@@ -29,7 +29,7 @@ class OrganizacionJuridicaForm(forms.ModelForm):
         }
 
 
-class OrganizacioneclEsiasticaForm(forms.ModelForm):
+class OrganizacionEclesiasticaForm(forms.ModelForm):
     class Meta:
         model = Organizacion
         fields = [
@@ -49,7 +49,7 @@ class OrganizacioneclEsiasticaForm(forms.ModelForm):
         }
 
 
-class OrganizacioneclHechoForm(forms.ModelForm):
+class OrganizacionHechoForm(forms.ModelForm):
     class Meta:
         model = Organizacion
         fields = [
