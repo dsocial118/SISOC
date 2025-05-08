@@ -5,14 +5,13 @@ $(document).ready(function () {
     const hechoForm = document.querySelector("#hecho-form");
 
     // Función para mostrar/ocultar formularios
-    function toggleForms() {
+    function oculatarmostrarFormulario() {
         const selectedValue = tipoOrganizacion.value;
-        // Ocultar todos los formularios
         juridicaForm.classList.add("d-none");
         eclesiasticaForm.classList.add("d-none");
         hechoForm.classList.add("d-none");
 
-        // Mostrar el formulario correspondiente
+
         if (selectedValue === "1") {
             juridicaForm.classList.remove("d-none");
         } else if (selectedValue === "2") {
@@ -26,5 +25,5 @@ $(document).ready(function () {
     tipoOrganizacion.addEventListener("change", toggleForms);
 
     // Inicializar la visibilidad de los formularios
-    toggleForms();
+    oculatarmostrarFormulario();
 });

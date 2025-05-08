@@ -50,7 +50,9 @@ class OrganizacionCreateView(CreateView):
         context = super().get_context_data(**kwargs)
         if self.request.POST:
             context["juridica_form"] = OrganizacionJuridicaForm(self.request.POST)
-            context["eclesiastica_form"] = OrganizacionEclesiasticaForm(self.request.POST)
+            context["eclesiastica_form"] = OrganizacionEclesiasticaForm(
+                self.request.POST
+            )
             context["hecho_form"] = OrganizacionHechoForm(self.request.POST)
         else:
             context["juridica_form"] = OrganizacionJuridicaForm()
@@ -108,9 +110,15 @@ class OrganizacionUpdateView(UpdateView):
                 self.request.POST, instance=self.object.firmante_hecho
             )
         else:
-            context["juridica_form"] = OrganizacionJuridicaForm(instance=self.object.firmante_juridica)
-            context["eclesiastica_form"] = OrganizacionEclesiasticaForm(instance=self.object.firmante_eclesiastica)
-            context["hecho_form"] = OrganizacionHechoForm(instance=self.object.firmante_hecho)
+            context["juridica_form"] = OrganizacionJuridicaForm(
+                instance=self.object.firmante_juridica
+            )
+            context["eclesiastica_form"] = OrganizacionEclesiasticaForm(
+                instance=self.object.firmante_eclesiastica
+            )
+            context["hecho_form"] = OrganizacionHechoForm(
+                instance=self.object.firmante_hecho
+            )
         return context
 
     def form_valid(self, form):
