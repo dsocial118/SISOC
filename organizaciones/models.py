@@ -13,6 +13,23 @@ class TipoOrganizacion(models.Model):
         verbose_name = "Tipo de Organización"
         verbose_name_plural = "Tipos de Organización"
 
+class FirmanteHecho(models.Model):
+    firmante1 = models.CharField(max_length=255, blank=True, null=True)
+    firmante2 = models.CharField(max_length=255, blank=True, null=True)
+    aval1 = models.CharField(max_length=255, blank=True, null=True)
+    cuitaval1 = models.IntegerField(blank=True, null=True)
+    aval2  = models.CharField(max_length=255, blank=True, null=True)
+    cuitaval2 = models.IntegerField(blank=True, null=True)
+
+class FirmanteEclesiastica(models.Model):
+    obispo = models.CharField(max_length=255, blank=True, null=True)
+    apoderado1 = models.CharField(max_length=255, blank=True, null=True)
+    apoderado2 = models.CharField(max_length=255, blank=True, null=True)
+
+class FirmanteJuridica(models.Model):
+    presidente = models.CharField(max_length=255, blank=True, null=True)
+    tesorero = models.CharField(max_length=255, blank=True, null=True) 
+    secretario = models.CharField(max_length=255, blank=True, null=True)
 
 class Organizacion(models.Model):
     nombre = models.CharField(max_length=255)
@@ -26,13 +43,15 @@ class Organizacion(models.Model):
         blank=True,
         null=True,
     )
-    firmante1 = models.CharField(max_length=255, blank=True, null=True)
-    firmante2 = models.CharField(max_length=255, blank=True, null=True)
-    firmante3 = models.CharField(max_length=255, blank=True, null=True)
-    aval1 = models.CharField(max_length=255, blank=True, null=True)
-    aval2 = models.CharField(max_length=255, blank=True, null=True)
-    cuitaval1 = models.BigIntegerField(blank=True, null=True)
-    cuitaval2 = models.BigIntegerField(blank=True, null=True)
+    firmante_juridica = models.OneToOneField(
+        'FirmanteJuridica', on_delete=models.SET_NULL, null=True, blank=True
+    )
+    firmante_eclesiastica = models.OneToOneField(
+        'FirmanteEclesiastica', on_delete=models.SET_NULL, null=True, blank=True
+    )
+    firmante_hecho = models.OneToOneField(
+        'FirmanteHecho', on_delete=models.SET_NULL, null=True, blank=True
+    )
 
     def delete(self, *args, **kwargs):
         from comedores.models.comedor import (  # pylint: disable=import-outside-toplevel
