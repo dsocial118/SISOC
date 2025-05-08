@@ -31,7 +31,7 @@ def sub_estados_intervenciones_ajax(request):
     return JsonResponse(data, safe=False)
 
 
-class IntervencionDetail(TemplateView):
+class IntervencionDetailView(TemplateView):
     template_name = "intervencion_detail.html"
     model = Intervencion
 

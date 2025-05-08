@@ -15,7 +15,7 @@ from comedores.views.web_views import (
     RelevamientoDeleteView,
     RelevamientoDetailView,
     RelevamientoUpdateView,
-    NominaDetail,
+    NominaDetailView,
     NominaCreateView,
     NominaDeleteView,
     NominaUpdateView,
@@ -24,7 +24,6 @@ from comedores.views.web_views import (
 
 from intervenciones.views import (
     sub_estados_intervenciones_ajax,
-    IntervencionDetail,
     IntervencionCreateView,
     IntervencionUpdateView,
     IntervencionDeleteView,
@@ -114,12 +113,12 @@ urlpatterns = [
     ),
     path(
         "comedores/intervencion/ver/<pk>",
-        group_required("Comedores")(IntervencionDetail.as_view()),
+        group_required("Comedores")(IntervencionDetailView.as_view()),
         name="comedor_intervencion_ver",
     ),
     path(
         "comedores/nomina/ver/<pk>",
-        group_required("Comedores")(NominaDetail),
+        group_required("Comedores")(NominaDetailView.as_view()),
         name="nomina_ver",
     ),
     path(
