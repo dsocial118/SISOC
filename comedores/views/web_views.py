@@ -57,7 +57,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 
 @csrf_exempt
-class NominaDetail(TemplateView):
+class NominaDetailView(TemplateView):
     template_name = "comedor/nomina_detail.html"
     model = Nomina
 
