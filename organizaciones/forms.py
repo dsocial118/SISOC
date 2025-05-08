@@ -1,6 +1,11 @@
 from django import forms
 
-from organizaciones.models import Organizacion, FirmanteHecho, FirmanteEclesiastica, FirmanteJuridica
+from organizaciones.models import (
+    Organizacion,
+    FirmanteHecho,
+    FirmanteEclesiastica,
+    FirmanteJuridica,
+)
 
 
 class OrganizacionForm(forms.ModelForm):
@@ -8,10 +13,12 @@ class OrganizacionForm(forms.ModelForm):
         model = Organizacion
         fields = "__all__"
 
+
 class OrganizacionJuridicaForm(forms.ModelForm):
     class Meta:
-        model = FirmanteJuridica 
+        model = FirmanteJuridica
         fields = "__all__"
+
 
 class OrganizacionEclesiasticaForm(forms.ModelForm):
     class Meta:
