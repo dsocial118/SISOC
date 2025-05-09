@@ -58,8 +58,19 @@ class DuplaCreateView(CreateView):
 class DuplaUpdateView(UpdateView):
     model = Dupla
     template_name = "dupla_form.html"
-    fields = ["nombre", "tecnico", "estado", "abogado"]
+    form_class = DuplaForm
     success_url = reverse_lazy("dupla_list")
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        # Aplicar la lógica de filtrado del formulario
+        form.filtrar_campos_tecnico_abogado()
+        return form
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["form"] = self.get_form()
+        return context
 
     def get_success_url(self):
         return reverse("dupla_list")
