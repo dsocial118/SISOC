@@ -11,10 +11,7 @@ from django.views.generic import (
     UpdateView,
 )
 
-from organizaciones.forms import (
-    OrganizacionForm,
-    FirmanteFormset
-)
+from organizaciones.forms import OrganizacionForm, FirmanteFormset
 from organizaciones.models import Organizacion
 
 
@@ -47,14 +44,14 @@ class OrganizacionCreateView(CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if self.request.POST:
-            context['firmante_formset'] = FirmanteFormset(self.request.POST)
+            context["firmante_formset"] = FirmanteFormset(self.request.POST)
         else:
-            context['firmante_formset'] = FirmanteFormset()
+            context["firmante_formset"] = FirmanteFormset()
         return context
 
     def form_valid(self, form):
         context = self.get_context_data()
-        firmante_formset = context['firmante_formset']
+        firmante_formset = context["firmante_formset"]
         if firmante_formset.is_valid():
             self.object = form.save()
             firmante_formset.instance = self.object
@@ -75,14 +72,16 @@ class OrganizacionUpdateView(UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if self.request.POST:
-            context['firmante_formset'] = FirmanteFormset(self.request.POST, instance=self.object)
+            context["firmante_formset"] = FirmanteFormset(
+                self.request.POST, instance=self.object
+            )
         else:
-            context['firmante_formset'] = FirmanteFormset(instance=self.object)
+            context["firmante_formset"] = FirmanteFormset(instance=self.object)
         return context
 
     def form_valid(self, form):
         context = self.get_context_data()
-        firmante_formset = context['firmante_formset']
+        firmante_formset = context["firmante_formset"]
         if firmante_formset.is_valid():
             self.object = form.save()
             firmante_formset.instance = self.object
