@@ -15,16 +15,22 @@ from comedores.views.web_views import (
     RelevamientoDeleteView,
     RelevamientoDetailView,
     RelevamientoUpdateView,
-    IntervencionDetail,
-    IntervencionCreateView,
-    IntervencionUpdateView,
-    IntervencionDeleteView,
-    NominaDetail,
+    NominaDetailView,
     NominaCreateView,
     NominaDeleteView,
     NominaUpdateView,
     AsignarDuplaListView,
+)
+
+from intervenciones.views import (
     sub_estados_intervenciones_ajax,
+    IntervencionCreateView,
+    IntervencionUpdateView,
+    IntervencionDeleteView,
+    subir_archivo_intervencion,
+    eliminar_archivo_intervencion,
+    IntervencionDetailIndividualView,
+    IntervencionDetailView,
 )
 from configuraciones.decorators import group_required
 from admisiones.views.web_views import (
@@ -108,12 +114,12 @@ urlpatterns = [
     ),
     path(
         "comedores/intervencion/ver/<pk>",
-        group_required("Comedores")(IntervencionDetail.as_view()),
+        group_required("Comedores")(IntervencionDetailView.as_view()),
         name="comedor_intervencion_ver",
     ),
     path(
         "comedores/nomina/ver/<pk>",
-        group_required("Comedores")(NominaDetail.as_view()),
+        group_required("Comedores")(NominaDetailView.as_view()),
         name="nomina_ver",
     ),
     path(
@@ -124,12 +130,12 @@ urlpatterns = [
     path(
         "comedores/intervencion/crear/<pk>",
         group_required("Comedores")(IntervencionCreateView.as_view()),
-        name="intervencion_crear",
+        name="comedor_intervencion_crear",
     ),
     path(
         "comedores/intervencion/editar/<pk>/<pk2>",
         group_required("Comedores")(IntervencionUpdateView.as_view()),
-        name="intervencion_editar",
+        name="comedores_intervencion_editar",
     ),
     path(
         "comedores/nomina/editar/<pk>/<pk2>",
@@ -137,9 +143,9 @@ urlpatterns = [
         name="nomina_editar",
     ),
     path(
-        "comedores/intervencion/borrar/<pk>/<pk2>",
-        group_required("Comedores")(IntervencionDeleteView.as_view()),
-        name="intervencion_borrar",
+        "comedores/intervencion/borrar/<int:comedor_id>/<int:intervencion_id>/",
+        (IntervencionDeleteView.as_view()),
+        name="comedor_intervencion_borrar",
     ),
     path(
         "comedores/nomina/borrar/<pk>/<pk2>",
@@ -180,5 +186,20 @@ urlpatterns = [
         "comedores/ajax/load-subestadosintervenciones/",
         sub_estados_intervenciones_ajax,
         name="ajax_load_subestadosintervenciones",
+    ),
+    path(
+        "intervencion/<int:intervencion_id>/documentacion/subir/",
+        subir_archivo_intervencion,
+        name="subir_archivo_intervencion",
+    ),
+    path(
+        "intervencion/<int:intervencion_id>/documentacion/eliminar/",
+        eliminar_archivo_intervencion,
+        name="eliminar_archivo_intervencion",
+    ),
+    path(
+        "intervencion/detalle/<int:pk>/",
+        group_required("Comedores")(IntervencionDetailIndividualView.as_view()),
+        name="intervencion_detalle",
     ),
 ]

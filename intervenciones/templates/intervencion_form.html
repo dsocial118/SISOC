@@ -1,0 +1,88 @@
+{% extends "includes/main.html" %}
+{% load crispy_forms_tags %}
+{% block title %}Agregar Intervención{% endblock %}
+{% block content %}
+    <div class="row">
+        <div class="col">
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <!-- Paso 1 -->
+                <div id="step-1">
+                    <h3>Paso 1 - Datos Iniciales</h3>
+                    <div class="form-group">{{ form.tipo_intervencion|as_crispy_field }}</div>
+                    <div class="form-group">{{ form.subintervencion|as_crispy_field }}</div>
+                    <div class="form-group">{{ form.destinatario|as_crispy_field }}</div>
+                    <button type="button" id="next-step" class="btn btn-primary">Siguiente</button>
+                </div>
+                <!-- Paso 2 -->
+                <div id="step-2" class="d-none">
+                    <h3>Paso 2 - Datos de Contacto</h3>
+                    <div class="form-group">{{ form.fecha|as_crispy_field }}</div>
+                    <div class="form-group">{{ form.forma_contacto|as_crispy_field }}</div>
+                    <div class="form-group">{{ form.observaciones|as_crispy_field }}</div>
+                    <div class="form-group">{{ form.tiene_documentacion|as_crispy_field }}</div>
+                    <div class="form-group d-none" id="documentacion-field">
+                        <label for="documentacion"></label>
+                        {{ form.documentacion|as_crispy_field }}
+                    </div>
+                    <button type="button" id="prev-step" class="btn btn-secondary">Anterior</button>
+                    <button type="submit" class="btn btn-success">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const nextStep = document.getElementById("next-step");
+        const prevStep = document.getElementById("prev-step");
+        const step1 = document.getElementById("step-1");
+        const step2 = document.getElementById("step-2");
+        const tieneDocumentacion = document.getElementById("id_tiene_documentacion");
+        const documentacionField = document.getElementById("documentacion-field");
+        const tipoIntervencionSelect = document.getElementById("id_tipo_intervencion");
+        const subIntervencionSelect = document.getElementById("id_subintervencion");
+
+        nextStep.addEventListener("click", function () {
+            step1.classList.add("d-none");
+            step2.classList.remove("d-none");
+        });
+
+        prevStep.addEventListener("click", function () {
+            step2.classList.add("d-none");
+            step1.classList.remove("d-none");
+        });
+
+        tieneDocumentacion.addEventListener("change", function () {
+            if (tieneDocumentacion.checked) {
+                documentacionField.classList.remove("d-none");
+            } else {
+                documentacionField.classList.add("d-none");
+            }
+        });
+
+        tipoIntervencionSelect.addEventListener("change", function () {
+            const tipoIntervencionId = this.value;
+
+            // Limpiar las opciones actuales del select de subintervenciones
+            subIntervencionSelect.innerHTML = '<option value="">Seleccione una opción</option>';
+            subIntervencionSelect.removeAttribute("required");
+
+            if (tipoIntervencionId) {
+                fetch(`/comedores/ajax/load-subestadosintervenciones/?id=${tipoIntervencionId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.length > 0) {
+                            data.forEach(subIntervencion => {
+                                const option = document.createElement("option");
+                                option.value = subIntervencion.id;
+                                option.textContent = subIntervencion.text;
+                                subIntervencionSelect.appendChild(option);
+                            });
+                        }
+                    })
+                    .catch(error => console.error("Error al cargar subintervenciones:", error));
+            }
+        });
+    });
+    </script>
+{% endblock %}
