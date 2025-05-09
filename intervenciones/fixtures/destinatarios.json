@@ -1,0 +1,23 @@
+[
+  {
+      "model": "intervenciones.tipodestinatario",
+      "pk": 1,
+      "fields": {
+          "nombre": "Organización"
+      }
+  },
+  {
+      "model": "intervenciones.tipodestinatario",
+      "pk": 2,
+      "fields": {
+          "nombre": "Comedor"
+      }
+  },
+  {
+      "model": "intervenciones.tipodestinatario",
+      "pk": 3,
+      "fields": {
+          "nombre": "Otros"
+      }
+  }
+]
