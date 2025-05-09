@@ -29,6 +29,7 @@ from intervenciones.views import (
     IntervencionDeleteView,
     subir_archivo_intervencion,
     eliminar_archivo_intervencion,
+    IntervencionDetailIndividualView,
     IntervencionDetailView,
 )
 from configuraciones.decorators import group_required
@@ -198,7 +199,7 @@ urlpatterns = [
     ),
     path(
         "intervencion/detalle/<int:pk>/",
-        group_required("Comedores")(IntervencionDetailView.as_view()),
+        group_required("Comedores")(IntervencionDetailIndividualView.as_view()),
         name="intervencion_detalle",
     ),
 ]

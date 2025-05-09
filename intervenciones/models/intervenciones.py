@@ -2,8 +2,6 @@ from django.db import models
 from django.utils import timezone
 
 
-
-
 class TipoIntervencion(models.Model):
     """
     Guardado de los tipos de intervenciones realizadas.
