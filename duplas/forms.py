@@ -12,7 +12,13 @@ class DuplaForm(forms.ModelForm):
         # Filtrar usuarios que pertenezcan al grupo "Técnico Comedor"
         grupo_tecnico = Group.objects.filter(name="Tecnico Comedor").first()
         if grupo_tecnico:
-            self.fields["tecnico"].queryset = grupo_tecnico.user_set.all()
+            # Excluir usuarios que ya están asignados a una dupla, excepto el actual
+            usuarios_asignados = Dupla.objects.exclude(pk=self.instance.pk).values_list(
+                "tecnico", flat=True
+            )
+            self.fields["tecnico"].queryset = grupo_tecnico.user_set.exclude(
+                id__in=usuarios_asignados
+            )
         else:
             self.fields["tecnico"].queryset = self.fields["tecnico"].queryset.none()
 
