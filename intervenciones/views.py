@@ -179,7 +179,7 @@ def eliminar_archivo_intervencion(request, intervencion_id):
     return redirect("intervencion_detalle", pk=intervencion.id)
 
 
-class IntervencionDetailView(TemplateView):
+class IntervencionDetailIndividualView(TemplateView):
     template_name = "intervencion_detail_view.html"
 
     def get_context_data(self, **kwargs):

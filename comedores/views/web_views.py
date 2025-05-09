@@ -56,7 +56,8 @@ from duplas.dupla_service import DuplaService
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 
-@method_decorator(csrf_exempt, name='dispatch')
+
+@method_decorator(csrf_exempt, name="dispatch")
 class NominaDetailView(TemplateView):
     template_name = "comedor/nomina_detail.html"
     model = Nomina
