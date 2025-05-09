@@ -6,55 +6,8 @@ from configuraciones.models import Municipio, Provincia
 from configuraciones.models import Localidad
 from configuraciones.models import Sexo
 from organizaciones.models import Organizacion
+from ciudadanos.models import EstadoIntervencion
 from duplas.models import Dupla
-
-
-class EstadosIntervencion(models.Model):
-    """
-    Guardado de los estados de las intervenciones realizadas a un ciudadano.
-    """
-
-    nombre = models.CharField(max_length=255)
-
-    def __str__(self):
-        return f"{self.nombre}"
-
-    class Meta:
-        verbose_name = "EstadosIntervencion"
-        verbose_name_plural = "EstadosIntervenciones"
-
-
-class TipoIntervencion(models.Model):
-    """
-    Guardado de los tipos de intervenciones realizadas a un ciudadano.
-    """
-
-    nombre = models.CharField(max_length=255)
-
-    def __str__(self):
-        return f"{self.nombre}"
-
-    class Meta:
-        verbose_name = "TipoIntervencion"
-        verbose_name_plural = "TiposIntervencion"
-
-
-class SubIntervencion(models.Model):
-    """
-    Guardado de las SubIntervencion realizadas a un ciudadano.
-    """
-
-    nombre = models.CharField(max_length=255)
-    subintervencion = models.ForeignKey(
-        TipoIntervencion, on_delete=models.SET_NULL, default=1, null=True
-    )
-
-    def __str__(self):
-        return f"{self.nombre}"
-
-    class Meta:
-        verbose_name = "SubIntervencion"
-        verbose_name_plural = "SubIntervenciones"
 
 
 class TipoDeComedor(models.Model):
@@ -241,31 +194,6 @@ class Comedor(models.Model):
         ordering = ["nombre"]
 
 
-class Intervencion(models.Model):
-    """
-    Guardado de las intervenciones realizadas a un ciudadano.
-    """
-
-    comedor = models.ForeignKey(Comedor, on_delete=models.SET_NULL, null=True)
-    subintervencion = models.ForeignKey(
-        SubIntervencion, on_delete=models.SET_NULL, null=True
-    )
-    tipo_intervencion = models.ForeignKey(
-        TipoIntervencion, on_delete=models.SET_NULL, null=True
-    )
-    fecha = models.DateTimeField(auto_now_add=True)
-    estado = models.ForeignKey(
-        EstadosIntervencion, on_delete=models.SET_NULL, default=1, null=True
-    )
-    observaciones = models.TextField(blank=True, null=True)
-
-    class Meta:
-        ordering = ["-fecha"]
-        verbose_name = "Intervencion"
-        verbose_name_plural = "Intervenciones"
-        indexes = [models.Index(fields=["comedor"])]
-
-
 class Nomina(models.Model):
     """
     Guardado de las intervenciones realizadas a un ciudadano.
@@ -274,7 +202,7 @@ class Nomina(models.Model):
     comedor = models.ForeignKey(Comedor, on_delete=models.SET_NULL, null=True)
     fecha = models.DateTimeField(auto_now_add=True)
     estado = models.ForeignKey(
-        EstadosIntervencion, on_delete=models.SET_NULL, default=1, null=True
+        EstadoIntervencion, on_delete=models.SET_NULL, default=1, null=True
     )
     observaciones = models.TextField(blank=True, null=True)
     nombre = models.TextField(blank=True, null=True)
