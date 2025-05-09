@@ -14,26 +14,31 @@ class TipoOrganizacion(models.Model):
         verbose_name_plural = "Tipos de Organización"
 
 
-class FirmanteHecho(models.Model):
-    firmante1 = models.CharField(max_length=255, blank=True, null=True)
-    firmante2 = models.CharField(max_length=255, blank=True, null=True)
-    aval1 = models.CharField(max_length=255, blank=True, null=True)
-    cuitaval1 = models.IntegerField(blank=True, null=True)
-    aval2 = models.CharField(max_length=255, blank=True, null=True)
-    cuitaval2 = models.IntegerField(blank=True, null=True)
-
-
-class FirmanteEclesiastica(models.Model):
-    obispo = models.CharField(max_length=255, blank=True, null=True)
-    apoderado1 = models.CharField(max_length=255, blank=True, null=True)
-    apoderado2 = models.CharField(max_length=255, blank=True, null=True)
-
-
-class FirmanteJuridica(models.Model):
-    presidente = models.CharField(max_length=255, blank=True, null=True)
-    tesorero = models.CharField(max_length=255, blank=True, null=True)
-    secretario = models.CharField(max_length=255, blank=True, null=True)
-
+class Firmante(models.Model):
+    organizacion = models.ForeignKey(
+        "Organizacion",
+        on_delete=models.CASCADE,
+        related_name="firmantes"
+    )
+    nombre = models.CharField(max_length=255)
+    rol = models.CharField(
+        max_length=50,
+        choices=[
+                ("firmante1", "Firmante 1"), 
+                ("firmante2", "Firmante 2"), 
+                ("firmante3", "Firmante 3"), 
+                ("obispo", "Obispo"),
+                ("apoderado1", "Apoderado 1"),
+                ("apoderado2", "Apoderado 2"),
+                ("presidente", "Presidente"),
+                ("secretario"," Secretario"),
+                ("tesorero", "Tesorero"),
+                ("aval", "Aval 1"),
+                ("aval2", "Aval 2"),
+                ("cuit_aval1", "CUIT Aval 1"),
+                ("cuit_aval2", "CUIT Aval 2"),
+                ]
+    )
 
 class Organizacion(models.Model):
     nombre = models.CharField(max_length=255)
@@ -46,15 +51,6 @@ class Organizacion(models.Model):
         related_name="organizaciones",
         blank=True,
         null=True,
-    )
-    firmante_juridica = models.OneToOneField(
-        "FirmanteJuridica", on_delete=models.SET_NULL, null=True, blank=True
-    )
-    firmante_eclesiastica = models.OneToOneField(
-        "FirmanteEclesiastica", on_delete=models.SET_NULL, null=True, blank=True
-    )
-    firmante_hecho = models.OneToOneField(
-        "FirmanteHecho", on_delete=models.SET_NULL, null=True, blank=True
     )
 
     def delete(self, *args, **kwargs):

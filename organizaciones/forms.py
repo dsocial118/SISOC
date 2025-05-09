@@ -1,40 +1,20 @@
 from django import forms
-
+from django.forms import inlineformset_factory
 from organizaciones.models import (
     Organizacion,
-    FirmanteHecho,
-    FirmanteEclesiastica,
-    FirmanteJuridica,
+    Firmante,
 )
-
 
 class OrganizacionForm(forms.ModelForm):
     class Meta:
         model = Organizacion
         fields = "__all__"
 
-
-class OrganizacionJuridicaForm(forms.ModelForm):
+class FirmanteForm(forms.ModelForm):
     class Meta:
-        model = FirmanteJuridica
-        fields = "__all__"
+        model = Firmante
+        fields = ["nombre", "rol"]
 
-
-class OrganizacionEclesiasticaForm(forms.ModelForm):
-    class Meta:
-        model = FirmanteEclesiastica
-        fields = "__all__"
-
-
-class OrganizacionHechoForm(forms.ModelForm):
-    class Meta:
-        model = FirmanteHecho
-        fields = "__all__"
-        labels = {
-            "firmante1": "Firmante 1",
-            "firmante2": "Firmante 2",
-            "aval1": "Aval 1",
-            "cuitaval1": "CUIT Aval 1",
-            "aval2": "Aval 2",
-            "cuitaval2": "CUIT Aval 2",
-        }
+FirmanteFormset = inlineformset_factory(
+    Organizacion, Firmante, form=FirmanteForm, extra=1, can_delete=True
+)
