@@ -1,29 +1,27 @@
 $(document).ready(function () {
-    const tipoOrganizacion = document.querySelector("#id_tipo_organizacion");
-    const juridicaForm = document.querySelector("#juridica-form");
-    const eclesiasticaForm = document.querySelector("#eclesiastica-form");
-    const hechoForm = document.querySelector("#hecho-form");
 
-    // Función para mostrar/ocultar formularios
-    function oculatarmostrarFormulario() {
-        const selectedValue = tipoOrganizacion.value;
-        juridicaForm.classList.add("d-none");
-        eclesiasticaForm.classList.add("d-none");
-        hechoForm.classList.add("d-none");
+    const addFirmanteButton = document.getElementById("add-firmante");
+    const firmantesContainer = document.getElementById("firmantes-container");
+    const totalForms = document.querySelector("#id_firmantes-TOTAL_FORMS");
 
+    addFirmanteButton.addEventListener("click", function () {
+        const newForm = firmantesContainer.children[0].cloneNode(true);
+        const formRegex = new RegExp(`-0-`, "g");
+        newForm.innerHTML = newForm.innerHTML.replace(formRegex, `-${totalForms.value}-`);
+        firmantesContainer.appendChild(newForm);
+        totalForms.value = parseInt(totalForms.value) + 1;
+    });
 
-        if (selectedValue === "1") {
-            juridicaForm.classList.remove("d-none");
-        } else if (selectedValue === "2") {
-            eclesiasticaForm.classList.remove("d-none");
-        } else if (selectedValue === "3") {
-            hechoForm.classList.remove("d-none");
+    firmantesContainer.addEventListener("click", function (e) {
+        if (e.target.classList.contains("remove-firmante")) {
+            // Verificar si hay más de un formulario antes de eliminar
+            if (firmantesContainer.children.length > 1) {
+                e.target.closest(".form-row").remove();
+                totalForms.value = parseInt(totalForms.value) - 1;
+            } else {
+                alert("Debe haber al menos un firmante.");
+            }
         }
-    }
+    });
 
-    // Escuchar cambios en el campo tipo_organizacion
-    tipoOrganizacion.addEventListener("change", toggleForms);
-
-    // Inicializar la visibilidad de los formularios
-    oculatarmostrarFormulario();
 });

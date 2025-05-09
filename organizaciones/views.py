@@ -13,9 +13,7 @@ from django.views.generic import (
 
 from organizaciones.forms import (
     OrganizacionForm,
-    OrganizacionJuridicaForm,
-    OrganizacionEclesiasticaForm,
-    OrganizacionHechoForm,
+    FirmanteFormset
 )
 from organizaciones.models import Organizacion
 
@@ -49,41 +47,18 @@ class OrganizacionCreateView(CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if self.request.POST:
-            context["juridica_form"] = OrganizacionJuridicaForm(self.request.POST)
-            context["eclesiastica_form"] = OrganizacionEclesiasticaForm(
-                self.request.POST
-            )
-            context["hecho_form"] = OrganizacionHechoForm(self.request.POST)
+            context['firmante_formset'] = FirmanteFormset(self.request.POST)
         else:
-            context["juridica_form"] = OrganizacionJuridicaForm()
-            context["eclesiastica_form"] = OrganizacionEclesiasticaForm()
-            context["hecho_form"] = OrganizacionHechoForm()
+            context['firmante_formset'] = FirmanteFormset()
         return context
 
     def form_valid(self, form):
         context = self.get_context_data()
-        juridica_form = context["juridica_form"]
-        eclesiastica_form = context["eclesiastica_form"]
-        hecho_form = context["hecho_form"]
-
-        if (
-            juridica_form.is_valid()
-            and eclesiastica_form.is_valid()
-            and hecho_form.is_valid()
-        ):
-            # Guarda la organización principal
+        firmante_formset = context['firmante_formset']
+        if firmante_formset.is_valid():
             self.object = form.save()
-
-            # Guarda los formularios relacionados y asocia sus IDs a la organización
-            juridica = juridica_form.save()
-            eclesiastica = eclesiastica_form.save()
-            hecho = hecho_form.save()
-
-            self.object.firmante_juridica_id = juridica.id
-            self.object.firmante_eclesiastica_id = eclesiastica.id
-            self.object.firmante_hecho_id = hecho.id
-            self.object.save()
-
+            firmante_formset.instance = self.object
+            firmante_formset.save()
             return HttpResponseRedirect(self.get_success_url())
         else:
             return self.form_invalid(form)
@@ -100,52 +75,18 @@ class OrganizacionUpdateView(UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if self.request.POST:
-            context["juridica_form"] = OrganizacionJuridicaForm(
-                self.request.POST, instance=self.object.firmante_juridica
-            )
-            context["eclesiastica_form"] = OrganizacionEclesiasticaForm(
-                self.request.POST, instance=self.object.firmante_eclesiastica
-            )
-            context["hecho_form"] = OrganizacionHechoForm(
-                self.request.POST, instance=self.object.firmante_hecho
-            )
+            context['firmante_formset'] = FirmanteFormset(self.request.POST, instance=self.object)
         else:
-            context["juridica_form"] = OrganizacionJuridicaForm(
-                instance=self.object.firmante_juridica
-            )
-            context["eclesiastica_form"] = OrganizacionEclesiasticaForm(
-                instance=self.object.firmante_eclesiastica
-            )
-            context["hecho_form"] = OrganizacionHechoForm(
-                instance=self.object.firmante_hecho
-            )
+            context['firmante_formset'] = FirmanteFormset(instance=self.object)
         return context
 
     def form_valid(self, form):
         context = self.get_context_data()
-        juridica_form = context["juridica_form"]
-        eclesiastica_form = context["eclesiastica_form"]
-        hecho_form = context["hecho_form"]
-
-        if (
-            juridica_form.is_valid()
-            and eclesiastica_form.is_valid()
-            and hecho_form.is_valid()
-        ):
-            # Guarda la organización principal
+        firmante_formset = context['firmante_formset']
+        if firmante_formset.is_valid():
             self.object = form.save()
-
-            # Guarda los formularios relacionados
-            juridica = juridica_form.save()
-            eclesiastica = eclesiastica_form.save()
-            hecho = hecho_form.save()
-
-            # Asocia los formularios relacionados a la organización
-            self.object.firmante_juridica = juridica
-            self.object.firmante_eclesiastica = eclesiastica
-            self.object.firmante_hecho = hecho
-            self.object.save()
-
+            firmante_formset.instance = self.object
+            firmante_formset.save()
             return HttpResponseRedirect(self.get_success_url())
         else:
             return self.form_invalid(form)
