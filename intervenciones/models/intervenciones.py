@@ -2,20 +2,6 @@ from django.db import models
 from django.utils import timezone
 
 
-class EstadosIntervencion(models.Model):
-    """
-    Guardado de los estados de las intervenciones realizadas.
-    """
-
-    nombre = models.CharField(max_length=255)
-
-    def __str__(self):
-        return f"{self.nombre}"
-
-    class Meta:
-        verbose_name = "Estado de Intervención"
-        verbose_name_plural = "Estados de Intervención"
-        ordering = ["id"]
 
 
 class TipoIntervencion(models.Model):
@@ -117,12 +103,6 @@ class Intervencion(models.Model):
     )
     fecha = models.DateTimeField(
         default=timezone.now, verbose_name="Fecha y hora de intervención"
-    )
-    estado = models.ForeignKey(
-        EstadosIntervencion,
-        on_delete=models.SET_NULL,
-        null=True,
-        verbose_name="Estado actual",
     )
     observaciones = models.TextField(
         blank=True, null=True, verbose_name="Observaciones"

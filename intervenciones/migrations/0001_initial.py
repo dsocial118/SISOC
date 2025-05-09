@@ -120,15 +120,6 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
-                    "estado",
-                    models.ForeignKey(
-                        null=True,
-                        on_delete=django.db.models.deletion.SET_NULL,
-                        to="intervenciones.estadosintervencion",
-                        verbose_name="Estado actual",
-                    ),
-                ),
-                (
                     "subintervencion",
                     models.ForeignKey(
                         null=True,
