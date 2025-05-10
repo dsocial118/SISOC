@@ -7,7 +7,17 @@ $(document).ready(function () {
     addFirmanteButton.addEventListener("click", function () {
         const newForm = firmantesContainer.children[0].cloneNode(true);
         const formRegex = new RegExp(`-0-`, "g");
-        newForm.innerHTML = newForm.innerHTML.replace(formRegex, `-${totalForms.value}-`);
+        Array.from(newForm.querySelectorAll("[name], [id], [for]")).forEach(function (element) {
+            if (element.name) {
+                element.name = element.name.replace(formRegex, `-${totalForms.value}-`);
+            }
+            if (element.id) {
+                element.id = element.id.replace(formRegex, `-${totalForms.value}-`);
+            }
+            if (element.htmlFor) {
+                element.htmlFor = element.htmlFor.replace(formRegex, `-${totalForms.value}-`);
+            }
+        });
         firmantesContainer.appendChild(newForm);
         totalForms.value = parseInt(totalForms.value) + 1;
     });
