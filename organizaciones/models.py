@@ -14,29 +14,34 @@ class TipoOrganizacion(models.Model):
         verbose_name_plural = "Tipos de Organización"
 
 
+class RolFirmante(models.Model):
+    nombre = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        ordering = ["id"]
+        verbose_name = "Rol de Firmante"
+        verbose_name_plural = "Roles de Firmante"
+
+
 class Firmante(models.Model):
     organizacion = models.ForeignKey(
         "Organizacion", on_delete=models.CASCADE, related_name="firmantes"
     )
     nombre = models.CharField(max_length=255)
-    rol = models.CharField(
-        max_length=50,
-        choices=[
-            ("firmante1", "Firmante 1"),
-            ("firmante2", "Firmante 2"),
-            ("firmante3", "Firmante 3"),
-            ("obispo", "Obispo"),
-            ("apoderado1", "Apoderado 1"),
-            ("apoderado2", "Apoderado 2"),
-            ("presidente", "Presidente"),
-            ("secretario", " Secretario"),
-            ("tesorero", "Tesorero"),
-            ("aval", "Aval 1"),
-            ("aval2", "Aval 2"),
-            ("cuit_aval1", "CUIT Aval 1"),
-            ("cuit_aval2", "CUIT Aval 2"),
-        ],
+    rol = models.ForeignKey(
+        RolFirmante,
+        on_delete=models.PROTECT,
+        related_name="firmantes",
+        blank=True,
+        null=True,
     )
+    cuit = models.BigIntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.nombre} ({self.get_rol_display()})"
 
 
 class Organizacion(models.Model):

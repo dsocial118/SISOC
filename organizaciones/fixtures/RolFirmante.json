@@ -1,0 +1,79 @@
+[
+    {
+        "model": "organizaciones.rolfirmante",
+        "pk": 1,
+        "fields": {
+            "nombre": "Firmante 1"
+        }
+    },
+    {
+        "model": "organizaciones.rolfirmante",
+        "pk": 2,
+        "fields": {
+            "nombre": "Firmante 2"
+        }
+    },
+    {
+        "model": "organizaciones.rolfirmante",
+        "pk": 3,
+        "fields": {
+            "nombre": "Firmante 3"
+        }
+    },
+    {
+        "model": "organizaciones.rolfirmante",
+        "pk": 4,
+        "fields": {
+            "nombre": "Aval 1"
+        }
+    },
+    {
+        "model": "organizaciones.rolfirmante",
+        "pk": 5,
+        "fields": {
+            "nombre": "Aval 2"
+        }
+    },
+    {
+        "model": "organizaciones.rolfirmante",
+        "pk": 6,
+        "fields": {
+            "nombre": "Presidente"
+        }
+    },
+    {
+        "model": "organizaciones.rolfirmante",
+        "pk": 7,
+        "fields": {
+            "nombre": "Secretario"
+        }
+    },
+    {
+        "model": "organizaciones.rolfirmante",
+        "pk": 8,
+        "fields": {
+            "nombre": "Tesorero"
+        }
+    },
+    {
+        "model": "organizaciones.rolfirmante",
+        "pk": 9,
+        "fields": {
+            "nombre": "Obispo"
+        }
+    },
+    {
+        "model": "organizaciones.rolfirmante",
+        "pk": 10,
+        "fields": {
+            "nombre": "Apoderado 1"
+        }
+    },
+    {
+        "model": "organizaciones.rolfirmante",
+        "pk": 11,
+        "fields": {
+            "nombre": "Apoderado 2"
+        }
+    }
+]
