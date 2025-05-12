@@ -35,7 +35,6 @@
                class="btn btn-secondary mr-1 backbutton-handler">Volver</a>
         </div>
         <div class="col-auto">
-            
             <a href="{% url 'nomina_ver' pk=comedor.id %}"
                class="btn btn-primary mr-1">Nomina</a>
             <a href="{% url 'dupla_asignar' pk=comedor.id %}"
@@ -590,7 +589,6 @@
             </div>
         </div>
     {% endif %}
-    
 {% endblock %}
 {% block customJS %}
     <script>
