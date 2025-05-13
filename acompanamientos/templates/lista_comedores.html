@@ -18,11 +18,11 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for comedor in comedores %}
+                        {% for admision in admisiones %}
                         <tr>
-                            <td>{{ comedor.nombre }}</td>
+                            <td>{{ admision.comedor.nombre }}</td>
                             <td>
-                                <a href="{% url 'detalle_acompanamiento' comedor_id=comedor.id %}" class="btn btn-primary">
+                                <a href="{% url 'detalle_acompanamiento' admision.comedor_id %}" class="btn btn-primary">
                                     Ver Acompañamiento
                                 </a>
                             </td>
