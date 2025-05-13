@@ -3,21 +3,21 @@
         "model": "intervenciones.TipoContacto",
         "pk": 1,
         "fields": {
-            "nombre": "Presencial"
+            "nombre": "Llamado telefónico"
         }
     },
     {
         "model": "intervenciones.TipoContacto",
         "pk": 2,
         "fields": {
-            "nombre": "Llamado"
+            "nombre": "Mensaje"
         }
     },
     {
         "model": "intervenciones.TipoContacto",
         "pk": 3,
         "fields": {
-            "nombre": "Mensaje"
+            "nombre": "Presencial"
         }
     },
     {
