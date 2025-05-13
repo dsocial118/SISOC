@@ -1,0 +1,85 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Acompañamiento{% endblock %}
+{% block titulo-pagina %}Acompañamiento{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'detalle_acompanamiento' comedor_id=comedor.id %}" title="Ver Comedor">{{ comedor.nombre }}</a>
+        </li>
+        <li class="breadcrumb-item active">Acompañamiento</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <div class="row">
+        <div class="col-12 my-3 mx-2 d-print-none">
+            <a href="{% url 'acompañamiento_editar' comedor.id %}" class="btn btn-primary mr-1">Editar Información</a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card card-primary card-outline">
+                <div class="card-header">
+                    <h3 class="card-title">Información Relevante</h3>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group">
+                        <li class="list-group-item">
+                            <strong>Número de Expediente:</strong> {{ info_relevante.numero_expediente }}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Número de Resolución:</strong> {{ info_relevante.numero_resolucion }}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Vencimiento de Mandato:</strong> {{ info_relevante.vencimiento_mandato }}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>IF de Relevamiento:</strong> {{ info_relevante.if_relevamiento }}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card card-primary card-outline">
+                <div class="card-header">
+                    <h3 class="card-title">Listado de Prestaciones</h3>
+                </div>
+                <div class="card-body table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Día</th>
+                                <th>Desayuno</th>
+                                <th>Almuerzo</th>
+                                <th>Merienda</th>
+                                <th>Cena</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for prestacion in prestaciones %}
+                            <tr>
+                                <td>{{ prestacion.dia }}</td>
+                                <td>{{ prestacion.desayuno|yesno:"Sí,No" }}</td>
+                                <td>{{ prestacion.almuerzo|yesno:"Sí,No" }}</td>
+                                <td>{{ prestacion.merienda|yesno:"Sí,No" }}</td>
+                                <td>{{ prestacion.cena|yesno:"Sí,No" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-2 text-start my-3">
+        <a href="{% url 'comedor_detalle' comedor.id %}" class="btn btn-secondary btn-lg">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+    </div>
+{% endblock %}

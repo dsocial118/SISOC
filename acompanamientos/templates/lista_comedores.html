@@ -1,0 +1,37 @@
+{% extends "includes/main.html" %}
+{% block title %}Comedores en Acompañamiento{% endblock %}
+{% block titulo-pagina %}Comedores en Acompañamiento{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card card-primary card-outline">
+            <div class="card-header">
+                <h3 class="card-title">Listado de Comedores</h3>
+            </div>
+            <div class="card-body table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for comedor in comedores %}
+                        <tr>
+                            <td>{{ comedor.nombre }}</td>
+                            <td>
+                                <a href="{% url 'detalle_acompanamiento' comedor_id=comedor.id %}" class="btn btn-primary">
+                                    Ver Acompañamiento
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
