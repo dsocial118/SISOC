@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from acompanamientos.models.acompanamiento import InformacionRelevante, Prestacion
+from admisiones.models.admisiones import Admision
 from comedores.models.comedor import Comedor
 
 def detalle_acompanamiento(request, comedor_id):
@@ -14,5 +15,5 @@ def detalle_acompanamiento(request, comedor_id):
     )
 
 def lista_comedores_acompanamiento(request):
-    comedores = Comedor.objects.filter(estado="Admitido - pendiente ejecución")
-    return render(request, "lista_comedores.html", {"comedores": comedores})
+    admisiones = Admision.objects.filter(estado__nombre="Test")
+    return render(request, "lista_comedores.html", {"admisiones": admisiones})
