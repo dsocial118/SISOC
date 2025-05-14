@@ -254,3 +254,63 @@ class ValorComida(models.Model):
     tipo = models.CharField(max_length=50)
     valor = models.DecimalField(max_digits=10, decimal_places=2)
     fecha = models.DateField()
+
+
+class RendicionCuentaFinal(models.Model):
+    """
+    Modelo que representa una rendición de cuenta final de un Comedor/Merendero.
+    Será donde se conecten todos los documentos adjuntos.
+    """
+
+    comedor = models.ForeignKey(
+        to=Comedor, on_delete=models.CASCADE, blank=True, related_name="rendiciones"
+    )
+
+    def add_documento_personalizado(self, nombre):
+        if self.documentos.filter(nombre=nombre).exists():
+            raise ValueError("Ya existe un documento con ese nombre.")
+        return DocumentoRendicionFinal.objects.create(
+            rendicion_final=self, nombre=nombre
+        )
+
+    class Meta:
+        verbose_name = "Rendición de Cuenta Final"
+        verbose_name_plural = "Rendiciones de Cuenta Final"
+
+
+class EstadoDocumentoRendicionFinal(models.Model):
+    nombre = models.CharField(max_length=255, unique=True)
+
+    class Meta:
+        verbose_name = "Estado de Documento"
+        verbose_name_plural = "Estados de Documento"
+
+
+class DocumentoRendicionFinal(models.Model):
+    """
+    Modelo que representa un documento en la Rendición de Cuenta Final.
+    """
+
+    rendicion_final = models.ForeignKey(
+        to=RendicionCuentaFinal,
+        on_delete=models.CASCADE,
+        related_name="documentos",
+    )
+    documento = models.FileField(
+        upload_to="rendicion_cuenta_final/", null=True, blank=True
+    )
+    nombre = models.CharField(max_length=255)
+    estado = models.ForeignKey(
+        to=EstadoDocumentoRendicionFinal,
+        on_delete=models.PROTECT,
+        default=1,
+    )
+    fecha_modificacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["rendicion_final"]),
+        ]
+        unique_together = [["rendicion_final", "nombre"]]
+        verbose_name = "Documento de Rendición"
+        verbose_name_plural = "Documentos de Rendición"
