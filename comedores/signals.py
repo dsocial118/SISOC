@@ -1,6 +1,13 @@
 from django.db.models.signals import post_save, pre_delete, pre_save
 from django.dispatch import receiver
-from comedores.models.comedor import Observacion, Referente, Comedor
+from comedores.models.comedor import (
+    DocumentoRendicionFinal,
+    EstadoDocumentoRendicionFinal,
+    Observacion,
+    Referente,
+    Comedor,
+    RendicionCuentaFinal,
+)
 from comedores.models.relevamiento import Relevamiento
 from comedores.services.clasificacion_comedor_service import ClasificacionComedorService
 from comedores.tasks import (
@@ -67,3 +74,30 @@ def send_referente_to_gestionar(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Relevamiento)
 def clasificacion_relevamiento(sender, instance, **kwargs):
     ClasificacionComedorService.create_clasificacion_relevamiento(instance)
+
+
+@receiver(post_save, sender=RendicionCuentaFinal)
+def crear_documentos_por_defecto(sender, instance, created, **kwargs):
+    if created:
+        tipos = [  # Tipos de documento por defecto
+            "Listado de Beneficiarios",
+            "Certificación mensual de prestaciones 1",
+            "Certificación mensual de prestaciones 2",
+            "Certificación mensual de prestaciones 3",
+            "Certificación mensual de prestaciones 4",
+            "Certificación mensual de prestaciones 5",
+            "Certificación mensual de prestaciones 6",
+            "DDJJ sobre aplicación de fondos + Anexo 1",
+            "Comprobantes de gastos",
+            "Constancias de CAE/CAI/CAEA",
+            "Constancias de Inscripción ARCA",
+            "DDJJ para Facturas A",
+            "Reporte Mensual Plataforma AC",
+            "Informe Técnico Social Final",
+            "Rendición Física presentada",
+        ]
+
+        for tipo in tipos:
+            DocumentoRendicionFinal.objects.create(
+                rendicion_final=instance, nombre=tipo
+            )
