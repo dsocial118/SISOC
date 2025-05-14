@@ -11,11 +11,8 @@
     </ol>
 {% endblock %}
 {% block content %}
-    <div class="row">
-        <div class="col-12 my-3 mx-2 d-print-none">
-            <a href="{% url 'acompañamiento_editar' comedor.id %}" class="btn btn-primary mr-1">Editar Información</a>
-        </div>
-    </div>
+
+    
 
     <div class="row">
         <div class="col-12">
@@ -24,6 +21,7 @@
                     <h3 class="card-title">Información Relevante</h3>
                 </div>
                 <div class="card-body">
+                    {% if info_relevante %}
                     <ul class="list-group">
                         <li class="list-group-item">
                             <strong>Número de Expediente:</strong> {{ info_relevante.numero_expediente }}
@@ -38,6 +36,11 @@
                             <strong>IF de Relevamiento:</strong> {{ info_relevante.if_relevamiento }}
                         </li>
                     </ul>
+                    {% else %}
+                    <div class="alert alert-warning mb-0">
+                        No hay información relevante cargada para este comedor.
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
