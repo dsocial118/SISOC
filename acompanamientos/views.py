@@ -5,7 +5,7 @@ from comedores.models.comedor import Comedor
 
 def detalle_acompanamiento(request, comedor_id):
     comedor = get_object_or_404(Comedor, pk=comedor_id)
-    info_relevante = get_object_or_404(InformacionRelevante, comedor=comedor)
+    info_relevante = InformacionRelevante.objects.filter(comedor=comedor).first()
     prestaciones = Prestacion.objects.filter(comedor=comedor)
 
     return render(
