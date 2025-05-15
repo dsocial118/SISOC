@@ -80,5 +80,5 @@ def clasificacion_relevamiento(sender, instance, **kwargs):
 @receiver(post_save, sender=RendicionCuentasFinal)
 def crear_documentos_por_defecto(sender, instance, created, **kwargs):
     if created:
-        for tipo in TipoDocumentoRendicionFinal.objects.all():
+        for tipo in TipoDocumentoRendicionFinal.objects.filter(personalizado=False):
             DocumentoRendicionFinal.objects.create(rendicion_final=instance, tipo=tipo)

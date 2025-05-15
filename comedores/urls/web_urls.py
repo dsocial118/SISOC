@@ -1,6 +1,7 @@
 from django.urls import path
 
 from comedores.views.web_views import (
+    adjuntar_documento_rendicion_cuenta_final,
     ComedorCreateView,
     ComedorDeleteView,
     ComedorDetailView,
@@ -20,6 +21,10 @@ from comedores.views.web_views import (
     NominaDeleteView,
     NominaUpdateView,
     AsignarDuplaListView,
+    RendicionCuentasFinalDetailView,
+    crear_documento_rendicion_cuentas_final,
+    eliminar_documento_rendicion_cuentas_final,
+    validar_documento_rendicion_cuentas_final,
 )
 
 from intervenciones.views import (
@@ -201,5 +206,30 @@ urlpatterns = [
         "intervencion/detalle/<int:pk>/",
         group_required("Comedores")(IntervencionDetailIndividualView.as_view()),
         name="intervencion_detalle",
+    ),
+    path(
+        "comedores/<pk>/rendicion_cuentas_final",
+        group_required("Tecnico Comedor")(RendicionCuentasFinalDetailView.as_view()),
+        name="rendicion_cuentas_final",
+    ),
+    path(
+        "rendicion_cuentas_final/documento/adjuntar/",
+        adjuntar_documento_rendicion_cuenta_final,
+        name="adjuntar_documento_rendicion_cuenta_final",
+    ),
+    path(
+        "rendicion_cuentas_final/documento/<int:rendicion_id>/crear/",
+        crear_documento_rendicion_cuentas_final,
+        name="crear_documento_rendicion_cuentas_final",
+    ),
+    path(
+        "rendicion_cuentas_final/documento/<int:documento_id>/eliminar/",
+        eliminar_documento_rendicion_cuentas_final,
+        name="eliminar_documento_rendicion_cuentas_final",
+    ),
+    path(
+        "rendicion_cuentas_final/documento/<int:documento_id>/valudar/",
+        validar_documento_rendicion_cuentas_final,
+        name="validar_documento_rendicion_cuentas_final",
     ),
 ]

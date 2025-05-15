@@ -278,10 +278,10 @@ class RendicionCuentasFinal(models.Model):
 
     def add_documento_personalizado(self, nombre):
         tipo_custom, _created = TipoDocumentoRendicionFinal.objects.get_or_create(
-            nombre=nombre,
+            nombre=nombre, personalizado=True
         )
         return DocumentoRendicionFinal.objects.create(
-            rendicion_final=self, tipo=tipo_custom
+            rendicion_final=self, tipo=tipo_custom, fecha_modificacion=timezone.now()
         )
 
     class Meta:
@@ -312,6 +312,7 @@ class TipoDocumentoRendicionFinal(models.Model):
         nombre (CharField): Nombre único que identifica el tipo de documento.
         validador (CharField): Nombre de la persona o área responsable de validar el documento.
             Puede ser 'Dupla', 'Contabilidad', etc. Este campo es opcional y por defecto es 'Dupla'.
+        personalizado (BooleanField): Indica si el tipo de documento es creado por un usuario.
     """
 
     nombre = models.CharField(max_length=255, unique=True)
@@ -321,6 +322,10 @@ class TipoDocumentoRendicionFinal(models.Model):
         null=True,
         default="Dupla",
         help_text="Quien debe validar el documento. Ej: Dupla, Contabilidad, etc.",
+    )
+    personalizado = models.BooleanField(
+        default=False,
+        help_text="Indica si el tipo de documento es creado por un usuario.",
     )
 
     class Meta:
@@ -357,7 +362,7 @@ class DocumentoRendicionFinal(models.Model):
         default=1,
     )
     observaciones = models.CharField(max_length=255, blank=True, null=True)
-    fecha_modificacion = models.DateTimeField(auto_now=True)
+    fecha_modificacion = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         indexes = [

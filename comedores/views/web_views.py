@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.db.models.base import Model
 from django.forms import BaseModelForm
 from django.http import HttpResponse
-from django.shortcuts import redirect
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views.generic import (
@@ -16,18 +16,20 @@ from django.views.generic import (
     UpdateView,
     TemplateView,
 )
-from comedores.forms.relevamiento_form import PuntosEntregaForm
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.views.decorators.http import require_POST
 
 from admisiones.models.admisiones import DuplaContacto
 from admisiones.forms.admisiones_forms import DuplaContactoForm
 
+from comedores.forms.relevamiento_form import PuntosEntregaForm
 from comedores.models.relevamiento import Relevamiento, ClasificacionComedor
 from comedores.forms.comedor_form import (
     ComedorForm,
     ReferenteForm,
     NominaForm,
 )
-
 from comedores.forms.observacion_form import ObservacionForm
 from comedores.forms.relevamiento_form import (
     AnexoForm,
@@ -41,23 +43,26 @@ from comedores.forms.relevamiento_form import (
     PrestacionForm,
     RelevamientoForm,
 )
-
 from comedores.models.comedor import (
     Comedor,
+    DocumentoRendicionFinal,
+    EstadoDocumentoRendicionFinal,
     ImagenComedor,
     Observacion,
     Nomina,
+    RendicionCuentasFinal,
 )
-
 from comedores.models.relevamiento import Prestacion
 from comedores.services.comedor_service import ComedorService
 from comedores.services.relevamiento_service import RelevamientoService
+
+from comedores.services.rendicion_cuentas_final_service import (
+    RendicionCuentasFinalService,
+)
 from duplas.dupla_service import DuplaService
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
 
 
-@method_decorator(csrf_exempt, name="dispatch")
+@method_decorator(csrf_exempt, name="dispatch")  # FIXME: No exceptuar nunca csrf
 class NominaDetailView(TemplateView):
     template_name = "comedor/nomina_detail.html"
     model = Nomina
@@ -277,7 +282,7 @@ class ComedorDetailView(DetailView):
                 return redirect("comedor_detalle", pk=self.object["id"])
 
 
-class AsignarDuplaListView(ListView):
+class AsignarDuplaListView(ListView):  # FIXME: Por que esto es una ListView?
     model = Comedor
     template_name = "comedor/asignar_dupla_form.html"
 
@@ -525,7 +530,7 @@ class RelevamientoDetailView(DetailView):
 
         return context
 
-    def get_object(self, queryset=None) -> Model:
+    def get_object(self, queryset=None):
         return RelevamientoService.get_relevamiento_detail_object(self.kwargs["pk"])
 
 
@@ -724,3 +729,96 @@ class ObservacionDeleteView(DeleteView):
         comedor = self.object.comedor
 
         return reverse_lazy("comedor_detalle", kwargs={"pk": comedor.id})
+
+
+class RendicionCuentasFinalDetailView(DetailView):
+    model = RendicionCuentasFinal
+    context_object_name = "rendicion"
+    template_name = "comedor/rendicion_cuentas_final_detail.html"
+
+    def get_object(self, queryset=None) -> Model:
+        comedor = get_object_or_404(Comedor, pk=self.kwargs["pk"])
+        rendicion, _created = RendicionCuentasFinal.objects.get_or_create(
+            comedor=comedor
+        )
+        return rendicion
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["documentos"] = self.object.documentos.select_related(
+            "tipo", "estado"
+        ).values(
+            "id",
+            "documento",
+            "observaciones",
+            "fecha_modificacion",
+            "tipo__nombre",
+            "tipo__validador",
+            "tipo__personalizado",
+            "estado__nombre",
+        )
+
+        context["comedor_id"] = self.object.comedor.id
+        context["comedor_nombre"] = self.object.comedor.nombre
+
+        context["fisicamente_presentada"] = self.object.fisicamente_presentada
+
+        return context
+
+
+@require_POST
+def adjuntar_documento_rendicion_cuenta_final(request):
+    doc_id = request.POST.get("documento_id")
+    archivo = request.FILES.get("archivo")
+
+    ok, _documento = RendicionCuentasFinalService.adjuntar_archivo_a_documento(
+        doc_id, archivo
+    )
+    if not ok:
+        messages.error(request, "No se seleccionó ningún archivo.")
+    else:
+        messages.success(request, "Archivo adjuntado correctamente.")
+
+    return redirect("rendicion_cuentas_final", pk=_documento.rendicion_final.comedor.id)
+
+
+@require_POST
+def crear_documento_rendicion_cuentas_final(request, rendicion_id):
+    rendicion = get_object_or_404(RendicionCuentasFinal, id=rendicion_id)
+    nombre = request.POST.get("nombre", "").strip()
+    archivo = request.FILES.get("archivo")
+
+    documento = rendicion.add_documento_personalizado(nombre)
+
+    if archivo:
+        RendicionCuentasFinalService.actualizar_documento_con_archivo(
+            documento, archivo
+        )
+
+    return redirect("rendicion_cuentas_final", pk=rendicion.comedor.id)
+
+
+@require_POST
+def eliminar_documento_rendicion_cuentas_final(request, documento_id):
+    documento = get_object_or_404(DocumentoRendicionFinal, id=documento_id)
+
+    comedor_id = documento.rendicion_final.comedor.id
+    documento.delete()
+    messages.success(request, "Documento eliminado correctamente.")
+
+    return redirect("rendicion_cuentas_final", pk=comedor_id)
+
+
+@require_POST
+def validar_documento_rendicion_cuentas_final(request, documento_id):
+    documento = get_object_or_404(DocumentoRendicionFinal, id=documento_id)
+    comedor_id = documento.rendicion_final.comedor.id
+
+    documento.estado = EstadoDocumentoRendicionFinal.objects.get(nombre="Validado")
+    documento.fecha_modificacion = timezone.now()
+    documento.save()
+
+    messages.success(request, "Documento validado correctamente.")
+
+    return redirect("rendicion_cuentas_final", pk=comedor_id)
