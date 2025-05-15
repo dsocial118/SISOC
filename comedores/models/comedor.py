@@ -348,7 +348,9 @@ class DocumentoRendicionFinal(models.Model):
     documento = models.FileField(
         upload_to="rendicion_cuenta_final/", null=True, blank=True
     )
-    tipo = models.ForeignKey(TipoDocumentoRendicionFinal, on_delete=models.PROTECT)
+    tipo = models.ForeignKey(
+        TipoDocumentoRendicionFinal, on_delete=models.PROTECT, null=True
+    )
     estado = models.ForeignKey(
         to=EstadoDocumentoRendicionFinal,
         on_delete=models.PROTECT,
