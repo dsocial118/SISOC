@@ -10,26 +10,19 @@
         "model": "comedores.EstadoDocumentoRendicionFinal",
         "pk": 2,
         "fields": {
-            "nombre": "Presentado"
+            "nombre": "En análisis"
         }
     },
     {
         "model": "comedores.EstadoDocumentoRendicionFinal",
         "pk": 3,
         "fields": {
-            "nombre": "En análisis"
-        }
-    },
-    {
-        "model": "comedores.EstadoDocumentoRendicionFinal",
-        "pk": 4,
-        "fields": {
             "nombre": "Validado"
         }
     },
     {
         "model": "comedores.EstadoDocumentoRendicionFinal",
-        "pk": 5,
+        "pk": 4,
         "fields": {
             "nombre": "Subsanar"
         }
