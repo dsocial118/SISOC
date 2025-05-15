@@ -103,7 +103,11 @@ class AdmisionesTecnicosUpdateView(UpdateView):
                 messages.success(request, "Estado actualizado correctamente.")
             else:
                 messages.error(request, "Error al actualizar el estado.")
-            return redirect(request.META.get('HTTP_REFERER'))
+            referer = request.META.get('HTTP_REFERER', '/')
+            allowed_hosts = [self.request.get_host()]
+            if url_has_allowed_host_and_scheme(referer, allowed_hosts=allowed_hosts):
+                return redirect(referer)
+            return redirect('/')
 
         return super().post(request, *args, **kwargs)
 
