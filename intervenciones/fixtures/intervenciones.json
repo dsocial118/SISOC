@@ -129,6 +129,13 @@
     "model": "intervenciones.tipointervencion",
     "pk": 19,
     "fields": {
+      "nombre": "Contacto"
+    }
+  },
+  {
+    "model":"intervenciones.tipointervencion",
+    "pk": 20,
+    "fields":{
       "nombre": "Otros"
     }
   },
