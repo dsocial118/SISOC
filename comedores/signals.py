@@ -7,6 +7,7 @@ from comedores.models.comedor import (
     Referente,
     Comedor,
     RendicionCuentaFinal,
+    TipoDocumentoRendicionFinal,
 )
 from comedores.models.relevamiento import Relevamiento
 from comedores.services.clasificacion_comedor_service import ClasificacionComedorService
@@ -79,25 +80,5 @@ def clasificacion_relevamiento(sender, instance, **kwargs):
 @receiver(post_save, sender=RendicionCuentaFinal)
 def crear_documentos_por_defecto(sender, instance, created, **kwargs):
     if created:
-        tipos = [  # Tipos de documento por defecto
-            "Listado de Beneficiarios",
-            "Certificación mensual de prestaciones 1",
-            "Certificación mensual de prestaciones 2",
-            "Certificación mensual de prestaciones 3",
-            "Certificación mensual de prestaciones 4",
-            "Certificación mensual de prestaciones 5",
-            "Certificación mensual de prestaciones 6",
-            "DDJJ sobre aplicación de fondos + Anexo 1",
-            "Comprobantes de gastos",
-            "Constancias de CAE/CAI/CAEA",
-            "Constancias de Inscripción ARCA",
-            "DDJJ para Facturas A",
-            "Reporte Mensual Plataforma AC",
-            "Informe Técnico Social Final",
-            "Rendición Física presentada",
-        ]
-
-        for tipo in tipos:
-            DocumentoRendicionFinal.objects.create(
-                rendicion_final=instance, nombre=tipo
-            )
+        for tipo in TipoDocumentoRendicionFinal.objects.all():
+            DocumentoRendicionFinal.objects.create(rendicion_final=instance, tipo=tipo)
