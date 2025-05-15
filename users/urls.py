@@ -12,7 +12,9 @@ from users.views import (
 
 urlpatterns = [
     path("", UsuariosLoginView.as_view(), name="login"),
-    path("logout", group_required("Admin")(LogoutView.as_view()), name="logout"),
+    path(
+        "logout", group_required("Admin")(LogoutView.as_view()), name="logout"
+    ),  # FIXME: Se deberia requerir el grupo Admin?
     # Usuarios
     path("usuarios/", group_required("Admin")(UserListView.as_view()), name="usuarios"),
     path(
