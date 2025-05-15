@@ -6,7 +6,7 @@ from comedores.models.comedor import (
     Observacion,
     Referente,
     Comedor,
-    RendicionCuentaFinal,
+    RendicionCuentasFinal,
     TipoDocumentoRendicionFinal,
 )
 from comedores.models.relevamiento import Relevamiento
@@ -77,7 +77,7 @@ def clasificacion_relevamiento(sender, instance, **kwargs):
     ClasificacionComedorService.create_clasificacion_relevamiento(instance)
 
 
-@receiver(post_save, sender=RendicionCuentaFinal)
+@receiver(post_save, sender=RendicionCuentasFinal)
 def crear_documentos_por_defecto(sender, instance, created, **kwargs):
     if created:
         for tipo in TipoDocumentoRendicionFinal.objects.all():

@@ -256,9 +256,9 @@ class ValorComida(models.Model):
     fecha = models.DateField()
 
 
-class RendicionCuentaFinal(models.Model):
+class RendicionCuentasFinal(models.Model):
     """
-    Modelo que representa una rendición de cuenta final de un Comedor/Merendero.
+    Modelo que representa una rendición de cuentas final de un Comedor/Merendero.
     Será donde se conecten todos los documentos adjuntos.
     Atributos:
         comedor (ForeignKey): Referencia al modelo Comedor, indicando a qué comedor pertenece la rendición.
@@ -285,8 +285,8 @@ class RendicionCuentaFinal(models.Model):
         )
 
     class Meta:
-        verbose_name = "Rendición de Cuenta Final"
-        verbose_name_plural = "Rendiciones de Cuenta Final"
+        verbose_name = "Rendición de Cuentas Final"
+        verbose_name_plural = "Rendiciones de Cuentas Final"
 
 
 class EstadoDocumentoRendicionFinal(models.Model):
@@ -330,9 +330,9 @@ class TipoDocumentoRendicionFinal(models.Model):
 
 class DocumentoRendicionFinal(models.Model):
     """
-    Modelo que representa un documento en la Rendición de Cuenta Final.
+    Modelo que representa un documento en la Rendición de Cuentas Final.
     Atributos:
-        rendicion_final (ForeignKey): Referencia a la instancia de RendicionCuentaFinal a la que pertenece el documento.
+        rendicion_final (ForeignKey): Referencia a la instancia de RendicionCuentasFinal a la que pertenece el documento.
         documento (FileField): Archivo adjunto correspondiente al documento de rendición.
         tipo (ForeignKey): Tipo de documento, relacionado con TipoDocumentoRendicionFinal.
         estado (ForeignKey): Estado actual del documento, relacionado con EstadoDocumentoRendicionFinal.
@@ -341,12 +341,12 @@ class DocumentoRendicionFinal(models.Model):
     """
 
     rendicion_final = models.ForeignKey(
-        to=RendicionCuentaFinal,
+        to=RendicionCuentasFinal,
         on_delete=models.CASCADE,
         related_name="documentos",
     )
     documento = models.FileField(
-        upload_to="rendicion_cuenta_final/", null=True, blank=True
+        upload_to="rendicion_cuentas_final/", null=True, blank=True
     )
     tipo = models.ForeignKey(
         TipoDocumentoRendicionFinal, on_delete=models.PROTECT, null=True
