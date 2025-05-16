@@ -1,7 +1,18 @@
 from admisiones.models.admisiones import Admision
+from acompanamientos.models.hitos import Hitos
 from acompanamientos.models.acompanamiento import InformacionRelevante, Prestacion
 
+
 class AcompanamientoService:
+    @staticmethod
+    def crear_hitos(comedor):
+        # Crear un nuevo registro de hitos para el comedor
+        Hitos.objects.create(comedor=comedor)
+
+    @staticmethod
+    def obtener_hitos(comedor):
+        # Obtener los hitos del comedor
+        return Hitos.objects.filter(comedor=comedor).first()
 
     @staticmethod
     def importar_datos_desde_admision(comedor):
@@ -23,7 +34,9 @@ class AcompanamientoService:
 
         # Importar las prestaciones
         prestaciones_admision = admision.prestaciones.all()
-        Prestacion.objects.filter(comedor=comedor).delete()  # Limpiar prestaciones previas
+        Prestacion.objects.filter(
+            comedor=comedor
+        ).delete()  # Limpiar prestaciones previas
         for prestacion in prestaciones_admision:
             Prestacion.objects.create(
                 comedor=comedor,
