@@ -737,31 +737,50 @@ class RendicionCuentasFinalDetailView(DetailView):
     template_name = "comedor/rendicion_cuentas_final_detail.html"
 
     def get_object(self, queryset=None) -> Model:
-        comedor = get_object_or_404(Comedor, pk=self.kwargs["pk"])
-        rendicion, _created = RendicionCuentasFinal.objects.get_or_create(
-            comedor=comedor
+        comedor = get_object_or_404(
+            Comedor.objects.only("id", "nombre"),  # Trae solo lo que vas a usar
+            pk=self.kwargs["pk"],
         )
+        rendicion, _ = RendicionCuentasFinal.objects.select_related(
+            "comedor"
+        ).get_or_create(comedor=comedor)
         return rendicion
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        context["documentos"] = self.object.documentos.select_related(
-            "tipo", "estado"
-        ).values(
-            "id",
-            "documento",
-            "observaciones",
-            "fecha_modificacion",
-            "tipo__nombre",
-            "tipo__validador",
-            "tipo__personalizado",
-            "estado__nombre",
+        documentos = (
+            self.object.documentos.select_related("tipo", "estado")
+            .only(
+                "id",
+                "documento",  # Para acceder a documento.url
+                "observaciones",
+                "fecha_modificacion",
+                "tipo__nombre",
+                "tipo__validador",
+                "tipo__personalizado",
+                "estado__nombre",
+            )
+            .order_by("id")
         )
+        for documento in documentos:
+            documento.editable = documento.estado.nombre in {
+                "No presentado",
+                "Subsanar",
+            }
+            documento.validable = (
+                documento.tipo.validador == "Dupla"
+                and documento.estado.nombre == "En análisis"
+            )
+            documento.eliminable = (
+                documento.tipo.personalizado
+                and documento.estado.nombre == "En análisis"
+            )
+
+        context["documentos"] = documentos
 
         context["comedor_id"] = self.object.comedor.id
         context["comedor_nombre"] = self.object.comedor.nombre
-
         context["fisicamente_presentada"] = self.object.fisicamente_presentada
 
         return context
