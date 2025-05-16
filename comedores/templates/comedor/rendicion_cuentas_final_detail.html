@@ -42,51 +42,29 @@
             <tbody>
                 {% for doc in documentos %}
                     <tr>
-                        <td class="text-start">{{ doc.tipo__nombre }}</td>
-                        <td>{{ doc.estado__nombre }}</td>
-                        <td>{{ doc.tipo__validador }}</td>
+                        <td class="text-start">{{ doc.tipo.nombre }}</td>
+                        <td>{{ doc.estado.nombre }}</td>
+                        <td>{{ doc.tipo.validador }}</td>
                         <td>
                             {% if doc.observaciones %}
                                 <a href="#"
-                                   class="btn btn-link p-0"
+                                   class="btn btn-link p-0 ver-observaciones"
                                    data-bs-toggle="modal"
-                                   data-bs-target="#modal-observaciones-{{ doc.id }}">Ver</a>
-                                <!-- Modal -->
-                                <div class="modal fade"
-                                     id="modal-observaciones-{{ doc.id }}"
-                                     tabindex="-1"
-                                     aria-labelledby="obs-label-{{ doc.id }}"
-                                     aria-hidden="true">
-                                    <div class="modal-dialog modal-dialog-scrollable">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title" id="obs-label-{{ doc.id }}">Observaciones del documento</h5>
-                                                <button type="button"
-                                                        class="btn-close"
-                                                        data-bs-dismiss="modal"
-                                                        aria-label="Cerrar"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <p>{{ doc.observaciones }}</p>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                   data-bs-target="#modal-observaciones"
+                                   data-observaciones="{{ doc.observaciones|escape }}"
+                                   data-titulo="Observaciones del documento {{ doc.tipo.nombre }}">Ver</a>
                             {% else %}
                                 -
                             {% endif %}
                         </td>
                         <td>{{ doc.fecha_modificacion|date:"d/m/Y H:i"|default:"-" }}</td>
                         <td>
-                            {% if doc.estado__nombre == "No presentado" or doc.estado__nombre == "Subsanar" %}
+                            {% if doc.editable %}
                                 <button class="btn btn-success btn-sm"
                                         data-bs-toggle="modal"
                                         data-bs-target="#modalAdjuntarDocumentoRendicionFinal"
                                         data-doc-id="{{ doc.id }}"
-                                        data-doc-tipo="{{ doc.tipo__nombre }}">Adjuntar</button>
+                                        data-doc-tipo="{{ doc.tipo.nombre }}">Adjuntar</button>
                             {% else %}
                                 <button class="btn btn-sm btn-secondary" disabled>Adjuntar</button>
                             {% endif %}
@@ -101,7 +79,7 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% if doc.tipo__validador == "Dupla" and doc.estado__nombre == "En análisis" %}
+                            {% if doc.validable %}
                                 <form method="post"
                                       action="{% url 'validar_documento_rendicion_cuentas_final' doc.id %}"
                                       onsubmit="return confirm('¿Estás seguro de que querés validar este documento?');">
@@ -113,7 +91,7 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% if doc.tipo__personalizado and doc.estado__nombre == "En análisis" %}
+                            {% if doc.eliminable %}
                                 <form method="post"
                                       action="{% url 'eliminar_documento_rendicion_cuentas_final' doc.id %}"
                                       onsubmit="return confirm('¿Estás seguro de que querés eliminar este documento?');">
@@ -209,22 +187,60 @@
             </form>
         </div>
     </div>
+    <div class="modal fade"
+         id="modal-observaciones"
+         tabindex="-1"
+         aria-labelledby="modal-observaciones-label"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modal-observaciones-label">Observaciones</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body" id="modal-observaciones-body">
+                    <!-- Contenido dinámico -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <!--  -->
 {% endblock %}
 ;
 {% block customJS %}
     <script>
-  const modalAdjuntarDocumentoRendicionFinal = document.getElementById('modalAdjuntarDocumentoRendicionFinal')
-  modalAdjuntarDocumentoRendicionFinal.addEventListener('show.bs.modal', event => {
-    const button = event.relatedTarget
-    const docId = button.getAttribute('data-doc-id')
-    const docTipo = button.getAttribute('data-doc-tipo')
+      document.addEventListener('DOMContentLoaded', function () {
+        const modalAdjuntarDocumentoRendicionFinal = document.getElementById('modalAdjuntarDocumentoRendicionFinal')
+        modalAdjuntarDocumentoRendicionFinal.addEventListener('show.bs.modal', event => {
+            const button = event.relatedTarget
+            const docId = button.getAttribute('data-doc-id')
+            const docTipo = button.getAttribute('data-doc-tipo')
 
-    const inputDocId = modalAdjuntarDocumentoRendicionFinal.querySelector('#documento_id')
-    const tipoTexto = modalAdjuntarDocumentoRendicionFinal.querySelector('#tipoDocumentoTexto')
+            const inputDocId = modalAdjuntarDocumentoRendicionFinal.querySelector('#documento_id')
+            const tipoTexto = modalAdjuntarDocumentoRendicionFinal.querySelector('#tipoDocumentoTexto')
 
-    inputDocId.value = docId
-    tipoTexto.textContent = `Documento: ${docTipo}`
-  })
+            inputDocId.value = docId
+            tipoTexto.textContent = `Documento: ${docTipo}`
+        })
+
+        const modal = document.getElementById('modal-observaciones');
+        const modalTitle = document.getElementById('modal-observaciones-label');
+        const modalBody = document.getElementById('modal-observaciones-body');
+
+        document.querySelectorAll('.ver-observaciones').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const observaciones = this.getAttribute('data-observaciones');
+                const titulo = this.getAttribute('data-titulo');
+                modalTitle.textContent = titulo || 'Observaciones';
+                modalBody.textContent = observaciones || 'Sin observaciones';
+            });
+        });
+    });
     </script>
 {% endblock %}
