@@ -11,6 +11,7 @@ from admisiones.models.admisiones import (
     ArchivoAdmision,
 )
 from comedores.models.comedor import Comedor
+
 # importar el servicio de acompañamiento
 from acompanamientos.acompanamiento_service import AcompanamientoService
 
@@ -111,7 +112,9 @@ class AdmisionService:
     @staticmethod
     def comenzar_acompanamiento(admision_id):
         admision = get_object_or_404(Admision, pk=admision_id)
-        estado_admitido = EstadoAdmision.objects.get(nombre="Admitido - pendiente ejecución")
+        estado_admitido = EstadoAdmision.objects.get(
+            nombre="Admitido - pendiente ejecución"
+        )
         admision.estado = estado_admitido
         admision.save()
 
