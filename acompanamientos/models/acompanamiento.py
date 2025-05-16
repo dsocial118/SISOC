@@ -1,6 +1,7 @@
 from django.db import models
 from comedores.models.comedor import Comedor
 
+
 class InformacionRelevante(models.Model):
     comedor = models.OneToOneField(Comedor, on_delete=models.CASCADE)
     numero_expediente = models.CharField(max_length=255)
@@ -14,15 +15,18 @@ class InformacionRelevante(models.Model):
 
 class Prestacion(models.Model):
     comedor = models.ForeignKey(Comedor, on_delete=models.CASCADE)
-    dia = models.CharField(max_length=20, choices=[
-        ("lunes", "Lunes"),
-        ("martes", "Martes"),
-        ("miercoles", "Miércoles"),
-        ("jueves", "Jueves"),
-        ("viernes", "Viernes"),
-        ("sabado", "Sábado"),
-        ("domingo", "Domingo"),
-    ])
+    dia = models.CharField(
+        max_length=20,
+        choices=[
+            ("lunes", "Lunes"),
+            ("martes", "Martes"),
+            ("miercoles", "Miércoles"),
+            ("jueves", "Jueves"),
+            ("viernes", "Viernes"),
+            ("sabado", "Sábado"),
+            ("domingo", "Domingo"),
+        ],
+    )
     desayuno = models.BooleanField(default=False)
     almuerzo = models.BooleanField(default=False)
     merienda = models.BooleanField(default=False)
