@@ -3,9 +3,11 @@ from acompanamientos.models.acompanamiento import InformacionRelevante, Prestaci
 from admisiones.models.admisiones import Admision
 from comedores.models.comedor import Comedor
 from comedores.models.relevamiento import Relevamiento
+from acompanamientos.acompanamiento_service import AcompanamientoService
 
 def detalle_acompanamiento(request, comedor_id):
     comedor = get_object_or_404(Comedor, pk=comedor_id)
+    hitos = AcompanamientoService.obtener_hitos(comedor)
     info_relevante = InformacionRelevante.objects.filter(comedor=comedor).first()
     relevamiento = (
         Relevamiento.objects.filter(comedor=comedor)
@@ -33,6 +35,7 @@ def detalle_acompanamiento(request, comedor_id):
             "comedor": comedor,
             "info_relevante": info_relevante,
             "prestaciones_dias": prestaciones_dias,
+            "hitos": hitos,
         },
     )
 
