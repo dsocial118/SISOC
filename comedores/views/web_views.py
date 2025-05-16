@@ -750,32 +750,8 @@ class RendicionCuentasFinalDetailView(DetailView):
         context = super().get_context_data(**kwargs)
 
         documentos = (
-            self.object.documentos.select_related("tipo", "estado")
-            .only(
-                "id",
-                "documento",  # Para acceder a documento.url
-                "observaciones",
-                "fecha_modificacion",
-                "tipo__nombre",
-                "tipo__validador",
-                "tipo__personalizado",
-                "estado__nombre",
-            )
-            .order_by("id")
+            RendicionCuentasFinalService.get_documentos_rendicion_cuentas_final()
         )
-        for documento in documentos:
-            documento.editable = documento.estado.nombre in {
-                "No presentado",
-                "Subsanar",
-            }
-            documento.validable = (
-                documento.tipo.validador == "Dupla"
-                and documento.estado.nombre == "En análisis"
-            )
-            documento.eliminable = (
-                documento.tipo.personalizado
-                and documento.estado.nombre == "En análisis"
-            )
 
         context["documentos"] = documentos
 
