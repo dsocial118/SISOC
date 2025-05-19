@@ -5,7 +5,7 @@ from comedores.models.comedor import Comedor
 from comedores.models.relevamiento import Relevamiento
 from acompanamientos.acompanamiento_service import AcompanamientoService
 
-
+# TODO: Sincronizar con la tarea de Pablo y migrar a clases
 def detalle_acompanamiento(request, comedor_id):
     comedor = get_object_or_404(Comedor, pk=comedor_id)
     hitos = AcompanamientoService.obtener_hitos(comedor)
@@ -41,8 +41,9 @@ def detalle_acompanamiento(request, comedor_id):
             "hitos": hitos,
         },
     )
-
-
+# TODO : migrar a clases
 def lista_comedores_acompanamiento(request):
     admisiones = Admision.objects.filter(estado__nombre="Test")
+    # TODO: Sincronizar estado con la tarea de Pablo
+
     return render(request, "lista_comedores.html", {"admisiones": admisiones})
