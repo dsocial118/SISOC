@@ -4,12 +4,12 @@ from acompanamientos import views
 urlpatterns = [
     path(
         "acompanamiento/<int:comedor_id>/detalle/",
-        views.detalle_acompanamiento,
+        views.AcompanamientoDetailView.as_view(),
         name="detalle_acompanamiento",
     ),
     path(
         "acompanamiento/",
-        views.lista_comedores_acompanamiento,
+        views.ComedoresAcompanamientoListView.as_view(),
         name="lista_comedores_acompanamiento",
     ),
 ]
