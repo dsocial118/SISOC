@@ -10,10 +10,10 @@ class Hitos(models.Model):
         default=False, verbose_name="Retiro de Tarjeta"
     )
     habilitacion_tarjeta = models.BooleanField(
-        default=False, verbose_name="Habilitación de Tarjeta"
+        default=False, verbose_name="Habilitación de tarjeta"
     )
     alta_usuario_plataforma = models.BooleanField(
-        default=False, verbose_name="Alta de usuario en Plataforma"
+        default=False, verbose_name="Alta de usuario en plataforma"
     )
     capacitacion_realizada = models.BooleanField(
         default=False, verbose_name="Capacitación realizada"

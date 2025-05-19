@@ -12,4 +12,5 @@ urlpatterns = [
         views.ComedoresAcompanamientoListView.as_view(),
         name="lista_comedores_acompanamiento",
     ),
+    path('comedor/<int:comedor_id>/restaurar-hito/', views.restaurar_hito, name='restaurar_hito'),
 ]
