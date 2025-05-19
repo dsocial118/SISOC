@@ -124,12 +124,14 @@ class RelevamientoSerializer(serializers.ModelSerializer):
             )
         if "referente_comedor" in self.initial_data:
             if "celular" in self.initial_data["referente_comedor"]:
+                # TODO: Crear una funcion que limpie todo
                 if self.initial_data["referente_comedor"]["celular"] == "":
                     self.initial_data["referente_comedor"]["celular"] = None
                 else:
                     self.initial_data["referente_comedor"]["celular"] = (
                         self.initial_data["referente_comedor"]["celular"]
                         .strip()
+                        .replace(" ", "")
                         .replace("-", "")
                         .replace(".", "")
                     )
@@ -140,6 +142,7 @@ class RelevamientoSerializer(serializers.ModelSerializer):
                     self.initial_data["referente_comedor"]["documento"] = (
                         self.initial_data["referente_comedor"]["documento"]
                         .strip()
+                        .replace(" ", "")
                         .replace("-", "")
                         .replace(".", "")
                     )
@@ -152,6 +155,7 @@ class RelevamientoSerializer(serializers.ModelSerializer):
                     self.initial_data["referente_comedor"]["celular"] = (
                         self.initial_data["referente_comedor"]["celular"]
                         .strip()
+                        .replace(" ", "")
                         .replace("-", "")
                         .replace(".", "")
                     )
@@ -162,6 +166,7 @@ class RelevamientoSerializer(serializers.ModelSerializer):
                     self.initial_data["responsable_relevamiento"]["documento"] = (
                         self.initial_data["responsable_relevamiento"]["documento"]
                         .strip()
+                        .replace(" ", "")
                         .replace("-", "")
                         .replace(".", "")
                     )
