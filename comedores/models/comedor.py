@@ -121,23 +121,36 @@ class Programas(models.Model):
 
 class Comedor(models.Model):
     """
-    Modelo que representa un Comedor/Merendero.
+    Representa una Comedor/Merendero.
 
     Atributos:
-        nombre (CharField): Nombre del Comedor/Merendero.
-        comienzo (IntegerField): Año de inicio de la actividad del Comedor/Merendero.
-        tipocomedor (ForeignKey): Tipo de Comedor/Merendero.
-        calle (CharField): Calle donde se encuentra el Comedor/Merendero.
-        numero (PositiveIntegerField): Número de la calle donde se encuentra el Comedor/Merendero.
-        entre_calle_1 (CharField): Primera calle entre la cual se encuentra el Comedor/Merendero.
-        entre_calle_2 (CharField): Segunda calle entre la cual se encuentra el Comedor/Merendero.
-        provincia (ForeignKey): Provincia donde se encuentra el Comedor/Merendero.
-        municipio (ForeignKey): Municipio donde se encuentra el Comedor/Merendero.
-        localidad (ForeignKey): Localidad donde se encuentra el Comedor/Merendero.
-        partido (CharField): Partido donde se encuentra el Comedor/Merendero/Merendero.
-        barrio (CharField): Barrio donde se encuentra el Comedor/Merendero.
-        codigo_postal (IntegerField): Código postal del Comedor/Merendero.
-        referente (ForeignKey): Referente del Comedor/Merendero.
+        nombre (CharField): Nombre del comedor.
+        organizacion (ForeignKey): Referencia a la organización asociada (opcional).
+        programa (ForeignKey): Referencia al programa asociado (opcional).
+        id_externo (IntegerField): Identificador externo del comedor (opcional).
+        codigo_de_proyecto (CharField): Código de proyecto asociado al comedor (opcional).
+        comienzo (IntegerField): Año en que comenzó a funcionar el comedor (opcional, entre 1900 y el año actual).
+        tipocomedor (ForeignKey): Tipo de comedor (opcional).
+        dupla (ForeignKey): Dupla técnica asociada (opcional).
+        estado (CharField): Estado actual del comedor. Opciones: "Sin Ingreso" o "Asignado a Dupla Técnica".
+        calle (CharField): Nombre de la calle (opcional).
+        numero (PositiveIntegerField): Número de la calle (opcional).
+        piso (CharField): Piso (opcional).
+        departamento (CharField): Departamento (opcional).
+        manzana (CharField): Manzana (opcional).
+        lote (CharField): Lote (opcional).
+        entre_calle_1 (CharField): Primera calle transversal (opcional).
+        entre_calle_2 (CharField): Segunda calle transversal (opcional).
+        latitud (FloatField): Coordenada de latitud (opcional, entre -90 y 90).
+        longitud (FloatField): Coordenada de longitud (opcional, entre -180 y 180).
+        provincia (ForeignKey): Provincia donde se encuentra el comedor (opcional).
+        municipio (ForeignKey): Municipio (opcional).
+        localidad (ForeignKey): Localidad (opcional).
+        partido (CharField): Partido o distrito (opcional).
+        barrio (CharField): Barrio (opcional).
+        codigo_postal (IntegerField): Código postal (opcional, de 4 a 6 dígitos).
+        referente (ForeignKey): Persona referente del comedor (opcional).
+        foto_legajo (ImageField): Campo para subir una foto o documento (opcional).
     """
 
     nombre = models.CharField(
@@ -151,6 +164,12 @@ class Comedor(models.Model):
     )
     id_externo = models.IntegerField(
         verbose_name="Id Externo",
+        blank=True,
+        null=True,
+    )
+    codigo_de_proyecto = models.CharField(
+        max_length=255,
+        verbose_name="Código de Proyecto",
         blank=True,
         null=True,
     )

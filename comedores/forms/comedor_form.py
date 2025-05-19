@@ -116,6 +116,7 @@ class ComedorForm(forms.ModelForm):
     longitud = forms.FloatField(min_value=-180, max_value=180, required=False)
     latitud = forms.FloatField(min_value=-90, max_value=90, required=False)
     codigo_postal = forms.IntegerField(min_value=1000, max_value=999999, required=False)
+    codigo_de_proyecto = forms.CharField(max_length=7, required=False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
