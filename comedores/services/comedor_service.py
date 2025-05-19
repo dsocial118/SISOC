@@ -109,6 +109,7 @@ class ComedorService:
                 "nombre",
                 "comienzo",
                 "id_externo",
+                "codigo_de_proyecto",
                 "organizacion__nombre",
                 "programa__nombre",
                 "provincia__nombre",
