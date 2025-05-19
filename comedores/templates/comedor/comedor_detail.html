@@ -35,12 +35,6 @@
                class="btn btn-secondary mr-1 backbutton-handler">Volver</a>
         </div>
         <div class="col-auto">
-            {% if contacto_dupla %}
-                <button type="button"
-                        class="btn btn-primary mr-1"
-                        data-bs-toggle="modal"
-                        data-bs-target="#nuevoContactoDupla">Contacto</button>
-            {% endif %}
             <a href="{% url 'nomina_ver' pk=comedor.id %}"
                class="btn btn-primary mr-1">Nomina</a>
             <a href="{% url 'dupla_asignar' pk=comedor.id %}"
@@ -325,6 +319,12 @@
                                                 <span class="username">{{ comedor.latitud | default_if_none:"-" }}</span>
                                             </div>
                                         </div>
+                                        <div class="nav-item d-flex col-12">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Estado
+                                                <span class="username">{{ comedor.estado }}</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -591,62 +591,6 @@
                             </table>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    {% endif %}
-    <!-- MODAL CONTACTO DUPLA -->
-    {% if contacto_dupla %}
-        <div class="modal fade"
-             id="nuevoContactoDupla"
-             tabindex="-1"
-             aria-labelledby="nuevoContactoDuplaLabel"
-             aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <form method="POST" action="">
-                        {% csrf_token %}
-                        <input type="hidden" id="comedor_id" name="comedor" value="{{ comedor.id }}" />
-                        <input type="hidden"
-                               id="usuario_id"
-                               name="usuario"
-                               value="{{ request.user.id }}" />
-                        <input type="hidden" name="fecha" value="{% now 'Y-m-d' %}" />
-                        <div class="modal-header">
-                            <h5 class="modal-title">Contacto Dupla</h5>
-                            <button type="button"
-                                    class="btn-close"
-                                    data-bs-dismiss="modal"
-                                    aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="form-group row mb-2">
-                                <div class="col-sm-2">Comedor:</div>
-                                <div class="col-sm-10">{{ comedor.nombre }}</div>
-                            </div>
-                            <div class="form-group row mb-2">
-                                <div class="col-sm-2">Usuario:</div>
-                                <div class="col-sm-10">{{ request.user.first_name }} {{ request.user.last_name }}</div>
-                            </div>
-                            <div class="form-group row mb-2">
-                                <div class="col-sm-2">Fecha:</div>
-                                <div class="col-sm-10">{% now "d-m-Y" %}</div>
-                            </div>
-                            <div class="form-group row mb-2">
-                                <div class="col-sm-10">{{ contacto_dupla_form.tipo| as_crispy_field }}</div>
-                            </div>
-                            <div class="form-group row mb-2">
-                                <div class="col-sm-10">{{ contacto_dupla_form.observaciones| as_crispy_field }}</div>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit"
-                                    class="btn btn-primary"
-                                    name="btnContactoDupla"
-                                    id="btnContactoDupla_id">Guardar</button>
-                        </div>
-                    </form>
                 </div>
             </div>
         </div>
