@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ("comedores", "0024_remove_archivosadmision_admision_and_more"),
+        ("comedores", "0022_merge_20250318_1554"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

@@ -175,22 +175,30 @@
                                 </div>
                                 <div class="col-6">
                                     <div class="row">
-                                        <div class="nav-item d-flex col-12">
+                                        <div class="nav-item d-flex col-6">
                                             <div class="comment-text comment-text d-flex flex-column">
                                                 Nombre
-                                                <span class="username">{{ comedor.nombre }}</span>
+                                                <span class="username">{{ comedor.nombre | default_if_none:"-" }}</span>
                                             </div>
                                         </div>
                                         <div class="nav-item d-flex col-6">
                                             <div class="comment-text comment-text d-flex flex-column">
-                                                Id Externo
+                                                ID Externo
                                                 <span class="username">{{ comedor.id_externo | default_if_none:"-" }}</span>
                                             </div>
                                         </div>
+                                    </div>
+                                    <div class="row">
                                         <div class="nav-item d-flex col-6">
                                             <div class="comment-text comment-text d-flex flex-column">
-                                                Tipo Comedor
-                                                <span class="username">{{ comedor.tipocomedor__nombre | default_if_none:"-" }}</span>
+                                                Codigo de Proyecto
+                                                <span class="username">{{ comedor.codigo_de_proyecto | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Tipo de Comedor
+                                                <span class="username">{{ comedor.tipo_comedor | default_if_none:"-" }}</span>
                                             </div>
                                         </div>
                                     </div>
