@@ -60,7 +60,7 @@
     "pk": 8,
     "fields": {
       "nombre": "DDJJ sobre aplicación de fondos del subsidio + Anexo I",
-      "validador": "Contabilidad"
+      "validador": "Contable"
     }
   },
   {
@@ -68,7 +68,7 @@
     "pk": 9,
     "fields": {
       "nombre": "Comprobantes de gastos",
-      "validador": "Contabilidad"
+      "validador": "Contable"
     }
   },
   {
@@ -76,7 +76,7 @@
     "pk": 10,
     "fields": {
       "nombre": "Constancias de CAE/CAI/CAEA",
-      "validador": "Contabilidad"
+      "validador": "Contable"
     }
   },
   {
@@ -84,7 +84,7 @@
     "pk": 11,
     "fields": {
       "nombre": "Constancias de inscripción ARCA",
-      "validador": "Contabilidad"
+      "validador": "Contable"
     }
   },
   {
@@ -92,7 +92,7 @@
     "pk": 12,
     "fields": {
       "nombre": "DDJJ para Facturas A",
-      "validador": "Contabilidad"
+      "validador": "Contable"
     }
   },
   {
@@ -100,7 +100,7 @@
     "pk": 13,
     "fields": {
       "nombre": "Reporte mensual",
-      "validador": "Contabilidad"
+      "validador": "Contable"
     }
   },
   {

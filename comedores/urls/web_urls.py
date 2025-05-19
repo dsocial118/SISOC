@@ -22,6 +22,7 @@ from comedores.views.web_views import (
     NominaUpdateView,
     AsignarDuplaListView,
     RendicionCuentasFinalDetailView,
+    DocumentosRendicionCuentasFinalListView,
     crear_documento_rendicion_cuentas_final,
     eliminar_documento_rendicion_cuentas_final,
     validar_documento_rendicion_cuentas_final,
@@ -231,5 +232,12 @@ urlpatterns = [
         "rendicion_cuentas_final/documento/<int:documento_id>/valudar/",
         validar_documento_rendicion_cuentas_final,
         name="validar_documento_rendicion_cuentas_final",
+    ),
+    path(
+        "rendicion_cuentas_final/listar/",
+        group_required("Area Contable", "Area Legales")(
+            DocumentosRendicionCuentasFinalListView.as_view()
+        ),
+        name="rendicion_cuentas_final_listar",
     ),
 ]

@@ -2,6 +2,7 @@ import os
 from typing import Any
 from django.contrib.auth.models import User
 from django.contrib import messages
+from django.db.models import Q
 from django.db.models.base import Model
 from django.forms import BaseModelForm
 from django.http import HttpResponse
@@ -744,13 +745,16 @@ class RendicionCuentasFinalDetailView(DetailView):
         rendicion, _ = RendicionCuentasFinal.objects.select_related(
             "comedor"
         ).get_or_create(comedor=comedor)
+
         return rendicion
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
         documentos = (
-            RendicionCuentasFinalService.get_documentos_rendicion_cuentas_final()
+            RendicionCuentasFinalService.get_documentos_rendicion_cuentas_final(
+                self.get_object()
+            )
         )
 
         context["documentos"] = documentos
@@ -817,3 +821,38 @@ def validar_documento_rendicion_cuentas_final(request, documento_id):
     messages.success(request, "Documento validado correctamente.")
 
     return redirect("rendicion_cuentas_final", pk=comedor_id)
+
+
+class DocumentosRendicionCuentasFinalListView(ListView):
+    model = DocumentoRendicionFinal
+    template_name = "comedor/rendicion_cuentas_final_list.html"
+    context_object_name = "documentos"
+
+    def get_queryset(self):
+        user = self.request.user
+        query = self.request.GET.get("busqueda")
+        qs = DocumentoRendicionFinal.objects.none()
+
+        if user.groups.filter(name="Area Contable").exists() or user.is_superuser:
+            qs = qs | DocumentoRendicionFinal.objects.filter(tipo__validador="Contable")
+        if user.groups.filter(name="Area Legales").exists() or user.is_superuser:
+            qs = qs | DocumentoRendicionFinal.objects.filter(tipo__validador="Legales")
+
+        if query:
+            qs = qs.filter(
+                Q(rendicion_final__comedor__nombre__icontains=query),
+                Q(tipo__nombre__icontains=query),
+            )
+
+        return (
+            qs.filter(estado__nombre__in=["En análisis", "Subsanar", "Validado"])
+            .only(
+                "id",
+                "documento",
+                "fecha_modificacion",
+                "estado__nombre",
+                "tipo__nombre",
+                "rendicion_final__comedor__nombre",
+            )
+            .order_by("fecha_modificacion")
+        )

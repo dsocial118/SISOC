@@ -30,12 +30,12 @@ class RendicionCuentasFinalService:
         return True, documento
 
     @staticmethod
-    def get_documentos_rendicion_cuentas_final(self):
+    def get_documentos_rendicion_cuentas_final(rendicion_cuentas_final):
         documentos = (
-            self.object.documentos.select_related("tipo", "estado")
+            rendicion_cuentas_final.documentos.select_related("tipo", "estado")
             .only(
                 "id",
-                "documento",  # Para acceder a documento.url
+                "documento",
                 "observaciones",
                 "fecha_modificacion",
                 "tipo__nombre",

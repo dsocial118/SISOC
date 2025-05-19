@@ -78,6 +78,15 @@
                     </ul>
                 </li>
             {% endif %}
+            {% if user|has_group:"Area Legales" or user|has_group:"Area Contable" %}
+                <li class="nav-item">
+                    <a href="{% url 'rendicion_cuentas_final_listar' %}"
+                       class="nav-link {% if 'rendicion_cuentas_final/listar' in pagina_actual %}active{% endif %}">
+                        <i class="nav-icon bi bi-receipt"></i>
+                        <p>Rendicion de Cuentas Final</p>
+                    </a>
+                </li>
+            {% endif %}
             {% if user|has_group:"Organizaciones" %}
                 <li class="nav-item">
                     <a href="{% url 'organizaciones' %}"
