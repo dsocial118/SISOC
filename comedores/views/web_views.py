@@ -751,13 +751,11 @@ class RendicionCuentasFinalDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        documentos = (
+        context["documentos"] = (
             RendicionCuentasFinalService.get_documentos_rendicion_cuentas_final(
                 self.get_object()
             )
         )
-
-        context["documentos"] = documentos
 
         context["comedor_id"] = self.object.comedor.id
         context["comedor_nombre"] = self.object.comedor.nombre
@@ -812,15 +810,16 @@ def eliminar_documento_rendicion_cuentas_final(request, documento_id):
 @require_POST
 def validar_documento_rendicion_cuentas_final(request, documento_id):
     documento = get_object_or_404(DocumentoRendicionFinal, id=documento_id)
-    comedor_id = documento.rendicion_final.comedor.id
-
     documento.estado = EstadoDocumentoRendicionFinal.objects.get(nombre="Validado")
     documento.fecha_modificacion = timezone.now()
     documento.save()
 
     messages.success(request, "Documento validado correctamente.")
 
-    return redirect("rendicion_cuentas_final", pk=comedor_id)
+    next_url = request.POST.get("next") or request.META.get("HTTP_REFERER")
+    if next_url:
+        return redirect(next_url)
+    return redirect("rendicion_cuentas_final", pk=documento.rendicion_final.comedor.id)
 
 
 class DocumentosRendicionCuentasFinalListView(ListView):
@@ -844,15 +843,27 @@ class DocumentosRendicionCuentasFinalListView(ListView):
                 Q(tipo__nombre__icontains=query),
             )
 
-        return (
+        qs = (
             qs.filter(estado__nombre__in=["En análisis", "Subsanar", "Validado"])
-            .only(
-                "id",
-                "documento",
-                "fecha_modificacion",
-                "estado__nombre",
-                "tipo__nombre",
-                "rendicion_final__comedor__nombre",
-            )
-            .order_by("fecha_modificacion")
+            .select_related("tipo", "estado", "rendicion_final__comedor")
+            .order_by("-fecha_modificacion")
         )
+
+        return qs
+
+
+@require_POST
+def subsanar_documento_rendicion_cuentas_final(request, documento_id):
+    documento = get_object_or_404(DocumentoRendicionFinal, id=documento_id)
+
+    documento.observaciones = request.POST.get("observacion", "")
+    documento.estado = EstadoDocumentoRendicionFinal.objects.get(nombre="Subsanar")
+    documento.fecha_modificacion = timezone.now()
+    documento.save()
+
+    messages.success(request, "Documento enviado a subsanar correctamente.")
+
+    next_url = request.POST.get("next") or request.META.get("HTTP_REFERER")
+    if next_url:
+        return redirect(next_url)
+    return redirect("rendicion_cuentas_final", pk=documento.rendicion_final.comedor.id)
