@@ -1,4 +1,5 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
 from django.http import JsonResponse
 from django.views.generic import ListView, DetailView
 from acompanamientos.models.acompanamiento import InformacionRelevante, Prestacion
@@ -55,12 +56,15 @@ def restaurar_hito(request, comedor_id):
         if hasattr(hito, campo):
             setattr(hito, campo, False)  # Cambia el valor del campo a False (0)
             hito.save()
-            return JsonResponse({"success": True, "message": f"El campo '{campo}' ha sido restaurado."})
+            messages.success(request, f"El campo '{campo}' ha sido restaurado correctamente.")
         else:
-            return JsonResponse({"success": False, "message": f"El campo '{campo}' no existe."}, status=400)
+            messages.error(request, f"El campo '{campo}' no existe en el modelo Hitos.")
 
-    return JsonResponse({"success": False, "message": "Método no permitido."}, status=405)
+        # Redirige a la página anterior
+        return redirect(request.META.get("HTTP_REFERER", "/"))
 
+    messages.error(request, "Método no permitido.")
+    return redirect(request.META.get("HTTP_REFERER", "/"))
 
 class ComedoresAcompanamientoListView(ListView):
     model = Admision
