@@ -25,6 +25,7 @@ from comedores.views.web_views import (
     DocumentosRendicionCuentasFinalListView,
     crear_documento_rendicion_cuentas_final,
     eliminar_documento_rendicion_cuentas_final,
+    subsanar_documento_rendicion_cuentas_final,
     validar_documento_rendicion_cuentas_final,
 )
 
@@ -229,9 +230,14 @@ urlpatterns = [
         name="eliminar_documento_rendicion_cuentas_final",
     ),
     path(
-        "rendicion_cuentas_final/documento/<int:documento_id>/valudar/",
+        "rendicion_cuentas_final/documento/<int:documento_id>/validar/",
         validar_documento_rendicion_cuentas_final,
         name="validar_documento_rendicion_cuentas_final",
+    ),
+    path(
+        "rendicion_cuentas_final/documento/<int:documento_id>/subsanar/",
+        subsanar_documento_rendicion_cuentas_final,
+        name="subsanar_documento_rendicion_cuentas_final",
     ),
     path(
         "rendicion_cuentas_final/listar/",
