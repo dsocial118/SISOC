@@ -1,6 +1,6 @@
 from admisiones.models.admisiones import Admision
-from acompanamientos.models.hitos import Hitos,CompararHitosIntervenciones
-from intervenciones.models.intervenciones import Intervencion,SubIntervencion
+from acompanamientos.models.hitos import Hitos, CompararHitosIntervenciones
+from intervenciones.models.intervenciones import Intervencion, SubIntervencion
 from acompanamientos.models.acompanamiento import InformacionRelevante, Prestacion
 
 
@@ -34,7 +34,6 @@ class AcompanamientoService:
                     if field.verbose_name == hito.hito:
                         setattr(nuevo_hito, field.name, True)
             nuevo_hito.save()
-        
 
     @staticmethod
     def obtener_hitos(comedor):
