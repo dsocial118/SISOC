@@ -22,14 +22,28 @@ class AcompanamientoDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         comedor = self.object
         context["hitos"] = AcompanamientoService.obtener_hitos(comedor)
-        context["info_relevante"] = InformacionRelevante.objects.filter(comedor=comedor).first()
+        context["info_relevante"] = InformacionRelevante.objects.filter(
+            comedor=comedor
+        ).first()
         relevamiento = (
-            Relevamiento.objects.filter(comedor=comedor).order_by("-fecha_visita").first()
+            Relevamiento.objects.filter(comedor=comedor)
+            .order_by("-fecha_visita")
+            .first()
         )
         prestacion = (
-            relevamiento.prestacion if relevamiento and relevamiento.prestacion else None
+            relevamiento.prestacion
+            if relevamiento and relevamiento.prestacion
+            else None
         )
-        dias = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"]
+        dias = [
+            "lunes",
+            "martes",
+            "miercoles",
+            "jueves",
+            "viernes",
+            "sabado",
+            "domingo",
+        ]
 
         prestaciones_dias = []
         if prestacion:
@@ -56,7 +70,9 @@ def restaurar_hito(request, comedor_id):
         if hasattr(hito, campo):
             setattr(hito, campo, False)  # Cambia el valor del campo a False (0)
             hito.save()
-            messages.success(request, f"El campo '{campo}' ha sido restaurado correctamente.")
+            messages.success(
+                request, f"El campo '{campo}' ha sido restaurado correctamente."
+            )
         else:
             messages.error(request, f"El campo '{campo}' no existe en el modelo Hitos.")
 
@@ -65,6 +81,7 @@ def restaurar_hito(request, comedor_id):
 
     messages.error(request, "Método no permitido.")
     return redirect(request.META.get("HTTP_REFERER", "/"))
+
 
 class ComedoresAcompanamientoListView(ListView):
     model = Admision

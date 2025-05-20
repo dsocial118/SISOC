@@ -8,6 +8,7 @@ from intervenciones.models.intervenciones import (
 )
 from acompanamientos.acompanamiento_service import AcompanamientoService
 
+
 @receiver(post_save, sender=Intervencion)
 def crear_hitos(sender, instance, **kwargs):
     print("Creando hitos para la intervención")
