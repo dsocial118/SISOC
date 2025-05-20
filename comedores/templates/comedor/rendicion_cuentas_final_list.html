@@ -29,6 +29,7 @@
                             <button type="submit" class="btn btn-lg btn-primary">
                                 <i class="fa fa-search"></i>
                             </button>
+                            <button type="button" id="toggle-validados" class="btn btn-outline-secondary btn-sm">Ocultar analizados</button>
                         </div>
                     </div>
                 </div>
@@ -50,7 +51,7 @@
                         </thead>
                         <tbody>
                             {% for documento in documentos %}
-                                <tr>
+                                <tr class="documento-row estado-{{ documento.estado.nombre|lower|slugify }}">
                                     <td>{{ documento.tipo.nombre }}</td>
                                     <td>{{ documento.rendicion_final.comedor.nombre }}</td>
                                     <td>{{ documento.fecha_modificacion|date:"d/m/Y H:i"|default:"-" }}</td>
@@ -74,16 +75,12 @@
                                             </form>
                                         </td>
                                         <td>
-    <button
-        type="button"
-        class="btn btn-danger btn-sm"
-        data-bs-toggle="modal"
-        data-bs-target="#modalSubsanar"
-        data-documento-id="{{ documento.id }}"
-    >
-        Subsanar
-    </button>
-</td>
+                                            <button type="button"
+                                                    class="btn btn-danger btn-sm"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#modalSubsanar"
+                                                    data-documento-id="{{ documento.id }}">Subsanar</button>
+                                        </td>
                                     {% else %}
                                         <td>
                                             <button class="btn btn-sm btn-secondary" disabled>Validar</button>
@@ -101,35 +98,40 @@
         </div>
     </div>
     <!-- Modales -->
-     <div class="modal fade" id="modalSubsanar" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
-    <form method="post" id="formSubsanar">
-      {% csrf_token %}
-      <input type="hidden" name="next" value="{{ request.get_full_path }}">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Subsanar Documento</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <div class="modal fade"
+         id="modalSubsanar"
+         tabindex="-1"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <form method="post" id="formSubsanar">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.get_full_path }}" />
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Subsanar Documento</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="observacion" class="form-label">Observación</label>
+                            <textarea maxlength="150"
+                                      name="observacion"
+                                      id="observacion"
+                                      class="form-control"
+                                      required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-danger">Enviar a Subsanar</button>
+                    </div>
+                </div>
+            </form>
         </div>
-        <div class="modal-body">
-          <div class="mb-3">
-            <label for="observacion" class="form-label">Observación</label>
-            <textarea maxlength="150" name="observacion" id="observacion" class="form-control" required></textarea>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-danger">Enviar a Subsanar</button>
-        </div>
-      </div>
-    </form>
-  </div>
-</div>
-     <!--  -->
+    </div>
+    <!--  -->
 {% endblock %}
 {% block customJS %}
-<script>
-    SUBSANAR_URL = "{% url 'subsanar_documento_rendicion_cuentas_final' 0 %}";
-</script>
-<script src="{% static 'custom/js/rendicioncuentasfinallist.js' %}"></script>
+    <script>SUBSANAR_URL = "{% url 'subsanar_documento_rendicion_cuentas_final' 0 %}";</script>
+    <script src="{% static 'custom/js/rendicioncuentasfinallist.js' %}"></script>
 {% endblock %}

@@ -10,4 +10,22 @@ document.addEventListener("DOMContentLoaded", function () {
         form.action = actionUrl;
         form.querySelector("textarea[name='observacion']").value = "";
     });
+
+    const toggleBtn = document.getElementById("toggle-validados");
+    let ocultos = false;
+
+    toggleBtn.addEventListener("click", function () {
+        const rows = document.querySelectorAll(
+            ".estado-validado, .estado-subsanar"
+        );
+
+        rows.forEach(row => {
+            row.style.display = ocultos ? "table-row" : "none";
+        });
+
+        ocultos = !ocultos;
+        toggleBtn.textContent = ocultos
+            ? "Mostrar analizados"
+            : "Ocultar analizados";
+    });
 });
