@@ -10,7 +10,6 @@ from admisiones.services.admisiones_service import AdmisionService
 from django.views.generic.edit import FormMixin
 
 from django.urls import reverse
-from django.utils.http import url_has_allowed_host_and_scheme
 from django.http import HttpResponseRedirect
 
 
@@ -101,18 +100,14 @@ class AdmisionesTecnicosUpdateView(UpdateView):
                 messages.success(request, "La admisión fue enviada a legales correctamente.")
             else:
                 messages.info(request, "La admisión ya estaba marcada como enviada a legales.")
-            if url_has_allowed_host_and_scheme(self.request.path_info, allowed_hosts=None):
-                return redirect(self.request.path_info)
-            return redirect('/')
+            return redirect(self.request.path_info)
         
         if "btnRectificarDocumentacion" in request.POST:
             if AdmisionService.marcar_como_documentacion_rectificada(admision, request.user):
                 messages.success(request, "Se rectificó la documentación.")
             else:
                 messages.error(request, "Error al querer realizar la rectificación.")
-            if url_has_allowed_host_and_scheme(self.request.path_info, allowed_hosts=None):
-                return redirect(self.request.path_info)
-            return redirect('/')
+            return redirect(self.request.path_info)
 
         if "btnCaratulacion" in request.POST:
             form = CaratularForm(request.POST, instance=admision)
@@ -121,16 +116,12 @@ class AdmisionesTecnicosUpdateView(UpdateView):
                 messages.success(request, "Caratulación del expediente guardado correctamente.")
             else:
                 messages.error(request, "Error al guardar la caratulación.")
-            if url_has_allowed_host_and_scheme(self.request.path_info, allowed_hosts=None):
-                return redirect(self.request.path_info)
-            return redirect('/')
+            return redirect(self.request.path_info)
 
         if "tipo_convenio" in request.POST:
             if AdmisionService.update_convenio(admision, request.POST.get("tipo_convenio")):
                 messages.success(request, "Tipo de convenio actualizado correctamente.")
-            if url_has_allowed_host_and_scheme(self.request.path_info, allowed_hosts=None):
-                return redirect(self.request.path_info)
-            return redirect('/')
+            return redirect(self.request.path_info)
 
         return super().post(request, *args, **kwargs)
 
