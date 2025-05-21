@@ -86,21 +86,25 @@ class ComedorService:
 
     @staticmethod
     def get_comedores_filtrados(query: Union[str, None] = None):
-        queryset = Comedor.objects.prefetch_related("provincia", "referente").values(
-            "id",
-            "nombre",
-            "tipocomedor__nombre",
-            "provincia__nombre",
-            "municipio__nombre",
-            "localidad__nombre",
-            "barrio",
-            "partido",
-            "calle",
-            "numero",
-            "referente__nombre",
-            "referente__apellido",
-            "referente__celular",
-        ).order_by("-id")
+        queryset = (
+            Comedor.objects.prefetch_related("provincia", "referente")
+            .values(
+                "id",
+                "nombre",
+                "tipocomedor__nombre",
+                "provincia__nombre",
+                "municipio__nombre",
+                "localidad__nombre",
+                "barrio",
+                "partido",
+                "calle",
+                "numero",
+                "referente__nombre",
+                "referente__apellido",
+                "referente__celular",
+            )
+            .order_by("-id")
+        )
         if query:
             queryset = queryset.filter(
                 Q(nombre__icontains=query)

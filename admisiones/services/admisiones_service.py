@@ -15,16 +15,16 @@ from admisiones.models.admisiones import (
     DocumentosExpediente,
 )
 from admisiones.forms.admisiones_forms import (
-    DocumentosExpedienteForm, 
-    InformeTecnicoJuridicoForm, 
-    InformeTecnicoBaseForm, 
-    CaratularForm, 
-    ProyectoConvenioForm, 
-    ResoForm, 
-    LegalesNumIFForm, 
-    FormularioRESO, 
-    FormularioProyectoDeConvenio, 
-    LegalesRectificarForm
+    DocumentosExpedienteForm,
+    InformeTecnicoJuridicoForm,
+    InformeTecnicoBaseForm,
+    CaratularForm,
+    ProyectoConvenioForm,
+    ResoForm,
+    LegalesNumIFForm,
+    FormularioRESO,
+    FormularioProyectoDeConvenio,
+    LegalesRectificarForm,
 )
 from comedores.models.comedor import Comedor
 from django.db.models import Q
@@ -40,17 +40,21 @@ class AdmisionService:
 
     @staticmethod
     def get_comedores_with_admision(user):
-        admision_subquery = Admision.objects.filter(
-            comedor=OuterRef("pk")
-        ).values("id")[:1]
-    
-        return Comedor.objects.filter(
-            Q(dupla__tecnico=user) | Q(dupla__abogado=user),
-            dupla__estado="Activo"
-        ).annotate(
-            admision_id=Subquery(admision_subquery.values("id")[:1]),
-            estado_legales=Subquery(admision_subquery.values("estado_legales")[:1])
-        ).distinct().order_by("-id")
+        admision_subquery = Admision.objects.filter(comedor=OuterRef("pk")).values(
+            "id"
+        )[:1]
+
+        return (
+            Comedor.objects.filter(
+                Q(dupla__tecnico=user) | Q(dupla__abogado=user), dupla__estado="Activo"
+            )
+            .annotate(
+                admision_id=Subquery(admision_subquery.values("id")[:1]),
+                estado_legales=Subquery(admision_subquery.values("estado_legales")[:1]),
+            )
+            .distinct()
+            .order_by("-id")
+        )
 
     @staticmethod
     def get_admision_create_context(pk):
@@ -65,7 +69,9 @@ class AdmisionService:
         tipo_convenio = get_object_or_404(TipoConvenio, pk=tipo_convenio_id)
         estado = 1
 
-        return Admision.objects.create(comedor=comedor, tipo_convenio=tipo_convenio, estado_id=estado)
+        return Admision.objects.create(
+            comedor=comedor, tipo_convenio=tipo_convenio, estado_id=estado
+        )
 
     @staticmethod
     def get_admision_update_context(admision):
@@ -78,7 +84,6 @@ class AdmisionService:
         archivos_dict = {
             archivo.documentacion.id: archivo for archivo in archivos_subidos
         }
-
 
         documentos_info = [
             {
@@ -97,12 +102,14 @@ class AdmisionService:
             }
             for doc in documentaciones
         ]
-        
+
         comedor = Comedor.objects.get(pk=admision.comedor_id)
         convenios = TipoConvenio.objects.all()
         caratular_form = CaratularForm(instance=admision)
         informe_base = InformeTecnicoBase.objects.filter(admision=admision).first()
-        informe_juridico = InformeTecnicoJuridico.objects.filter(admision=admision).first()
+        informe_juridico = InformeTecnicoJuridico.objects.filter(
+            admision=admision
+        ).first()
         return {
             "documentos": documentos_info,
             "comedor": comedor,
@@ -155,9 +162,7 @@ class AdmisionService:
 
         try:
             archivo = get_object_or_404(
-                ArchivoAdmision,
-                admision_id=admision_id,
-                documentacion_id=documento_id
+                ArchivoAdmision, admision_id=admision_id, documentacion_id=documento_id
             )
 
             exito = AdmisionService.update_estado_archivo(archivo, estado)
@@ -175,30 +180,30 @@ class AdmisionService:
 
         except Exception as e:
             return {"success": False, "error": str(e)}
-        
-    @staticmethod
 
+    @staticmethod
     def update_estado_archivo(archivo, nuevo_estado):
         if not archivo:
             return False
-    
+
         archivo.estado = nuevo_estado
         archivo.save()
-    
+
         AdmisionService.verificar_estado_admision(archivo.admision)
         return True
-    
+
     @staticmethod
     def verificar_estado_admision(admision):
         archivos = ArchivoAdmision.objects.filter(admision=admision).only("estado")
 
         if admision.estado_id != 3:
-            if archivos.exists() and all(archivo.estado == "Aceptado" for archivo in archivos):
+            if archivos.exists() and all(
+                archivo.estado == "Aceptado" for archivo in archivos
+            ):
                 if admision.estado_id != 2:
                     admision.estado_id = 2
                     admision.save()
 
-    
     @staticmethod
     def obtener_grupo_usuario(user):
         if user.groups.filter(name="Abogado Dupla").exists():
@@ -207,10 +212,14 @@ class AdmisionService:
             return "Tecnico Comedor"
         else:
             return "Otro"
-        
+
     @staticmethod
     def get_queryset_informe_por_tipo(tipo):
-        return InformeTecnicoJuridico.objects.all() if tipo == "juridico" else InformeTecnicoBase.objects.all()
+        return (
+            InformeTecnicoJuridico.objects.all()
+            if tipo == "juridico"
+            else InformeTecnicoBase.objects.all()
+        )
 
     @staticmethod
     def get_informe_por_tipo_y_pk(tipo, pk):
@@ -232,10 +241,13 @@ class AdmisionService:
             if field.name not in ["id", "admision", "estado"]
         ]
 
-        html = render_to_string("pdf_template.html", {
-            "informe": informe,
-            "campos": campos,
-        })
+        html = render_to_string(
+            "pdf_template.html",
+            {
+                "informe": informe,
+                "campos": campos,
+            },
+        )
 
         result = BytesIO()
         pisa_status = pisa.CreatePDF(html, dest=result)
@@ -249,24 +261,26 @@ class AdmisionService:
             admision=informe.admision,
             tipo=tipo,
             informe_id=informe.id,
-            archivo=pdf_file
+            archivo=pdf_file,
         )
 
     @staticmethod
     def get_campos_visibles_informe(informe):
         return [
-            (field.verbose_name, getattr(informe, field.name))  
-            for field in informe._meta.get_fields() 
+            (field.verbose_name, getattr(informe, field.name))
+            for field in informe._meta.get_fields()
             if field.name not in ["id", "admision", "estado"]
         ]
-    
+
     @staticmethod
     def get_admision(admision_id):
         return get_object_or_404(Admision, pk=admision_id)
 
     @staticmethod
     def get_form_class_por_tipo(tipo):
-        return InformeTecnicoJuridicoForm if tipo == "juridico" else InformeTecnicoBaseForm
+        return (
+            InformeTecnicoJuridicoForm if tipo == "juridico" else InformeTecnicoBaseForm
+        )
 
     @staticmethod
     def preparar_informe_para_creacion(instance, admision_id):
@@ -285,7 +299,7 @@ class AdmisionService:
             admision.save()
             return True
         return False
-        
+
     @staticmethod
     def marcar_como_documentacion_rectificada(admision, usuario=None):
         cambios = False
@@ -298,10 +312,10 @@ class AdmisionService:
             admision.estado_id = 2
             cambios = True
 
-        if admision.estado_legales != 'Rectificado':
-            admision.estado_legales = 'Rectificado'
+        if admision.estado_legales != "Rectificado":
+            admision.estado_legales = "Rectificado"
             cambios = True
-        
+
         if admision.observaciones:
             admision.observaciones = None
             cambios = True
@@ -312,7 +326,6 @@ class AdmisionService:
 
         return False
 
-
     @staticmethod
     def legales_detalle_context(admision):
         documentaciones = Documentacion.objects.filter(
@@ -320,7 +333,7 @@ class AdmisionService:
         ).distinct()
         informe = AdmisionService.get_informe_por_tipo_convenio(admision)
         archivos_subidos = ArchivoAdmision.objects.filter(admision=admision)
-        historial = admision.historial.all().order_by('-fecha')
+        historial = admision.historial.all().order_by("-fecha")
 
         archivos_dict = {
             archivo.documentacion.id: archivo for archivo in archivos_subidos
@@ -352,17 +365,21 @@ class AdmisionService:
 
         ultimos_valores = {}
         for tipo in tipos:
-            ultimo_doc = documentos_expediente.filter(tipo=tipo).order_by('-creado').first()
+            ultimo_doc = (
+                documentos_expediente.filter(tipo=tipo).order_by("-creado").first()
+            )
             ultimos_valores[tipo] = ultimo_doc.value if ultimo_doc else None
 
         return {
             "documentos": documentos_info,
             "informe": informe,
             "historial_cambios": historial,
-            "pdf_url": getattr(admision, "informe_pdf", None).archivo.url
-                       if getattr(admision, "informe_pdf", None)
-                       and getattr(admision.informe_pdf, "archivo", None)
-                       else None,
+            "pdf_url": (
+                getattr(admision, "informe_pdf", None).archivo.url
+                if getattr(admision, "informe_pdf", None)
+                and getattr(admision.informe_pdf, "archivo", None)
+                else None
+            ),
             "formulario_reso": reso_formulario,
             "formulario_reso_completo": bool(reso_formulario),
             "formulario_proyecto": proyecto_formulario,
@@ -377,7 +394,6 @@ class AdmisionService:
             "value_numero_conv": ultimos_valores["Numero CONV"],
         }
 
-    
     @staticmethod
     def get_informe_por_tipo_convenio(admision):
         if admision.tipo_convenio_id == 1:
@@ -385,12 +401,12 @@ class AdmisionService:
         elif admision.tipo_convenio_id in [2, 3]:
             return InformeTecnicoJuridico.objects.filter(admision=admision).first()
         return None
-    
+
     @staticmethod
     def enviar_a_rectificar(request, admision):
         form = LegalesRectificarForm(request.POST)
         if form.is_valid():
-            observaciones = form.cleaned_data['observaciones']
+            observaciones = form.cleaned_data["observaciones"]
             cambios = False
 
             if admision.estado_id != 3:
@@ -422,11 +438,13 @@ class AdmisionService:
         else:
             messages.error(request, "Error al guardar el número de IF.")
         return redirect(request.path_info)
-    
+
     @staticmethod
     def validar_juridicos(request, admision):
         reso_completo = FormularioRESO.objects.filter(admision=admision).exists()
-        proyecto_completo = FormularioProyectoDeConvenio.objects.filter(admision=admision).exists()
+        proyecto_completo = FormularioProyectoDeConvenio.objects.filter(
+            admision=admision
+        ).exists()
 
         condiciones_validas = (
             reso_completo
@@ -443,11 +461,11 @@ class AdmisionService:
         else:
             messages.error(
                 request,
-                "No se puede validar: asegúrese de que completar ambos formularios y agregar el Número IF."
+                "No se puede validar: asegúrese de que completar ambos formularios y agregar el Número IF.",
             )
 
         return redirect(request.path_info)
-    
+
     @staticmethod
     def guardar_formulario_reso(request, admision):
         formulario_existente = FormularioRESO.objects.filter(admision=admision).first()
@@ -466,7 +484,9 @@ class AdmisionService:
 
     @staticmethod
     def guardar_formulario_proyecto_convenio(request, admision):
-        formulario_existente = FormularioProyectoDeConvenio.objects.filter(admision=admision).first()
+        formulario_existente = FormularioProyectoDeConvenio.objects.filter(
+            admision=admision
+        ).first()
         form = ProyectoConvenioForm(request.POST, instance=formulario_existente)
 
         if form.is_valid():
@@ -474,12 +494,16 @@ class AdmisionService:
             nuevo_formulario.admision = admision
             nuevo_formulario.creado_por = request.user
             nuevo_formulario.save()
-            messages.success(request, "Formulario Proyecto de Convenio guardado correctamente.")
+            messages.success(
+                request, "Formulario Proyecto de Convenio guardado correctamente."
+            )
         else:
-            messages.error(request, "Error al guardar el formulario Proyecto de Convenio.")
+            messages.error(
+                request, "Error al guardar el formulario Proyecto de Convenio."
+            )
 
         return redirect(request.path_info)
-    
+
     @staticmethod
     def guardar_documento_expediente(request, admision):
         form = DocumentosExpedienteForm(request.POST, request.FILES)

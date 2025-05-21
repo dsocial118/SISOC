@@ -46,7 +46,7 @@ from comedores.models.comedor import (
     Nomina,
 )
 
-from admisiones.models.admisiones import ( 
+from admisiones.models.admisiones import (
     Admision,
     InformeTecnicoBase,
     InformeTecnicoJuridico,

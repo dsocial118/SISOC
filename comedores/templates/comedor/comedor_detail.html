@@ -26,7 +26,6 @@
 {% load crispy_forms_tags %}
 ;
 {% block content %}
-
     <link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
     <link rel="stylesheet"
           href="{% static 'custom/css/comedorRelevamiento.css' %}" />
@@ -38,13 +37,14 @@
         <div class="col-auto">
             <a href="{% url 'nomina_ver' pk=comedor.id %}"
                class="btn btn-primary mr-1">Nomina</a>
-            <a href="{% url 'dupla_asignar' pk=comedor.id %}" class="btn btn-primary mr-1">
+            <a href="{% url 'dupla_asignar' pk=comedor.id %}"
+               class="btn btn-primary mr-1">
                 {% if comedor.estado == "Sin Ingreso" %}
                     Asignar Dupla
                 {% else %}
                     Modificar Dupla
                 {% endif %}
-            </a>                      
+            </a>
             <a href="{% url 'ciudadano_intervencion_ver' comedor.id %}"
                class="btn btn-primary mr-1">Intervenciones</a>
             <a href="{% url 'comedor_editar' comedor.id %}"
@@ -516,13 +516,14 @@
                 <div class="card-header">
                     <h3 class="card-title font-weight-bold mr-3 pt-1">Detalles Admisión</h3>
                     <div class="card-tools">
-                        <a href="{% url 'dupla_asignar' pk=comedor.id %}" class="btn btn-primary mr-1 btn-sm">
+                        <a href="{% url 'dupla_asignar' pk=comedor.id %}"
+                           class="btn btn-primary mr-1 btn-sm">
                             {% if comedor.estado == "Sin Ingreso" %}
                                 Asignar Dupla
                             {% else %}
                                 Modificar Dupla
                             {% endif %}
-                        </a>   
+                        </a>
                         <button type="button" class="btn btn-tool" data-card-widget="collapse">
                             <i class="fas fa-minus"></i>
                         </button>
