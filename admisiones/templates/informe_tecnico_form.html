@@ -1,0 +1,34 @@
+{% extends "includes/main.html" %};
+{% load static %}
+{% load static crispy_forms_tags %}
+;
+{% load user_extras %}
+;
+{% block title %}Informe Técnico: {{ comedor.nombre }}{% endblock %}
+;
+{% block titulo-pagina %}Informe Técnico: {{ comedor.nombre }} - Estado: {{ informe_tecnico.estado }}{% endblock %}
+;
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <div class="breadcrumb-item">
+            <a href="{% url 'admisiones_tecnicos_editar' admision.id %}">{{ admision.comedor.nombre }}</a>
+        </div>
+        <div class="breadcrumb-item active">Informe Técnico</div>
+    </ol>
+{% endblock %}
+{% block content %}
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="container">
+            <div class="row mt-4">
+                {% for field in form %}<div class="col-md-6 mb-3">{{ field|as_crispy_field }}</div>{% endfor %}
+            </div>
+            <div class="mt-3">
+                <a class="btn btn-secondary"
+                   href="{% url 'admisiones_tecnicos_editar' admision.id %}">Cancelar</a>
+                <button type="submit" class="btn btn-primary">Guardar</button>
+            </div>
+        </div>
+    </form>
+{% endblock %}
+{% block customJS %}{% endblock %}
