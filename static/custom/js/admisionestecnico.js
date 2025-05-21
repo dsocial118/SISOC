@@ -31,7 +31,7 @@ function subirArchivo(admisionId, documentoId) {
     let url = `/admision/${admisionId}/documentacion/${documentoId}/subir/`;
 
     let xhr = new XMLHttpRequest();
-    xhr.open("POST", url, true); // ver lo de crftoken aca mas tarde {% csrf_token %}*
+    xhr.open("POST", url, true);
 
     // Enviar la solicitud con el progreso
     xhr.upload.onprogress = function (event) {
@@ -46,7 +46,20 @@ function subirArchivo(admisionId, documentoId) {
         if (xhr.status === 200) {
             let data = JSON.parse(xhr.responseText);
             if (data.success) {
-                document.getElementById(`estado-${documentoId}`).innerText = "A Validar";
+                const urlActualizarEstado = window.URL_ACTUALIZAR_ESTADO;
+                            
+                document.getElementById(`estado-${documentoId}`).innerHTML = `
+                    <select class="form-control"
+                        onchange="actualizarEstado(this)"
+                        data-admision-id="${admisionId}"
+                        data-documento-id="${documentoId}"
+                        data-url="${urlActualizarEstado}">
+                        <option value="validar" ${data.nuevo_estado === 'validar' ? 'selected' : ''}>A Validar</option>
+                        <option value="A Validar Abogado" ${data.nuevo_estado === 'A Validar Abogado' ? 'selected' : ''}>A Validar Abogado</option>
+                        <option value="Rectificar" ${data.nuevo_estado === 'Rectificar' ? 'selected' : ''}>Rectificar</option>
+                    </select>
+                `;
+
                 inputFile.disabled = true; 
                 let button = inputFile.nextElementSibling;
                 button.innerText = "Archivado";
@@ -113,7 +126,7 @@ function eliminarArchivo(admisionId, documentoId) {
                     <input type="file" id="file-${documentoId}" />
                     <button class="btn btn-primary btn-sm" onclick="subirArchivo(${admisionId}, ${documentoId})">Archivar</button>
                     <!-- Volver a agregar la barra de progreso -->
-                    <div class="progress mt-2" style="display:none; height: 3px;"" id="progress-container-${documentoId}">
+                    <div class="progress mt-2" style="display:none; height: 3px;" id="progress-container-${documentoId}">
                         <div class="progress-bar  progress-bar-striped" role="progressbar" id="progress-bar-${documentoId}" style="width: 0%;">0%</div>
                     </div>
                 </td>

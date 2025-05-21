@@ -152,6 +152,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "config.middlewares.xss_protection.XSSProtectionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
+    "admisiones.threadlocals.ThreadLocalMiddleware",
 ]
 
 # Configuración de plantillas
