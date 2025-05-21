@@ -1,19 +1,19 @@
 {% extends "includes/main.html" %};
 {% load static %}
 ;
-{% block title %}Comedores - Admisiones{% endblock %}
+{% block title %}Comedores - Expedientes{% endblock %}
 ;
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
         <li class="breadcrumb-item">
-            <a href="{% url 'admisiones_tecnicos_listar' %}">Admisiones</a>
+            <a href="{% url 'admisiones_legales_listar' %}">Expedientes</a>
         </li>
         <li class="breadcrumb-item active">Listar</li>
     </ol>
 {% endblock %}
 ;
 {% block content %}
-    <h2 class="text-center display-4 mb-4">Admisiones</h2>
+    <h2 class="text-center display-4 mb-4">Expedientes</h2>
     <div class="row mt-5">
         <div class="col-12">
             <div class="card">
@@ -21,46 +21,33 @@
                     <table class="table table-bordered table-striped projects">
                         <thead>
                             <tr>
-                                <th>Nombre</th>
-                                <th>Tipo Comedor</th>
-                                <th>Ubicacion</th>
-                                <th>Direccion</th>
-                                <th>Referente</th>
-                                <th>Numero de contacto</th>
+                                <th>Comedor</th>
+                                <th>Tipo convenio</th>
+                                <th>Num Expediente</th>
+                                <th>Num IF</th>
+                                <th>Modificado</th>
+                                <th>Estado</th>
                                 <th style="width: 10%" class="notexport">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for comedor in comedores %}
+                            {% for admision in admisiones %}
                                 <tr>
                                     <td>
-                                        <a href="{% url 'comedor_detalle' comedor.id %}"
+                                        <a href="{% url 'comedor_detalle' admision.comedor.id %}"
                                            class="font-weight-bold link-handler"
-                                           title="Ver detalles">{{ comedor.nombre }}</a>
+                                           title="Ver detalles">{{ admision.comedor.nombre }}</a>
                                     </td>
-                                    <td>{{ comedor.tipocomedor }}</td>
-                                    <td>
-                                        {{ comedor.provincia | default_if_none:"-" }}
-                                    </td>
-                                    <td>{{ comedor.calle | default_if_none:"-" }} {{ comedor.numero | default_if_none:"-" }}</td>
-                                    <td>{{ comedor.referente.nombre| default_if_none:"-" }}, {{ comedor.referente.apellido | default_if_none:"-" }}</td>
-                                    <td>{{ comedor.referente.celular | default_if_none:"-" }}</td>
+                                    <td>{{ admision.tipo_convenio.nombre }}</td>
+                                    <td>{{ admision.num_expediente }}</td>
+                                    <td>{{ admision.num_if }}</td>
+                                    <td>{{ admision.modificado|date:'d/m/Y' }}</td>
+                                    <td>{{ admision.estado_legales| default_if_none:"-" }}</td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            {% if comedor.admision_id %}
-                                            <a href="{% url 'admisiones_tecnicos_editar' comedor.admision_id %}" class="btn btn-warning btn-sm">
-                                                Editar
-                                            {% if comedor.estado_legales == "A Rectificar" %}
-                                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                                  Rectificar
-                                                </span>
-                                            {% endif %}
+                                            <a href="{% url 'admisiones_legales_ver' admision.id %}" class="btn btn-primary btn-sm">
+                                                Ver
                                             </a>
-                                            {% else %}
-                                            <a href="{% url 'admisiones_tecnicos_crear' comedor.id %}" class="btn btn-primary btn-sm">
-                                                Crear
-                                            </a>
-                                            {% endif %}
                                         </div>
                                     </td>
                                 </tr>

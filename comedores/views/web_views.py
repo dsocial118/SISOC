@@ -18,16 +18,12 @@ from django.views.generic import (
 )
 from comedores.forms.relevamiento_form import PuntosEntregaForm
 
-from admisiones.models.admisiones import DuplaContacto
-from admisiones.forms.admisiones_forms import DuplaContactoForm
-
 from comedores.models.relevamiento import Relevamiento, ClasificacionComedor
 from comedores.forms.comedor_form import (
     ComedorForm,
     ReferenteForm,
     IntervencionForm,
     NominaForm,
-    CaratularForm,
 )
 
 from comedores.forms.observacion_form import ObservacionForm
@@ -306,41 +302,9 @@ class ComedorDetailView(DetailView):
             }
         )
 
-        context["contactos_duplas_cargados"] = (
-            DuplaContacto.objects.filter(comedor=self.object["id"])
-            .order_by("-fecha")
-            .all()
-        )
-        # TODO: Hacer IF para que aparezca el boton Contacto Dupla si el comedor ya tiene una dupla cargada
-        context["contacto_dupla_form"] = DuplaContactoForm()
-        context["contacto_dupla"] = True
-
         admision = Admision.objects.filter(comedor=self.object["id"]).first()
 
-        context["informe_base"] = InformeTecnicoBase.objects.filter(admision=admision).first()
-        context["informe_juridico"] = InformeTecnicoJuridico.objects.filter(admision=admision).first()
-
         context["admision"] = admision
-        if admision and admision.estado_id == 2:
-            context["caratular"] = True
-        else:
-            context["caratular"] = False
-        comedor_id = self.object["id"]
-        comedor_instance = Comedor.objects.get(id=comedor_id)
-
-        context["caratular_form"] = CaratularForm(instance=comedor_instance)
-
-        comedor = Comedor.objects.select_related("dupla").get(id=comedor_id)
-        user = self.request.user
-
-        esta_dupla = comedor.dupla and user in comedor.dupla.tecnico.all()
-        if esta_dupla:
-            context["es_tecnico_dupla"] = user.groups.filter(name="Tecnico Comedor").exists()
-            context["es_abogado_dupla"] = user.groups.filter(name="Abogado Dupla").exists() 
-        else:
-            context["es_tecnico_dupla"] = False
-            context["es_abogado_dupla"] = False 
-
         return context
 
     def post(self, request, *args, **kwargs):
@@ -348,27 +312,6 @@ class ComedorDetailView(DetailView):
 
         is_new_relevamiento = "territorial" in request.POST
         is_edit_relevamiento = "territorial_editar" in request.POST
-        is_contacto_dupla = "btnContactoDupla" in request.POST
-        is_caratular = "btnCaratulacion" in request.POST
-
-        if is_caratular:
-            comedor = Comedor.objects.get(pk=self.object["id"])
-            form = CaratularForm(request.POST, instance=comedor)
-            if form.is_valid():
-                form.save()
-                messages.success(request, "Caratulación del expediente guardado correctamente.")
-            else:
-                messages.error(request, "Error al guardar la caratulación.")
-            return redirect("comedor_detalle", pk=self.object["id"])
-        
-        if is_contacto_dupla:
-            form = DuplaContactoForm(request.POST)
-            if form.is_valid():
-                form.save()
-                messages.success(request, "Contacto guardado correctamente.")
-            else:
-                messages.error(request, "Error al guardar el contacto.")
-            return redirect("comedor_detalle", pk=self.object["id"])
 
         if is_new_relevamiento or is_edit_relevamiento:
             try:
@@ -420,7 +363,7 @@ class AsignarDuplaListView(ListView):
         else:
             messages.error(request, "No se seleccionó ninguna dupla.")
 
-        return redirect("dupla_asignar", pk=comedor_id)
+        return redirect("comedor_detalle", pk=comedor_id)
 
 
 class ComedorUpdateView(UpdateView):

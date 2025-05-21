@@ -36,77 +36,15 @@
                class="btn btn-secondary mr-1 backbutton-handler">Volver</a>
         </div>
         <div class="col-auto">
-            {% if contacto_dupla %}
-                <button type="button"
-                        class="btn btn-primary mr-1"
-                        data-bs-toggle="modal"
-                        data-bs-target="#nuevoContactoDupla">
-                    Contacto
-                </button>
-            {% endif %}
-            {% if es_abogado_dupla %}
-                {% if informe_base %}
-                    <a href="{% url 'informe_tecnico_ver' tipo='base' pk=informe_base.id %}" class="btn btn-primary mr-1">
-                        Ver Informe Técnico
-                    </a>
-                {% elif informe_juridico %}
-                    <a href="{% url 'informe_tecnico_ver' tipo='juridico' pk=informe_juridico.id %}" class="btn btn-secondary mr-1">
-                        Ver Informe Técnico
-                    </a>
-                {% endif %}
-            {% endif %}
-
-            {% if es_tecnico_dupla %}
-                {% if comedor.num_expediente and comedor.num_if %}
-                    {% if admision.tipo_convenio_id == 1 %}
-                        {% if informe_base %}
-                            {% if informe_base.estado != "Validado" %}
-                                <a href="{% url 'informe_tecnico_editar' tipo='base' pk=informe_base.id %}" class="btn btn-primary mr-1">
-                                    Informe Técnico
-                                </a>
-                            {% else %}
-                                <a href="#" class="btn btn-primary mr-1">
-                                    Mandar a legales
-                                </a>
-                            {% endif %}
-                        {% else  %}
-                            <a href="{% url 'informe_tecnico_crear' tipo='base' admision_id=admision.id %}" class="btn btn-primary mr-1">
-                                Informe Técnico
-                            </a>
-                        {% endif %}
-                    {% else %}
-                        {% if informe_juridico %}
-                            {% if informe_juridico.estado != "Validado" %}
-                                <a href="{% url 'informe_tecnico_editar' tipo='juridico' pk=informe_base.id %}" class="btn btn-primary mr-1">
-                                    Informe Técnico
-                                </a>
-                            {% else %}
-                                <a href="#" class="btn btn-primary mr-1">
-                                    Mandar a legales
-                                </a>
-                            {% endif %}
-                        {% else  %}
-                            <a href="{% url 'informe_tecnico_crear' tipo='juridico' admision_id=admision.id %}" class="btn btn-secondary mr-1">
-                                Informe Técnico
-                            </a>
-                        {% endif %}
-                    {% endif %}
-                {% endif %}
-                    
-                {% if caratular %}
-                    <button type="button"
-                            class="btn btn-primary mr-1"
-                            data-bs-toggle="modal"
-                            data-bs-target="#caratularExpediente">
-                        Caratular expediente
-                    </button>
-                {% endif %}
-            {% endif %}
-
             <a href="{% url 'nomina_ver' pk=comedor.id %}"
                class="btn btn-primary mr-1">Nomina</a>
-            <a href="{% url 'dupla_asignar' pk=comedor.id %}"
-               class="btn btn-primary mr-1">Asignar Dupla</a>
+            <a href="{% url 'dupla_asignar' pk=comedor.id %}" class="btn btn-primary mr-1">
+                {% if comedor.estado == "Sin Ingreso" %}
+                    Asignar Dupla
+                {% else %}
+                    Modificar Dupla
+                {% endif %}
+            </a>                      
             <a href="{% url 'ciudadano_intervencion_ver' comedor.id %}"
                class="btn btn-primary mr-1">Intervenciones</a>
             <a href="{% url 'comedor_editar' comedor.id %}"
@@ -247,18 +185,6 @@
                                             <div class="comment-text comment-text d-flex flex-column">
                                                 Nombre
                                                 <span class="username">{{ comedor.nombre }}</span>
-                                            </div>
-                                        </div>
-                                        <div class="nav-item d-flex col-6">
-                                            <div class="comment-text comment-text d-flex flex-column">
-                                                Número de Expediente
-                                                <span class="username">{{ comedor.num_expediente | default_if_none:"-" }}</span>
-                                            </div>
-                                        </div>
-                                        <div class="nav-item d-flex col-6">
-                                            <div class="comment-text comment-text d-flex flex-column">
-                                                Número de IF
-                                                <span class="username">{{ comedor.num_if | default_if_none:"-" }}</span>
                                             </div>
                                         </div>
                                         <div class="nav-item d-flex col-6">
@@ -477,9 +403,9 @@
                     <h3 class="card-title font-weight-bold mr-3 pt-1">Relevamientos</h3>
                     <div class="card-tools">
                         <a href="{% url 'relevamientos' comedor.id %}"
-                           class="btn btn-primary mx-3">Ver mas</a>
+                           class="btn btn-primary btn-sm mr-3">Ver mas</a>
                         <button type="button"
-                                class="btn btn-primary"
+                                class="btn btn-primary btn-sm"
                                 data-bs-toggle="modal"
                                 data-bs-target="#RelevamientoModal">Agregar</button>
                         <button type="button" class="btn btn-tool" data-card-widget="collapse">
@@ -582,6 +508,67 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
+                    <h3 class="card-title font-weight-bold mr-3 pt-1">Detalles Admisión</h3>
+                    <div class="card-tools">
+                        <a href="{% url 'dupla_asignar' pk=comedor.id %}" class="btn btn-primary mr-1 btn-sm">
+                            {% if comedor.estado == "Sin Ingreso" %}
+                                Asignar Dupla
+                            {% else %}
+                                Modificar Dupla
+                            {% endif %}
+                        </a>   
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body card-comments p-0 pb-1">
+                    <div class="nav nav-pills row my-3">
+                        <div class="nav-item col-4 d-flex mb-3">
+                            <div class="comment-text comment-text d-flex flex-column">
+                                Dupla
+                                <span class="username">{{ comedor.dupla__nombre |default_if_none:"-" }}</span>
+                            </div>
+                        </div>
+                        <div class="nav-item col-4 d-flex mb-3">
+                            <div class="comment-text comment-text d-flex flex-column">
+                                Número de Expediente
+                                <span class="username">{{ admision.num_expediente |default_if_none:"-" }}</span>
+                            </div>
+                        </div>
+                        <div class="nav-item col-4 d-flex mb-3">
+                            <div class="comment-text comment-text d-flex flex-column">
+                                Número de IF
+                                <span class="username">{{ admision.num_if |default_if_none:"-" }}</span>
+                            </div>
+                        </div>
+                        <div class="nav-item col-4 d-flex mb-3">
+                            <div class="comment-text comment-text d-flex flex-column">
+                                Tipo de convenio
+                                <span class="username">{{ admision.tipo_convenio.nombre |default_if_none:"-" }}</span>
+                            </div>
+                        </div>
+                        <div class="nav-item col-4 d-flex mb-3">
+                            <div class="comment-text comment-text d-flex flex-column">
+                                Fecha
+                                <span class="username">{{ admision.creado |date:'d/m/Y' |default_if_none:"-" }}</span>
+                            </div>
+                        </div>
+                        <div class="nav-item col-4 d-flex mb-3">
+                            <div class="comment-text comment-text d-flex flex-column">
+                                Estado
+                                <span class="username">{{ admision.estado.nombre |default_if_none:"-" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row relevamiento-container">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
                     <h3 class="card-title font-weight-bold mr-3 pt-1">Observaciones</h3>
                     <div class="card-tools">
                         <button type="button" class="btn btn-tool" data-card-widget="collapse">
@@ -665,101 +652,6 @@
                             </table>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    {% endif %}
-    <!-- MODAL CONTACTO DUPLA -->
-    {% if contacto_dupla %}
-        <div class="modal fade"
-             id="nuevoContactoDupla"
-             tabindex="-1"
-             aria-labelledby="nuevoContactoDuplaLabel"
-             aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <form method="POST" action="">
-                        {% csrf_token %}
-                        <input type="hidden" id="comedor_id" name="comedor" value="{{ comedor.id }}" />
-                        <input type="hidden"
-                               id="usuario_id"
-                               name="usuario"
-                               value="{{ request.user.id }}" />
-                        <input type="hidden" name="fecha" value="{% now 'Y-m-d' %}" />
-                        <div class="modal-header">
-                            <h5 class="modal-title">Contacto Dupla</h5>
-                            <button type="button"
-                                    class="btn-close"
-                                    data-bs-dismiss="modal"
-                                    aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="form-group row mb-2">
-                                <div class="col-sm-2">Comedor:</div>
-                                <div class="col-sm-10">{{ comedor.nombre }}</div>
-                            </div>
-                            <div class="form-group row mb-2">
-                                <div class="col-sm-2">Usuario:</div>
-                                <div class="col-sm-10">{{ request.user.first_name }} {{ request.user.last_name }}</div>
-                            </div>
-                            <div class="form-group row mb-2">
-                                <div class="col-sm-2">Fecha:</div>
-                                <div class="col-sm-10">{% now "d-m-Y" %}</div>
-                            </div>
-                            <div class="form-group row mb-2">
-                                <div class="col-sm-10">{{ contacto_dupla_form.tipo| as_crispy_field }}</div>
-                            </div>
-                            <div class="form-group row mb-2">
-                                <div class="col-sm-10">{{ contacto_dupla_form.observaciones| as_crispy_field }}</div>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit"
-                                    class="btn btn-primary"
-                                    name="btnContactoDupla"
-                                    id="btnContactoDupla_id">Guardar</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    {% endif %}
-        <!-- MODAL CARATULACION -->
-        {% if caratular %}
-        <div class="modal fade"
-             id="caratularExpediente"
-             tabindex="-1"
-             aria-labelledby="caratularExpedienteLabel"
-             aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <form method="POST" action="">
-                        {% csrf_token %}
-                        <div class="modal-header">
-                            <h5 class="modal-title">Caratular Expediente</h5>
-                            <button type="button"
-                                    class="btn-close"
-                                    data-bs-dismiss="modal"
-                                    aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="form-group row mb-2">
-                                <div class="col-sm-10">{{ caratular_form.num_expediente| as_crispy_field }}</div>
-                            </div>
-                            <div class="form-group row mb-2">
-                                <div class="col-sm-10">{{ caratular_form.num_if| as_crispy_field }}</div>
-                            </div>
-
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit"
-                                    class="btn btn-primary"
-                                    name="btnCaratulacion"
-                                    id="btnCaratulacion_id">Guardar</button>
-                        </div>
-                    </form>
                 </div>
             </div>
         </div>

@@ -10,7 +10,7 @@
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
         <div class="breadcrumb-item">
-            <a href="{% url 'comedor_detalle' admision.comedor.id %}">{{ admision.comedor.nombre }}</a>
+            <a href="{% url 'admisiones_tecnicos_editar' admision.id %}">{{ admision.comedor.nombre }}</a>
         </div>
         <div class="breadcrumb-item active">Informe Técnico</div>
     </ol>
@@ -27,7 +27,7 @@
       {% endfor %}
     </div>
     <div class="mt-3">
-    <a class="btn btn-secondary" href="{% url 'comedor_detalle' admision.comedor.id %}">Cancelar</a>
+    <a class="btn btn-secondary" href="{% url 'admisiones_tecnicos_editar' admision.id %}">Cancelar</a>
       <button type="submit" class="btn btn-primary">Guardar</button>
     </div>
   </div>
