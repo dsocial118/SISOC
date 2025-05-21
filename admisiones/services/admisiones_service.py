@@ -425,9 +425,7 @@ class AdmisionService:
             messages.success(request, "Número de IF guardado correctamente.")
         else:
             messages.error(request, "Error al guardar el número de IF.")
-        if url_has_allowed_host_and_scheme(request.path_info, allowed_hosts=None):
-            return redirect(request.path_info)
-        return redirect('/')
+        return redirect(request.path_info)
     
     @staticmethod
     def validar_juridicos(request, admision):
@@ -452,9 +450,7 @@ class AdmisionService:
                 "No se puede validar: asegúrese de que completar ambos formularios y agregar el Número IF."
             )
 
-        if url_has_allowed_host_and_scheme(request.path_info, allowed_hosts=None):
-            return redirect(request.path_info)
-        return redirect('/')
+        return redirect(request.path_info)
     
     @staticmethod
     def guardar_formulario_reso(request, admision):
@@ -470,9 +466,7 @@ class AdmisionService:
         else:
             messages.error(request, "Error al guardar el formulario RESO.")
 
-        if url_has_allowed_host_and_scheme(request.path_info, allowed_hosts=None):
-            return redirect(request.path_info)
-        return redirect('/')
+        return redirect(request.path_info)
 
     @staticmethod
     def guardar_formulario_proyecto_convenio(request, admision):
