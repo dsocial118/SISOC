@@ -33,6 +33,7 @@ from django.template.loader import render_to_string
 from django.core.files.base import ContentFile
 from io import BytesIO
 from django.forms.models import model_to_dict
+from django.utils.http import url_has_allowed_host_and_scheme
 from xhtml2pdf import pisa
 
 
@@ -411,7 +412,10 @@ class AdmisionService:
             messages.success(request, "Enviado a rectificar con éxito.")
         else:
             messages.error(request, "Error al enviar a rectificar.")
-        return redirect(request.path_info)
+        from django.utils.http import url_has_allowed_host_and_scheme
+        if url_has_allowed_host_and_scheme(request.path_info, allowed_hosts=None):
+            return redirect(request.path_info)
+        return redirect('/')
 
     @staticmethod
     def guardar_legales_num_if(request, admision):
