@@ -4,7 +4,6 @@ from django import forms
 from comedores.models.comedor import (
     Comedor,
     Referente,
-    Intervencion,
     ImagenComedor,
     Nomina,
 )
@@ -31,33 +30,6 @@ class ReferenteForm(forms.ModelForm):
     class Meta:
         model = Referente
         fields = "__all__"
-
-
-class IntervencionForm(forms.ModelForm):
-    class Meta:
-        model = Intervencion
-        fields = "__all__"
-        widgets = {
-            "detalles": forms.Textarea(
-                attrs={
-                    "class": "form-control",
-                    "rows": 3,
-                }
-            ),
-            "subintervencion": forms.Select(
-                attrs={"class": "select2 subintervencion-select"}
-            ),
-            "tipo_intervencion": forms.Select(
-                attrs={"class": "select2 tipo_intervencion-select"}
-            ),
-        }
-        labels = {
-            "detalles": "Detalles de la intervención",
-            "subintervencion": "Subintervención",
-            "tipo_intervencion": "Tipo de intervención",
-            "estado": "Estado",
-            "direccion": "Dirección",
-        }
 
 
 class NominaForm(forms.ModelForm):

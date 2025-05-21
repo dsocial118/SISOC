@@ -9,9 +9,10 @@ from comedores.models.comedor import (
     Comedor,
     Referente,
     ValorComida,
-    Intervencion,
     Nomina,
 )
+
+from intervenciones.models.intervenciones import Intervencion
 from configuraciones.models import Municipio, Provincia
 from configuraciones.models import Localidad
 from comedores.models.comedor import ImagenComedor
@@ -23,11 +24,12 @@ class ComedorService:
         return Comedor.objects.filter(dupla=id_dupla).first()
 
     @staticmethod
-    def get_comedor(pk_send):
-        comedor = Comedor.objects.values(
-            "id", "nombre", "provincia", "barrio", "calle", "numero"
-        ).get(pk=pk_send)
-        return comedor
+    def get_comedor(pk_send, as_dict=False):
+        if as_dict:
+            return Comedor.objects.values(
+                "id", "nombre", "provincia", "barrio", "calle", "numero"
+            ).get(pk=pk_send)
+        return Comedor.objects.get(pk=pk_send)
 
     @staticmethod
     def detalle_de_intervencion(kwargs):
@@ -120,6 +122,7 @@ class ComedorService:
                 "foto_legajo",
                 "nombre",
                 "comienzo",
+                "estado",
                 "id_externo",
                 "organizacion__nombre",
                 "programa__nombre",

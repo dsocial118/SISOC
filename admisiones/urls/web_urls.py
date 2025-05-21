@@ -13,6 +13,7 @@ from admisiones.views.web_views import (
     AdmisionesLegalesListView,
     AdmisionesLegalesDetailView,
 )
+from intervenciones.views import sub_estados_intervenciones_ajax
 
 urlpatterns = [
     path(
