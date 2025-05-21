@@ -4,8 +4,22 @@ from django.http import JsonResponse
 from django.shortcuts import redirect, get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import CreateView, ListView, UpdateView, DetailView
-from admisiones.forms.admisiones_forms import AdmisionForm, CaratularForm, LegalesRectificarForm, ProyectoConvenioForm, ResoForm, LegalesNumIFForm
-from admisiones.models.admisiones import Admision, ArchivoAdmision, ArchivoAdmision, InformeTecnicoPDF,FormularioProyectoDeConvenio, FormularioRESO
+from admisiones.forms.admisiones_forms import (
+    AdmisionForm,
+    CaratularForm,
+    LegalesRectificarForm,
+    ProyectoConvenioForm,
+    ResoForm,
+    LegalesNumIFForm,
+)
+from admisiones.models.admisiones import (
+    Admision,
+    ArchivoAdmision,
+    ArchivoAdmision,
+    InformeTecnicoPDF,
+    FormularioProyectoDeConvenio,
+    FormularioRESO,
+)
 from admisiones.services.admisiones_service import AdmisionService
 from django.views.generic.edit import FormMixin
 
@@ -34,22 +48,29 @@ def eliminar_archivo_admision(request, admision_id, documentacion_id):
         return JsonResponse({"success": True, "nombre": archivo.documentacion.nombre})
     return JsonResponse({"success": False, "error": "Método no permitido"}, status=405)
 
+
 def actualizar_estado_archivo(request):
     resultado = AdmisionService.actualizar_estado_ajax(request)
 
     if resultado.get("success"):
-        return JsonResponse({
-            "success": True,
-            "nuevo_estado": resultado.get("nuevo_estado"),
-            "grupo_usuario": resultado.get("grupo_usuario"),
-            "mostrar_select": resultado.get("mostrar_select", False),
-            "opciones": resultado.get("opciones", []),
-        })
+        return JsonResponse(
+            {
+                "success": True,
+                "nuevo_estado": resultado.get("nuevo_estado"),
+                "grupo_usuario": resultado.get("grupo_usuario"),
+                "mostrar_select": resultado.get("mostrar_select", False),
+                "opciones": resultado.get("opciones", []),
+            }
+        )
     else:
-        return JsonResponse({
-            "success": False,
-            "error": resultado.get("error", "Error desconocido"),
-        }, status=400)
+        return JsonResponse(
+            {
+                "success": False,
+                "error": resultado.get("error", "Error desconocido"),
+            },
+            status=400,
+        )
+
 
 class AdmisionesTecnicosListView(ListView):
     model = Admision
@@ -97,13 +118,19 @@ class AdmisionesTecnicosUpdateView(UpdateView):
 
         if "mandarLegales" in request.POST:
             if AdmisionService.marcar_como_enviado_a_legales(admision, request.user):
-                messages.success(request, "La admisión fue enviada a legales correctamente.")
+                messages.success(
+                    request, "La admisión fue enviada a legales correctamente."
+                )
             else:
-                messages.info(request, "La admisión ya estaba marcada como enviada a legales.")
+                messages.info(
+                    request, "La admisión ya estaba marcada como enviada a legales."
+                )
             return redirect(self.request.path_info)
-        
+
         if "btnRectificarDocumentacion" in request.POST:
-            if AdmisionService.marcar_como_documentacion_rectificada(admision, request.user):
+            if AdmisionService.marcar_como_documentacion_rectificada(
+                admision, request.user
+            ):
                 messages.success(request, "Se rectificó la documentación.")
             else:
                 messages.error(request, "Error al querer realizar la rectificación.")
@@ -113,13 +140,17 @@ class AdmisionesTecnicosUpdateView(UpdateView):
             form = CaratularForm(request.POST, instance=admision)
             if form.is_valid():
                 form.save()
-                messages.success(request, "Caratulación del expediente guardado correctamente.")
+                messages.success(
+                    request, "Caratulación del expediente guardado correctamente."
+                )
             else:
                 messages.error(request, "Error al guardar la caratulación.")
             return redirect(self.request.path_info)
 
         if "tipo_convenio" in request.POST:
-            if AdmisionService.update_convenio(admision, request.POST.get("tipo_convenio")):
+            if AdmisionService.update_convenio(
+                admision, request.POST.get("tipo_convenio")
+            ):
                 messages.success(request, "Tipo de convenio actualizado correctamente.")
             return redirect(self.request.path_info)
 
@@ -147,7 +178,6 @@ class InformeTecnicosCreateView(CreateView):
     def get_success_url(self):
         admision_id = self.object.admision.id
         return reverse("admisiones_tecnicos_editar", args=[admision_id])
-
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -181,14 +211,16 @@ class InformeTecnicosUpdateView(UpdateView):
         context = super().get_context_data(**kwargs)
         tipo = self.kwargs.get("tipo", "base")
         informe = self.object
-        context.update({
-            "tipo": tipo,
-            "admision": informe.admision,
-            "comedor": informe.admision.comedor,
-            "campos": AdmisionService.get_campos_visibles_informe(informe),
-        })
+        context.update(
+            {
+                "tipo": tipo,
+                "admision": informe.admision,
+                "comedor": informe.admision.comedor,
+                "campos": AdmisionService.get_campos_visibles_informe(informe),
+            }
+        )
         return context
-    
+
 
 class InformeTecnicoDetailView(DetailView):
     template_name = "informe_tecnico_detalle.html"
@@ -207,7 +239,9 @@ class InformeTecnicoDetailView(DetailView):
             AdmisionService.actualizar_estado_informe(informe, nuevo_estado, tipo)
 
         admision_id = informe.admision.id
-        return HttpResponseRedirect(reverse("admisiones_tecnicos_editar", args=[admision_id]))
+        return HttpResponseRedirect(
+            reverse("admisiones_tecnicos_editar", args=[admision_id])
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -221,7 +255,8 @@ class InformeTecnicoDetailView(DetailView):
             admision=informe.admision, tipo=tipo, informe_id=informe.id
         ).first()
         return context
-    
+
+
 class AdmisionesLegalesListView(ListView):
     model = Admision
     template_name = "admisiones_legales_list.html"
@@ -229,6 +264,7 @@ class AdmisionesLegalesListView(ListView):
 
     def get_queryset(self):
         return Admision.objects.filter(enviado_legales=True)
+
 
 class AdmisionesLegalesDetailView(FormMixin, DetailView):
     model = Admision
@@ -242,13 +278,13 @@ class AdmisionesLegalesDetailView(FormMixin, DetailView):
         return context
 
     def get_success_url(self):
-        return reverse('admisiones_legales_ver', kwargs={'pk': self.object.pk})
-    
+        return reverse("admisiones_legales_ver", kwargs={"pk": self.object.pk})
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update(AdmisionService.legales_detalle_context(self.get_object()))
-        if 'form' not in context:
-            context['form'] = self.get_form()
+        if "form" not in context:
+            context["form"] = self.get_form()
         return context
 
     def post(self, request, *args, **kwargs):
@@ -264,7 +300,9 @@ class AdmisionesLegalesDetailView(FormMixin, DetailView):
             return AdmisionService.guardar_formulario_reso(request, admision)
 
         if "btnProyectoConvenio" in request.POST:
-            return AdmisionService.guardar_formulario_proyecto_convenio(request, admision)
+            return AdmisionService.guardar_formulario_proyecto_convenio(
+                request, admision
+            )
 
         if "btnObservaciones" in request.POST:
             return AdmisionService.enviar_a_rectificar(request, admision)

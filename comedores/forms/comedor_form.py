@@ -143,6 +143,7 @@ class ComedorForm(forms.ModelForm):
             "tipocomedor": "Tipo comedor",
         }
 
+
 class ImagenComedorForm(forms.ModelForm):
     class Meta:
         model = ImagenComedor

@@ -18,17 +18,23 @@ from intervenciones.views import sub_estados_intervenciones_ajax
 urlpatterns = [
     path(
         "comedores/admisiones/tecnicos/listar",
-        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(AdmisionesTecnicosListView.as_view()),
+        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(
+            AdmisionesTecnicosListView.as_view()
+        ),
         name="admisiones_tecnicos_listar",
     ),
     path(
         "comedores/admisiones/tecnicos/crear/<pk>",
-        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(AdmisionesTecnicosCreateView.as_view()),
+        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(
+            AdmisionesTecnicosCreateView.as_view()
+        ),
         name="admisiones_tecnicos_crear",
     ),
     path(
         "comedores/admisiones/tecnicos/editar/<pk>",
-        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(AdmisionesTecnicosUpdateView.as_view()),
+        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(
+            AdmisionesTecnicosUpdateView.as_view()
+        ),
         name="admisiones_tecnicos_editar",
     ),
     path(
@@ -41,21 +47,35 @@ urlpatterns = [
         eliminar_archivo_admision,
         name="eliminar_archivo_admision",
     ),
-    path("comedores/admision/informe_tecnico/<str:tipo>/<int:admision_id>/crear/", InformeTecnicosCreateView.as_view(), name="informe_tecnico_crear"),
-    path("comedores/admision/informe_tecnico/<str:tipo>/<int:pk>/editar/", InformeTecnicosUpdateView.as_view(), name="informe_tecnico_editar"),
-    path("comedores/admision/informe_tecnico/<str:tipo>/<int:pk>/ver/", InformeTecnicoDetailView.as_view(), name="informe_tecnico_ver"),
-    path("ajax/actualizar-estado/", actualizar_estado_archivo, name="actualizar_estado_archivo"),
-
+    path(
+        "comedores/admision/informe_tecnico/<str:tipo>/<int:admision_id>/crear/",
+        InformeTecnicosCreateView.as_view(),
+        name="informe_tecnico_crear",
+    ),
+    path(
+        "comedores/admision/informe_tecnico/<str:tipo>/<int:pk>/editar/",
+        InformeTecnicosUpdateView.as_view(),
+        name="informe_tecnico_editar",
+    ),
+    path(
+        "comedores/admision/informe_tecnico/<str:tipo>/<int:pk>/ver/",
+        InformeTecnicoDetailView.as_view(),
+        name="informe_tecnico_ver",
+    ),
+    path(
+        "ajax/actualizar-estado/",
+        actualizar_estado_archivo,
+        name="actualizar_estado_archivo",
+    ),
     # Legales
-        path(
+    path(
         "comedores/admisiones/legales/listar",
         group_required(["Legales"])(AdmisionesLegalesListView.as_view()),
         name="admisiones_legales_listar",
     ),
-        path(
+    path(
         "comedores/admisiones/legales/ver/<pk>",
         group_required(["Legales"])(AdmisionesLegalesDetailView.as_view()),
         name="admisiones_legales_ver",
     ),
-
 ]

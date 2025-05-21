@@ -37,7 +37,9 @@ from configuraciones.decorators import group_required
 urlpatterns = [
     path(
         "comedores/listar",
-        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(ComedorListView.as_view()),
+        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(
+            ComedorListView.as_view()
+        ),
         name="comedores",
     ),
     path(
@@ -47,7 +49,9 @@ urlpatterns = [
     ),
     path(
         "comedores/<pk>",
-        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(ComedorDetailView.as_view()),
+        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(
+            ComedorDetailView.as_view()
+        ),
         name="comedor_detalle",
     ),
     path(

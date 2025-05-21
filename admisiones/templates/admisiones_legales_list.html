@@ -45,9 +45,8 @@
                                     <td>{{ admision.estado_legales| default_if_none:"-" }}</td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            <a href="{% url 'admisiones_legales_ver' admision.id %}" class="btn btn-primary btn-sm">
-                                                Ver
-                                            </a>
+                                            <a href="{% url 'admisiones_legales_ver' admision.id %}"
+                                               class="btn btn-primary btn-sm">Ver</a>
                                         </div>
                                     </td>
                                 </tr>
