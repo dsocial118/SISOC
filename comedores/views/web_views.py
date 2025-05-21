@@ -53,6 +53,12 @@ from comedores.models.comedor import (
     Nomina,
     RendicionCuentasFinal,
 )
+
+from admisiones.models.admisiones import (
+    Admision,
+    InformeTecnicoBase,
+    InformeTecnicoJuridico,
+)
 from comedores.models.relevamiento import Prestacion
 from comedores.services.comedor_service import ComedorService
 from comedores.services.relevamiento_service import RelevamientoService
@@ -228,15 +234,9 @@ class ComedorDetailView(DetailView):
             }
         )
 
-        context["contactos_duplas_cargados"] = (
-            DuplaContacto.objects.filter(comedor=self.object["id"])
-            .order_by("-fecha")
-            .all()
-        )
-        # TODO: Hacer IF para que aparezca el boton Contacto Dupla si el comedor ya tiene una dupla cargada
-        context["contacto_dupla_form"] = DuplaContactoForm()
-        context["contacto_dupla"] = True
+        admision = Admision.objects.filter(comedor=self.object["id"]).first()
 
+        context["admision"] = admision
         return context
 
     def post(self, request, *args, **kwargs):
@@ -244,21 +244,8 @@ class ComedorDetailView(DetailView):
 
         is_new_relevamiento = "territorial" in request.POST
         is_edit_relevamiento = "territorial_editar" in request.POST
-        is_contacto_dupla = "btnContactoDupla" in request.POST
-
-        if is_contacto_dupla:
-            print("lalala")
-            form = DuplaContactoForm(request.POST)
-            if form.is_valid():
-                form.save()
-                messages.success(request, "Contacto guardado correctamente.")
-            else:
-                messages.error(request, "Error al guardar el contacto.")
-                print("Errores del formulario:", form.errors)
-            return redirect("comedor_detalle", pk=self.object["id"])
 
         if is_new_relevamiento or is_edit_relevamiento:
-            print("asdadsasad")
             try:
                 relevamiento = None
                 if is_new_relevamiento:
@@ -308,7 +295,7 @@ class AsignarDuplaListView(ListView):  # FIXME: Por que esto es una ListView?
         else:
             messages.error(request, "No se seleccionó ninguna dupla.")
 
-        return redirect("dupla_asignar", pk=comedor_id)
+        return redirect("comedor_detalle", pk=comedor_id)
 
 
 class ComedorUpdateView(UpdateView):
