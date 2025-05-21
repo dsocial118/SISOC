@@ -1,5 +1,9 @@
 {% extends "includes/main.html" %}
 {% load static crispy_forms_tags %}
+{% block head %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/duplasSelect2.min.css' %}" />
+{% endblock %}
 {% block title %}Editar Dupla{% endblock %}
 {% block content %}
     <div class="container mt-4">
