@@ -9,7 +9,7 @@
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
         <div class="breadcrumb-item">
-            <a href="{% url 'comedor_detalle' admision.comedor.id %}">{{ admision.comedor.nombre }}</a>
+            <a href="{% url 'admisiones_tecnicos_editar' admision.id %}">{{ admision.comedor.nombre }}</a>
         </div>
         <div class="breadcrumb-item active">Informe Técnico</div>
     </ol>
@@ -18,7 +18,7 @@
   <div class="container mt-4">
     <div class="row justify-content-between d-print-none mx-1 mb-3">
       <div class="col-auto">
-          <a href="{% url 'comedor_detalle' admision.comedor_id %}"
+          <a href="{% url 'admisiones_tecnicos_editar' admision.id %}"
              class="btn btn-secondary mr-1 backbutton-handler">Volver</a>
       </div>
       <div class="col-auto">

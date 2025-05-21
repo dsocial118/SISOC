@@ -1,6 +1,8 @@
 from django.db import models
 from users.models import User
 from comedores.models.comedor import Comedor
+from django.core.exceptions import ValidationError
+from django.conf import settings
 
 
 class EstadoAdmision(models.Model):
@@ -26,13 +28,36 @@ class TipoConvenio(models.Model):
 
 
 class Admision(models.Model):
+    ESTADOS_LEGALES = [
+        ("A Rectificar", "A Rectificar"),
+        ("Rectificado", "Rectificado"),
+        ("Pendiente de Validacion", "Pendiente de Validacion"),
+        ("Informe SGA Generado", "Informe SGA Generado"),
+        ("Resolucion Generada", "Resolucion Generada"),
+        ("Convenio Firmado", "Convenio Firmado"),
+        ("Finalizado", "Finalizado"),
+
+    ]
+    
     comedor = models.ForeignKey(Comedor, on_delete=models.SET_NULL, null=True)
     estado = models.ForeignKey(EstadoAdmision, on_delete=models.SET_NULL, null=True)
     tipo_convenio = models.ForeignKey(
         TipoConvenio, on_delete=models.SET_NULL, null=True
     )
+    num_expediente = models.CharField(max_length=255, blank=True, null=True)
+    num_if = models.CharField(max_length=100, blank=True, null=True)
+    legales_num_if = models.CharField(max_length=100, blank=True, null=True)
     creado = models.DateField(auto_now_add=True, null=True, blank=True)
     modificado = models.DateField(auto_now=True, null=True, blank=True)
+    enviado_legales = models.BooleanField(default=False, verbose_name="¿Enviado a legales?")
+    estado_legales = models.CharField(
+        max_length=40,
+        choices=ESTADOS_LEGALES,
+        null=True,
+        blank=True, 
+        verbose_name="Estado"
+    )
+    observaciones = models.TextField(blank=True, null=True, verbose_name="Observaciones")
 
     class Meta:
         indexes = [
@@ -80,23 +105,20 @@ class ArchivoAdmision(models.Model):
         choices=[("pendiente", "Pendiente"), ("validar", "A Validar"), ("A Validar Abogado", "A Validar Abogado"),("Rectificar", "Rectificar"),],
         default="pendiente",
     )
+    rectificar = models.BooleanField(default=False, verbose_name="Rectificar")
+    observaciones = models.TextField(blank=True, null=True, verbose_name="Observaciones")
+    num_if = models.CharField(max_length=100, blank=True, null=True)
+    creado = models.DateField(auto_now_add=True, null=True, blank=True)
+    modificado = models.DateField(auto_now=True, null=True, blank=True)
+
+    def delete(self, *args, **kwargs):
+        if self.rectificar:
+            raise ValidationError("No se puede eliminar un registro marcado como 'Rectificar'.")
+        super().delete(*args, **kwargs)
+
 
     def __str__(self):
         return f"{self.admision.id} - {self.documentacion.nombre}"
-
-
-class DuplaContacto(models.Model):
-
-    comedor = models.ForeignKey(Comedor, on_delete=models.SET_NULL, null=True)
-    usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    fecha = models.DateField()
-    tipo = models.CharField(
-        max_length=20,
-        choices=[("whatsapp", "Whatsapp"), ("email", "Email"), ("llamada", "Llamada")],
-        blank=False,
-        null=False,
-    )
-    observaciones = models.TextField()
 
 class InformeTecnicoBase(models.Model):
     ESTADOS = [
@@ -259,3 +281,51 @@ class InformeTecnicoPDF(models.Model):
     def __str__(self):
         return f"{self.get_tipo_display()} - PDF Admision #{self.admision_id}"
 
+class AdmisionHistorial(models.Model):
+    admision = models.ForeignKey("Admision", on_delete=models.CASCADE, related_name="historial")
+    campo = models.CharField(max_length=50)
+    valor_anterior = models.TextField(blank=True, null=True)
+    valor_nuevo = models.TextField(blank=True, null=True)
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    fecha = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.campo} cambiado por {self.usuario} el {self.fecha.strftime('%d/%m/%Y %H:%M')}"
+
+class FormularioRESO(models.Model):
+    admision = models.ForeignKey("Admision", on_delete=models.CASCADE, related_name="formularios_reso")
+    pregunta1 = models.CharField(max_length=255, blank=True, null=True)
+    pregunta2 = models.CharField(max_length=255, blank=True, null=True)
+    pregunta3 = models.CharField(max_length=255, blank=True, null=True)
+    creado = models.DateTimeField(auto_now_add=True)
+    creado_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+
+    def __str__(self):
+        return f"Formulario RESO de {self.admision} por {self.creado_por}"
+
+class FormularioProyectoDeConvenio(models.Model):
+    admision = models.ForeignKey("Admision", on_delete=models.CASCADE, related_name="formularios_proyecto_convenio")
+    pregunta1 = models.CharField(max_length=255, blank=True, null=True)
+    pregunta2 = models.CharField(max_length=255, blank=True, null=True)
+    pregunta3 = models.CharField(max_length=255, blank=True, null=True)
+    creado = models.DateTimeField(auto_now_add=True)
+    creado_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+
+    def __str__(self):
+        return f"Formulario Proyecto de Convenio de {self.admision} por {self.creado_por}"
+
+class DocumentosExpediente(models.Model):
+    admision = models.ForeignKey(Admision, on_delete=models.CASCADE)
+    nombre = models.CharField(max_length=255, blank=True, null=True)
+    tipo = models.CharField(max_length=255, blank=True, null=True)
+    value = models.CharField(max_length=255, blank=True, null=True)
+    archivo = models.FileField(
+        upload_to="comedor/admisiones_archivos/expediente", null=True, blank=True
+    )
+    rectificar = models.BooleanField(default=False, verbose_name="Rectificar")
+    observaciones = models.TextField(blank=True, null=True, verbose_name="Observaciones")
+    num_if = models.CharField(max_length=100, blank=True, null=True)
+    creado = models.DateField(auto_now_add=True, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.admision.id}"

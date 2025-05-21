@@ -1,6 +1,60 @@
 from django.urls import path
+from configuraciones.decorators import group_required
+from admisiones.views.web_views import (
+    subir_archivo_admision,
+    eliminar_archivo_admision,
+    actualizar_estado_archivo,
+    AdmisionesTecnicosListView,
+    AdmisionesTecnicosCreateView,
+    AdmisionesTecnicosUpdateView,
+    InformeTecnicosCreateView,
+    InformeTecnicosUpdateView,
+    InformeTecnicoDetailView,
+    AdmisionesLegalesListView,
+    AdmisionesLegalesDetailView,
+)
 
 urlpatterns = [
-]
+    path(
+        "comedores/admisiones/tecnicos/listar",
+        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(AdmisionesTecnicosListView.as_view()),
+        name="admisiones_tecnicos_listar",
+    ),
+    path(
+        "comedores/admisiones/tecnicos/crear/<pk>",
+        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(AdmisionesTecnicosCreateView.as_view()),
+        name="admisiones_tecnicos_crear",
+    ),
+    path(
+        "comedores/admisiones/tecnicos/editar/<pk>",
+        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(AdmisionesTecnicosUpdateView.as_view()),
+        name="admisiones_tecnicos_editar",
+    ),
+    path(
+        "admision/<int:admision_id>/documentacion/<int:documentacion_id>/subir/",
+        subir_archivo_admision,
+        name="subir_archivo_admision",
+    ),
+    path(
+        "admision/<int:admision_id>/documentacion/<int:documentacion_id>/eliminar/",
+        eliminar_archivo_admision,
+        name="eliminar_archivo_admision",
+    ),
+    path("comedores/admision/informe_tecnico/<str:tipo>/<int:admision_id>/crear/", InformeTecnicosCreateView.as_view(), name="informe_tecnico_crear"),
+    path("comedores/admision/informe_tecnico/<str:tipo>/<int:pk>/editar/", InformeTecnicosUpdateView.as_view(), name="informe_tecnico_editar"),
+    path("comedores/admision/informe_tecnico/<str:tipo>/<int:pk>/ver/", InformeTecnicoDetailView.as_view(), name="informe_tecnico_ver"),
+    path("ajax/actualizar-estado/", actualizar_estado_archivo, name="actualizar_estado_archivo"),
 
-#LAS URLS LAS PUSIERON DENTRO DE LAS URL DE COMEDORES
+    # Legales
+        path(
+        "comedores/admisiones/legales/listar",
+        group_required(["Legales"])(AdmisionesLegalesListView.as_view()),
+        name="admisiones_legales_listar",
+    ),
+        path(
+        "comedores/admisiones/legales/ver/<pk>",
+        group_required(["Legales"])(AdmisionesLegalesDetailView.as_view()),
+        name="admisiones_legales_ver",
+    ),
+
+]

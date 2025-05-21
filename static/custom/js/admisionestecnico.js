@@ -46,16 +46,20 @@ function subirArchivo(admisionId, documentoId) {
         if (xhr.status === 200) {
             let data = JSON.parse(xhr.responseText);
             if (data.success) {
+                const urlActualizarEstado = window.URL_ACTUALIZAR_ESTADO;
+                            
                 document.getElementById(`estado-${documentoId}`).innerHTML = `
                     <select class="form-control"
-                            onchange="mostrarModal(this)"
-                            data-documento-id="${documentoId}"
-                            data-admision-id="${admisionId}">
-                        <option value="validar">A Validar</option>
-                        <option value="A Validar Abogado">A Validar Abogado</option>
-                        <option value="Rectificar">Rectificar</option>
+                        onchange="actualizarEstado(this)"
+                        data-admision-id="${admisionId}"
+                        data-documento-id="${documentoId}"
+                        data-url="${urlActualizarEstado}">
+                        <option value="validar" ${data.nuevo_estado === 'validar' ? 'selected' : ''}>A Validar</option>
+                        <option value="A Validar Abogado" ${data.nuevo_estado === 'A Validar Abogado' ? 'selected' : ''}>A Validar Abogado</option>
+                        <option value="Rectificar" ${data.nuevo_estado === 'Rectificar' ? 'selected' : ''}>Rectificar</option>
                     </select>
-            `;
+                `;
+
                 inputFile.disabled = true; 
                 let button = inputFile.nextElementSibling;
                 button.innerText = "Archivado";
@@ -91,29 +95,6 @@ function subirArchivo(admisionId, documentoId) {
 
 let admisionIdEliminar;
 let documentoIdEliminar;
-
-function mostrarModal(selectElement) {
-    const nuevoEstado = selectElement.value;
-    const admisionId = selectElement.getAttribute('data-admision-id');
-    const documentoId = selectElement.getAttribute('data-documento-id');
-    
-    // Establecer los valores en el formulario del modal
-    document.getElementById('estadoSeleccionado').value = nuevoEstado;
-    document.getElementById('admisionId').value = admisionId;
-    document.getElementById('documentoId').value = documentoId;
-
-    console.log("Estado:", nuevoEstado);
-    console.log("Documento ID:", documentoId);
-    console.log("Admision ID:", admisionId);
-
-    // Establecer la acción del formulario para que envíe a la URL correcta
-    const formAction = `#`;
-    document.getElementById('cambiarEstadoForm').action = formAction;
-
-    // Mostrar el modal
-    const modal = new bootstrap.Modal(document.getElementById('confirmarModal'));
-    modal.show();
-}
 
 function confirmarEliminar(admisionId, documentoId) {
     admisionIdEliminar = admisionId;

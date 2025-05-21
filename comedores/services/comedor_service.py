@@ -98,7 +98,7 @@ class ComedorService:
             "referente__nombre",
             "referente__apellido",
             "referente__celular",
-        )
+        ).order_by("-id")
         if query:
             queryset = queryset.filter(
                 Q(nombre__icontains=query)
@@ -145,8 +145,8 @@ class ComedorService:
                 "referente__mail",
                 "referente__celular",
                 "referente__documento",
-                "num_expediente",
-                "num_if",
+                "estado",
+                "dupla__nombre",
             )
             .get(pk=comedor_id)
         )

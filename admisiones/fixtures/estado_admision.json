@@ -10,8 +10,14 @@
         "model": "admisiones.estadoadmision",
         "pk": 2,
         "fields": {
-            "nombre": "Admitido"
+            "nombre": "Finalizada"
+        }
+    },
+    {
+        "model": "admisiones.estadoadmision",
+        "pk": 3,
+        "fields": {
+            "nombre": "A Rectificar"
         }
     }
-
 ]
