@@ -15,5 +15,7 @@ class ThreadLocalMiddleware:
 
     def __call__(self, request):
         _thread_locals.user = getattr(request, "user", None)
-        response = self.get_response(request)
-        return response
+        try:
+            return self.get_response(request)
+        finally:
+            _thread_locals.user = None

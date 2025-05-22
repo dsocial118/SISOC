@@ -135,6 +135,7 @@ INSTALLED_APPS = [
     "duplas",
     "admisiones",
     "intervenciones",
+    "historial",
 ]
 
 # Definición del middleware utilizado por el proyecto
@@ -151,8 +152,8 @@ MIDDLEWARE = [
     "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "config.middlewares.xss_protection.XSSProtectionMiddleware",
+    "config.middlewares.threadlocals.ThreadLocalMiddleware",
     "corsheaders.middleware.CorsMiddleware",
-    "admisiones.threadlocals.ThreadLocalMiddleware",
 ]
 
 # Configuración de plantillas
