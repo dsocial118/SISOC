@@ -19,6 +19,7 @@ class Historial(models.Model):
         objeto (GenericForeignKey): Relación genérica al objeto afectado por la acción.
         diferencias (JSONField): Campo opcional para almacenar diferencias o cambios en formato JSON.
     """
+
     fecha = models.DateTimeField(auto_now_add=True)
     usuario = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
     accion = models.CharField(max_length=255)

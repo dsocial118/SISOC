@@ -2,7 +2,6 @@ from django.db.models.signals import post_save, pre_delete, pre_save
 from django.dispatch import receiver
 from comedores.models.comedor import (
     DocumentoRendicionFinal,
-    EstadoDocumentoRendicionFinal,
     Observacion,
     Referente,
     Comedor,
