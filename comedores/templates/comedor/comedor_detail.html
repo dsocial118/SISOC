@@ -35,6 +35,10 @@
                class="btn btn-secondary mr-1 backbutton-handler">Volver</a>
         </div>
         <div class="col-auto">
+            <!-- TODO: Solo disponible luego de 5 rendicion de cuentas mensual -->
+            <a href="{% url 'rendicion_cuentas_final' pk=comedor.id %}"
+               class="btn btn-primary mr-1">Rendicion de Cuentas Final</a>
+            <!--  -->
             <a href="{% url 'nomina_ver' pk=comedor.id %}"
                class="btn btn-primary mr-1">Nomina</a>
             <a href="{% url 'dupla_asignar' pk=comedor.id %}"

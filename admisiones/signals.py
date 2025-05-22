@@ -1,7 +1,7 @@
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
 from admisiones.models.admisiones import Admision, AdmisionHistorial
-from admisiones.threadlocals import get_current_user
+from config.middlewares.threadlocals import get_current_user
 
 
 @receiver(pre_save, sender=Admision)
