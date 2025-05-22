@@ -26,14 +26,14 @@
         "model": "admisiones.tipoconvenio",
         "pk": 2,
         "fields": {
-            "nombre": "Personería Jurídica Eclesiástica"
+            "nombre": "Personería jurídica eclesiástica"
         }
     },
     {
         "model": "admisiones.tipoconvenio",
         "pk": 3,
         "fields": {
-            "nombre": "Personería Jurídica"
+            "nombre": "Personería jurídica"
         }
     },
     {
@@ -94,7 +94,7 @@
         "model": "admisiones.documentacion",
         "pk": 7,
         "fields": {
-            "nombre": "Reso Personería Jurídica - Aval 1",
+            "nombre": "Reso Personería jurídica - Aval 1",
             "tipo": 1,
             "convenios": [1]
         }
@@ -148,7 +148,7 @@
         "model": "admisiones.documentacion",
         "pk": 13,
         "fields": {
-            "nombre": "Reso Personería Jurídica - Aval 2",
+            "nombre": "Reso Personería jurídica - Aval 2",
             "tipo": 1,
             "convenios": [1]
         }
@@ -274,7 +274,7 @@
         "model": "admisiones.documentacion",
         "pk": 27,
         "fields": {
-            "nombre": "Reso Personería Jurídica",
+            "nombre": "Reso Personería jurídica",
             "tipo": 1,
             "convenios": [2]
         }
@@ -436,7 +436,7 @@
         "model": "admisiones.documentacion",
         "pk": 45,
         "fields": {
-            "nombre": "Reso Personería Jurídica",
+            "nombre": "Reso Personería jurídica",
             "tipo": 1,
             "convenios": [3]
         }
