@@ -1,6 +1,7 @@
 from django.urls import path
 
 from comedores.views.web_views import (
+    adjuntar_documento_rendicion_cuenta_final,
     ComedorCreateView,
     ComedorDeleteView,
     ComedorDetailView,
@@ -20,6 +21,13 @@ from comedores.views.web_views import (
     NominaDeleteView,
     NominaUpdateView,
     AsignarDuplaListView,
+    RendicionCuentasFinalDetailView,
+    DocumentosRendicionCuentasFinalListView,
+    crear_documento_rendicion_cuentas_final,
+    eliminar_documento_rendicion_cuentas_final,
+    subsanar_documento_rendicion_cuentas_final,
+    switch_rendicion_final_fisicamente_presentada,
+    validar_documento_rendicion_cuentas_final,
 )
 
 from intervenciones.views import (
@@ -33,18 +41,13 @@ from intervenciones.views import (
     IntervencionDetailView,
 )
 from configuraciones.decorators import group_required
-from admisiones.views.web_views import (
-    subir_archivo_admision,
-    eliminar_archivo_admision,
-    AdmisionesTecnicosListView,
-    AdmisionesTecnicosCreateView,
-    AdmisionesTecnicosUpdateView,
-)
 
 urlpatterns = [
     path(
         "comedores/listar",
-        group_required("Comedores")(ComedorListView.as_view()),
+        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(
+            ComedorListView.as_view()
+        ),
         name="comedores",
     ),
     path(
@@ -54,7 +57,9 @@ urlpatterns = [
     ),
     path(
         "comedores/<pk>",
-        group_required("Comedores")(ComedorDetailView.as_view()),
+        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(
+            ComedorDetailView.as_view()
+        ),
         name="comedor_detalle",
     ),
     path(
@@ -153,31 +158,6 @@ urlpatterns = [
         name="nomina_borrar",
     ),
     path(
-        "comedores/admisiones/tecnicos/listar",
-        group_required("Comedores")(AdmisionesTecnicosListView.as_view()),
-        name="admisiones_tecnicos_listar",
-    ),
-    path(
-        "comedores/admisiones/tecnicos/crear/<pk>",
-        group_required("Comedores")(AdmisionesTecnicosCreateView.as_view()),
-        name="admisiones_tecnicos_crear",
-    ),
-    path(
-        "comedores/admisiones/tecnicos/editar/<pk>",
-        group_required("Comedores")(AdmisionesTecnicosUpdateView.as_view()),
-        name="admisiones_tecnicos_editar",
-    ),
-    path(
-        "admision/<int:admision_id>/documentacion/<int:documentacion_id>/subir/",
-        subir_archivo_admision,
-        name="subir_archivo_admision",
-    ),
-    path(
-        "admision/<int:admision_id>/documentacion/<int:documentacion_id>/eliminar/",
-        eliminar_archivo_admision,
-        name="eliminar_archivo_admision",
-    ),
-    path(
         "comedores/dupla/asignar/<pk>",
         group_required("Comedores")(AsignarDuplaListView.as_view()),
         name="dupla_asignar",
@@ -201,5 +181,47 @@ urlpatterns = [
         "intervencion/detalle/<int:pk>/",
         group_required("Comedores")(IntervencionDetailIndividualView.as_view()),
         name="intervencion_detalle",
+    ),
+    path(
+        "comedores/<pk>/rendicion_cuentas_final",
+        group_required("Tecnico Comedor")(RendicionCuentasFinalDetailView.as_view()),
+        name="rendicion_cuentas_final",
+    ),
+    path(
+        "rendicion_cuentas_final/documento/adjuntar/",
+        adjuntar_documento_rendicion_cuenta_final,
+        name="adjuntar_documento_rendicion_cuenta_final",
+    ),
+    path(
+        "rendicion_cuentas_final/<int:rendicion_id>/crear/",
+        crear_documento_rendicion_cuentas_final,
+        name="crear_documento_rendicion_cuentas_final",
+    ),
+    path(
+        "rendicion_cuentas_final/<int:rendicion_id>/fisicamente_presentada/",
+        switch_rendicion_final_fisicamente_presentada,
+        name="switch_rendicion_final_fisicamente_presentada",
+    ),
+    path(
+        "rendicion_cuentas_final/documento/<int:documento_id>/eliminar/",
+        eliminar_documento_rendicion_cuentas_final,
+        name="eliminar_documento_rendicion_cuentas_final",
+    ),
+    path(
+        "rendicion_cuentas_final/documento/<int:documento_id>/validar/",
+        validar_documento_rendicion_cuentas_final,
+        name="validar_documento_rendicion_cuentas_final",
+    ),
+    path(
+        "rendicion_cuentas_final/documento/<int:documento_id>/subsanar/",
+        subsanar_documento_rendicion_cuentas_final,
+        name="subsanar_documento_rendicion_cuentas_final",
+    ),
+    path(
+        "rendicion_cuentas_final/listar/",
+        group_required("Area Contable", "Area Legales")(
+            DocumentosRendicionCuentasFinalListView.as_view()
+        ),
+        name="rendicion_cuentas_final_listar",
     ),
 ]

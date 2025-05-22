@@ -135,6 +135,7 @@ INSTALLED_APPS = [
     "duplas",
     "admisiones",
     "intervenciones",
+    "historial",
     "acompanamientos",
     "expedientespagos",
 ]
@@ -153,6 +154,7 @@ MIDDLEWARE = [
     "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "config.middlewares.xss_protection.XSSProtectionMiddleware",
+    "config.middlewares.threadlocals.ThreadLocalMiddleware",
     "corsheaders.middleware.CorsMiddleware",
 ]
 

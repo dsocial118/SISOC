@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>Informe Técnico</title>
+        <style>
+        body { font-family: Arial, sans-serif; font-size: 12px; }
+        h1 { text-align: center; }
+        .campo { margin-bottom: 10px; }
+        </style>
+    </head>
+    <body>
+        <h1>Informe Técnico</h1>
+        <p>
+            <strong>Estado:</strong> {{ informe.estado }}
+        </p>
+        <hr />
+        {% for nombre, valor in campos %}
+            <div class="campo">
+                <strong>{{ nombre }}:</strong> {{ valor }}
+            </div>
+        {% endfor %}
+    </body>
+</html>

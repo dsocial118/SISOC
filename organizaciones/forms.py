@@ -27,5 +27,5 @@ class FirmanteForm(forms.ModelForm):
 
 
 FirmanteFormset = inlineformset_factory(
-    Organizacion, Firmante, form=FirmanteForm, extra=1, can_delete=True
+    Organizacion, Firmante, form=FirmanteForm, extra=0, can_delete=True
 )
