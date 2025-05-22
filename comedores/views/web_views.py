@@ -65,6 +65,7 @@ from comedores.services.rendicion_cuentas_final_service import (
     RendicionCuentasFinalService,
 )
 from duplas.dupla_service import DuplaService
+from historial.services.historial_service import HistorialService
 
 
 @method_decorator(csrf_exempt, name="dispatch")  # FIXME: No exceptuar nunca csrf
@@ -742,6 +743,12 @@ class RendicionCuentasFinalDetailView(DetailView):
             )
         )
 
+        context["historial"] = (
+            HistorialService.get_historial_documentos_by_rendicion_cuentas_final(
+                self.get_object()
+            )
+        )
+
         context["comedor_id"] = self.object.comedor.id
         context["comedor_nombre"] = self.object.comedor.nombre
         context["fisicamente_presentada"] = self.object.fisicamente_presentada
@@ -757,6 +764,7 @@ def adjuntar_documento_rendicion_cuenta_final(request):
     ok, _documento = RendicionCuentasFinalService.adjuntar_archivo_a_documento(
         doc_id, archivo
     )
+
     if not ok:
         messages.error(request, "No se seleccionó ningún archivo.")
     else:
@@ -774,6 +782,11 @@ def crear_documento_rendicion_cuentas_final(request, rendicion_id):
     documento = rendicion.add_documento_personalizado(nombre)
 
     if archivo:
+        HistorialService.registrar_historial(
+            accion="Crear documento personalizado",
+            instancia=documento,
+        )
+
         RendicionCuentasFinalService.actualizar_documento_con_archivo(
             documento, archivo
         )
@@ -798,6 +811,11 @@ def validar_documento_rendicion_cuentas_final(request, documento_id):
     documento.estado = EstadoDocumentoRendicionFinal.objects.get(nombre="Validado")
     documento.fecha_modificacion = timezone.now()
     documento.save()
+
+    HistorialService.registrar_historial(
+        accion="Validar documento",
+        instancia=documento,
+    )
 
     messages.success(request, "Documento validado correctamente.")
 
@@ -845,6 +863,11 @@ def subsanar_documento_rendicion_cuentas_final(request, documento_id):
     documento.estado = EstadoDocumentoRendicionFinal.objects.get(nombre="Subsanar")
     documento.fecha_modificacion = timezone.now()
     documento.save()
+
+    HistorialService.registrar_historial(
+        accion="Enviar a subsanar documento",
+        instancia=documento,
+    )
 
     messages.success(request, "Documento enviado a subsanar correctamente.")
 

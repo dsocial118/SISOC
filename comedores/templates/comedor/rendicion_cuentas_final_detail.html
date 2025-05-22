@@ -25,6 +25,9 @@
         <div class="col-md-12"></div>
     </div>
     <div class="row">
+        <button class="btn btn-primary mb-3 w-auto"
+                data-bs-toggle="modal"
+                data-bs-target="#modalCrearDocumento">Añadir documento personalizado</button>
         <table class="w-100 table table-stripped text-center">
             <thead>
                 <tr>
@@ -107,10 +110,42 @@
             </tbody>
         </table>
     </div>
+    <div class="row mt-3">
+        <h3>Historial de Documentos</h3>
+        <table class="w-100 table table-stripped text-center">
+            <thead class="">
+                <tr>
+                    <th class="text-start">Tipo de Documento</th>
+                    <th>Acción</th>
+                    <th>Usuario</th>
+                    <th>Fecha</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for registro in historial %}
+                    <tr>
+                        <td class="text-start">
+                            {% with documento=registro.objeto %}
+                                {% if documento %}
+                                    {{ documento.tipo.nombre|default:"Desconocido" }}
+                                {% else %}
+                                    <span class="text-muted">No disponible</span>
+                                {% endif %}
+                            {% endwith %}
+                        </td>
+                        <td>{{ registro.accion }}</td>
+                        <td>{{ registro.usuario.get_full_name|default:registro.usuario.username }}</td>
+                        <td>{{ registro.fecha|date:"d/m/Y H:i"|default:"-" }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center">No hay registros aun.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
     <div class="mt-1 mx-2">
-        <button class="btn btn-primary"
-                data-bs-toggle="modal"
-                data-bs-target="#modalCrearDocumento">Añadir documento personalizado</button>
         <a href="{% url 'comedor_detalle' rendicion.id %}"
            class="btn btn-secondary mx-2">Volver</a>
     </div>
@@ -201,9 +236,7 @@
                             data-bs-dismiss="modal"
                             aria-label="Cerrar"></button>
                 </div>
-                <div class="modal-body" id="modal-observaciones-body">
-                    <!-- Contenido dinámico -->
-                </div>
+                <div class="modal-body" id="modal-observaciones-body"></div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                 </div>
