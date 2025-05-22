@@ -129,6 +129,13 @@
     "model": "intervenciones.tipointervencion",
     "pk": 19,
     "fields": {
+      "nombre": "Contacto"
+    }
+  },
+  {
+    "model":"intervenciones.tipointervencion",
+    "pk": 20,
+    "fields":{
       "nombre": "Otros"
     }
   },
@@ -152,7 +159,7 @@
     "model": "intervenciones.subintervencion",
     "pk": 3,
     "fields": {
-      "nombre": "Otras visitas",
+      "nombre": "Otra visita",
       "tipo_intervencion": 1
     }
   },
@@ -184,7 +191,7 @@
     "model": "intervenciones.subintervencion",
     "pk": 7,
     "fields": {
-      "nombre": "Original",
+      "nombre": "Nómina total de beneficiarios",
       "tipo_intervencion": 14
     }
   },
@@ -192,7 +199,7 @@
     "model": "intervenciones.subintervencion",
     "pk": 8,
     "fields": {
-      "nombre": "Altas - Bajas",
+      "nombre": "Nómina alta/baja mes 2",
       "tipo_intervencion": 14
     }
   },
@@ -200,13 +207,45 @@
     "model": "intervenciones.subintervencion",
     "pk": 9,
     "fields": {
+      "nombre": "Nómina alta/baja mes 3",
+      "tipo_intervencion": 14
+    }
+  },
+  {
+    "model": "intervenciones.subintervencion",
+    "pk": 10,
+    "fields": {
+      "nombre": "Nómina alta/baja mes 4",
+      "tipo_intervencion": 14
+    }
+  },
+  {
+    "model": "intervenciones.subintervencion",
+    "pk": 11,
+    "fields": {
+      "nombre": "Nómina alta/baja mes 5",
+      "tipo_intervencion": 14
+    }
+  },
+  {
+    "model": "intervenciones.subintervencion",
+    "pk": 12,
+    "fields": {
+      "nombre": "Nómina alta/baja mes 6",
+      "tipo_intervencion": 14
+    }
+  },
+  {
+    "model": "intervenciones.subintervencion",
+    "pk": 13,
+    "fields": {
       "nombre": "No se encuentra en sucursal",
       "tipo_intervencion": 15
     }
   },
   {
     "model": "intervenciones.subintervencion",
-    "pk": 10,
+    "pk": 14,
     "fields": {
       "nombre": "Pérdida o robo",
       "tipo_intervencion": 15
@@ -214,7 +253,7 @@
   },
   {
     "model": "intervenciones.subintervencion",
-    "pk": 11,
+    "pk": 15,
     "fields": {
       "nombre": "Cambio de titularidad",
       "tipo_intervencion": 15
@@ -222,10 +261,122 @@
   },
   {
     "model": "intervenciones.subintervencion",
-    "pk": 12,
+    "pk": 16,
     "fields": {
       "nombre": "Dificultades para el uso de la tarjeta",
       "tipo_intervencion": 15
+    }
+  },
+  {
+    "model": "intervenciones.subintervencion",
+    "pk": 17,
+    "fields": {
+      "nombre": "Notificación",
+      "tipo_intervencion": 5
+    }
+  },
+  {
+    "model": "intervenciones.subintervencion",
+    "pk": 18,
+    "fields": {
+      "nombre": "Confirmación de retiro",
+      "tipo_intervencion": 5
+    }
+  },
+  {
+    "model": "intervenciones.subintervencion",
+    "pk": 19,
+    "fields": {
+      "nombre": "Notificación de primera acreditación",
+      "tipo_intervencion": 10
+    }
+  },
+  {
+    "model": "intervenciones.subintervencion",
+    "pk": 20,
+    "fields": {
+      "nombre": "Notificación de acreditación mes 2",
+      "tipo_intervencion": 10
+    }
+  },
+  {
+    "model": "intervenciones.subintervencion",
+    "pk": 21,
+    "fields": {
+      "nombre": "Notificación de acreditación mes 3",
+      "tipo_intervencion": 10
+    }
+  },
+  {
+    "model": "intervenciones.subintervencion",
+    "pk": 22,
+    "fields": {
+      "nombre": "Notificación de acreditación mes 4",
+      "tipo_intervencion": 10
+    }
+  },
+  {
+    "model": "intervenciones.subintervencion",
+    "pk": 23,
+    "fields": {
+      "nombre": "Notificación de acreditación mes 5",
+      "tipo_intervencion": 10
+    }
+  },
+  {
+    "model": "intervenciones.subintervencion",
+    "pk": 24,
+    "fields": {
+      "nombre": "Notificación de acreditación mes 6",
+      "tipo_intervencion": 10
+    }
+  },
+  {
+    "model": "intervenciones.subintervencion",
+    "pk": 25,
+    "fields": {
+      "nombre": "Certificacion mes 1",
+      "tipo_intervencion": 13
+    }
+  },
+  {
+    "model": "intervenciones.subintervencion",
+    "pk": 26,
+    "fields": {
+      "nombre": "Certificacion mes 2",
+      "tipo_intervencion": 13
+    }
+  },
+  {
+    "model": "intervenciones.subintervencion",
+    "pk": 27,
+    "fields": {
+      "nombre": "Certificacion mes 3",
+      "tipo_intervencion": 13
+    }
+  },
+  {
+    "model": "intervenciones.subintervencion",
+    "pk": 28,
+    "fields": {
+      "nombre": "Certificacion mes 4",
+      "tipo_intervencion": 13
+    }
+  },
+  {
+    "model": "intervenciones.subintervencion",
+    "pk": 29,
+    "fields": {
+      "nombre": "Certificacion mes 5",
+      "tipo_intervencion": 13
+    }
+  },
+  {
+    "model": "intervenciones.subintervencion",
+    "pk": 30,
+    "fields": {
+      "nombre": "Certificacion mes 6",
+      "tipo_intervencion": 13
     }
   }
 ]

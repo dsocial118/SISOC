@@ -1,6 +1,13 @@
 from django.db.models.signals import post_save, pre_delete, pre_save
 from django.dispatch import receiver
-from comedores.models.comedor import Observacion, Referente, Comedor
+from comedores.models.comedor import (
+    DocumentoRendicionFinal,
+    Observacion,
+    Referente,
+    Comedor,
+    RendicionCuentasFinal,
+    TipoDocumentoRendicionFinal,
+)
 from comedores.models.relevamiento import Relevamiento
 from comedores.services.clasificacion_comedor_service import ClasificacionComedorService
 from comedores.tasks import (
@@ -67,3 +74,10 @@ def send_referente_to_gestionar(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Relevamiento)
 def clasificacion_relevamiento(sender, instance, **kwargs):
     ClasificacionComedorService.create_clasificacion_relevamiento(instance)
+
+
+@receiver(post_save, sender=RendicionCuentasFinal)
+def crear_documentos_por_defecto(sender, instance, created, **kwargs):
+    if created:
+        for tipo in TipoDocumentoRendicionFinal.objects.filter(personalizado=False):
+            DocumentoRendicionFinal.objects.create(rendicion_final=instance, tipo=tipo)

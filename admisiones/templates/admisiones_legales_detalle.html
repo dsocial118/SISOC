@@ -1,0 +1,535 @@
+{% extends "includes/main.html" %};
+{% load static %}
+;
+{% load crispy_forms_tags %}
+;
+{% load user_extras %}
+;
+{% block title %}Expediente: {{ admision.num_expediente }}{% endblock %}
+;
+{% block titulo-pagina %}
+    {{ admision.num_expediente }} - {{ admision.estado_legales| default_if_none:"Estado a definir" }}
+{% endblock %}
+;
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <div class="breadcrumb-item">
+            <a href="{% url 'admisiones_legales_listar' %}">Legales - Expedientes</a>
+        </div>
+        <div class="breadcrumb-item active">{{ admision.num_expediente }}</div>
+    </ol>
+{% endblock %}
+;
+{% block content %}
+    <div class="row justify-content-between d-print-none mx-1 mb-3">
+        <div class="col-auto">
+            <a href="{% url 'admisiones_legales_listar' %}"
+               class="btn btn-secondary mr-1">Volver</a>
+        </div>
+        <div class="col-auto">
+            {% if admision.estado_legales == "Rectificado" or admision.estado_legales == None %}
+                <button type="button"
+                        class="btn btn-primary mr-1"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalValidaciosJuridicos">Validación Jurídicos</button>
+                <button type="button"
+                        class="btn btn-primary mr-1"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalLegalesNumIF">Agregar Número IF</button>
+                <button type="button"
+                        class="btn btn-primary mr-1"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalFormReso">Formulario RESO</button>
+                <button type="button"
+                        class="btn btn-primary mr-1"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalFormConvenio">Formulario Proyecto de Convenio</button>
+                {% if not formulario_proyecto_completo and not formulario_reso_completo and not admision.legales_num_if %}
+                    <button type="button"
+                            class="btn btn-warning mr-1"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalRectificar">Rectificar</button>
+                {% endif %}
+            {% endif %}
+            {% if admision.estado_legales == "Pendiente de Validacion" %}
+                <button type="button"
+                        class="btn btn-primary mr-1"
+                        data-bs-toggle="modal"
+                        data-bs-tipo="Informe SGA"
+                        data-bs-label="Cargue el IF del Informe SGA"
+                        data-bs-target="#modalDocumentoExpediente">Informe SGA</button>
+            {% elif admision.estado_legales == "Informe SGA Generado" %}
+                <button type="button"
+                        class="btn btn-primary mr-1"
+                        data-bs-toggle="modal"
+                        data-bs-tipo="Resolución"
+                        data-bs-label="Cargue el Número de Resolución"
+                        data-bs-target="#modalDocumentoExpediente">Resolución</button>
+            {% elif admision.estado_legales == "Resolución Generada" %}
+                <button type="button"
+                        class="btn btn-primary mr-1"
+                        data-bs-toggle="modal"
+                        data-bs-tipo="Firma Convenio"
+                        data-bs-label="Cargue el IF del Convenio"
+                        data-bs-target="#modalDocumentoExpediente">Firma Convenio</button>
+            {% elif admision.estado_legales == "Convenio Firmado" %}
+                <button type="button"
+                        class="btn btn-primary mr-1"
+                        data-bs-toggle="modal"
+                        data-bs-tipo="Numero CONV"
+                        data-bs-label="Cargue el Número del Convenio"
+                        data-bs-target="#modalDocumentoExpediente">Cargar número CONV</button>
+            {% endif %}
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-4">
+            <div class="card card-primary card-outline h-100">
+                <div class="card-header">
+                    <h2 class="card-title fw-bold fs-3">Expediente</h2>
+                </div>
+                <div class="card-body card-comments">
+                    <ul class="nav nav-pills flex-column">
+                        <li class="nav-item">
+                            <div class="comment-text">
+                                Estado expediente:
+                                <span class="fw-bold">{{ admision.estado_legales| default_if_none:"-" }}</span>
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <div class="comment-text">
+                                Número de IF:
+                                <span class="fw-bold">{{ admision.legales_num_if |default_if_none:"-" }}</span>
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <div class="comment-text">
+                                Formulario RESO:
+                                {% if formulario_reso_completo %}
+                                    <i class="bi bi-check-circle-fill text-success"></i>
+                                {% else %}
+                                    <i class="bi bi-x-circle-fill text-danger"></i>
+                                {% endif %}
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <div class="comment-text">
+                                Formulario Proyecto de Convenio:
+                                {% if formulario_proyecto_completo %}
+                                    <i class="bi bi-check-circle-fill text-success"></i>
+                                {% else %}
+                                    <i class="bi bi-x-circle-fill text-danger"></i>
+                                {% endif %}
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <div class="comment-text">
+                                Informe SGA:
+                                {% if value_informe_sga %}
+                                    <span class="fw-bold">{{ value_informe_sga }}</span> <i class="bi bi-check-circle-fill text-success"></i>
+                                {% else %}
+                                    <i class="bi bi-x-circle-fill text-danger"></i>
+                                {% endif %}
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <div class="comment-text">
+                                Resolución:
+                                {% if value_resolucion %}
+                                    <span class="fw-bold">{{ value_resolucion }}</span> <i class="bi bi-check-circle-fill text-success"></i>
+                                {% else %}
+                                    <i class="bi bi-x-circle-fill text-danger"></i>
+                                {% endif %}
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <div class="comment-text">
+                                Firma Convenio:
+                                {% if value_firma_convenio %}
+                                    <span class="fw-bold">{{ value_firma_convenio }}</span> <i class="bi bi-check-circle-fill text-success"></i>
+                                {% else %}
+                                    <i class="bi bi-x-circle-fill text-danger"></i>
+                                {% endif %}
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <div class="comment-text">
+                                Numero CONV:
+                                {% if value_numero_conv %}
+                                    <span class="fw-bold">{{ value_numero_conv }}</span> <i class="bi bi-check-circle-fill text-success"></i>
+                                {% else %}
+                                    <i class="bi bi-x-circle-fill text-danger"></i>
+                                {% endif %}
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-4">
+            <div class="card card-primary card-outline h-100">
+                <div class="card-header">
+                    <h2 class="card-title fw-bold fs-3">Admisión</h2>
+                </div>
+                <div class="card-body card-comments">
+                    <ul class="nav nav-pills flex-column">
+                        <li class="nav-item">
+                            <div class="comment-text">
+                                Tipo Convenio:
+                                <span class="fw-bold">{{ admision.tipo_convenio.nombre| default_if_none:"-" }}</span>
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <div class="comment-text">
+                                Estado:
+                                <span class="fw-bold">{{ admision.estado.nombre| default_if_none:"-" }}</span>
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <div class="comment-text">
+                                Fecha:
+                                <span class="fw-bold">{{ admision.creado |date:'d/m/Y' }}</span>
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <div class="comment-text">
+                                Número de Expediente:
+                                <span class="fw-bold">{{ admision.num_expediente |default_if_none:"-" }}</span>
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <div class="comment-text">
+                                Número de IF:
+                                <span class="fw-bold">{{ admision.num_if |default_if_none:"-" }}</span>
+                            </div>
+                        </li>
+                        {% if pdf_url %}
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Informe Técnico:
+                                    <a href="{{ pdf_url }}" class="btn btn-primary btn-sm" target="_blank">📄 PDF</a>
+                                </div>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-4">
+            <div class="card card-primary card-outline">
+                <div class="card-header">
+                    <h2 class="card-title fw-bold fs-3">Comedor</h2>
+                </div>
+                <div class="card-body card-comments p-3">
+                    <ul class="nav nav-pills flex-column">
+                        <li class="nav-item">
+                            <div class="comment-text ">
+                                Nombre:
+                                <a href="{% url 'comedor_detalle' admision.comedor.id %}"><span class="fw-bold">{{ admision.comedor.nombre }}</span></a>
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <div class="comment-text">
+                                Tipo Comedor:
+                                <span class="fw-bold">{{ admision.comedor.tipocomedor| default_if_none:"-" }}</span>
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <div class="comment-text">
+                                Programa:
+                                <span class="fw-bold">{{ admision.comedor.programa| default_if_none:"-" }}</span>
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <div class="comment-text">
+                                Organización:
+                                <span class="fw-bold">{{ admision.comedor.organizacion | default_if_none:"-" }}</span>
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <div class="comment-text">
+                                Provincia:
+                                <span class="fw-bold">{{ admision.comedor.provincia | default_if_none:"-" }} - {{ admision.comedor.municipio | default_if_none:"-" }} - {{ admision.comedor.localidad | default_if_none:"-" }}</span>
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <div class="comment-text">
+                                Calle:
+                                <span class="fw-bold">{{ admision.comedor.calle | default_if_none:"-" }} {{ admision.comedor.numero | default_if_none:"-" }} - Piso: {{ admision.comedor.piso | default_if_none:"-" }} {{ admision.comedor.departamento | default_if_none:"" }}</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title fw-bold fs-3">Documentación</h2>
+                </div>
+                <div class="card-body card-comments p-0 pb-1">
+                    <!-- CONTENEDOR DE DOCUMENTOS -->
+                    <div class="container mt-2 table-responsive">
+                        <table class="table table-striped table-bordered table-hover table-sm"
+                               id="tablaDocumentos">
+                            <thead>
+                                <tr>
+                                    <th>Documento</th>
+                                    <th>Archivo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for doc in documentos %}
+                                    <tr id="fila-{{ doc.id }}">
+                                        <td class="ps-3">{{ doc.nombre }}</td>
+                                        <td>
+                                            <a href="{{ doc.archivo_url }}"
+                                               target="_blank"
+                                               class="btn btn-primary btn-sm">Ver Archivo</a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 mt-3">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title fw-bold fs-3">Historial de movimientos</h2>
+                </div>
+                <div class="card-body card-comments p-0 pb-1">
+                    <div class="container mt-2 table-responsive">
+                        <table class="table table-striped table-bordered table-hover table-sm"
+                               id="tablaDocumentos">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Campo</th>
+                                    <th></th>
+                                    <th>Usuario</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cambio in historial_cambios %}
+                                    <tr id="fila-{{ doc.id }}">
+                                        <td class="ps-3">{{ cambio.fecha|date:'d/m/Y H:i' }}</td>
+                                        <td class="ps-3">{{ cambio.campo }}</td>
+                                        <td class="ps-3">{{ cambio.valor_nuevo| default_if_none:"-" }}</td>
+                                        <td class="ps-3">{{ cambio.usuario.username }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Modal para confirmar Validacion Juridicos -->
+    <div class="modal fade"
+         id="modalValidaciosJuridicos"
+         tabindex="-1"
+         aria-labelledby="modalValidaciosJuridicosLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalValidaciosJuridicosLabel">Confirmar cambio de estado "Pendiente de Validación"</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                </div>
+                <div class="modal-body mb-2">¿Estás seguro que queres cambiar el estado a "Pendiente de Validación"?</div>
+                <div class="modal-footer">
+                    <form id="validacionjuridicosForm" method="POST" action="">
+                        {% csrf_token %}
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit"
+                                id="ValidaciosJuridicosId"
+                                name="ValidacionJuridicos"
+                                class="btn btn-primary">Confirmar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- MODAL RECTIFICAR -->
+    <div class="modal fade"
+         id="modalRectificar"
+         tabindex="-1"
+         aria-labelledby="modalRectificarLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <form method="POST" action="">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title">Enviar a Rectificar</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            {{ form.observaciones.label_tag }}
+                            {{ form.observaciones }}
+                            {% if form.observaciones.errors %}<div class="text-danger">{{ form.observaciones.errors }}</div>{% endif %}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit"
+                                class="btn btn-warning"
+                                name="btnObservaciones"
+                                id="btnObservaciones_id">Enviar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- MODAL Form Reso -->
+    <div class="modal fade"
+         id="modalFormReso"
+         tabindex="-1"
+         aria-labelledby="modalFormResoLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="POST" action="">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title">Formulario RESO</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        {% for field in reso_form %}<div class="col-md-6 mb-3">{{ field|as_crispy_field }}</div>{% endfor %}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" name="btnRESO" id="btnRESO_id">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- MODAL Form Proyecto de Convenio -->
+    <div class="modal fade"
+         id="modalFormConvenio"
+         tabindex="-1"
+         aria-labelledby="modalFormConvenioLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="POST" action="">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title">Formulario Proyecto de Convenio</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        {% for field in proyecto_form %}<div class="col-md-6 mb-3">{{ field|as_crispy_field }}</div>{% endfor %}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit"
+                                class="btn btn-primary"
+                                name="btnProyectoConvenio"
+                                id="btnProyectoConvenio_id">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- MODAL Numero IF -->
+    <div class="modal fade"
+         id="modalLegalesNumIF"
+         tabindex="-1"
+         aria-labelledby="modalLegalesNumIFLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="POST" action="">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title">Agrege el numero de IF</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">{{ form_legales_num_if.legales_num_if|as_crispy_field }}</div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit"
+                                class="btn btn-primary"
+                                name="btnLegalesNumIF"
+                                id="btnLegalesNumIF_id">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- MODAL Documento Expediente -->
+    <div class="modal fade"
+         id="modalDocumentoExpediente"
+         tabindex="-1"
+         aria-labelledby="modalDocumentoExpedienteLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="POST" action="">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalDocumentoExpedienteLabel"></h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="tipo_id" name="tipo" value />
+                        <p id="valueLabel">Label</p>
+                        {{ documentos_form.value|as_crispy_field }}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit"
+                                class="btn btn-primary"
+                                name="btnDocumentoExpediente"
+                                id="btnDocumentoExpediente_id">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block customJS %}
+    <script>
+  const modal = document.getElementById('modalDocumentoExpediente');
+  modal.addEventListener('show.bs.modal', function (event) {
+    const button = event.relatedTarget;
+    const tipo = button.getAttribute('data-bs-tipo');
+    const label = button.getAttribute('data-bs-label');
+    const tipoInput = modal.querySelector('#tipo_id');
+    tipoInput.value = tipo;
+
+    const modalTitle = modal.querySelector('#modalDocumentoExpedienteLabel');
+    modalTitle.textContent = tipo;
+    const modalLabel = modal.querySelector('#valueLabel');
+    modalLabel.textContent = label;
+  });
+    </script>
+{% endblock %}
