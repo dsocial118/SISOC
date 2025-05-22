@@ -5,6 +5,7 @@ from comedores.models.comedor import (
     DocumentoRendicionFinal,
     EstadoDocumentoRendicionFinal,
 )
+from historial.services.historial_service import HistorialService
 
 
 class RendicionCuentasFinalService:
@@ -17,6 +18,11 @@ class RendicionCuentasFinalService:
         documento.fecha_modificacion = timezone.now()
         documento.save()
 
+        HistorialService.registrar_historial(
+            accion="Adjuntar documento",
+            instancia=documento,
+        )
+
     @staticmethod
     def adjuntar_archivo_a_documento(documento_id, archivo):
         documento = get_object_or_404(DocumentoRendicionFinal, id=documento_id)
@@ -27,6 +33,7 @@ class RendicionCuentasFinalService:
         RendicionCuentasFinalService.actualizar_documento_con_archivo(
             documento, archivo
         )
+
         return True, documento
 
     @staticmethod

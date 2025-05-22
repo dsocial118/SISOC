@@ -280,6 +280,7 @@ class RendicionCuentasFinal(models.Model):
         tipo_custom, _created = TipoDocumentoRendicionFinal.objects.get_or_create(
             nombre=nombre, personalizado=True
         )
+
         return DocumentoRendicionFinal.objects.create(
             rendicion_final=self, tipo=tipo_custom, fecha_modificacion=timezone.now()
         )
