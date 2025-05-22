@@ -1,9 +1,6 @@
-from django.shortcuts import render, get_object_or_404
 from django.views.generic import ListView, DetailView
-from acompanamientos.models.acompanamiento import InformacionRelevante, Prestacion
-from admisiones.models.admisiones import Admision
+from admisiones.models.admisiones import Admision, InformeTecnicoBase, DocumentosExpediente
 from comedores.models.comedor import Comedor
-from comedores.models.relevamiento import Relevamiento
 from acompanamientos.acompanamiento_service import AcompanamientoService
 from django.db.models import Q
 
@@ -19,28 +16,37 @@ class AcompanamientoDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         comedor = self.object
         context["hitos"] = AcompanamientoService.obtener_hitos(comedor)
-        context["info_relevante"] = InformacionRelevante.objects.filter(comedor=comedor).first()
-        relevamiento = (
-            Relevamiento.objects.filter(comedor=comedor).order_by("-fecha_visita").first()
-        )
-        prestacion = (
-            relevamiento.prestacion if relevamiento and relevamiento.prestacion else None
-        )
-        dias = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"]
+        
+        admision = Admision.objects.filter(comedor=comedor).exclude(num_if__isnull=True).exclude(num_if="").order_by('-id').first()
+        context["admision"] = admision
 
-        prestaciones_dias = []
-        if prestacion:
-            for dia in dias:
-                prestaciones_dias.append(
-                    {
-                        "dia": dia,
-                        "desayuno": getattr(prestacion, f"{dia}_desayuno_actual", "-"),
-                        "almuerzo": getattr(prestacion, f"{dia}_almuerzo_actual", "-"),
-                        "merienda": getattr(prestacion, f"{dia}_merienda_actual", "-"),
-                        "cena": getattr(prestacion, f"{dia}_cena_actual", "-"),
-                    }
-                )
-        context["prestaciones_dias"] = prestaciones_dias
+        info_relevante = None
+        if admision:
+            info_relevante = InformeTecnicoBase.objects.filter(admision__comedor=comedor).order_by('-id').first()
+        context["info_relevante"] = info_relevante
+
+        context["numero_if"] = admision.num_if if admision else None
+
+        resolucion = None
+        if admision:
+            doc_resolucion = DocumentosExpediente.objects.filter(admision__comedor=comedor, tipo="Resolución").order_by('-creado').first()
+            if doc_resolucion:
+                resolucion = doc_resolucion.value or doc_resolucion.nombre
+
+        context["numero_resolucion"] = resolucion
+
+
+       # Prestaciones
+        if info_relevante:
+            context["prestaciones_dias"] = [
+                {"tipo": "Desayuno", "cantidad": info_relevante.prestaciones_desayuno},
+                {"tipo": "Almuerzo", "cantidad": info_relevante.prestaciones_almuerzo},
+                {"tipo": "Merienda", "cantidad": info_relevante.prestaciones_merienda},
+                {"tipo": "Cena", "cantidad": info_relevante.prestaciones_cena},
+            ]
+        else:
+            context["prestaciones_dias"] = []
+
         return context
 
 
@@ -55,7 +61,7 @@ class ComedoresAcompanamientoListView(ListView):
 
         if user.is_superuser:
             return (
-                Admision.objects.filter(estado__nombre="Test")
+                Admision.objects.filter(estado__nombre="Finalizada")
                 .values(
                     "comedor__id",
                     "comedor__nombre",
