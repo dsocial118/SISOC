@@ -36,6 +36,9 @@ from io import BytesIO
 from django.forms.models import model_to_dict
 from xhtml2pdf import pisa
 
+from acompanamientos.acompanamiento_service import AcompanamientoService
+
+
 
 class AdmisionService:
 
@@ -533,3 +536,17 @@ class AdmisionService:
             print(form.errors)
 
         return redirect(request.path_info)
+    
+    @staticmethod
+    def comenzar_acompanamiento(admision_id):
+        admision = get_object_or_404(Admision, pk=admision_id)
+        estado_admitido = EstadoAdmision.objects.get(
+            nombre="Admitido - pendiente ejecución"
+        )
+        admision.estado = estado_admitido
+        admision.save()
+
+        # Importar datos a la app de Acompañamiento
+        AcompanamientoService.importar_datos_desde_admision(admision.comedor)
+
+        return admision
