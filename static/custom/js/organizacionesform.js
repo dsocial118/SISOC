@@ -1,30 +1,66 @@
 $(document).ready(function () {
-
     const addFirmanteButton = document.getElementById("add-firmante");
     const firmantesContainer = document.getElementById("firmantes-container");
     const totalForms = document.querySelector("#id_firmantes-TOTAL_FORMS");
+    const tipoOrgSelect = document.getElementById("id_tipo_organizacion");
 
-    addFirmanteButton.addEventListener("click", function () {
-        const newForm = firmantesContainer.children[0].cloneNode(true);
-        const formRegex = new RegExp(`-0-`, "g");
-        Array.from(newForm.querySelectorAll("[name], [id], [for]")).forEach(function (element) {
-            if (element.name) {
-                element.name = element.name.replace(formRegex, `-${totalForms.value}-`);
+    const rolesPorTipoOrg = {
+        "Personería jurídica": ["Presidente", "Tesorero", "Secretario"],
+        "Personería jurídica eclesiástica": ["Obispo", "Apoderado 1", "Apoderado 2"],
+        "Asociación de hecho": ["Firmante 1", "Firmante 2"]
+    };
+
+    function actualizarRoles() {
+        const tipoOrgTexto = tipoOrgSelect.options[tipoOrgSelect.selectedIndex]?.text;
+        const rolesValidos = rolesPorTipoOrg[tipoOrgTexto];
+
+        const selectsRol = firmantesContainer.querySelectorAll("select[name$='-rol']");
+        selectsRol.forEach(function (select) {
+            const opciones = Array.from(select.options);
+
+            // Mostrar solo las opciones válidas, ocultar el resto
+            opciones.forEach(function (opcion) {
+                if (opcion.value === "") {
+                    opcion.hidden = false;
+                    return;
+                }
+                if (!rolesValidos) {
+                    opcion.hidden = true;
+                } else {
+                    opcion.hidden = !rolesValidos.includes(opcion.text);
+                }
+            });
+
+            // Resetear si la opción no es válida
+            if (!rolesValidos || !rolesValidos.includes(select.options[select.selectedIndex]?.text)) {
+                select.selectedIndex = 0;
             }
-            if (element.id) {
-                element.id = element.id.replace(formRegex, `-${totalForms.value}-`);
-            }
-            if (element.htmlFor) {
-                element.htmlFor = element.htmlFor.replace(formRegex, `-${totalForms.value}-`);
-            }
+
+            // Deshabilitar el select si no hay tipo de organización
+            select.disabled = !rolesValidos;
         });
+    }
+
+    // Clonado del formulario de firmante
+    addFirmanteButton.addEventListener("click", function () {
+        const emptyFormTemplate = document.getElementById("empty-form").innerHTML;
+        const formHtml = emptyFormTemplate.replace(/__prefix__/g, totalForms.value);
+
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = formHtml;
+
+        const newForm = tempDiv.firstElementChild;
         firmantesContainer.appendChild(newForm);
+
         totalForms.value = parseInt(totalForms.value) + 1;
+
+        actualizarRoles(); // Para actualizar roles según tipo de organización
     });
 
+
+    // Eliminación de firmante
     firmantesContainer.addEventListener("click", function (e) {
         if (e.target.classList.contains("remove-firmante")) {
-            // Verificar si hay más de un formulario antes de eliminar
             if (firmantesContainer.children.length > 1) {
                 e.target.closest(".form-row").remove();
                 totalForms.value = parseInt(totalForms.value) - 1;
@@ -34,4 +70,8 @@ $(document).ready(function () {
         }
     });
 
+    // Evento de cambio del tipo de organización
+    tipoOrgSelect.addEventListener("change", actualizarRoles);
+
+    actualizarRoles(); // Ejecutar al cargar
 });
