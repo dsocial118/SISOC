@@ -2,7 +2,6 @@ import os
 from typing import Any
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.db.models import Q
 from django.db.models.base import Model
 from django.forms import BaseModelForm
 from django.http import HttpResponse
@@ -736,22 +735,23 @@ class RendicionCuentasFinalDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        rendicion = self.object
 
         context["documentos"] = (
             RendicionCuentasFinalService.get_documentos_rendicion_cuentas_final(
-                self.get_object()
+                rendicion
             )
         )
 
         context["historial"] = (
             HistorialService.get_historial_documentos_by_rendicion_cuentas_final(
-                self.get_object()
+                rendicion
             )
         )
 
-        context["comedor_id"] = self.object.comedor.id
-        context["comedor_nombre"] = self.object.comedor.nombre
-        context["fisicamente_presentada"] = self.object.fisicamente_presentada
+        context["comedor_id"] = rendicion.comedor.id
+        context["comedor_nombre"] = rendicion.comedor.nombre
+        context["fisicamente_presentada"] = rendicion.fisicamente_presentada
 
         return context
 
@@ -770,7 +770,7 @@ def adjuntar_documento_rendicion_cuenta_final(request):
     else:
         messages.success(request, "Archivo adjuntado correctamente.")
 
-    return redirect("rendicion_cuentas_final", pk=_documento.rendicion_final.comedor.id)
+    return redirect(request.META.get("HTTP_REFERER", "/"))
 
 
 @require_POST
@@ -791,18 +791,17 @@ def crear_documento_rendicion_cuentas_final(request, rendicion_id):
             documento, archivo
         )
 
-    return redirect("rendicion_cuentas_final", pk=rendicion.comedor.id)
+    return redirect(request.META.get("HTTP_REFERER", "/"))
 
 
 @require_POST
 def eliminar_documento_rendicion_cuentas_final(request, documento_id):
     documento = get_object_or_404(DocumentoRendicionFinal, id=documento_id)
 
-    comedor_id = documento.rendicion_final.comedor.id
     documento.delete()
     messages.success(request, "Documento eliminado correctamente.")
 
-    return redirect("rendicion_cuentas_final", pk=comedor_id)
+    return redirect(request.META.get("HTTP_REFERER", "/"))
 
 
 @require_POST
@@ -822,7 +821,7 @@ def validar_documento_rendicion_cuentas_final(request, documento_id):
     next_url = request.POST.get("next") or request.META.get("HTTP_REFERER")
     if next_url:
         return redirect(next_url)
-    return redirect("rendicion_cuentas_final", pk=documento.rendicion_final.comedor.id)
+    return redirect(request.META.get("HTTP_REFERER", "/"))
 
 
 class DocumentosRendicionCuentasFinalListView(ListView):
@@ -833,24 +832,8 @@ class DocumentosRendicionCuentasFinalListView(ListView):
     def get_queryset(self):
         user = self.request.user
         query = self.request.GET.get("busqueda")
-        qs = DocumentoRendicionFinal.objects.none()
 
-        if user.groups.filter(name="Area Contable").exists() or user.is_superuser:
-            qs = qs | DocumentoRendicionFinal.objects.filter(tipo__validador="Contable")
-        if user.groups.filter(name="Area Legales").exists() or user.is_superuser:
-            qs = qs | DocumentoRendicionFinal.objects.filter(tipo__validador="Legales")
-
-        if query:
-            qs = qs.filter(
-                Q(rendicion_final__comedor__nombre__icontains=query),
-                Q(tipo__nombre__icontains=query),
-            )
-
-        qs = (
-            qs.filter(estado__nombre__in=["En análisis", "Subsanar", "Validado"])
-            .select_related("tipo", "estado", "rendicion_final__comedor")
-            .order_by("-fecha_modificacion")
-        )
+        qs = RendicionCuentasFinalService.filter_documentos_por_area(user, query)
 
         return qs
 
@@ -871,7 +854,15 @@ def subsanar_documento_rendicion_cuentas_final(request, documento_id):
 
     messages.success(request, "Documento enviado a subsanar correctamente.")
 
-    next_url = request.POST.get("next") or request.META.get("HTTP_REFERER")
-    if next_url:
-        return redirect(next_url)
-    return redirect("rendicion_cuentas_final", pk=documento.rendicion_final.comedor.id)
+    return redirect(request.META.get("HTTP_REFERER", "/"))
+
+
+@require_POST
+def switch_rendicion_final_fisicamente_presentada(request, rendicion_id):
+    rendicion_final = get_object_or_404(RendicionCuentasFinal, id=rendicion_id)
+    rendicion_final.fisicamente_presentada = not rendicion_final.fisicamente_presentada
+    rendicion_final.save()
+
+    messages.success(request, "Estado de revisión actualizado.")
+
+    return redirect(request.META.get("HTTP_REFERER", "/"))
