@@ -99,6 +99,11 @@ class OrganizacionDetailView(DetailView):
     template_name = "organizacion_detail.html"
     context_object_name = "organizacion"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["firmantes"] = self.object.firmantes.select_related("rol")
+        return context
+
 
 class OrganizacionDeleteView(DeleteView):
     model = Organizacion
