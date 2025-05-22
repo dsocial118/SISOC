@@ -7,6 +7,18 @@ User = get_user_model()
 
 
 class Historial(models.Model):
+    """
+    Modelo para almacenar registros históricos de acciones realizadas por usuarios sobre cualquier instancia.
+
+    Campos:
+        fecha (DateTimeField): Marca de tiempo cuando se creó el registro.
+        usuario (ForeignKey a User): Usuario que realizó la acción. Puede ser nulo o estar en blanco.
+        accion (CharField): Descripción de la acción realizada.
+        content_type (ForeignKey a ContentType): Modelo de la instancia afectada.
+        object_id (CharField): ID del objeto afectado.
+        objeto (GenericForeignKey): Relación genérica al objeto afectado por la acción.
+        diferencias (JSONField): Campo opcional para almacenar diferencias o cambios en formato JSON.
+    """
     fecha = models.DateTimeField(auto_now_add=True)
     usuario = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
     accion = models.CharField(max_length=255)
