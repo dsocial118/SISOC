@@ -43,8 +43,36 @@
         const subIntervencionSelect = document.getElementById("id_subintervencion");
 
         nextStep.addEventListener("click", function () {
-            step1.classList.add("d-none");
-            step2.classList.remove("d-none");
+            let formStep1 = Array.from(step1.querySelectorAll("select[required]"));
+            const isValid = formStep1.every(input => {
+                if (input.tagName === "SELECT") {
+                    return input.value !== "";
+                }
+                return input.checkValidity();
+            });
+
+            if (isValid) {
+                // Si es válido, ocultar paso 1 y mostrar paso 2
+                step1.classList.add("d-none");
+                step2.classList.remove("d-none");
+            } else {
+                // Resaltar campos inválidos
+                formStep1.forEach(input => {
+                    if (input.tagName === "SELECT") {
+                        if (input.value === "") {
+                            input.classList.add("is-invalid");
+                        } else {
+                            input.classList.remove("is-invalid");
+                        }
+                    } else {
+                        if (!input.checkValidity()) {
+                            input.classList.add("is-invalid");
+                        } else {
+                            input.classList.remove("is-invalid");
+                        }
+                    }
+                });
+            }
         });
 
         prevStep.addEventListener("click", function () {
@@ -61,6 +89,10 @@
         });
 
         tipoIntervencionSelect.addEventListener("change", function () {
+            cargarTipoIntervencion.call(this);
+        });
+
+        function cargarTipoIntervencion() {
             const tipoIntervencionId = this.value;
 
             // Limpiar las opciones actuales del select de subintervenciones
@@ -82,7 +114,9 @@
                     })
                     .catch(error => console.error("Error al cargar subintervenciones:", error));
             }
-        });
+        }
+
+        cargarTipoIntervencion.call(tipoIntervencionSelect);
     });
     </script>
 {% endblock %}

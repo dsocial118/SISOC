@@ -39,19 +39,24 @@
                                            title="Ver detalles">{{ comedor.nombre }}</a>
                                     </td>
                                     <td>{{ comedor.tipocomedor }}</td>
-                                    <td>
-                                        {{ comedor.provincia | default_if_none:"-" }},
-                                        {{ comedor.municipio | default_if_none:"-" }},
-                                        {{ comedor.localidad | default_if_none:"-" }},
-                                        {{ comedor.barrio | default_if_none:"-" }}
-                                    </td>
+                                    <td>{{ comedor.provincia | default_if_none:"-" }}</td>
                                     <td>{{ comedor.calle | default_if_none:"-" }} {{ comedor.numero | default_if_none:"-" }}</td>
                                     <td>{{ comedor.referente.nombre| default_if_none:"-" }}, {{ comedor.referente.apellido | default_if_none:"-" }}</td>
                                     <td>{{ comedor.referente.celular | default_if_none:"-" }}</td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            <a href="{% url 'admisiones_tecnicos_crear' comedor.id %}"
-                                               class="btn btn-primary btn-sm">Ver</a>
+                                            {% if comedor.admision_id %}
+                                                <a href="{% url 'admisiones_tecnicos_editar' comedor.admision_id %}"
+                                                   class="btn btn-warning btn-sm">
+                                                    Editar
+                                                    {% if comedor.estado_legales == "A Rectificar" %}
+                                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">Rectificar</span>
+                                                    {% endif %}
+                                                </a>
+                                            {% else %}
+                                                <a href="{% url 'admisiones_tecnicos_crear' comedor.id %}"
+                                                   class="btn btn-primary btn-sm">Crear</a>
+                                            {% endif %}
                                         </div>
                                     </td>
                                 </tr>
