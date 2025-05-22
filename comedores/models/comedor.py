@@ -365,6 +365,18 @@ class DocumentoRendicionFinal(models.Model):
     observaciones = models.CharField(max_length=255, blank=True, null=True)
     fecha_modificacion = models.DateTimeField(null=True, blank=True)
 
+    @property
+    def editable(self):
+        return self.estado.nombre in {"No presentado", "Subsanar"}
+
+    @property
+    def validable(self):
+        return self.tipo.validador == "Dupla" and self.estado.nombre == "En análisis"
+
+    @property
+    def eliminable(self):
+        return self.tipo.personalizado and self.estado.nombre == "En análisis"
+
     class Meta:
         indexes = [
             models.Index(fields=["rendicion_final"]),
