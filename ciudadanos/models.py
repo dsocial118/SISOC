@@ -1646,7 +1646,7 @@ class Direccion(models.Model):
         return f"{self.nombre}"
 
 
-# TODO: Unificar con el modelo Intervencion de Comedores
+# TODO: Unificar con el modelo Intervencion de intervenciones
 class Intervencion(models.Model):
     """
     Guardado de las intervenciones realizadas a un ciudadano.

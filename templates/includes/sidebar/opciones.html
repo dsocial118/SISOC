@@ -46,7 +46,7 @@
             </p>
         </a>
         <ul class="nav nav-treeview">
-            {% if user|has_group:"Comedores" %}
+            {% if user|has_group:"Comedores" or user|has_group:"Tecnico Comedor" or user|has_group:"Abogado Dupla" %}
                 <li class="nav-item">
                     <a href="{% url 'comedores' %}"
                        class="nav-link {% if 'comedores/listar' in pagina_actual %}active{% endif %}">
@@ -70,7 +70,7 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="#" class="nav-link ms-3">
+                            <a href="{% url 'admisiones_legales_listar' %}" class="nav-link ms-3">
                                 <i class="far fa-dot-circle nav-icon"></i>
                                 <p>Legales</p>
                             </a>
@@ -82,6 +82,15 @@
                        class="nav-link {% if 'acompanamiento' in pagina_actual %}active{% endif %}">
                         <i class="nav-icon bi bi-emoji-smile-fill"></i>
                         <p>Acompañamiento</p>
+                    </a>
+                </li>
+            {% endif %}
+            {% if user|has_group:"Area Legales" or user|has_group:"Area Contable" %}
+                <li class="nav-item">
+                    <a href="{% url 'rendicion_cuentas_final_listar' %}"
+                       class="nav-link {% if 'rendicion_cuentas_final/listar' in pagina_actual %}active{% endif %}">
+                        <i class="nav-icon bi bi-receipt"></i>
+                        <p>Rendicion de Cuentas Final</p>
                     </a>
                 </li>
             {% endif %}

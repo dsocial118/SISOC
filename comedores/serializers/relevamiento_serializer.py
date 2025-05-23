@@ -124,13 +124,52 @@ class RelevamientoSerializer(serializers.ModelSerializer):
             )
         if "referente_comedor" in self.initial_data:
             if "celular" in self.initial_data["referente_comedor"]:
+                # TODO: Crear una funcion que limpie todo
                 if self.initial_data["referente_comedor"]["celular"] == "":
                     self.initial_data["referente_comedor"]["celular"] = None
+                else:
+                    self.initial_data["referente_comedor"]["celular"] = (
+                        self.initial_data["referente_comedor"]["celular"]
+                        .strip()
+                        .replace(" ", "")
+                        .replace("-", "")
+                        .replace(".", "")
+                    )
+            if "documento" in self.initial_data["referente_comedor"]:
+                if self.initial_data["referente_comedor"]["documento"] == "":
+                    self.initial_data["referente_comedor"]["documento"] = None
+                else:
+                    self.initial_data["referente_comedor"]["documento"] = (
+                        self.initial_data["referente_comedor"]["documento"]
+                        .strip()
+                        .replace(" ", "")
+                        .replace("-", "")
+                        .replace(".", "")
+                    )
 
         if "responsable_relevamiento" in self.initial_data:
             if "celular" in self.initial_data["responsable_relevamiento"]:
                 if self.initial_data["responsable_relevamiento"]["celular"] == "":
                     self.initial_data["responsable_relevamiento"]["celular"] = None
+                else:
+                    self.initial_data["referente_comedor"]["celular"] = (
+                        self.initial_data["referente_comedor"]["celular"]
+                        .strip()
+                        .replace(" ", "")
+                        .replace("-", "")
+                        .replace(".", "")
+                    )
+            if "documento" in self.initial_data["responsable_relevamiento"]:
+                if self.initial_data["responsable_relevamiento"]["documento"] == "":
+                    self.initial_data["responsable_relevamiento"]["documento"] = None
+                else:
+                    self.initial_data["responsable_relevamiento"]["documento"] = (
+                        self.initial_data["responsable_relevamiento"]["documento"]
+                        .strip()
+                        .replace(" ", "")
+                        .replace("-", "")
+                        .replace(".", "")
+                    )
 
         if (
             "referente_comedor" in self.initial_data
