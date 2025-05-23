@@ -1,0 +1,23 @@
+[
+    {
+        "model": "admisiones.estadoadmision",
+        "pk": 1,
+        "fields": {
+            "nombre": "Pendiente"
+        }
+    },
+    {
+        "model": "admisiones.estadoadmision",
+        "pk": 2,
+        "fields": {
+            "nombre": "Finalizada"
+        }
+    },
+    {
+        "model": "admisiones.estadoadmision",
+        "pk": 3,
+        "fields": {
+            "nombre": "A Rectificar"
+        }
+    }
+]

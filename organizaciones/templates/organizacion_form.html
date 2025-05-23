@@ -58,6 +58,12 @@
                     <div class="card-body">
                         {{ firmante_formset.management_form }}
                         <div id="firmantes-container">
+                            <div id="empty-form" style="display:none">
+                                <div class="form-row">
+                                    {{ firmante_formset.empty_form|crispy }}
+                                    <button type="button" class="btn btn-danger remove-firmante my-3">Eliminar</button>
+                                </div>
+                            </div>
                             {% for form in firmante_formset %}
                                 <div class="form-row">
                                     {{ form|crispy }}
