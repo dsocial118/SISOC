@@ -153,12 +153,8 @@ class AsyncSendComedorToGestionar(threading.Thread):
                     "localidad": (
                         comedor.localidad.nombre if comedor.localidad else ""
                     ),
-                    "lote": (
-                        comedor.lote if comedor.lote else ""
-                    ),
-                    "manzana": (
-                        comedor.manzana if comedor.manzana else ""
-                    ),
+                    "lote": (comedor.lote if comedor.lote else ""),
+                    "manzana": (comedor.manzana if comedor.manzana else ""),
                     "partido": comedor.partido if comedor.partido else "",
                     "barrio": comedor.barrio if comedor.barrio else "",
                     "codigo_postal": (
