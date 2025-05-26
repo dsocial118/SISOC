@@ -31,8 +31,10 @@ class ExpedientesPagosDetailView(DetailView):
     template_name = "expedientespagos_detail.html"
     context_object_name = "expediente_pago"
 
-    def get_queryset(self):
-        return ExpedientePago.objects.all()
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["expediente"] = ExpedientesPagosService.obtener_expediente_pago(self.kwargs.get("pk"))
+        return context
 
 
 class ExpedientesPagosCreateView(CreateView):
@@ -41,8 +43,12 @@ class ExpedientesPagosCreateView(CreateView):
     fields = "__all__"
     success_url = reverse_lazy("expedientespagos:expedientespagos_list")
 
-    def get_queryset(self):
-        return ExpedientePago.objects.all()
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        comedor_id = self.kwargs.get("pk")
+        context["comedorid"] = comedor_id
+        context["form"] = ExpedientePagoForm()
+        return context
 
     def form_valid(self, form):
         form.instance.user = self.request.user
@@ -55,12 +61,17 @@ class ExpedientesPagosUpdateView(UpdateView):
     fields = "__all__"
     success_url = reverse_lazy("expedientespagos:expedientespagos_list")
 
-    def get_queryset(self):
-        return ExpedientePago.objects.all()
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        acompanamiento_id = self.kwargs.get("pk")
+        context["acompanamiento"] = acompanamiento_id
+        context["form"] = ExpedientePagoForm()
+        return context
 
     def form_valid(self, form):
         form.instance.user = self.request.user
         return super().form_valid(form)
+
 
 
 class ExpedientesPagosDeleteView(DeleteView):

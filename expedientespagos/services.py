@@ -50,6 +50,6 @@ class ExpedientesPagosService:
         return ExpedientePago.objects.filter(comedor=comedor)
 
     @staticmethod
-    def obtener_expediente_pago(comedor):
-        # Obtener un expediente de pago específico para un comedor
-        return ExpedientePago.objects.filter(comedor=comedor).first()
+    def obtener_expediente_pago(id_enviado):
+        # Obtener un expediente de pago
+        return ExpedientePago.objects.get(pk=id_enviado)

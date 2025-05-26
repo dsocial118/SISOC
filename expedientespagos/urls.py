@@ -8,12 +8,12 @@ urlpatterns = [
         name="expedientespagos_list",
     ),
     path(
-        "expedientespagos/<int:pk>/",
+        "expedientespagos/<int:pk>/detalle/",
         views.ExpedientesPagosDetailView.as_view(),
         name="expedientespagos_detail",
     ),
     path(
-        "expedientespagos/nuevo/",
+        "expedientespagos/<int:pk>/nuevo/",
         views.ExpedientesPagosCreateView.as_view(),
         name="expedientespagos_create",
     ),
