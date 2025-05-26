@@ -8,17 +8,12 @@ from admisiones.forms.admisiones_forms import (
     AdmisionForm,
     CaratularForm,
     LegalesRectificarForm,
-    ProyectoConvenioForm,
-    ResoForm,
-    LegalesNumIFForm,
 )
 from admisiones.models.admisiones import (
     Admision,
     ArchivoAdmision,
     ArchivoAdmision,
     InformeTecnicoPDF,
-    FormularioProyectoDeConvenio,
-    FormularioRESO,
 )
 from admisiones.services.admisiones_service import AdmisionService
 from django.views.generic.edit import FormMixin
@@ -272,20 +267,16 @@ class AdmisionesLegalesDetailView(FormMixin, DetailView):
     context_object_name = "admision"
     form_class = LegalesRectificarForm
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update(AdmisionService.legales_detalle_context(self.get_object()))
-        return context
-
     def get_success_url(self):
         return reverse("admisiones_legales_ver", kwargs={"pk": self.object.pk})
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update(AdmisionService.legales_detalle_context(self.get_object()))
+        context.update(AdmisionService.get_legales_context(self.get_object()))
         if "form" not in context:
             context["form"] = self.get_form()
         return context
+
 
     def post(self, request, *args, **kwargs):
         admision = self.get_object()
