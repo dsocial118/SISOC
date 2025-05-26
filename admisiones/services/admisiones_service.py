@@ -39,7 +39,6 @@ from xhtml2pdf import pisa
 from acompanamientos.acompanamiento_service import AcompanamientoService
 
 
-
 class AdmisionService:
 
     @staticmethod
@@ -536,7 +535,7 @@ class AdmisionService:
             print(form.errors)
 
         return redirect(request.path_info)
-    
+
     @staticmethod
     def comenzar_acompanamiento(admision_id):
         admision = get_object_or_404(Admision, pk=admision_id)

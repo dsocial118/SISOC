@@ -1,5 +1,6 @@
 from expedientespagos.models.expedientespagos import ExpedientePago
 
+
 class ExpedientesPagosService:
     @staticmethod
     def crear_expediente_pago(comedor, data):
@@ -18,14 +19,16 @@ class ExpedientesPagosService:
             comedor=comedor,
         )
         return expediente_pago
-    
+
     @staticmethod
     def actualizar_expediente_pago(expediente_pago, data):
         # Actualizar un expediente de pago existente
         expediente_pago.expediente_pago = data.get("expediente_pago")
         expediente_pago.resolucion_pago = data.get("resolucion_pago")
         expediente_pago.anexo = data.get("anexo")
-        expediente_pago.if_cantidad_de_prestaciones = data.get("if_cantidad_de_prestaciones")
+        expediente_pago.if_cantidad_de_prestaciones = data.get(
+            "if_cantidad_de_prestaciones"
+        )
         expediente_pago.if_pagado = data.get("if_pagado")
         expediente_pago.monto = data.get("monto")
         expediente_pago.numero_orden_pago = data.get("numero_orden_pago")
@@ -35,7 +38,7 @@ class ExpedientesPagosService:
         expediente_pago.save()
 
         return expediente_pago
-    
+
     @staticmethod
     def eliminar_expediente_pago(expediente_pago):
         # Eliminar un expediente de pago
@@ -45,9 +48,8 @@ class ExpedientesPagosService:
     def obtener_expedientes_pagos(comedor):
         # Obtener todos los expedientes de pago para un comedor
         return ExpedientePago.objects.filter(comedor=comedor)
-    
+
     @staticmethod
     def obtener_expediente_pago(comedor):
         # Obtener un expediente de pago específico para un comedor
         return ExpedientePago.objects.filter(comedor=comedor).first()
-    
