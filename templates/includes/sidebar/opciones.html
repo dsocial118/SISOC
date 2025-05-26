@@ -46,7 +46,7 @@
             </p>
         </a>
         <ul class="nav nav-treeview">
-            {% if user|has_group:"Comedores" or user|has_group:"Tecnico Comedor" or user|has_group:"Abogado Dupla" or user|has_group:"Area Legales"%}
+            {% if user|has_group:"Comedores" or user|has_group:"Tecnico Comedor" or user|has_group:"Abogado Dupla" or user|has_group:"Area Legales" %}
                 <li class="nav-item">
                     <a href="{% url 'comedores' %}"
                        class="nav-link {% if 'comedores/listar' in pagina_actual %}active{% endif %}">
