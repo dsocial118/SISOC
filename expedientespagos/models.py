@@ -29,13 +29,6 @@ class ExpedientePago(models.Model):
         related_name="expediente_pago",
         verbose_name="Comedor",
     )
-    acompanamiento = models.OneToOneField(
-        InformacionRelevante,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name="expediente_pago",
-        verbose_name="Acompañamiento",
-    )
     fecha_creacion = models.DateTimeField(
         auto_now_add=True, verbose_name="Fecha de creación"
     )
