@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.generic import ListView, DetailView
-from acompanamientos.models.acompanamiento import InformacionRelevante, Prestacion
+from admisiones.models.admisiones import Admision, InformeTecnicoBase, DocumentosExpediente
 from acompanamientos.models.hitos import Hitos
 from admisiones.models.admisiones import Admision
 from comedores.models.comedor import Comedor
