@@ -277,7 +277,6 @@ class AdmisionesLegalesDetailView(FormMixin, DetailView):
             context["form"] = self.get_form()
         return context
 
-
     def post(self, request, *args, **kwargs):
         admision = self.get_object()
 

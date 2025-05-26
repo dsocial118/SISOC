@@ -248,7 +248,7 @@ class InformeTecnicoBase(models.Model):
         default="Para revision",
         verbose_name="Estado de la Solicitud",
     )
-    
+
     def __str__(self):
         return f"{self.nombre_org} - {self.expediente_nro}"
 
@@ -425,9 +425,7 @@ class AdmisionHistorial(models.Model):
     campo = models.CharField(max_length=50)
     valor_anterior = models.TextField(blank=True, null=True)
     valor_nuevo = models.TextField(blank=True, null=True)
-    usuario = models.ForeignKey(
-        get_user_model(), on_delete=models.SET_NULL, null=True
-    )
+    usuario = models.ForeignKey(get_user_model(), on_delete=models.SET_NULL, null=True)
     fecha = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
