@@ -1,0 +1,61 @@
+{% extends "includes/main.html" %};
+{% load static %}
+;
+{% load crispy_forms_tags %}
+;
+{% block title %}Listado de Epedientes de pagos{% endblock %}
+;
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <div class="breadcrumb-item active">
+            <a href="{% url 'detalle_acompanamiento' comedor_id=comedorid %}">Expedientes de pagos</a>
+        </div>
+    </ol>
+{% endblock %}
+;
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Listado de Expedientes de Pagos</h1>
+    {% if expedientes_pagos %}
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Número de Expediente</th>
+                <th>Resolución de Pago</th>
+                <th>Monto</th>
+                <th>Anexo</th>
+                <th>Número de Orden de Pago</th>
+                <th>Fecha de pago al banco</th>
+                <th>Fecha de acreditación</th>
+                <th>Observaciones</th>
+                <th>Fecha de creación</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for expediente in expedientes_pagos %}
+            <tr>
+                <td>{{ expediente.expediente_pago }}</td>
+                <td>{{ expediente.resolucion_pago }}</td>
+                <td>{{ expediente.monto|floatformat:2 }}</td>
+                <td>{{ expediente.anexo }}</td>
+                <td>{{ expediente.numero_orden_pago }}</td>
+                <td>{{ expediente.fecha_pago_al_banco|date:"d/m/Y" }}</td>
+                <td>{{ expediente.fecha_acreditacion|date:"d/m/Y" }}</td>
+                <td>{{ expediente.observaciones }}</td>
+                <td>{{ expediente.fecha_creacion|date:"d/m/Y" }}</td>
+                <td>
+                    <a href="{% url 'expedientespagos_detail' expediente.id %}" class="btn btn-info btn-sm">Ver</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="alert alert-warning">
+        No hay expedientes de pagos registrados para este comedor.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

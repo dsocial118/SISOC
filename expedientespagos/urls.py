@@ -3,7 +3,7 @@ from expedientespagos import views
 
 urlpatterns = [
     path(
-        "expedientespagos/",
+        "expedientespagos/<int:pk>/",
         views.ExpedientesPagosListView.as_view(),
         name="expedientespagos_list",
     ),

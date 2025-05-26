@@ -25,12 +25,14 @@ class ExpedientePago(models.Model):
     comedor = models.OneToOneField(
         Comedor,
         on_delete=models.SET_NULL,
+        null=True,
         related_name="expediente_pago",
         verbose_name="Comedor",
     )
     acompanamiento = models.OneToOneField(
         InformacionRelevante,
         on_delete=models.SET_NULL,
+        null=True,
         related_name="expediente_pago",
         verbose_name="Acompañamiento",
     )
