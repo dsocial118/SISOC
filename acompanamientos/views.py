@@ -2,7 +2,11 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.generic import ListView, DetailView
-from admisiones.models.admisiones import Admision, InformeTecnicoBase, DocumentosExpediente
+from admisiones.models.admisiones import (
+    Admision,
+    InformeTecnicoBase,
+    DocumentosExpediente,
+)
 from acompanamientos.models.hitos import Hitos
 from admisiones.models.admisiones import Admision
 from comedores.models.comedor import Comedor
@@ -21,27 +25,42 @@ class AcompanamientoDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         comedor = self.object
         context["hitos"] = AcompanamientoService.obtener_hitos(comedor)
-        
-        admision = Admision.objects.filter(comedor=comedor).exclude(num_if__isnull=True).exclude(num_if="").order_by('-id').first()
+
+        admision = (
+            Admision.objects.filter(comedor=comedor)
+            .exclude(num_if__isnull=True)
+            .exclude(num_if="")
+            .order_by("-id")
+            .first()
+        )
         context["admision"] = admision
 
         info_relevante = None
         if admision:
-            info_relevante = InformeTecnicoBase.objects.filter(admision__comedor=comedor).order_by('-id').first()
+            info_relevante = (
+                InformeTecnicoBase.objects.filter(admision__comedor=comedor)
+                .order_by("-id")
+                .first()
+            )
         context["info_relevante"] = info_relevante
 
         context["numero_if"] = admision.num_if if admision else None
 
         resolucion = None
         if admision:
-            doc_resolucion = DocumentosExpediente.objects.filter(admision__comedor=comedor, tipo="Resolución").order_by('-creado').first()
+            doc_resolucion = (
+                DocumentosExpediente.objects.filter(
+                    admision__comedor=comedor, tipo="Resolución"
+                )
+                .order_by("-creado")
+                .first()
+            )
             if doc_resolucion:
                 resolucion = doc_resolucion.value or doc_resolucion.nombre
 
         context["numero_resolucion"] = resolucion
 
-
-       # Prestaciones
+        # Prestaciones
         if info_relevante:
             context["prestaciones_dias"] = [
                 {"tipo": "Desayuno", "cantidad": info_relevante.prestaciones_desayuno},
