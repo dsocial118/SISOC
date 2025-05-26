@@ -1,7 +1,7 @@
 {% extends "includes/main.html" %};
 {% load static %}
 ;
-{% load user_extras %}
+{% load static custom_filters %}
 ;
 {% block title %}Informe Técnico: {{ admision.comedor.nombre }}{% endblock %}
 ;
@@ -23,11 +23,13 @@
                    class="btn btn-secondary mr-1 backbutton-handler">Volver</a>
             </div>
             <div class="col-auto">
+                {% if user|has_group:"Abogado Dupla" %}
                 {% if object.estado != "Validado" %}
                     <a href="#"
                        class="btn btn-primary mr-1"
                        data-bs-toggle="modal"
                        data-bs-target="#cambiarEstadoModal">Cambiar estado</a>
+                {% endif %}
                 {% endif %}
                 {% if pdf %}<a href="{{ pdf.archivo.url }}" class="btn btn-primary" target="_blank">📄 PDF</a>{% endif %}
             </div>

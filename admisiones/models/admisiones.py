@@ -3,6 +3,7 @@ from users.models import User
 from comedores.models.comedor import Comedor
 from django.core.exceptions import ValidationError
 from django.conf import settings
+from django.contrib.auth import get_user_model
 
 
 class EstadoAdmision(models.Model):
@@ -247,16 +248,7 @@ class InformeTecnicoBase(models.Model):
         default="Para revision",
         verbose_name="Estado de la Solicitud",
     )
-
-    # def save(self, *args, **kwargs):
-    #    self.prestaciones_totales = (
-    #        self.prestaciones_desayuno +
-    #        self.prestaciones_almuerzo +
-    #        self.prestaciones_merienda +
-    #        self.prestaciones_cena
-    #    )
-    #    super().save(*args, **kwargs)
-
+    
     def __str__(self):
         return f"{self.nombre_org} - {self.expediente_nro}"
 
@@ -434,7 +426,7 @@ class AdmisionHistorial(models.Model):
     valor_anterior = models.TextField(blank=True, null=True)
     valor_nuevo = models.TextField(blank=True, null=True)
     usuario = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True
+        get_user_model(), on_delete=models.SET_NULL, null=True
     )
     fecha = models.DateTimeField(auto_now_add=True)
 
