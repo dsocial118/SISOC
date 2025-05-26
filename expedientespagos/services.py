@@ -1,4 +1,4 @@
-from expedientespagos.models.expedientespagos import ExpedientePago
+from expedientespagos.models import ExpedientePago
 
 
 class ExpedientesPagosService:

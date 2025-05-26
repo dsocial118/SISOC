@@ -1,4 +1,3 @@
-
 from django.views.generic import (
     ListView,
     DetailView,
@@ -7,34 +6,38 @@ from django.views.generic import (
     DeleteView,
 )
 from django.urls import reverse_lazy
-from django.contrib.auth.mixins import LoginRequiredMixin
-from expedientespagos.models.expedientespagos import ExpedientePago
+from expedientespagos.models import ExpedientePago
+from expedientespagos.forms import ExpedientePagoForm
+from expedientespagos.services import ExpedientesPagosService
 
-# Create your views here.
 
 
-class ExpedientesPagosListView(LoginRequiredMixin, ListView):
+class ExpedientesPagosListView(ListView):
     model = ExpedientePago
-    template_name = "expedientespagos/expedientespagos_list.html"
+    template_name = "expedientespagos_list.html"
     context_object_name = "expedientespagos"
     paginate_by = 10
 
-    def get_queryset(self):
-        return ExpedientePago.objects.all()
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        comedor_id = self.kwargs.get("pk")
+        context["expedientes_pagos"] = ExpedientesPagosService.obtener_expedientes_pagos(comedor_id)
+        context["comedorid"] = comedor_id
 
+        return context
 
-class ExpedientesPagosDetailView(LoginRequiredMixin, DetailView):
+class ExpedientesPagosDetailView(DetailView):
     model = ExpedientePago
-    template_name = "expedientespagos/expedientespagos_detail.html"
+    template_name = "expedientespagos_detail.html"
     context_object_name = "expediente_pago"
 
     def get_queryset(self):
         return ExpedientePago.objects.all()
 
 
-class ExpedientesPagosCreateView(LoginRequiredMixin, CreateView):
+class ExpedientesPagosCreateView(CreateView):
     model = ExpedientePago
-    template_name = "expedientespagos/expedientespagos_form.html"
+    template_name = "expedientespagos_form.html"
     fields = "__all__"
     success_url = reverse_lazy("expedientespagos:expedientespagos_list")
 
@@ -46,9 +49,9 @@ class ExpedientesPagosCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
 
-class ExpedientesPagosUpdateView(LoginRequiredMixin, UpdateView):
+class ExpedientesPagosUpdateView(UpdateView):
     model = ExpedientePago
-    template_name = "expedientespagos/expedientespagos_form.html"
+    template_name = "expedientespagos_form.html"
     fields = "__all__"
     success_url = reverse_lazy("expedientespagos:expedientespagos_list")
 
@@ -60,9 +63,9 @@ class ExpedientesPagosUpdateView(LoginRequiredMixin, UpdateView):
         return super().form_valid(form)
 
 
-class ExpedientesPagosDeleteView(LoginRequiredMixin, DeleteView):
+class ExpedientesPagosDeleteView(DeleteView):
     model = ExpedientePago
-    template_name = "expedientespagos/expedientespagos_confirm_delete.html"
+    template_name = "expedientespagos_confirm_delete.html"
     success_url = reverse_lazy("expedientespagos:expedientespagos_list")
 
     def get_queryset(self):

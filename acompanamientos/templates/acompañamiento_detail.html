@@ -13,6 +13,14 @@
 {% endblock %}
 {% block content %}
     <div class="row">
+        <div class="col-6"></div>
+            <a href="{% url 'expedientespagos_list' comedor.id %}" class="btn btn-primary btn-lg mb-3">
+                <i class="fas fa-plus"></i> Agregar Expediente de Pago
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
         <div class="col-12">
             <div class="card card-primary card-outline">
                 <div class="card-header">
