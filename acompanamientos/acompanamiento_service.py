@@ -2,6 +2,8 @@ from admisiones.models.admisiones import Admision
 from acompanamientos.models.hitos import Hitos, CompararHitosIntervenciones
 from acompanamientos.models.acompanamiento import InformacionRelevante, Prestacion
 from intervenciones.models.intervenciones import Intervencion, SubIntervencion
+
+
 class AcompanamientoService:
     @staticmethod
     def crear_hitos(intervenciones: Intervencion):
@@ -54,9 +56,7 @@ class AcompanamientoService:
         )
 
         prestaciones_admision = admision.prestaciones.all()
-        Prestacion.objects.filter(
-            comedor=comedor
-        ).delete()
+        Prestacion.objects.filter(comedor=comedor).delete()
         for prestacion in prestaciones_admision:
             Prestacion.objects.create(
                 comedor=comedor,
