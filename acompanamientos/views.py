@@ -88,6 +88,7 @@ class ComedoresAcompanamientoListView(ListView):
 
         if user.is_superuser:
             return (
+                # TODO: El estado se cambia cuando se termina la ultima etapa de admision que esta trabajando Pablo.
                 Admision.objects.filter(estado__nombre="Finalizada")
                 .values(
                     "comedor__id",
