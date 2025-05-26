@@ -1,17 +1,15 @@
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
-from django.http import JsonResponse
 from django.views.generic import ListView, DetailView
+from django.db.models import Q
 from admisiones.models.admisiones import (
     Admision,
     InformeTecnicoBase,
     DocumentosExpediente,
 )
-from acompanamientos.models.hitos import Hitos
-from admisiones.models.admisiones import Admision
-from comedores.models.comedor import Comedor
 from acompanamientos.acompanamiento_service import AcompanamientoService
-from django.db.models import Q
+from acompanamientos.models.hitos import Hitos
+from comedores.models.comedor import Comedor
 
 
 # TODO: Sincronizar con la tarea de Pablo y migrar a clases

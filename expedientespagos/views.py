@@ -1,5 +1,4 @@
-from django.shortcuts import render
-from expedientespagos.models.expedientespagos import ExpedientePago
+
 from django.views.generic import (
     ListView,
     DetailView,
@@ -9,6 +8,7 @@ from django.views.generic import (
 )
 from django.urls import reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin
+from expedientespagos.models.expedientespagos import ExpedientePago
 
 # Create your views here.
 
