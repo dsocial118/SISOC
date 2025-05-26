@@ -1,10 +1,7 @@
-from django.db.models.signals import post_save, pre_delete, pre_save
+from django.db.models.signals import post_save
 from django.dispatch import receiver
 from intervenciones.models.intervenciones import (
     Intervencion,
-    SubIntervencion,
-    TipoIntervencion,
-    TipoDestinatario,
 )
 from acompanamientos.acompanamiento_service import AcompanamientoService
 
