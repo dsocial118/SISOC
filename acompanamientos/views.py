@@ -1,5 +1,10 @@
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
+from django.http import JsonResponse
 from django.views.generic import ListView, DetailView
-from admisiones.models.admisiones import Admision, InformeTecnicoBase, DocumentosExpediente
+from acompanamientos.models.acompanamiento import InformacionRelevante, Prestacion
+from acompanamientos.models.hitos import Hitos
+from admisiones.models.admisiones import Admision
 from comedores.models.comedor import Comedor
 from acompanamientos.acompanamiento_service import AcompanamientoService
 from django.db.models import Q
@@ -48,6 +53,28 @@ class AcompanamientoDetailView(DetailView):
             context["prestaciones_dias"] = []
 
         return context
+
+
+def restaurar_hito(request, comedor_id):
+    if request.method == "POST":
+        campo = request.POST.get("campo")
+        hito = get_object_or_404(Hitos, comedor_id=comedor_id)
+
+        # Verifica si el campo existe en el modelo
+        if hasattr(hito, campo):
+            setattr(hito, campo, False)  # Cambia el valor del campo a False (0)
+            hito.save()
+            messages.success(
+                request, f"El campo '{campo}' ha sido restaurado correctamente."
+            )
+        else:
+            messages.error(request, f"El campo '{campo}' no existe en el modelo Hitos.")
+
+        # Redirige a la página anterior
+        return redirect(request.META.get("HTTP_REFERER", "/"))
+
+    messages.error(request, "Método no permitido.")
+    return redirect(request.META.get("HTTP_REFERER", "/"))
 
 
 class ComedoresAcompanamientoListView(ListView):

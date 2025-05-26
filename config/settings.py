@@ -137,6 +137,7 @@ INSTALLED_APPS = [
     "intervenciones",
     "historial",
     "acompanamientos",
+    "expedientespagos",
 ]
 
 # Definición del middleware utilizado por el proyecto
