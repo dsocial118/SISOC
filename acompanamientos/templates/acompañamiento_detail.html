@@ -89,7 +89,6 @@
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <span class="me-3">{{ hitos.fecha }}</span>
-                                    <button class="btn btn-warning btn-sm">Restaurar</button>
                                 </div>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -98,25 +97,43 @@
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <span class="me-3">{{ hitos.retiro_tarjeta|yesno:"Completado,Pendiente" }}</span>
-                                    <button class="btn btn-warning btn-sm">Restaurar</button>
+                                    {% if hitos.retiro_tarjeta %}
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="retiro_tarjeta" />
+                                            <button class="btn btn-warning btn-sm">Restaurar</button>
+                                        </form>
+                                    {% endif %}
                                 </div>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                 <div>
-                                    <strong>Habilitación de Tarjeta:</strong>
+                                    <strong>Habilitación de tarjeta:</strong>
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <span class="me-3">{{ hitos.habilitacion_tarjeta|yesno:"Completado,Pendiente" }}</span>
-                                    <button class="btn btn-warning btn-sm">Restaurar</button>
+                                    {% if hitos.habilitacion_tarjeta %}
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="habilitacion_tarjeta" />
+                                            <button class="btn btn-warning btn-sm">Restaurar</button>
+                                        </form>
+                                    {% endif %}
                                 </div>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                 <div>
-                                    <strong>Alta de usuario en Plataforma:</strong>
+                                    <strong>Alta de usuario en plataforma:</strong>
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <span class="me-3">{{ hitos.alta_usuario_plataforma|yesno:"Completado,Pendiente" }}</span>
-                                    <button class="btn btn-warning btn-sm">Restaurar</button>
+                                    {% if hitos.alta_usuario_plataforma %}
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="alta_usuario_plataforma" />
+                                            <button class="btn btn-warning btn-sm">Restaurar</button>
+                                        </form>
+                                    {% endif %}
                                 </div>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -125,7 +142,13 @@
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <span class="me-3">{{ hitos.capacitacion_realizada|yesno:"Completado,Pendiente" }}</span>
-                                    <button class="btn btn-warning btn-sm">Restaurar</button>
+                                    {% if hitos.capacitacion_realizada %}
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="capacitacion_realizada" />
+                                            <button class="btn btn-warning btn-sm">Restaurar</button>
+                                        </form>
+                                    {% endif %}
                                 </div>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -134,7 +157,13 @@
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <span class="me-3">{{ hitos.notificacion_acreditacion_1|yesno:"Completado,Pendiente" }}</span>
-                                    <button class="btn btn-warning btn-sm">Restaurar</button>
+                                    {% if hitos.habilitacion_tarjeta %}
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="notificacion_acreditacion_1" />
+                                            <button class="btn btn-warning btn-sm">Restaurar</button>
+                                        </form>
+                                    {% endif %}
                                 </div>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -143,7 +172,13 @@
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <span class="me-3">{{ hitos.notificacion_acreditacion_2|yesno:"Completado,Pendiente" }}</span>
-                                    <button class="btn btn-warning btn-sm">Restaurar</button>
+                                    {% if hitos.notificacion_acreditacion_2 %}
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="notificacion_acreditacion_2" />
+                                            <button class="btn btn-warning btn-sm">Restaurar</button>
+                                        </form>
+                                    {% endif %}
                                 </div>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -152,7 +187,13 @@
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <span class="me-3">{{ hitos.notificacion_acreditacion_3|yesno:"Completado,Pendiente" }}</span>
-                                    <button class="btn btn-warning btn-sm">Restaurar</button>
+                                    {% if hitos.notificacion_acreditacion_3 %}
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="notificacion_acreditacion_3" />
+                                            <button class="btn btn-warning btn-sm">Restaurar</button>
+                                        </form>
+                                    {% endif %}
                                 </div>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -161,7 +202,13 @@
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <span class="me-3">{{ hitos.notificacion_acreditacion_4|yesno:"Completado,Pendiente" }}</span>
-                                    <button class="btn btn-warning btn-sm">Restaurar</button>
+                                    {% if hitos.notificacion_acreditacion_4 %}
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="notificacion_acreditacion_4" />
+                                            <button class="btn btn-warning btn-sm">Restaurar</button>
+                                        </form>
+                                    {% endif %}
                                 </div>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -170,7 +217,13 @@
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <span class="me-3">{{ hitos.notificacion_acreditacion_5|yesno:"Completado,Pendiente" }}</span>
-                                    <button class="btn btn-warning btn-sm">Restaurar</button>
+                                    {% if hitos.notificacion_acreditacion_5 %}
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="notificacion_acreditacion_5" />
+                                            <button class="btn btn-warning btn-sm">Restaurar</button>
+                                        </form>
+                                    {% endif %}
                                 </div>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -179,7 +232,13 @@
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <span class="me-3">{{ hitos.notificacion_acreditacion_6|yesno:"Completado,Pendiente" }}</span>
-                                    <button class="btn btn-warning btn-sm">Restaurar</button>
+                                    {% if hitos.notificacion_acreditacion_6 %}
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="notificacion_acreditacion_6" />
+                                            <button class="btn btn-warning btn-sm">Restaurar</button>
+                                        </form>
+                                    {% endif %}
                                 </div>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -188,7 +247,13 @@
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <span class="me-3">{{ hitos.nomina_entregada_inicial|yesno:"Completado,Pendiente" }}</span>
-                                    <button class="btn btn-warning btn-sm">Restaurar</button>
+                                    {% if hitos.nomina_entregada_inicial %}
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="nomina_entregada_inicial" />
+                                            <button class="btn btn-warning btn-sm">Restaurar</button>
+                                        </form>
+                                    {% endif %}
                                 </div>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -197,7 +262,13 @@
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <span class="me-3">{{ hitos.nomina_alta_baja_2|yesno:"Completado,Pendiente" }}</span>
-                                    <button class="btn btn-warning btn-sm">Restaurar</button>
+                                    {% if hitos.nomina_alta_baja_2 %}
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="nomina_alta_baja_2" />
+                                            <button class="btn btn-warning btn-sm">Restaurar</button>
+                                        </form>
+                                    {% endif %}
                                 </div>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -206,7 +277,13 @@
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <span class="me-3">{{ hitos.nomina_alta_baja_3|yesno:"Completado,Pendiente" }}</span>
-                                    <button class="btn btn-warning btn-sm">Restaurar</button>
+                                    {% if hitos.nomina_alta_baja_3 %}
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="nomina_alta_baja_3" />
+                                            <button class="btn btn-warning btn-sm">Restaurar</button>
+                                        </form>
+                                    {% endif %}
                                 </div>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -215,7 +292,13 @@
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <span class="me-3">{{ hitos.nomina_alta_baja_4|yesno:"Completado,Pendiente" }}</span>
-                                    <button class="btn btn-warning btn-sm">Restaurar</button>
+                                    {% if hitos.nomina_alta_baja_4 %}
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="nomina_alta_baja_4" />
+                                            <button class="btn btn-warning btn-sm">Restaurar</button>
+                                        </form>
+                                    {% endif %}
                                 </div>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -224,7 +307,13 @@
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <span class="me-3">{{ hitos.nomina_alta_baja_5|yesno:"Completado,Pendiente" }}</span>
-                                    <button class="btn btn-warning btn-sm">Restaurar</button>
+                                    {% if hitos.nomina_alta_baja_5 %}
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="nomina_alta_baja_5" />
+                                            <button class="btn btn-warning btn-sm">Restaurar</button>
+                                        </form>
+                                    {% endif %}
                                 </div>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -233,7 +322,13 @@
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <span class="me-3">{{ hitos.nomina_alta_baja_6|yesno:"Completado,Pendiente" }}</span>
-                                    <button class="btn btn-warning btn-sm">Restaurar</button>
+                                    {% if hitos.nomina_alta_baja_6 %}
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="nomina_alta_baja_6" />
+                                            <button class="btn btn-warning btn-sm">Restaurar</button>
+                                        </form>
+                                    {% endif %}
                                 </div>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -242,7 +337,13 @@
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <span class="me-3">{{ hitos.certificado_prestaciones_1|yesno:"Completado,Pendiente" }}</span>
-                                    <button class="btn btn-warning btn-sm">Restaurar</button>
+                                    {% if hitos.certificado_prestaciones_1 %}
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="certificado_prestaciones_1" />
+                                            <button class="btn btn-warning btn-sm">Restaurar</button>
+                                        </form>
+                                    {% endif %}
                                 </div>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -251,7 +352,13 @@
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <span class="me-3">{{ hitos.certificado_prestaciones_2|yesno:"Completado,Pendiente" }}</span>
-                                    <button class="btn btn-warning btn-sm">Restaurar</button>
+                                    {% if hitos.certificado_prestaciones_2 %}
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="certificado_prestaciones_2" />
+                                            <button class="btn btn-warning btn-sm">Restaurar</button>
+                                        </form>
+                                    {% endif %}
                                 </div>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -260,7 +367,13 @@
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <span class="me-3">{{ hitos.certificado_prestaciones_3|yesno:"Completado,Pendiente" }}</span>
-                                    <button class="btn btn-warning btn-sm">Restaurar</button>
+                                    {% if hitos.certificado_prestaciones_3 %}
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="certificado_prestaciones_3" />
+                                            <button class="btn btn-warning btn-sm">Restaurar</button>
+                                        </form>
+                                    {% endif %}
                                 </div>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -269,7 +382,13 @@
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <span class="me-3">{{ hitos.certificado_prestaciones_4|yesno:"Completado,Pendiente" }}</span>
-                                    <button class="btn btn-warning btn-sm">Restaurar</button>
+                                    {% if hitos.certificado_prestaciones_4 %}
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="certificado_prestaciones_4" />
+                                            <button class="btn btn-warning btn-sm">Restaurar</button>
+                                        </form>
+                                    {% endif %}
                                 </div>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -278,7 +397,13 @@
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <span class="me-3">{{ hitos.certificado_prestaciones_5|yesno:"Completado,Pendiente" }}</span>
-                                    <button class="btn btn-warning btn-sm">Restaurar</button>
+                                    {% if hitos.certificado_prestaciones_5 %}
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="certificado_prestaciones_5" />
+                                            <button class="btn btn-warning btn-sm">Restaurar</button>
+                                        </form>
+                                    {% endif %}
                                 </div>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -287,7 +412,13 @@
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <span class="me-3">{{ hitos.certificado_prestaciones_6|yesno:"Completado,Pendiente" }}</span>
-                                    <button class="btn btn-warning btn-sm">Restaurar</button>
+                                    {% if hitos.certificado_prestaciones_6 %}
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="certificado_prestaciones_6" />
+                                            <button class="btn btn-warning btn-sm">Restaurar</button>
+                                        </form>
+                                    {% endif %}
                                 </div>
                             </li>
                         </ul>

@@ -1,0 +1,74 @@
+{% extends "includes/main.html" %};
+{% load static %}
+;
+{% block title %}Epedientes de pagos{% endblock %}
+;
+
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <div class="breadcrumb-item active">
+            <a href="{% url 'expedientespagos_list' %}">Expedientes de pagos</a>
+        </div>
+    </ol>
+{% endblock %}
+;
+{% load crispy_forms_tags %}
+;
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card card-primary card-outline">
+            <div class="card-header">
+                <h3 class="card-title">Listado de Expedientes de Pagos</h3>
+            </div>
+            <div class="card-body table-responsive">
+                {% if expedientes %}
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Número de Expediente</th>
+                            <th>Fecha</th>
+                            <th>Monto</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for expediente in expedientes %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ expediente.numero }}</td>
+                            <td>{{ expediente.fecha|date:"d/m/Y" }}</td>
+                            <td>${{ expediente.monto|floatformat:2 }}</td>
+                            <td>{{ expediente.estado }}</td>
+                            <td>
+                                <a href="{% url 'detalle_expediente' expediente.id %}" class="btn btn-info btn-sm">Ver</a>
+                                <a href="{% url 'editar_expediente' expediente.id %}" class="btn btn-warning btn-sm">Editar</a>
+                                <form method="POST" action="{% url 'eliminar_expediente' expediente.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('¿Estás seguro de eliminar este expediente?');">Eliminar</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="alert alert-warning mb-0">
+                    No hay expedientes de pagos registrados.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block customJS %}
+    <script>
+        const comedorId = "{{ comedor.id }}"
+        const GESTIONAR_API_KEY = "{{ GESTIONAR_API_KEY }}";
+        const GESTIONAR_API_CREAR_COMEDOR = "{{ GESTIONAR_API_CREAR_COMEDOR }}";
+    </script>
+    <script src="{% static 'custom/js/comedordetail.js' %}"></script>
+{% endblock %}
