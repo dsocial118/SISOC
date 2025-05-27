@@ -27,12 +27,16 @@ $(document).ready(function () {
                 if (!rolesValidos) {
                     opcion.hidden = true;
                 } else {
-                    opcion.hidden = !rolesValidos.includes(opcion.text);
+                    // Agregar leyenda "Titular de la tarjeta" a "Firmante 1"
+                    if (opcion.text === "Firmante 1" || opcion.text === "Firmante 1 (Titular de la tarjeta)") {
+                        opcion.text = "Firmante 1 (Titular de la tarjeta)";
+                    }
+                    opcion.hidden = !rolesValidos.includes(opcion.text.replace(" (Titular de la tarjeta)", ""));
                 }
             });
 
             // Resetear si la opción no es válida
-            if (!rolesValidos || !rolesValidos.includes(select.options[select.selectedIndex]?.text)) {
+            if (!rolesValidos || !rolesValidos.includes(select.options[select.selectedIndex]?.text.replace(" (Titular de la tarjeta)", ""))) {
                 select.selectedIndex = 0;
             }
 
@@ -57,7 +61,6 @@ $(document).ready(function () {
         actualizarRoles(); // Para actualizar roles según tipo de organización
     });
 
-
     // Eliminación de firmante
     firmantesContainer.addEventListener("click", function (e) {
         if (e.target.classList.contains("remove-firmante")) {
@@ -73,5 +76,6 @@ $(document).ready(function () {
     // Evento de cambio del tipo de organización
     tipoOrgSelect.addEventListener("change", actualizarRoles);
 
-    actualizarRoles(); // Ejecutar al cargar
+    // Ejecutar al cargar para editar
+    actualizarRoles();
 });
