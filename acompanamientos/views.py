@@ -101,28 +101,14 @@ class ComedoresAcompanamientoListView(ListView):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_superuser:
-            return (
-                # TODO: El estado se cambia cuando se termina la ultima etapa de admision que esta trabajando Pablo.
-                Admision.objects.filter(estado__nombre="Finalizada")
-                .values(
-                    "comedor__id",
-                    "comedor__nombre",
-                )
-                .distinct()
+        
+        queryset = Admision.objects.filter(estado__nombre="Finalizada")
+
+        # Si no es superusuario, filtrar por dupla
+        if not user.is_superuser:
+            queryset = queryset.filter(
+                Q(comedor__dupla__abogado=user) | Q(comedor__dupla__tecnico=user)
             )
-        else:
-            return (
-                Admision.objects.filter(
-                    Q(estado__nombre="Test")
-                    & (
-                        Q(comedor__dupla__abogado=user)
-                        | Q(comedor__dupla__tecnico=user)
-                    )
-                )
-                .values(
-                    "comedor__id",
-                    "comedor__nombre",
-                )
-                .distinct()
-            )
+
+        # Devolver valores únicos de comedor
+        return queryset.values("comedor__id", "comedor__nombre").distinct()
