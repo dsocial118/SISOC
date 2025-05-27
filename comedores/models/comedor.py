@@ -143,18 +143,32 @@ class Comedor(models.Model):
     )
 
     direccion_validator = RegexValidator(
-        regex=r'^[a-zA-Z0-9\s.,áéíóúÁÉÍÓÚñÑ-]*$',
-        message="La dirección solo puede contener letras, números, espacios y los caracteres ., -"
+        regex=r"^[a-zA-Z0-9\s.,áéíóúÁÉÍÓÚñÑ-]*$",
+        message="La dirección solo puede contener letras, números, espacios y los caracteres ., -",
     )
 
-    calle = models.CharField(max_length=255, blank=True, null=True, validators=[direccion_validator])
+    calle = models.CharField(
+        max_length=255, blank=True, null=True, validators=[direccion_validator]
+    )
     numero = models.PositiveIntegerField(blank=True, null=True)
-    piso = models.CharField(max_length=255, blank=True, null=True, validators=[direccion_validator])
-    departamento = models.CharField(max_length=255, blank=True, null=True, validators=[direccion_validator])
-    manzana = models.CharField(max_length=255, blank=True, null=True, validators=[direccion_validator])
-    lote = models.CharField(max_length=255, blank=True, null=True, validators=[direccion_validator])
-    entre_calle_1 = models.CharField(max_length=255, blank=True, null=True, validators=[direccion_validator])
-    entre_calle_2 = models.CharField(max_length=255, blank=True, null=True, validators=[direccion_validator])
+    piso = models.CharField(
+        max_length=255, blank=True, null=True, validators=[direccion_validator]
+    )
+    departamento = models.CharField(
+        max_length=255, blank=True, null=True, validators=[direccion_validator]
+    )
+    manzana = models.CharField(
+        max_length=255, blank=True, null=True, validators=[direccion_validator]
+    )
+    lote = models.CharField(
+        max_length=255, blank=True, null=True, validators=[direccion_validator]
+    )
+    entre_calle_1 = models.CharField(
+        max_length=255, blank=True, null=True, validators=[direccion_validator]
+    )
+    entre_calle_2 = models.CharField(
+        max_length=255, blank=True, null=True, validators=[direccion_validator]
+    )
     latitud = models.FloatField(
         validators=[MinValueValidator(-90), MaxValueValidator(90)],
         blank=True,

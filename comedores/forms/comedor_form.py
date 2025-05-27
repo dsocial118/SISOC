@@ -40,7 +40,7 @@ class ReferenteForm(forms.ModelForm):
         if not re.match(email_regex, mail):
             raise ValidationError("Por favor, ingresa un correo electrónico válido.")
         return mail
-    
+
     class Meta:
         model = Referente
         fields = "__all__"
