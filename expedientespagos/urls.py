@@ -7,6 +7,7 @@ from expedientespagos.views import (
     ExpedientesPagosUpdateView,
     ExpedientesPagosDeleteView,
 )
+
 urlpatterns = [
     path(
         "expedientespagos/<int:pk>/",
@@ -25,7 +26,9 @@ urlpatterns = [
     ),
     path(
         "expedientespagos/<int:pk>/editar/",
-        group_required(["Tecnico Comedor","Abogado Dupla"])(ExpedientesPagosUpdateView.as_view()),
+        group_required(["Tecnico Comedor", "Abogado Dupla"])(
+            ExpedientesPagosUpdateView.as_view()
+        ),
         name="expedientespagos_update",
     ),
     path(
