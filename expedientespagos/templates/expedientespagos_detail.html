@@ -38,10 +38,7 @@
 <div class="mt-3">
     <a href="{% url 'expedientespagos_list' expediente.comedor_id %}" class="btn btn-secondary">Volver al Listado</a>
     <a href="{% url 'expedientespagos_update' expediente.id %}" class="btn btn-primary">Editar</a>
-    <form method="post" action="{% url 'expedientespagos_delete' expediente.id %}" style="display:inline;">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-danger">Eliminar</button>
-    </form>
+    <a href="{% url 'expedientespagos_delete' expediente.id %}" class="btn btn-danger">Eliminar</a>
 </div>
 
 </div>
