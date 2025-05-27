@@ -50,13 +50,12 @@ class AcompanamientoDetailView(DetailView):
                 .first()
             )
         if doc_resolucion:
-                resolucion = doc_resolucion.value or doc_resolucion.nombre
+            resolucion = doc_resolucion.value or doc_resolucion.nombre
 
         # Asignar valores al contexto
         context["info_relevante"] = info_relevante
         context["numero_if"] = admision.num_if if admision else None
         context["numero_resolucion"] = resolucion
-        
 
         # Prestaciones
         if info_relevante:
@@ -101,7 +100,7 @@ class ComedoresAcompanamientoListView(ListView):
 
     def get_queryset(self):
         user = self.request.user
-        
+
         queryset = Admision.objects.filter(estado__nombre="Finalizada")
 
         # Si no es superusuario, filtrar por dupla
