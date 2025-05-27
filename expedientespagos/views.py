@@ -1,4 +1,4 @@
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, Http404
 from django.contrib import messages
 from django.views.generic import (
     ListView,
@@ -12,7 +12,6 @@ from expedientespagos.models import ExpedientePago
 from expedientespagos.forms import ExpedientePagoForm
 from expedientespagos.services import ExpedientesPagosService
 from comedores.models.comedor import Comedor
-from django.http import Http404
 
 
 class ExpedientesPagosListView(ListView):
