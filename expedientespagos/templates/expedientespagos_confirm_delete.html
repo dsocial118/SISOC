@@ -1,5 +1,6 @@
 {% extends "includes/main.html" %}
 {% load static %}
+{% load crispy_forms_tags %}
 {% block title %}Acciones{% endblock %}
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
@@ -8,13 +9,12 @@
         </li>
         <li class="breadcrumb-item ">
             <a href="{% url 'expedientespagos_detail' object.id %}"
-               title="Ver ciudadano">{{ object }}</a>
+               title="Ver ciudadano">{{ object.expediente_pago }}</a>
         </li>
-        <li class="breadcrumb-item active">Detalle</li>
+        <li class="breadcrumb-item active">Eliminar</li>
     </ol>
 {% endblock %}
-;
-{% load crispy_forms_tags %}
+
 {% block content %}
     <div class="error-page mt-5 px-3"></div>
     <div class="error-content">

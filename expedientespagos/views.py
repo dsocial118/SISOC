@@ -1,3 +1,5 @@
+from django.http import HttpResponseRedirect
+from django.contrib import messages
 from django.views.generic import (
     ListView,
     DetailView,
@@ -5,12 +7,12 @@ from django.views.generic import (
     UpdateView,
     DeleteView,
 )
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy,reverse
 from expedientespagos.models import ExpedientePago
 from expedientespagos.forms import ExpedientePagoForm
 from expedientespagos.services import ExpedientesPagosService
 from comedores.models.comedor import Comedor
-
+from django.http import Http404
 
 class ExpedientesPagosListView(ListView):
     model = ExpedientePago
@@ -99,16 +101,23 @@ class ExpedientesPagosUpdateView(UpdateView):
 class ExpedientesPagosDeleteView(DeleteView):
     model = ExpedientePago
     template_name = "expedientespagos_confirm_delete.html"
-    
+
+    def get_object(self, queryset=None):
+        try:
+            return super().get_object(queryset)
+        except ExpedientePago.DoesNotExist as exc:
+            raise Http404("El expediente de pago no existe.") from exc
+
     def get_success_url(self):
-        expediente_pago = self.get_object() 
-        comedor_id = expediente_pago.comedor.id
-        return reverse_lazy("expedientespagos_list", kwargs={"pk": comedor_id})
-    
-    def post(self, request, *args, **kwargs):
+        # Obtén el ID del comedor asociado al expediente
         expediente_pago = self.get_object()
-        ExpedientesPagosService.eliminar_expediente_pago(expediente_pago)
-        return self.get_success_url()
-    
+        comedor_id = expediente_pago.comedor.id
+        return reverse("lista_comedores_acompanamiento")
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        self.object.delete()
+        messages.success(request, "Expediente eliminado correctamente.")
+        return HttpResponseRedirect(self.get_success_url())
 
     
