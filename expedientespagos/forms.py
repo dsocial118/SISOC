@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.models import Group
 from expedientespagos.models import ExpedientePago
 
+
 class ExpedientePagoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -9,7 +10,7 @@ class ExpedientePagoForm(forms.ModelForm):
     class Meta:
         model = ExpedientePago
         fields = "__all__"
-        exclude = ['comedor']
+        exclude = ["comedor"]
         widgets = {
             "usuario": forms.Select(attrs={"class": "form-control"}),
         }
@@ -18,5 +19,3 @@ class ExpedientePagoForm(forms.ModelForm):
             "usuario": "Usuario Responsable",
             "estado": "Estado del Expediente",
         }
-
-

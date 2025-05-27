@@ -7,12 +7,13 @@ from django.views.generic import (
     UpdateView,
     DeleteView,
 )
-from django.urls import reverse_lazy,reverse
+from django.urls import reverse_lazy, reverse
 from expedientespagos.models import ExpedientePago
 from expedientespagos.forms import ExpedientePagoForm
 from expedientespagos.services import ExpedientesPagosService
 from comedores.models.comedor import Comedor
 from django.http import Http404
+
 
 class ExpedientesPagosListView(ListView):
     model = ExpedientePago
@@ -23,10 +24,13 @@ class ExpedientesPagosListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor_id = self.kwargs.get("pk")
-        context["expedientes_pagos"] = ExpedientesPagosService.obtener_expedientes_pagos(comedor_id)
+        context["expedientes_pagos"] = (
+            ExpedientesPagosService.obtener_expedientes_pagos(comedor_id)
+        )
         context["comedorid"] = comedor_id
 
         return context
+
 
 class ExpedientesPagosDetailView(DetailView):
     model = ExpedientePago
@@ -35,7 +39,9 @@ class ExpedientesPagosDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["expediente"] = ExpedientesPagosService.obtener_expediente_pago(self.kwargs.get("pk"))
+        context["expediente"] = ExpedientesPagosService.obtener_expediente_pago(
+            self.kwargs.get("pk")
+        )
         return context
 
 
@@ -43,9 +49,11 @@ class ExpedientesPagosCreateView(CreateView):
     model = ExpedientePago
     template_name = "expedientespagos_form.html"
     fields = "__all__"
-    
+
     def get_success_url(self):
-        return reverse_lazy("expedientespagos_list", kwargs={"pk": self.kwargs.get("pk")})
+        return reverse_lazy(
+            "expedientespagos_list", kwargs={"pk": self.kwargs.get("pk")}
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -53,7 +61,7 @@ class ExpedientesPagosCreateView(CreateView):
         context["comedorid"] = comedor_id
         context["form"] = ExpedientePagoForm()
         return context
-    
+
     def post(self, request, *args, **kwargs):
         comedor_id = self.kwargs.get("pk")
         form = ExpedientePagoForm(request.POST)
@@ -67,25 +75,28 @@ class ExpedientesPagosCreateView(CreateView):
         else:
             return self.form_invalid(form)
 
+
 class ExpedientesPagosUpdateView(UpdateView):
     model = ExpedientePago
     template_name = "expedientespagos_form.html"
-    form_class = ExpedientePagoForm 
-    
+    form_class = ExpedientePagoForm
+
     def get_success_url(self):
-        return reverse_lazy("expedientespagos_list", kwargs={"pk": self.object.comedor.id})
-    
+        return reverse_lazy(
+            "expedientespagos_list", kwargs={"pk": self.object.comedor.id}
+        )
+
     def form_valid(self, form):
         # Mantén el mismo comedor que tenía originalmente
         form.instance.comedor = self.get_object().comedor
         return super().form_valid(form)
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         expediente = self.get_object()
         context["comedorid"] = expediente.comedor.id
         return context
-       
+
     def post(self, request, *args, **kwargs):
         expediente_pago = self.get_object()
         form = ExpedientePagoForm(request.POST, instance=expediente_pago)
@@ -116,5 +127,3 @@ class ExpedientesPagosDeleteView(DeleteView):
         self.object.delete()
         messages.success(request, "Expediente eliminado correctamente.")
         return HttpResponseRedirect(self.get_success_url())
-
-    
