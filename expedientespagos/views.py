@@ -109,9 +109,6 @@ class ExpedientesPagosDeleteView(DeleteView):
             raise Http404("El expediente de pago no existe.") from exc
 
     def get_success_url(self):
-        # Obtén el ID del comedor asociado al expediente
-        expediente_pago = self.get_object()
-        comedor_id = expediente_pago.comedor.id
         return reverse("lista_comedores_acompanamiento")
 
     def post(self, request, *args, **kwargs):
