@@ -1,5 +1,4 @@
 from django.db import models
-from acompanamientos.models.acompanamiento import InformacionRelevante
 from comedores.models.comedor import Comedor
 
 
