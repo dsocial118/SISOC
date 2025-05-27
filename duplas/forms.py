@@ -16,6 +16,7 @@ class DuplaForm(forms.ModelForm):
             usuarios_asignados = Dupla.objects.exclude(pk=self.instance.pk).values_list(
                 "tecnico", flat=True
             )
+            usuarios_asignados = [u for u in usuarios_asignados if u is not None]
             self.fields["tecnico"].queryset = grupo_tecnico.user_set.exclude(
                 id__in=usuarios_asignados
             )
