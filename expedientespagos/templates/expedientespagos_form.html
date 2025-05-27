@@ -9,12 +9,21 @@
     <li class="breadcrumb-item">
         <a href="{% url 'expedientespagos_list' comedorid %}">Expedientes de pagos</a>
     </li>
-    <li class="breadcrumb-item active">Crear Expediente de Pago</li>
+    {% if request.resolver_match.url_name == "expedientespagos_create" %}
+        <li class="breadcrumb-item active">Crear Expediente de Pago</li>
+    {% else %}
+        <li class="breadcrumb-item active">Editar Expediente de Pago</li>
+    {% endif %}
 </ol>
 {% endblock %}
 
 {% block content %}
 <div class="container mt-4">
+    {% if request.resolver_match.url_name == "expedientespagos_create" %}
+        <h1>Crear Expediente de Pago</h1>
+    {% else %}
+        <h1>Editar Expediente de Pago</h1>
+    {% endif %}
     <h1>Crear Expediente de Pago</h1>
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
