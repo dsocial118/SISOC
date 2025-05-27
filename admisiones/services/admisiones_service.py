@@ -35,6 +35,9 @@ from django.core.files.base import ContentFile
 from io import BytesIO
 from django.forms.models import model_to_dict
 from xhtml2pdf import pisa
+import logging
+
+logger = logging.getLogger(__name__)
 
 from acompanamientos.acompanamiento_service import AcompanamientoService
 
@@ -173,7 +176,7 @@ class AdmisionService:
             if not exito:
                 return {"success": False, "error": "No se pudo actualizar el estado."}
 
-            grupo_usuario = AdmisionService.obtener_grupo_usuario(request.user)
+            grupo_usuario = AdmisionService.get_dupla_grupo_por_usuario(request.user)
 
             return {
                 "success": True,
@@ -208,7 +211,7 @@ class AdmisionService:
                     admision.save()
 
     @staticmethod
-    def obtener_grupo_usuario(user):
+    def get_dupla_grupo_por_usuario(user):
         if user.groups.filter(name="Abogado Dupla").exists():
             return "Abogado Dupla"
         elif user.groups.filter(name="Tecnico Comedor").exists():
@@ -255,7 +258,8 @@ class AdmisionService:
         result = BytesIO()
         pisa_status = pisa.CreatePDF(html, dest=result)
         if pisa_status.err:
-            return  # loguear error si querés
+            logger.error("Error al generar el PDF con pisa: %s", pisa_status.err)
+            return
 
         nombre_archivo = f"{tipo}_informe_{informe.id}.pdf"
         pdf_file = ContentFile(result.getvalue(), name=nombre_archivo)
@@ -330,7 +334,7 @@ class AdmisionService:
         return False
 
     @staticmethod
-    def legales_detalle_context(admision):
+    def get_legales_context(admision):
         documentaciones = Documentacion.objects.filter(
             models.Q(convenios=admision.tipo_convenio)
         ).distinct()
