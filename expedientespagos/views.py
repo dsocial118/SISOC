@@ -68,23 +68,20 @@ class ExpedientesPagosCreateView(CreateView):
 class ExpedientesPagosUpdateView(UpdateView):
     model = ExpedientePago
     template_name = "expedientespagos_form.html"
-    fields = "__all__"
+    form_class = ExpedientePagoForm 
     
     def get_success_url(self):
         return reverse_lazy("expedientespagos_list", kwargs={"pk": self.object.comedor.id})
-
+    
     def form_valid(self, form):
-        # Obtén la instancia del comedor
-        comedor_id = self.kwargs.get('pk')
-        comedor = Comedor.objects.get(id=comedor_id)
-        form.instance.comedor = comedor  # Asigna la instancia del comedor
+        # Mantén el mismo comedor que tenía originalmente
+        form.instance.comedor = self.get_object().comedor
         return super().form_valid(form)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         expediente = self.get_object()
         context["comedorid"] = expediente.comedor.id
-        context["form"] = self.get_form()
         return context
        
     def post(self, request, *args, **kwargs):
