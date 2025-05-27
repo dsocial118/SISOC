@@ -31,7 +31,12 @@ class ReferenteForm(forms.ModelForm):
 
     def clean_mail(self):
         mail = self.cleaned_data.get("mail")
+        if not mail:
+            return mail
+
         email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+        if not isinstance(mail, str):  # Asegurarse de que sea una cadena
+            raise ValidationError("El correo electrónico debe ser una cadena válida.")
         if not re.match(email_regex, mail):
             raise ValidationError("Por favor, ingresa un correo electrónico válido.")
         return mail
