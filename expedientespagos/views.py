@@ -9,7 +9,7 @@ from django.urls import reverse_lazy
 from expedientespagos.models import ExpedientePago
 from expedientespagos.forms import ExpedientePagoForm
 from expedientespagos.services import ExpedientesPagosService
-
+from comedores.models.comedor import Comedor
 
 
 class ExpedientesPagosListView(ListView):
@@ -51,13 +51,14 @@ class ExpedientesPagosCreateView(CreateView):
         context["comedorid"] = comedor_id
         context["form"] = ExpedientePagoForm()
         return context
-       
+    
     def post(self, request, *args, **kwargs):
         comedor_id = self.kwargs.get("pk")
         form = ExpedientePagoForm(request.POST)
+        comedor = Comedor.objects.get(pk=comedor_id)
         if form.is_valid():
             expediente_pago = ExpedientesPagosService.crear_expediente_pago(
-                comedor_id, form.cleaned_data
+                comedor, form.cleaned_data
             )
             self.object = expediente_pago
             return self.form_valid(form)
@@ -72,6 +73,13 @@ class ExpedientesPagosUpdateView(UpdateView):
     def get_success_url(self):
         return reverse_lazy("expedientespagos_list", kwargs={"pk": self.object.comedor.id})
 
+    def form_valid(self, form):
+        # Obtén la instancia del comedor
+        comedor_id = self.kwargs.get('pk')
+        comedor = Comedor.objects.get(id=comedor_id)
+        form.instance.comedor = comedor  # Asigna la instancia del comedor
+        return super().form_valid(form)
+    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         expediente = self.get_object()
@@ -94,7 +102,16 @@ class ExpedientesPagosUpdateView(UpdateView):
 class ExpedientesPagosDeleteView(DeleteView):
     model = ExpedientePago
     template_name = "expedientespagos_confirm_delete.html"
-    success_url = reverse_lazy("expedientespagos_list")
+    
+    def get_success_url(self):
+        expediente_pago = self.get_object() 
+        comedor_id = expediente_pago.comedor.id
+        return reverse_lazy("expedientespagos_list", kwargs={"pk": comedor_id})
+    
+    def post(self, request, *args, **kwargs):
+        expediente_pago = self.get_object()
+        ExpedientesPagosService.eliminar_expediente_pago(expediente_pago)
+        return self.get_success_url()
+    
 
-    def get_queryset(self):
-        return ExpedientePago.objects.all()
+    
