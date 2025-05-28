@@ -1,6 +1,6 @@
 [
     {
-        "model": "acompanamientos.compararhitosintervenciones",
+        "model": "acompanamientos.hitosintervenciones",
         "pk": 1,
         "fields": {
             "intervencion": "Aviso para retiro de tarjeta",
@@ -9,7 +9,7 @@
         }
     },
     {
-        "model": "acompanamientos.compararhitosintervenciones",
+        "model": "acompanamientos.hitosintervenciones",
         "pk": 2,
         "fields": {
             "intervencion": "Habilitación de tarjeta",
@@ -18,7 +18,7 @@
         }
     },
     {
-        "model": "acompanamientos.compararhitosintervenciones",
+        "model": "acompanamientos.hitosintervenciones",
         "pk": 3,
         "fields": {
             "intervencion": "Alta de usuario en plataforma",
@@ -27,7 +27,7 @@
         }
     },
     {
-        "model": "acompanamientos.compararhitosintervenciones",
+        "model": "acompanamientos.hitosintervenciones",
         "pk": 4,
         "fields": {
             "intervencion": "Asistencia a capacitación",
@@ -36,7 +36,7 @@
         }
     },
     {
-        "model": "acompanamientos.compararhitosintervenciones",
+        "model": "acompanamientos.hitosintervenciones",
         "pk": 5,
         "fields": {
             "intervencion": "Aviso de acreditación de fondos",
@@ -45,7 +45,7 @@
         }
     },
     {
-        "model": "acompanamientos.compararhitosintervenciones",
+        "model": "acompanamientos.hitosintervenciones",
         "pk": 6,
         "fields": {
             "intervencion": "Aviso de acreditación de fondos",
@@ -54,7 +54,7 @@
         }
     },
     {
-        "model": "acompanamientos.compararhitosintervenciones",
+        "model": "acompanamientos.hitosintervenciones",
         "pk": 7,
         "fields": {
             "intervencion": "Aviso de acreditación de fondos",
@@ -63,7 +63,7 @@
         }
     },
     {
-        "model": "acompanamientos.compararhitosintervenciones",
+        "model": "acompanamientos.hitosintervenciones",
         "pk": 8,
         "fields": {
             "intervencion": "Aviso de acreditación de fondos",
@@ -72,7 +72,7 @@
         }
     },
     {
-        "model": "acompanamientos.compararhitosintervenciones",
+        "model": "acompanamientos.hitosintervenciones",
         "pk": 9,
         "fields": {
             "intervencion": "Aviso de acreditación de fondos",
@@ -81,7 +81,7 @@
         }
     },
     {
-        "model": "acompanamientos.compararhitosintervenciones",
+        "model": "acompanamientos.hitosintervenciones",
         "pk": 10,
         "fields": {
             "intervencion": "Aviso de acreditación de fondos",
@@ -90,7 +90,7 @@
         }
     },
     {
-        "model": "acompanamientos.compararhitosintervenciones",
+        "model": "acompanamientos.hitosintervenciones",
         "pk": 11,
         "fields": {
             "intervencion": "Listado de beneficiarios",
@@ -99,7 +99,7 @@
         }
     },
     {
-        "model": "acompanamientos.compararhitosintervenciones",
+        "model": "acompanamientos.hitosintervenciones",
         "pk": 12,
         "fields": {
             "intervencion": "Listado de beneficiarios",
@@ -108,7 +108,7 @@
         }
     },
     {
-        "model": "acompanamientos.compararhitosintervenciones",
+        "model": "acompanamientos.hitosintervenciones",
         "pk": 13,
         "fields": {
             "intervencion": "Listado de beneficiarios",
@@ -117,7 +117,7 @@
         }
     },
     {
-        "model": "acompanamientos.compararhitosintervenciones",
+        "model": "acompanamientos.hitosintervenciones",
         "pk": 14,
         "fields": {
             "intervencion": "Listado de beneficiarios",
@@ -126,7 +126,7 @@
         }
     },
     {
-        "model": "acompanamientos.compararhitosintervenciones",
+        "model": "acompanamientos.hitosintervenciones",
         "pk": 15,
         "fields": {
             "intervencion": "Listado de beneficiarios",
@@ -135,7 +135,7 @@
         }
     },
     {
-        "model": "acompanamientos.compararhitosintervenciones",
+        "model": "acompanamientos.hitosintervenciones",
         "pk": 16,
         "fields": {
             "intervencion": "Listado de beneficiarios",
@@ -144,7 +144,7 @@
         }
     },
     {
-        "model": "acompanamientos.compararhitosintervenciones",
+        "model": "acompanamientos.hitosintervenciones",
         "pk": 17,
         "fields": {
             "intervencion": "Certificación mensual",
@@ -153,7 +153,7 @@
         }
     },
     {
-        "model": "acompanamientos.compararhitosintervenciones",
+        "model": "acompanamientos.hitosintervenciones",
         "pk": 18,
         "fields": {
             "intervencion": "Certificación mensual",
@@ -162,7 +162,7 @@
         }
     },
     {
-        "model": "acompanamientos.compararhitosintervenciones",
+        "model": "acompanamientos.hitosintervenciones",
         "pk": 19,
         "fields": {
             "intervencion": "Certificación mensual",
@@ -171,7 +171,7 @@
         }
     },
     {
-        "model": "acompanamientos.compararhitosintervenciones",
+        "model": "acompanamientos.hitosintervenciones",
         "pk": 20,
         "fields": {
             "intervencion": "Certificación mensual",
@@ -180,7 +180,7 @@
         }
     },
     {
-        "model": "acompanamientos.compararhitosintervenciones",
+        "model": "acompanamientos.hitosintervenciones",
         "pk": 21,
         "fields": {
             "intervencion": "Certificación mensual",
@@ -189,7 +189,7 @@
         }
     },
     {
-        "model": "acompanamientos.compararhitosintervenciones",
+        "model": "acompanamientos.hitosintervenciones",
         "pk": 22,
         "fields": {
             "intervencion": "Certificación mensual",

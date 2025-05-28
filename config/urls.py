@@ -23,6 +23,7 @@ urlpatterns = [
     # Healthcheck AWS
     path("", include("healthcheck.urls")),
     path("acompanamientos/", include("acompanamientos.urls")),
+    path("expedientespagos/", include("expedientespagos.urls")),
 ]
 
 urlpatterns += staticfiles_urlpatterns()
