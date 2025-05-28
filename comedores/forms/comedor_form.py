@@ -1,4 +1,6 @@
 from django import forms
+from django.core.exceptions import ValidationError
+import re
 
 
 from comedores.models.comedor import (
@@ -26,6 +28,18 @@ class ReferenteForm(forms.ModelForm):
             self.fields["referente_celular"].initial = comedor.referente.celular
             self.fields["referente_documento"].initial = comedor.referente.documento
             self.fields["referente_funcion"].initial = comedor.referente.funcion
+
+    def clean_mail(self):
+        mail = self.cleaned_data.get("mail")
+        if not mail:
+            return mail
+
+        email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+        if not isinstance(mail, str):  # Asegurarse de que sea una cadena
+            raise ValidationError("El correo electrónico debe ser una cadena válida.")
+        if not re.match(email_regex, mail):
+            raise ValidationError("Por favor, ingresa un correo electrónico válido.")
+        return mail
 
     class Meta:
         model = Referente
