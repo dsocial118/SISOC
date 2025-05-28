@@ -1,0 +1,200 @@
+[
+    {
+        "model": "acompanamientos.hitosintervenciones",
+        "pk": 1,
+        "fields": {
+            "intervencion": "Aviso para retiro de tarjeta",
+            "subintervencion": "Confirmación de retiro",
+            "hito": "Retiro de tarjeta"
+        }
+    },
+    {
+        "model": "acompanamientos.hitosintervenciones",
+        "pk": 2,
+        "fields": {
+            "intervencion": "Habilitación de tarjeta",
+            "subintervencion": "",
+            "hito": "Habilitación de tarjeta"
+        }
+    },
+    {
+        "model": "acompanamientos.hitosintervenciones",
+        "pk": 3,
+        "fields": {
+            "intervencion": "Alta de usuario en plataforma",
+            "subintervencion": "",
+            "hito": "Alta de usuario en plataforma"
+        }
+    },
+    {
+        "model": "acompanamientos.hitosintervenciones",
+        "pk": 4,
+        "fields": {
+            "intervencion": "Asistencia a capacitación",
+            "subintervencion": "",
+            "hito": "Capacitación realizada"
+        }
+    },
+    {
+        "model": "acompanamientos.hitosintervenciones",
+        "pk": 5,
+        "fields": {
+            "intervencion": "Aviso de acreditación de fondos",
+            "subintervencion": "Notificación de primera acreditación",
+            "hito": "Notificación de primera acreditación"
+        }
+    },
+    {
+        "model": "acompanamientos.hitosintervenciones",
+        "pk": 6,
+        "fields": {
+            "intervencion": "Aviso de acreditación de fondos",
+            "subintervencion": "Notificación de acreditación mes 2",
+            "hito": "Notificación de acreditación mes 2"
+        }
+    },
+    {
+        "model": "acompanamientos.hitosintervenciones",
+        "pk": 7,
+        "fields": {
+            "intervencion": "Aviso de acreditación de fondos",
+            "subintervencion": "Notificación de acreditación mes 3",
+            "hito": "Notificación de acreditación mes 3"
+        }
+    },
+    {
+        "model": "acompanamientos.hitosintervenciones",
+        "pk": 8,
+        "fields": {
+            "intervencion": "Aviso de acreditación de fondos",
+            "subintervencion": "Notificación de acreditación mes 4",
+            "hito": "Notificación de acreditación mes 4"
+        }
+    },
+    {
+        "model": "acompanamientos.hitosintervenciones",
+        "pk": 9,
+        "fields": {
+            "intervencion": "Aviso de acreditación de fondos",
+            "subintervencion": "Notificación de acreditación mes 5",
+            "hito": "Notificación de acreditación mes 5"
+        }
+    },
+    {
+        "model": "acompanamientos.hitosintervenciones",
+        "pk": 10,
+        "fields": {
+            "intervencion": "Aviso de acreditación de fondos",
+            "subintervencion": "Notificación de acreditación mes 6",
+            "hito": "Notificación de acreditación mes 6"
+        }
+    },
+    {
+        "model": "acompanamientos.hitosintervenciones",
+        "pk": 11,
+        "fields": {
+            "intervencion": "Listado de beneficiarios",
+            "subintervencion": "Nómina total de beneficiarios",
+            "hito": "Nómina entregada inicial"
+        }
+    },
+    {
+        "model": "acompanamientos.hitosintervenciones",
+        "pk": 12,
+        "fields": {
+            "intervencion": "Listado de beneficiarios",
+            "subintervencion": "Nómina alta/baja mes 2",
+            "hito": "Nómina Alta/baja mes 2"
+        }
+    },
+    {
+        "model": "acompanamientos.hitosintervenciones",
+        "pk": 13,
+        "fields": {
+            "intervencion": "Listado de beneficiarios",
+            "subintervencion": "Nómina alta/baja mes 3",
+            "hito": "Nómina Alta/baja mes 3"
+        }
+    },
+    {
+        "model": "acompanamientos.hitosintervenciones",
+        "pk": 14,
+        "fields": {
+            "intervencion": "Listado de beneficiarios",
+            "subintervencion": "Nómina alta/baja mes 4",
+            "hito": "Nómina Alta/baja mes 4"
+        }
+    },
+    {
+        "model": "acompanamientos.hitosintervenciones",
+        "pk": 15,
+        "fields": {
+            "intervencion": "Listado de beneficiarios",
+            "subintervencion": "Nómina alta/baja mes 5",
+            "hito": "Nómina Alta/baja mes 5"
+        }
+    },
+    {
+        "model": "acompanamientos.hitosintervenciones",
+        "pk": 16,
+        "fields": {
+            "intervencion": "Listado de beneficiarios",
+            "subintervencion": "Nómina alta/baja mes 6",
+            "hito": "Nómina Alta/baja mes 6"
+        }
+    },
+    {
+        "model": "acompanamientos.hitosintervenciones",
+        "pk": 17,
+        "fields": {
+            "intervencion": "Certificación mensual",
+            "subintervencion": "Certificacion mes 1",
+            "hito": "Certificado mensual de prestaciones mes: 1"
+        }
+    },
+    {
+        "model": "acompanamientos.hitosintervenciones",
+        "pk": 18,
+        "fields": {
+            "intervencion": "Certificación mensual",
+            "subintervencion": "Certificacion mes 2",
+            "hito": "Certificado mensual de prestaciones mes: 2"
+        }
+    },
+    {
+        "model": "acompanamientos.hitosintervenciones",
+        "pk": 19,
+        "fields": {
+            "intervencion": "Certificación mensual",
+            "subintervencion": "Certificacion mes 3",
+            "hito": "Certificado mensual de prestaciones mes: 3"
+        }
+    },
+    {
+        "model": "acompanamientos.hitosintervenciones",
+        "pk": 20,
+        "fields": {
+            "intervencion": "Certificación mensual",
+            "subintervencion": "Certificacion mes 4",
+            "hito": "Certificado mensual de prestaciones mes: 4"
+        }
+    },
+    {
+        "model": "acompanamientos.hitosintervenciones",
+        "pk": 21,
+        "fields": {
+            "intervencion": "Certificación mensual",
+            "subintervencion": "Certificacion mes 5",
+            "hito": "Certificado mensual de prestaciones mes: 5"
+        }
+    },
+    {
+        "model": "acompanamientos.hitosintervenciones",
+        "pk": 22,
+        "fields": {
+            "intervencion": "Certificación mensual",
+            "subintervencion": "Certificacion mes 6",
+            "hito": "Certificado mensual de prestaciones mes: 6"
+        }
+    }
+]

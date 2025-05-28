@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.db.models import OuterRef, Subquery
 from admisiones.models.admisiones import (
     Admision,
+    EstadoAdmision,
     TipoConvenio,
     Documentacion,
     ArchivoAdmision,
@@ -37,6 +38,8 @@ from xhtml2pdf import pisa
 import logging
 
 logger = logging.getLogger(__name__)
+
+from acompanamientos.acompanamiento_service import AcompanamientoService
 
 
 class AdmisionService:
@@ -536,3 +539,17 @@ class AdmisionService:
             print(form.errors)
 
         return redirect(request.path_info)
+
+    @staticmethod
+    def comenzar_acompanamiento(admision_id):
+        admision = get_object_or_404(Admision, pk=admision_id)
+        estado_admitido = EstadoAdmision.objects.get(
+            nombre="Admitido - pendiente ejecución"
+        )
+        admision.estado = estado_admitido
+        admision.save()
+
+        # Importar datos a la app de Acompañamiento
+        AcompanamientoService.importar_datos_desde_admision(admision.comedor)
+
+        return admision
