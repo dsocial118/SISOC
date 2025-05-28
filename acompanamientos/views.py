@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
 from django.views.generic import ListView, DetailView
+from django.views.decorators.http import require_POST
 from django.db.models import Q
 from admisiones.models.admisiones import (
     Admision,
@@ -10,6 +11,25 @@ from admisiones.models.admisiones import (
 from acompanamientos.acompanamiento_service import AcompanamientoService
 from acompanamientos.models.hitos import Hitos
 from comedores.models.comedor import Comedor
+
+@require_POST
+def restaurar_hito(request, comedor_id):
+    campo = request.POST.get("campo")
+    hito = get_object_or_404(Hitos, comedor_id=comedor_id)
+
+    # Verifica si el campo existe en el modelo
+    if hasattr(hito, campo):
+        setattr(hito, campo, False)  # Cambia el valor del campo a False (0)
+        hito.save()
+        messages.success(
+            request, f"El campo '{campo}' ha sido restaurado correctamente."
+        )
+    else:
+        messages.error(request, f"El campo '{campo}' no existe en el modelo Hitos.")
+
+    # Redirige a la página anterior
+    return redirect(request.META.get("HTTP_REFERER", "/"))
+
 
 
 # TODO: Sincronizar con la tarea de Pablo y migrar a clases
@@ -70,29 +90,6 @@ class AcompanamientoDetailView(DetailView):
             context["prestaciones_dias"] = []
 
         return context
-
-
-def restaurar_hito(request, comedor_id):
-    if request.method == "POST":
-        campo = request.POST.get("campo")
-        hito = get_object_or_404(Hitos, comedor_id=comedor_id)
-
-        # Verifica si el campo existe en el modelo
-        if hasattr(hito, campo):
-            setattr(hito, campo, False)  # Cambia el valor del campo a False (0)
-            hito.save()
-            messages.success(
-                request, f"El campo '{campo}' ha sido restaurado correctamente."
-            )
-        else:
-            messages.error(request, f"El campo '{campo}' no existe en el modelo Hitos.")
-
-        # Redirige a la página anterior
-        return redirect(request.META.get("HTTP_REFERER", "/"))
-
-    messages.error(request, "Método no permitido.")
-    return redirect(request.META.get("HTTP_REFERER", "/"))
-
 
 class ComedoresAcompanamientoListView(ListView):
     model = Admision
