@@ -7,16 +7,38 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         groups = [
-            "Admin",
-            "Comedores",
-            "Organizaciones",
-            "CDI",
-            "Ciudadanos",
-            "Tecnico Comedor",
-            "Abogado Dupla",
-            "Area Contable",
-            "Area Legales",
-        ]
+                "Admin",
+                "Comedores",
+                "Organizaciones",
+                "CDI",
+                "Ciudadanos",
+                "Tecnico Comedor",
+                "Abogado Dupla",
+                "Area Contable",
+                "Area Legales",
+                "Comedores Listar",
+                "Comedores Crear",
+                "Comedores Ver",
+                "Comedores Editar",
+                "Comedores Eliminar",
+                "Comedores Relevamiento Ver",
+                "Comedores Relevamiento Crear",
+                "Comedores Relevamiento Detalle",
+                "Comedores Relevamiento Editar",
+                "Comedores Observaciones Crear",
+                "Comedores Observaciones Detalle",
+                "Comedores Observaciones Editar",
+                "Comedores Observaciones Eliminar",
+                "Comedores Intervencion Ver",
+                "Comedores Intervencion Crear",
+                "Comedores Intervencion Editar", 
+                "Comedores Intervenciones Detalle",
+                "Comedores Nomina Ver",
+                "Comedores Nomina Crear",
+                "Comedores Nomina Editar",
+                "Comedores Nomina Borrar",
+                "Comedores Dupla Asignar",
+            ]
         for group_name in groups:
             _group, created = Group.objects.get_or_create(name=group_name)
             if created:
