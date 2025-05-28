@@ -32,7 +32,7 @@ def restaurar_hito(request, comedor_id):
     return redirect(request.META.get("HTTP_REFERER", "/"))
 
 
-# TODO: Sincronizar con la tarea de Pablo y migrar a clases
+# TODO: Sincronizar con la tarea de Pablo
 class AcompanamientoDetailView(DetailView):
     model = Comedor
     template_name = "acompañamiento_detail.html"
@@ -54,18 +54,15 @@ class AcompanamientoDetailView(DetailView):
         context["admision"] = admision
 
         info_relevante = None
+        resolucion = None
+        doc_resolucion = None
+
         if admision:
             info_relevante = (
                 InformeTecnicoBase.objects.filter(admision__comedor=comedor)
                 .order_by("-id")
                 .first()
             )
-        context["info_relevante"] = info_relevante
-
-        context["numero_if"] = admision.num_if if admision else None
-
-        resolucion = None
-        if admision:
             doc_resolucion = (
                 DocumentosExpediente.objects.filter(
                     admision__comedor=comedor, tipo="Resolución"
@@ -73,9 +70,12 @@ class AcompanamientoDetailView(DetailView):
                 .order_by("-creado")
                 .first()
             )
-            if doc_resolucion:
-                resolucion = doc_resolucion.value or doc_resolucion.nombre
+        if doc_resolucion:
+            resolucion = doc_resolucion.value or doc_resolucion.nombre
 
+        # Asignar valores al contexto
+        context["info_relevante"] = info_relevante
+        context["numero_if"] = admision.num_if if admision else None
         context["numero_resolucion"] = resolucion
 
         # Prestaciones
@@ -99,30 +99,14 @@ class ComedoresAcompanamientoListView(ListView):
 
     def get_queryset(self):
         user = self.request.user
-        # TODO: Sincronizar estado con la tarea de Pablo
 
-        if user.is_superuser:
-            return (
-                # TODO: El estado se cambia cuando se termina la ultima etapa de admision que esta trabajando Pablo.
-                Admision.objects.filter(estado__nombre="Finalizada")
-                .values(
-                    "comedor__id",
-                    "comedor__nombre",
-                )
-                .distinct()
+        queryset = Admision.objects.filter(estado__nombre="Finalizada")
+
+        # Si no es superusuario, filtrar por dupla
+        if not user.is_superuser:
+            queryset = queryset.filter(
+                Q(comedor__dupla__abogado=user) | Q(comedor__dupla__tecnico=user)
             )
-        else:
-            return (
-                Admision.objects.filter(
-                    Q(estado__nombre="Test")
-                    & (
-                        Q(comedor__dupla__abogado=user)
-                        | Q(comedor__dupla__tecnico=user)
-                    )
-                )
-                .values(
-                    "comedor__id",
-                    "comedor__nombre",
-                )
-                .distinct()
-            )
+
+        # Devolver valores únicos de comedor
+        return queryset.values("comedor__id", "comedor__nombre").distinct()
