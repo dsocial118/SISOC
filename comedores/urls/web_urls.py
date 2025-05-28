@@ -45,121 +45,143 @@ from configuraciones.decorators import group_required
 urlpatterns = [
     path(
         "comedores/listar",
-        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(
+        group_required(["Comedores Listar", "Tecnico Comedor", "Abogado Dupla"])(
             ComedorListView.as_view()
         ),
         name="comedores",
     ),
     path(
         "comedores/crear",
-        group_required("Comedores")(ComedorCreateView.as_view()),
+        group_required(["Comedores Crear"])(ComedorCreateView.as_view()),
         name="comedor_crear",
     ),
     path(
         "comedores/<pk>",
-        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(
+        group_required(["Comedores Ver", "Tecnico Comedor", "Abogado Dupla"])(
             ComedorDetailView.as_view()
         ),
         name="comedor_detalle",
     ),
     path(
         "comedores/<pk>/editar",
-        group_required("Comedores")(ComedorUpdateView.as_view()),
+        group_required(["Comedores Editar"])(ComedorUpdateView.as_view()),
         name="comedor_editar",
     ),
     path(
         "comedores/<pk>/eliminar",
-        group_required("Comedores")(ComedorDeleteView.as_view()),
+        group_required(["Comedores Eliminar"])(ComedorDeleteView.as_view()),
         name="comedor_eliminar",
     ),
     path(
         "comedores/<comedor_pk>/relevamiento/listar",
-        group_required("Comedores")(RelevamientoListView.as_view()),
+        group_required(["Comedores Relevamiento Ver"])(RelevamientoListView.as_view()),
         name="relevamientos",
     ),
     path(
         "comedores/<comedor_pk>/relevamiento/crear",
-        group_required("Comedores")(RelevamientoCreateView.as_view()),
+        group_required(["Comedores Relevamiento Crear"])(
+            RelevamientoCreateView.as_view()
+        ),
         name="relevamiento_crear",
     ),
     path(
         "comedores/<comedor_pk>/relevamiento/<pk>",
-        group_required("Comedores")(RelevamientoDetailView.as_view()),
+        group_required(["Comedores Relevamiento Detalle"])(
+            RelevamientoDetailView.as_view()
+        ),
         name="relevamiento_detalle",
     ),
     path(
         "comedores/<comedor_pk>/relevamiento/<pk>/editar",
-        group_required("Comedores")(RelevamientoUpdateView.as_view()),
+        group_required(["Comedores Relevamiento Editar"])(
+            RelevamientoUpdateView.as_view()
+        ),
         name="relevamiento_editar",
     ),
     path(
         "comedores/<comedor_pk>/relevamiento/<pk>/eliminar",
-        group_required("Comedores")(RelevamientoDeleteView.as_view()),
+        group_required(["Comedores Relevamiento Editar"])(
+            RelevamientoDeleteView.as_view()
+        ),
         name="relevamiento_eliminar",
     ),
     path(
         "comedores/<comedor_pk>/observacion/crear",
-        group_required("Comedores")(ObservacionCreateView.as_view()),
+        group_required(["Comedores Observaciones Crear"])(
+            ObservacionCreateView.as_view()
+        ),
         name="observacion_crear",
     ),
     path(
         "comedores/<comedor_pk>/observacion/<pk>",
-        group_required("Comedores")(ObservacionDetailView.as_view()),
+        group_required(["Comedores Observaciones Detalle"])(
+            ObservacionDetailView.as_view()
+        ),
         name="observacion_detalle",
     ),
     path(
         "comedores/<comedor_pk>/observacion/<pk>/editar",
-        group_required("Comedores")(ObservacionUpdateView.as_view()),
+        group_required(["Comedores Observaciones Editar"])(
+            ObservacionUpdateView.as_view()
+        ),
         name="observacion_editar",
     ),
     path(
         "comedores/<comedor_pk>/observacion/<pk>/eliminar",
-        group_required("Comedores")(ObservacionDeleteView.as_view()),
+        group_required(["Comedores Observaciones Eliminar"])(
+            ObservacionDeleteView.as_view()
+        ),
         name="observacion_eliminar",
     ),
     path(
         "comedores/intervencion/ver/<pk>",
-        group_required("Comedores")(IntervencionDetailView.as_view()),
+        group_required(["Comedores Intervencion Ver"])(
+            IntervencionDetailView.as_view()
+        ),
         name="comedor_intervencion_ver",
     ),
     path(
         "comedores/nomina/ver/<pk>",
-        group_required("Comedores")(NominaDetailView.as_view()),
+        group_required(["Comedores Nomina Ver"])(NominaDetailView.as_view()),
         name="nomina_ver",
     ),
     path(
         "comedores/nomina/crear/<pk>",
-        group_required("Comedores")(NominaCreateView.as_view()),
+        group_required(["Comedores Nomina Crear"])(NominaCreateView.as_view()),
         name="nomina_crear",
     ),
     path(
         "comedores/intervencion/crear/<pk>",
-        group_required("Comedores")(IntervencionCreateView.as_view()),
+        group_required(["Comedores Intervencion Crear"])(
+            IntervencionCreateView.as_view()
+        ),
         name="comedor_intervencion_crear",
     ),
     path(
         "comedores/intervencion/editar/<pk>/<pk2>",
-        group_required("Comedores")(IntervencionUpdateView.as_view()),
+        group_required(["Comedores Intervencion Editar"])(
+            IntervencionUpdateView.as_view()
+        ),
         name="comedores_intervencion_editar",
     ),
     path(
         "comedores/nomina/editar/<pk>/<pk2>",
-        group_required("Comedores")(NominaUpdateView.as_view()),
+        group_required(["Comedores Nomina Editar"])(NominaUpdateView.as_view()),
         name="nomina_editar",
     ),
     path(
         "comedores/intervencion/borrar/<int:comedor_id>/<int:intervencion_id>/",
-        (IntervencionDeleteView.as_view()),
+        group_required(["Comedores Nomina Borrar"])(IntervencionDeleteView.as_view()),
         name="comedor_intervencion_borrar",
     ),
     path(
         "comedores/nomina/borrar/<pk>/<pk2>",
-        group_required("Comedores")(NominaDeleteView.as_view()),
+        group_required(["Comedores Nomina Borrar"])(NominaDeleteView.as_view()),
         name="nomina_borrar",
     ),
     path(
         "comedores/dupla/asignar/<pk>",
-        group_required("Comedores")(AsignarDuplaListView.as_view()),
+        group_required(["Comedores Dupla Asignar"])(AsignarDuplaListView.as_view()),
         name="dupla_asignar",
     ),
     path(
@@ -179,7 +201,9 @@ urlpatterns = [
     ),
     path(
         "intervencion/detalle/<int:pk>/",
-        group_required("Comedores")(IntervencionDetailIndividualView.as_view()),
+        group_required(["Comedores Intervenciones Detalle"])(
+            IntervencionDetailIndividualView.as_view()
+        ),
         name="intervencion_detalle",
     ),
     path(
