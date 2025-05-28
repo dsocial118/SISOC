@@ -12,6 +12,7 @@ from acompanamientos.acompanamiento_service import AcompanamientoService
 from acompanamientos.models.hitos import Hitos
 from comedores.models.comedor import Comedor
 
+
 @require_POST
 def restaurar_hito(request, comedor_id):
     campo = request.POST.get("campo")
@@ -29,7 +30,6 @@ def restaurar_hito(request, comedor_id):
 
     # Redirige a la página anterior
     return redirect(request.META.get("HTTP_REFERER", "/"))
-
 
 
 # TODO: Sincronizar con la tarea de Pablo y migrar a clases
@@ -90,6 +90,7 @@ class AcompanamientoDetailView(DetailView):
             context["prestaciones_dias"] = []
 
         return context
+
 
 class ComedoresAcompanamientoListView(ListView):
     model = Admision
