@@ -195,48 +195,42 @@ class ComedorDetailView(DetailView):
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
+
         (
             count_beneficiarios,
             valor_cena,
             valor_desayuno,
             valor_almuerzo,
             valor_merienda,
-        ) = ComedorService.get_presupuestos(self.object["id"])
+        ) = ComedorService.get_presupuestos(self.object.id)
+
+        relevamientos = self.object.relevamiento_set.order_by("-estado", "-id")[:1]
+        observaciones = self.object.observacion_set.order_by("-fecha_visita")[:3]
 
         context.update(
             {
-                "relevamientos": Relevamiento.objects.filter(comedor=self.object["id"])
-                .values("id", "fecha_visita", "estado")
-                .order_by("-estado", "-id")[:1],
-                "observaciones": Observacion.objects.filter(comedor=self.object["id"])
-                .values("id", "fecha_visita")
-                .order_by("-fecha_visita")[:3],
-                "count_relevamientos": Relevamiento.objects.filter(
-                    comedor=self.object["id"]
-                ).count(),
+                "relevamientos": relevamientos,
+                "observaciones": observaciones,
+                "count_relevamientos": self.object.relevamiento_set.count(),
                 "count_beneficiarios": count_beneficiarios,
                 "presupuesto_desayuno": valor_desayuno,
                 "presupuesto_almuerzo": valor_almuerzo,
                 "presupuesto_merienda": valor_merienda,
                 "presupuesto_cena": valor_cena,
-                "imagenes": ImagenComedor.objects.filter(
-                    comedor=self.object["id"]
-                ).values("imagen"),
-                "comedor_categoria": ClasificacionComedor.objects.filter(
-                    comedor=self.object["id"]
-                )
-                .order_by("-fecha")
-                .first(),
+                "imagenes": self.object.imagenes.values("imagen"),
+                "comedor_categoria": self.object.clasificacioncomedor_set.order_by(
+                    "-fecha"
+                ).first(),
+                "rendicion_cuentas_final_activo": self.object.expedientes_pagos.count()
+                >= 5,
                 "GESTIONAR_API_KEY": os.getenv("GESTIONAR_API_KEY"),
                 "GESTIONAR_API_CREAR_COMEDOR": os.getenv("GESTIONAR_API_CREAR_COMEDOR"),
             }
         )
 
-        admision = Admision.objects.filter(comedor=self.object["id"]).first()
-
-        context["admision"] = admision
         return context
 
+    # TODO: Refactorizar y solidifcar el return
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
 
