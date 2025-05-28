@@ -1,5 +1,4 @@
 from django.db import models
-from acompanamientos.models.acompanamiento import InformacionRelevante
 from comedores.models.comedor import Comedor
 
 
@@ -22,17 +21,8 @@ class ExpedientePago(models.Model):
     fecha_pago_al_banco = models.DateField(verbose_name="Fecha de pago al banco")
     fecha_acreditacion = models.DateField(verbose_name="Fecha de acreditación")
     observaciones = models.TextField(verbose_name="Observaciones")
-    comedor = models.OneToOneField(
-        Comedor,
-        on_delete=models.SET_NULL,
-        related_name="expediente_pago",
-        verbose_name="Comedor",
-    )
-    acompanamiento = models.OneToOneField(
-        InformacionRelevante,
-        on_delete=models.SET_NULL,
-        related_name="expediente_pago",
-        verbose_name="Acompañamiento",
+    comedor = models.ForeignKey(
+        Comedor, on_delete=models.SET_NULL, related_name="expedientes_pagos", null=True
     )
     fecha_creacion = models.DateTimeField(
         auto_now_add=True, verbose_name="Fecha de creación"

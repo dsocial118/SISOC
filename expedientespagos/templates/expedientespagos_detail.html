@@ -6,7 +6,7 @@
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
         <div class="breadcrumb-item active">
-            <a href="{% url 'expedientespagos_list' %}">Expedientes de pagos</a>
+            <a href="{% url 'expedientespagos_list' expediente.comedor_id %}">Expedientes de pagos</a>
         </div>
     </ol>
 {% endblock %}
@@ -14,66 +14,50 @@
 {% load crispy_forms_tags %}
 ;
 {% block content %}
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card card-primary card-outline">
-                <div class="card-header">
-                    <h3 class="card-title">Listado de Expedientes de Pagos</h3>
-                </div>
-                <div class="card-body table-responsive">
-                    {% if expedientes %}
-                        <table class="table table-bordered table-striped">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Número de Expediente</th>
-                                    <th>Fecha</th>
-                                    <th>Monto</th>
-                                    <th>Estado</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for expediente in expedientes %}
-                                    <tr>
-                                        <td>{{ forloop.counter }}</td>
-                                        <td>{{ expediente.numero }}</td>
-                                        <td>{{ expediente.fecha|date:"d/m/Y" }}</td>
-                                        <td>${{ expediente.monto|floatformat:2 }}</td>
-                                        <td>{{ expediente.estado }}</td>
-                                        <td>
-                                            <a href="{% url 'detalle_expediente' expediente.id %}"
-                                               class="btn btn-info btn-sm">Ver</a>
-                                            <a href="{% url 'editar_expediente' expediente.id %}"
-                                               class="btn btn-warning btn-sm">Editar</a>
-                                            <form method="POST"
-                                                  action="{% url 'eliminar_expediente' expediente.id %}"
-                                                  style="display:inline">
-                                                {% csrf_token %}
-                                                <button type="submit"
-                                                        class="btn btn-danger btn-sm"
-                                                        onclick="return confirm('¿Estás seguro de eliminar este expediente?');">
-                                                    Eliminar
-                                                </button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    {% else %}
-                        <div class="alert alert-warning mb-0">No hay expedientes de pagos registrados.</div>
-                    {% endif %}
-                </div>
+    <div class="container mt-4">
+        <h1>Detalle del Expediente de Pago</h1>
+        <div class="card">
+            <div class="card-header">
+                <h3>Información del Expediente</h3>
+            </div>
+            <div class="card-body">
+                <p>
+                    <strong>Número de Expediente:</strong> {{ expediente.expediente_pago }}
+                </p>
+                <p>
+                    <strong>Resolución de Pago:</strong> {{ expediente.resolucion_pago }}
+                </p>
+                <p>
+                    <strong>Monto:</strong> ${{ expediente.monto|floatformat:2 }}
+                </p>
+                <p>
+                    <strong>Anexo:</strong> {{ expediente.anexo }}
+                </p>
+                <p>
+                    <strong>Número de Orden de Pago:</strong> {{ expediente.numero_orden_pago }}
+                </p>
+                <p>
+                    <strong>Fecha de Pago al Banco:</strong> {{ expediente.fecha_pago_al_banco|date:"d/m/Y" }}
+                </p>
+                <p>
+                    <strong>Fecha de Acreditación:</strong> {{ expediente.fecha_acreditacion|date:"d/m/Y" }}
+                </p>
+                <p>
+                    <strong>Observaciones:</strong> {{ expediente.observaciones }}
+                </p>
+                <p>
+                    <strong>Fecha de Creación:</strong> {{ expediente.fecha_creacion|date:"d/m/Y" }}
+                </p>
             </div>
         </div>
     </div>
-{% endblock %}
-{% block customJS %}
-    <script>
-        const comedorId = "{{ comedor.id }}"
-        const GESTIONAR_API_KEY = "{{ GESTIONAR_API_KEY }}";
-        const GESTIONAR_API_CREAR_COMEDOR = "{{ GESTIONAR_API_CREAR_COMEDOR }}";
-    </script>
-    <script src="{% static 'custom/js/comedordetail.js' %}"></script>
+    <div class="mt-3">
+        <a href="{% url 'expedientespagos_list' expediente.comedor_id %}"
+           class="btn btn-secondary">Volver al Listado</a>
+        <a href="{% url 'expedientespagos_update' expediente.id %}"
+           class="btn btn-primary">Editar</a>
+        <a href="{% url 'expedientespagos_delete' expediente.id %}"
+           class="btn btn-danger">Eliminar</a>
+    </div>
+</div>
 {% endblock %}

@@ -77,7 +77,7 @@ class Hitos(models.Model):
         return f"Hito - {self.comedor.nombre} - {self.fecha}"
 
 
-class CompararHitosIntervenciones(models.Model):
+class HitosIntervenciones(models.Model):
     intervencion = models.CharField(max_length=255)
     subintervencion = models.CharField(max_length=255)
     hito = models.CharField(max_length=255)
