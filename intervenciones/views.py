@@ -15,7 +15,7 @@ from intervenciones.models.intervenciones import (
 from intervenciones.forms import IntervencionForm
 
 
-@csrf_exempt
+@csrf_exempt  # FIXME: eliminar excepcion CSRF
 def sub_estados_intervenciones_ajax(request):
     tipo_intervencion_id = request.GET.get("id")
     if tipo_intervencion_id:
