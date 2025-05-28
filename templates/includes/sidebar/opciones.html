@@ -78,7 +78,7 @@
                     </ul>
                 </li>
             {% endif %}
-            {% if user|has_group:"Area Legales" or user|has_group:"Tecnico Comedor" or user|has_group:"Abogado Dupla"%}
+            {% if user|has_group:"Area Legales" or user|has_group:"Tecnico Comedor" or user|has_group:"Abogado Dupla" %}
                 <li class="nav-item">
                     <a href="{% url 'lista_comedores_acompanamiento' %}"
                        class="nav-link {% if 'acompanamiento' in pagina_actual %}active{% endif %}">
