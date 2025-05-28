@@ -79,47 +79,65 @@ urlpatterns = [
     ),
     path(
         "comedores/<comedor_pk>/relevamiento/crear",
-        group_required(["Comedores Relevamiento Crear"])(RelevamientoCreateView.as_view()),
+        group_required(["Comedores Relevamiento Crear"])(
+            RelevamientoCreateView.as_view()
+        ),
         name="relevamiento_crear",
     ),
     path(
         "comedores/<comedor_pk>/relevamiento/<pk>",
-        group_required(["Comedores Relevamiento Detalle"])(RelevamientoDetailView.as_view()),
+        group_required(["Comedores Relevamiento Detalle"])(
+            RelevamientoDetailView.as_view()
+        ),
         name="relevamiento_detalle",
     ),
     path(
         "comedores/<comedor_pk>/relevamiento/<pk>/editar",
-        group_required(["Comedores Relevamiento Editar"])(RelevamientoUpdateView.as_view()),
+        group_required(["Comedores Relevamiento Editar"])(
+            RelevamientoUpdateView.as_view()
+        ),
         name="relevamiento_editar",
     ),
     path(
         "comedores/<comedor_pk>/relevamiento/<pk>/eliminar",
-        group_required(["Comedores Relevamiento Editar"])(RelevamientoDeleteView.as_view()),
+        group_required(["Comedores Relevamiento Editar"])(
+            RelevamientoDeleteView.as_view()
+        ),
         name="relevamiento_eliminar",
     ),
     path(
         "comedores/<comedor_pk>/observacion/crear",
-        group_required(["Comedores Observaciones Crear"])(ObservacionCreateView.as_view()),
+        group_required(["Comedores Observaciones Crear"])(
+            ObservacionCreateView.as_view()
+        ),
         name="observacion_crear",
     ),
     path(
         "comedores/<comedor_pk>/observacion/<pk>",
-        group_required(["Comedores Observaciones Detalle"])(ObservacionDetailView.as_view()),
+        group_required(["Comedores Observaciones Detalle"])(
+            ObservacionDetailView.as_view()
+        ),
         name="observacion_detalle",
     ),
     path(
         "comedores/<comedor_pk>/observacion/<pk>/editar",
-        group_required(["Comedores Observaciones Editar"])(ObservacionUpdateView.as_view()),
+        group_required(["Comedores Observaciones Editar"])(
+            ObservacionUpdateView.as_view()
+        ),
         name="observacion_editar",
     ),
     path(
         "comedores/<comedor_pk>/observacion/<pk>/eliminar",
-        group_required(["Comedores Observaciones Eliminar"])(ObservacionDeleteView.as_view()),
+        group_required(["Comedores Observaciones Eliminar"])(
+            ObservacionDeleteView.as_view()
+        ),
         name="observacion_eliminar",
     ),
     path(
         "comedores/intervencion/ver/<pk>",
-        group_required(["Comedores Intervencion Ver"])(IntervencionDetailView.as_view()),
+        group_required(["Comedores Intervencion Ver"])(
+            IntervencionDetailView.as_view()
+        ),
         name="comedor_intervencion_ver",
     ),
     path(
@@ -134,12 +152,16 @@ urlpatterns = [
     ),
     path(
         "comedores/intervencion/crear/<pk>",
-        group_required(["Comedores Intervencion Crear"])(IntervencionCreateView.as_view()),
+        group_required(["Comedores Intervencion Crear"])(
+            IntervencionCreateView.as_view()
+        ),
         name="comedor_intervencion_crear",
     ),
     path(
         "comedores/intervencion/editar/<pk>/<pk2>",
-        group_required(["Comedores Intervencion Editar"])(IntervencionUpdateView.as_view()),
+        group_required(["Comedores Intervencion Editar"])(
+            IntervencionUpdateView.as_view()
+        ),
         name="comedores_intervencion_editar",
     ),
     path(
@@ -179,7 +201,9 @@ urlpatterns = [
     ),
     path(
         "intervencion/detalle/<int:pk>/",
-        group_required(["Comedores Intervenciones Detalle"])(IntervencionDetailIndividualView.as_view()),
+        group_required(["Comedores Intervenciones Detalle"])(
+            IntervencionDetailIndividualView.as_view()
+        ),
         name="intervencion_detalle",
     ),
     path(
