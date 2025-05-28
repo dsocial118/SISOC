@@ -120,41 +120,15 @@ class ComedorService:
     @staticmethod
     def get_comedor_detail_object(comedor_id: int):
         return (
-            Comedor.objects.select_related("provincia", "referente")
-            .values(
-                "id",
-                "foto_legajo",
-                "nombre",
-                "comienzo",
-                "estado",
-                "id_externo",
-                "organizacion__nombre",
-                "programa__nombre",
-                "provincia__nombre",
-                "municipio__nombre",
-                "localidad__nombre",
-                "tipocomedor__nombre",
-                "partido",
-                "barrio",
-                "calle",
-                "numero",
-                "piso",
-                "departamento",
-                "manzana",
-                "lote",
-                "longitud",
-                "latitud",
-                "entre_calle_1",
-                "entre_calle_2",
-                "codigo_postal",
-                "referente__nombre",
-                "referente__apellido",
-                "referente__mail",
-                "referente__celular",
-                "referente__documento",
-                "estado",
-                "dupla__nombre",
+            Comedor.objects.select_related(
+                "provincia",
+                "referente",
+                "organizacion",
+                "programa",
+                "tipocomedor",
+                "dupla",
             )
+            .prefetch_related("expedientes_pagos")
             .get(pk=comedor_id)
         )
 
