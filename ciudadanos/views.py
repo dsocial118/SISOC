@@ -1737,7 +1737,7 @@ class DimensionesUpdateView(SuccessMessageMixin, UpdateView):
 
 class DimensionesDetailView(DetailView):
     model = Ciudadano
-    template_name = "ciudadanos/dimensiones_detail.html"
+    template_name = "ciudadanos/dimension_detail.html"
 
 
 class ArchivosListView(ListView):
