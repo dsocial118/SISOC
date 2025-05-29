@@ -37,9 +37,10 @@ def run_django_commands():
     Ejecuta los comandos de Django necesarios para la preparación y el funcionamiento de la aplicación.
     """
     subprocess.run(["python", "manage.py", "makemigrations"])
+    subprocess.run(["python", "manage.py", "migrate", "auth"])
     subprocess.run(["python", "manage.py", "migrate", "--noinput"])
 
-    # Cargar los fixtures condicionalmente y limpiar el código si es necesario
+    # Cargar los fixtures condicionalmente, si se quiere forzar añadir `--force`
     subprocess.run(["python", "manage.py", "load_fixtures"])
 
     subprocess.run(["python", "manage.py", "create_local_superuser"])
