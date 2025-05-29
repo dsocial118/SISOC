@@ -94,13 +94,14 @@ class AcompanamientoDetailView(DetailView):
 
 class ComedoresAcompanamientoListView(ListView):
     model = Admision
+    model = InformeTecnicoBase
     template_name = "lista_comedores.html"
     context_object_name = "admisiones"
 
     def get_queryset(self):
         user = self.request.user
 
-        queryset = Admision.objects.filter(estado__nombre="Finalizada")
+        queryset = Admision.objects.filter(estado_legales="Finalizado")
 
         # Si no es superusuario, filtrar por dupla
         if not user.is_superuser:
