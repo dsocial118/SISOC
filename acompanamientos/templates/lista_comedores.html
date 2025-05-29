@@ -2,7 +2,17 @@
 {% block title %}Comedores en Acompañamiento{% endblock %}
 {% block titulo-pagina %}Comedores en Acompañamiento{% endblock %}
 {% block content %}
-    <div class="row">
+    <div>
+        <h2 class="text-center display-4 mb-4">Buscar Comedor</h2>
+        <div class="mb-3">
+            <input type="text"
+                   id="comedorFilter"
+                   class="form-control"
+                   placeholder="Filtrar por nombre del Comedor..."
+                   onkeyup="filterTable()" />
+        </div>
+    </div>
+    <div class="row mt-3">
         <div class="col-12">
             <div class="card card-primary card-outline">
                 <div class="card-header">
