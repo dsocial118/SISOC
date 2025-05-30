@@ -242,7 +242,7 @@ class ComedorDetailView(DetailView):
                 relevamiento = None
                 if is_new_relevamiento:
                     relevamiento = RelevamientoService.create_pendiente(
-                        request, self.object["id"]
+                        request, self.object.id
                     )
 
                 elif is_edit_relevamiento:
@@ -259,7 +259,7 @@ class ComedorDetailView(DetailView):
                 )
             except Exception as e:
                 messages.error(request, f"Error al crear el relevamiento: {e}")
-                return redirect("comedor_detalle", pk=self.object["id"])
+                return redirect("comedor_detalle", pk=self.object.id)
 
 
 class AsignarDuplaListView(ListView):  # FIXME: Por que esto es una ListView?
