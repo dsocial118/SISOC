@@ -14,7 +14,11 @@ urlpatterns = [
     path("", UsuariosLoginView.as_view(), name="login"),
     path("logout", (LogoutView.as_view()), name="logout"),
     # Usuarios
-    path("usuarios/", group_required("Usuario Ver")(UserListView.as_view()), name="usuarios"),
+    path(
+        "usuarios/",
+        group_required("Usuario Ver")(UserListView.as_view()),
+        name="usuarios",
+    ),
     path(
         "usuarios/crear/",
         group_required("Usuario Crear")(UserCreateView.as_view()),

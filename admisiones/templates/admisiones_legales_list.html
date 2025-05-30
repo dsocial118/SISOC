@@ -16,12 +16,11 @@
     <h2 class="text-center display-4 mb-4">Expedientes</h2>
     <div>
         <div class="mb-3">
-        <input type="text"
-            id="comedorFilter"
-            class="form-control"
-            placeholder="Filtrar por cualquier campo..."
-            onkeyup="filterTable()" />
-
+            <input type="text"
+                   id="comedorFilter"
+                   class="form-control"
+                   placeholder="Filtrar por cualquier campo..."
+                   onkeyup="filterTable()" />
         </div>
     </div>
     <div class="row mt-5">
@@ -117,5 +116,5 @@
     </div>
 {% endblock %}
 {% block customJS %}
-<script src="{% static 'custom/js/filtroadmisiones.js' %}"></script>
+    <script src="{% static 'custom/js/filtroadmisiones.js' %}"></script>
 {% endblock %}
