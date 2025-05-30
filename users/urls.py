@@ -14,22 +14,26 @@ urlpatterns = [
     path("", UsuariosLoginView.as_view(), name="login"),
     path("logout", (LogoutView.as_view()), name="logout"),
     # Usuarios
-    path("usuarios/", group_required("Admin")(UserListView.as_view()), name="usuarios"),
+    path("usuarios/", group_required("Usuario Ver")(UserListView.as_view()), name="usuarios"),
     path(
         "usuarios/crear/",
-        group_required("Admin")(UserCreateView.as_view()),
+        group_required("Usuario Crear")(UserCreateView.as_view()),
         name="usuario_crear",
     ),
     path(
         "usuarios/editar/<int:pk>/",
-        group_required("Admin")(UserUpdateView.as_view()),
+        group_required("Usuario Editar")(UserUpdateView.as_view()),
         name="usuario_editar",
     ),
     path(
         "usuarios/borrar/<int:pk>/",
-        group_required("Admin")(UserDeleteView.as_view()),
+        group_required("Usuario Eliminar")(UserDeleteView.as_view()),
         name="usuario_borrar",
     ),
     # Grupos
-    path("grupos/", group_required("Admin")(GroupListView.as_view()), name="grupos"),
+    path(
+        "grupos/",
+        group_required("Grupos Ver")(GroupListView.as_view()),
+        name="grupos",
+    ),
 ]

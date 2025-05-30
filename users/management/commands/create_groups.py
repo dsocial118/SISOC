@@ -40,6 +40,11 @@ class Command(BaseCommand):
             "Comedores Dupla Asignar",
             "Acompanamiento Detalle",
             "Acompanamiento Listar",
+            "Usuario Crear",
+            "Usuario Eliminar",
+            "Usuario Editar",
+            "Usuario Listar",
+            "Grupos Ver",
         ]
         for group_name in groups:
             _group, created = Group.objects.get_or_create(name=group_name)
