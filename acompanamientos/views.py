@@ -96,24 +96,30 @@ class ComedoresAcompanamientoListView(ListView):
     model = Comedor
     template_name = "lista_comedores.html"
     context_object_name = "comedores"
-    paginate_by = 10  # o el número que uses
+    paginate_by = 10  # Cantidad de resultados por página
 
     def get_queryset(self):
         user = self.request.user
         busqueda = self.request.GET.get("busqueda", "").strip().lower()
 
+        # Filtramos las admisiones con estado=2 (Finalizada)
         admisiones = Admision.objects.filter(estado=2)
 
+        # Si no es superusuario, filtramos por dupla asignada
         if not user.is_superuser:
             admisiones = admisiones.filter(
                 Q(comedor__dupla__abogado=user) | Q(comedor__dupla__tecnico=user)
             )
 
+        # Obtenemos los IDs de los comedores que tienen admisiones finalizadas
         comedor_ids = admisiones.values_list("comedor_id", flat=True).distinct()
+
+        # Filtramos los comedores
         queryset = Comedor.objects.filter(id__in=comedor_ids).select_related(
             "referente", "tipocomedor", "provincia"
         )
 
+        # Aplicamos búsqueda global
         if busqueda:
             queryset = queryset.filter(
                 Q(nombre__icontains=busqueda)
