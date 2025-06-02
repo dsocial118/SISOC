@@ -12,6 +12,12 @@ class ExpedientePagoForm(forms.ModelForm):
         exclude = ["comedor"]
         widgets = {
             "usuario": forms.Select(attrs={"class": "form-control"}),
+            "fecha_pago_al_banco": forms.DateInput(
+                attrs={"type": "date", "class": "form-control"}
+            ),
+            "fecha_acreditacion": forms.DateInput(
+                attrs={"type": "date", "class": "form-control"}
+            ),
         }
         labels = {
             "nombre": "Nombre del Expediente",
