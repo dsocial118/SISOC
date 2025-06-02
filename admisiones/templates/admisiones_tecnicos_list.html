@@ -1,8 +1,6 @@
-{% extends "includes/main.html" %};
+{% extends "includes/main.html" %}
 {% load static %}
-;
 {% block title %}Comedores - Admisiones{% endblock %}
-;
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
         <li class="breadcrumb-item">
@@ -11,9 +9,19 @@
         <li class="breadcrumb-item active">Listar</li>
     </ol>
 {% endblock %}
-;
 {% block content %}
     <h2 class="text-center display-4 mb-4">Admisiones</h2>
+    <div>
+        <div class="mb-3">
+            <form method="get" class="mb-3">
+                <input type="text"
+                       name="busqueda"
+                       value="{{ query }}"
+                       class="form-control"
+                       placeholder="Buscar por nombre, ubicación, referente, etc." />
+            </form>
+        </div>
+    </div>
     <div class="row mt-5">
         <div class="col-12">
             <div class="card">
@@ -116,4 +124,6 @@
         </div>
     </div>
 {% endblock %}
-{% block customJS %}{% endblock %}
+{% block customJS %}
+    <script src="{% static 'custom/js/filtroadmisiones.js' %}"></script>
+{% endblock %}
