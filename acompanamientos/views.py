@@ -93,21 +93,42 @@ class AcompanamientoDetailView(DetailView):
 
 
 class ComedoresAcompanamientoListView(ListView):
-    model = Admision
-    model = InformeTecnicoBase
+    model = Comedor
     template_name = "lista_comedores.html"
-    context_object_name = "admisiones"
+    context_object_name = "comedores"
+    paginate_by = 10  # o el número que uses
 
     def get_queryset(self):
         user = self.request.user
+        busqueda = self.request.GET.get("busqueda", "").strip().lower()
 
-        queryset = Admision.objects.filter(estado_legales="Finalizado")
+        admisiones = Admision.objects.filter(estado=2)
 
-        # Si no es superusuario, filtrar por dupla
         if not user.is_superuser:
-            queryset = queryset.filter(
+            admisiones = admisiones.filter(
                 Q(comedor__dupla__abogado=user) | Q(comedor__dupla__tecnico=user)
             )
 
-        # Devolver valores únicos de comedor
-        return queryset.values("comedor__id", "comedor__nombre").distinct()
+        comedor_ids = admisiones.values_list("comedor_id", flat=True).distinct()
+        queryset = Comedor.objects.filter(id__in=comedor_ids).select_related(
+            "referente", "tipocomedor", "provincia"
+        )
+
+        if busqueda:
+            queryset = queryset.filter(
+                Q(nombre__icontains=busqueda)
+                | Q(provincia__nombre__icontains=busqueda)
+                | Q(tipocomedor__nombre__icontains=busqueda)
+                | Q(calle__icontains=busqueda)
+                | Q(numero__icontains=busqueda)
+                | Q(referente__nombre__icontains=busqueda)
+                | Q(referente__apellido__icontains=busqueda)
+                | Q(referente__celular__icontains=busqueda)
+            )
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["query"] = self.request.GET.get("busqueda", "")
+        return context
