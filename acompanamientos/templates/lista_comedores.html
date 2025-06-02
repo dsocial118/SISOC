@@ -1,4 +1,5 @@
 {% extends "includes/main.html" %}
+{% load static %}
 {% block title %}Comedores en Acompañamiento{% endblock %}
 {% block titulo-pagina %}Comedores en Acompañamiento{% endblock %}
 {% block content %}
@@ -29,17 +30,44 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for admision in admisiones %}
+                            {% for comedor in comedores %}
                                 <tr>
-                                    <td>{{ admision.comedor__nombre }}</td>
+                                    <td>{{ comedor.nombre }}</td>
                                     <td>
-                                        <a href="{% url 'detalle_acompanamiento' admision.comedor__id %}"
+                                        <a href="{% url 'detalle_acompanamiento' comedor.id %}"
                                            class="btn btn-primary">Ver Acompañamiento</a>
                                     </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="2" class="text-center">No se encontraron resultados.</td>
                                 </tr>
                             {% endfor %}
                         </tbody>
                     </table>
+                    {% if is_paginated %}
+                        <div class="mt-2">
+                            <ul class="pagination">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a href="?busqueda={{ query }}&page={{ page_obj.previous_page_number }}"
+                                           class="page-link">Anterior</a>
+                                    </li>
+                                {% endif %}
+                                {% for num in page_obj.paginator.page_range %}
+                                    <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                                        <a href="?busqueda={{ query }}&page={{ num }}" class="page-link">{{ num }}</a>
+                                    </li>
+                                {% endfor %}
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a href="?busqueda={{ query }}&page={{ page_obj.next_page_number }}"
+                                           class="page-link">Siguiente</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
