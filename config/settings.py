@@ -1,9 +1,10 @@
 import os
 from pathlib import Path
 import sys
-
+import logging
 from django.contrib.messages import constants as messages
 from dotenv import load_dotenv
+
 
 # Cargar variables de entorno desde el archivo .env
 load_dotenv()
@@ -215,10 +216,98 @@ if "pytest" in sys.argv:  # DB para testing
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "filters": {
+        "info_only": {
+            "()": "django.utils.log.CallbackFilter",
+            "callback": lambda r: r.levelno == logging.INFO,
+        },
+        "error_only": {
+            "()": "django.utils.log.CallbackFilter",
+            "callback": lambda r: r.levelno >= logging.ERROR,
+        },
+        "warning_only": {
+            "()": "django.utils.log.CallbackFilter",
+            "callback": lambda r: r.levelno >= logging.WARNING,
+        },
+        "debug_only": {
+            "()": "django.utils.log.CallbackFilter",
+            "callback": lambda r: r.levelno >= logging.DEBUG,
+        },
+        "critical_only": {
+            "()": "django.utils.log.CallbackFilter",
+            "callback": lambda r: r.levelno >= logging.CRITICAL,
+        },
+    },
+    "formatters": {
+        "verbose": {
+            "format": "[{asctime}] {module} {levelname} {name}: {message} ",
+            "style": "{",
+        },
+        "simple": {
+            "format": "[{asctime}] {levelname} {message}",
+            "style": "{",
+        },
+    },
     "handlers": {
-        "console": {
+        "info_file": {
+            "level": "INFO",
+            "filters": ["info_only"],
+            "class": "config.utils.DailyFileHandler",
+            "filename": str(BASE_DIR / "logs/info.log"),
+            "formatter": "verbose",
+        },
+        "error_file": {
+            "level": "ERROR",
+            "filters": ["error_only"],
+            "class": "config.utils.DailyFileHandler",
+            "filename": str(BASE_DIR / "logs/error.log"),
+            "formatter": "verbose",
+        },
+        "warning_file": {
+            "level": "WARNING",
+            "filters": ["warning_only"],
+            "class": "config.utils.DailyFileHandler",
+            "filename": str(BASE_DIR / "logs/warning.log"),
+            "formatter": "verbose",
+        },
+        "debug_file": {
             "level": "DEBUG",
-            "class": "logging.StreamHandler",
+            "filters": ["debug_only"],
+            "class": "config.utils.DailyFileHandler",
+            "filename": str(BASE_DIR / "logs/debug.log"),
+            "formatter": "verbose",
+        },
+        "critical_file": {
+            "level": "CRITICAL",
+            "filters": ["critical_only"],
+            "class": "config.utils.DailyFileHandler",
+            "filename": str(BASE_DIR / "logs/critical.log"),
+            "formatter": "verbose",
+        },
+        "daily_info_file": {
+            "level": "INFO",
+            "class": "config.utils.DailyFileHandler",
+            "filename": str(BASE_DIR / "logs/daily_info.log"),
+            "formatter": "verbose",
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": [
+                "info_file",
+                "error_file",
+                "warning_file",
+                "debug_file",
+                "critical_file",
+                "daily_info_file",
+            ],
+            "level": "DEBUG",
+            "propagate": True,
+        },
+        "django.request": {
+            "handlers": ["daily_info_file"],
+            "level": "ERROR",
+            "propagate": False,
         },
     },
 }
