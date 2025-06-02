@@ -1,4 +1,5 @@
 import os
+from django.db.models import Q
 from django.contrib import messages
 from django.http import JsonResponse
 from django.shortcuts import redirect, get_object_or_404
@@ -68,12 +69,33 @@ def actualizar_estado_archivo(request):
 
 
 class AdmisionesTecnicosListView(ListView):
-    model = Admision
+    model = Admision  # aunque devolvés Comedor, la clase sigue siendo ListView
     template_name = "admisiones_tecnicos_list.html"
     context_object_name = "comedores"
+    paginate_by = 10
 
     def get_queryset(self):
-        return AdmisionService.get_comedores_with_admision(self.request.user)
+        query = self.request.GET.get("busqueda", "").strip().lower()
+        comedores = AdmisionService.get_comedores_with_admision(self.request.user)
+
+        if query:
+            comedores = comedores.filter(
+                Q(nombre__icontains=query)
+                | Q(provincia__nombre__icontains=query)
+                | Q(tipocomedor__nombre__icontains=query)
+                | Q(calle__icontains=query)
+                | Q(numero__icontains=query)
+                | Q(referente__nombre__icontains=query)
+                | Q(referente__apellido__icontains=query)
+                | Q(referente__celular__icontains=query)
+            )
+
+        return comedores
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["query"] = self.request.GET.get("busqueda", "")
+        return context
 
 
 class AdmisionesTecnicosCreateView(CreateView):
@@ -256,9 +278,29 @@ class AdmisionesLegalesListView(ListView):
     model = Admision
     template_name = "admisiones_legales_list.html"
     context_object_name = "admisiones"
+    paginate_by = 10
 
     def get_queryset(self):
-        return Admision.objects.filter(enviado_legales=True)
+        query = self.request.GET.get("busqueda", "").strip().lower()
+        queryset = Admision.objects.filter(enviado_legales=True).select_related(
+            "comedor", "tipo_convenio"
+        )
+
+        if query:
+            queryset = queryset.filter(
+                Q(comedor__nombre__icontains=query)
+                | Q(tipo_convenio__nombre__icontains=query)
+                | Q(num_expediente__icontains=query)
+                | Q(num_if__icontains=query)
+                | Q(estado_legales__icontains=query)
+            )
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["query"] = self.request.GET.get("busqueda", "")
+        return context
 
 
 class AdmisionesLegalesDetailView(FormMixin, DetailView):
