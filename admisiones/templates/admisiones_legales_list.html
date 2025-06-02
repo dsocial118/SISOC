@@ -16,11 +16,13 @@
     <h2 class="text-center display-4 mb-4">Expedientes</h2>
     <div>
         <div class="mb-3">
-            <input type="text"
-                   id="comedorFilter"
-                   class="form-control"
-                   placeholder="Filtrar por cualquier campo..."
-                   onkeyup="filterTable()" />
+            <form method="get" class="mb-3">
+                <input type="text"
+                       name="busqueda"
+                       value="{{ query }}"
+                       class="form-control"
+                       placeholder="Buscar por nombre, ubicación, referente, etc." />
+            </form>
         </div>
     </div>
     <div class="row mt-5">
