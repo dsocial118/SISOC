@@ -231,7 +231,7 @@ LOGGING = {
         },
         "debug_only": {
             "()": "django.utils.log.CallbackFilter",
-            "callback": lambda r: r.levelno >= logging.DEBUG,
+            "callback": lambda r: r.levelno == logging.DEBUG,
         },
         "critical_only": {
             "()": "django.utils.log.CallbackFilter",
@@ -240,7 +240,7 @@ LOGGING = {
     },
     "formatters": {
         "verbose": {
-            "format": "[{asctime}] {module} {levelname} {name}: {message} ",
+            "format": "[{asctime}] {module} {levelname} {name}: {message}",
             "style": "{",
         },
         "simple": {
@@ -284,28 +284,15 @@ LOGGING = {
             "filename": str(BASE_DIR / "logs/critical.log"),
             "formatter": "verbose",
         },
-        "daily_info_file": {
-            "level": "INFO",
-            "class": "config.utils.DailyFileHandler",
-            "filename": str(BASE_DIR / "logs/daily_info.log"),
-            "formatter": "verbose",
-        },
     },
     "loggers": {
         "django": {
-            "handlers": [
-                "info_file",
-                "error_file",
-                "warning_file",
-                "debug_file",
-                "critical_file",
-                "daily_info_file",
-            ],
+            "handlers": ["info_file", "error_file", "warning_file", "debug_file", "critical_file"],
             "level": "DEBUG",
             "propagate": True,
         },
         "django.request": {
-            "handlers": ["daily_info_file"],
+            "handlers": ["error_file"],
             "level": "ERROR",
             "propagate": False,
         },
