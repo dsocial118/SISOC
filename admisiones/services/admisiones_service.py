@@ -536,7 +536,9 @@ class AdmisionService:
             messages.success(request, "Se ha cargado con éxito.")
         else:
             messages.error(request, "Error al guardar.")
-            print(form.errors)
+            logger.error(
+                "Error al guardar documento de expediente: %s", form.errors
+            )
 
         return redirect(request.path_info)
 
