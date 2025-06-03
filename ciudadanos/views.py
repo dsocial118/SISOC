@@ -764,25 +764,40 @@ class CiudadanosCreateView(CreateView):
                 dimensionfamilia = DimensionFamilia.objects.create(
                     ciudadano_id=ciudadano.id
                 )
-                print("dimensionfamilia", dimensionfamilia)
+            
+                logger.info(
+                    f"dimensionfamilia {dimensionfamilia}"
+                )
                 dimensionvivienda = DimensionVivienda.objects.create(
                     ciudadano_id=ciudadano.id
                 )
-                print("dimensionvivienda", dimensionvivienda)
+
+                logger.info(
+                    f"dimensionvivienda {dimensionvivienda}"
+                )
                 dimensiosalud = DimensionSalud.objects.create(ciudadano_id=ciudadano.id)
-                print("dimensiosalud", dimensiosalud)
+             
                 dimensioneconomia = DimensionEconomia.objects.create(
                     ciudadano_id=ciudadano.id
                 )
-                print("dimensioneconomia", dimensioneconomia)
+                logger.info(
+                    f"dimensioneconomia {dimensioneconomia}"
+                )
+ 
                 dimensioneducacion = DimensionEducacion.objects.create(
                     ciudadano_id=ciudadano.id
                 )
-                print("dimensioneducacion", dimensioneducacion)
+                logger.info(
+                    f"dimensioneducacion {dimensioneducacion}"
+                )
+
                 dimensiontrabajo = DimensionTrabajo.objects.create(
                     ciudadano_id=ciudadano.id
                 )
-                print("dimensiontrabajo", dimensiontrabajo)
+                logger.info(    
+                    f"dimensiontrabajo {dimensiontrabajo}"
+                )
+       
 
             # Redireccionar según el botón presionado
             if "form_ciudadanos" in self.request.POST:
@@ -1950,8 +1965,9 @@ class CiudadanosGrupoHogarCreateView(CreateView):
             for familiar in page_obj
             if familiar["ciudadano_2Hogar__id"] == int(pk)
         ]
-        print(context["hogar_1"])
-
+        logger.debug(
+            f"hogar_1: {context['hogar_1']}, hogar_2: {context['hogar_2']}"
+        )
         context["hogares"] = page_obj
         context["count_hogar"] = hogares.count()
         context["ciudadano_principal"] = ciudadano_principal
