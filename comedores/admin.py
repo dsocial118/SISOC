@@ -16,11 +16,7 @@ from comedores.models.relevamiento import (
     TipoGestionQuejas,
     TipoModalidadPrestacion,
     TipoRecurso,
-    TipoInsumos,
-    TipoFrecuenciaInsumos,
-    TipoTecnologia,
-    TipoAccesoComedor,
-    TipoDistanciaTransporte,
+    
 )
 
 from comedores.models.comedor import (
@@ -30,8 +26,15 @@ from comedores.models.comedor import (
     ValorComida,
     Programas,
     Nomina,
+    Referente,
+    ImagenComedor,
+    RendicionCuentasFinal,
+    EstadoDocumentoRendicionFinal,
+    TipoDocumentoRendicionFinal,
+    DocumentoRendicionFinal,
 )
 
+#relevamiento
 admin.site.register(TipoModalidadPrestacion)
 admin.site.register(TipoEspacio)
 admin.site.register(TipoCombustible)
@@ -45,17 +48,20 @@ admin.site.register(TipoRecurso)
 admin.site.register(FuenteRecursos)
 admin.site.register(FuenteCompras)
 admin.site.register(Prestacion)
-admin.site.register(Comedor)
 admin.site.register(Relevamiento)
-admin.site.register(Observacion)
-admin.site.register(ValorComida)
-admin.site.register(Nomina)
-admin.site.register(TipoDeComedor)
-admin.site.register(TipoInsumos)
-admin.site.register(TipoFrecuenciaInsumos)
-admin.site.register(TipoTecnologia)
-admin.site.register(TipoAccesoComedor)
-admin.site.register(TipoDistanciaTransporte)
 admin.site.register(MotivoExcepcion)
 admin.site.register(Excepcion)
+
+#Comedor
+admin.site.register(Comedor)
+admin.site.register(Observacion)
+admin.site.register(TipoDeComedor)
+admin.site.register(ValorComida)
 admin.site.register(Programas)
+admin.site.register(Nomina)
+admin.site.register(Referente)
+admin.site.register(ImagenComedor)
+admin.site.register(RendicionCuentasFinal)
+admin.site.register(EstadoDocumentoRendicionFinal)
+admin.site.register(TipoDocumentoRendicionFinal)
+admin.site.register(DocumentoRendicionFinal)
