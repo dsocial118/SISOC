@@ -16,7 +16,6 @@ from comedores.models.relevamiento import (
     TipoGestionQuejas,
     TipoModalidadPrestacion,
     TipoRecurso,
-    
 )
 
 from comedores.models.comedor import (
@@ -34,7 +33,7 @@ from comedores.models.comedor import (
     DocumentoRendicionFinal,
 )
 
-#relevamiento
+# relevamiento
 admin.site.register(TipoModalidadPrestacion)
 admin.site.register(TipoEspacio)
 admin.site.register(TipoCombustible)
@@ -52,7 +51,7 @@ admin.site.register(Relevamiento)
 admin.site.register(MotivoExcepcion)
 admin.site.register(Excepcion)
 
-#Comedor
+# Comedor
 admin.site.register(Comedor)
 admin.site.register(Observacion)
 admin.site.register(TipoDeComedor)
