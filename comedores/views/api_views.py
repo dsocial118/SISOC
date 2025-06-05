@@ -21,7 +21,7 @@ class RelevamientoApiView(APIView):
         )
         relevamiento_serializer = RelevamientoSerializer(
             relevamiento, data=request.data, partial=True
-        ).clean()
+        )
         if relevamiento_serializer.is_valid():
             relevamiento_serializer.save()
             relevamiento = relevamiento_serializer.instance
@@ -29,7 +29,7 @@ class RelevamientoApiView(APIView):
             error_message_str = format_serializer_errors(relevamiento_serializer)
 
             return Response(
-                f"Error en relevamiento: '{error_message_str}'",
+                f"Error: '{error_message_str}'",
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
