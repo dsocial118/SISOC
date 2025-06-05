@@ -24,6 +24,7 @@ urlpatterns = [
     path("", include("healthcheck.urls")),
     path("acompanamientos/", include("acompanamientos.urls")),
     path("expedientespagos/", include("expedientespagos.urls")),
+    path("rendicioncuentasmensual/", include("rendicioncuentasmensual.urls")),
 ]
 
 urlpatterns += staticfiles_urlpatterns()

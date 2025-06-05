@@ -12,13 +12,21 @@
     </ol>
 {% endblock %}
 {% block content %}
-    <div class="row">
-        <div class="col-6"></div>
+<div class="row">
+        <div class="col-6">
         <a href="{% url 'expedientespagos_list' comedor.id %}"
            class="btn btn-primary btn-lg mb-3">
             <i class="fas fa-plus"></i>Expedientes de Pagos
         </a>
     </div>
+</div>
+<div class="row">
+    <div class="col-6">
+    <a href="{% url 'rendicioncuentasmensual_list' comedor.id %}"
+       class="btn btn-primary btn-lg mb-3">
+        <i class="fas fa-plus"></i>Rendicion de Cuenta Mensual
+    </a>
+</div>
 </div>
 <div class="row">
     <div class="col-12">
