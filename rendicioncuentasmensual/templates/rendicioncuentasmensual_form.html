@@ -1,0 +1,60 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Detalle de Rendición de Cuenta{% endblock %}
+
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right">
+    <li class="breadcrumb-item">
+        <a href="{% url 'rendicioncuentasmensual_list' comedorid %}" title="Ver listado de rendiciones">Rendiciones de Cuenta</a>
+    </li>
+    <li class="breadcrumb-item active">{{ form.instance.id|default:"Crear" }} Rendición</li>
+</ol>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">{{ form.instance.id|default:"Crear" }} Rendición de Cuenta</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="row">
+            <!-- Datos de la rendición -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5>Datos de la Rendición</h5>
+                    </div>
+                    <div class="card-body">
+                        {{ form.mes|as_crispy_field }}
+                        {{ form.anio|as_crispy_field }}
+                        {{ form.documento_adjunto|as_crispy_field }}
+                        {{ form.observaciones|as_crispy_field }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Archivos asociados -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-secondary text-white">
+                        <h5>Archivos Asociados</h5>
+                    </div>
+                    <div class="card-body">
+                        {{ form.arvhios_adjuntos|as_crispy_field }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de acción -->
+        <div class="mt-4 text-center">
+            <button type="submit" class="btn btn-success">
+                {{ form.instance.id|default:"Crear" }} Rendición
+            </button>
+            <a href="{% url 'rendicioncuentasmensual_list' comedorid %}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

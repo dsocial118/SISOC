@@ -18,13 +18,27 @@ class DocumentacionAdjunta(models.Model):
         verbose_name_plural = "Documentos Adjuntos"
 
 class RendicionCuentaMensual(models.Model):
+    MESES = [
+        (1, "Enero"),
+        (2, "Febrero"),
+        (3, "Marzo"),
+        (4, "Abril"),
+        (5, "Mayo"),
+        (6, "Junio"),
+        (7, "Julio"),
+        (8, "Agosto"),
+        (9, "Septiembre"),
+        (10, "Octubre"),
+        (11, "Noviembre"),
+        (12, "Diciembre"),
+    ]
     comedor = models.ForeignKey(
         Comedor, on_delete=models.SET_NULL, 
         related_name="rendiciones_cuentas_mensuales",
         null=True,
         blank=True,
     )
-    mes = models.IntegerField(verbose_name="Mes")
+    mes = models.IntegerField(verbose_name="Mes", choices=MESES)
     anio = models.IntegerField(verbose_name="Año")
     documento_adjunto = models.BooleanField(
         default=False, verbose_name="Documento Adjunto"

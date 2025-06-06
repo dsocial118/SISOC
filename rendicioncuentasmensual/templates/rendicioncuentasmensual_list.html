@@ -1,0 +1,80 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% block title %}Acciones{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="" title="Ver listado de admisiones">Rendición de cuenta mensual</a>
+        </li>
+        <li class="breadcrumb-item ">
+            <a href="{% url 'detalle_acompanamiento' comedorid %}"
+               title="Ver ciudadano">{{ object.rendicion_cuenta_mensual }}</a>
+        </li>
+        <li class="breadcrumb-item active">Lista</li>
+    </ol>
+{% endblock %}
+{% block content %}
+
+<div class="container mt-5">
+    <h1 class="mb-4">Rendiciones de Cuenta - {{ comedor.nombre }}</h1>
+    <a href="{% url 'rendicioncuentasmensual_create' comedorid %}" class="btn btn-success">
+        Crear Rendición de Cuenta
+    </a>
+    <table class="table table-bordered table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>#</th>
+                <th>Mes</th>
+                <th>Año</th>
+                <th>Observaciones</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for rendicion in rendiciones_cuentas_mensuales %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ rendicion.mes }}</td>
+                <td>{{ rendicion.anio }}</td>
+                <td>{{ rendicion.observaciones }}</td>
+                <td>
+                    <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#archivos-{{ rendicion.id }}" aria-expanded="false" aria-controls="archivos-{{ rendicion.id }}">
+                        Ver Archivos
+                    </button>
+                </td>
+            </tr>
+            <tr class="collapse" id="archivos-{{ rendicion.id }}">
+                <td colspan="5">
+                    <table class="table table-sm table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Nombre del Archivo</th>
+                                <th>Descargar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for archivo in rendiciones_cuentas_mensuales.arvhios_adjuntos.all %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ archivo.nombre }}</td>
+                                <td>
+                                    <a href="{{ archivo.archivo.url }}" class="btn btn-success btn-sm" target="_blank">Descargar</a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center">No hay archivos asociados.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock content %}
