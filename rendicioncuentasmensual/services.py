@@ -35,7 +35,7 @@ class RendicionCuentaMensualService:
     @staticmethod
     def obtener_rendiciones_cuentas_mensuales(comedor):
         # Obtener todas las rendiciones de cuenta mensual para un comedor
-        return RendicionCuentaMensual.objects.filter(comedor=comedor)
+        return RendicionCuentaMensual.objects.filter(comedor=comedor).prefetch_related("arvhios_adjuntos")
 
     @staticmethod
     def obtener_rendicion_cuenta_mensual(id_enviado):
