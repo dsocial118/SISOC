@@ -39,6 +39,9 @@
                 <td>{{ rendicion.anio }}</td>
                 <td>{{ rendicion.observaciones }}</td>
                 <td>
+                    <a href="{% url 'rendicioncuentasmensual_detail' rendicion.id %}" class="btn btn-info btn-sm">
+                        Ver Detalle
+                    </a>
                     <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#archivos-{{ rendicion.id }}" aria-expanded="false" aria-controls="archivos-{{ rendicion.id }}">
                         Ver Archivos
                     </button>
