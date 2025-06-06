@@ -33,7 +33,7 @@ class RendicionCuentaMensualDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["rendicion"] = RendicionCuentaMensualService.obtener_rendicion_cuenta_mensual(self.kwargs.get("id_enviado"))
+        context["rendicion"] = RendicionCuentaMensualService.obtener_rendicion_cuenta_mensual(self.kwargs.get("pk"))
         return context
     
 class RendicionCuentaMensualCreateView(CreateView):

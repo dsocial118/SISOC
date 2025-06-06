@@ -15,7 +15,7 @@ urlpatterns = [
         name="rendicioncuentasmensual_list",
     ),
     path(
-        "rendicioncuentasmensual/detalle/<int:id_enviado>/",
+        "rendicioncuentasmensual/detalle/<int:pk>/",
         group_required("Tecnico Comedor")(RendicionCuentaMensualDetailView.as_view()),
         name="rendicioncuentasmensual_detail",
     ),
