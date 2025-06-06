@@ -13,17 +13,6 @@ from comedores.models.comedor import Comedor
 from django.urls import reverse_lazy, reverse
 from .forms import RendicionCuentaMensualForm, DocumentacionAdjuntaForm
 
-
-def crear_rendicion_cuenta_mensual(request):
-    if request.method == "POST":
-        form = RendicionCuentaMensualForm(request.POST, request.FILES)
-        if form.is_valid():
-            rendicion = form.save()
-            return redirect("rendicion_cuenta_listar")
-    else:
-        form = RendicionCuentaMensualForm()
-    return render(request, "rendicioncuentasmensual/crear.html", {"form": form})
-
 class RendicionCuentaMensualListView(ListView):
     model = RendicionCuentaMensual
     template_name = "rendicioncuentasmensual_list.html"
@@ -58,11 +47,11 @@ class RendicionCuentaMensualCreateView(CreateView):
         rendicion = form.save(commit=False)
         rendicion.comedor = comedor
         rendicion.save()
-        archivos = self.request.FILES.getlist("arvhios_adjuntos")
-        for archivo in archivos:
+        archivos = self.request.FILES.getlist("documento_adjunto")
+        for archivo_enviado in archivos:
             doc_adjunta = DocumentacionAdjunta.objects.create(
-                nombre=archivo.name,
-                archivo=archivo,
+                nombre=archivo_enviado.name,
+                archivo=archivo_enviado,
             )
             rendicion.arvhios_adjuntos.add(doc_adjunta)
 
