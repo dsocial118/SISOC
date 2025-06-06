@@ -45,6 +45,17 @@ class Command(BaseCommand):
             "Usuario Editar",
             "Usuario Listar",
             "Grupos Ver",
+            "Admin Ver Expedientes",
+            "Técnico Ver Tareas Asignadas",
+            "Provincia Ver Estado Pago",
+            "Provincia Crear Expediente",
+            "Provincia Ver Lista Aprobados",
+            "Provincia Cargar Formulario",
+            "Provincia Finalizar Expediente",
+            "Admin Asignar Técnico",
+            "Técnico Subir Cruces",
+            "Técnico Validar Resultado Cruce",
+            "Técnico Registrar Informe Pago"
         ]
         for group_name in groups:
             _group, created = Group.objects.get_or_create(name=group_name)

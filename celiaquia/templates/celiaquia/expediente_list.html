@@ -1,0 +1,106 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Expedientes Celiaquía{% endblock %}
+
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right">
+    <li class="breadcrumb-item"><a href="#">Celiaquía</a></li>
+    <li class="breadcrumb-item active">Expedientes</li>
+</ol>
+{% endblock %}
+
+{% block content %}
+<h2 class="text-center display-4 mb-4">Listado de Expedientes</h2>
+
+<form method="GET">
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <div class="form-group">
+                <div class="input-group input-group-lg">
+                    <input type="search"
+                           class="form-control form-control-lg"
+                           placeholder="Buscar por provincia u observaciones"
+                           name="busqueda" />
+                    <div class="input-group-append">
+                        <button type="submit" class="btn btn-lg btn-primary">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<div class="row mt-3">
+    <div class="col-12 text-center">
+        <a href="{% url 'celiaquia_expedientes_listar' %}" class="btn btn-secondary btn-lg d-block d-sm-inline mt-2">Resetear</a>
+        {% if perms.celiaquia.add_expediente %}
+            <a href="{% url 'celiaquia_expedientes_crear' %}" class="btn btn-primary btn-lg d-block d-sm-inline mt-2 mr-2">Agregar</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <table class="table table-bordered table-striped projects">
+                    <thead>
+                        <tr>
+                            <th>Provincia</th>
+                            <th>Fecha de creación</th>
+                            <th>Estado</th>
+                            <th>Observaciones</th>
+                            <th style="width: 15%" class="notexport">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for expediente in expedientes %}
+                        <tr>
+                            <td>{{ expediente.provincia }}</td>
+                            <td>{{ expediente.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                            <td>{{ expediente.estado.nombre }}</td>
+                            <td>{{ expediente.observaciones|truncatewords:15 }}</td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'celiaquia_expedientes_detalle' expediente.id %}" class="btn btn-primary btn-sm">Ver</a>
+                                    {% if expediente.estado.nombre == 'Creado' %}
+                                        <a href="{% url 'celiaquia_expedientes_editar' expediente.id %}" class="btn btn-secondary btn-sm">Editar</a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center">No se encontraron expedientes.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% if is_paginated %}
+                <div class="mt-2">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a href="?page={{ page_obj.previous_page_number }}" class="page-link">Anterior</a>
+                        </li>
+                        {% endif %}
+                        {% for num in page_obj.paginator.page_range %}
+                        <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                            <a href="?page={{ num }}" class="page-link">{{ num }}</a>
+                        </li>
+                        {% endfor %}
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a href="?page={{ page_obj.next_page_number }}" class="page-link">Siguiente</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

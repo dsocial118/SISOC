@@ -24,6 +24,7 @@ urlpatterns = [
     path("", include("healthcheck.urls")),
     path("acompanamientos/", include("acompanamientos.urls")),
     path("expedientespagos/", include("expedientespagos.urls")),
+    path('', include('celiaquia.urls.web_urls')),
 ]
 
 urlpatterns += staticfiles_urlpatterns()
