@@ -52,6 +52,22 @@ class RendicionCuentaMensualCreateView(CreateView):
     template_name = "rendicioncuentasmensual_form.html"
     fields = "__all__"
 
+    def form_valid(self, form):
+        comedor_id = self.kwargs.get("comedor_id")
+        comedor = Comedor.objects.get(id=comedor_id)
+        rendicion = form.save(commit=False)
+        rendicion.comedor = comedor
+        rendicion.save()
+        archivos = self.request.FILES.getlist("arvhios_adjuntos")
+        for archivo in archivos:
+            doc_adjunta = DocumentacionAdjunta.objects.create(
+                nombre=archivo.name,
+                archivo=archivo,
+            )
+            rendicion.arvhios_adjuntos.add(doc_adjunta)
+
+        return super().form_valid(form)
+
     def get_success_url(self):
         return reverse_lazy("rendicioncuentasmensual_list", kwargs={"comedor_id": self.kwargs.get("comedor_id")})
 
@@ -67,6 +83,22 @@ class RendicionCuentaMensualUpdateView(UpdateView):
     template_name = "rendicioncuentasmensual_form.html"
     fields = "__all__"
 
+    def form_valid(self, form):
+        comedor_id = self.kwargs.get("comedor_id")
+        comedor = Comedor.objects.get(id=comedor_id)
+        rendicion = form.save(commit=False)
+        rendicion.comedor = comedor
+        rendicion.save()
+        archivos = self.request.FILES.getlist("arvhios_adjuntos")
+        for archivo in archivos:
+            doc_adjunta = DocumentacionAdjunta.objects.create(
+                nombre=archivo.name,
+                archivo=archivo,
+            )
+            rendicion.arvhios_adjuntos.add(doc_adjunta)
+
+        return super().form_valid(form)
+    
     def get_success_url(self):
         return reverse_lazy("rendicioncuentasmensual_list", kwargs={"comedor_id": self.kwargs.get("comedor_id")})
 
