@@ -5,7 +5,7 @@ from comedores.models.comedor import Comedor
 
 class DocumentacionAdjunta(models.Model):
     nombre = models.CharField(max_length=255, verbose_name="Nombre del Documento")
-    archivo = models.FileField(upload_to="documentos_adjuntos/", verbose_name="Archivo")
+    archivo = models.FileField(upload_to="rendicioncuentasmensual/documentos_adjuntos/", verbose_name="Archivo")
     fecha_creacion = models.DateTimeField(
         auto_now_add=True, verbose_name="Fecha de Creación"
     )
