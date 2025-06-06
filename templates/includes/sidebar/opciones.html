@@ -123,6 +123,16 @@
                     </a>
                 </li>
             {% endif %}
+            
+                <li class="nav-item">
+                    <a href="{% url 'celiaquia_expedientes_listar' %}"
+                    class="nav-link {% if 'celiaquia/expedientes/listar' in pagina_actual %}active{% endif %}">
+                        <i class="nav-icon bi bi-clipboard-heart"></i>
+                        <p>Celiaquía</p>
+                    </a>
+                </li>
+
+            
         </ul>
     </li>
 {% endwith %}

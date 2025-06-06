@@ -1,0 +1,39 @@
+{% extends "includes/main.html" %}
+{% load static crispy_forms_tags %}
+
+{% block title %}Subir Archivos de Cruce{% endblock %}
+
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right px-3">
+    <li class="breadcrumb-item">
+        <a href="{% url 'celiaquia_expedientes_listar' %}">Expedientes</a>
+    </li>
+    <li class="breadcrumb-item">
+        <a href="{% url 'celiaquia_expedientes_detalle' expediente.id %}">Detalle Expediente</a>
+    </li>
+    <li class="breadcrumb-item active">Subir Archivos de Cruce</li>
+</ol>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+    <a href="{% url 'celiaquia_expedientes_detalle' expediente.id %}" class="btn btn-secondary">Volver</a>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <form method="post" enctype="multipart/form-data" class="card card-primary card-outline">
+            <div class="card-header">
+                <h3 class="card-title">Carga de Archivos</h3>
+            </div>
+            <div class="card-body">
+                {% csrf_token %}
+                {{ form|crispy }}
+            </div>
+            <div class="card-footer d-flex justify-content-end">
+                <button type="submit" class="btn btn-success">Subir Archivo</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
