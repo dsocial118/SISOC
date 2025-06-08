@@ -1,6 +1,12 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django import forms
+
+
+
+class CargaMasivaForm(forms.Form):
+    archivo = forms.FileField(label="Archivo Excel (.xlsx)", required=True)
 
 class EstadoExpediente(models.Model):
     nombre = models.CharField(max_length=255, unique=True)
@@ -65,6 +71,8 @@ class ArchivoCruce(models.Model):
     def __str__(self):
         return f"{self.organismo} - {self.tipo}"
 
+class CargaMasivaForm(forms.Form):
+    archivo = forms.FileField(label="Archivo Excel (.xlsx)", required=True)
 
 class ResultadoCruce(models.Model):
     expediente = models.ForeignKey(Expediente, on_delete=models.CASCADE, related_name='resultados')

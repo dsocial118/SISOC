@@ -1,0 +1,14 @@
+{% extends 'includes/main.html' %}
+{% block title %}Carga Masiva de Personas{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>Carga Masiva de Personas</h2>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Subir Archivo</button>
+    <a href="{% url 'celiaquia_expedientes_detalle' expediente.id %}" class="btn btn-secondary">Cancelar</a>
+  </form>
+</div>
+{% endblock %}
