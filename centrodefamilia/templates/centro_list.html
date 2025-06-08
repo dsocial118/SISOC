@@ -1,0 +1,39 @@
+{% extends "includes/main.html" %}
+{% block title %}Listado de Centros{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center mb-4">Centros</h2>
+
+    <div class="mb-3 text-end">
+        <a href="{% url 'centro_crear' %}" class="btn btn-success">Agregar Centro</a>
+    </div>
+
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Tipo</th>
+                <th>Activo</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for centro in object_list %}
+            <tr>
+                <td>{{ centro.nombre }}</td>
+                <td>{{ centro.get_tipo_display }}</td>
+                <td>{{ centro.activo|yesno:"Sí,No" }}</td>
+                <td>
+                    <a href="{% url 'centro_editar' centro.pk %}" class="btn btn-sm btn-primary">Editar</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" class="text-center">No hay centros registrados.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

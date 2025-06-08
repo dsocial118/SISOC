@@ -1,0 +1,18 @@
+{% extends "includes/main.html" %}
+{% block title %}Registrar Participante{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center mb-4">Registrar Participante</h2>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+
+        <div class="text-end">
+            <button type="submit" class="btn btn-primary">Guardar</button>
+            <a href="{% url 'participante_actividad_listar' %}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
