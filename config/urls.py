@@ -18,6 +18,7 @@ urlpatterns = [
     path("", include("duplas.urls")),
     path("", include("ciudadanos.urls")),
     path("", include("admisiones.urls")),
+    path("", include("centrodefamilia.urls")),
     # Django Debug Toolbar
     path("__debug__/", include("debug_toolbar.urls")),
     # Healthcheck AWS
