@@ -22,6 +22,78 @@ from celiaquia.models import Expediente, ArchivoCruce, EstadoExpediente
 from django.conf import settings
 import os
 from celiaquia.models import ResultadoCruce
+from django.views.generic.edit import FormView
+from openpyxl import load_workbook
+from .models import PersonaFormulario
+from .models import CargaMasivaForm
+from django.views import View
+from django.http import HttpResponse
+from openpyxl import Workbook
+from .models import ResultadoCruce
+
+class ExportarResultadosExcelView(View):
+    def get(self, request, expediente_id):
+        resultados = ResultadoCruce.objects.filter(expediente_id=expediente_id)
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Resultados de Cruce"
+        ws.append(["DNI", "Estado", "Motivo de Rechazo"])
+
+        for resultado in resultados:
+            ws.append([
+                resultado.dni,
+                resultado.get_estado_display(),
+                resultado.motivo_rechazo or ''
+            ])
+
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename=resultados_cruce_exp_{expediente_id}.xlsx'
+        wb.save(response)
+        return response
+
+class CargaMasivaPersonasView(LoginRequiredMixin, FormView):
+    form_class = CargaMasivaForm
+    template_name = 'celiaquia/carga_masiva_personas.html'
+
+    def form_valid(self, form):
+        archivo_excel = form.cleaned_data['archivo']
+        expediente = get_object_or_404(Expediente, pk=self.kwargs['pk'])
+
+        try:
+            wb = load_workbook(archivo_excel)
+            ws = wb.active
+
+            filas_cargadas = 0
+            for fila in ws.iter_rows(min_row=2, values_only=True):  # Asumimos encabezados en fila 1
+                nombre, apellido, dni, sexo, fecha_nacimiento = fila
+
+                # Validar duplicados en el mismo expediente
+                if PersonaFormulario.objects.filter(expediente=expediente, dni=str(dni)).exists():
+                    continue
+
+                PersonaFormulario.objects.create(
+                    expediente=expediente,
+                    nombre=nombre,
+                    apellido=apellido,
+                    dni=str(dni),
+                    sexo=sexo,
+                    fecha_nacimiento=fecha_nacimiento
+                )
+                filas_cargadas += 1
+
+            messages.success(self.request, f"Se cargaron {filas_cargadas} personas correctamente.")
+        except Exception as e:
+            messages.error(self.request, f"Error al procesar el archivo: {e}")
+
+        return redirect('celiaquia_expedientes_detalle', pk=expediente.pk)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['expediente'] = get_object_or_404(Expediente, pk=self.kwargs['pk'])
+        return context
 
 
 

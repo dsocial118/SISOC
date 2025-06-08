@@ -1,6 +1,7 @@
 from django.urls import path
 from configuraciones.decorators import group_required
 from celiaquia.views import (
+    CargaMasivaPersonasView,
     ExpedienteCreateView,
     ExpedienteDetailView,
     ExpedienteListView,
@@ -12,7 +13,16 @@ from celiaquia.views import (
     CruceArchivosUploadView,
     CruceResultadoConfirmarView,
     InformePagoCreateView,
+    ExportarResultadosExcelView,
 )
+
+
+path(
+    'expedientes/<int:expediente_id>/exportar-resultados/',
+    ExportarResultadosExcelView.as_view(),
+    name='celiaquia_exportar_resultados_excel'
+),
+
 
 urlpatterns = [
     path(
@@ -78,4 +88,7 @@ urlpatterns = [
         name="celiaquia_pago_registrar",
     ),
     path('expedientes/<int:pk>/cargar-persona/', FormularioCargarView.as_view(), name='celiaquia_expedientes_cargar_persona'),
+    path('expedientes/<int:pk>/carga-masiva/', CargaMasivaPersonasView.as_view(), name='celiaquia_carga_masiva'),
+
+
 ]

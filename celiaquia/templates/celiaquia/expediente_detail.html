@@ -26,6 +26,8 @@
           <button type="submit" class="btn btn-success">Confirmar Nómina</button>
         </form>
       {% endif %}
+      <a href="{% url 'celiaquia_carga_masiva' expediente.id %}" class="btn btn-outline-primary">Carga Masiva Excel</a>
+
     </div>
 
   <div class="card mb-4">
