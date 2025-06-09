@@ -7,6 +7,7 @@ from organizaciones.models import (
     Aval2,
 )
 
+
 class OrganizacionForm(forms.ModelForm):
     class Meta:
         model = Organizacion
@@ -26,15 +27,17 @@ class FirmanteForm(forms.ModelForm):
         if rol == "aval" and not cuit:
             self.add_error("cuit", "El CUIT es obligatorio para el rol Aval")
 
+
 class Aval1Form(forms.ModelForm):
     class Meta:
         model = Aval1
         fields = ["nombre", "cuit"]
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["nombre"].required = False
         self.fields["cuit"].required = False
+
 
 class Aval2Form(forms.ModelForm):
     class Meta:
@@ -46,11 +49,12 @@ class Aval2Form(forms.ModelForm):
         self.fields["nombre"].required = False
         self.fields["cuit"].required = False
 
+
 Aval1Formset = inlineformset_factory(
-    Organizacion, Aval1, form=Aval1Form, extra=1, can_delete=True
+    Organizacion, Aval1, form=Aval1Form, extra=1, max_num=1, can_delete=True
 )
 Aval2Formset = inlineformset_factory(
-    Organizacion, Aval2, form=Aval2Form, extra=1, can_delete=True
+    Organizacion, Aval2, form=Aval2Form, extra=1, max_num=1, can_delete=True
 )
 
 FirmanteFormset = inlineformset_factory(

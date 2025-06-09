@@ -37,8 +37,8 @@ urlpatterns = [
         name="organizacion_eliminar",
     ),
     path(
-    "organizaciones/subtipos-entidad/ajax/",
-    group_required("Organizaciones")(sub_tipo_entidad_ajax),
-    name="organizacion_subtipos_entidad_ajax",
+        "organizaciones/subtipos-entidad/ajax/",
+        group_required("Organizaciones")(sub_tipo_entidad_ajax),
+        name="organizacion_subtipos_entidad_ajax",
     ),
 ]
