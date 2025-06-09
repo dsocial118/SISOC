@@ -1,9 +1,10 @@
 import os
 from pathlib import Path
 import sys
-
+import logging
 from django.contrib.messages import constants as messages
 from dotenv import load_dotenv
+
 
 # Cargar variables de entorno desde el archivo .env
 load_dotenv()
@@ -131,6 +132,13 @@ INSTALLED_APPS = [
     "organizaciones",
     "provincias",
     "cdi",
+    "ciudadanos",
+    "duplas",
+    "admisiones",
+    "intervenciones",
+    "historial",
+    "acompanamientos",
+    "expedientespagos",
 ]
 
 # Definición del middleware utilizado por el proyecto
@@ -147,6 +155,7 @@ MIDDLEWARE = [
     "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "config.middlewares.xss_protection.XSSProtectionMiddleware",
+    "config.middlewares.threadlocals.ThreadLocalMiddleware",
     "corsheaders.middleware.CorsMiddleware",
 ]
 
@@ -207,10 +216,91 @@ if "pytest" in sys.argv:  # DB para testing
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "filters": {
+        "info_only": {
+            "()": "django.utils.log.CallbackFilter",
+            "callback": lambda r: r.levelno == logging.INFO,
+        },
+        "error_only": {
+            "()": "django.utils.log.CallbackFilter",
+            "callback": lambda r: r.levelno >= logging.ERROR,
+        },
+        "warning_only": {
+            "()": "django.utils.log.CallbackFilter",
+            "callback": lambda r: r.levelno >= logging.WARNING,
+        },
+        "debug_only": {
+            "()": "django.utils.log.CallbackFilter",
+            "callback": lambda r: r.levelno == logging.DEBUG,
+        },
+        "critical_only": {
+            "()": "django.utils.log.CallbackFilter",
+            "callback": lambda r: r.levelno >= logging.CRITICAL,
+        },
+    },
+    "formatters": {
+        "verbose": {
+            "format": "[{asctime}] {module} {levelname} {name}: {message}",
+            "style": "{",
+        },
+        "simple": {
+            "format": "[{asctime}] {levelname} {message}",
+            "style": "{",
+        },
+    },
     "handlers": {
-        "console": {
+        "info_file": {
+            "level": "INFO",
+            "filters": ["info_only"],
+            "class": "config.utils.DailyFileHandler",
+            "filename": str(BASE_DIR / "logs/info.log"),
+            "formatter": "verbose",
+        },
+        "error_file": {
+            "level": "ERROR",
+            "filters": ["error_only"],
+            "class": "config.utils.DailyFileHandler",
+            "filename": str(BASE_DIR / "logs/error.log"),
+            "formatter": "verbose",
+        },
+        "warning_file": {
+            "level": "WARNING",
+            "filters": ["warning_only"],
+            "class": "config.utils.DailyFileHandler",
+            "filename": str(BASE_DIR / "logs/warning.log"),
+            "formatter": "verbose",
+        },
+        "debug_file": {
             "level": "DEBUG",
-            "class": "logging.StreamHandler",
+            "filters": ["debug_only"],
+            "class": "config.utils.DailyFileHandler",
+            "filename": str(BASE_DIR / "logs/debug.log"),
+            "formatter": "verbose",
+        },
+        "critical_file": {
+            "level": "CRITICAL",
+            "filters": ["critical_only"],
+            "class": "config.utils.DailyFileHandler",
+            "filename": str(BASE_DIR / "logs/critical.log"),
+            "formatter": "verbose",
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": [
+                "info_file",
+                "error_file",
+                "warning_file",
+                "debug_file",
+                "critical_file",
+            ],
+            "level": "DEBUG",
+            "propagate": True,
+        },
+        "django.request": {
+            "handlers": ["error_file"],
+            "level": "ERROR",
+            "propagate": False,
         },
     },
 }
@@ -263,7 +353,17 @@ DOMINIO = os.environ.get("DOMINIO", default="localhost:8001")
 CSRF_TRUSTED_ORIGINS = [
     "http://com.sisoc.secretarianaf.gob.ar",
     "https://com.sisoc.secretarianaf.gob.ar",
+    "http://10.80.9.15",
+    "http://10.80.5.45",
+    "https://api.appsheet.com",
 ]
 
-# Configuración de hosts permitidos desde variables de entorno
-ALLOWED_HOSTS = ["com.sisoc.secretarianaf.gob.ar", "localhost", "127.0.0.1"]
+# Configuración de hosts permitidos TODO: que se haga desde el .env
+ALLOWED_HOSTS = [
+    "com.sisoc.secretarianaf.gob.ar",
+    "localhost",
+    "127.0.0.1",
+    "10.80.9.15",
+    "10.80.5.45",
+    "https://api.appsheet.com",
+]

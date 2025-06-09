@@ -1,0 +1,44 @@
+[
+    {
+        "model": "ciudadanos.modocontratacion",
+        "pk": 1,
+        "fields": {
+            "modo": "Relación de dependencia"
+        }
+    },
+    {
+        "model": "ciudadanos.modocontratacion",
+        "pk": 2,
+        "fields": {
+            "modo": "Monotributista / Contratado"
+        }
+    },
+    {
+        "model": "ciudadanos.modocontratacion",
+        "pk": 3,
+        "fields": {
+            "modo": "Informal con cobro mensual"
+        }
+    },
+    {
+        "model": "ciudadanos.modocontratacion",
+        "pk": 4,
+        "fields": {
+            "modo": "Jornal"
+        }
+    },
+    {
+        "model": "ciudadanos.modocontratacion",
+        "pk": 5,
+        "fields": {
+            "modo": "Changarín"
+        }
+    },
+    {
+        "model": "ciudadanos.modocontratacion",
+        "pk": 6,
+        "fields": {
+            "modo": "Otro"
+        }
+    }
+]

@@ -1,0 +1,114 @@
+[
+  {
+    "model": "comedores.TipoDocumentoRendicionFinal",
+    "pk": 1,
+    "fields": {
+      "nombre": "Lista de beneficiarios",
+      "validador": "Dupla"
+    }
+  },
+  {
+    "model": "comedores.TipoDocumentoRendicionFinal",
+    "pk": 2,
+    "fields": {
+      "nombre": "Certificación mensual de prestaciones mes 1",
+      "validador": "Dupla"
+    }
+  },
+  {
+    "model": "comedores.TipoDocumentoRendicionFinal",
+    "pk": 3,
+    "fields": {
+      "nombre": "Certificación mensual de prestaciones mes 2",
+      "validador": "Dupla"
+    }
+  },
+  {
+    "model": "comedores.TipoDocumentoRendicionFinal",
+    "pk": 4,
+    "fields": {
+      "nombre": "Certificación mensual de prestaciones mes 3",
+      "validador": "Dupla"
+    }
+  },
+  {
+    "model": "comedores.TipoDocumentoRendicionFinal",
+    "pk": 5,
+    "fields": {
+      "nombre": "Certificación mensual de prestaciones mes 4",
+      "validador": "Dupla"
+    }
+  },
+  {
+    "model": "comedores.TipoDocumentoRendicionFinal",
+    "pk": 6,
+    "fields": {
+      "nombre": "Certificación mensual de prestaciones mes 5",
+      "validador": "Dupla"
+    }
+  },
+  {
+    "model": "comedores.TipoDocumentoRendicionFinal",
+    "pk": 7,
+    "fields": {
+      "nombre": "Certificación mensual de prestaciones mes 6",
+      "validador": "Dupla"
+    }
+  },
+  {
+    "model": "comedores.TipoDocumentoRendicionFinal",
+    "pk": 8,
+    "fields": {
+      "nombre": "DDJJ sobre aplicación de fondos del subsidio + Anexo I",
+      "validador": "Contable"
+    }
+  },
+  {
+    "model": "comedores.TipoDocumentoRendicionFinal",
+    "pk": 9,
+    "fields": {
+      "nombre": "Comprobantes de gastos",
+      "validador": "Contable"
+    }
+  },
+  {
+    "model": "comedores.TipoDocumentoRendicionFinal",
+    "pk": 10,
+    "fields": {
+      "nombre": "Constancias de CAE/CAI/CAEA",
+      "validador": "Contable"
+    }
+  },
+  {
+    "model": "comedores.TipoDocumentoRendicionFinal",
+    "pk": 11,
+    "fields": {
+      "nombre": "Constancias de inscripción ARCA",
+      "validador": "Contable"
+    }
+  },
+  {
+    "model": "comedores.TipoDocumentoRendicionFinal",
+    "pk": 12,
+    "fields": {
+      "nombre": "DDJJ para Facturas A",
+      "validador": "Contable"
+    }
+  },
+  {
+    "model": "comedores.TipoDocumentoRendicionFinal",
+    "pk": 13,
+    "fields": {
+      "nombre": "Reporte mensual",
+      "validador": "Contable"
+    }
+  },
+  {
+    "model": "comedores.TipoDocumentoRendicionFinal",
+    "pk": 14,
+    "fields": {
+      "nombre": "Informe Técnico Final",
+      "validador": "Legales"
+    }
+  }
+]

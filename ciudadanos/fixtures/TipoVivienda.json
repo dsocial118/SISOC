@@ -1,0 +1,72 @@
+[
+    {
+        "model": "ciudadanos.tipovivienda",
+        "pk": 1,
+        "fields": {
+            "tipo": "Casa"
+        }
+    },
+    {
+        "model": "ciudadanos.tipovivienda",
+        "pk": 2,
+        "fields": {
+            "tipo": "Rancho"
+        }
+    },
+    {
+        "model": "ciudadanos.tipovivienda",
+        "pk": 3,
+        "fields": {
+            "tipo": "Casilla"
+        }
+    },
+    {
+        "model": "ciudadanos.tipovivienda",
+        "pk": 4,
+        "fields": {
+            "tipo": "Vivienda móvil"
+        }
+    },
+    {
+        "model": "ciudadanos.tipovivienda",
+        "pk": 5,
+        "fields": {
+            "tipo": "Situación de calle"
+        }
+    },
+    {
+        "model": "ciudadanos.tipovivienda",
+        "pk": 6,
+        "fields": {
+            "tipo": "Departamento"
+        }
+    },
+    {
+        "model": "ciudadanos.tipovivienda",
+        "pk": 7,
+        "fields": {
+            "tipo": "Pieza en hotel familiar o pensión"
+        }
+    },
+    {
+        "model": "ciudadanos.tipovivienda",
+        "pk": 8,
+        "fields": {
+            "tipo": "Pieza en hotel/Pensón"
+        }
+    },
+    {
+        "model": "ciudadanos.tipovivienda",
+        "pk": 9,
+        "fields": {
+            "tipo": "Sitio no construido para vivienda"
+        }
+    },
+    {
+        "model": "ciudadanos.tipovivienda",
+        "pk": 10,
+        "fields": {
+            "tipo": "Otro"
+        }
+    }
+]

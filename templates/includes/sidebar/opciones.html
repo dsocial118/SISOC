@@ -28,6 +28,11 @@
                         <i class="fas fa-arrow-alt-circle-right nav-icon"></i>
                         <p>Grupos</p>
                     </a>
+                    <a href="{% url 'dupla_list' %}"
+                       class="nav-link {% if 'grupos' in pagina_actual %}active{% endif %}">
+                        <i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+                        <p>Duplas</p>
+                    </a>
                 </li>
             </ul>
         </li>
@@ -41,12 +46,53 @@
             </p>
         </a>
         <ul class="nav nav-treeview">
-            {% if user|has_group:"Comedores" %}
+            {% if user|has_group:"Comedor Ver" or user|has_group:"Tecnico Comedor" or user|has_group:"Abogado Dupla" or user|has_group:"Area Legales" or user|has_group:"Comedores Listar" %}
                 <li class="nav-item">
                     <a href="{% url 'comedores' %}"
                        class="nav-link {% if 'comedores/listar' in pagina_actual %}active{% endif %}">
-                        <i class="nav-icon fas fa-user"></i>
+                        <i class="nav-icon bi bi-house-heart-fill"></i>
                         <p>Comedores</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="far fa-circle nav-icon"></i>
+                        <p>
+                            Admision - Comedores
+                            <i class="nav-arrow bi bi-chevron-right"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview" style="display: none;">
+                        <li class="nav-item">
+                            <a href="{% url 'admisiones_tecnicos_listar' %}" class="nav-link ms-3">
+                                <i class="far fa-dot-circle nav-icon"></i>
+                                <p>Técnicos</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'admisiones_legales_listar' %}" class="nav-link ms-3">
+                                <i class="far fa-dot-circle nav-icon"></i>
+                                <p>Legales</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            {% endif %}
+            {% if user|has_group:"Area Legales" or user|has_group:"Tecnico Comedor" or user|has_group:"Abogado Dupla" %}
+                <li class="nav-item">
+                    <a href="{% url 'lista_comedores_acompanamiento' %}"
+                       class="nav-link {% if 'acompanamiento' in pagina_actual %}active{% endif %}">
+                        <i class="nav-icon bi bi-emoji-smile-fill"></i>
+                        <p>Acompañamiento</p>
+                    </a>
+                </li>
+            {% endif %}
+            {% if user|has_group:"Area Legales" or user|has_group:"Area Contable" %}
+                <li class="nav-item">
+                    <a href="{% url 'rendicion_cuentas_final_listar' %}"
+                       class="nav-link {% if 'rendicion_cuentas_final/listar' in pagina_actual %}active{% endif %}">
+                        <i class="nav-icon bi bi-receipt"></i>
+                        <p>Rendicion de Cuentas Final</p>
                     </a>
                 </li>
             {% endif %}
@@ -63,8 +109,17 @@
                 <li class="nav-item">
                     <a href="{% url 'cdi' %}"
                        class="nav-link {% if 'cdi/listar' in pagina_actual %}active{% endif %}">
-                        <i class="nav-icon bi bi-building-fill"></i>
+                        <i class="nav-icon bi bi-emoji-smile-fill"></i>
                         <p>Centro Desarrollo Infantil</p>
+                    </a>
+                </li>
+            {% endif %}
+            {% if user|has_group:"Ciudadanos" %}
+                <li class="nav-item">
+                    <a href="{% url 'ciudadanos' %}"
+                       class="nav-link {% if 'ciudadanos/listar' in pagina_actual %}active{% endif %}">
+                        <i class="nav-icon bi bi-people-fill"></i>
+                        <p>Ciudadanos</p>
                     </a>
                 </li>
             {% endif %}

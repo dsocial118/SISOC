@@ -1,12 +1,11 @@
 import os
-import re
 from typing import Any
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.db.models.base import Model
 from django.forms import BaseModelForm
-from django.http import HttpResponse, JsonResponse
-from django.shortcuts import redirect
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views.generic import (
@@ -17,17 +16,18 @@ from django.views.generic import (
     UpdateView,
     TemplateView,
 )
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.views.decorators.http import require_POST
+
+
 from comedores.forms.relevamiento_form import PuntosEntregaForm
-
-
 from comedores.models.relevamiento import Relevamiento, ClasificacionComedor
 from comedores.forms.comedor_form import (
     ComedorForm,
     ReferenteForm,
-    IntervencionForm,
     NominaForm,
 )
-
 from comedores.forms.observacion_form import ObservacionForm
 from comedores.forms.relevamiento_form import (
     AnexoForm,
@@ -41,52 +41,34 @@ from comedores.forms.relevamiento_form import (
     PrestacionForm,
     RelevamientoForm,
 )
-
 from comedores.models.comedor import (
     Comedor,
+    DocumentoRendicionFinal,
+    EstadoDocumentoRendicionFinal,
     ImagenComedor,
     Observacion,
-    Intervencion,
-    SubIntervencion,
     Nomina,
+    RendicionCuentasFinal,
 )
 
+from admisiones.models.admisiones import (
+    Admision,
+    InformeTecnicoBase,
+    InformeTecnicoJuridico,
+)
 from comedores.models.relevamiento import Prestacion
 from comedores.services.comedor_service import ComedorService
 from comedores.services.relevamiento_service import RelevamientoService
 
-
-def sub_estados_intervenciones_ajax(request):
-    request_id = request.GET.get("id")
-    if request_id:
-        sub_estados = SubIntervencion.objects.filter(fk_subintervencion=request_id)
-    else:
-        sub_estados = SubIntervencion.objects.all()
-
-    data = [
-        {"id": sub_estado.id, "text": sub_estado.nombre} for sub_estado in sub_estados
-    ]
-    return JsonResponse(data, safe=False)
+from comedores.services.rendicion_cuentas_final_service import (
+    RendicionCuentasFinalService,
+)
+from duplas.dupla_service import DuplaService
+from historial.services.historial_service import HistorialService
 
 
-class IntervencionDetail(TemplateView):
-    template_name = "comedor/intervencion_detail.html"
-    model = Intervencion
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        intervenciones, cantidad_intervenciones = (
-            ComedorService.detalle_de_intervencion(self.kwargs)
-        )
-        comedor = ComedorService.get_comedor(self.kwargs["pk"])
-        context["intervenciones"] = intervenciones
-        context["object"] = comedor
-        context["cantidad_intervenciones"] = cantidad_intervenciones
-
-        return context
-
-
-class NominaDetail(TemplateView):
+@method_decorator(csrf_exempt, name="dispatch")  # FIXME: No exceptuar nunca csrf
+class NominaDetailView(TemplateView):
     template_name = "comedor/nomina_detail.html"
     model = Nomina
 
@@ -137,52 +119,6 @@ class NominaDeleteView(DeleteView):
     def form_valid(self, form):
         self.object.delete()
         return redirect("nomina_ver", pk=self.kwargs["pk2"])
-
-
-class IntervencionCreateView(CreateView):
-    model = Intervencion
-    template_name = "comedor/intervencion_form.html"
-    form_class = IntervencionForm
-
-    def form_valid(self, form):
-        pk = self.kwargs["pk"]
-        form.save()
-        return redirect("intervencion_ver", pk=pk)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        comedor = ComedorService.get_comedor(self.kwargs["pk"])
-        context["form"] = self.get_form()
-        context["object"] = comedor
-
-        return context
-
-
-class IntervencionDeleteView(DeleteView):
-    model = Intervencion
-    template_name = "comedor/intervencion_confirm_delete.html"
-
-    def form_valid(self, form):
-        self.object.delete()
-        return redirect("intervencion_ver", pk=self.kwargs["pk2"])
-
-
-class IntervencionUpdateView(UpdateView):
-    model = Intervencion
-    form_class = IntervencionForm
-    template_name = "comedor/intervencion_form.html"
-
-    def form_valid(self, form):
-        pk = self.kwargs["pk2"]
-        form.save()
-        return redirect("intervencion_ver", pk=pk)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        comedor = ComedorService.get_comedor(self.kwargs["pk2"])
-        context["form"] = self.get_form()
-        context["object"] = comedor
-        return context
 
 
 class NominaUpdateView(UpdateView):
@@ -259,38 +195,34 @@ class ComedorDetailView(DetailView):
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
+
         (
             count_beneficiarios,
             valor_cena,
             valor_desayuno,
             valor_almuerzo,
             valor_merienda,
-        ) = ComedorService.get_presupuestos(self.object["id"])
+        ) = ComedorService.get_presupuestos(self.object.id)
+
+        relevamientos = self.object.relevamiento_set.order_by("-estado", "-id")[:1]
+        observaciones = self.object.observacion_set.order_by("-fecha_visita")[:3]
 
         context.update(
             {
-                "relevamientos": Relevamiento.objects.filter(comedor=self.object["id"])
-                .values("id", "fecha_visita", "estado")
-                .order_by("-estado", "-id")[:1],
-                "observaciones": Observacion.objects.filter(comedor=self.object["id"])
-                .values("id", "fecha_visita")
-                .order_by("-fecha_visita")[:3],
-                "count_relevamientos": Relevamiento.objects.filter(
-                    comedor=self.object["id"]
-                ).count(),
+                "relevamientos": relevamientos,
+                "observaciones": observaciones,
+                "count_relevamientos": self.object.relevamiento_set.count(),
                 "count_beneficiarios": count_beneficiarios,
                 "presupuesto_desayuno": valor_desayuno,
                 "presupuesto_almuerzo": valor_almuerzo,
                 "presupuesto_merienda": valor_merienda,
                 "presupuesto_cena": valor_cena,
-                "imagenes": ImagenComedor.objects.filter(
-                    comedor=self.object["id"]
-                ).values("imagen"),
-                "comedor_categoria": ClasificacionComedor.objects.filter(
-                    comedor=self.object["id"]
-                )
-                .order_by("-fecha")
-                .first(),
+                "imagenes": self.object.imagenes.values("imagen"),
+                "comedor_categoria": self.object.clasificacioncomedor_set.order_by(
+                    "-fecha"
+                ).first(),
+                "rendicion_cuentas_final_activo": self.object.expedientes_pagos.count()
+                >= 5,
                 "GESTIONAR_API_KEY": os.getenv("GESTIONAR_API_KEY"),
                 "GESTIONAR_API_CREAR_COMEDOR": os.getenv("GESTIONAR_API_CREAR_COMEDOR"),
             }
@@ -298,33 +230,64 @@ class ComedorDetailView(DetailView):
 
         return context
 
+    # TODO: Refactorizar y solidifcar el return
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
-        try:
-            relevamiento = None
-            is_new_relevamiento = "territorial" in request.POST
-            is_edit_relevamiento = "territorial_editar" in request.POST
 
-            if is_new_relevamiento:
-                relevamiento = RelevamientoService.create_pendiente(
-                    request, self.object["id"]
+        is_new_relevamiento = "territorial" in request.POST
+        is_edit_relevamiento = "territorial_editar" in request.POST
+
+        if is_new_relevamiento or is_edit_relevamiento:
+            try:
+                relevamiento = None
+                if is_new_relevamiento:
+                    relevamiento = RelevamientoService.create_pendiente(
+                        request, self.object.id
+                    )
+
+                elif is_edit_relevamiento:
+                    relevamiento = RelevamientoService.update_territorial(request)
+
+                return redirect(
+                    reverse(
+                        "relevamiento_detalle",
+                        kwargs={
+                            "pk": relevamiento.pk,
+                            "comedor_pk": relevamiento.comedor.pk,
+                        },
+                    )
                 )
+            except Exception as e:
+                messages.error(request, f"Error al crear el relevamiento: {e}")
+                return redirect("comedor_detalle", pk=self.object.id)
 
-            elif is_edit_relevamiento:
-                relevamiento = RelevamientoService.update_territorial(request)
 
-            return redirect(
-                reverse(
-                    "relevamiento_detalle",
-                    kwargs={
-                        "pk": relevamiento.pk,
-                        "comedor_pk": relevamiento.comedor.pk,
-                    },
-                )
-            )
-        except Exception as e:
-            messages.error(request, f"Error al crear el relevamiento: {e}")
-            return redirect("comedor_detalle", pk=self.object["id"])
+class AsignarDuplaListView(ListView):  # FIXME: Por que esto es una ListView?
+    model = Comedor
+    template_name = "comedor/asignar_dupla_form.html"
+
+    def get_context_data(self, **kwargs):
+        data = super().get_context_data(**kwargs)
+        comedor = ComedorService.get_comedor(self.kwargs["pk"])
+        duplas = DuplaService.get_duplas_by_estado_activo()
+        data["comedor"] = comedor
+        data["duplas"] = duplas
+        return data
+
+    def post(self, request, *args, **kwargs):
+        dupla_id = request.POST.get("dupla_id")
+        comedor_id = self.kwargs["pk"]
+
+        if dupla_id:
+            try:
+                ComedorService.asignar_dupla_a_comedor(dupla_id, comedor_id)
+                messages.success(request, "Dupla asignada correctamente.")
+            except Exception as e:
+                messages.error(request, f"Error al asignar la dupla: {e}")
+        else:
+            messages.error(request, "No se seleccionó ninguna dupla.")
+
+        return redirect("comedor_detalle", pk=comedor_id)
 
 
 class ComedorUpdateView(UpdateView):
@@ -486,7 +449,7 @@ class RelevamientoDetailView(DetailView):
 
         relevamiento = Relevamiento.objects.get(pk=self.get_object()["id"])
         context["relevamiento"]["gas"] = (
-            RelevamientoService.separate_m2m_string(
+            RelevamientoService.separate_string(
                 relevamiento.espacio.cocina.abastecimiento_combustible.all()
             )
             if relevamiento.espacio
@@ -498,7 +461,7 @@ class RelevamientoDetailView(DetailView):
             else None
         )
         context["relevamiento"]["donaciones"] = (
-            RelevamientoService.separate_m2m_string(
+            RelevamientoService.separate_string(
                 relevamiento.recursos.recursos_donaciones_particulares.all()
             )
             if relevamiento.recursos
@@ -506,7 +469,7 @@ class RelevamientoDetailView(DetailView):
         )
 
         context["relevamiento"]["nacional"] = (
-            RelevamientoService.separate_m2m_string(
+            RelevamientoService.separate_string(
                 relevamiento.recursos.recursos_estado_nacional.all()
             )
             if relevamiento.recursos
@@ -514,7 +477,7 @@ class RelevamientoDetailView(DetailView):
         )
 
         context["relevamiento"]["provincial"] = (
-            RelevamientoService.separate_m2m_string(
+            RelevamientoService.separate_string(
                 relevamiento.recursos.recursos_estado_provincial.all()
             )
             if relevamiento.recursos
@@ -522,7 +485,7 @@ class RelevamientoDetailView(DetailView):
         )
 
         context["relevamiento"]["municipal"] = (
-            RelevamientoService.separate_m2m_string(
+            RelevamientoService.separate_string(
                 relevamiento.recursos.recursos_estado_municipal.all()
             )
             if relevamiento.recursos
@@ -530,7 +493,7 @@ class RelevamientoDetailView(DetailView):
         )
 
         context["relevamiento"]["otras"] = (
-            RelevamientoService.separate_m2m_string(
+            RelevamientoService.separate_string(
                 relevamiento.recursos.recursos_otros.all()
             )
             if relevamiento.recursos
@@ -538,7 +501,7 @@ class RelevamientoDetailView(DetailView):
         )
 
         context["relevamiento"]["Entregas"] = (
-            RelevamientoService.separate_m2m_string(
+            RelevamientoService.separate_string(
                 relevamiento.punto_entregas.frecuencia_recepcion_mercaderias.all()
             )
             if relevamiento.punto_entregas
@@ -547,7 +510,7 @@ class RelevamientoDetailView(DetailView):
 
         return context
 
-    def get_object(self, queryset=None) -> Model:
+    def get_object(self, queryset=None):
         return RelevamientoService.get_relevamiento_detail_object(self.kwargs["pk"])
 
 
@@ -746,3 +709,154 @@ class ObservacionDeleteView(DeleteView):
         comedor = self.object.comedor
 
         return reverse_lazy("comedor_detalle", kwargs={"pk": comedor.id})
+
+
+class RendicionCuentasFinalDetailView(DetailView):
+    model = RendicionCuentasFinal
+    context_object_name = "rendicion"
+    template_name = "comedor/rendicion_cuentas_final_detail.html"
+
+    def get_object(self, queryset=None) -> Model:
+        comedor = get_object_or_404(
+            Comedor.objects.only("id", "nombre"),  # Trae solo lo que vas a usar
+            pk=self.kwargs["pk"],
+        )
+        rendicion, _ = RendicionCuentasFinal.objects.select_related(
+            "comedor"
+        ).get_or_create(comedor=comedor)
+
+        return rendicion
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        rendicion = self.object
+
+        context["documentos"] = (
+            RendicionCuentasFinalService.get_documentos_rendicion_cuentas_final(
+                rendicion
+            )
+        )
+
+        context["historial"] = (
+            HistorialService.get_historial_documentos_by_rendicion_cuentas_final(
+                rendicion
+            )
+        )
+
+        context["comedor_id"] = rendicion.comedor.id
+        context["comedor_nombre"] = rendicion.comedor.nombre
+        context["fisicamente_presentada"] = rendicion.fisicamente_presentada
+
+        return context
+
+
+@require_POST
+def adjuntar_documento_rendicion_cuenta_final(request):
+    doc_id = request.POST.get("documento_id")
+    archivo = request.FILES.get("archivo")
+
+    ok, _documento = RendicionCuentasFinalService.adjuntar_archivo_a_documento(
+        doc_id, archivo
+    )
+
+    if not ok:
+        messages.error(request, "No se seleccionó ningún archivo.")
+    else:
+        messages.success(request, "Archivo adjuntado correctamente.")
+
+    return redirect(request.META.get("HTTP_REFERER", "/"))
+
+
+@require_POST
+def crear_documento_rendicion_cuentas_final(request, rendicion_id):
+    rendicion = get_object_or_404(RendicionCuentasFinal, id=rendicion_id)
+    nombre = request.POST.get("nombre", "").strip()
+    archivo = request.FILES.get("archivo")
+
+    documento = rendicion.add_documento_personalizado(nombre)
+
+    if archivo:
+        HistorialService.registrar_historial(
+            accion="Crear documento personalizado",
+            instancia=documento,
+        )
+
+        RendicionCuentasFinalService.actualizar_documento_con_archivo(
+            documento, archivo
+        )
+
+    return redirect(request.META.get("HTTP_REFERER", "/"))
+
+
+@require_POST
+def eliminar_documento_rendicion_cuentas_final(request, documento_id):
+    documento = get_object_or_404(DocumentoRendicionFinal, id=documento_id)
+
+    documento.delete()
+    messages.success(request, "Documento eliminado correctamente.")
+
+    return redirect(request.META.get("HTTP_REFERER", "/"))
+
+
+@require_POST
+def validar_documento_rendicion_cuentas_final(request, documento_id):
+    documento = get_object_or_404(DocumentoRendicionFinal, id=documento_id)
+    documento.estado = EstadoDocumentoRendicionFinal.objects.get(nombre="Validado")
+    documento.fecha_modificacion = timezone.now()
+    documento.save()
+
+    HistorialService.registrar_historial(
+        accion="Validar documento",
+        instancia=documento,
+    )
+
+    messages.success(request, "Documento validado correctamente.")
+
+    next_url = request.POST.get("next") or request.META.get("HTTP_REFERER")
+    if next_url:
+        return redirect(next_url)
+    return redirect(request.META.get("HTTP_REFERER", "/"))
+
+
+class DocumentosRendicionCuentasFinalListView(ListView):
+    model = DocumentoRendicionFinal
+    template_name = "comedor/rendicion_cuentas_final_list.html"
+    context_object_name = "documentos"
+
+    def get_queryset(self):
+        user = self.request.user
+        query = self.request.GET.get("busqueda")
+
+        qs = RendicionCuentasFinalService.filter_documentos_por_area(user, query)
+
+        return qs
+
+
+@require_POST
+def subsanar_documento_rendicion_cuentas_final(request, documento_id):
+    documento = get_object_or_404(DocumentoRendicionFinal, id=documento_id)
+
+    documento.observaciones = request.POST.get("observacion", "")
+    documento.estado = EstadoDocumentoRendicionFinal.objects.get(nombre="Subsanar")
+    documento.fecha_modificacion = timezone.now()
+    documento.save()
+
+    HistorialService.registrar_historial(
+        accion="Enviar a subsanar documento",
+        instancia=documento,
+    )
+
+    messages.success(request, "Documento enviado a subsanar correctamente.")
+
+    return redirect(request.META.get("HTTP_REFERER", "/"))
+
+
+@require_POST
+def switch_rendicion_final_fisicamente_presentada(request, rendicion_id):
+    rendicion_final = get_object_or_404(RendicionCuentasFinal, id=rendicion_id)
+    rendicion_final.fisicamente_presentada = not rendicion_final.fisicamente_presentada
+    rendicion_final.save()
+
+    messages.success(request, "Estado de revisión actualizado.")
+
+    return redirect(request.META.get("HTTP_REFERER", "/"))

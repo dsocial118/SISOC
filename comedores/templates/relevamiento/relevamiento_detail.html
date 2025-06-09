@@ -1,5 +1,5 @@
 {% extends "includes/main.html" %};
-{% load static %}
+{% load static custom_filters %}
 ;
 {% block title %}Relevamiento - Comedor: {{ comedor.nombre }}{% endblock %}
 ;
@@ -1213,9 +1213,20 @@
                     </div>
                     <!-- Imágenes -->
                     <div class="carousel-inner">
-                        {% for imagen in relevamiento.imagenes %}
+                        {% for archivo in relevamiento.imagenes %}
                             <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                <img src="{{ imagen }}" class="d-block w-100" alt="Relevamiento" />
+                                {% if archivo|lower|endswith:".pdf" %}
+                                    <iframe src="{{ archivo }}"
+                                            class="d-block w-100"
+                                            style="height: 500px"
+                                            frameborder="0">
+                                        <p>
+                                            Tu navegador no puede mostrar PDFs. <a href="{{ archivo }}" target="_blank">Descargar PDF</a>.
+                                        </p>
+                                    </iframe>
+                                {% else %}
+                                    <img src="{{ archivo }}" class="d-block w-100" alt="Relevamiento" />
+                                {% endif %}
                             </div>
                         {% endfor %}
                     </div>

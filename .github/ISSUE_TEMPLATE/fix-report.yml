@@ -1,0 +1,76 @@
+name: Reporte de Bug / Error / Crash
+description: Template para reportar bugs, errores o crasheos
+title: '[FIX] '
+labels: ['FIX']
+assignees: []
+body:
+  - type: textarea
+    id: descripcion
+    attributes:
+      label: 🐞 Descripción de lo que se reporta
+      description: Explicá brevemente qué ocurrió.
+      placeholder: "Ejemplo: Al clickear en X botón, aparece un error: TemplateNotFound"
+    validations:
+      required: true
+
+  - type: input
+    id: url
+    attributes:
+      label: 🔗 URLs relacionadas (si aplica)
+      description: Copiá y pegá la URL de la página donde pasó el error.
+      placeholder: "Ejemplo: \"http://10.80.9.15/comedores/listar\""
+    validations:
+      required: true
+
+
+  - type: textarea
+    id: esperado
+    attributes:
+      label: ✅ Comportamiento esperado
+      description: ¿Qué debería ocurrir en lugar del error?
+      placeholder: "Ejemplo: Que el formulario se guarde correctamente y me redirija al listado."
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label:  🚩 Logs o tracebacks (si aplica)
+      description: Pegá cualquier mensaje de error que veas en pantalla o consola del navegador.
+      render: shell
+      placeholder: |
+        Traceback (most recent call last):
+          File "...", line ..., in ...
+    validations:
+      required: false
+
+
+  - type: textarea
+    id: pasos
+    attributes:
+      label: 🔁 Pasos para reproducirlo (en caso de ser complejo)
+      description: Indicá paso a paso cómo repetir el problema.
+      placeholder: |
+        Ejemplo:
+        1. Ir a ...
+        2. Click en ...
+        3. ...
+    validations:
+      required: false
+
+  - type: textarea
+    id: capturas
+    attributes:
+      label: 📸 Capturas de pantalla
+      placeholder: "Pegá acá las URLs o arrastrá las imágenes al issue luego de crearlo."
+    validations:
+      required: false
+
+  - type: textarea
+    id: extras
+    attributes:
+      label: Extras
+      description: Cualquier otra cosa que pueda ayudar a entender el problema.
+      placeholder: "Ej: Entorno, pruebas ya realizadas, hipotesis/intuiciones, frecuencia (si no pasa siempre), usuario afectado, navegador usado (si en otros no pasa), etc."
+    validations:
+      required: false

@@ -1,23 +1,26 @@
 import os
 import subprocess
 import time
-from concurrent.futures import ThreadPoolExecutor
 import pymysql
 
 
 def wait_for_mysql():
+    """
+    Espera a que MySQL esté disponible antes de continuar.
+    Usa las variables de entorno DATABASE_HOST, DATABASE_PORT, DATABASE_USER y DATABASE_PASSWORD.
+    Se puede omitir con la variable WAIT_FOR_DB=false.
+    """
     host = os.getenv("DATABASE_HOST", "mysql")
     port = int(os.getenv("DATABASE_PORT", "3307"))
     user = os.getenv("DATABASE_USER", "root")
     password = os.getenv("DATABASE_PASSWORD", "root1-password2")
-
     wait_for_db = os.getenv("WAIT_FOR_DB", "true").lower() == "true"
 
     if not wait_for_db:
-        print("Skipping waiting for MySQL as WAIT_FOR_DB is set to false.")
+        print("⏭️  Se omite la espera por MySQL (WAIT_FOR_DB=false)")
         return
 
-    print("Waiting for MySQL to be ready...")
+    print("⏳ Esperando que MySQL esté disponible...")
     while True:
         try:
             conn = pymysql.connect(host=host, port=port, user=user, password=password)
@@ -26,23 +29,33 @@ def wait_for_mysql():
         except pymysql.MySQLError:
             time.sleep(5)
     time.sleep(10)
-    print("MySQL is up and ready")
+    print("✅ MySQL está listo.")
 
 
 def run_django_commands():
+    """
+    Ejecuta los comandos de Django necesarios para la preparación y el funcionamiento de la aplicación.
+    """
     subprocess.run(["python", "manage.py", "makemigrations"])
+    subprocess.run(["python", "manage.py", "migrate", "auth"])
     subprocess.run(["python", "manage.py", "migrate", "--noinput"])
-    load_fixtures()
+
+    # Cargar los fixtures condicionalmente, si se quiere forzar añadir `--force`
+    subprocess.run(["python", "manage.py", "load_fixtures"])
+
     subprocess.run(["python", "manage.py", "create_local_superuser"])
     subprocess.run(["python", "manage.py", "create_groups"])
     run_server()
 
 
 def run_server():
+    """
+    Inicia el servidor de Django. Usa Gunicorn en producción o el servidor de desarrollo si no.
+    """
     environment = os.getenv("ENVIRONMENT", "dev").lower()
 
     if environment == "prd":
-        print("Running Django in production mode with Gunicorn...")
+        print("🚀 Iniciando Django en modo producción con Gunicorn...")
         subprocess.run(
             [
                 "gunicorn",
@@ -60,29 +73,8 @@ def run_server():
             ]
         )
     else:
-        print("Running Django in development mode...")
+        print("🧪 Iniciando Django en modo desarrollo...")
         subprocess.run(["python", "manage.py", "runserver", "0.0.0.0:8000"])
-
-
-def load_fixture(file):
-    subprocess.run(["python", "manage.py", "loaddata", file])
-
-
-def load_fixtures():
-    fixtures = []
-    for root, dirs, _ in os.walk("."):
-        if "fixtures" in dirs:
-            fixtures_dir = os.path.join(root, "fixtures")
-            fixtures.extend(
-                [
-                    os.path.join(fixtures_dir, file)
-                    for file in os.listdir(fixtures_dir)
-                    if file.endswith(".json")
-                ]
-            )
-
-    with ThreadPoolExecutor() as executor:
-        executor.map(load_fixture, fixtures)
 
 
 if __name__ == "__main__":
