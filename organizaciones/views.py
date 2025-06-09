@@ -107,6 +107,8 @@ class OrganizacionUpdateView(UpdateView):
         else:
             return self.form_invalid(form)
 
+    def get_success_url(self):
+        return reverse("organizacion_detalle", kwargs={"pk": self.object.pk})
 
 class OrganizacionDetailView(DetailView):
     model = Organizacion
