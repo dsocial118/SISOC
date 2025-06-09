@@ -32,7 +32,7 @@ class SubtipoEntidad(models.Model):
     tipo_entidad = models.ForeignKey(
         TipoEntidad,
         on_delete=models.CASCADE,
-        related_name='subtipos',
+        related_name="subtipos",
         blank=True,
         null=True,
     )
@@ -74,10 +74,15 @@ class Firmante(models.Model):
 
     def __str__(self):
         return f"{self.nombre} ({self.get_rol_display()})"
-    
+
+
 class Aval1(models.Model):
     organizacion = models.ForeignKey(
-        "Organizacion", on_delete=models.CASCADE, related_name="avales1", blank=True, null=True
+        "Organizacion",
+        on_delete=models.CASCADE,
+        related_name="avales1",
+        blank=True,
+        null=True,
     )
     nombre = models.CharField(max_length=255, blank=True, null=True)
     cuit = models.BigIntegerField(unique=True, blank=True, null=True)
@@ -92,7 +97,11 @@ class Aval1(models.Model):
 
 class Aval2(models.Model):
     organizacion = models.ForeignKey(
-        "Organizacion", on_delete=models.CASCADE, related_name="avales2", blank=True, null=True
+        "Organizacion",
+        on_delete=models.CASCADE,
+        related_name="avales2",
+        blank=True,
+        null=True,
     )
     nombre = models.CharField(max_length=255, blank=True, null=True)
     cuit = models.BigIntegerField(unique=True, blank=True, null=True)

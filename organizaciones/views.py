@@ -11,7 +11,12 @@ from django.views.generic import (
     UpdateView,
 )
 
-from organizaciones.forms import OrganizacionForm, FirmanteFormset, Aval1Formset, Aval2Formset
+from organizaciones.forms import (
+    OrganizacionForm,
+    FirmanteFormset,
+    Aval1Formset,
+    Aval2Formset,
+)
 from organizaciones.models import Organizacion, SubtipoEntidad
 
 
@@ -58,7 +63,11 @@ class OrganizacionCreateView(CreateView):
         firmante_formset = context["firmante_formset"]
         aval1_formset = context["aval1_formset"]
         aval2_formset = context["aval2_formset"]
-        if firmante_formset.is_valid() and aval1_formset.is_valid() and aval2_formset.is_valid():
+        if (
+            firmante_formset.is_valid()
+            and aval1_formset.is_valid()
+            and aval2_formset.is_valid()
+        ):
             self.object = form.save()
             firmante_formset.instance = self.object
             aval1_formset.instance = self.object
@@ -78,12 +87,19 @@ class OrganizacionUpdateView(UpdateView):
     model = Organizacion
     form_class = OrganizacionForm
     template_name = "organizacion_form.html"
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if self.request.POST:
-            context["firmante_formset"] = FirmanteFormset(self.request.POST, instance=self.object)
-            context["aval1_formset"] = Aval1Formset(self.request.POST, instance=self.object)
-            context["aval2_formset"] = Aval2Formset(self.request.POST, instance=self.object)
+            context["firmante_formset"] = FirmanteFormset(
+                self.request.POST, instance=self.object
+            )
+            context["aval1_formset"] = Aval1Formset(
+                self.request.POST, instance=self.object
+            )
+            context["aval2_formset"] = Aval2Formset(
+                self.request.POST, instance=self.object
+            )
         else:
             context["firmante_formset"] = FirmanteFormset(instance=self.object)
             context["aval1_formset"] = Aval1Formset(instance=self.object)
@@ -95,7 +111,11 @@ class OrganizacionUpdateView(UpdateView):
         firmante_formset = context["firmante_formset"]
         aval1_formset = context["aval1_formset"]
         aval2_formset = context["aval2_formset"]
-        if firmante_formset.is_valid() and aval1_formset.is_valid() and aval2_formset.is_valid():
+        if (
+            firmante_formset.is_valid()
+            and aval1_formset.is_valid()
+            and aval2_formset.is_valid()
+        ):
             self.object = form.save()
             firmante_formset.instance = self.object
             aval1_formset.instance = self.object
@@ -109,6 +129,7 @@ class OrganizacionUpdateView(UpdateView):
 
     def get_success_url(self):
         return reverse("organizacion_detalle", kwargs={"pk": self.object.pk})
+
 
 class OrganizacionDetailView(DetailView):
     model = Organizacion
@@ -139,7 +160,7 @@ class OrganizacionDeleteView(DeleteView):
         except ValidationError as e:
             messages.error(request, e.message)
             return self.render_to_response(self.get_context_data(object=self.object))
-        
+
 
 def sub_tipo_entidad_ajax(request):
     tipo_entidad_id = request.GET.get("tipo_entidad")
@@ -150,7 +171,5 @@ def sub_tipo_entidad_ajax(request):
     else:
         subtipo_entidades = SubtipoEntidad.objects.none()
 
-    data = [
-        {"id": subtipo.id, "text": subtipo.nombre} for subtipo in subtipo_entidades
-    ]
+    data = [{"id": subtipo.id, "text": subtipo.nombre} for subtipo in subtipo_entidades]
     return JsonResponse(data, safe=False)
