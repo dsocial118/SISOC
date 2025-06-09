@@ -20,7 +20,7 @@ urlpatterns = [
         name="rendicioncuentasmensual_detail",
     ),
     path(
-        "rendicioncuentasmensual/eliminar/<int:id_enviado>/",
+        "rendicioncuentasmensual/eliminar/<int:pk>/",
         group_required("Tecnico Comedor")(RendicionCuentaMensualDeleteView.as_view()),
         name="rendicioncuentasmensual_delete",
     ),

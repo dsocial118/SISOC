@@ -2,11 +2,6 @@ from django import forms
 from rendicioncuentasmensual.models import RendicionCuentaMensual, DocumentacionAdjunta
 
 class RendicionCuentaMensualForm(forms.ModelForm):
-    arvhios_adjuntos = forms.ModelMultipleChoiceField(
-        queryset=DocumentacionAdjunta.objects.all(),
-        widget=forms.CheckboxSelectMultiple,
-        required=False,
-    )
     class Meta:
         model = RendicionCuentaMensual
         fields = "__all__"
@@ -14,7 +9,7 @@ class RendicionCuentaMensualForm(forms.ModelForm):
         widgets = {
             "mes": forms.Select(attrs={"class": "form-control"}),
             "anio": forms.NumberInput(attrs={"class": "form-control"}),
-            "documento_adjunto": forms.ClearableFileInput(attrs={"class": "form-control"}),
+            "documento_adjunto": forms.CheckboxInput(attrs={"class": "form-check-input"}),
             "observaciones": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
         }
         labels = {
