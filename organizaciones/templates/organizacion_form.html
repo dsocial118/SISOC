@@ -152,31 +152,54 @@
     <script>
         // Puedes poner esto en tu template donde tengas el formulario
 
+
 document.addEventListener("DOMContentLoaded", function () {
     const tipoEntidadSelect = document.getElementById("id_tipo_entidad");
     const subtipoEntidadSelect = document.getElementById("id_subtipo_entidad");
     subtipoEntidadSelect.innerHTML = "";
 
+    function ToggleCardAvales()
+    {
+        const cardAvales = document.getElementById("card-avales");
+        if (tipoEntidadSelect && cardAvales) {
+            if (tipoEntidadSelect.value === "3") {
+                cardAvales.style.display = "block";
+            } else {
+                cardAvales.style.display = "none";
+            }
+        }
+    }
+
+    function RenderSubtipoEntidad()
+    {
+        ToggleCardAvales();
+
+        subtipoEntidadSelect.innerHTML = "";        
+        const tipoEntidadId = this.value ? this.value : tipoEntidadSelect.value;
+        fetch(`/organizaciones/subtipos-entidad/ajax/?tipo_entidad=${tipoEntidadId}`, {
+            headers: {
+                "X-Requested-With": "XMLHttpRequest"
+            }
+        })
+        .then(response => response.json())
+        .then(result => {
+            console.log("Subtipos de entidad:", result);
+            result.forEach(subtipo => {
+                const option = document.createElement("option");
+                option.value = subtipo.id;
+                option.textContent = subtipo.text;
+                subtipoEntidadSelect.appendChild(option);
+            });
+        })
+        .catch(error => console.error("Error al cargar subintervenciones:", error));
+    }
+
+    RenderSubtipoEntidad();
+    ToggleCardAvales();
+
     if (tipoEntidadSelect) {
         tipoEntidadSelect.addEventListener("change", function () {
-            subtipoEntidadSelect.innerHTML = "";
-            const tipoEntidadId = this.value;
-            fetch(`/organizaciones/subtipos-entidad/ajax/?tipo_entidad=${tipoEntidadId}`, {
-                headers: {
-                    "X-Requested-With": "XMLHttpRequest"
-                }
-            })
-            .then(response => response.json())
-            .then(result => {
-                console.log("Subtipos de entidad:", result);
-                result.forEach(subtipo => {
-                    const option = document.createElement("option");
-                    option.value = subtipo.id;
-                    option.textContent = subtipo.text;
-                    subtipoEntidadSelect.appendChild(option);
-                });
-            })
-            .catch(error => console.error("Error al cargar subintervenciones:", error));
+            RenderSubtipoEntidad();
         });
     }
 });
