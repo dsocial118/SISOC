@@ -46,7 +46,6 @@
                         <div class="documentacion-edit-item d-flex align-items-center">
                             <div class="flex-grow-1">
                                 <label>{{ archivo.nombre }}</label>
-                                <a href="{{ archivo.archivo.url }}" target="_blank" class="btn btn-link btn-sm">Ver Archivo</a>
                             </div>
                             <button type="button" class="btn btn-danger btn-sm remove-existing-documentacion" data-id="{{ archivo.id }}">
                                 Eliminar
@@ -63,11 +62,12 @@
                         </div>
                     </div>
                     <div class="card-footer text-end d-flex justify-content-between">
-                        <button type="button" class="btn btn-danger btn-sm" id="remove-documentacion">
-                            Eliminar Archivo
-                        </button>
+                        
                         <button type="button" class="btn btn-primary" id="add-documentacion">
                             Agregar Archivo
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm" id="remove-documentacion">
+                            Eliminar Archivo
                         </button>
                     </div>
                 </div>
@@ -115,9 +115,25 @@
             if (event.target.classList.contains("remove-existing-documentacion")) {
                 const archivoId = event.target.getAttribute("data-id");
                 if (confirm("¿Estás seguro de que deseas eliminar este archivo?")) {
-                    // Aquí puedes realizar una solicitud AJAX para eliminar el archivo del servidor
-                    alert(`Archivo con ID ${archivoId} eliminado (simulación).`);
-                    event.target.closest(".documentacion-edit-item").remove();
+                    fetch(`/rendicioncuentasmensual/eliminar-archivo/${archivoId}/`, {
+                        method: "POST",
+                        headers: {
+                            "X-CSRFToken": "{{ csrf_token }}", // Asegúrate de incluir el token CSRF
+                        },
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert(data.message);
+                            event.target.closest(".documentacion-edit-item").remove();
+                        } else {
+                            alert("Error al eliminar el archivo: " + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error:", error);
+                        alert("Ocurrió un error al intentar eliminar el archivo.");
+                    });
                 }
             }
         });

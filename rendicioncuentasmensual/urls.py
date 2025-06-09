@@ -6,6 +6,7 @@ from rendicioncuentasmensual.views import (
     RendicionCuentaMensualDeleteView,
     RendicionCuentaMensualCreateView,
     RendicionCuentaMensualUpdateView,
+    eliminar_archivo,
 )
 
 urlpatterns = [
@@ -34,4 +35,5 @@ urlpatterns = [
         group_required("Tecnico Comedor")(RendicionCuentaMensualUpdateView.as_view()),
         name="rendicioncuentasmensual_update",
     ),
+    path("eliminar-archivo/<int:archivo_id>/", eliminar_archivo, name="eliminar_archivo"),
 ]
