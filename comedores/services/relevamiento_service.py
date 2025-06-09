@@ -132,7 +132,7 @@ class RelevamientoService:
         return relevamiento
 
     @staticmethod
-    def separate_m2m_string(tipos):
+    def separate_string(tipos):
         tipos_list = [str(tipo) for tipo in tipos]
 
         if len(tipos_list) == 0:

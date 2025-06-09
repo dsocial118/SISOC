@@ -1,0 +1,37 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Acciones{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanosderivaciones_listar' %}">Derivaciones</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanos_ver' object.ciudadano.id %}">{{ object.ciudadano }}</a>
+        </li>
+        <li class="breadcrumb-item active">Eliminar</li>
+    </ol>
+{% endblock %}
+;
+{% load crispy_forms_tags %}
+{% block content %}
+    <div class="error-page mt-5 px-3">
+        <div class="error-content">
+            <h3>
+                <i class="fas fa-exclamation-triangle text-danger px-2"></i> Atención!
+            </h3>
+            <p>
+                ¿Estás seguro que deseas eliminar de manera permanente la derivación de <span class="font-weight-bold">{{ object.ciudadano }}</span>?
+            </p>
+            <div class="text-left">
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+                    <a href="{% url 'ciudadanosderivaciones_ver' object.id %}">
+                        <button type="button" class="btn btn-secondary btn-sm">Cancelar</button>
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

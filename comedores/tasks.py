@@ -1,9 +1,13 @@
 import os
 import threading
+import logging
 import requests
+
 from comedores.models.comedor import Comedor, Observacion, Referente
 from comedores.models.relevamiento import Relevamiento
 
+
+logger = logging.getLogger(__name__)
 TIMEOUT = 360  # Segundos máximos de espera por respuesta
 
 
@@ -54,10 +58,9 @@ class AsyncSendRelevamientoToGestionar(threading.Thread):
             )
             response.raise_for_status()
             response_data = response.json()
-            print(
+            logger.info(
                 f"RELEVAMIENTO {relevamiento.id} sincronizado con GESTIONAR con exito"
             )
-
             gestionar_pdf = response_data["Rows"][0].get("docPDF", "")
             if gestionar_pdf:
                 # El .update() en el queryset es para evitar que salten las signals
@@ -66,10 +69,10 @@ class AsyncSendRelevamientoToGestionar(threading.Thread):
                 )
 
         except Exception as e:
-            print("!!! Error al sincronizar creacion de RELEVAMIENTO con GESTIONAR:")
-            print(e)
-            print("!!! Con el body:")
-            print(data)
+            logger.error(
+                f"Error al sincronizar RELEVAMIENTO {relevamiento.id} con GESTIONAR: {e}"
+            )
+            logger.error(f"Con el body: {data}")
 
 
 class AsyncRemoveRelevamientoToGestionar(threading.Thread):
@@ -100,14 +103,14 @@ class AsyncRemoveRelevamientoToGestionar(threading.Thread):
                 timeout=TIMEOUT,
             )
             response.raise_for_status()
-            print(
+            logger.info(
                 f"RELEVAMIENTO {relevamiento.id} sincronizado con GESTIONAR con exito"
             )
         except Exception as e:
-            print("!!! Error al sincronizar eliminacion de RELEVAMIENTO con GESTIONAR:")
-            print(e)
-            print("!!! Con el body:")
-            print(data)
+            logger.error(
+                f"Error al sincronizar RELEVAMIENTO {relevamiento.id} con GESTIONAR: {e}"
+            )
+            logger.error(f"Con el body: {data}")
 
 
 class AsyncSendComedorToGestionar(threading.Thread):
@@ -157,8 +160,15 @@ class AsyncSendComedorToGestionar(threading.Thread):
                     "manzana": (comedor.manzana if comedor.manzana else ""),
                     "partido": comedor.partido if comedor.partido else "",
                     "barrio": comedor.barrio if comedor.barrio else "",
+                    "piso": comedor.piso if comedor.piso else "",
+                    "departamento": (
+                        comedor.departamento if comedor.departamento else ""
+                    ),
                     "codigo_postal": (
                         comedor.codigo_postal if comedor.codigo_postal else ""
+                    ),
+                    "Organizacion": (
+                        comedor.organizacion.nombre if comedor.organizacion else ""
                     ),
                     "Referente": (
                         comedor.referente.documento
@@ -166,7 +176,7 @@ class AsyncSendComedorToGestionar(threading.Thread):
                         else ""
                     ),
                     "Imagen": (
-                        f"{os.getenv('DOMINIO')}/media/{comedor.foto_legajo}"
+                        f"{os.getenv('DOMINIO')}media/{comedor.foto_legajo}"
                         if comedor.foto_legajo
                         else ""
                     ),
@@ -187,12 +197,12 @@ class AsyncSendComedorToGestionar(threading.Thread):
             )
             response.raise_for_status()
             response = response.json()
-            print(f"COMEDOR {comedor.id} sincronizado con GESTIONAR con exito")
+            logger.info(f"COMEDOR {comedor.id} sincronizado con GESTIONAR con exito")
         except Exception as e:
-            print("!!! Error al sincronizar creacion de COMEDOR con GESTIONAR:")
-            print(e)
-            print("!!! Con el body:")
-            print(data)
+            logger.error(
+                f"Error al sincronizar COMEDOR {comedor.id} con GESTIONAR: {e}"
+            )
+            logger.error(f"Con el body: {data}")
 
 
 class AsyncRemoveComedorToGestionar(threading.Thread):
@@ -222,12 +232,12 @@ class AsyncRemoveComedorToGestionar(threading.Thread):
                 timeout=TIMEOUT,
             )
             response.raise_for_status()
-            print(f"COMEDOR {comedor.id} sincronizado con exito")
+            logger.info(f"COMEDOR {comedor.id} sincronizado con exito")
         except requests.exceptions.RequestException as e:
-            print("!!! Error al sincronizar eliminacion de COMEDOR con GESTIONAR:")
-            print(e)
-            print("!!! Con el body:")
-            print(data)
+            logger.error(
+                f"Error al sincronizar eliminacion de COMEDOR {comedor.id} con GESTIONAR: {e}"
+            )
+            logger.error(f"Con el body: {data}")
 
 
 class AsyncSendReferenteToGestionar(threading.Thread):
@@ -268,13 +278,15 @@ class AsyncSendReferenteToGestionar(threading.Thread):
                 )
                 response.raise_for_status()
                 response = response.json()
-                print(f"REFERENTE {referente.id} sincronizado con GESTIONAR con exito")
+                logger.info(
+                    f"REFERENTE {referente.id} sincronizado con GESTIONAR con exito"
+                )
 
         except Exception as e:
-            print("!!! Error al sincronizar REFERENTE con GESTIONAR:")
-            print(e)
-            print("!!! Con el body:")
-            print(data)
+            logger.error(
+                f"Error al sincronizar REFERENTE {referente.id} con GESTIONAR: {e}"
+            )
+            logger.error(f"Con el body: {data}")
 
 
 class AsyncSendObservacionToGestionar(threading.Thread):
@@ -314,9 +326,9 @@ class AsyncSendObservacionToGestionar(threading.Thread):
             )
             response.raise_for_status()
             response = response.json()
-            print(f"OBSERVACION {observacion.id} sincronizada con exito")
+            logger.info(f"OBSERVACION {observacion.id} sincronizada con exito")
         except Exception as e:
-            print("!!! Error al sincronizar OBSERVACION con GESTIONAR:")
-            print(e)
-            print("!!! Con el body:")
-            print(data)
+            logger.error(
+                f"Error al sincronizar OBSERVACION {observacion.id} con GESTIONAR: {e}"
+            )
+            logger.error(f"Con el body: {data}")

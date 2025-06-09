@@ -1,0 +1,265 @@
+{% extends "includes/main.html" %};
+{% load static %}
+;
+{% block title %}Rendicion de Cuentas Final{% endblock %}
+;
+{% block titulo-pagina %}Rendicion de Cuentas Final{% endblock %}
+;
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <div class="breadcrumb-item">
+            <a href="{% url 'comedores' %}">Comedores</a>
+        </div>
+        <div class="breadcrumb-item">
+            <a href="{% url 'comedor_detalle' rendicion.comedor_id %}">{{ rendicion.comedor_nombre }}</a>
+        </div>
+        <div class="breadcrumb-item active">Rendicion de Cuentas Final</div>
+    </ol>
+{% endblock %}
+;
+{% block menu-adicional %}{% endblock %}
+;
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/nomina.css' %}" />
+    <div class="row">
+        <div class="col-md-12"></div>
+    </div>
+    <div class="row">
+        <button class="btn btn-primary mb-3 w-auto"
+                data-bs-toggle="modal"
+                data-bs-target="#modalCrearDocumento">Añadir documento personalizado</button>
+        <form method="post"
+              action="{% url 'switch_rendicion_final_fisicamente_presentada' rendicion.id %}">
+            {% csrf_token %}
+            <div class="form-check form-switch mb-3">
+                <input class="form-check-input"
+                       type="checkbox"
+                       id="fisicamentePresentadaSwitch"
+                       name="fisicamente_presentada"
+                       onchange="this.disabled = true; this.form.submit();"
+                       {% if rendicion.fisicamente_presentada %}checked{% endif %} />
+                <label class="form-check-label" for="fisicamentePresentadaSwitch">Revisión físicamente presentada</label>
+            </div>
+        </form>
+        <table class="w-100 table table-stripped text-center">
+            <thead>
+                <tr>
+                    <th class="text-start">Tipo de Documento</th>
+                    <th>Estado</th>
+                    <th>Validador</th>
+                    <th>Observaciones</th>
+                    <th>Última Modificación</th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doc in documentos %}
+                    <tr>
+                        <td class="text-start">{{ doc.tipo.nombre }}</td>
+                        <td>{{ doc.estado.nombre }}</td>
+                        <td>{{ doc.tipo.validador }}</td>
+                        <td>
+                            {% if doc.observaciones %}
+                                <a href="#"
+                                   class="btn btn-link p-0 ver-observaciones"
+                                   data-bs-toggle="modal"
+                                   data-bs-target="#modal-observaciones"
+                                   data-observaciones="{{ doc.observaciones|escape }}"
+                                   data-titulo="Observaciones del documento {{ doc.tipo.nombre }}">Ver</a>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>{{ doc.fecha_modificacion|date:"d/m/Y H:i"|default:"-" }}</td>
+                        <td>
+                            {% if doc.editable %}
+                                <button class="btn btn-success btn-sm"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalAdjuntarDocumentoRendicionFinal"
+                                        data-doc-id="{{ doc.id }}"
+                                        data-doc-tipo="{{ doc.tipo.nombre }}">Adjuntar</button>
+                            {% else %}
+                                <button class="btn btn-sm btn-secondary" disabled>Adjuntar</button>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if doc.documento %}
+                                <a href="{{ doc.documento.url }}"
+                                   target="_blank"
+                                   class="btn btn-primary btn-sm">Visualizar</a>
+                            {% else %}
+                                <button class="btn btn-sm btn-secondary" disabled>Visualizar</button>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if doc.validable %}
+                                <form method="post"
+                                      action="{% url 'validar_documento_rendicion_cuentas_final' doc.id %}"
+                                      onsubmit="return confirm('¿Estás seguro de que querés validar este documento?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-warning btn-sm">Validar</button>
+                                </form>
+                            {% else %}
+                                <button class="btn btn-sm btn-secondary" disabled>Validar</button>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if doc.eliminable %}
+                                <form method="post"
+                                      action="{% url 'eliminar_documento_rendicion_cuentas_final' doc.id %}"
+                                      onsubmit="return confirm('¿Estás seguro de que querés eliminar este documento?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger btn-sm bi bi-trash"></button>
+                                </form>
+                            {% else %}
+                                <button type="submit" class="btn btn-sm bi bi-trash btn-secondary" disabled></button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="row mt-3">
+        <h3>Historial de Documentos</h3>
+        <table class="w-100 table table-stripped text-center">
+            <thead class="">
+                <tr>
+                    <th class="text-start">Tipo de Documento</th>
+                    <th>Acción</th>
+                    <th>Usuario</th>
+                    <th>Fecha</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for registro in historial %}
+                    <tr>
+                        <td class="text-start">
+                            {% with documento=registro.objeto %}
+                                {% if documento %}
+                                    {{ documento.tipo.nombre|default:"Desconocido" }}
+                                {% else %}
+                                    <span class="text-muted">No disponible</span>
+                                {% endif %}
+                            {% endwith %}
+                        </td>
+                        <td>{{ registro.accion }}</td>
+                        <td>{{ registro.usuario.get_full_name|default:registro.usuario.username }}</td>
+                        <td>{{ registro.fecha|date:"d/m/Y H:i"|default:"-" }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center">No hay registros aun.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="mt-1 mx-2">
+        <a href="{% url 'comedor_detalle' rendicion.id %}"
+           class="btn btn-secondary mx-2">Volver</a>
+    </div>
+    <!-- Modales -->
+    <div class="modal fade"
+         id="modalAdjuntarDocumentoRendicionFinal"
+         tabindex="-1"
+         aria-labelledby="modalAdjuntarDocumentoRendicionFinalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <form id="formAdjuntar"
+                  method="post"
+                  enctype="multipart/form-data"
+                  action="{% url 'adjuntar_documento_rendicion_cuenta_final' %}"
+                  onsubmit="return confirm('¿Estás seguro de que querés adjuntar este documento?');">
+                {% csrf_token %}
+                <input type="hidden" name="documento_id" id="documento_id" value="" />
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalAdjuntarDocumentoRendicionFinalLabel">Adjuntar archivo</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p id="tipoDocumentoTexto"></p>
+                        <div class="mb-3">
+                            <label for="archivo" class="form-label">Archivo</label>
+                            <input class="form-control" type="file" id="archivo" name="archivo" required />
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Subir</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="modal fade"
+         id="modalCrearDocumento"
+         tabindex="-1"
+         aria-labelledby="modalCrearDocumentoLabel"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <form method="POST"
+                  action="{% url 'crear_documento_rendicion_cuentas_final' rendicion.id %}"
+                  enctype="multipart/form-data"
+                  onsubmit="return confirm('¿Estás seguro de que querés crear este documento?');">
+                {% csrf_token %}
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalCrearDocumentoLabel">Nuevo Documento Personalizado</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="nombre" class="form-label">Nombre del documento</label>
+                            <input type="text" class="form-control" name="nombre" required />
+                        </div>
+                        <div class="mb-3">
+                            <label for="archivo" class="form-label">Archivo</label>
+                            <input type="file" class="form-control" name="archivo" />
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-success">Crear</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="modal fade"
+         id="modal-observaciones"
+         tabindex="-1"
+         aria-labelledby="modal-observaciones-label"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modal-observaciones-label">Observaciones</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body" id="modal-observaciones-body"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--  -->
+{% endblock %}
+;
+{% block customJS %}
+    <!-- TODO: Migrar a JS -->
+    <script src="{% static 'custom/js/rendicioncuentasfinaldetail.js' %}"></script>
+{% endblock %}

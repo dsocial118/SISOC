@@ -1,0 +1,149 @@
+{% extends "includes/main.html" %};
+{% load static %}
+;
+{% block title %}Acciones sociales{% endblock %}
+;
+{% block titulo-pagina %}Acciones sociales{% endblock %}
+;
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="">Ciudadano</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanos_ver' ciudadano.id %}">{{ ciudadano.apellido }}, {{ ciudadano.nombre }}</a>
+        </li>
+        <li class="breadcrumb-item active">Acciones sociales</li>
+    </ol>
+{% endblock %}
+;
+{% block menu-adicional %}{% endblock %}
+;
+{% block content %}
+    <!-- Datos de ciudadano -->
+    <div class="row">
+        <div class="col-12 pb-3">
+            <div class="card card-outline card-primary h-100 mb-0">
+                <div class="card-header">
+                    <h3 class="card-title">Datos personales</h3>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dd class="col-sm-2 mb-2">
+                            Nombre
+                        </dd>
+                        <dt class="col-sm-10 mb-2">
+                            <a href="{% url 'ciudadanos_ver' ciudadano.id %}" title="Ver ciudadano">{{ ciudadano.apellido }} {{ ciudadano.nombre }}</a>
+                        </dt>
+                        <dd class="col-sm-2 mb-2">
+                            {{ ciudadano.tipo_documento }}
+                        </dd>
+                        <dt class="col-sm-10 mb-2">{{ ciudadano.documento }}</dt>
+                        <dd class="col-sm-2 mb-2">
+                            Fecha de nacimiento
+                        </dd>
+                        <dt class="col-sm-10 mb-2">{{ ciudadano.fecha_nacimiento|date:'d/m/Y' }}</dt>
+                        <dd class="col-sm-2 mb-2">
+                            Sexo
+                        </dd>
+                        <dt class="col-sm-10">{{ ciudadano.sexo }}</dt>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-2">
+            <div class="row h-100"></div>
+        </div>
+    </div>
+    <!-- tabla derivaciones -->
+    <div class="row ">
+        <div class="col-12">
+            <div class="card">
+                <!-- /.card-header -->
+                <div class="card-body">
+                    <table class="table table-bordered table-striped projects tabladt">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Programa</th>
+                                <th>Cantidad</th>
+                                <th>Accion realizada</th>
+                                <th>Detalles</th>
+                                <th width="5%" class="notexport">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% comment %} #FIXME: Esto esta todo hardcodeado D: {% endcomment %}
+                            <tr>
+                                <td>09/07/2019</td>
+                                <td>Asistencia habitacional</td>
+                                <td>3</td>
+                                <td>Limpieza de terreno</td>
+                                <td>Se realizo la limpieza del terreno de la familia baez debido a condiciones insalubres</td>
+                                <td class="text-right">
+                                    <a href="" class="btn btn-secondary btn-sm ver" title="Ver admisión">Ver</a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>09/07/2019</td>
+                                <td>Incendios</td>
+                                <td>1</td>
+                                <td>Asistencia al hogar</td>
+                                <td>Se asiste con la recontrucción del hogar de la familia Baez tras sufrir un incendio</td>
+                                <td class="text-right">
+                                    <a href="" class="btn btn-secondary btn-sm ver" title="Ver admisión">Ver</a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>09/07/2019</td>
+                                <td>Asistencia alimentaria</td>
+                                <td>12</td>
+                                <td>Entrega de alimentos</td>
+                                <td>Se entregan bolsones de alimento a la familia</td>
+                                <td class="text-right">
+                                    <a href="" class="btn btn-secondary btn-sm ver" title="Ver admisión">Ver</a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>09/07/2019</td>
+                                <td>Asistencia habitacional</td>
+                                <td>2</td>
+                                <td>Entrega de camas</td>
+                                <td>Se entregan camas tras sufrir un incendio</td>
+                                <td class="text-right">
+                                    <a href="" class="btn btn-secondary btn-sm ver" title="Ver admisión">Ver</a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>09/07/2019</td>
+                                <td>Asistencia habitacional</td>
+                                <td>2</td>
+                                <td>Entrega colchones</td>
+                                <td>Se entregan colchones tras sufrir un incendio</td>
+                                <td class="text-right">
+                                    <a href="" class="btn btn-secondary btn-sm ver" title="Ver admisión">Ver</a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>09/07/2019</td>
+                                <td>Asistencia habitacional</td>
+                                <td>4</td>
+                                <td>Entrega frazadas</td>
+                                <td>Se entregan frazadas tras sufrir un incendio</td>
+                                <td class="text-right">
+                                    <a href="" class="btn btn-secondary btn-sm ver" title="Ver admisión">Ver</a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- /.card-body -->
+            </div>
+            <!-- /.card -->
+        </div>
+        <!-- /.col -->
+    </div>
+    <!-- /.row -->
+{% endblock %}
+;
+{% block customJS %}{% endblock %}
