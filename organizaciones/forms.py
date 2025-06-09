@@ -3,6 +3,8 @@ from django.forms import inlineformset_factory
 from organizaciones.models import (
     Organizacion,
     Firmante,
+    TipoEntidad,
+    SubtipoEntidad,
 )
 
 
