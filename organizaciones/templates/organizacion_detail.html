@@ -80,6 +80,18 @@
                                                 <span class="username">{{ organizacion.email | default_if_none:"-" }}</span>
                                             </div>
                                         </div>
+                                        <div class="nav-item d-flex">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Tipo Organizacion
+                                                <span class="username">{{ organizacion.tipo_entidad | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item d-flex">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Subtipo Organizacion
+                                                <span class="username">{{ organizacion.subtipo_entidad | default_if_none:"-" }}</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
