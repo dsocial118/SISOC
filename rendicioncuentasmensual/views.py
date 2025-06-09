@@ -1,5 +1,8 @@
 from django.shortcuts import render,redirect
+from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
+from django.http import JsonResponse
 from django.views.generic import (
     ListView,
     DetailView,
@@ -13,6 +16,14 @@ from comedores.models.comedor import Comedor
 from django.urls import reverse_lazy, reverse
 from .forms import RendicionCuentaMensualForm, DocumentacionAdjuntaForm
 
+
+@csrf_exempt
+def eliminar_archivo(request, archivo_id):
+    if request.method == "POST":
+        archivo = get_object_or_404(DocumentacionAdjunta, id=archivo_id)
+        archivo.delete()
+        return JsonResponse({"success": True, "message": "Archivo eliminado correctamente."})
+    return JsonResponse({"success": False, "message": "Método no permitido."}, status=405)
 class RendicionCuentaMensualListView(ListView):
     model = RendicionCuentaMensual
     template_name = "rendicioncuentasmensual_list.html"
