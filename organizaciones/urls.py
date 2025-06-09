@@ -7,6 +7,7 @@ from organizaciones.views import (
     OrganizacionUpdateView,
     OrganizacionDetailView,
     OrganizacionDeleteView,
+    sub_tipo_entidad_ajax,
 )
 
 urlpatterns = [
@@ -34,5 +35,10 @@ urlpatterns = [
         "organizaciones/eliminar/<int:pk>",
         group_required("Organizaciones")(OrganizacionDeleteView.as_view()),
         name="organizacion_eliminar",
+    ),
+    path(
+    "organizaciones/subtipos-entidad/ajax/",
+    group_required("Organizaciones")(sub_tipo_entidad_ajax),
+    name="organizacion_subtipos_entidad_ajax",
     ),
 ]

@@ -1,7 +1,7 @@
 from django.contrib import messages
 from django.db.models import Q
 from django.forms import ValidationError
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
 from django.urls import reverse, reverse_lazy
 from django.views.generic import (
     CreateView,
@@ -12,7 +12,7 @@ from django.views.generic import (
 )
 
 from organizaciones.forms import OrganizacionForm, FirmanteFormset
-from organizaciones.models import Organizacion
+from organizaciones.models import Organizacion, SubtipoEntidad
 
 
 class OrganizacionListView(ListView):
@@ -123,3 +123,18 @@ class OrganizacionDeleteView(DeleteView):
         except ValidationError as e:
             messages.error(request, e.message)
             return self.render_to_response(self.get_context_data(object=self.object))
+        
+
+def sub_tipo_entidad_ajax(request):
+    tipo_entidad_id = request.GET.get("tipo_entidad")
+    if tipo_entidad_id:
+        subtipo_entidades = SubtipoEntidad.objects.filter(
+            tipo_entidad_id=tipo_entidad_id
+        ).order_by("nombre")
+    else:
+        subtipo_entidades = SubtipoEntidad.objects.none()
+
+    data = [
+        {"id": subtipo.id, "text": subtipo.nombre} for subtipo in subtipo_entidades
+    ]
+    return JsonResponse(data, safe=False)

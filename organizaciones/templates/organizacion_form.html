@@ -49,7 +49,27 @@
                     <div class="card-header">
                         <h3>Organización</h3>
                     </div>
-                    <div class="card-body">{{ form|crispy }}</div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            {{ form.nombre|as_crispy_field }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.cuit|as_crispy_field }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.telefono|as_crispy_field }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.email|as_crispy_field }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.tipo_entidad|as_crispy_field }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.subtipo_entidad|as_crispy_field }}
+                        </div>
+                    </div>
+                </div>
                 </div>
                 <div class="card mt-3">
                     <div class="card-header">
@@ -83,4 +103,38 @@
 {% endblock %}
 {% block customJS %}
     <script src="{% static 'custom/js/organizacionesform.js' %}"></script>
+
+    <script>
+        // Puedes poner esto en tu template donde tengas el formulario
+
+document.addEventListener("DOMContentLoaded", function () {
+    const tipoEntidadSelect = document.getElementById("id_tipo_entidad");
+    const subtipoEntidadSelect = document.getElementById("id_subtipo_entidad");
+    subtipoEntidadSelect.innerHTML = "";
+
+    if (tipoEntidadSelect) {
+        tipoEntidadSelect.addEventListener("change", function () {
+            subtipoEntidadSelect.innerHTML = "";
+            const tipoEntidadId = this.value;
+            fetch(`/organizaciones/subtipos-entidad/ajax/?tipo_entidad=${tipoEntidadId}`, {
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest"
+                }
+            })
+            .then(response => response.json())
+            .then(result => {
+                console.log("Subtipos de entidad:", result);
+                result.forEach(subtipo => {
+                    const option = document.createElement("option");
+                    option.value = subtipo.id;
+                    option.textContent = subtipo.text;
+                    subtipoEntidadSelect.appendChild(option);
+                });
+            })
+            .catch(error => console.error("Error al cargar subintervenciones:", error));
+        });
+    }
+});
+    </script>
 {% endblock %}
+
