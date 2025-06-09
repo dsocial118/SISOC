@@ -74,6 +74,35 @@ class Firmante(models.Model):
 
     def __str__(self):
         return f"{self.nombre} ({self.get_rol_display()})"
+    
+class Aval1(models.Model):
+    organizacion = models.ForeignKey(
+        "Organizacion", on_delete=models.CASCADE, related_name="avales1", blank=True, null=True
+    )
+    nombre = models.CharField(max_length=255, blank=True, null=True)
+    cuit = models.BigIntegerField(unique=True, blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.nombre} ({self.cuit})"
+
+    class Meta:
+        verbose_name = "Aval 1"
+        verbose_name_plural = "Avales 1"
+
+
+class Aval2(models.Model):
+    organizacion = models.ForeignKey(
+        "Organizacion", on_delete=models.CASCADE, related_name="avales2", blank=True, null=True
+    )
+    nombre = models.CharField(max_length=255, blank=True, null=True)
+    cuit = models.BigIntegerField(unique=True, blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.nombre} ({self.cuit})"
+
+    class Meta:
+        verbose_name = "Aval 2"
+        verbose_name_plural = "Avales 2"
 
 
 class Organizacion(models.Model):
