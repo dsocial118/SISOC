@@ -5,14 +5,21 @@ from comedores.models.comedor import Comedor
 
 class DocumentacionAdjunta(models.Model):
     nombre = models.CharField(max_length=255, verbose_name="Nombre del Documento")
-    archivo = models.FileField(upload_to="rendicioncuentasmensual/documentos_adjuntos/", verbose_name="Archivo")
+    archivo = models.FileField(upload_to="rendicioncuentasmensualdocumentos_adjuntos/", verbose_name="Archivo")
     fecha_creacion = models.DateTimeField(
         auto_now_add=True, verbose_name="Fecha de Creación"
     )
     ultima_modificacion = models.DateTimeField(
         auto_now=True, verbose_name="Última Modificación"
     )
-
+    rendicion_cuenta_mensual = models.ForeignKey(
+        'RendicionCuentaMensual',
+        on_delete=models.SET_NULL,
+        related_name='arvhios_adjuntos',
+        verbose_name="Rendición de Cuenta Mensual",
+        null=True,
+        blank=True,
+    )
     class Meta:
         verbose_name = "Documento Adjunto"
         verbose_name_plural = "Documentos Adjuntos"
@@ -51,11 +58,6 @@ class RendicionCuentaMensual(models.Model):
     )
     fecha_creacion = models.DateTimeField(
         auto_now_add=True, verbose_name="Fecha de Creación"
-    )
-    arvhios_adjuntos = models.ManyToManyField(
-        DocumentacionAdjunta,
-        related_name="rendiciones_cuentas_mensuales",
-        blank=True,
     )
 
     class Meta:
