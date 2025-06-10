@@ -1,0 +1,87 @@
+[
+    {
+        "model": "organizaciones.tipoentidad",
+        "pk": 1,
+        "fields": {
+            "nombre": "Personería jurídica"
+        }
+    },
+    {
+        "model": "organizaciones.tipoentidad",
+        "pk": 2,
+        "fields": {
+            "nombre": "Personería jurídica eclesiástica"
+        }
+    },
+    {
+        "model": "organizaciones.tipoentidad",
+        "pk": 3,
+        "fields": {
+            "nombre": "Asociación de hecho"
+        }
+    },
+    {
+        "model": "organizaciones.subtipoentidad",
+        "pk": 1,
+        "fields": {
+            "tipo_entidad": 1,
+            "nombre": "Asociación civil"
+        }
+    },
+    {
+        "model": "organizaciones.subtipoentidad",
+        "pk": 2,
+        "fields": {
+            "tipo_entidad": 1,
+            "nombre": "Cooperativa"
+        }
+    },
+    {
+        "model": "organizaciones.subtipoentidad",
+        "pk": 3,
+        "fields": {
+            "tipo_entidad": 1,
+            "nombre": "Entidad"
+        }
+    },
+    {
+        "model": "organizaciones.subtipoentidad",
+        "pk": 4,
+        "fields": {
+            "tipo_entidad": 1,
+            "nombre": "Fundación"
+        }
+    },
+    {
+        "model": "organizaciones.subtipoentidad",
+        "pk": 5,
+        "fields": {
+            "tipo_entidad": 2,
+            "nombre": "Arquidiócesis"
+        }
+    },
+    {
+        "model": "organizaciones.subtipoentidad",
+        "pk": 6,
+        "fields": {
+            "tipo_entidad": 2,
+            "nombre": "Diócesis"
+        }
+    },
+    {
+        "model": "organizaciones.subtipoentidad",
+        "pk": 7,
+        "fields": {
+            "tipo_entidad": 2,
+            "nombre": "Parroquias"
+        }
+    },
+    {
+        "model": "organizaciones.subtipoentidad",
+        "pk": 8,
+        "fields": {
+            "tipo_entidad": 3,
+            "nombre": "Asociación de hecho"
+        }
+    }
+]
