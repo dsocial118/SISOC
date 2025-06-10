@@ -1,11 +1,12 @@
 from django.db import models
-from django.contrib.auth.models import User
 from comedores.models.comedor import Comedor
 
 
 class DocumentacionAdjunta(models.Model):
     nombre = models.CharField(max_length=255, verbose_name="Nombre del Documento")
-    archivo = models.FileField(upload_to="rendicioncuentasmensualdocumentos_adjuntos/", verbose_name="Archivo")
+    archivo = models.FileField(
+        upload_to="rendicioncuentasmensualdocumentos_adjuntos/", verbose_name="Archivo"
+    )
     fecha_creacion = models.DateTimeField(
         auto_now_add=True, verbose_name="Fecha de Creación"
     )
@@ -13,16 +14,18 @@ class DocumentacionAdjunta(models.Model):
         auto_now=True, verbose_name="Última Modificación"
     )
     rendicion_cuenta_mensual = models.ForeignKey(
-        'RendicionCuentaMensual',
+        "RendicionCuentaMensual",
         on_delete=models.SET_NULL,
-        related_name='arvhios_adjuntos',
+        related_name="arvhios_adjuntos",
         verbose_name="Rendición de Cuenta Mensual",
         null=True,
         blank=True,
     )
+
     class Meta:
         verbose_name = "Documento Adjunto"
         verbose_name_plural = "Documentos Adjuntos"
+
 
 class RendicionCuentaMensual(models.Model):
     MESES = [
@@ -40,7 +43,8 @@ class RendicionCuentaMensual(models.Model):
         (12, "Diciembre"),
     ]
     comedor = models.ForeignKey(
-        Comedor, on_delete=models.SET_NULL, 
+        Comedor,
+        on_delete=models.SET_NULL,
         related_name="rendiciones_cuentas_mensuales",
         null=True,
         blank=True,

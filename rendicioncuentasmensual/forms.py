@@ -1,6 +1,7 @@
 from django import forms
 from rendicioncuentasmensual.models import RendicionCuentaMensual, DocumentacionAdjunta
 
+
 class RendicionCuentaMensualForm(forms.ModelForm):
     class Meta:
         model = RendicionCuentaMensual
@@ -9,7 +10,9 @@ class RendicionCuentaMensualForm(forms.ModelForm):
         widgets = {
             "mes": forms.Select(attrs={"class": "form-control"}),
             "anio": forms.NumberInput(attrs={"class": "form-control"}),
-            "documento_adjunto": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+            "documento_adjunto": forms.CheckboxInput(
+                attrs={"class": "form-check-input"}
+            ),
             "observaciones": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
         }
         labels = {
@@ -19,6 +22,8 @@ class RendicionCuentaMensualForm(forms.ModelForm):
             "observaciones": "Observaciones",
             "arvhios_adjuntos": "Archivos Adjuntos",
         }
+
+
 class DocumentacionAdjuntaForm(forms.ModelForm):
     class Meta:
         model = DocumentacionAdjunta
