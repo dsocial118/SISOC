@@ -1,3 +1,4 @@
 from django.contrib import admin
+from rendicioncuentasmensual.models import RendicionCuentaMensual
 
-# Register your models here.
+admin.site.register(RendicionCuentaMensual)

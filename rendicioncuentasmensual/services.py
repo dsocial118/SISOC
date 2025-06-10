@@ -1,5 +1,4 @@
-from rendicioncuentasmensual.models import RendicionCuentaMensual, DocumentacionAdjunta
-from comedores.models.comedor import Comedor
+from rendicioncuentasmensual.models import RendicionCuentaMensual
 
 
 class RendicionCuentaMensualService:
@@ -35,9 +34,16 @@ class RendicionCuentaMensualService:
     @staticmethod
     def obtener_rendiciones_cuentas_mensuales(comedor):
         # Obtener todas las rendiciones de cuenta mensual para un comedor
-        return RendicionCuentaMensual.objects.filter(comedor=comedor).prefetch_related("arvhios_adjuntos")
+        return RendicionCuentaMensual.objects.filter(comedor=comedor).prefetch_related(
+            "arvhios_adjuntos"
+        )
 
     @staticmethod
     def obtener_rendicion_cuenta_mensual(id_enviado):
         # Obtener una rendición de cuenta mensual por ID
         return RendicionCuentaMensual.objects.get(pk=id_enviado)
+
+    @staticmethod
+    def cantidad_rendiciones_cuentas_mensuales(comedor):
+        # Obtener la cantidad de rendiciones de cuenta mensual para un comedor
+        return RendicionCuentaMensual.objects.filter(comedor=comedor).count()
