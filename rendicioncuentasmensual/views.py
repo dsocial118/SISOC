@@ -15,7 +15,7 @@ from .services import RendicionCuentaMensualService
 from .forms import RendicionCuentaMensualForm, DocumentacionAdjuntaForm
 
 
-@csrf_exempt
+@csrf_exempt # FIXME: Dejar de utilizar el csrf_exempt
 def eliminar_archivo(request, archivo_id):
     if request.method == "POST":
         archivo = get_object_or_404(DocumentacionAdjunta, id=archivo_id)
