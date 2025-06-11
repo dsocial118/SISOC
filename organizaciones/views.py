@@ -126,7 +126,7 @@ class OrganizacionUpdateView(UpdateView):
             return HttpResponseRedirect(self.get_success_url())
         else:
             return self.form_invalid(form)
-
+        
     def get_success_url(self):
         return reverse("organizacion_detalle", kwargs={"pk": self.object.pk})
 
@@ -139,6 +139,8 @@ class OrganizacionDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["firmantes"] = self.object.firmantes.select_related("rol")
+        context["avales1"] = self.object.avales1.all()
+        context["avales2"] = self.object.avales2.all()
         return context
 
 
