@@ -45,7 +45,6 @@
         <div class="col-12">
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
-                
                 <div class="card">
                     <div class="card-header">
                         <h3>Organización</h3>
@@ -59,7 +58,6 @@
                         <div class="form-group">{{ form.subtipo_entidad|as_crispy_field }}</div>
                     </div>
                 </div>
-                
                 <div class="card mt-3" id="card-avales">
                     <div class="card-header">
                         <h3>Avales</h3>
@@ -70,7 +68,7 @@
                             <h5>Aval 1</h5>
                             {{ aval1_formset.management_form }}
                             {% for form in aval1_formset %}
-                            {{ form.id }}
+                                {{ form.id }}
                                 <div class="form-row align-items-end">
                                     <div class="col-md-6">{{ form.nombre|as_crispy_field }}</div>
                                     <div class="col-md-6">{{ form.cuit|as_crispy_field }}</div>
@@ -84,7 +82,7 @@
                             <h5>Aval 2</h5>
                             {{ aval2_formset.management_form }}
                             {% for form in aval2_formset %}
-                            {{ form.id }}
+                                {{ form.id }}
                                 <div class="form-row align-items-end">
                                     <div class="col-md-6">{{ form.nombre|as_crispy_field }}</div>
                                     <div class="col-md-6">{{ form.cuit|as_crispy_field }}</div>
@@ -93,7 +91,7 @@
                             {% endfor %}
                         </div>
                     </div>
-                </div>  
+                </div>
                 <div class="card mt-3">
                     <div class="card-header">
                         <h3>Firmantes</h3>
