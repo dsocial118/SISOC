@@ -9,6 +9,7 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
     }
 
+    // FIXME: Eliminar comentarios de GPT
     // Ajusta los roles según tu lógica de negocio
     const rolesPorTipoEntidad = {
         "Personería jurídica": ["Presidente", "Tesorero", "Secretario"],
@@ -49,6 +50,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    // FIXME: Utilizar otro nombre para la variable el q no se entiende
     function reindexFirmantes() {
         if (!firmantesContainer || !totalForms) return;
         const forms = firmantesContainer.querySelectorAll('.form-row');
