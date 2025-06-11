@@ -43,7 +43,8 @@ class RendicionCuentaMensualService:
         # Obtener una rendición de cuenta mensual por ID
         return RendicionCuentaMensual.objects.get(pk=id_enviado)
 
-    @staticmethod
+    # TODO: Cambiar nombre y añadir verbo
+    @staticmethod 
     def cantidad_rendiciones_cuentas_mensuales(comedor):
         # Obtener la cantidad de rendiciones de cuenta mensual para un comedor
         return RendicionCuentaMensual.objects.filter(comedor=comedor).count()
