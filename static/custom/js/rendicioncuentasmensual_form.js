@@ -1,4 +1,4 @@
-
+// FIXME: Eliminar comentarios redundantes de GPT
 document.addEventListener("DOMContentLoaded", function () {
     const addButton = document.getElementById("add-documentacion");
     const container = document.getElementById("documentacion-container");
