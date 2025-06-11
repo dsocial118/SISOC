@@ -139,6 +139,8 @@ class OrganizacionDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["firmantes"] = self.object.firmantes.select_related("rol")
+        context["avales1"] = self.object.avales1.all()
+        context["avales2"] = self.object.avales2.all()
         return context
 
 
