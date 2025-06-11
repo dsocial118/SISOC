@@ -5,14 +5,14 @@ from configuraciones.decorators import group_required
 urlpatterns = [
     path(
         "acompanamiento/<int:comedor_id>/detalle/",
-        group_required(["Acompanamiento Detalle"])(
+        group_required(["Acompanamiento Detalle","Area Legales"])(
             views.AcompanamientoDetailView.as_view()
         ),
         name="detalle_acompanamiento",
     ),
     path(
         "acompanamiento/",
-        group_required(["Acompanamiento Listar"])(
+        group_required(["Acompanamiento Listar","Area Legales"])(
             views.ComedoresAcompanamientoListView.as_view()
         ),
         name="lista_comedores_acompanamiento",
