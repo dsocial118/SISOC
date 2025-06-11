@@ -16,7 +16,7 @@ class DocumentacionAdjunta(models.Model):
     rendicion_cuenta_mensual = models.ForeignKey(
         "RendicionCuentaMensual",
         on_delete=models.SET_NULL,
-        related_name="arvhios_adjuntos",
+        related_name="arvhios_adjuntos", #FIXME: Arreglar typo
         verbose_name="Rendición de Cuenta Mensual",
         null=True,
         blank=True,
