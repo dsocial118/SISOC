@@ -126,7 +126,7 @@ class OrganizacionUpdateView(UpdateView):
             return HttpResponseRedirect(self.get_success_url())
         else:
             return self.form_invalid(form)
-        
+
     def get_success_url(self):
         return reverse("organizacion_detalle", kwargs={"pk": self.object.pk})
 
