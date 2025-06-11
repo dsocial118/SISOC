@@ -26,7 +26,7 @@ urlpatterns = [
     ),
     path(
         "expedientespagos/<int:pk>/editar/",
-        group_required(["Tecnico Comedor", "Abogado Dupla"])(
+        group_required(["Tecnico Comedor", "Area Legales"])(
             ExpedientesPagosUpdateView.as_view()
         ),
         name="expedientespagos_update",
