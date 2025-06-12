@@ -49,7 +49,48 @@
                     <div class="card-header">
                         <h3>Organización</h3>
                     </div>
-                    <div class="card-body">{{ form|crispy }}</div>
+                    <div class="card-body">
+                        <div class="form-group">{{ form.nombre|as_crispy_field }}</div>
+                        <div class="form-group">{{ form.cuit|as_crispy_field }}</div>
+                        <div class="form-group">{{ form.telefono|as_crispy_field }}</div>
+                        <div class="form-group">{{ form.email|as_crispy_field }}</div>
+                        <div class="form-group">{{ form.tipo_entidad|as_crispy_field }}</div>
+                        <div class="form-group">{{ form.subtipo_entidad|as_crispy_field }}</div>
+                    </div>
+                </div>
+                <div class="card mt-3" id="card-avales">
+                    <div class="card-header">
+                        <h3>Avales</h3>
+                    </div>
+                    <div class="card-body">
+                        <!-- Aval 1 -->
+                        <div class="mb-4">
+                            <h5>Aval 1</h5>
+                            {{ aval1_formset.management_form }}
+                            {% for form in aval1_formset %}
+                                {{ form.id }}
+                                <div class="form-row align-items-end">
+                                    <div class="col-md-6">{{ form.nombre|as_crispy_field }}</div>
+                                    <div class="col-md-6">{{ form.cuit|as_crispy_field }}</div>
+                                    <div class="col-12 mt-2"></div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <hr />
+                        <!-- Aval 2 -->
+                        <div>
+                            <h5>Aval 2</h5>
+                            {{ aval2_formset.management_form }}
+                            {% for form in aval2_formset %}
+                                {{ form.id }}
+                                <div class="form-row align-items-end">
+                                    <div class="col-md-6">{{ form.nombre|as_crispy_field }}</div>
+                                    <div class="col-md-6">{{ form.cuit|as_crispy_field }}</div>
+                                    <div class="col-12 mt-2"></div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
                 </div>
                 <div class="card mt-3">
                     <div class="card-header">
@@ -57,13 +98,13 @@
                     </div>
                     <div class="card-body">
                         {{ firmante_formset.management_form }}
-                        <div id="firmantes-container">
-                            <div id="empty-form" style="display:none">
-                                <div class="form-row">
-                                    {{ firmante_formset.empty_form|crispy }}
-                                    <button type="button" class="btn btn-danger remove-firmante my-3">Eliminar</button>
-                                </div>
+                        <div id="empty-form" style="display:none">
+                            <div class="form-row">
+                                {{ firmante_formset.empty_form|crispy }}
+                                <button type="button" class="btn btn-danger remove-firmante my-3">Eliminar</button>
                             </div>
+                        </div>
+                        <div id="firmantes-container">
                             {% for form in firmante_formset %}
                                 <div class="form-row">
                                     {{ form|crispy }}
@@ -80,7 +121,63 @@
             </form>
         </div>
     </div>
+</div>
 {% endblock %}
 {% block customJS %}
     <script src="{% static 'custom/js/organizacionesform.js' %}"></script>
+    <script>
+        // Puedes poner esto en tu template donde tengas el formulario
+
+
+document.addEventListener("DOMContentLoaded", function () {
+    const tipoEntidadSelect = document.getElementById("id_tipo_entidad");
+    const subtipoEntidadSelect = document.getElementById("id_subtipo_entidad");
+    subtipoEntidadSelect.innerHTML = "";
+
+    function ToggleCardAvales()
+    {
+        const cardAvales = document.getElementById("card-avales");
+        if (tipoEntidadSelect && cardAvales) {
+            if (tipoEntidadSelect.value === "3") {
+                cardAvales.style.display = "block";
+            } else {
+                cardAvales.style.display = "none";
+            }
+        }
+    }
+
+    function RenderSubtipoEntidad()
+    {
+        ToggleCardAvales();
+
+        subtipoEntidadSelect.innerHTML = "";        
+        const tipoEntidadId = this.value ? this.value : tipoEntidadSelect.value;
+        fetch(`/organizaciones/subtipos-entidad/ajax/?tipo_entidad=${tipoEntidadId}`, {
+            headers: {
+                "X-Requested-With": "XMLHttpRequest"
+            }
+        })
+        .then(response => response.json())
+        .then(result => {
+            console.log("Subtipos de entidad:", result);
+            result.forEach(subtipo => {
+                const option = document.createElement("option");
+                option.value = subtipo.id;
+                option.textContent = subtipo.text;
+                subtipoEntidadSelect.appendChild(option);
+            });
+        })
+        .catch(error => console.error("Error al cargar subintervenciones:", error));
+    }
+
+    RenderSubtipoEntidad();
+    ToggleCardAvales();
+
+    if (tipoEntidadSelect) {
+        tipoEntidadSelect.addEventListener("change", function () {
+            RenderSubtipoEntidad();
+        });
+    }
+});
+    </script>
 {% endblock %}
