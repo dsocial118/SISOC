@@ -1,0 +1,113 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Detalle Centro{% endblock %}
+
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right">
+    <li class="breadcrumb-item"><a href="{% url 'centro_list' %}">Centro de Familia</a></li>
+    <li class="breadcrumb-item active">Detalle</li>
+</ol>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="display-4">{{ centro.nombre }}</h2>
+        <div>
+            <a href="{% url 'centro_update' centro.id %}" class="btn btn-primary mr-2">Editar</a>
+            <a href="{% url 'centro_list' %}" class="btn btn-secondary mr-2">Volver</a>
+            <a href="{% url 'actividadcentro_create' %}?centro={{ centro.id }}" class="btn btn-success mr-2">Agregar Actividad</a>
+            {% if centro.tipo == 'faro' %}
+                <a href="{% url 'centro_create' %}?faro={{ centro.id }}" class="btn btn-info">Agregar Centro Adherido</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <p><strong>Tipo:</strong> {{ centro.get_tipo_display }}</p>
+            <p><strong>Dirección:</strong> {{ centro.direccion }}</p>
+            <p><strong>Contacto:</strong> {{ centro.contacto }}</p>
+            <p><strong>Estado:</strong>
+                {% if centro.activo %}
+                    <span class="badge badge-success">Activo</span>
+                {% else %}
+                    <span class="badge badge-danger">Inactivo</span>
+                {% endif %}
+            </p>
+            {% if centro.tipo == 'adherido' %}
+                <p><strong>Centro FARO asociado:</strong> {{ centro.faro_asociado.nombre }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <h4 class="mt-4">Actividades Configuradas</h4>
+    <div class="card mb-5">
+        <div class="card-body p-0">
+            <table class="table table-bordered table-striped mb-0">
+                <thead>
+                    <tr>
+                        <th>Actividad</th>
+                        <th>Categoría</th>
+                        <th>Días</th>
+                        <th>Horarios</th>
+                        <th>Estado</th>
+                        <th>Fechas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for actividad in actividades %}
+                    <tr>
+                        <td>{{ actividad.actividad.nombre }}</td>
+                        <td>{{ actividad.actividad.categoria.nombre }}</td>
+                        <td>{{ actividad.dias }}</td>
+                        <td>{{ actividad.horarios }}</td>
+                        <td><span class="badge badge-info">{{ actividad.get_estado_display }}</span></td>
+                        <td>{{ actividad.fecha_inicio }} - {{ actividad.fecha_fin }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="text-center">No hay actividades configuradas.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if centro.tipo == 'faro' %}
+    <h4 class="mt-5">Centros Adheridos</h4>
+    <div class="card">
+        <div class="card-body p-0">
+            <table class="table table-bordered table-striped mb-0">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Dirección</th>
+                        <th>Contacto</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for adherido in centros_adheridos %}
+                    <tr>
+                        <td><a href="{% url 'centro_detail' adherido.id %}">{{ adherido.nombre }}</a></td>
+                        <td>{{ adherido.direccion }}</td>
+                        <td>{{ adherido.contacto }}</td>
+                        <td>
+                            {% if adherido.activo %}
+                                <span class="badge badge-success">Activo</span>
+                            {% else %}
+                                <span class="badge badge-secondary">Inactivo</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" class="text-center">No hay centros adheridos registrados.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
