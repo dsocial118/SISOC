@@ -1,19 +1,20 @@
 from .models import Centro, ActividadCentro, ParticipanteActividad
 from django.core.exceptions import ValidationError
 
+
 class CentroService:
 
     @staticmethod
     def obtener_adheridos(centro_faro):
         """Devuelve los centros adheridos a un FARO activo"""
-        if not centro_faro or centro_faro.tipo != 'faro':
+        if not centro_faro or centro_faro.tipo != "faro":
             return Centro.objects.none()
         return Centro.objects.filter(faro_asociado=centro_faro, activo=True)
 
     @staticmethod
     def puede_asociar_adherido(centro):
         """Devuelve True si el centro puede tener adheridos"""
-        return centro.tipo == 'faro' and centro.activo
+        return centro.tipo == "faro" and centro.activo
 
     @staticmethod
     def es_centro_valido_para_actividad(centro):
@@ -28,20 +29,24 @@ class ActividadCentroService:
         return ActividadCentro.objects.filter(centro=centro)
 
 
-
-
 class ParticipanteService:
 
     @staticmethod
     def contar_participantes_por_actividad(actividad_centro):
-        return ParticipanteActividad.objects.filter(actividad_centro=actividad_centro).count()
+        return ParticipanteActividad.objects.filter(
+            actividad_centro=actividad_centro
+        ).count()
 
     @staticmethod
     def cargar_participantes_desde_lista(lista_dnis, actividad_centro):
         """Carga masiva desde una lista de CUITs"""
         nuevos = []
         for cuit in lista_dnis:
-            if not ParticipanteActividad.objects.filter(actividad_centro=actividad_centro, cuit=cuit).exists():
-                nuevos.append(ParticipanteActividad(cuit=cuit, actividad_centro=actividad_centro))
+            if not ParticipanteActividad.objects.filter(
+                actividad_centro=actividad_centro, cuit=cuit
+            ).exists():
+                nuevos.append(
+                    ParticipanteActividad(cuit=cuit, actividad_centro=actividad_centro)
+                )
         ParticipanteActividad.objects.bulk_create(nuevos)
         return len(nuevos)

@@ -53,13 +53,19 @@
                         <th>Días</th>
                         <th>Horarios</th>
                         <th>Estado</th>
-                        <th>Fechas</th>
+                    
                     </tr>
                 </thead>
                 <tbody>
                     {% for actividad in actividades %}
                     <tr>
-                        <td>{{ actividad.actividad.nombre }}</td>
+                        <td>
+<a href="{% url 'actividadcentro_detail' centro_id=actividad.centro.id pk=actividad.id %}">
+    {{ actividad.actividad.nombre }}
+</a>
+
+</td>
+
                         <td>{{ actividad.actividad.categoria.nombre }}</td>
                         <td>{{ actividad.dias }}</td>
                         <td>{{ actividad.horarios }}</td>
