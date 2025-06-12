@@ -62,10 +62,15 @@
         {% endif %}
     </div>
 </div>
-
-
+    
     <div class="mt-4 text-center">
-        <a href="{% url 'actividadcentro_list' %}" class="btn btn-secondary mr-2">Volver</a>
+        <a href="{% url 'participanteactividad_create' centro_id=actividad.centro.id actividad_id=actividad.id %}" class="btn btn-success mr-2">
+    Agregar Participante
+</a>
+
+    </div>
+    <div class="mt-4 text-center">
+        <a href="{% url 'centro_detail' actividad.centro.id %}" class="btn btn-secondary mr-2">Volver</a>
     </div>
 </div>
 {% endblock %}

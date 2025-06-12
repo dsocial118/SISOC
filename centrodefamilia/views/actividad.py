@@ -46,7 +46,14 @@ class ActividadCentroCreateView(CreateView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse("actividadcentro_detail", kwargs={"pk": self.object.pk})
+        return reverse(
+            "actividadcentro_detail",
+            kwargs={
+                "centro_id": self.object.centro.id,
+                "pk": self.object.pk
+            }
+        )
+
 
 
 class ActividadCentroDetailView(DetailView):
