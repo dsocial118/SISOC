@@ -140,7 +140,7 @@ INSTALLED_APPS = [
     "acompanamientos",
     "expedientespagos",
     "rendicioncuentasmensual",
-     'centrodefamilia',
+    "centrodefamilia",
 ]
 
 # Definición del middleware utilizado por el proyecto
