@@ -13,6 +13,7 @@ from centrodefamilia.views.actividad import (
 )
 
 from centrodefamilia.utils.decorators import group_required
+from centrodefamilia.views.participante import ParticipanteActividadCreateView
 
 urlpatterns = [
     # --- CENTROS ---
@@ -69,4 +70,6 @@ urlpatterns = [
         ActividadCentroDetailView.as_view(),
         name="actividadcentro_detail",
     ),
+    path('centros/<int:centro_id>/actividades/<int:actividad_id>/participantes/crear/', ParticipanteActividadCreateView.as_view(), name='participanteactividad_create'),
+
 ]

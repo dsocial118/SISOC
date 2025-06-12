@@ -18,10 +18,13 @@ class ParticipanteActividadCreateView(CreateView):
         return initial
 
     def get_success_url(self):
+        centro_id = self.kwargs.get("centro_id")
         actividad_id = self.kwargs.get("actividad_id")
-        return reverse_lazy(
-            "participanteactividad_list", kwargs={"actividad_id": actividad_id}
-        )
+        return reverse_lazy("actividadcentro_detail", kwargs={
+            "centro_id": centro_id,
+            "pk": actividad_id
+        })
+
 
     def form_valid(self, form):
         messages.success(self.request, "Participante cargado correctamente.")
