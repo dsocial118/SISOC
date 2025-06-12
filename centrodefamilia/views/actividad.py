@@ -1,44 +1,45 @@
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, CreateView
 from django.urls import reverse_lazy
-from centrodefamilia.models import ActividadCentro, Centro
-from centrodefamilia.form import ActividadCentroForm
-from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
-from centrodefamilia.services.centro_service import puede_operar
+from centrodefamilia.models import ActividadCentro
+from centrodefamilia.forms import ActividadCentroForm
 
-
-class ActividadCentroListView(LoginRequiredMixin, ListView):
+class ActividadCentroListView(ListView):
     model = ActividadCentro
     template_name = "centros/actividadcentro_list.html"
     context_object_name = "actividades"
 
     def get_queryset(self):
-        return ActividadCentro.objects.filter(centro__id=self.kwargs['centro_id'])
+        qs = super().get_queryset()
+        centro_id = self.request.GET.get('centro')
+        if centro_id:
+            qs = qs.filter(centro_id=centro_id)
+        return qs
 
-class ActividadCentroCreateView(LoginRequiredMixin, CreateView):
+class ActividadCentroCreateView(CreateView):
     model = ActividadCentro
     form_class = ActividadCentroForm
     template_name = "centros/actividadcentro_form.html"
+    success_url = reverse_lazy("actividadcentro_list")
 
-    def dispatch(self, request, *args, **kwargs):
-        centro = get_object_or_404(Centro, id=self.kwargs["centro_id"])
-        if not puede_operar(centro):
-            messages.error(request, "El centro no puede operar porque su faro está inactivo.")
-            return redirect("actividadcentro_listar", centro_id=centro.id)
-        return super().dispatch(request, *args, **kwargs)
+    def get_initial(self):
+        initial = super().get_initial()
+        centro_id = self.kwargs.get('centro_id') or self.request.GET.get('centro')
+        if centro_id:
+            initial['centro'] = centro_id
+        return initial
 
-    def get_success_url(self):
-        return reverse_lazy("actividadcentro_listar", kwargs={"centro_id": self.kwargs["centro_id"]})
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        centro = get_object_or_404(Centro, id=self.kwargs["centro_id"])
-        kwargs['centro'] = centro
-        return kwargs
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        # Ocultar el campo 'centro' en el formulario si viene por la URL
+        if self.kwargs.get('centro_id'):
+            form.fields.pop('centro', None)
+        return form
 
     def form_valid(self, form):
-        centro = get_object_or_404(Centro, id=self.kwargs["centro_id"])
-        form.instance.centro = centro
-        messages.success(self.request, "Actividad registrada correctamente.")
+        centro_id = self.kwargs.get('centro_id') or self.request.GET.get('centro')
+        if centro_id:
+            form.instance.centro_id = centro_id
+        messages.success(self.request, "Actividad creada correctamente.")
         return super().form_valid(form)
+

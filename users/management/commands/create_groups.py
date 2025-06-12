@@ -45,6 +45,7 @@ class Command(BaseCommand):
             "Usuario Editar",
             "Usuario Listar",
             "Grupos Ver",
+            "ReferenteCentro",
         ]
         for group_name in groups:
             _group, created = Group.objects.get_or_create(name=group_name)

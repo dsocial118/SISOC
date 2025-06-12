@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Centro, Categoria, Actividad, ActividadCentro, ParticipanteActividad
+from .models import Centro, Actividad, ActividadCentro, ParticipanteActividad ,Categoria
 
 @admin.register(Centro)
 class CentroAdmin(admin.ModelAdmin):
@@ -18,10 +18,14 @@ class ActividadAdmin(admin.ModelAdmin):
     list_filter = ('categoria',)
     search_fields = ('nombre',)
 
-@admin.register(ActividadCentro)
 class ActividadCentroAdmin(admin.ModelAdmin):
-    list_display = ('centro', 'actividad', 'cantidad_personas', 'dias', 'horarios')
-    list_filter = ('centro', 'actividad')
+    list_display = ('centro', 'actividad', 'get_categoria', 'cantidad_personas', 'dias', 'horarios')
+    list_filter = ('centro', 'actividad', 'actividad__categoria')
+
+    def get_categoria(self, obj):
+        return obj.actividad.categoria
+    get_categoria.short_description = 'Categoría'
+
 
 @admin.register(ParticipanteActividad)
 class ParticipanteActividadAdmin(admin.ModelAdmin):

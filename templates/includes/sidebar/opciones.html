@@ -123,6 +123,16 @@
                     </a>
                 </li>
             {% endif %}
+            {% if user|has_group:"superadmin" or user|has_group:"ReferenteCentro" or user %}
+                <li class="nav-item">
+                    <a href="{% url 'centro_list' %}"
+                    class="nav-link {% if 'centros/' in pagina_actual %}active{% endif %}">
+                        <i class="nav-icon fas fa-sitemap"></i>
+                        <p>Centro de Familia</p>
+                    </a>
+                </li>
+             {% endif %}
+
         </ul>
     </li>
 {% endwith %}

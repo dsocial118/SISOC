@@ -1,0 +1,34 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Detalle Actividad{% endblock %}
+
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right">
+    <li class="breadcrumb-item"><a href="{% url 'centro_list' %}">Centro de Familia</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'actividadcentro_list' %}">Actividades</a></li>
+    <li class="breadcrumb-item active">Detalle</li>
+</ol>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="text-center display-4 mb-4">{{ actividad.actividad.nombre }}</h2>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <p><strong>Centro:</strong> {{ actividad.centro.nombre }}</p>
+            <p><strong>Categoría:</strong> {{ actividad.actividad.categoria.nombre }}</p>
+            <p><strong>Cantidad de personas:</strong> {{ actividad.cantidad_personas }}</p>
+            <p><strong>Días:</strong> {{ actividad.dias }}</p>
+            <p><strong>Horarios:</strong> {{ actividad.horarios }}</p>
+        </div>
+    </div>
+
+    <div class="mt-4 text-center">
+        <a href="{% url 'actividadcentro_list' %}" class="btn btn-secondary mr-2">Volver</a>
+        <a href="{% url 'participanteactividad_list' actividad.id %}" class="btn btn-info mr-2">Ver Participantes</a>
+        <a href="{% url 'participanteactividad_create' actividad.id %}" class="btn btn-success">Agregar Participante</a>
+    </div>
+</div>
+{% endblock %}
