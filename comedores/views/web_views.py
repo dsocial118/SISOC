@@ -65,6 +65,7 @@ from comedores.services.rendicion_cuentas_final_service import (
 )
 from duplas.dupla_service import DuplaService
 from historial.services.historial_service import HistorialService
+from rendicioncuentasmensual.services import RendicionCuentaMensualService
 
 
 @method_decorator(csrf_exempt, name="dispatch")  # FIXME: No exceptuar nunca csrf
@@ -203,7 +204,11 @@ class ComedorDetailView(DetailView):
             valor_almuerzo,
             valor_merienda,
         ) = ComedorService.get_presupuestos(self.object.id)
-
+        rendiciones_mensuales = (
+            RendicionCuentaMensualService.cantidad_rendiciones_cuentas_mensuales(
+                self.object
+            )
+        )
         relevamientos = self.object.relevamiento_set.order_by("-estado", "-id")[:1]
         observaciones = self.object.observacion_set.order_by("-fecha_visita")[:3]
 
@@ -221,8 +226,7 @@ class ComedorDetailView(DetailView):
                 "comedor_categoria": self.object.clasificacioncomedor_set.order_by(
                     "-fecha"
                 ).first(),
-                "rendicion_cuentas_final_activo": self.object.expedientes_pagos.count()
-                >= 5,
+                "rendicion_cuentas_final_activo": rendiciones_mensuales >= 5,
                 "GESTIONAR_API_KEY": os.getenv("GESTIONAR_API_KEY"),
                 "GESTIONAR_API_CREAR_COMEDOR": os.getenv("GESTIONAR_API_CREAR_COMEDOR"),
             }
