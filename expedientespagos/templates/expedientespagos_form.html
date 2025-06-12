@@ -1,87 +1,63 @@
 {% extends "includes/main.html" %}
 {% load static %}
 {% load crispy_forms_tags %}
-
 {% block title %}Crear Expediente de Pago{% endblock %}
-
 {% block breadcrumb %}
-<ol class="breadcrumb float-sm-right">
-    <li class="breadcrumb-item">
-        <a href="{% url 'expedientespagos_list' comedorid %}">Expedientes de pagos</a>
-    </li>
-    {% if request.resolver_match.url_name == "expedientespagos_create" %}
-        <li class="breadcrumb-item active">Crear Expediente de Pago</li>
-    {% else %}
-        <li class="breadcrumb-item active">Editar Expediente de Pago</li>
-    {% endif %}
-</ol>
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'expedientespagos_list' comedorid %}">Expedientes de pagos</a>
+        </li>
+        {% if request.resolver_match.url_name == "expedientespagos_create" %}
+            <li class="breadcrumb-item active">Crear Expediente de Pago</li>
+        {% else %}
+            <li class="breadcrumb-item active">Editar Expediente de Pago</li>
+        {% endif %}
+    </ol>
 {% endblock %}
-
 {% block content %}
-<div class="container mt-4">
-    {% if request.resolver_match.url_name == "expedientespagos_create" %}
-        <h1>Crear Expediente de Pago</h1>
-    {% else %}
-        <h1>Editar Expediente de Pago</h1>
-    {% endif %}
-    <form method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
-        <div class="row">
-            <!-- Campos visibles solo para el grupo "Área Legales" -->
-            {% if es_area_legales %}
-            <div class="col-md-6">
-                <div class="form-group">
-                    {{ form.expediente_pago|as_crispy_field }}
-                </div>
-                <div class="form-group">
-                    {{ form.resolucion_pago|as_crispy_field }}
-                </div>
-                <div class="form-group">
-                    {{ form.anexo|as_crispy_field }}
-                </div>
-                <div class="form-group">
-                    {{ form.if_cantidad_de_prestaciones|as_crispy_field }}
-                </div>
-                <div class="form-group">
-                    {{ form.if_pagado|as_crispy_field }}
-                </div>
+    <div class="container mt-4">
+        {% if request.resolver_match.url_name == "expedientespagos_create" %}
+            <h1>Crear Expediente de Pago</h1>
+        {% else %}
+            <h1>Editar Expediente de Pago</h1>
+        {% endif %}
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="row">
+                <!-- Campos visibles solo para el grupo "Área Legales" -->
+                {% if es_area_legales %}
+                    <div class="col-md-6">
+                        <div class="form-group">{{ form.expediente_pago|as_crispy_field }}</div>
+                        <div class="form-group">{{ form.resolucion_pago|as_crispy_field }}</div>
+                        <div class="form-group">{{ form.anexo|as_crispy_field }}</div>
+                        <div class="form-group">{{ form.if_cantidad_de_prestaciones|as_crispy_field }}</div>
+                        <div class="form-group">{{ form.if_pagado|as_crispy_field }}</div>
+                    </div>
+                {% endif %}
+                <!-- Campos visibles solo para el grupo "Técnico Comedor" -->
+                {% if es_tecnico_comedor %}
+                    <div class="col-md-6">
+                        <div class="form-group" style="display: none;">
+                            {{ form.expediente_pago|as_crispy_field }}
+                            {{ form.resolucion_pago|as_crispy_field }}
+                            {{ form.anexo|as_crispy_field }}
+                            {{ form.if_cantidad_de_prestaciones|as_crispy_field }}
+                            {{ form.if_pagado|as_crispy_field }}
+                        </div>
+                        <div class="form-group">{{ form.monto|as_crispy_field }}</div>
+                        <div class="form-group">{{ form.numero_orden_pago|as_crispy_field }}</div>
+                        <div class="form-group">{{ form.fecha_pago_al_banco|as_crispy_field }}</div>
+                        <div class="form-group">{{ form.fecha_acreditacion|as_crispy_field }}</div>
+                        <div class="form-group">{{ form.observaciones|as_crispy_field }}</div>
+                    </div>
+                {% endif %}
             </div>
-            {% endif %}
-
-            <!-- Campos visibles solo para el grupo "Técnico Comedor" -->
-            {% if es_tecnico_comedor %}
-            <div class="col-md-6">
-                <div class="form-group" style="display: none;">
-                    {{ form.expediente_pago|as_crispy_field }}
-                    {{ form.resolucion_pago|as_crispy_field }}
-                    {{ form.anexo|as_crispy_field }}
-                    {{ form.if_cantidad_de_prestaciones|as_crispy_field }}
-                    {{ form.if_pagado|as_crispy_field }}
-                </div>
-                <div class="form-group">
-                    {{ form.monto|as_crispy_field }}
-                </div>
-                <div class="form-group">
-                    {{ form.numero_orden_pago|as_crispy_field }}
-                </div>
-                <div class="form-group">
-                    {{ form.fecha_pago_al_banco|as_crispy_field }}
-                </div>
-                <div class="form-group">
-                    {{ form.fecha_acreditacion|as_crispy_field }}
-                </div>
-                <div class="form-group">
-                    {{ form.observaciones|as_crispy_field }}
-                </div>
+            <!-- Botones de acción -->
+            <div class="mt-4 text-center">
+                <button type="submit" class="btn btn-success">Guardar</button>
+                <a href="{% url 'expedientespagos_list' comedorid %}"
+                   class="btn btn-secondary">Cancelar</a>
             </div>
-            {% endif %}
-        </div>
-
-        <!-- Botones de acción -->
-        <div class="mt-4 text-center">
-            <button type="submit" class="btn btn-success">Guardar</button>
-            <a href="{% url 'expedientespagos_list' comedorid %}" class="btn btn-secondary">Cancelar</a>
-        </div>
-    </form>
-</div>
+        </form>
+    </div>
 {% endblock %}

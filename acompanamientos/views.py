@@ -44,8 +44,8 @@ class AcompanamientoDetailView(DetailView):
         comedor = self.object
         context["hitos"] = AcompanamientoService.obtener_hitos(comedor)
         context["es_tecnico_comedor"] = (
-            self.request.user.is_superuser or 
-            self.request.user.groups.filter(name="Tecnico Comedor").exists()
+            self.request.user.is_superuser
+            or self.request.user.groups.filter(name="Tecnico Comedor").exists()
         )
         admision = (
             Admision.objects.filter(comedor=comedor)
@@ -109,7 +109,14 @@ class ComedoresAcompanamientoListView(ListView):
         admisiones = Admision.objects.filter(estado=2)
 
         # Si no es superusuario, filtramos por dupla asignada
-        
+
+        if (
+            not user.is_superuser
+            and not user.groups.filter(name="Area Legales").exists()
+        ):
+            admisiones = admisiones.filter(
+                Q(comedor__dupla__abogado=user) | Q(comedor__dupla__tecnico=user)
+            )
 
         # Obtenemos los IDs de los comedores que tienen admisiones finalizadas
         comedor_ids = admisiones.values_list("comedor_id", flat=True).distinct()
