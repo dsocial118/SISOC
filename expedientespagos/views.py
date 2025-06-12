@@ -60,12 +60,12 @@ class ExpedientesPagosCreateView(CreateView):
         context["comedorid"] = comedor_id
         context["form"] = ExpedientePagoForm()
         context["es_area_legales"] = (
-            self.request.user.is_superuser or 
-            self.request.user.groups.filter(name="Area Legales").exists()
+            self.request.user.is_superuser
+            or self.request.user.groups.filter(name="Area Legales").exists()
         )
         context["es_tecnico_comedor"] = (
-            self.request.user.is_superuser or 
-            self.request.user.groups.filter(name="Tecnico Comedor").exists()
+            self.request.user.is_superuser
+            or self.request.user.groups.filter(name="Tecnico Comedor").exists()
         )
         return context
 
@@ -81,6 +81,7 @@ class ExpedientesPagosCreateView(CreateView):
             return self.form_valid(form)
         else:
             return self.form_invalid(form)
+
 
 class ExpedientesPagosUpdateView(UpdateView):
     model = ExpedientePago
@@ -101,8 +102,14 @@ class ExpedientesPagosUpdateView(UpdateView):
         context = super().get_context_data(**kwargs)
         expediente = self.get_object()
         context["comedorid"] = expediente.comedor.id
-        context["es_area_legales"] =(self.request.user.is_superuser or  self.request.user.groups.filter(name="Area Legales").exists())
-        context["es_tecnico_comedor"] =(self.request.user.is_superuser or  self.request.user.groups.filter(name="Tecnico Comedor").exists())
+        context["es_area_legales"] = (
+            self.request.user.is_superuser
+            or self.request.user.groups.filter(name="Area Legales").exists()
+        )
+        context["es_tecnico_comedor"] = (
+            self.request.user.is_superuser
+            or self.request.user.groups.filter(name="Tecnico Comedor").exists()
+        )
         return context
 
     def post(self, request, *args, **kwargs):
