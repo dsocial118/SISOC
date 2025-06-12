@@ -110,10 +110,6 @@ class ComedoresAcompanamientoListView(ListView):
 
         # Si no es superusuario, filtramos por dupla asignada
         
-        if not user.is_superuser and not user.groups.filter(name="Area Legales").exists():
-            admisiones = admisiones.filter(
-                Q(comedor__dupla__abogado=user) | Q(comedor__dupla__tecnico=user)
-            )
 
         # Obtenemos los IDs de los comedores que tienen admisiones finalizadas
         comedor_ids = admisiones.values_list("comedor_id", flat=True).distinct()

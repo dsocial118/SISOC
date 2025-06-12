@@ -47,7 +47,7 @@ class ExpedientesPagosDetailView(DetailView):
 class ExpedientesPagosCreateView(CreateView):
     model = ExpedientePago
     template_name = "expedientespagos_form.html"
-    fields = "__all__"
+    form_class = ExpedientePagoForm
 
     def get_success_url(self):
         return reverse_lazy(
@@ -59,8 +59,14 @@ class ExpedientesPagosCreateView(CreateView):
         comedor_id = self.kwargs.get("pk")
         context["comedorid"] = comedor_id
         context["form"] = ExpedientePagoForm()
-        context["es_area_legales"] =(self.request.user.is_superuser or  self.request.user.groups.filter(name="Area Legales").exists())
-        context["es_tecnico_comedor"] =(self.request.user.is_superuser or  self.request.user.groups.filter(name="Tecnico Comedor").exists())
+        context["es_area_legales"] = (
+            self.request.user.is_superuser or 
+            self.request.user.groups.filter(name="Area Legales").exists()
+        )
+        context["es_tecnico_comedor"] = (
+            self.request.user.is_superuser or 
+            self.request.user.groups.filter(name="Tecnico Comedor").exists()
+        )
         return context
 
     def post(self, request, *args, **kwargs):
@@ -68,14 +74,13 @@ class ExpedientesPagosCreateView(CreateView):
         form = ExpedientePagoForm(request.POST)
         comedor = Comedor.objects.get(pk=comedor_id)
         if form.is_valid():
-            expediente_pago = ExpedientesPagosService.crear_expediente_pago(
+            # Crear el objeto y asignarlo a self.object
+            self.object = ExpedientesPagosService.crear_expediente_pago(
                 comedor, form.cleaned_data
             )
-            self.object = expediente_pago
             return self.form_valid(form)
         else:
             return self.form_invalid(form)
-
 
 class ExpedientesPagosUpdateView(UpdateView):
     model = ExpedientePago
