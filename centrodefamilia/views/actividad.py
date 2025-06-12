@@ -5,6 +5,8 @@ from centrodefamilia.models import ActividadCentro
 from centrodefamilia.forms import ActividadCentroForm
 from django.views.generic import DetailView
 from centrodefamilia.models import ParticipanteActividad
+from django.utils.decorators import method_decorator
+from centrodefamilia.utils.decorators import group_required
 
 
 class ActividadCentroListView(ListView):
@@ -19,7 +21,7 @@ class ActividadCentroListView(ListView):
             qs = qs.filter(centro_id=centro_id)
         return qs
 
-
+@method_decorator(group_required("superadmin", "el"), name='dispatch')
 class ActividadCentroCreateView(CreateView):
     model = ActividadCentro
     form_class = ActividadCentroForm

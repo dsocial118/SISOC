@@ -59,11 +59,10 @@ urlpatterns = [
     ),
     path(
         "centros/<int:centro_id>/actividades/nueva/",
-        group_required("superadmin", "ReferenteCentro")(
-            ActividadCentroCreateView.as_view()
-        ),
+        ActividadCentroCreateView.as_view(),
         name="actividadcentro_create",
     ),
+
     # --- PARTICIPANTES ---
     path(
         "centros/<int:centro_id>/actividades/<int:pk>/detalle/",
