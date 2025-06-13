@@ -66,3 +66,18 @@
 #imagePreviewContainer img {
     cursor: pointer;
 }
+
+#fotoLegajoPreviewContainer .card {
+    transition: transform 0.2s;
+    border: 2px solid #007bff;
+}
+
+#fotoLegajoPreviewContainer .card:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+}
+
+#fotoLegajoPreviewContainer .card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
