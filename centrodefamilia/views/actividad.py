@@ -7,6 +7,7 @@ from django.views.generic import DetailView
 from centrodefamilia.models import ParticipanteActividad
 from django.utils.decorators import method_decorator
 from configuraciones.decorators import group_required
+from django.views.generic import UpdateView
 
 
 class ActividadCentroListView(ListView):
@@ -47,14 +48,6 @@ class ActividadCentroCreateView(CreateView):
         messages.success(self.request, "Actividad creada correctamente.")
         return super().form_valid(form)
 
-    def get_success_url(self):
-        return reverse(
-            "actividadcentro_detail",
-            kwargs={
-                "centro_id": self.object.centro.id,
-                "pk": self.object.pk
-            }
-        )
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         centro_id = self.request.GET.get("centro")
@@ -63,6 +56,13 @@ class ActividadCentroCreateView(CreateView):
             centro = Centro.objects.get(pk=centro_id)
             kwargs["centro"] = centro
         return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["centro_id"] = self.kwargs.get("centro_id")
+        return context
+
+
 
 
 
@@ -83,4 +83,26 @@ class ActividadCentroDetailView(DetailView):
         precioactividad =  self.object.precio or 0
         context["precio_total"] = cantidad_participantes * precioactividad
 
+        return context
+    
+class ActividadCentroUpdateView(UpdateView):
+    model = ActividadCentro
+    form_class = ActividadCentroForm
+    template_name = "centros/actividadcentro_form.html"
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["centro"] = self.get_object().centro
+        return kwargs
+
+    def form_valid(self, form):
+        messages.success(self.request, "Actividad actualizada correctamente.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("centro_detail", kwargs={"pk": self.object.centro.id})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["centro_id"] = self.object.centro.id
         return context
