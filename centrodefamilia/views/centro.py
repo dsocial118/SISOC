@@ -1,30 +1,14 @@
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import ListView, CreateView, UpdateView, DetailView
-from django.urls import reverse_lazy
 from django.contrib import messages
-from acompanamientos import forms
+from django.urls import reverse_lazy, reverse
+from django.db.models import Q, Count
+from centrodefamilia.models import Centro, ActividadCentro, ParticipanteActividad
 from centrodefamilia.forms import CentroForm
-from centrodefamilia.models import Centro, ParticipanteActividad
 from centrodefamilia.services import CentroService
-from centrodefamilia.models import ActividadCentro
-from django import forms
-from django.views.generic.edit import DeleteView
-from django.db.models import Q
+from configuraciones.decorators import group_required
+from django.utils.decorators import method_decorator
 
-
-class CentroDeleteView(LoginRequiredMixin, DeleteView):
-    model = Centro
-    template_name = "centros/centro_confirm_delete.html"
-    success_url = reverse_lazy("centro_list")
-
-    def post(self, request, *args, **kwargs):
-        centro = self.get_object()
-        centro.activo = False  # Eliminación lógica
-        centro.save()
-        messages.success(
-            request, f"El centro '{centro.nombre}' fue desactivado correctamente."
-        )
-        return super().post(request, *args, **kwargs)
 
 
 class CentroListView(LoginRequiredMixin, ListView):
@@ -34,63 +18,31 @@ class CentroListView(LoginRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        queryset = Centro.objects.all()
+        queryset = Centro.objects.select_related("faro_asociado", "referente")
 
-        # Filtra por referente si pertenece al grupo 'ReferenteCentro' y no es superadmin
-        if (
-            self.request.user.groups.filter(name="ReferenteCentro").exists()
-            and not self.request.user.is_superuser
-        ):
-            queryset = queryset.filter(referente=self.request.user)
+        user = self.request.user
+        if user.groups.filter(name="ReferenteCentro").exists() and not user.is_superuser:
+            centros_usuario = Centro.objects.filter(referente=user)
 
-        # Aplicar búsqueda si hay parámetro 'busqueda'
+            # Si el user es referente de un FARO, incluir también sus adheridos
+            if centros_usuario.filter(tipo="faro").exists():
+                faros_ids = centros_usuario.filter(tipo="faro").values_list("id", flat=True)
+                adheridos = Centro.objects.filter(faro_asociado_id__in=faros_ids)
+                queryset = centros_usuario | adheridos
+            else:
+                # Si solo es referente de adheridos
+                queryset = centros_usuario
+
         busqueda = self.request.GET.get("busqueda")
         if busqueda:
             queryset = queryset.filter(
-                Q(nombre__icontains=busqueda)
-                | Q(direccion__icontains=busqueda)
-                | Q(tipo__icontains=busqueda)
+                Q(nombre__icontains=busqueda) |
+                Q(direccion__icontains=busqueda) |
+                Q(tipo__icontains=busqueda)
             )
 
-        return queryset
+        return queryset.order_by("nombre")
 
-
-class CentroCreateView(CreateView):
-    model = Centro
-    form_class = CentroForm
-    template_name = "centros/centro_form.html"
-    success_url = reverse_lazy("centro_list")
-
-    def get_initial(self):
-        initial = super().get_initial()
-        faro_id = self.request.GET.get("faro")
-        if faro_id:
-            initial["faro_asociado"] = faro_id
-            initial["tipo"] = "adherido"
-        return initial
-
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-        faro_id = self.request.GET.get("faro")
-        if faro_id:
-            form.fields["faro_asociado"].widget = forms.HiddenInput()
-            form.fields["tipo"].widget = forms.HiddenInput()
-        return form
-
-    def form_valid(self, form):
-        messages.success(self.request, "Centro creado correctamente.")
-        return super().form_valid(form)
-
-
-class CentroUpdateView(LoginRequiredMixin, UpdateView):
-    model = Centro
-    fields = ["nombre", "tipo", "direccion", "contacto", "activo", "faro_asociado"]
-    template_name = "centros/centro_form.html"
-    success_url = reverse_lazy("centro_list")
-
-    def form_valid(self, form):
-        messages.success(self.request, "Centro actualizado correctamente.")
-        return super().form_valid(form)
 
 
 class CentroDetailView(LoginRequiredMixin, DetailView):
@@ -100,29 +52,71 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        centro = self.get_object()
+        centro = self.object
 
-        # Actividades del centro
-        context["actividades"] = ActividadCentro.objects.filter(centro=centro)
-        actividades = ActividadCentro.objects.filter(centro=centro)
+        actividades = (
+            ActividadCentro.objects.filter(centro=centro)
+            .select_related("actividad", "actividad__categoria")
+        )
+
+        participantes = (
+            ParticipanteActividad.objects
+            .filter(actividad_centro__in=actividades)
+            .values("actividad_centro")
+            .annotate(total=Count("id"))
+        )
+
+        participantes_map = {p["actividad_centro"]: p["total"] for p in participantes}
+
         actividades_con_ganancia = []
-
         for actividad in actividades:
-            cantidad = ParticipanteActividad.objects.filter(actividad_centro=actividad).count()
-            precio = actividad.precio or 0
-            ganancia = cantidad * precio
+            cantidad = participantes_map.get(actividad.id, 0)
+            ganancia = (actividad.precio or 0) * cantidad
             actividades_con_ganancia.append({
                 "obj": actividad,
-                "ganancia": ganancia,
+                "ganancia": ganancia
             })
 
         context["actividades"] = actividades_con_ganancia
 
-
         if centro.tipo == "faro":
-            # Centros adheridos obtenidos por servicio (si hay lógica extra)
-            context["adheridos"] = CentroService.obtener_adheridos(centro)
-            # Centros adheridos obtenidos directamente del modelo (para tabla)
             context["centros_adheridos"] = Centro.objects.filter(faro_asociado=centro)
 
         return context
+
+
+
+class CentroCreateView(LoginRequiredMixin, CreateView):
+    model = Centro
+    form_class = CentroForm
+    template_name = "centros/centro_form.html"
+    success_url = reverse_lazy("centro_list")
+
+    def form_valid(self, form):
+        messages.success(self.request, "Centro creado exitosamente.")
+        return super().form_valid(form)
+
+
+
+class CentroUpdateView(LoginRequiredMixin, UpdateView):
+    model = Centro
+    form_class = CentroForm
+    template_name = "centros/centro_form.html"
+
+    def form_valid(self, form):
+        messages.success(self.request, "Centro actualizado correctamente.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("centro_detail", kwargs={"pk": self.object.pk})
+
+
+
+class CentroDeleteView(LoginRequiredMixin, DeleteView):
+    model = Centro
+    success_url = reverse_lazy("centro_list")
+    template_name = "includes/confirm_delete.html"
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, "Centro eliminado correctamente.")
+        return super().delete(request, *args, **kwargs)

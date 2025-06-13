@@ -17,6 +17,12 @@ class ParticipanteActividadCreateView(CreateView):
             initial["actividad_centro"] = actividad_id
         return initial
 
+    def form_valid(self, form):
+        actividad_id = self.kwargs.get("actividad_id")
+        form.instance.actividad_centro_id = actividad_id
+        messages.success(self.request, "Participante cargado correctamente.")
+        return super().form_valid(form)
+
     def get_success_url(self):
         centro_id = self.kwargs.get("centro_id")
         actividad_id = self.kwargs.get("actividad_id")
@@ -25,7 +31,8 @@ class ParticipanteActividadCreateView(CreateView):
             "pk": actividad_id
         })
 
-
-    def form_valid(self, form):
-        messages.success(self.request, "Participante cargado correctamente.")
-        return super().form_valid(form)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["centro_id"] = self.kwargs.get("centro_id")
+        context["actividad_id"] = self.kwargs.get("actividad_id")
+        return context
