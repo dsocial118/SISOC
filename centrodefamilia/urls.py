@@ -10,6 +10,7 @@ from centrodefamilia.views.actividad import (
     ActividadCentroDetailView,
     ActividadCentroListView,
     ActividadCentroCreateView,
+    ActividadCentroUpdateView,
 )
 
 from configuraciones.decorators import group_required
@@ -66,5 +67,13 @@ urlpatterns = [
     path('centros/<int:centro_id>/actividades/<int:actividad_id>/participantes/crear/',
          group_required(['ReferenteCentro'])(ParticipanteActividadCreateView.as_view()),
         name='participanteactividad_create'),
+
+path(
+    "centros/<int:centro_id>/actividades/<int:pk>/editar/",
+    group_required(["superadmin", "ReferenteCentro"])(ActividadCentroUpdateView.as_view()),
+    name="actividadcentro_edit",
+),
+
+
 
 ]
