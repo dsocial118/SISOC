@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 
 class Centro(models.Model):
     TIPO_CHOICES = [
-        ("faro", "FARO"),
+        ("faro", "faro"),
         ("adherido", "Adherido"),
     ]
     nombre = models.CharField(max_length=200)
@@ -102,6 +102,7 @@ class ActividadCentro(models.Model):
     )
     dias = models.CharField(max_length=100, verbose_name="Días")
     horarios = models.CharField(max_length=100, verbose_name="Horarios")
+    precio = models.PositiveIntegerField(verbose_name="PrecioActividad",null=True, blank=True)
     estado = models.CharField(
         max_length=20,
         choices=ESTADO_CHOICES,

@@ -16,13 +16,14 @@
     <h2 class="text-center display-4 mb-4">{{ actividad.actividad.nombre }}</h2>
 
     <div class="card mb-4">
-        <div class="card-body">
-            <p><strong>Centro:</strong> {{ actividad.centro.nombre }}</p>
-            <p><strong>Categoría:</strong> {{ actividad.actividad.categoria.nombre }}</p>
-            <p><strong>Cantidad de personas:</strong> {{ actividad.cantidad_personas }}</p>
-            <p><strong>Días:</strong> {{ actividad.dias }}</p>
-            <p><strong>Horarios:</strong> {{ actividad.horarios }}</p>
-        </div>
+    <div class="card-body">
+        <p><strong>Centro:</strong> {{ actividad.centro.nombre }}</p>
+        <p><strong>Categoría:</strong> {{ actividad.actividad.categoria.nombre }}</p>
+        <p><strong>Cantidad de personas:</strong> {{ actividad.cantidad_personas }}</p>
+        <p><strong>Días:</strong> {{ actividad.dias }}</p>
+        <p><strong>Horarios:</strong> {{ actividad.horarios }}</p>
+        <p><strong>Costo total de la actividad:</strong> ${{ precio_total }}</p>
+    </div>
     </div>
 
     <div class="card">
