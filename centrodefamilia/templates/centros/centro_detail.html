@@ -71,6 +71,7 @@
                     <td>{{ actividad.obj.horarios }}</td>
                     <td><span class="badge badge-info">{{ actividad.obj.get_estado_display }}</span></td>
                     <td>${{ actividad.ganancia }}</td>
+                    <td> <a href="{% url 'actividadcentro_detail' centro_id=actividad.obj.centro.id pk=actividad.obj.id %}" class="btn btn-primary mr-2">Ver</a></td>
 
 
                 </tr>

@@ -65,13 +65,14 @@ class ActividadCentroForm(forms.ModelForm):
         if self.centro and self.centro.tipo == "faro" and precio:
             raise ValidationError("Un centro de tipo FARO no debe tener un precio asignado.")
         return cleaned_data
+    
+    
 
 
 class ParticipanteActividadForm(forms.ModelForm):
     class Meta:
         model = ParticipanteActividad
         fields = [
-            "actividad_centro",
             "nombre",
             "apellido",
             "dni",

@@ -1,13 +1,13 @@
-from django.views.generic import ListView, CreateView
+from django.views.generic import ListView, CreateView, DetailView, UpdateView
 from django.urls import reverse
 from django.contrib import messages
-from centrodefamilia.models import ActividadCentro
-from centrodefamilia.forms import ActividadCentroForm
-from django.views.generic import DetailView
-from centrodefamilia.models import ParticipanteActividad
+from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
+
+from centrodefamilia.models import ActividadCentro, Centro, ParticipanteActividad
+from centrodefamilia.forms import ActividadCentroForm
 from configuraciones.decorators import group_required
-from django.views.generic import UpdateView
+
 
 
 class ActividadCentroListView(ListView):
@@ -16,11 +16,12 @@ class ActividadCentroListView(ListView):
     context_object_name = "actividades"
 
     def get_queryset(self):
-        qs = super().get_queryset()
+        queryset = super().get_queryset().select_related("centro", "actividad", "actividad__categoria")
         centro_id = self.request.GET.get("centro")
         if centro_id:
-            qs = qs.filter(centro_id=centro_id)
-        return qs
+            queryset = queryset.filter(centro_id=centro_id)
+        return queryset
+
 
 
 class ActividadCentroCreateView(CreateView):
@@ -28,42 +29,28 @@ class ActividadCentroCreateView(CreateView):
     form_class = ActividadCentroForm
     template_name = "centros/actividadcentro_form.html"
 
-    def get_initial(self):
-        initial = super().get_initial()
-        centro_id = self.kwargs.get("centro_id") or self.request.GET.get("centro")
-        if centro_id:
-            initial["centro"] = centro_id
-        return initial
-
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-        if self.kwargs.get("centro_id"):
-            form.fields.pop("centro", None)
-        return form
-
-    def form_valid(self, form):
-        centro_id = self.kwargs.get("centro_id") or self.request.GET.get("centro")
-        if centro_id:
-            form.instance.centro_id = centro_id
-        messages.success(self.request, "Actividad creada correctamente.")
-        return super().form_valid(form)
+    def dispatch(self, request, *args, **kwargs):
+        self.centro_id = self.kwargs.get("centro_id") or self.request.GET.get("centro")
+        self.centro = get_object_or_404(Centro, pk=self.centro_id)
+        return super().dispatch(request, *args, **kwargs)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        centro_id = self.request.GET.get("centro")
-        if centro_id:
-            from centrodefamilia.models import Centro
-            centro = Centro.objects.get(pk=centro_id)
-            kwargs["centro"] = centro
+        kwargs["centro"] = self.centro
         return kwargs
+
+    def form_valid(self, form):
+        form.instance.centro = self.centro
+        messages.success(self.request, "La actividad fue creada correctamente.")
+        return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["centro_id"] = self.kwargs.get("centro_id")
+        context["centro_id"] = self.centro.pk
         return context
 
-
-
+    def get_success_url(self):
+        return reverse("centro_detail", kwargs={"pk": self.centro.pk})
 
 
 
@@ -74,17 +61,18 @@ class ActividadCentroDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["participantes"] = ParticipanteActividad.objects.filter(
-            actividad_centro=self.object
-        )
-        cantidad_participantes = ParticipanteActividad.objects.filter(
-            actividad_centro=self.object
-        ).count()
-        precioactividad =  self.object.precio or 0
-        context["precio_total"] = cantidad_participantes * precioactividad
-
+        actividad = self.get_object()
+        participantes = ParticipanteActividad.objects.filter(actividad_centro=actividad)
+        cantidad = participantes.count()
+        precio = actividad.precio or 0
+        context.update({
+            "participantes": participantes,
+            "precio_total": cantidad * precio,
+        })
         return context
-    
+
+
+
 class ActividadCentroUpdateView(UpdateView):
     model = ActividadCentro
     form_class = ActividadCentroForm
@@ -96,13 +84,13 @@ class ActividadCentroUpdateView(UpdateView):
         return kwargs
 
     def form_valid(self, form):
-        messages.success(self.request, "Actividad actualizada correctamente.")
+        messages.success(self.request, "La actividad fue actualizada correctamente.")
         return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse("centro_detail", kwargs={"pk": self.object.centro.id})
+        return reverse("centro_detail", kwargs={"pk": self.object.centro.pk})
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["centro_id"] = self.object.centro.id
+        context["centro_id"] = self.object.centro.pk
         return context

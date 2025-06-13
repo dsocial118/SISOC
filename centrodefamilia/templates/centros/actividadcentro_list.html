@@ -13,8 +13,7 @@
 
 <div class="row mt-3">
     <div class="col-12 text-center">
-        <a href="{% url 'actividadcentro_create' %}"
-           class="btn btn-primary btn-lg d-block d-sm-inline mt-2">Agregar Actividad</a>
+        <a href="{% url 'actividadcentro_create' %}" class="btn btn-primary btn-lg d-block d-sm-inline mt-2">Agregar Actividad</a>
     </div>
 </div>
 
@@ -30,7 +29,6 @@
                             <th>Días</th>
                             <th>Horarios</th>
                             <th>Estado</th>
-                            <th>Fechas</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -43,7 +41,6 @@
                             <td>
                                 <span class="badge badge-info">{{ actividad.get_estado_display }}</span>
                             </td>
-                            
                         </tr>
                         {% empty %}
                         <tr>
