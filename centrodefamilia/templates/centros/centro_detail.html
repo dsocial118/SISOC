@@ -53,28 +53,28 @@
                         <th>Días</th>
                         <th>Horarios</th>
                         <th>Estado</th>
+                        <th>Ganancia</th>
                     
                     </tr>
                 </thead>
                 <tbody>
-                    {% for actividad in actividades %}
-                    <tr>
-                        <td>
-<a href="{% url 'actividadcentro_detail' centro_id=actividad.centro.id pk=actividad.id %}">
-    {{ actividad.actividad.nombre }}
-</a>
+                   {% for actividad in actividades %}
+                <tr>
+                    <td>
+                        <a href="{% url 'actividadcentro_detail' centro_id=actividad.obj.centro.id pk=actividad.obj.id %}">
+                            {{ actividad.obj.actividad.nombre }}
+                        </a>
+                    </td>
+                    <td>{{ actividad.obj.actividad.categoria.nombre }}</td>
+                    <td>{{ actividad.obj.dias }}</td>
+                    <td>{{ actividad.obj.horarios }}</td>
+                    <td><span class="badge badge-info">{{ actividad.obj.get_estado_display }}</span></td>
+                    <td>${{ actividad.ganancia }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center">No hay actividades configuradas.</td></tr>
+                {% endfor %}
 
-</td>
-
-                        <td>{{ actividad.actividad.categoria.nombre }}</td>
-                        <td>{{ actividad.dias }}</td>
-                        <td>{{ actividad.horarios }}</td>
-                        <td><span class="badge badge-info">{{ actividad.get_estado_display }}</span></td>
-                        <td>{{ actividad.fecha_inicio }} - {{ actividad.fecha_fin }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr><td colspan="6" class="text-center">No hay actividades configuradas.</td></tr>
-                    {% endfor %}
                 </tbody>
             </table>
         </div>

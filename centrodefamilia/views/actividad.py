@@ -6,7 +6,7 @@ from centrodefamilia.forms import ActividadCentroForm
 from django.views.generic import DetailView
 from centrodefamilia.models import ParticipanteActividad
 from django.utils.decorators import method_decorator
-from centrodefamilia.utils.decorators import group_required
+from configuraciones.decorators import group_required
 
 
 class ActividadCentroListView(ListView):
@@ -21,7 +21,7 @@ class ActividadCentroListView(ListView):
             qs = qs.filter(centro_id=centro_id)
         return qs
 
-@method_decorator(group_required("superadmin", "el"), name='dispatch')
+
 class ActividadCentroCreateView(CreateView):
     model = ActividadCentro
     form_class = ActividadCentroForm
@@ -55,6 +55,15 @@ class ActividadCentroCreateView(CreateView):
                 "pk": self.object.pk
             }
         )
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        centro_id = self.request.GET.get("centro")
+        if centro_id:
+            from centrodefamilia.models import Centro
+            centro = Centro.objects.get(pk=centro_id)
+            kwargs["centro"] = centro
+        return kwargs
+
 
 
 
@@ -68,4 +77,10 @@ class ActividadCentroDetailView(DetailView):
         context["participantes"] = ParticipanteActividad.objects.filter(
             actividad_centro=self.object
         )
+        cantidad_participantes = ParticipanteActividad.objects.filter(
+            actividad_centro=self.object
+        ).count()
+        precioactividad =  self.object.precio or 0
+        context["precio_total"] = cantidad_participantes * precioactividad
+
         return context

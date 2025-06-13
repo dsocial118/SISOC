@@ -4,7 +4,7 @@ from django.urls import reverse_lazy
 from django.contrib import messages
 from acompanamientos import forms
 from centrodefamilia.forms import CentroForm
-from centrodefamilia.models import Centro
+from centrodefamilia.models import Centro, ParticipanteActividad
 from centrodefamilia.services import CentroService
 from centrodefamilia.models import ActividadCentro
 from django import forms
@@ -104,6 +104,20 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
 
         # Actividades del centro
         context["actividades"] = ActividadCentro.objects.filter(centro=centro)
+        actividades = ActividadCentro.objects.filter(centro=centro)
+        actividades_con_ganancia = []
+
+        for actividad in actividades:
+            cantidad = ParticipanteActividad.objects.filter(actividad_centro=actividad).count()
+            precio = actividad.precio or 0
+            ganancia = cantidad * precio
+            actividades_con_ganancia.append({
+                "obj": actividad,
+                "ganancia": ganancia,
+            })
+
+        context["actividades"] = actividades_con_ganancia
+
 
         if centro.tipo == "faro":
             # Centros adheridos obtenidos por servicio (si hay lógica extra)

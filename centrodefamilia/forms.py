@@ -46,8 +46,25 @@ class CentroForm(forms.ModelForm):
 class ActividadCentroForm(forms.ModelForm):
     class Meta:
         model = ActividadCentro
-        fields = ["actividad", "cantidad_personas", "dias", "horarios", "estado"]
+        fields = ["actividad", "cantidad_personas", "dias", "horarios", "precio", "estado"]
         exclude = ["centro"]
+
+    def __init__(self, *args, **kwargs):
+        self.centro = kwargs.pop("centro", None)
+        super().__init__(*args, **kwargs)
+
+        # Si es FARO, ocultar el campo
+        if self.centro and self.centro.tipo == "faro":
+            self.fields["precio"].widget = forms.HiddenInput()
+            self.fields["precio"].required = False
+
+    def clean(self):
+        cleaned_data = super().clean()
+        precio = cleaned_data.get("precio")
+
+        if self.centro and self.centro.tipo == "faro" and precio:
+            raise ValidationError("Un centro de tipo FARO no debe tener un precio asignado.")
+        return cleaned_data
 
 
 class ParticipanteActividadForm(forms.ModelForm):
