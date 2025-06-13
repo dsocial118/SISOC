@@ -46,63 +46,136 @@ function crearOpcion({ id, nombre, nombre_region }, select) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    const imageInput = document.getElementById('imagenesInput');
+    // Array para almacenar todos los archivos seleccionados
+    let selectedFiles = [];
     
-    if (imageInput) {
+    const imageInput = document.getElementById('imagenesInput');
+    const addImagesBtn = document.getElementById('addImagesBtn');
+    const imageCount = document.getElementById('imageCount');
+    const selectedImagesInfo = document.getElementById('selectedImagesInfo');
+    
+    if (imageInput && addImagesBtn) {
+        // Botón para abrir selector de archivos
+        addImagesBtn.addEventListener('click', function() {
+            imageInput.click();
+        });
+        
+        // Manejar selección de archivos
         imageInput.addEventListener('change', function(e) {
-            console.log('imagenesInput change event triggered');
-            const files = e.target.files;
-            console.log('Files selected:', files.length);
-            const previewContainer = document.getElementById('imagePreviewContainer');
+            const newFiles = Array.from(e.target.files);
             
-            if (!previewContainer) {
-                console.error('Preview container not found');
-                return;
-            }
-            
-            previewContainer.innerHTML = '';
-            
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
+            // Agregar nuevos archivos al array existente
+            newFiles.forEach(file => {
+                // Verificar que no esté duplicado (por nombre y tamaño)
+                const isDuplicate = selectedFiles.some(existingFile => 
+                    existingFile.name === file.name && existingFile.size === file.size
+                );
                 
-                if (file.type.startsWith('image/')) {
-                    const reader = new FileReader();
-                    
-                    reader.onload = function(e) {
-                        const previewDiv = document.createElement('div');
-                        previewDiv.className = 'col-md-3 col-sm-4 col-6 mb-3';
-                        
-                        previewDiv.innerHTML = `
-                            <div class="card">
-                                <img src="${e.target.result}" class="card-img-top" style="height: 150px; object-fit: cover;" alt="Preview">
-                                <div class="card-body p-2">
-                                    <small class="text-muted text-truncate d-block">${file.name}</small>
-                                    <small class="text-muted">${(file.size / 1024).toFixed(1)} KB</small>
-                                </div>
-                            </div>
-                        `;
-                        
-                        previewContainer.appendChild(previewDiv);
-                    };
-                    
-                    reader.onerror = function(e) {
-                    };
-                    
-                    reader.readAsDataURL(file);
-                } else {
+                if (!isDuplicate) {
+                    selectedFiles.push(file);
                 }
+            });
+            
+            // Actualizar la previsualización
+            updateImagePreview();
+            
+            // Limpiar el input para permitir seleccionar los mismos archivos otra vez
+            imageInput.value = '';
+        });
+    }
+    
+    function updateImagePreview() {
+        const previewContainer = document.getElementById('imagePreviewContainer');
+        
+        if (!previewContainer) {
+            console.error('Preview container not found');
+            return;
+        }
+        
+        // Limpiar contenedor
+        previewContainer.innerHTML = '';
+        
+        // Actualizar contador
+        if (imageCount) {
+            imageCount.textContent = selectedFiles.length;
+        }
+        
+        // Mostrar/ocultar info de archivos seleccionados
+        if (selectedImagesInfo) {
+            if (selectedFiles.length > 0) {
+                selectedImagesInfo.classList.remove('d-none');
+            } else {
+                selectedImagesInfo.classList.add('d-none');
+            }
+        }
+        
+        // Crear previsualizaciones
+        selectedFiles.forEach((file, index) => {
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    const previewDiv = document.createElement('div');
+                    previewDiv.className = 'col-md-3 col-sm-4 col-6 mb-3';
+                    previewDiv.setAttribute('data-file-index', index);
+                    
+                    previewDiv.innerHTML = `
+                        <div class="card position-relative">
+                            <!-- Botón para eliminar -->
+                            <button type="button" class="btn btn-danger btn-sm position-absolute" 
+                                    style="top: 5px; right: 5px; z-index: 10; width: 30px; height: 30px; padding: 0;"
+                                    onclick="removeImage(${index})"
+                                    title="Eliminar imagen">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            
+                            <img src="${e.target.result}" 
+                                 class="card-img-top" 
+                                 style="height: 150px; object-fit: cover;" 
+                                 alt="Preview">
+                            
+                            <div class="card-body p-2">
+                                <small class="text-muted text-truncate d-block">${file.name}</small>
+                                <small class="text-muted">${(file.size / 1024).toFixed(1)} KB</small>
+                            </div>
+                        </div>
+                    `;
+                    
+                    previewContainer.appendChild(previewDiv);
+                };
+                
+                reader.readAsDataURL(file);
             }
         });
-    } else {
-        console.error('imagenesInput element not found');
+        
+        // Actualizar el input file con los archivos seleccionados
+        updateFileInput();
     }
-
+    
+    // Función global para eliminar imágenes (se llama desde onclick)
+    window.removeImage = function(index) {
+        selectedFiles.splice(index, 1);
+        updateImagePreview();
+    };
+    
+    function updateFileInput() {
+        // Crear un nuevo DataTransfer para actualizar el input file
+        const dt = new DataTransfer();
+        
+        selectedFiles.forEach(file => {
+            dt.items.add(file);
+        });
+        
+        imageInput.files = dt.files;
+    }
+    
+    // ...existing code for foto_legajo...
     const fotoLegajoInput = document.getElementById('id_foto_legajo');
     
     if (fotoLegajoInput) {
         fotoLegajoInput.addEventListener('change', function(e) {
             console.log('foto_legajo change event triggered');
-            const file = e.target.files[0]; // Solo un archivo para foto_legajo
+            const file = e.target.files[0];
             const previewContainer = document.getElementById('fotoLegajoPreviewContainer');
             
             if (!previewContainer) {

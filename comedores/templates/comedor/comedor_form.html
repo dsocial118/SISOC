@@ -136,7 +136,19 @@
                                 </div>
                             {% endfor %}
 
-                            <input type="file" name="imagenes" id="imagenesInput" class="form-control" multiple accept="image/*" />
+                            <input type="file" name="imagenes" id="imagenesInput" class="d-none" multiple accept="image/*" />
+
+
+                            <button type="button" id="addImagesBtn" class="btn btn-primary mb-3">
+                                <i class="fas fa-plus"></i> Agregar Imágenes
+                            </button>
+                            
+                            <!-- Contenedor para mostrar las imágenes seleccionadas -->
+                            <div id="selectedImagesInfo" class="mb-2 d-none">
+                                <small class="text-muted">
+                                    <span id="imageCount">0</span> imagen(es) seleccionada(s)
+                                </small>
+                            </div>
 
                             <div id="imagePreviewContainer" class="mt-3 row"></div>
 
