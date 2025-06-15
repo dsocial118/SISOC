@@ -9,10 +9,13 @@ from django.views.generic import (
     UpdateView,
     DeleteView,
 )
-from comedores.models.comedor import Comedor
-from .models import RendicionCuentaMensual, DocumentacionAdjunta
-from .services import RendicionCuentaMensualService
-from .forms import RendicionCuentaMensualForm, DocumentacionAdjuntaForm
+from comedores.models import Comedor
+from rendicioncuentasmensual.models import RendicionCuentaMensual, DocumentacionAdjunta
+from rendicioncuentasmensual.services import RendicionCuentaMensualService
+from rendicioncuentasmensual.forms import (
+    RendicionCuentaMensualForm,
+    DocumentacionAdjuntaForm,
+)
 
 
 @csrf_exempt  # FIXME: Dejar de utilizar el csrf_exempt
