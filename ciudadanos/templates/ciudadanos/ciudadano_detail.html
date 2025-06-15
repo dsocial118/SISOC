@@ -1,0 +1,1046 @@
+{% extends "includes/main.html" %};
+{% load static %}
+{% load crispy_forms_tags %}
+;
+{% block head %}
+    <!-- Timeline -->
+    <link rel="stylesheet" href="{% static 'custom/css/timeline.css' %}" />
+    <link rel="stylesheet" href="{% static 'custom/css/alertas.css' %}" />
+    <style>
+        /* Oculta el formulario por defecto */
+        #form-programas {
+            display: none;
+            margin-top: 20px;
+        }
+    
+        /* Estilo para las opciones del Select2 */
+        .select2-results__option {
+            color: black;
+        }
+    
+        /* Estilo para las opciones seleccionadas de Select2 */
+        .select2-container--default
+        .select2-selection--multiple
+        .select2-selection__choice {
+            background-color: #14376b !important;
+            border: 1px solid #053f96 !important;
+        }
+    
+        /* Animación ease-out */
+        @keyframes easeOutEffect {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    
+        /* Aplicación de la animación ease-out */
+        .ease-out {
+            animation: easeOutEffect 0.5s ease-out forwards; /* forwards mantiene el estado final */
+        }
+    </style>
+{% endblock %}
+{% load crispy_forms_tags %}
+{% block title %}Ciudadano{% endblock %}
+;
+{% block titulo-pagina %}
+    {{ object.apellido }}, {{ object.nombre }}
+    <span class="ml-2 h5">| {{ object.edad }}</span>
+    <span class="info-box-icon h5 pl-2"><i class="flag-icon {{ emoji_nacionalidad }}"></i></span>
+{% endblock %}
+;
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right mt-2 mr-2">
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanos' %}">Ciudadano</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanos_ver' object.id %}">{{ object }}</a>
+        </li>
+        <li class="breadcrumb-item active">Detalle</li>
+    </ol>
+{% endblock %}
+;
+{% block menu-adicional %}{% endblock %}
+;
+{% block content %}
+    <!-- MENU -->
+    <div class="d-flex justify-content-between d-print-none mx-1 mb-4">
+        <div>
+            <a href="{% url 'ciudadanos' %}" class="btn btn-secondary">Volver</a>
+        </div>
+        <div class="d-flex">
+            {% if perms.Usuarios.rol_admin %}
+                <a href="{% url 'ciudadanosderivaciones_historial' object.id %}"
+                   class="btn btn-secondary me-2">Derivar</a>
+            {% endif %}
+            <a href="#" class="btn btn-secondary print me-2 d-none d-sm-inline">Imprimir</a>
+            {% if perms.Usuarios.rol_admin %}
+                <a href="{% url 'ciudadanos_editar' object.id %}"
+                   class="btn btn-primary me-2">Editar</a>
+            {% endif %}
+            <a href="{% url 'ciudadano_intervencion_ver' object.id %}"
+               class="btn btn-primary me-2">Intervenciónes</a>
+            <a href="{% url 'llamados_ver' object.id %}"
+               class="btn btn-primary me-2">Llamados</a>
+            {% if perms.Usuarios.rol_admin %}
+                <a href="{% url 'ciudadanos_eliminar' object.id %}"
+                   class="btn btn-danger">Eliminar</a>
+            {% endif %}
+        </div>
+    </div>
+    <!--FIN MENU-->
+    <div class="row mb-4">
+        <div class="col-2">
+            <div class="info-card bg-card">
+                <div class="row">
+                    <div class="col-3">
+                        <i class="fa fa-bell fa-2x"></i>
+                    </div>
+                    <div class="col-9 text-start">
+                        <p>{{ count_alta }}</p>
+                    </div>
+                </div>
+                <div class="row info-card-label">
+                    <h5 class="mt-2">
+                        <a href="{% url 'alertas_listar' object.id %}" class="small-box-footer">
+                            Alertas <i class="fas fa-arrow-circle-right"></i>
+                        </a>
+                    </h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-2">
+            <div class="info-card bg-card">
+                <div class="row">
+                    <div class="col-3">
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                    </div>
+                    <div class="col-9 text-start">
+                        <p>
+                            {% if count_media or count_baja %}
+                                <span title="{{ count_media }} alertas" class="badge badge-Importante p-2">{{ count_media }}</span>
+                                <span title="{{ count_baja }} alertas" class="badge badge-Precaución p-2">{{ count_baja }}</span>
+                            {% else %}
+                                <span title="0 alertas" class="badge badge-Importante p-2">0</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                <div class="row info-card-label">
+                    <h5 class="mt-2">
+                        <a href="{% url 'alertas_listar' object.id %}" class="small-box-footer">
+                            Indicadores de riesgo <i class="fas fa-arrow-circle-right"></i>
+                        </a>
+                    </h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-2">
+            <div class="info-card bg-card">
+                <div class="row">
+                    <div class="col-3">
+                        <i class="fa fa-book fa-2x"></i>
+                    </div>
+                    <div class="col-9 text-start">
+                        <p>{{ count_intervenciones }}</p>
+                    </div>
+                </div>
+                <div class="row info-card-label">
+                    <h5 class="mt-2">
+                        <a href="{% url 'programas_intervencion' object.id %}"
+                           class="small-box-footer">
+                            Programas en intervención <i class="fas fa-arrow-circle-right"></i>
+                        </a>
+                    </h5>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <!--AREA IZQUIERDA-->
+        <div class="col-6">
+            <!--DATOS PERSONALES-->
+            <div class="card datos-personales">
+                <div class="card-header">
+                    <h3 class="card-title font-weight-bold">Datos personales</h3>
+                    <div class="card-tools">
+                        <button type="button"
+                                class="btn btn-tool d-sm-none"
+                                data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <!--FOTO PERFIL-->
+                            <div class="card bg-dark p-4">
+                                {% if object.foto %}
+                                    <img class="card-img-top rounded"
+                                         src="{{ object.foto.url }}"
+                                         alt="Foto de perfil" />
+                                {% else %}
+                                    <img class="card-img-top rounded"
+                                         src="{% static 'custom/img/default.png' %}"
+                                         alt="Foto de perfil" />
+                                {% endif %}
+                            </div>
+                            <!--FIN FOTO PERFIL-->
+                        </div>
+                        <div class="col-6">
+                            <div class="card-body card-comments p-0 pb-1">
+                                <ul class="nav nav-pills flex-column">
+                                    <li class="nav-item">
+                                        <div class="comment-text">
+                                            <p class="text-muted">Nombre</p>
+                                            <span class="username bold">{{ object }}</span>
+                                        </div>
+                                    </li>
+                                    <li class="nav-item">
+                                        <div class="comment-text">
+                                            <p class="text-muted">Documento</p>
+                                            <span class="username bold">{{ object.tipo_documento }} {{ object.documento }}</span>
+                                        </div>
+                                    </li>
+                                    <li class="nav-item">
+                                        <div class="comment-text">
+                                            <p class="text-muted">Sexo</p>
+                                            <span class="username bold">{{ object.sexo }}</span>
+                                        </div>
+                                    </li>
+                                    <li class="nav-item">
+                                        <div class="comment-text">
+                                            <p class="text-muted">Fecha de nacimiento</p>
+                                            <span class="bold username">{{ object.fecha_nacimiento|date:'d/m/Y' }}</span>
+                                        </div>
+                                    </li>
+                                    <li class="nav-item">
+                                        <div class="comment-text">
+                                            <p class="text-muted">Nacionalidad</p>
+                                            <span class="username bold">{{ object.nacionalidad|default_if_none:"-" }}</span>
+                                        </div>
+                                    </li>
+                                    <li class="nav-item">
+                                        <div class="comment-text">
+                                            <p class="text-muted">Estado civil</p>
+                                            <span class="username bold">{{ object.estado_civil|default_if_none:"-" }}</span>
+                                        </div>
+                                    </li>
+                                    <li class="nav-item">
+                                        <div class="comment-text">
+                                            <p class="text-muted">Teléfono</p>
+                                            <span class="username bold">{{ object.telefono|default_if_none:"-" }}</span>
+                                        </div>
+                                    </li>
+                                    <li class="nav-item">
+                                        <div class="comment-text">
+                                            <p class="text-muted">Email</p>
+                                            <span class="username bold">{{ object.email|default_if_none:"-" }}</span>
+                                        </div>
+                                    </li>
+                                    <li class="nav-item">
+                                        <div class="comment-text">
+                                            <p class="text-muted">Estado</p>
+                                            {% if object.estado %}
+                                                <span class="username text-success bold">Activo</span>
+                                            {% else %}
+                                                <span class="username text-danger bold">Inactivo</span>
+                                            {% endif %}
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!--FIN DATOS PERSONALES-->
+        </div>
+        <!--FIN AREA IZQUIERDA-->
+        <div class="col-6">
+            <div class="row">
+                <!--INICIO MAPA Y DIMENSIONES-->
+                <div class="col-12">
+                    <div class="row">
+                        <div class="card">
+                            <div class="card-body card-comments">
+                                <div class="row pb-sm-1">
+                                    <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3285.0070299761087!2d-58.727604824311015!3d-34.57868867296322!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95bcbded9b818d6f%3A0x4f92ab2cfce3c024!2sC.%20El%20Zonda%20115%2C%20B1663CQC%20San%20Miguel%2C%20Provincia%20de%20Buenos%20Aires!5e0!3m2!1sen!2sar!4v1694143900980!5m2!1sen!2sar"
+                                            width="100%"
+                                            height="700"
+                                            style="border:0"
+                                            allowfullscreen=""
+                                            loading="lazy"
+                                            referrerpolicy="no-referrer-when-downgrade"></iframe>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!--FIN MAPA Y DIMENSIONES-->
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <!-- card dimensiones -->
+            <c-tab-group>
+            <c-slot name="tab_lister">
+            <ul class="flex-shrink-1 nav nav-pills card-title" role="tablist">
+                <c-tab-item class='active' target='dfamilia'>Familia</c-tab-item>
+                <c-tab-item target='dvivienda'>Vivienda</c-tab-item>
+                <c-tab-item target='dsalud'>Salud</c-tab-item>
+                <c-tab-item target='deducacion'>Educación</c-tab-item>
+                <c-tab-item target='deconomia'>Economía</c-tab-item>
+                <c-tab-item target='dtrabajo'>Trabajo</c-tab-item>
+            </ul>
+            <div class="ms-auto">
+                <a href="{% url 'ciudadanosdimensiones_ver' object.id %}"
+                   class="btn btn-secondary btn-sm align-right"
+                   data-card-widget="collapse">
+                    Ver detalles
+                    <i class=" ms-2 fas fa-info-circle "></i>
+                </a>
+            </div>
+            </c-slot>
+            <c-tab-panel class="show active" id="dfamilia">
+            <dl class="row mb-0 ">
+                <dd class="col-sm-10">
+                    Estado civil
+                </dd>
+                <dt class="col-sm-2">{{ dimensionfamilia.estado_civil|default_if_none:"-" }}</dt>
+                <dd class="col-sm-10">
+                    Cantidad de hijos
+                </dd>
+                <dt class="col-sm-2">{{ dimensionfamilia.cant_hijos|default_if_none:"-" }}</dt>
+                <dd class="col-sm-10">
+                    ¿Convive otro adulto responsable? (Padre o apoyo en la
+                    crianza)
+                </dd>
+                <dt class="col-sm-2">{{ dimensionfamilia.otro_responsable|yesno:'Sí,No' }}</dt>
+                <dd class="col-sm-10">
+                    Personas en el hogar embarazadas
+                </dd>
+                <dt class="col-sm-2">{{ dimensionfamilia.hay_embarazadas|yesno:'Sí,No' }}</dt>
+                <dd class="col-sm-10">
+                    Personas en el hogar privados de su libertad
+                </dd>
+                <dt class="col-sm-2">{{ dimensionfamilia.hay_priv_libertad|yesno:'Sí,No' }}</dt>
+                <dd class="col-sm-10">
+                    Personas en el hogar con problemas de salud mental
+                </dd>
+                <dt class="col-sm-2">{{ dimensionfamilia.hay_prbl_smental|yesno:'Sí,No' }}</dt>
+                <dd class="col-sm-10">
+                    Personas en el hogar con enfermedades crónicas
+                </dd>
+                <dt class="col-sm-2">{{ dimensionfamilia.hay_enf_cronica|yesno:'Sí,No' }}</dt>
+                <dd class="col-sm-10">
+                    Personas en el hogar con discapacidad
+                </dd>
+                <dt class="col-sm-2">{{ dimensionfamilia.hay_fam_discapacidad|yesno:'Sí,No' }}</dt>
+                <dd class="col-12 mt-3">
+                    Observaciones
+                </dd>
+                <dt class="col-12">{{ dimensionfamilia.obs_familia|default_if_none:"-" }}</dt>
+            </dl>
+            </c-tab-panel>
+            <c-tab-panel id="dvivienda">
+            <dl class="row mb-0">
+                <dd class="col-sm-10">
+                    Posesión de la vivienda
+                </dd>
+                <dt class="col-sm-2">{{ dimensionvivienda.posesion|default_if_none:"-" }}</dt>
+                <dd class="col-sm-10">
+                    Tipo de vivienda
+                </dd>
+                <dt class="col-sm-2">{{ dimensionvivienda.tipo|default_if_none:"-" }}</dt>
+                <dd class="col-sm-10">
+                    Material de la vivienda
+                </dd>
+                <dt class="col-sm-2">{{ dimensionvivienda.material|default_if_none:"-" }}</dt>
+                <dd class="col-sm-10">
+                    Material principal de los pisos interiores
+                </dd>
+                <dt class="col-sm-2">{{ dimensionvivienda.pisos|default_if_none:"-" }}</dt>
+                <dd class="col-sm-10">
+                    ¿Cuántas habitaciones tiene el hogar? (sin contar baño/s,
+                    cocina, pasillo/s, lavadero)
+                </dd>
+                <dt class="col-sm-2">{{ dimensionvivienda.cant_ambientes|default_if_none:"-" }}</dt>
+                <dd class="col-sm-10">
+                    ¿Cuántas camas/ colchones tienen?
+                </dd>
+                <dt class="col-sm-2">{{ dimensionvivienda.cant_camas|default_if_none:"-" }}</dt>
+                <dd class="col-sm-10">
+                    ¿Cuantos hogares hay en la vivienda?
+                </dd>
+                <dt class="col-sm-2">{{ dimensionvivienda.cant_hogares|default_if_none:"-" }}</dt>
+                <dd class="col-sm-10">
+                    ¿Cuantas personas viven en la vivienda?
+                </dd>
+                <dt class="col-sm-2">{{ dimensionvivienda.cant_convivientes|default_if_none:"-" }}</dt>
+                <dd class="col-sm-10">
+                    ¿Cuántos de ellos son menores de 18 años?
+                </dd>
+                <dt class="col-sm-2">{{ dimensionvivienda.cant_menores|default_if_none:"-" }}</dt>
+                <dd class="col-sm-10">
+                    Baño dentro de la vivienda con descarga
+                </dd>
+                <dt class="col-sm-2">{{ dimensionvivienda.hay_banio|yesno:'Sí,No' }}</dt>
+                <dd class="col-sm-10">
+                    Posee Agua caliente
+                </dd>
+                <dt class="col-sm-2">{{ dimensionvivienda.hay_agua_caliente|yesno:'Sí,No' }}</dt>
+                <dd class="col-sm-10">
+                    Riesgo de desmoronamiento
+                </dd>
+                <dt class="col-sm-2">{{ dimensionvivienda.hay_desmoronamiento|yesno:'Sí,No' }}</dt>
+                <dd class="col-sm-10">
+                    La vivienda está ubicada...
+                </dd>
+                <dt class="col-sm-2">{{ dimensionvivienda.ubicacion_vivienda|default_if_none:"-" }}</dt>
+                <dd class="col-sm-10">
+                    Posee PC
+                </dd>
+                <dt class="col-sm-2">{{ dimensionvivienda.PoseenPC|yesno:'Sí,No,-' }}</dt>
+                <dd class="col-sm-10">
+                    Posee Internet
+                </dd>
+                <dt class="col-sm-2">{{ dimensionvivienda.Poseeninternet|yesno:'Sí,No,-' }}</dt>
+                <dd class="col-sm-10">
+                    Posee Celular
+                </dd>
+                <dt class="col-sm-2">{{ dimensionvivienda.PoseenCeludar|yesno:'Sí,No,-' }}</dt>
+                <dd class="col-12 mt-3">
+                    Observaciones
+                </dd>
+                <dt class="col-12">{{ dimensionvivienda.obs_vivienda|default_if_none:"-" }}</dt>
+            </dl>
+            </c-tab-panel>
+            <c-tab-panel id="dsalud">
+            <dl class="row mb-0">
+                <dd class="col-sm-10">
+                    Centro de Salud en donde se atiende
+                </dd>
+                <dt class="col-sm-2">{{ dimensionsalud.lugares_atencion|default_if_none:"-" }}</dt>
+                <dd class="col-sm-10">
+                    Frecuencia de controles médicos
+                </dd>
+                <dt class="col-sm-2">{{ dimensionsalud.frecuencia_controles_medicos|default_if_none:"-" }}</dt>
+                <dd class="col-sm-10">
+                    Posee alguna enfermedad recurrente o algún diagnóstico de
+                    enfermedad crónic?
+                </dd>
+                <dt class="col-sm-2">{{ dimensionsalud.hay_enfermedad|yesno:'Sí,No,-' }}</dt>
+                <dd class="col-sm-10">
+                    Posee cobertura de salud
+                </dd>
+                <dt class="col-sm-2">{{ dimensionsalud.hay_obra_social|yesno:'Sí,No,-' }}</dt>
+                <dd class="col-sm-10">
+                    Posee alguna discapacidad
+                </dd>
+                <dt class="col-sm-2">{{ dimensionsalud.hay_discapacidad|yesno:'Sí,No,-' }}</dt>
+                <dd class="col-sm-10">
+                    Posee certificado de discapacidad
+                </dd>
+                <dt class="col-sm-2">{{ dimensionsalud.hay_cud|yesno:'Sí,No,-' }}</dt>
+                <dd class="col-12 mt-3">
+                    Observaciones
+                </dd>
+                <dt class="col-12">{{ dimensionsalud.obs_salud|default_if_none:"-" }}</dt>
+            </dl>
+            </c-tab-panel>
+            <c-tab-panel id="deducacion">
+            <dl class="row mb-0">
+                <dd class="col-sm-10">
+                    Asiste a la escuela
+                </dd>
+                <dt class="col-sm-2">{{ object.dimensioneducacion.asiste_escuela|yesno:'Sí,No,-' }}</dt>
+                <dd class="col-sm-10">
+                    Máximo nivel educativo alcanzado
+                </dd>
+                <dt class="col-sm-2">{{ object.dimensioneducacion.max_nivel|default_if_none:"-" }}</dt>
+                <dd class="col-sm-10">
+                    Estado del nivel
+                </dd>
+                <dt class="col-sm-2">{{ object.dimensioneducacion.estado_nivel|default_if_none:"-" }}</dt>
+                <dd class="col-sm-10 ">
+                    Motivo principal por el que no terminaste tus estudios
+                </dd>
+                <dt class="col-sm-2">
+                    {{
+                    object.dimensioneducacion.nivel_incompleto|default_if_none:"-" }}
+                </dt>
+                <dd class="col-sm-10 ">
+                    Motivo principal por el que no tuviste educación formal
+                </dd>
+                <dt class="col-sm-2">{{ object.dimensioneducacion.sin_educacion_formal|default_if_none:"-" }}</dt>
+                <dd class="col-sm-10">
+                    Institución
+                </dd>
+                <dt class="col-sm-2">{{ object.dimensioneducacion.institucion|default_if_none:"-" }}</dt>
+                <dd class="col-sm-10">
+                    Gestión
+                </dd>
+                <dt class="col-sm-2">{{ object.dimensioneducacion.gestion|default_if_none:"-" }}</dt>
+                <dd class="col-sm-10">
+                    Ciclo
+                </dd>
+                <dt class="col-sm-2">{{ object.dimensioneducacion.ciclo|default_if_none:"-" }}</dt>
+                <dd class="col-sm-10">
+                    Grado
+                </dd>
+                <dt class="col-sm-2">{{ object.dimensioneducacion.grado|default_if_none:"-" }}</dt>
+                <dd class="col-sm-10">
+                    Turno
+                </dd>
+                <dt class="col-sm-2">{{ object.dimensioneducacion.turno|default_if_none:"-" }}</dt>
+                <dd class="col-sm-10">
+                    Provincia Institucion
+                </dd>
+                <dt class="col-sm-2">
+                    {{
+                    object.dimensioneducacion.provinciaInstitucion|default_if_none:"-" }}
+                </dt>
+                <dd class="col-sm-10 ">
+                    Municipio Institucion
+                </dd>
+                <dt class="col-sm-2">
+                    {{
+                    object.dimensioneducacion.municipioInstitucion|default_if_none:"-" }}
+                </dt>
+                <dd class="col-sm-10 ">
+                    Localidad Institucion
+                </dd>
+                <dt class="col-sm-2">
+                    {{
+                    object.dimensioneducacion.localidadInstitucion|default_if_none:"-" }}
+                </dt>
+                <dd class="col-sm-10 ">
+                    Barrio Institucion
+                </dd>
+                <dt class="col-sm-2">
+                    {{
+                    object.dimensioneducacion.barrio_institucion|default_if_none:"-" }}
+                </dt>
+                <dd class="col-sm-10 ">
+                    Calle Institucion
+                </dd>
+                <dt class="col-sm-2">
+                    {{
+                    object.dimensioneducacion.calle_institucion|default_if_none:"-" }}
+                </dt>
+                <dd class="col-sm-10 ">
+                    Numero Institucion
+                </dd>
+                <dt class="col-sm-2">
+                    {{
+                    object.dimensioneducacion.numero_institucion|default_if_none:"-" }}
+                </dt>
+                <dd class="col-sm-10 ">
+                    Interes Estudio
+                </dd>
+                <dt class="col-sm-2">{{ object.dimensioneducacion.interes_estudio|yesno:'Sí,No,-' }}</dt>
+                <dd class="col-sm-10 ">
+                    Interes Curso
+                </dd>
+                <dt class="col-sm-2">{{ object.dimensioneducacion.interes_curso|yesno:'Sí,No,-' }}</dt>
+                <dd class="col-sm-10 ">
+                    Actualmente te encontrás haciendo algún curso de capacitación
+                </dd>
+                <dt class="col-sm-2">{{ object.dimensioneducacion.realizando_curso|yesno:'Sí,No,-' }}</dt>
+                <dd class="col-sm-10 ">
+                    Observaciones
+                </dd>
+                <dt class="col-sm-2">{{ object.dimensioneducacion.observaciones|default_if_none:"-" }}</dt>
+            </dl>
+            </c-tab-panel>
+            <c-tab-panel id="deconomia">
+            <dl class="row mb-0">
+                <dd class="col-sm-10">
+                    Calificación de Ingresos
+                </dd>
+                <dt class="col-sm-2">{{ object.dimensioneconomia.ingresos|default_if_none:"-" }}</dt>
+                <dd class="col-sm-10">
+                    ¿Recibe Plan Social?
+                </dd>
+                <dt class="col-sm-2">{{ object.dimensioneconomia.recibe_plan|default_if_none:"-" }}</dt>
+                <dd class="col-sm-10">
+                    Planes sociales que recibe
+                </dd>
+                <dt class="col-sm-2">
+                    {% if object.dimensioneconomia.planes.all.count > 0 %}
+                        {{ object.dimensioneconomia.planes.all|join:', ' }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </dt>
+                <dd class="col-sm-10">
+                    Miembros de la familia que trabajan o aportan al grupo
+                    conviviente
+                </dd>
+                <dt class="col-sm-2">{{ object.dimensioneconomia.cant_aportantes|default_if_none:"-" }}</dt>
+                <dd class="col-12 mt-3">
+                    Observaciones
+                </dd>
+                <dt class="col-12">{{ object.dimensioneconomia.obs_economia|default_if_none:"-" }}</dt>
+            </dl>
+            </c-tab-panel>
+            <c-tab-panel id="dtrabajo">
+            <dl class="row mb-0">
+                <dd class="col-sm-10">
+                    ¿Actualmente realizás alguna actividad laboral, productiva o comunitaria?
+                </dd>
+                <dt class="col-sm-2">{{ dimensiontrabajo.tiene_trabajo|default_if_none:"-" }}</dt>
+                <dd class="col-sm-10">
+                    Ocupación
+                </dd>
+                <dt class="col-sm-2">{{ dimensiontrabajo.ocupacion|default_if_none:"-" }}</dt>
+                <dd class="col-sm-10">
+                    Modo de contratación
+                </dd>
+                <dt class="col-sm-2">{{ dimensiontrabajo.modo_contratacion|default_if_none:"-" }}</dt>
+                <dd class="col-sm-10">
+                    ¿Conviviente trabaja?
+                </dd>
+                <dt class="col-sm-2">{{ dimensiontrabajo.conviviente_trabaja|default_if_none:"-" }}</dt>
+                <dd class="col-12 mt-3">
+                    Observaciones
+                </dd>
+                <dt class="col-12">{{ dimensiontrabajo.obs_trabajo|default_if_none:"-" }}</dt>
+            </dl>
+            </c-tab-panel>
+            </c-tab-group>
+            <!-- /.card dimensiones-->
+        </div>
+        <div class="col-12">
+            <!-- AREA PROGRAMAS-->
+            <div class="card">
+                <div class="card-header pb-1 mb-0">
+                    <h3 class="card-title">Programas</h3>
+                    <div class="fs-6 m-0 p-0" id="mensajes"></div>
+                    <div class="card-tools">
+                        <ul class="nav nav-pills ml-auto">
+                            <li class="nav-item">
+                                <p>
+                                    <button id="editButton" class="btn btn-danger btn-sm my-0 me-2">
+                                        <i class='fas fa-trash-alt text-white text-small'></i>
+                                    </button>
+                                </p>
+                            </li>
+                            <li class="nav-item">
+                                <h5>
+                                    <span class="btn btn-primary btn-sm m-0 toastrDefaultSuccess"
+                                          id="agregar-programa-btn">Agregar</span>
+                                </h5>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body" style="display: block;">
+                    <div class="row" id="progamas_ciudadanos">
+                        {% for p in ciudadanos_programas %}
+                            <div class="col-6 m-0 py-1 contenedor-programa"
+                                 data-ciudadano-id="{{ ciudadano.id }}">
+                                <div class="callout callout-info text-white text-truncate py-1 text-uppercase"
+                                     style="background:rgb(41 97 180);
+                                            display: flex;
+                                            justify-content: space-between;
+                                            align-items: center">
+                                    <span class="program-name">{{ p.programas.nombre }}</span>
+                                    <span class="badge btn btn-danger borrar-programa"
+                                          style="cursor: pointer;
+                                                 display: none"
+                                          data-program-id="{{ p.id }}">X</span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="px-4 pt-0 mt-0 pb-2" id="form-programas" style="display: none">
+                    <form id="ProgramaForm"
+                          method="POST"
+                          action="{% url 'actualizar_programas' object.id %}">
+                        {% csrf_token %}
+                        {{ form_prog.programas|as_crispy_field }}
+                        <div class="d-flex justify-content-end mt-3">
+                            <button type="button" class="btn btn-secondary btn-sm me-2" id="cancelar-btn">Cancelar</button>
+                            <button type="submit" class="btn btn-primary btn-sm" id="guardar-btn">Guardar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <!--FIN PROGRAMAS-->
+        </div>
+        <div class="col-6">
+            <!--INICIO ALERTAS Y ARCHIVOS-->
+            <div class="col-12">
+                <div class="card ">
+                    <div class="card-header">
+                        <h3 class="card-title font-weight-bold">Imágenes</h3>
+                        <div class="card-tools">
+                            <button type="button"
+                                    class="btn btn-tool d-md-none"
+                                    data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% if files_img %}
+                        <div class="card-body  p-0">
+                            {% for f in files_img %}
+                                {% if forloop.counter == 1 %}
+                                    <div class="row">
+                                        <div class="col-3">
+                                            <div class="comment-text comment-text d-flex flex-column text-sm">
+                                                Fecha
+                                                <span class="username bold">{{ f.fecha|date:"d/m/Y" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-5">
+                                            <a href="{{ MEDIA_URL }}{{ f.archivo.url }}"
+                                               target="_blank"
+                                               title="{{ f.archivo|cut:'ciudadanos/archivos/' }}">
+                                                <img alt="Imagen del ciudadano"
+                                                     class="d-block w-100 carousel-image"
+                                                     src="{{ MEDIA_URL }}{{ f.archivo.url }}" />
+                                            </a>
+                                        </div>
+                                        <div class="col-4 d-flex py-3 justify-content-end align-items-end">
+                                            <a class="btn btn-small me-2 btn-success"
+                                               href="{% url 'ciudadanosarchivos_listar' object.id %}">Ver mas</a>
+                                            {% if perms.Usuarios.rol_admin %}
+                                                <a class="btn btn-small me-2 btn-secondary"
+                                                   href="{% url 'ciudadanosarchivos_crear' object.id %}">Agregar</a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="card-body  p-0">
+                            <h6 class="text-center text-muted py-3">Sin imágenes</h6>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-12">
+                            {% if files_docs %}
+                                <h6 class="font-weight-bold">Fecha del último archivo cargado:</h6>
+                                <p>{{ f.fecha|date:"d/m/Y" }}</p>
+                            {% else %}
+                                <h6 class="text-center text-muted py-3">Sin archivos</h6>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card-header">
+                                <h3 class="card-title font-weight-bold">Documentos adjuntos</h3>
+                                <div class="card-tools">
+                                    <button type="button"
+                                            class="btn btn-tool d-md-none"
+                                            data-card-widget="collapse">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% if files_docs %}
+                                <div class="card-body">
+                                    {% for f in files_docs %}
+                                        <ul class="list-unstyled">
+                                            <li class="py-1">
+                                                <a href="{{ f.archivo.url }}"
+                                                   class=""
+                                                   target="_blank"
+                                                   title="{{ f.archivo|cut:'ciudadanos/archivos/' }}">
+                                                    <i class="fas fa-file pr-1"></i>
+                                                    {{ f.archivo|cut:"ciudadanos/archivos/"|truncatechars:35 }}
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="card-body">
+                                    <h6 class="text-center text-muted py-3">Sin archivos</h6>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 d-flex justify-content-end py-3">
+                            <a class="btn btn-small me-2 btn-success"
+                               href="{% url 'ciudadanosarchivos_listar' object.id %}">Ver mas</a>
+                            {% if perms.Usuarios.rol_admin %}
+                                <a class="btn btn-small me-2 btn-secondary"
+                                   href="{% url 'ciudadanosarchivos_crear' object.id %}">Agregar</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--FIN ALERTAS Y ARCHIVOS-->
+    </div>
+    {% if datos_json %}
+        <div class="row d-none d-sm-inline">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                        <h3 class="card-title font-weight-bold">Evolución de riesgos</h3>
+                    </div>
+                    <div class="card-body ">
+                        <canvas id="lineChart"
+                                style="min-height: 250px;
+                                       height: 250px;
+                                       max-height: 250px;
+                                       max-width: 100%;
+                                       display: block;
+                                       width: 612px"
+                                width="765"
+                                height="312"
+                                class="chartjs-render-monitor"></canvas>
+                        <div class="d-flex flex-row justify-content-end">
+                            <span class="mr-3">
+                                <i class="fas fa-square text-fuchsia"></i> Riesgo familiar
+                            </span>
+                            <span class="mr-3">
+                                <i class="fas fa-square text-lime"></i> Riesgo habitacional
+                            </span>
+                            <span class="mr-3">
+                                <i class="fas fa-square text-red"></i> Riesgo Salud
+                            </span>
+                            <span class="mr-3">
+                                <i class="fas fa-square text-blue"></i> Riesgo económico
+                            </span>
+                            <span class="mr-3">
+                                <i class="fas fa-square text-orange"></i> Riesgo educacional
+                            </span>
+                            <span class="mr-3">
+                                <i class="fas fa-square text-gray"></i> Riesgo laboral
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    <!-- Modal de confirmación -->
+    <div id="confirmDeleteModal"
+         class="modal fade"
+         tabindex="-1"
+         role="dialog"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirmar Eliminación</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    ¿Seguro que deseas eliminar el siguiente programa del ciudadano?
+                    <div class="callout callout-info text-white text-truncate py-1 text-uppercase mt-4"
+                         style="background:rgb(41 97 180)">
+                        <span id="programNameToDelete"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" id="acceptDeleteBtn" class="btn btn-danger">Aceptar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block customJS %}
+    <script> let datosJson = JSON.parse('{{ datos_json|escapejs }}');</script>
+    <script type="text/javascript" src="{% static 'custom/js/timeline.js' %}"></script>
+    <script src="{% static 'custom/js/ciudadanosdetail.js' %}"></script>
+    <script>
+        $(function () {
+            // Initialize Select2 Elements
+            $('.select2').select2();
+    
+            // Initialize Select2 Elements with Bootstrap 4 theme
+            $('.select2bs4').select2({
+                theme: 'bootstrap4'
+            });
+        });
+    </script>
+    <script>
+        $(document).ready(function() {
+            $('#agregar-programa-btn').click(function() {
+                $('#form-programas').stop(true, true).animate({
+                    height: 'toggle',
+                    opacity: 'toggle'
+                }, 500, 'easeOutQuad');
+            });
+            $('#cancelar-btn').click(function() {
+                $('#form-programas').stop(true, true).animate({
+                    height: 'toggle',
+                    opacity: 'toggle'
+                }, 500, 'easeOutQuad');
+            });         
+        });
+        
+    </script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const form = document.getElementById('ProgramaForm');
+        const programasDiv = document.getElementById('progamas_ciudadanos');
+    
+        form.addEventListener('submit', function (e) {
+            e.preventDefault(); // Evita que el formulario se envíe de forma tradicional
+            const formData = new FormData(form);
+    
+            // Realiza la solicitud con fetch
+            fetch("{% url 'actualizar_programas' object.id %}", {
+                method: "POST",
+                body: formData,
+                headers: {
+                    "X-CSRFToken": formData.get("csrfmiddlewaretoken")
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Maneja los mensajes
+                if (data.messages) {
+                    data.messages.forEach(msg => {
+                        if (msg.level === 25) {
+                            // Mensajes de éxito
+                            toastr.success(msg.message, '');
+                        } else if (msg.level === 40) {
+                            // Mensajes de error (usamos Bootstrap `alert-danger`)
+                            toastr.error(msg.message, 'Error', {
+                                iconClass: 'toast-danger' // Personaliza el estilo de toastr con Bootstrap
+                            });
+                        } else if (msg.level === 30) {
+                            // Mensajes de advertencia
+                            toastr.warning(msg.message, 'Advertencia');
+                        } else {
+                            // Mensajes informativos (default)
+                            toastr.info(msg.message, 'Información');
+                        }
+                    });
+                }
+    
+                // Si hay errores, no continuamos
+                if (data.errors) {
+                    console.error("Errores en el formulario:", data.errors);
+                    return;
+                }
+    
+                // Actualiza la lista de programas si se agregaron nuevos
+                if (data.programas) {
+                    data.programas.forEach(programa => {
+                        const programHtml = `
+                            <div class="col-6 m-0 py-1 contenedor-programa">
+                                <div class="callout callout-info text-white text-truncate py-1 text-uppercase" style="background:rgb(41 97 180); display: flex; justify-content: space-between; align-items: center;">
+                                    <span class="program-name">${programa.nombre}</span>
+                                    <span class="badge btn btn-danger borrar-programa" style="cursor: pointer; display: none;" data-program-id="${programa.id}">X</span>
+                                </div>
+                            </div>
+                        `;
+    
+                        // Agrega el nuevo contenido al final del div
+                        programasDiv.innerHTML += programHtml;
+    
+                        // Aplica un efecto de animación si es necesario
+                        const lastProgram = programasDiv.lastElementChild;
+                        lastProgram.querySelector('.callout').classList.add('ease-out');
+                    });
+                }
+            })
+            .catch(error => {
+                console.error("Error al enviar la solicitud:", error);
+                toastr.error('Se produjo un error al procesar la solicitud. Por favor, inténtalo de nuevo.', 'Error');
+            });
+        });
+    });
+    </script>
+    <script>
+        $(document).ready(function() {
+            // Delegar el evento para la cruz de eliminación de cualquier elemento en contenedor-programa, incluyendo los nuevos
+            $(document).on('click', '.borrar-programa', function() {
+                var programToDeleteId = $(this).data('program-id'); // Obtener el ID del programa a eliminar
+                var programName = $(this).closest('.callout').find('.program-name').text(); // Obtener el nombre del programa
+        
+                // Mostrar el nombre del programa en el modal
+                $('#programNameToDelete').text(programName); // Inserta el nombre del programa
+                
+                // Mostrar el modal de confirmación
+                const confirmDeleteModal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'), {});
+                confirmDeleteModal.show();
+                
+                // Asignar el ID del programa al botón "Aceptar" en el modal
+                $('#acceptDeleteBtn').data('program-id', programToDeleteId);
+            });
+        
+            // Cuando se hace clic en el botón "Aceptar" del modal
+            $('#acceptDeleteBtn').click(function() {
+                var programId = $(this).data('program-id'); // Obtener el ID del programa a eliminar
+                
+                // Si no existe un ID, muestra un error en la consola
+                if (!programId) {
+                    console.error('No se ha definido un ID de programa para eliminar.');
+                    return;
+                }
+        
+                // Realizar la solicitud AJAX para eliminar el programa
+                $.ajax({
+                    url: '{% url "eliminar_programa" %}', // Asegúrate de que la URL es correcta
+                    method: 'POST',
+                    data: {
+                        csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val(),
+                        program_id: programId
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            // Elimina el contenedor-programa correspondiente usando el ID de CiudadanoProgramas
+                            $('span[data-program-id="' + programId + '"]')
+                                .closest('.contenedor-programa')  // Selecciona el contenedor-programa
+                                .remove();  // Elimina el contenedor completo
+                            
+                            // Cierra el modal
+                            const confirmDeleteModal = bootstrap.Modal.getInstance(document.getElementById('confirmDeleteModal'));
+                            confirmDeleteModal.hide();
+                        } else {
+                            alert("Hubo un problema al eliminar el programa.");
+                        }
+                    },
+                    
+                    error: function() {
+                        alert("Hubo un error al intentar eliminar el programa.");
+                    }
+                });
+            });
+    
+            // Mostrar u ocultar las cruces con el botón "Editar"
+            $('#editButton').click(function() {
+                // Alternar la visibilidad de las cruces
+                $('.borrar-programa').toggle(); // Muestra u oculta las cruces
+            });
+        });
+    </script>
+{% endblock %}

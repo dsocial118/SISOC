@@ -1,9 +1,6 @@
 from django.db import models
 
 
-# -------------------------------CONFIGURACIONES GENERALES (se usan en tod
-
-
 class Provincia(models.Model):
     """
     Guardado de las provincias de los vecinos y vecinas registrados.
@@ -65,8 +62,8 @@ class Municipio(models.Model):
     """
 
     nombre = models.CharField(max_length=255)
-    fk_provincia = models.ForeignKey(
-        Provincia, on_delete=models.SET_NULL, null=True, blank=True
+    provincia = models.ForeignKey(
+        Provincia, on_delete=models.CASCADE, null=True, blank=True
     )
 
     def __str__(self):
@@ -76,6 +73,10 @@ class Municipio(models.Model):
         ordering = ["id"]
         verbose_name = "Municipio"
         verbose_name_plural = "Municipio"
+        unique_together = (
+            "nombre",
+            "provincia",
+        )
 
 
 class Localidad(models.Model):
@@ -84,8 +85,8 @@ class Localidad(models.Model):
     """
 
     nombre = models.CharField(max_length=255)
-    fk_municipio = models.ForeignKey(
-        Municipio, on_delete=models.SET_NULL, null=True, blank=True
+    municipio = models.ForeignKey(
+        Municipio, on_delete=models.CASCADE, null=True, blank=True
     )
 
     def __str__(self):
@@ -94,6 +95,10 @@ class Localidad(models.Model):
     class Meta:
         verbose_name = "Localidad"
         verbose_name_plural = "Localidad"
+        unique_together = (
+            "nombre",
+            "municipio",
+        )
 
 
 class Sexo(models.Model):

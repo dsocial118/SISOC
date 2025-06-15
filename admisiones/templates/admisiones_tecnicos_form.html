@@ -1,0 +1,557 @@
+{% extends "includes/main.html" %};
+{% load static %}
+;
+{% load crispy_forms_tags %}
+;
+{% load static custom_filters %}
+;
+{% block title %}Admision: {{ comedor.nombre }}{% endblock %}
+;
+{% block titulo-pagina %}{{ comedor.nombre }}{% endblock %}
+;
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <div class="breadcrumb-item">
+            <a href="{% url 'admisiones_tecnicos_listar' %}">Técnicos - Admisiones</a>
+        </div>
+        <div class="breadcrumb-item active">{{ comedor.nombre }}</div>
+    </ol>
+{% endblock %}
+;
+{% block content %}
+    <div class="row justify-content-between d-print-none mx-1 mb-3">
+        <div class="col-auto">
+            <a href="{% url 'admisiones_tecnicos_listar' %}"
+               class="btn btn-secondary mr-1">Volver</a>
+        </div>
+        <div class="col-auto">
+            {% if user|has_group:"Abogado Dupla" %}
+                {% if informe_base %}
+                    <a href="{% url 'informe_tecnico_ver' tipo='base' pk=informe_base.id %}"
+                       class="btn btn-primary mr-1">Ver Informe Técnico</a>
+                {% elif informe_juridico %}
+                    <a href="{% url 'informe_tecnico_ver' tipo='juridico' pk=informe_juridico.id %}"
+                       class="btn btn-primary mr-1">Ver Informe Técnico</a>
+                {% endif %}
+            {% endif %}
+            {% if user|has_group:"Tecnico Comedor" %}
+                {% if admision.estado_legales == "A Rectificar" %}
+                    <button type="button"
+                            class="btn btn-warning mr-1"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalRectificarDocumetacion">Rectificar Documentación</button>
+                {% endif %}
+                {% if admision.estado_id != 1 %}
+                    {% if informe_base %}
+                        <a href="{% url 'informe_tecnico_ver' tipo='base' pk=informe_base.id %}"
+                           class="btn btn-primary mr-1">Ver Informe Técnico</a>
+                    {% elif informe_juridico %}
+                        <a href="{% url 'informe_tecnico_ver' tipo='juridico' pk=informe_juridico.id %}"
+                           class="btn btn-primary mr-1">Ver Informe Técnico</a>
+                    {% endif %}
+                {% endif %}
+                {% if admision.num_expediente and admision.num_if %}
+                    {% if admision.tipo_convenio_id == 1 %}
+                        {% if informe_base %}
+                            {% if informe_base.estado != "Validado" %}
+                                <a href="{% url 'informe_tecnico_editar' tipo='base' pk=informe_base.id %}"
+                                   class="btn btn-primary mr-1">Informe Técnico</a>
+                            {% else %}
+                                {% if not admision.enviado_legales %}
+                                    <button type="button"
+                                            class="btn btn-primary mr-1"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#confirmarLegalesModal">Mandar a legales</button>
+                                {% endif %}
+                            {% endif %}
+                        {% else %}
+                            <a href="{% url 'informe_tecnico_crear' tipo='base' admision_id=admision.id %}"
+                               class="btn btn-primary mr-1">Informe Técnico</a>
+                        {% endif %}
+                    {% else %}
+                        {% if informe_juridico %}
+                            {% if informe_juridico.estado != "Validado" %}
+                                <a href="{% url 'informe_tecnico_editar' tipo='juridico' pk=informe_juridico.id %}"
+                                   class="btn btn-primary mr-1">Informe Técnico</a>
+                            {% else %}
+                                {% if not admision.enviado_legales %}
+                                    <button type="button"
+                                            class="btn btn-primary mr-1"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#confirmarLegalesModal">Mandar a legales</button>
+                                {% endif %}
+                            {% endif %}
+                        {% else %}
+                            <a href="{% url 'informe_tecnico_crear' tipo='juridico' admision_id=admision.id %}"
+                               class="btn btn-primary mr-1">Informe Técnico</a>
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+                {% if admision.estado.nombre != "Pendiente" %}
+                    <button type="button"
+                            class="btn btn-primary mr-1"
+                            data-bs-toggle="modal"
+                            data-bs-target="#caratularExpediente">Caratular expediente</button>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+    {% if es_crear %}
+        <!-- MODAL DE SELECCIÓN INICIAL -->
+        <div class="modal fade"
+             id="seleccionModal"
+             tabindex="-1"
+             aria-labelledby="seleccionModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form method="POST"
+                          action="{% url 'admisiones_tecnicos_crear' pk=comedor.pk %}">
+                        {% csrf_token %}
+                        <div class="modal-header">
+                            <h5 class="modal-title">Seleccione el tipo de convenio</h5>
+                        </div>
+                        <div class="modal-body">
+                            <select name="tipo_convenio" id="tipoConvenio" class="form-control" required>
+                                <option value="">-- Seleccione --</option>
+                                {% for c in convenios %}<option value="{{ c.id }}">{{ c.nombre }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="modal-footer">
+                            <a href="{% url 'admisiones_tecnicos_listar' %}"
+                               class="btn btn-secondary">Cancelar</a>
+                            <button type="submit"
+                                    class="btn btn-primary"
+                                    id="confirmarSeleccion"
+                                    disabled>Continuar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    <div class="row mb-3">
+        {% if not es_crear %}
+            <div class="col-5">
+                <div class="card card-primary card-outline h-100">
+                    <div class="card-header">
+                        <h2 class="card-title fw-bold fs-3">Admisión</h2>
+                    </div>
+                    <div class="card-body card-comments">
+                        <ul class="nav nav-pills flex-column">
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Tipo Convenio:
+                                    <span class="fw-bold">{{ admision.tipo_convenio.nombre| default_if_none:"-" }}
+                                        {% if user|has_group:"Tecnico Comedor" %}
+                                            {% if admision.estado.nombre == "Pendiente" %}
+                                                <button type="button"
+                                                        class="btn btn-primary btn-sm ms-3 mb-1"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#nuevoSeleccionModal">Cambiar</button>
+                                            {% endif %}
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Estado:
+                                    {% if admision_todo_aceptado %}
+                                        <span class="fw-bold">Finalizada</span>
+                                    {% else %}
+                                        <span class="fw-bold">{{ admision.estado.nombre| default_if_none:"-" }}</span>
+                                    {% endif %}
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Fecha:
+                                    <span class="fw-bold">{{ admision.creado |date:'d/m/Y' }}</span>
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Número de Expediente:
+                                    <span class="fw-bold">{{ admision.num_expediente |default_if_none:"-" }}</span>
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Número de IF:
+                                    <span class="fw-bold">{{ admision.num_if |default_if_none:"-" }}</span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+        {% if es_crear %}
+            <div class="col-12">
+            {% else %}
+                <div class="col-7">
+                {% endif %}
+                <div class="card card-primary card-outline">
+                    <div class="card-header">
+                        <h2 class="card-title fw-bold fs-3">Comedor</h2>
+                    </div>
+                    <div class="card-body card-comments p-3">
+                        <ul class="nav nav-pills flex-column">
+                            <li class="nav-item">
+                                <div class="comment-text ">
+                                    Nombre:
+                                    <a href="{% url 'comedor_detalle' comedor.id %}"><span class="fw-bold">{{ comedor.nombre }}</span></a>
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Tipo Comedor:
+                                    <span class="fw-bold">{{ comedor.tipocomedor| default_if_none:"-" }}</span>
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Programa:
+                                    <span class="fw-bold">{{ comedor.programa| default_if_none:"-" }}</span>
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Organización:
+                                    <span class="fw-bold">{{ comedor.organizacion | default_if_none:"-" }}</span>
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Provincia:
+                                    <span class="fw-bold">{{ comedor.provincia | default_if_none:"-" }} - {{ comedor.municipio | default_if_none:"-" }} - {{ comedor.localidad | default_if_none:"-" }}</span>
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Calle:
+                                    <span class="fw-bold">{{ comedor.calle | default_if_none:"-" }} {{ comedor.numero | default_if_none:"-" }} - Piso: {{ comedor.piso | default_if_none:"-" }} {{ comedor.departamento | default_if_none:"" }}</span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% if admision.estado_legales == "A Rectificar" %}
+            <div class="row mb-3">
+                <div class="col-12">
+                    <div class="card card-danger card-outline h-100">
+                        <div class="card-header">
+                            <h2 class="card-title fw-bold fs-3">A Rectificar</h2>
+                        </div>
+                        <div class="card-body card-comments">
+                            <h6>{{ admision.observaciones }}</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title fw-bold fs-3">Documentos requeridos</h2>
+                    </div>
+                    <div class="card-body card-comments p-0 pb-1">
+                        <!-- CONTENEDOR DE DOCUMENTOS -->
+                        <div class="container mt-2 table-responsive">
+                            <table class="table table-striped table-bordered table-hover table-sm"
+                                   id="tablaDocumentos">
+                                <thead>
+                                    <tr>
+                                        <th>Documento</th>
+                                        <th>Estado</th>
+                                        <th>Archivo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for doc in documentos %}
+                                        <tr id="fila-{{ doc.id }}">
+                                            <td class="ps-3">{{ doc.nombre }}</td>
+                                            {% if doc.estado == "Aceptado" %}
+                                                <td class="ps-3 text-success" id="estado-{{ doc.id }}">Aceptado</td>
+                                            {% elif doc.estado == "Pendiente" %}
+                                                <td class="ps-3" id="estado-{{ doc.id }}">{{ doc.estado }}</td>
+                                            {% elif doc.estado == "A Validar Abogado" %}
+                                                {% if user|has_group:"Tecnico Comedor" %}<td class="ps-3" id="estado-{{ doc.id }}">A Validar Abogado</td>{% endif %}
+                                                {% if user|has_group:"Abogado Dupla" %}
+                                                    <td id="estado-{{ doc.id }}">
+                                                        <select class="form-control"
+                                                                onchange="actualizarEstado(this)"
+                                                                data-admision-id="{{ admision.id }}"
+                                                                data-documento-id="{{ doc.id }}"
+                                                                data-url="{% url 'actualizar_estado_archivo' %}">
+                                                            <option selected>Elegir opcion</option>
+                                                            <option value="Aceptado" {% if doc.estado == 'Aceptado' %}selected{% endif %}>Aceptado</option>
+                                                            <option value="Rectificar"
+                                                                    {% if doc.estado == 'Rectificar' %}selected{% endif %}>
+                                                                Rectificar
+                                                            </option>
+                                                        </select>
+                                                    </td>
+                                                {% endif %}
+                                            {% else %}
+                                                {% if user|has_group:"Tecnico Comedor" %}
+                                                    <td id="estado-{{ doc.id }}">
+                                                        <select class="form-control"
+                                                                onchange="actualizarEstado(this)"
+                                                                data-admision-id="{{ admision.id }}"
+                                                                data-documento-id="{{ doc.id }}"
+                                                                data-url="{% url 'actualizar_estado_archivo' %}">
+                                                            <option value="validar" {% if doc.estado == 'validar' %}selected{% endif %}>A Validar</option>
+                                                            <option value="A Validar Abogado"
+                                                                    {% if doc.estado == 'A Validar Abogado' %}selected{% endif %}>
+                                                                A Validar Abogado
+                                                            </option>
+                                                            <option value="Rectificar"
+                                                                    {% if doc.estado == 'Rectificar' %}selected{% endif %}>
+                                                                Rectificar
+                                                            </option>
+                                                        </select>
+                                                    </td>
+                                                {% endif %}
+                                                {% if user|has_group:"Abogado Dupla" %}<td class="ps-3" id="estado-{{ doc.id }}">{{ doc.estado }}</td>{% endif %}
+                                            {% endif %}
+                                            <td>
+                                                {% if doc.archivo_url %}
+                                                    <a href="{{ doc.archivo_url }}"
+                                                       target="_blank"
+                                                       class="btn btn-primary btn-sm">Ver Archivo</a>
+                                                    {% if user|has_group:"Tecnico Comedor" %}
+                                                        <button class="btn btn-secondary btn-sm" disabled>Archivado</button>
+                                                        {% if admision.estado.nombre != "Finalizada" %}
+                                                            <button class="btn btn-sm btn-danger fw-bold px-3"
+                                                                    onclick="confirmarEliminar({{ admision.id }}, {{ doc.id }})">
+                                                                X
+                                                            </button>
+                                                        {% endif %}
+                                                    {% endif %}
+                                                {% else %}
+                                                    {% if user|has_group:"Tecnico Comedor" %}
+                                                        <input type="file" id="file-{{ doc.id }}" />
+                                                        <button class="btn btn-primary btn-sm"
+                                                                onclick="subirArchivo({{ admision.id }}, {{ doc.id }})">
+                                                            Archivar
+                                                        </button>
+                                                        <!-- Barra de progreso que se muestra cuando se sube un archivo -->
+                                                        <div class="progress mt-2"
+                                                             id="progress-container-{{ doc.id }}"
+                                                             style="display:none;
+                                                                    height: 3px">
+                                                            <div class="progress-bar  progress-bar-striped"
+                                                                 role="progressbar"
+                                                                 id="progress-bar-{{ doc.id }}"
+                                                                 style="width: 0%">0%</div>
+                                                        </div>
+                                                    {% endif %}
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- MODAL DE CONFIRMACIÓN -->
+        <div class="modal fade"
+             id="modalConfirmarEliminar"
+             tabindex="-1"
+             role="dialog"
+             aria-labelledby="modalConfirmarEliminarLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalConfirmarEliminarLabel">Eliminar Archivo</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">¿Estás seguro de que deseas eliminar este archivo? Esta acción no se puede deshacer.</div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-danger" id="btnConfirmarEliminar">Eliminar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- MODAL DE SELECCIÓN DE CONVENIO -->
+        <div class="modal fade"
+             id="nuevoSeleccionModal"
+             tabindex="-1"
+             aria-labelledby="nuevoSeleccionModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form method="POST" action="">
+                        {% csrf_token %}
+                        <div class="modal-header">
+                            <h5 class="modal-title">Seleccione el tipo de convenio</h5>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-danger h6 text-white" role="alert">
+                                Al cambiar el Convenio se perderan todos los archivos cargados. Esta seguro que quiere continuar?
+                            </div>
+                            <select name="tipo_convenio"
+                                    id="nuevoTipoConvenio"
+                                    class="form-control"
+                                    required>
+                                <option value="">-- Seleccione --</option>
+                                {% for c in convenios %}
+                                    <option value="{{ c.id }}"
+                                            {% if c.id == admision.tipo_convenio.id %}selected{% endif %}>
+                                        {{ c.nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit"
+                                    class="btn btn-danger"
+                                    id="nuevoConfirmarSeleccion"
+                                    disabled>Cambiar y eliminar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <!-- Modal para confirmar mandar a legales -->
+        <div class="modal fade"
+             id="confirmarLegalesModal"
+             tabindex="-1"
+             aria-labelledby="confirmarLegalesModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="confirmarLegalesModalLabel">Confirmar mandar a Legales</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body mb-2">¿Estás seguro que queres mandar a Legales?</div>
+                    <div class="modal-footer">
+                        <form id="mandarLegalesForm" method="POST" action="">
+                            {% csrf_token %}
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit"
+                                    id="mandarLegalesId"
+                                    name="mandarLegales"
+                                    class="btn btn-primary">Confirmar</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Modal para confirmar rectificar documentacion -->
+        <div class="modal fade"
+             id="modalRectificarDocumetacion"
+             tabindex="-1"
+             aria-labelledby="modalRectificarDocumetacionLabel"
+             aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalRectificarDocumetacionLabel">Confirmar rectificar documentación</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body mb-2">¿Estás seguro que queres rectificar documentación?</div>
+                    <div class="modal-footer">
+                        <form id="mandarLegalesForm" method="POST" action="">
+                            {% csrf_token %}
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit"
+                                    id="btnRectificarDocumentacion_id"
+                                    name="btnRectificarDocumentacion"
+                                    class="btn btn-primary">Confirmar</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Toast de éxito -->
+        <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
+            <div id="toastEstadoExito"
+                 class="toast align-items-center text-bg-success border-0"
+                 role="alert"
+                 aria-live="assertive"
+                 aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <h6>Estado actualizado con éxito.</h6>
+                    </div>
+                    <button type="button"
+                            class="btn-close btn-close-white me-2 m-auto"
+                            data-bs-dismiss="toast"
+                            aria-label="Cerrar"></button>
+                </div>
+            </div>
+        </div>
+        {% if not es_crear %}
+            <!-- MODAL CARATULACION -->
+            <div class="modal fade"
+                 id="caratularExpediente"
+                 tabindex="-1"
+                 aria-labelledby="caratularExpedienteLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <form method="POST" action="">
+                            {% csrf_token %}
+                            <div class="modal-header">
+                                <h5 class="modal-title">Caratular Expediente</h5>
+                                <button type="button"
+                                        class="btn-close"
+                                        data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="form-group row mb-2">
+                                    <div class="col-sm-10">{{ caratular_form.num_expediente| as_crispy_field }}</div>
+                                </div>
+                                <div class="form-group row mb-2">
+                                    <div class="col-sm-10">{{ caratular_form.num_if| as_crispy_field }}</div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit"
+                                        class="btn btn-primary"
+                                        name="btnCaratulacion"
+                                        id="btnCaratulacion_id">Guardar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    {% endblock %}
+    {% block customJS %}
+        <script>window.CSRF_TOKEN = "{{ csrf_token }}";</script>
+        {% if es_crear %}
+            <script src="{% static 'custom/js/admisionesTecnicoCrear.js' %}"></script>
+        {% endif %}
+        <script src="{% static 'custom/js/admisionestecnico.js' %}"></script>
+        <script src="{% static 'custom/js/admisionesactualizarestado.js' %}"></script>
+        <script>window.URL_ACTUALIZAR_ESTADO = "{% url 'actualizar_estado_archivo' %}";</script>
+    {% endblock %}

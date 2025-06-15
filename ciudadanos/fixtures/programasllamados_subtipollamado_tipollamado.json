@@ -1,0 +1,916 @@
+[
+    {
+        "model": "ciudadanos.ProgramasLlamados",
+        "pk": 1,
+        "fields": {
+            "nombre": "Programa de Acompañamiento Social (PAS)"
+        }
+    },
+    {
+        "model": "ciudadanos.ProgramasLlamados",
+        "pk": 2,
+        "fields": {
+            "nombre": "Tarjeta Alimentar"
+        }
+    },
+    {
+        "model": "ciudadanos.ProgramasLlamados",
+        "pk": 3,
+        "fields": {
+            "nombre": "Monotributo Social"
+        }
+    },
+    {
+        "model": "ciudadanos.ProgramasLlamados",
+        "pk": 4,
+        "fields": {
+            "nombre": "Agencia Nacional de Discapacidad"
+        }
+    },
+    {
+        "model": "ciudadanos.ProgramasLlamados",
+        "pk": 5,
+        "fields": {
+            "nombre": "Otros Programas de la Secretaria"
+        }
+    },
+    {
+        "model": "ciudadanos.ProgramasLlamados",
+        "pk": 6,
+        "fields": {
+            "nombre": "Otros Organismos"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 1,
+        "fields": {
+            "programas_llamados": 1,
+            "nombre": "Ingreso a Monotributo costo cero PAS"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 2,
+        "fields": {
+            "programas_llamados": 1,
+            "nombre": "Ingresos PAS por incompatibilidad"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 3,
+        "fields": {
+            "programas_llamados": 1,
+            "nombre": "Excepción a la constraprestación"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 4,
+        "fields": {
+            "programas_llamados": 1,
+            "nombre": "Unificación de CUIT"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 5,
+        "fields": {
+            "programas_llamados": 1,
+            "nombre": "Jubilables"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 6,
+        "fields": {
+            "programas_llamados": 1,
+            "nombre": "Reclamo bancario"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 7,
+        "fields": {
+            "programas_llamados": 1,
+            "nombre": "Unidad de Gestión"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 8,
+        "fields": {
+            "programas_llamados": 1,
+            "nombre": "Actualización de datos PAS"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 9,
+        "fields": {
+            "programas_llamados": 1,
+            "nombre": "Compatibilidad PAS"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 10,
+        "fields": {
+            "programas_llamados": 1,
+            "nombre": "Inscripción"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 11,
+        "fields": {
+            "programas_llamados": 1,
+            "nombre": "Pérdida o inconvenientes con la tarjeta de cobro del programa"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 12,
+        "fields": {
+            "programas_llamados": 2,
+            "nombre": "Cambio de titularidad"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 13,
+        "fields": {
+            "programas_llamados": 2,
+            "nombre": "Cambio de radicación"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 14,
+        "fields": {
+            "programas_llamados": 2,
+            "nombre": "Errores de exclusión"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 15,
+        "fields": {
+            "programas_llamados": 2,
+            "nombre": "Pedido de baja"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 16,
+        "fields": {
+            "programas_llamados": 2,
+            "nombre": "Compatibilidad con otros Programas o Políticas"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 17,
+        "fields": {
+            "programas_llamados": 2,
+            "nombre": "Cronograma de Pagos"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 18,
+        "fields": {
+            "programas_llamados": 2,
+            "nombre": "Información sobre monto de Tarjeta Alimentar"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 19,
+        "fields": {
+            "programas_llamados": 2,
+            "nombre": "Información sobre uso de Tarjeta Alimentar (destinos y lugares de compra)"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 20,
+        "fields": {
+            "programas_llamados": 2,
+            "nombre": "Información para retirar la Tarjeta Alimentar"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 21,
+        "fields": {
+            "programas_llamados": 2,
+            "nombre": "Denuncia por robo o extravío de tarjeta"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 22,
+        "fields": {
+            "programas_llamados": 2,
+            "nombre": "No entrega de tarjeta Reimpresión de tarjeta"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 23,
+        "fields": {
+            "programas_llamados": 2,
+            "nombre": "Saber si le corresponde"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 24,
+        "fields": {
+            "programas_llamados": 3,
+            "nombre": "Reempadronamiento"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 25,
+        "fields": {
+            "programas_llamados": 3,
+            "nombre": "Obra Social"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 26,
+        "fields": {
+            "programas_llamados": 3,
+            "nombre": "Inscripción a Monotributo Social"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 27,
+        "fields": {
+            "programas_llamados": 3,
+            "nombre": "Estado de trámite"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 28,
+        "fields": {
+            "programas_llamados": 3,
+            "nombre": "Inscripción a Monotributo Social"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 29,
+        "fields": {
+            "programas_llamados": 3,
+            "nombre": "Estado de trámite"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 30,
+        "fields": {
+            "programas_llamados": 3,
+            "nombre": "Modificación de Datos"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 31,
+        "fields": {
+            "programas_llamados": 3,
+            "nombre": "Modificación de Adherentes (MS)"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 32,
+        "fields": {
+            "programas_llamados": 3,
+            "nombre": "Unificación de CUIT (MS)"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 33,
+        "fields": {
+            "programas_llamados": 3,
+            "nombre": "Evaluación negativa - Incompatibilidad (MS)"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 34,
+        "fields": {
+            "programas_llamados": 3,
+            "nombre": "Baja"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 35,
+        "fields": {
+            "programas_llamados": 3,
+            "nombre": "Consulta por baja de oficio"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 36,
+        "fields": {
+            "programas_llamados": 3,
+            "nombre": "Facturación (MS)"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 37,
+        "fields": {
+            "programas_llamados": 3,
+            "nombre": "AFIP Sin Impuestos Activos (MS)"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 38,
+        "fields": {
+            "programas_llamados": 3,
+            "nombre": "AFIP Otros problemas (MS)"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 39,
+        "fields": {
+            "programas_llamados": 3,
+            "nombre": "Aportes Previsionales (MS)"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 40,
+        "fields": {
+            "programas_llamados": 3,
+            "nombre": "Pagos de Subsidio (MS)"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 41,
+        "fields": {
+            "programas_llamados": 3,
+            "nombre": "Consulta General"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 42,
+        "fields": {
+            "programas_llamados": 3,
+            "nombre": "Irregularidad"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 43,
+        "fields": {
+            "programas_llamados": 4,
+            "nombre": "Pensiones"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 44,
+        "fields": {
+            "programas_llamados": 4,
+            "nombre": "Otros trámites"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 45,
+        "fields": {
+            "programas_llamados": 5,
+            "nombre": "Adultos Mayores"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 46,
+        "fields": {
+            "programas_llamados": 5,
+            "nombre": "Microcréditos"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 47,
+        "fields": {
+            "programas_llamados": 5,
+            "nombre": "Asistencia Social"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 48,
+        "fields": {
+            "programas_llamados": 5,
+            "nombre": "Proyectos Manos a la Obra"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 49,
+        "fields": {
+            "programas_llamados": 5,
+            "nombre": "Primera Infancia"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 50,
+        "fields": {
+            "programas_llamados": 5,
+            "nombre": "Editora Braille"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 51,
+        "fields": {
+            "programas_llamados": 5,
+            "nombre": "100% Nuestro"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 52,
+        "fields": {
+            "programas_llamados": 5,
+            "nombre": "Línea 102"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 53,
+        "fields": {
+            "programas_llamados": 5,
+            "nombre": "Comedores y merenderos"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 54,
+        "fields": {
+            "programas_llamados": 5,
+            "nombre": "Banco de herramientas"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 55,
+        "fields": {
+            "programas_llamados": 5,
+            "nombre": "Ver para ser libres"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 56,
+        "fields": {
+            "programas_llamados": 5,
+            "nombre": "Irregularidad"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 57,
+        "fields": {
+            "programas_llamados": 6,
+            "nombre": "DADSE"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 58,
+        "fields": {
+            "programas_llamados": 6,
+            "nombre": "ANSES"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 59,
+        "fields": {
+            "programas_llamados": 6,
+            "nombre": "Tarjetas alimentarias"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 60,
+        "fields": {
+            "programas_llamados": 6,
+            "nombre": "Tarjetas de bancos"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 61,
+        "fields": {
+            "programas_llamados": 6,
+            "nombre": "Ministerios"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 62,
+        "fields": {
+            "programas_llamados": 6,
+            "nombre": "Secretarías"
+        }
+    },
+    {
+        "model": "ciudadanos.TipoLlamado",
+        "pk": 63,
+        "fields": {
+            "programas_llamados": 6,
+            "nombre": "Subsecretarías"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 1,
+        "fields": {
+            "tipo_llamado": 5,
+            "nombre": "Inicio de trámite Requisitos"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 2,
+        "fields": {
+            "tipo_llamado": 24,
+            "nombre": "Consulta"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 3,
+        "fields": {
+            "tipo_llamado": 24,
+            "nombre": "Reclamo"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 4,
+        "fields": {
+            "tipo_llamado": 25,
+            "nombre": "Denegatoria de Prestación OS (MS)"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 5,
+        "fields": {
+            "tipo_llamado": 25,
+            "nombre": "Denegatoria de Afiliación OS (MS)"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 6,
+        "fields": {
+            "tipo_llamado": 25,
+            "nombre": "Opción de Cambio OS sin Consentimiento (MS)"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 7,
+        "fields": {
+            "tipo_llamado": 25,
+            "nombre": "Obra Social (MS)"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 8,
+        "fields": {
+            "tipo_llamado": 43,
+            "nombre": "Contactar cuidador domiciliario"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 9,
+        "fields": {
+            "tipo_llamado": 59,
+            "nombre": "Vida digna (Córdoba)"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 10,
+        "fields": {
+            "tipo_llamado": 60,
+            "nombre": "Mbareté (Corrientes)"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 11,
+        "fields": {
+            "tipo_llamado": 61,
+            "nombre": "Capital Humano"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 12,
+        "fields": {
+            "tipo_llamado": 61,
+            "nombre": "Defensa"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 13,
+        "fields": {
+            "tipo_llamado": 61,
+            "nombre": "Economía"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 14,
+        "fields": {
+            "tipo_llamado": 61,
+            "nombre": "Justicia"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 15,
+        "fields": {
+            "tipo_llamado": 61,
+            "nombre": "Relaciones Exteriores"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 16,
+        "fields": {
+            "tipo_llamado": 61,
+            "nombre": "Comercio Internacional"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 17,
+        "fields": {
+            "tipo_llamado": 61,
+            "nombre": "Culto Salud Seguridad"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 18,
+        "fields": {
+            "tipo_llamado": 62,
+            "nombre": "Educación"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 19,
+        "fields": {
+            "tipo_llamado": 62,
+            "nombre": "Trabajo Empleo y Seguridad Social"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 20,
+        "fields": {
+            "tipo_llamado": 62,
+            "nombre": "Cultura"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 21,
+        "fields": {
+            "tipo_llamado": 62,
+            "nombre": "Hacienda"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 22,
+        "fields": {
+            "tipo_llamado": 62,
+            "nombre": "Política Económica"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 23,
+        "fields": {
+            "tipo_llamado": 62,
+            "nombre": "Legal y Administrativa"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 24,
+        "fields": {
+            "tipo_llamado": 62,
+            "nombre": "Finanzas"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 25,
+        "fields": {
+            "tipo_llamado": 62,
+            "nombre": "Energía"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 26,
+        "fields": {
+            "tipo_llamado": 62,
+            "nombre": "Unidad Gabinete de Asesores"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 27,
+        "fields": {
+            "tipo_llamado": 62,
+            "nombre": "Agricultura ganadería y pesca"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 28,
+        "fields": {
+            "tipo_llamado": 62,
+            "nombre": "Coordinación de la producción"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 29,
+        "fields": {
+            "tipo_llamado": 62,
+            "nombre": "Industria y comercio"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 30,
+        "fields": {
+            "tipo_llamado": 62,
+            "nombre": "Minería"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 31,
+        "fields": {
+            "tipo_llamado": 62,
+            "nombre": "Obras Públicas"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 32,
+        "fields": {
+            "tipo_llamado": 62,
+            "nombre": "Desarrollo Territorial Hábitat y Vivienda"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 33,
+        "fields": {
+            "tipo_llamado": 62,
+            "nombre": "Transporte"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 34,
+        "fields": {
+            "tipo_llamado": 62,
+            "nombre": "Pequeña y Mediana Empresa Emprendedores y Economía del conocimiento"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 35,
+        "fields": {
+            "tipo_llamado": 62,
+            "nombre": "Coordinación y Energía Minera"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 36,
+        "fields": {
+            "tipo_llamado": 62,
+            "nombre": "Justicia"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 37,
+        "fields": {
+            "tipo_llamado": 62,
+            "nombre": "Derechos Humanos"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 38,
+        "fields": {
+            "tipo_llamado": 62,
+            "nombre": "Relaciones Exteriores"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 39,
+        "fields": {
+            "tipo_llamado": 62,
+            "nombre": "Relaciones Económicas internacionales"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 40,
+        "fields": {
+            "tipo_llamado": 62,
+            "nombre": "Coordinación y Planificación Exterior"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 41,
+        "fields": {
+            "tipo_llamado": 62,
+            "nombre": "Culto"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 42,
+        "fields": {
+            "tipo_llamado": 63,
+            "nombre": "Protección de Violencia contra las Mujeres"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 43,
+        "fields": {
+            "tipo_llamado": 63,
+            "nombre": "Energía eléctrica"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 44,
+        "fields": {
+            "tipo_llamado": 63,
+            "nombre": "Desarrollo Territorial"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 45,
+        "fields": {
+            "tipo_llamado": 63,
+            "nombre": "Hábitat y Vivienda"
+        }
+    },
+    {
+        "model": "ciudadanos.SubTipoLlamado",
+        "pk": 46,
+        "fields": {
+            "tipo_llamado": 63,
+            "nombre": "Integración Socio Urbana"
+        }
+    }
+]

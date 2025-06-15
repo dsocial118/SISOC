@@ -1,0 +1,23 @@
+[
+        {
+                "model": "ciudadanos.estadoIntervencion",
+                "pk": 1,
+                "fields": {
+                        "nombre": "En espera"
+                }
+        },
+        {
+                "model": "ciudadanos.estadoIntervencion",
+                "pk": 2,
+                "fields": {
+                        "nombre": "En curso"
+                }
+        },
+        {
+                "model": "ciudadanos.estadoIntervencion",
+                "pk": 3,
+                "fields": {
+                        "nombre": "Finalizada"
+                }
+        }
+]

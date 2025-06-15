@@ -1,0 +1,266 @@
+{% extends "includes/main.html" %};
+{% load static %}
+;
+{% block title %}Intervenciones de salud{% endblock %}
+;
+{% block titulo-pagina %}Intervenciones de salud{% endblock %}
+;
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="">Ciudadano</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanos_ver' ciudadano.id %}">{{ ciudadano.apellido }}, {{ ciudadano.nombre }}</a>
+        </li>
+        <li class="breadcrumb-item active">Intervenciones de salud</li>
+    </ol>
+{% endblock %}
+;
+{% block menu-adicional %}{% endblock %}
+;
+{% block content %}
+    <!-- Datos de ciudadano -->
+    <div class="row">
+        <div class="col-sm-6 pb-3">
+            <div class="card card-outline card-primary h-100 mb-0">
+                <div class="card-header">
+                    <h3 class="card-title">Datos personales</h3>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dd class="col-sm-2 mb-2">
+                            Nombre
+                        </dd>
+                        <dt class="col-sm-10 mb-2">
+                            <a href="{% url 'ciudadanos_ver' ciudadano.id %}" title="Ver ciudadano">{{ ciudadano }}</a>
+                        </dt>
+                        <dd class="col-sm-2 mb-2">
+                            DNI
+                        </dd>
+                        <dt class="col-sm-10 mb-2">{{ ciudadano.documento }}</dt>
+                        <dd class="col-sm-2 mb-2">
+                            Fecha de nacimiento
+                        </dd>
+                        <dt class="col-sm-10 mb-2">{{ ciudadano.fecha_nacimiento|date:'d/m/Y' }}</dt>
+                        <dd class="col-sm-2 mb-2">
+                            Sexo
+                        </dd>
+                        <dt class="col-sm-10">{{ ciudadano.sexo }}</dt>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6">
+            <div class="row h-100">
+                <div class="col-sm-6">
+                    <div class="info-box mb-2 py-3">
+                        <span class="info-box-icon bg-success"><i class="far fa-thumbs-up"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Finalizadas</span>
+                            <span class="info-box-number h5">3</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="info-box mb-2 py-3">
+                        <span class="info-box-icon bg-danger"><i class="far fa-thumbs-down"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Ausentes</span>
+                            <span class="info-box-number h5">2</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="info-box mb-2 py-3">
+                        <span class="info-box-icon bg-primary"><i class="far fa-thumbs-down"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Pendientes</span>
+                            <span class="info-box-number h5">1</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="info-box mb-2 py-3">
+                        <span class="info-box-icon bg-warning"><i class="far fa-thumbs-down"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Reprogramado</span>
+                            <span class="info-box-number h5">1</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="info-box mb-2 py-3">
+                        <span class="info-box-icon bg-purple"><i class="fas fa-briefcase-medical"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Controles medicos</span>
+                            <span class="info-box-number h5">53</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="info-box mb-2 py-3">
+                        <span class="info-box-icon bg-purple"><i class="fas fa-calendar-alt"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Ultimo control médico</span>
+                            <span class="info-box-number h5">1</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title font-weight-bold mr-3 pt-1">Alarmas de salud</h3>
+                    <span title="4 alertas" class="badge badge-alertas p-2">1</span>
+                    <div class="card-tools">
+                        <!--<a href="/ciudadanos/alertas/listar/69" class="ml-3 mr-2">Ver detalles </a>-->
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 col-sm-6 col-12">
+                            <div class="callout callout-danger h-100 pb-0">
+                                <h6 class="font-weight-bold">
+                                    <i class="fas fa-exclamation-triangle px-1"></i> Sin controles clínicos
+                                </h6>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title font-weight-bold mr-3 pt-1">Indicadores de riesgo de salud</h3>
+                    <span title="2 alertas" class="badge badge-Importante p-2">0</span>
+                    <span title="3 alertas" class="badge badge-Precaución p-2">0</span>
+                    <div class="card-tools">
+                        <!--<a href="/ciudadanos/alertas/listar/69" class="ml-3 mr-2">Ver detalles </a>-->
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-12 text-center">
+                            <h6 class="text-center text-muted py-3">Sin indicadores de riesgo.</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- tabla derivaciones -->
+    <div class="row ">
+        <div class="col-12">
+            <div class="card">
+                <!-- /.card-header -->
+                <div class="card-body">
+                    <table class="table table-bordered table-striped projects tabladt">
+                        <thead>
+                            <tr>
+                                <th>Organismo</th>
+                                <th>Especialidad</th>
+                                <th>Fecha turno</th>
+                                <th>Hora</th>
+                                <th>Estado</th>
+                                <th width="5%" class="notexport">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Hospital Lacarde</td>
+                                <td>Medicina Clinica</td>
+                                <td>20/08/2020</td>
+                                <td>15:00</td>
+                                <td>
+                                    <span class="text-success font-weight-bold">Finalizado</span>
+                                </td>
+                                <td class="text-right">
+                                    <a href="" class="btn btn-secondary btn-sm ver" title="Ver admisión">Ver</a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Hospital Posadas</td>
+                                <td>Traumatología</td>
+                                <td>20/09/2020</td>
+                                <td>17:00</td>
+                                <td>
+                                    <span class="text-danger font-weight-bold">Ausente</span>
+                                </td>
+                                <td class="text-right">
+                                    <a href="" class="btn btn-secondary btn-sm ver" title="Ver admisión">Ver</a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Hospital Santa María</td>
+                                <td>Ginecología</td>
+                                <td>05/01/2021</td>
+                                <td>9:00</td>
+                                <td>
+                                    <span class="text-success font-weight-bold">Finalizado</span>
+                                </td>
+                                <td class="text-right">
+                                    <a href="" class="btn btn-secondary btn-sm ver" title="Ver admisión">Ver</a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Hospital Lacarde</td>
+                                <td>Medicina Clínica</td>
+                                <td>02/01/2022</td>
+                                <td>16:00</td>
+                                <td>
+                                    <span class="text-danger font-weight-bold">Ausente</span>
+                                </td>
+                                <td class="text-right">
+                                    <a href="" class="btn btn-secondary btn-sm ver" title="Ver admisión">Ver</a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Hospital Santa María</td>
+                                <td>Ginecología</td>
+                                <td>15/10/2022</td>
+                                <td>9:00</td>
+                                <td>
+                                    <span class="text-success font-weight-bold">Finalizado</span>
+                                </td>
+                                <td class="text-right">
+                                    <a href="" class="btn btn-secondary btn-sm ver" title="Ver admisión">Ver</a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Hospital Lacarde</td>
+                                <td>Medicina Clínica</td>
+                                <td>30/10/2023</td>
+                                <td>7:00</td>
+                                <td>
+                                    <span class="text-primary font-weight-bold">Pendiente</span>
+                                </td>
+                                <td class="text-right">
+                                    <a href="" class="btn btn-secondary btn-sm ver" title="Ver admisión">Ver</a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- /.card-body -->
+            </div>
+            <!-- /.card -->
+        </div>
+        <!-- /.col -->
+    </div>
+    <!-- /.row -->
+{% endblock %}
+;
+{% block customJS %}{% endblock %}

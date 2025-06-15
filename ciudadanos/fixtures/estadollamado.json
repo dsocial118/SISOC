@@ -1,0 +1,23 @@
+[
+    {
+        "model": "ciudadanos.estadollamado",
+        "pk": 1,
+        "fields": {
+            "nombre": "Pendiente"
+        }
+    },
+    {
+        "model": "ciudadanos.estadollamado",
+        "pk": 2,
+        "fields": {
+            "nombre": "Realizado"
+        }
+    },
+    {
+        "model": "ciudadanos.estadollamado",
+        "pk": 3,
+        "fields": {
+            "nombre": "No Realizado"
+        }
+    }
+]

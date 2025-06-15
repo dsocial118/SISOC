@@ -1,0 +1,63 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Listado de duplas{% endblock %}
+{% block titulo-pagina %}Duplas{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="" title="Ver listado de duplas">Duplas</a>
+        </li>
+        <li class="breadcrumb-item active">Listado</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <div class="container mt-4">
+        <h2>Listado de Duplas</h2>
+        <a href="{% url 'dupla_crear' %}" class="btn btn-primary mb-3">Crear Nueva Dupla</a>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for dupla in duplas %}
+                    <tr>
+                        <td>{{ dupla.nombre }}</td>
+                        <td>
+                            <a href="{% url 'dupla_editar' dupla.id %}"
+                               class="btn btn-warning btn-sm">Editar</a>
+                            <a href="{% url 'dupla_eliminar' dupla.id %}"
+                               class="btn btn-danger btn-sm">Eliminar</a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4">No hay duplas disponibles.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <!-- Paginación -->
+        <nav>
+            <ul class="pagination">
+                {% if duplas.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ duplas.previous_page_number }}">Anterior</a>
+                    </li>
+                {% endif %}
+                {% for num in duplas.paginator.page_range %}
+                    <li class="page-item {% if duplas.number == num %}active{% endif %}">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                {% endfor %}
+                {% if duplas.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ duplas.next_page_number }}">Siguiente</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+{% endblock %}

@@ -1,0 +1,99 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Llamados formulario{% endblock %}
+{% block titulo-pagina %}Llamados{% endblock %}
+;
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right ">
+        <li class="breadcrumb-item">Llamados</li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanos_ver' object.id %}" title="Ver ciudadano">{{ object.nombre }} {{ object.apellido }}</a>
+        </li>
+        <li class="breadcrumb-item active">Agregar</li>
+    </ol>
+{% endblock %}
+;
+{% load crispy_forms_tags %}
+{% block content %}
+    <!-- Datos de ciudadano -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card card-outline card-primary ">
+                <div class="card-header">
+                    <h3 class="card-title">Detalle Ciudadano</h3>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dd class="col-sm-2 mb-2">
+                            Nombre
+                        </dd>
+                        <dt class="col-sm-10 mb-2">
+                            <a href="{% url 'ciudadanos_ver' object.id %}" title="Ver ciudadano">{{ object.nombre }} {{ object.apellido }}</a>
+                        </dt>
+                        <dd class="col-sm-2 mb-2">
+                            DNI
+                        </dd>
+                        <dt class="col-sm-10 mb-2">{{ object.documento }}</dt>
+                        <dd class="col-sm-2 mb-2">
+                            Fecha de nacimiento
+                        </dd>
+                        <dt class="col-sm-10 mb-2">{{ object.fecha_nacimiento|date:'d/m/Y' }}</dt>
+                        <dd class="col-sm-2 mb-2">
+                            Sexo
+                        </dd>
+                        <dt class="col-sm-10 mb-2">{{ object.sexo }}</dt>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /  -->
+    <div class="row">
+        <div class="col">
+            <form class="needs-validation"
+                  novalidate
+                  method="POST"
+                  enctype="multipart/form-data">
+                <!-- Security token -->
+                {% csrf_token %}
+                <div class="card card-primary card-outline">
+                    <div class="card-header">
+                        <h3 class="card-title">Agregar Llamado</h3>
+                    </div>
+                    <div class="card-body ">
+                        <div class="row m-0 p-0">
+                            <input type="hidden" name="ciudadano" value="{{ object.id }}" />
+                            <input type="hidden" name="usuario" value="{{ request.user.id }}" />
+                            <div class="col-sm-6">
+                                <div class="form-group">{{ form.programas_llamados| as_crispy_field }}</div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="form-group">{{ form.tipo_llamado| as_crispy_field }}</div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="form-group">{{ form.subtipo_llamado| as_crispy_field }}</div>
+                            </div>
+                            <div class="col-sm-3">
+                                <div class="form-group">{{ form.estado| as_crispy_field }}</div>
+                            </div>
+                            <div class="col-sm-12">
+                                <div class="form-group">{{ form.observaciones| as_crispy_field }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 mx-2">
+                    <button class="btn btn-primary mr-1">Confirmar</button>
+                    <a href="{% url 'ciudadanos_ver' object.id %}" class="btn btn-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+{% block customJS %}
+    <script>
+        var ajaxLoadSubLlamados = "{% url 'ajax_load_subestadosllamados' %}";
+        var ajaxLoadLlamadosTipos = "{% url 'ajax_load_tiposllamados' %}";
+    </script>
+{% endblock %}
+;

@@ -1,0 +1,30 @@
+[
+    {
+        "model": "rendicioncuentasfinal.EstadoDocumentoRendicionFinal",
+        "pk": 1,
+        "fields": {
+            "nombre": "No presentado"
+        }
+    },
+    {
+        "model": "rendicioncuentasfinal.EstadoDocumentoRendicionFinal",
+        "pk": 2,
+        "fields": {
+            "nombre": "En análisis"
+        }
+    },
+    {
+        "model": "rendicioncuentasfinal.EstadoDocumentoRendicionFinal",
+        "pk": 3,
+        "fields": {
+            "nombre": "Validado"
+        }
+    },
+    {
+        "model": "rendicioncuentasfinal.EstadoDocumentoRendicionFinal",
+        "pk": 4,
+        "fields": {
+            "nombre": "Subsanar"
+        }
+    }
+]
