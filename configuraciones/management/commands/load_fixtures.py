@@ -66,12 +66,7 @@ class Command(BaseCommand):
         Carga un fixture si corresponde según el estado de la base o la opción --force.
         """
         if self.should_load_fixture(file):
-            self.stdout.write(f"📥 Cargando fixture: {file}")
             subprocess.run(["python", "manage.py", "loaddata", file])
-        else:
-            self.stdout.write(
-                f"⏩ Omitiendo fixture: {file} (los modelos ya tienen datos)"
-            )
 
     def load_fixtures(self):
         """
@@ -91,4 +86,5 @@ class Command(BaseCommand):
                 )
 
         with ThreadPoolExecutor() as executor:
+            self.stdout.write(f"📥 Cargando fixtures...")
             executor.map(self.load_fixture, fixtures)
