@@ -1,24 +1,32 @@
-$(document).ready(function () {
+document.addEventListener("DOMContentLoaded", function () {
     const addFirmanteButton = document.getElementById("add-firmante");
     const firmantesContainer = document.getElementById("firmantes-container");
     const totalForms = document.querySelector("#id_firmantes-TOTAL_FORMS");
-    const tipoOrgSelect = document.getElementById("id_tipo_organizacion");
+    const tipoEntidadSelect = document.getElementById("id_tipo_entidad");
 
-    const rolesPorTipoOrg = {
+    if (!addFirmanteButton || !firmantesContainer || !totalForms) {
+        console.warn("No se encontraron los elementos necesarios para el manejo de firmantes.");
+        return;
+    }
+
+    // FIXME: Eliminar comentarios de GPT
+    // Ajusta los roles según tu lógica de negocio
+    const rolesPorTipoEntidad = {
         "Personería jurídica": ["Presidente", "Tesorero", "Secretario"],
         "Personería jurídica eclesiástica": ["Obispo", "Apoderado 1", "Apoderado 2"],
         "Asociación de hecho": ["Firmante 1", "Firmante 2"]
     };
 
     function actualizarRoles() {
-        const tipoOrgTexto = tipoOrgSelect.options[tipoOrgSelect.selectedIndex]?.text;
-        const rolesValidos = rolesPorTipoOrg[tipoOrgTexto];
+        if (!tipoEntidadSelect || !firmantesContainer) return;
+        const tipoEntidadTexto = tipoEntidadSelect.options[tipoEntidadSelect.selectedIndex]?.text;
+        const rolesValidos = rolesPorTipoEntidad[tipoEntidadTexto];
 
         const selectsRol = firmantesContainer.querySelectorAll("select[name$='-rol']");
         selectsRol.forEach(function (select) {
+            if (!select) return;
             const opciones = Array.from(select.options);
 
-            // Mostrar solo las opciones válidas, ocultar el resto
             opciones.forEach(function (opcion) {
                 if (opcion.value === "") {
                     opcion.hidden = false;
@@ -27,7 +35,6 @@ $(document).ready(function () {
                 if (!rolesValidos) {
                     opcion.hidden = true;
                 } else {
-                    // Agregar leyenda "Titular de la tarjeta" a "Firmante 1"
                     if (opcion.text === "Firmante 1" || opcion.text === "Firmante 1 (Titular de la tarjeta)") {
                         opcion.text = "Firmante 1 (Titular de la tarjeta)";
                     }
@@ -35,47 +42,90 @@ $(document).ready(function () {
                 }
             });
 
-            // Resetear si la opción no es válida
             if (!rolesValidos || !rolesValidos.includes(select.options[select.selectedIndex]?.text.replace(" (Titular de la tarjeta)", ""))) {
                 select.selectedIndex = 0;
             }
 
-            // Deshabilitar el select si no hay tipo de organización
             select.disabled = !rolesValidos;
         });
     }
 
-    // Clonado del formulario de firmante
+    // FIXME: Utilizar otro nombre para la variable el q no se entiende
+    function reindexFirmantes() {
+        if (!firmantesContainer || !totalForms) return;
+        const forms = firmantesContainer.querySelectorAll('.form-row');
+        forms.forEach((form, idx) => {
+            form.querySelectorAll('input, select, textarea, label').forEach(el => {
+                if (el.name) {
+                    el.name = el.name.replace(/firmantes-\d+-/, `firmantes-${idx}-`);
+                }
+                if (el.id) {
+                    el.id = el.id.replace(/firmantes-\d+-/, `firmantes-${idx}-`);
+                }
+                if (el.htmlFor) {
+                    el.htmlFor = el.htmlFor.replace(/firmantes-\d+-/, `firmantes-${idx}-`);
+                }
+            });
+        });
+        totalForms.value = forms.length;
+    }
+
     addFirmanteButton.addEventListener("click", function () {
-        const emptyFormTemplate = document.getElementById("empty-form").innerHTML;
+        const emptyFormDiv = document.getElementById("empty-form");
+        if (!emptyFormDiv) return;
+        const emptyFormTemplate = emptyFormDiv.innerHTML;
         const formHtml = emptyFormTemplate.replace(/__prefix__/g, totalForms.value);
 
         const tempDiv = document.createElement("div");
         tempDiv.innerHTML = formHtml;
 
         const newForm = tempDiv.firstElementChild;
+        if (!newForm) return;
+
+        const deleteInput = newForm.querySelector("input[type='checkbox'][name$='-DELETE']");
+        if (deleteInput) {
+            deleteInput.checked = false;
+        }
+
         firmantesContainer.appendChild(newForm);
 
-        totalForms.value = parseInt(totalForms.value) + 1;
-
-        actualizarRoles(); // Para actualizar roles según tipo de organización
+        reindexFirmantes();
+        actualizarRoles();
     });
 
-    // Eliminación de firmante
     firmantesContainer.addEventListener("click", function (e) {
         if (e.target.classList.contains("remove-firmante")) {
-            if (firmantesContainer.children.length > 1) {
+            if (firmantesContainer.querySelectorAll('.form-row').length > 1) {
                 e.target.closest(".form-row").remove();
-                totalForms.value = parseInt(totalForms.value) - 1;
+                reindexFirmantes();
+                actualizarRoles();
             } else {
                 alert("Debe haber al menos un firmante.");
             }
         }
     });
 
-    // Evento de cambio del tipo de organización
-    tipoOrgSelect.addEventListener("change", actualizarRoles);
+    if (tipoEntidadSelect) {
+        tipoEntidadSelect.addEventListener("change", actualizarRoles);
+    }
 
-    // Ejecutar al cargar para editar
     actualizarRoles();
+});
+
+document.querySelector("form").addEventListener("submit", function (e) {
+    // Elimina el empty-form si está dentro del form
+    const emptyFormDiv = document.getElementById("empty-form");
+    if (emptyFormDiv && emptyFormDiv.parentNode) {
+        emptyFormDiv.parentNode.removeChild(emptyFormDiv);
+    }
+
+    // Limpia firmantes vacíos
+    const forms = firmantesContainer.querySelectorAll('.form-row');
+    forms.forEach(form => {
+        const nombreInput = form.querySelector("input[name$='-nombre']");
+        if (nombreInput && !nombreInput.value.trim()) {
+            form.remove();
+        }
+    });
+    reindexFirmantes();
 });
