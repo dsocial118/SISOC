@@ -44,7 +44,8 @@ from relevamientos.tasks import AsyncSendRelevamientoToGestionar
 from config.utils import convert_string_to_int
 
 
-class RelevamientoService:
+# TODO: Refactorizar todo esto, pylint esta muriendo aca
+class RelevamientoService:  # pylint: disable=too-many-public-methods
 
     # TODO: Mover metodos no genericos al utils.py
 
@@ -368,7 +369,9 @@ class RelevamientoService:
         return espacio_prestacion_instance
 
     @staticmethod
-    def populate_espacio_prestacion_data(prestacion_data):
+    def populate_espacio_prestacion_data(
+        prestacion_data,
+    ):  # pylint: disable=too-many-statements,too-many-branches
         if "espacio_equipado" in prestacion_data:
             prestacion_data["espacio_equipado"] = (
                 prestacion_data["espacio_equipado"] == "Y"
@@ -631,7 +634,9 @@ class RelevamientoService:
         return recursos_instance
 
     @staticmethod
-    def populate_recursos_data(recursos_data):
+    def populate_recursos_data(
+        recursos_data,
+    ):  # pylint: disable=too-many-statements,too-many-branches
         def get_frecuencia_recepcion(nombre):
             return (
                 FrecuenciaRecepcionRecursos.objects.get(
@@ -748,7 +753,9 @@ class RelevamientoService:
         return anexo_instance
 
     @staticmethod
-    def populate_anexo_data(anexo_data):
+    def populate_anexo_data(  # pylint: disable=too-many-statements,too-many-branches
+        anexo_data,
+    ):
         if "tipo_insumo" in anexo_data and anexo_data["tipo_insumo"]:
             try:
                 anexo_data["tipo_insumo"] = TipoInsumos.objects.get(
@@ -1048,7 +1055,9 @@ class RelevamientoService:
         return prestacion_instance
 
     @staticmethod
-    def populate_prestacion_data(prestacion_data):
+    def populate_prestacion_data(
+        prestacion_data,
+    ):  # pylint: disable=too-many-statements,too-many-branches
 
         if "lunes_desayuno_actual" in prestacion_data:
             prestacion_data["lunes_desayuno_actual"] = convert_string_to_int(
