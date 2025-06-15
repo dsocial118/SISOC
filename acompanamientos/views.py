@@ -10,7 +10,7 @@ from admisiones.models.admisiones import (
 )
 from acompanamientos.acompanamiento_service import AcompanamientoService
 from acompanamientos.models.hitos import Hitos
-from comedores.models.comedor import Comedor
+from comedores.models import Comedor
 
 
 @require_POST

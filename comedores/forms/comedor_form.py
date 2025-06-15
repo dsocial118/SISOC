@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 import re
 
 
-from comedores.models.comedor import (
+from comedores.models import (
     Comedor,
     Referente,
     ImagenComedor,

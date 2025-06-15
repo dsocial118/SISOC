@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ("comedores", "0029_remove_intervencion_comedor_and_more"),
+        ("comedores", "0023_comedor_codigo_de_proyecto"),
     ]
 
     operations = [

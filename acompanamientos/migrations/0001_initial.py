@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ("comedores", "0031_alter_nomina_estado"),
+        ("comedores", "0023_comedor_codigo_de_proyecto"),
     ]
 
     operations = [

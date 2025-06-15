@@ -8,7 +8,7 @@ import django.utils.timezone
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("comedores", "0031_alter_nomina_estado"),
+        ("comedores", "0023_comedor_codigo_de_proyecto"),
         ("acompanamientos", "0001_initial"),
     ]
 

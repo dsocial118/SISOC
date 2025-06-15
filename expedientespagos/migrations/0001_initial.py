@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("acompanamientos", "0003_alter_hitos_alta_usuario_plataforma_and_more"),
-        ("comedores", "0034_merge_20250521_2106"),
+        ("comedores", "0023_comedor_codigo_de_proyecto"),
     ]
 
     operations = [

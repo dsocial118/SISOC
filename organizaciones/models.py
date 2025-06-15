@@ -141,19 +141,6 @@ class Organizacion(models.Model):
         null=True,
     )
 
-    def delete(self, *args, **kwargs):
-        from comedores.models.comedor import (  # pylint: disable=import-outside-toplevel
-            Comedor,
-        )
-
-        comedor_relacionado = Comedor.objects.filter(organizacion=self).first()
-
-        if comedor_relacionado:
-            raise ValidationError(
-                f"No puedes eliminar {self.nombre} porque está relacionado con el comedor: {comedor_relacionado.nombre}."
-            )
-        super().delete(*args, **kwargs)
-
     def __str__(self):
         return str(self.nombre)
 

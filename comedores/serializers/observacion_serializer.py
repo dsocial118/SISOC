@@ -3,7 +3,7 @@ import datetime
 from rest_framework import serializers
 from django.utils import timezone
 
-from comedores.models.comedor import Observacion
+from comedores.models import Observacion
 
 
 class ObservacionSerializer(serializers.ModelSerializer):

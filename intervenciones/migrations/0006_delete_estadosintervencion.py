@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("comedores", "0031_alter_nomina_estado"),
+        ("comedores", "0023_comedor_codigo_de_proyecto"),
         (
             "intervenciones",
             "0004_tipocontacto_intervencion_documentacion_and_more_squashed_0005_alter_intervencion_subintervencion_and_more",

@@ -1,5 +1,5 @@
 from django.db import models
-from comedores.models.comedor import Comedor
+from comedores.models import Comedor
 from django.utils import timezone
 
 
