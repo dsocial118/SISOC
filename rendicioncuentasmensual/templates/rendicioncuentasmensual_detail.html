@@ -1,0 +1,74 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% block title %}Detalle de Rendición de Cuenta{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'rendicioncuentasmensual_list' rendicion.comedor.id %}"
+               title="Ver listado de rendiciones">Rendiciones de Cuenta</a>
+        </li>
+        <li class="breadcrumb-item active">Detalle</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <div class="container mt-4">
+        <div class="row">
+            <!-- Card para mostrar los datos de la rendición de cuenta -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5>Datos de la Rendición</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>
+                            <strong>Mes:</strong> {{ rendicion.mes }}
+                        </p>
+                        <p>
+                            <strong>Año:</strong> {{ rendicion.anio }}
+                        </p>
+                        <p>
+                            <strong>Observaciones:</strong> {{ rendicion.observaciones|default:"Sin observaciones" }}
+                        </p>
+                        <p>
+                            <strong>Fecha de Creación:</strong> {{ rendicion.fecha_creacion|date:"d/m/Y" }}
+                        </p>
+                        <p>
+                            <strong>Última Modificación:</strong> {{ rendicion.ultima_modificacion|date:"d/m/Y H:i" }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <!-- Tabla para mostrar los archivos asociados -->
+            <div class="col-md-8">
+                <h5 class="mb-3">Archivos Asociados</h5>
+                <table class="table table-bordered table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>Nombre del Archivo</th>
+                            <th>Descargar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for archivo in rendicion.arvhios_adjuntos.all %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ archivo.nombre }}</td>
+                                <td>
+                                    <a href="{{ archivo.archivo.url }}"
+                                       class="btn btn-success btn-sm"
+                                       target="_blank">Descargar</a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center">No hay archivos asociados.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}
