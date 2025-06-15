@@ -1,27 +1,27 @@
 [
     {
-        "model": "comedores.tipofrecuenciabolsones",
+        "model": "relevamientos.tipofrecuenciabolsones",
         "pk": 1,
         "fields": {
             "nombre": "Semanal"
         }
     },
     {
-        "model": "comedores.tipofrecuenciabolsones",
+        "model": "relevamientos.tipofrecuenciabolsones",
         "pk": 2,
         "fields": {
             "nombre": "Mensual"
         }
     },
     {
-        "model": "comedores.tipofrecuenciabolsones",
+        "model": "relevamientos.tipofrecuenciabolsones",
         "pk": 3,
         "fields": {
             "nombre": "Quincenal"
         }
     },
     {
-        "model": "comedores.tipofrecuenciabolsones",
+        "model": "relevamientos.tipofrecuenciabolsones",
         "pk": 4,
         "fields": {
             "nombre": "Otros"

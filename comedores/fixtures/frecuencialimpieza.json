@@ -1,20 +1,20 @@
 [
     {
-        "model": "comedores.frecuencialimpieza",
+        "model": "relevamientos.frecuencialimpieza",
         "pk": 1,
         "fields": {
             "nombre": "1 vez por día"
         }
     },
     {
-        "model": "comedores.frecuencialimpieza",
+        "model": "relevamientos.frecuencialimpieza",
         "pk": 2,
         "fields": {
             "nombre": "2 veces por día o más"
         }
     },
     {
-        "model": "comedores.frecuencialimpieza",
+        "model": "relevamientos.frecuencialimpieza",
         "pk": 3,
         "fields": {
             "nombre": "Otra frecuencia"
