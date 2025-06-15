@@ -1,0 +1,37 @@
+[
+    {
+        "model": "ciudadanos.estadoderivacion",
+        "pk": 1,
+        "fields": {
+            "estado": "Pendiente"
+        }
+    },
+    {
+        "model": "ciudadanos.estadoderivacion",
+        "pk": 2,
+        "fields": {
+            "estado": "En análisis"
+        }
+    },
+    {
+        "model": "ciudadanos.estadoderivacion",
+        "pk": 3,
+        "fields": {
+            "estado": "Aceptada"
+        }
+    },
+    {
+        "model": "ciudadanos.estadoderivacion",
+        "pk": 4,
+        "fields": {
+            "estado": "Asesoramiento"
+        }
+    },
+    {
+        "model": "ciudadanos.estadoderivacion",
+        "pk": 5,
+        "fields": {
+            "estado": "finalizada"
+        }
+    }
+]

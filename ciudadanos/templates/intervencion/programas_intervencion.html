@@ -1,0 +1,255 @@
+{% extends "includes/main.html" %};
+{% load static %}
+;
+{% block title %}Programas en intervención{% endblock %}
+;
+{% block titulo-pagina %}Programas en intervención{% endblock %}
+;
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="">Ciudadano</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanos_ver' ciudadano.id %}">{{ ciudadano.apellido }}, {{ ciudadano.nombre }}</a>
+        </li>
+        <li class="breadcrumb-item active">Programas en intervención</li>
+    </ol>
+{% endblock %}
+;
+{% block menu-adicional %}{% endblock %}
+;
+{% block content %}
+    <!-- Datos de ciudadano -->
+    <div class="row">
+        <div class="col-sm-10 pb-3">
+            <div class="card card-outline card-primary h-100 mb-0">
+                <div class="card-header">
+                    <h3 class="card-title">Datos personales</h3>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dd class="col-sm-2 mb-2">
+                            Nombre
+                        </dd>
+                        <dt class="col-sm-10 mb-2">
+                            <a href="{% url 'ciudadanos_ver' ciudadano.id %}" title="Ver ciudadano">{{ ciudadano }}</a>
+                        </dt>
+                        <dd class="col-sm-2 mb-2">
+                            DNI
+                        </dd>
+                        <dt class="col-sm-10 mb-2">{{ ciudadano.documento }}</dt>
+                        <dd class="col-sm-2 mb-2">
+                            Fecha de nacimiento
+                        </dd>
+                        <dt class="col-sm-10 mb-2">{{ ciudadano.fecha_nacimiento|date:'d/m/Y' }}</dt>
+                        <dd class="col-sm-2 mb-2">
+                            Sexo
+                        </dd>
+                        <dt class="col-sm-10">{{ ciudadano.sexo }}</dt>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-2">
+            <div class="row h-100">
+                <div class="col-12">
+                    <div class="info-box mb-2 py-3">
+                        <span class="info-box-icon bg-success"><i class="far fa-thumbs-up"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Activos</span>
+                            <span class="info-box-number h5">1</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="info-box mb-2 py-3">
+                        <span class="info-box-icon bg-danger"><i class="far fa-thumbs-down"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Inactivos</span>
+                            <span class="info-box-number h5">5</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Admisiones activas (estado "aceptada") -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title font-weight-bold mr-3 pt-1">DDA</h3>
+                    <span title="4 alertas" class="badge badge-success p-2">Activo</span>
+                </div>
+                <div class="card-body mt-2">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="text-muted text-sm font-weight-normal">Admitido desde 14/07/2019</div>
+                            <div class="font-weight-bold">
+                                Equipo interviniente
+                                <span class="badge badge-success mx-2 font-weight-normal"></span>
+                            </div>
+                            <div class="font-weight-bold">
+                                Persona responsable
+                                <span class="badge badge-info mx-2 font-weight-normal"></span>
+                            </div>
+                            <div class="font-weight-bold">
+                                Observaciones de admisión
+                                <div class="font-weight-normal"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title font-weight-bold mr-3 pt-1">Asistencia alimentaria</h3>
+                    <span title="4 alertas" class="badge badge-danger p-2">Inactivo</span>
+                </div>
+                <div class="card-body mt-2">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="text-muted text-sm font-weight-normal">Admitido desde 14/07/2020</div>
+                            <div class="font-weight-bold">
+                                Equipo interviniente
+                                <span class="badge badge-success mx-2 font-weight-normal"></span>
+                            </div>
+                            <div class="font-weight-bold">
+                                Persona responsable
+                                <span class="badge badge-info mx-2 font-weight-normal"></span>
+                            </div>
+                            <div class="font-weight-bold">
+                                Observaciones de admisión
+                                <div class="font-weight-normal"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title font-weight-bold mr-3 pt-1">Incendios</h3>
+                    <span title="4 alertas" class="badge badge-danger p-2">Inactivo</span>
+                </div>
+                <div class="card-body mt-2">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="text-muted text-sm font-weight-normal">Admitido desde 09/07/2019</div>
+                            <div class="font-weight-bold">
+                                Equipo interviniente
+                                <span class="badge badge-success mx-2 font-weight-normal"></span>
+                            </div>
+                            <div class="font-weight-bold">
+                                Persona responsable
+                                <span class="badge badge-info mx-2 font-weight-normal"></span>
+                            </div>
+                            <div class="font-weight-bold">
+                                Observaciones de admisión
+                                <div class="font-weight-normal"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title font-weight-bold mr-3 pt-1">Asistencia habitacional</h3>
+                    <span title="4 alertas" class="badge badge-danger p-2">Inactivo</span>
+                </div>
+                <div class="card-body mt-2">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="text-muted text-sm font-weight-normal">Admitido desde 09/07/2019</div>
+                            <div class="font-weight-bold">
+                                Equipo interviniente
+                                <span class="badge badge-success mx-2 font-weight-normal"></span>
+                            </div>
+                            <div class="font-weight-bold">
+                                Persona responsable
+                                <span class="badge badge-info mx-2 font-weight-normal"></span>
+                            </div>
+                            <div class="font-weight-bold">
+                                Observaciones de admisión
+                                <div class="font-weight-normal"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title font-weight-bold mr-3 pt-1">Camino de la embarazada</h3>
+                    <span title="4 alertas" class="badge badge-danger p-2">Inactivo</span>
+                </div>
+                <div class="card-body mt-2">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="text-muted text-sm font-weight-normal">Admitido desde 10/07/2021</div>
+                            <div class="font-weight-bold">
+                                Equipo interviniente
+                                <span class="badge badge-success mx-2 font-weight-normal"></span>
+                            </div>
+                            <div class="font-weight-bold">
+                                Persona responsable
+                                <span class="badge badge-info mx-2 font-weight-normal"></span>
+                            </div>
+                            <div class="font-weight-bold">
+                                Observaciones de admisión
+                                <div class="font-weight-normal"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title font-weight-bold mr-3 pt-1">Mil días</h3>
+                    <span title="4 alertas" class="badge badge-danger p-2">Inactivo</span>
+                </div>
+                <div class="card-body mt-2">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="text-muted text-sm font-weight-normal">Admitido desde 04/02/2021</div>
+                            <div class="font-weight-bold">
+                                Equipo interviniente
+                                <span class="badge badge-success mx-2 font-weight-normal"></span>
+                            </div>
+                            <div class="font-weight-bold">
+                                Persona responsable
+                                <span class="badge badge-info mx-2 font-weight-normal"></span>
+                            </div>
+                            <div class="font-weight-bold">
+                                Observaciones de admisión
+                                <div class="font-weight-normal"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /.row -->
+{% endblock %}
+;
+{% block customJS %}{% endblock %}

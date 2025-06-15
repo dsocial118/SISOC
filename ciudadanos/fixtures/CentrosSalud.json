@@ -1,0 +1,156 @@
+[
+    {
+        "model": "ciudadanos.centrossalud",
+        "pk": 1,
+        "fields": {
+            "centro": "20 de Julio"
+        }
+    },
+    {
+        "model": "ciudadanos.centrossalud",
+        "pk": 2,
+        "fields": {
+            "centro": "29 de Septiembre"
+        }
+    },
+    {
+        "model": "ciudadanos.centrossalud",
+        "pk": 3,
+        "fields": {
+            "centro": "Ana Teresa Barthalot"
+        }
+    },
+    {
+        "model": "ciudadanos.centrossalud",
+        "pk": 4,
+        "fields": {
+            "centro": "C.I.C Maria Lobato"
+        }
+    },
+    {
+        "model": "ciudadanos.centrossalud",
+        "pk": 5,
+        "fields": {
+            "centro": "Camila Rolón"
+        }
+    },
+    {
+        "model": "ciudadanos.centrossalud",
+        "pk": 6,
+        "fields": {
+            "centro": "Cándido Castello"
+        }
+    },
+    {
+        "model": "ciudadanos.centrossalud",
+        "pk": 7,
+        "fields": {
+            "centro": "Rodolfo Podestá"
+        }
+    },
+    {
+        "model": "ciudadanos.centrossalud",
+        "pk": 8,
+        "fields": {
+            "centro": "Cura Brochero"
+        }
+    },
+    {
+        "model": "ciudadanos.centrossalud",
+        "pk": 9,
+        "fields": {
+            "centro": "Alberto Sabin"
+        }
+    },
+    {
+        "model": "ciudadanos.centrossalud",
+        "pk": 10,
+        "fields": {
+            "centro": "Federico Leloir"
+        }
+    },
+    {
+        "model": "ciudadanos.centrossalud",
+        "pk": 11,
+        "fields": {
+            "centro": "Suárez París"
+        }
+    },
+    {
+        "model": "ciudadanos.centrossalud",
+        "pk": 12,
+        "fields": {
+            "centro": "Raúl Matera"
+        }
+    },
+    {
+        "model": "ciudadanos.centrossalud",
+        "pk": 13,
+        "fields": {
+            "centro": "René Favaloro"
+        }
+    },
+    {
+        "model": "ciudadanos.centrossalud",
+        "pk": 14,
+        "fields": {
+            "centro": "Marta Antoniazzi"
+        }
+    },
+    {
+        "model": "ciudadanos.centrossalud",
+        "pk": 15,
+        "fields": {
+            "centro": "Padre Mora"
+        }
+    },
+    {
+        "model": "ciudadanos.centrossalud",
+        "pk": 16,
+        "fields": {
+            "centro": "Pte. Perón"
+        }
+    },
+    {
+        "model": "ciudadanos.centrossalud",
+        "pk": 17,
+        "fields": {
+            "centro": "Ramón Castillo"
+        }
+    },
+    {
+        "model": "ciudadanos.centrossalud",
+        "pk": 18,
+        "fields": {
+            "centro": "San Miguel Oeste"
+        }
+    },
+    {
+        "model": "ciudadanos.centrossalud",
+        "pk": 19,
+        "fields": {
+            "centro": "U.F.O /Manuelita"
+        }
+    },
+    {
+        "model": "ciudadanos.centrossalud",
+        "pk": 20,
+        "fields": {
+            "centro": "Hospital Público"
+        }
+    },
+    {
+        "model": "ciudadanos.centrossalud",
+        "pk": 21,
+        "fields": {
+            "centro": "Clínica Privada o Sanatorio"
+        }
+    },
+    {
+        "model": "ciudadanos.centrossalud",
+        "pk": 22,
+        "fields": {
+            "centro": "No asiste a instituciones de salud"
+        }
+    }
+]

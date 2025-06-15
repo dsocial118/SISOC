@@ -1,0 +1,58 @@
+{% extends "includes/main.html" %};
+{% load static %}
+;
+{% block head %}
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/flag-icon-css@3.5.0/css/flag-icon.min.css" />
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+{% endblock %}
+{% block title %}Ciudadano{% endblock %}
+;
+{% block titulo-pagina %}{% endblock %}
+;
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanos' %}">Ciudadano</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanos_ver' object.id %}">{{ object }}</a>
+        </li>
+        <li class="breadcrumb-item active">Eliminar</li>
+    </ol>
+{% endblock %}
+;
+{% block menu-adicional %}{% endblock %}
+;
+{% block content %}
+    <div class="error-page mt-5 px-3">
+        <div class="error-content">
+            <h3>
+                <i class="fas fa-exclamation-triangle text-danger px-2"></i> Atención!
+            </h3>
+            <p>
+                ¿Estás seguro que deseas eliminar de manera permanente el registro <span class="font-weight-bold">{{ object|upper }}</span>?
+            </p>
+            {% if relaciones_existentes %}
+                <p>
+                    Si elimina este ciudadano se borrarán también, de manera permanente, registros relacionados en los siguientes módulos:
+                </p>
+                <ul class=" mb-4">
+                    {% for relacion in relaciones_existentes %}<li>{{ relacion }}</li>{% endfor %}
+                </ul>
+            {% endif %}
+            <div class="text-left">
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+                    <a href="{% url 'ciudadanos_ver' object.id %}"
+                       class="btn btn-secondary btn-sm">Cancelar</a>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+;
+{% block customJS %}{% endblock %}

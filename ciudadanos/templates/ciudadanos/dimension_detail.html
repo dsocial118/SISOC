@@ -1,0 +1,431 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Alertas{% endblock %}
+{% block titulo-pagina %}Dimensiones{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right mt-2 mr-2">
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanos' %}">Ciudadano</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanos_ver' object.id %}">{{ object }}</a>
+        </li>
+        <li class="breadcrumb-item active">Dimensiones</li>
+    </ol>
+{% endblock %}
+{% block menu-adicional %}{% endblock %}
+{% block content %}
+    <div class="row">
+        <!-- botones -->
+        <div class="col-12 my-3 mx-2 d-print-none">
+            <a href="{% url 'ciudadanosdimensiones_editar' object.id %}"
+               class="btn btn-primary mr-1">Editar</a>
+            <a href="" class="btn btn-secondary mr-1 print">Imprimir</a>
+        </div>
+        <!-- ./botones -->
+    </div>
+    <!-- Datos de ciudadano -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card card-outline card-primary">
+                <div class="card-header">
+                    <h3 class="card-title">Datos personales</h3>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-3 font-weight-normal">Nombre</dt>
+                        <dd class="col-sm-9 font-weight-bold">
+                            {{ object }}
+                        </dd>
+                        <dt class="col-sm-3 font-weight-normal">Documento</dt>
+                        <dd class="col-sm-9 font-weight-bold">
+                            {{ object.tipo_documento }} {{ object.documento }}
+                        </dd>
+                        <dt class="col-sm-3 font-weight-normal">Fecha de nacimiento</dt>
+                        <dd class="col-sm-9 font-weight-bold">
+                            {{ object.fecha_nacimiento|date:'d/m/Y' }}
+                        </dd>
+                        <dt class="col-sm-3 font-weight-normal">Sexo</dt>
+                        <dd class="col-sm-9 font-weight-bold">
+                            {{ object.sexo }}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /  -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card card-outline card-primary">
+                <div class="card-header">
+                    <h3 class="card-title">Detalle de dimensiones</h3>
+                </div>
+                <div class="card-body">
+                    <!-- dimension familia -->
+                    <div class="h3 mb-3">Familia</div>
+                    <dl class="row mb-0">
+                        <dd class="col-sm-8">
+                            Cantidad de hijos
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionfamilia.cant_hijos|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            ¿Convive otro adulto responsable? (Padre o apoyo en la crianza)
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionfamilia.otro_responsable|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-sm-8">
+                            Personas en el hogar embarazadas
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionfamilia.hay_embarazadas|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-sm-8">
+                            Personas en el hogar con problemas de salud mental
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionfamilia.hay_prbl_smental|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-sm-8">
+                            Personas en el hogar con discapacidad
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionfamilia.hay_discapacidad|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-sm-8">
+                            Personas en el hogar con enfermedades crónicas
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionfamilia.hay_enf_cronica|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-sm-8">
+                            Personas en el hogar privados de su libertad
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionfamilia.hay_priv_libertad|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-12 mt-3">
+                            Observaciones
+                        </dd>
+                        <dt class="col-12">{{ object.dimensionfamilia.obs_familia|default_if_none:"-" }}</dt>
+                    </dl>
+                    <!-- /dimension familia -->
+                    <hr class="mt-4 mb-3 border-secondary" />
+                    <!-- dimension vivienda -->
+                    <div class="h3 mb-3">Vivienda</div>
+                    <dl class="row mb-0">
+                        <dd class="col-sm-8">
+                            Posesión de la vivienda
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionvivienda.posesion|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Tipo de vivienda
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionvivienda.tipo|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Material de la vivienda
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionvivienda.material|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Material principal de los pisos interiores
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionvivienda.pisos|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            ¿Cuántas habitaciones tiene el hogar? (sin contar baño/s, cocina,
+                            pasillo/s, lavadero)
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionvivienda.cant_ambientes|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            ¿Cuántas camas/ colchones tienen?
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionvivienda.cant_camas|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            ¿Cuantos hogares hay en la vivienda?
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionvivienda.cant_hogares|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            ¿Cuantas personas viven en la vivienda?
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionvivienda.cant_convivientes|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            ¿Cuántos de ellos son menores de 18 años?
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionvivienda.cant_menores|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Baño dentro de la vivienda con descarga
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionvivienda.hay_banio|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Posee Agua caliente
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionvivienda.hay_agua_caliente|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-sm-8">
+                            Riesgo de desmoronamiento
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionvivienda.hay_desmoronamiento|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-sm-8">
+                            La vivienda está ubicada...
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionvivienda.ubicacion_vivienda|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Posee Celular
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionvivienda.PoseenCelular|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-sm-8">
+                            Posee PC
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionvivienda.PoseenPC|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-sm-8">
+                            Posee Internet
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionvivienda.Poseeninternet|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-sm-8">
+                            ¿Que utilizan principalmente para cocinar?
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionvivienda.gas|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Material de la cubierta exterior de la vivienda
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionvivienda.techos|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            El agua que utilizan para cocinar proviene de...
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionvivienda.agua|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            El desagüe del inodoro es...
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionvivienda.desague|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Observaciones
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionvivienda.obs_vivienda|default_if_none:"-" }}</dt>
+                    </dl>
+                    <!-- /dimension vivienda -->
+                    <hr class="mt-4 mb-3 border-secondary" />
+                    <!-- dimension Salud -->
+                    <div class="h3 mb-3">Salud</div>
+                    <dl class="row mb-0">
+                        <dd class="col-sm-8">
+                            Centro de Salud en donde se atiende
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionsalud.lugares_atencion|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Frecuencia de controles médicos
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionsalud.frecuencia_controles_medicos|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Posee alguna enfermedad recurrente o algún diagnóstico de enfermedad crónico?
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionsalud.hay_enfermedad|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-sm-8">
+                            Posee cobertura de salud
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionsalud.hay_obra_social|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-sm-8">
+                            Posee alguna discapacidad
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionsalud.hay_discapacidad|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-sm-8">
+                            Posee certificado de discapacidad
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionsalud.hay_cud|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-sm-8">
+                            Observaciones
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensionsalud.obs_salud|default_if_none:"-" }}</dt>
+                    </dl>
+                    <!-- /dimension Salud -->
+                    <hr class="mt-4 mb-3 border-secondary" />
+                    <!-- dimension Educación -->
+                    <div class="h3 mb-3">Educación</div>
+                    <dl class="row mb-0">
+                        <dd class="col-sm-8">
+                            Asiste a la escuela
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.asiste_escuela|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-sm-8">
+                            Máximo nivel educativo alcanzado
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.max_nivel|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Motivo principal por el que no terminaste tus estudios
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.nivel_incompleto|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Motivo principal por el que no tuviste educación formal
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.sin_educacion_formal|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Estado del nivel
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.estado_nivel|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            provincia Institucion
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.provinciaInstitucion|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            localidad Institucion
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.localidadInstitucion|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            municipio Institucion
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.municipioInstitucion|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            barrio Institucion
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.barrio_institucion|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            calle Institucion
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.calle_institucion|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            numero Institucion
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.numero_institucion|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Institución
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.institucion|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Gestión
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.gestion|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Ciclo
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.ciclo|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Grado
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.grado|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Turno
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.turno|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            interes Estudio
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.interes_estudio|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-sm-8">
+                            interes Curso
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.interes_curso|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-sm-8">
+                            Actualmente te encontrás haciendo algún curso de capacitación
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.realizando_curso|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-sm-8">
+                            En qué Área
+                        </dd>
+                        <dt class="col-sm-4">
+                            {% if object.dimensioneducacion.area_curso %}
+                                {% for area in object.dimensioneducacion.area_curso %}
+                                    {{ area }}
+                                    {% if not forloop.last %},{% endif %}
+                                {% endfor %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </dt>
+                        <dd class="col-sm-8">
+                            Tenés conocimiento de algún oficio
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.oficio|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-sm-8">
+                            En que Area
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.area_oficio|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Observaciones
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneducacion.observaciones|default_if_none:"-" }}</dt>
+                    </dl>
+                    <!-- /dimension educacion -->
+                    <hr class="mt-4 mb-3 border-secondary" />
+                    <!-- dimension economia -->
+                    <div class="h3 mb-3">Economía</div>
+                    <dl class="row mb-0">
+                        <dd class="col-sm-8">
+                            Calificación de Ingresos
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneconomia.ingresos|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            ¿Recibe Plan Social?
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneconomia.recibe_plan|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-sm-8">
+                            Planes sociales que recibe
+                        </dd>
+                        <dt class="col-sm-4">
+                            {% if object.dimensioneconomia.planes.all.count > 0 %}
+                                {{ object.dimensioneconomia.planes.all|join:', ' }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </dt>
+                        <dd class="col-sm-8">
+                            Miembros de la familia que trabajan o aportan al grupo conviviente
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensioneconomia.cant_aportantes|default_if_none:"-" }}</dt>
+                        <dd class="col-12 mt-3">
+                            Observaciones
+                        </dd>
+                        <dt class="col-12">{{ object.dimensioneconomia.obs_economia|default_if_none:"-" }}</dt>
+                    </dl>
+                    <!-- /dimension economia -->
+                    <hr class="mt-4 mb-3 border-secondary" />
+                    <!-- dimension trabajo -->
+                    <div class="h3 mb-3">Trabajo</div>
+                    <dl class="row mb-0">
+                        <dd class="col-sm-8">
+                            ¿Actualmente realizás alguna actividad laboral, productiva o
+                            comunitaria?
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensiontrabajo.tiene_trabajo|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-sm-8">
+                            Ocupación
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensiontrabajo.ocupacion|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Modo de contratación
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensiontrabajo.modo_contratacion|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Horas trabajadas semanalmente
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensiontrabajo.horasSemanales|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Esa actividad la realizás como…
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensiontrabajo.actividadRealizadaComo|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            ¿Este trabajo es…
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensiontrabajo.duracionTrabajo|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            Por ese trabajo, ¿te descuentan jubilación o aportas vos mismo?
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensiontrabajo.aportesJubilacion|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            ¿Buscaste trabajo en los últimos 30 días?
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensiontrabajo.busqueda_laboral|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-sm-8">
+                            ¿Cuánto hace que buscás trabajo?
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensiontrabajo.Tiempobusqueda_laboral|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            ¿Por qué motivo no buscaste trabajo? (Indicá el motivo principal)
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensiontrabajo.nobusqueda_laboral|default_if_none:"-" }}</dt>
+                        <dd class="col-sm-8">
+                            ¿Conviviente trabaja?
+                        </dd>
+                        <dt class="col-sm-4">{{ object.dimensiontrabajo.conviviente_trabaja|yesno:'Sí,No,-' }}</dt>
+                        <dd class="col-12 mt-3">
+                            Observaciones
+                        </dd>
+                        <dt class="col-12">{{ object.dimensiontrabajo.obs_trabajo|default_if_none:"-" }}</dt>
+                    </dl>
+                    <!-- /dimension trabajo -->
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mt-4 d-print-none">
+        <div class="col-12 mx-2">
+            <a href="{% url 'ciudadanos_ver' object.id %}" class="btn btn-secondary">Volver</a>
+        </div>
+    </div>
+{% endblock %}
+{% block customJS %}{% endblock %}

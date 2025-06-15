@@ -3,50 +3,64 @@ from typing import Union
 
 from django.db.models import Q
 
-from comedores.models.relevamiento import Relevamiento
+from relevamientos.models import Relevamiento
 from comedores.forms.comedor_form import ImagenComedorForm
-from comedores.models.comedor import (
+from comedores.models import (
     Comedor,
     Referente,
     ValorComida,
-    Intervencion,
     Nomina,
 )
+
+from intervenciones.models.intervenciones import Intervencion
 from configuraciones.models import Municipio, Provincia
 from configuraciones.models import Localidad
-from comedores.models.comedor import ImagenComedor
+from comedores.models import ImagenComedor
 
 
 class ComedorService:
     @staticmethod
-    def get_comedor(pk_send):
-        comedor = Comedor.objects.values(
-            "id", "nombre", "provincia", "barrio", "calle", "numero"
-        ).get(pk=pk_send)
-        return comedor
+    def get_comedor_by_dupla(id_dupla):
+        return Comedor.objects.filter(dupla=id_dupla).first()
+
+    @staticmethod
+    def get_comedor(pk_send, as_dict=False):
+        if as_dict:
+            return Comedor.objects.values(
+                "id", "nombre", "provincia", "barrio", "calle", "numero"
+            ).get(pk=pk_send)
+        return Comedor.objects.get(pk=pk_send)
 
     @staticmethod
     def detalle_de_intervencion(kwargs):
-        intervenciones = Intervencion.objects.filter(fk_comedor=kwargs["pk"])
+        intervenciones = Intervencion.objects.filter(comedor=kwargs["pk"])
         cantidad_intervenciones = Intervencion.objects.filter(
-            fk_comedor=kwargs["pk"]
+            comedor=kwargs["pk"]
         ).count()
 
         return intervenciones, cantidad_intervenciones
 
     @staticmethod
+    def asignar_dupla_a_comedor(dupla_id, comedor_id):
+        comedor = Comedor.objects.get(id=comedor_id)
+        comedor.dupla_id = dupla_id
+        comedor.estado = "Asignado a Dupla Técnica"
+        comedor.save()
+        return comedor
+
+    @staticmethod
     def detalle_de_nomina(kwargs):
-        nomina = Nomina.objects.filter(fk_comedor=kwargs["pk"])
+        nomina = Nomina.objects.filter(comedor=kwargs["pk"])
         cantidad_nomina_m = Nomina.objects.filter(
-            fk_comedor=kwargs["pk"], fk_sexo__sexo="Masculino"
+            comedor=kwargs["pk"], sexo__sexo="Masculino"
         ).count()
         cantidad_nomina_f = Nomina.objects.filter(
-            fk_comedor=kwargs["pk"], fk_sexo__sexo="Femenino"
+            comedor=kwargs["pk"], sexo__sexo="Femenino"
         ).count()
         espera = Nomina.objects.filter(
-            fk_comedor=kwargs["pk"], fk_estado__nombre="Lista de espera"
+            comedor=kwargs["pk"], estado__nombre="Lista de espera"
         ).count()
-        cantidad_intervenciones = Nomina.objects.filter(fk_comedor=kwargs["pk"]).count()
+        cantidad_intervenciones = Nomina.objects.filter(comedor=kwargs["pk"]).count()
         return (
             nomina,
             cantidad_nomina_m,
@@ -58,7 +72,7 @@ class ComedorService:
     @staticmethod
     def borrar_imagenes(post):
         pattern = re.compile(
-            r"^imagen_legajo-borrar-(\d+)$"
+            r"^imagen_ciudadano-borrar-(\d+)$"
         )  # Patron para encontrar los campos de imagenes a borrar
         imagenes_ids = []
         # Itera sobre los datos POST para encontrar los campos coincidentes con el patron
@@ -72,20 +86,24 @@ class ComedorService:
 
     @staticmethod
     def get_comedores_filtrados(query: Union[str, None] = None):
-        queryset = Comedor.objects.prefetch_related("provincia", "referente").values(
-            "id",
-            "nombre",
-            "tipocomedor__nombre",
-            "provincia__nombre",
-            "municipio__nombre",
-            "localidad__nombre",
-            "barrio",
-            "partido",
-            "calle",
-            "numero",
-            "referente__nombre",
-            "referente__apellido",
-            "referente__celular",
+        queryset = (
+            Comedor.objects.prefetch_related("provincia", "referente")
+            .values(
+                "id",
+                "nombre",
+                "tipocomedor__nombre",
+                "provincia__nombre",
+                "municipio__nombre",
+                "localidad__nombre",
+                "barrio",
+                "partido",
+                "calle",
+                "numero",
+                "referente__nombre",
+                "referente__apellido",
+                "referente__celular",
+            )
+            .order_by("-id")
         )
         if query:
             queryset = queryset.filter(
@@ -102,39 +120,15 @@ class ComedorService:
     @staticmethod
     def get_comedor_detail_object(comedor_id: int):
         return (
-            Comedor.objects.select_related("provincia", "referente")
-            .values(
-                "id",
-                "foto_legajo",
-                "nombre",
-                "comienzo",
-                "id_externo",
-                "codigo_de_proyecto",
-                "organizacion__nombre",
-                "programa__nombre",
-                "provincia__nombre",
-                "municipio__nombre",
-                "localidad__nombre",
-                "tipocomedor__nombre",
-                "partido",
-                "barrio",
-                "calle",
-                "numero",
-                "piso",
-                "departamento",
-                "manzana",
-                "lote",
-                "longitud",
-                "latitud",
-                "entre_calle_1",
-                "entre_calle_2",
-                "codigo_postal",
-                "referente__nombre",
-                "referente__apellido",
-                "referente__mail",
-                "referente__celular",
-                "referente__documento",
+            Comedor.objects.select_related(
+                "provincia",
+                "referente",
+                "organizacion",
+                "programa",
+                "tipocomedor",
+                "dupla",
             )
+            .prefetch_related("expedientes_pagos")
             .get(pk=comedor_id)
         )
 

@@ -1,0 +1,23 @@
+[
+    {
+        "model": "ciudadanos.estadoniveleducativo",
+        "pk": 1,
+        "fields": {
+            "estado": "En curso"
+        }
+    },
+    {
+        "model": "ciudadanos.estadoniveleducativo",
+        "pk": 2,
+        "fields": {
+            "estado": "Incompleto"
+        }
+    },
+    {
+        "model": "ciudadanos.estadoniveleducativo",
+        "pk": 3,
+        "fields": {
+            "estado": "Completo"
+        }
+    }
+]

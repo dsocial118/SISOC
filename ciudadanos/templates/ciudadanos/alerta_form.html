@@ -1,0 +1,165 @@
+{% extends "includes/main.html" %};
+{% load static %}
+;
+{% load crispy_forms_tags %}
+{% block title %}Alertas{% endblock %}
+;
+{% block titulo-pagina %}Ciudadano{% endblock %}
+;
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right mt-2 mr-2">
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanos' %}">Ciudadano</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanos_ver' ciudadano.pk %}">{{ ciudadano.nombre }} {{ ciudadano.apellido }}</a>
+        </li>
+        <li class="breadcrumb-item active ">Alertas</li>
+    </ol>
+{% endblock %}
+;
+{% block menu-adicional %}{% endblock %}
+;
+{% block content %}
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card card-primary card-outline">
+                <div class="card-body">
+                    <div class="bs-stepper">
+                        <div class="bs-stepper-header" role="tablist">
+                            <div class="step d-none d-sm-inline">
+                                <a href="{% url 'ciudadanos_editar' ciudadano.pk %}"
+                                   class="step-trigger"
+                                   role="tab">
+                                    <span class="bs-stepper-circle">1</span>
+                                    <span class="bs-stepper-label">Datos Personales</span>
+                                </a>
+                            </div>
+                            <div class="line d-none d-sm-inline"></div>
+                            <div class="step d-none d-sm-inline">
+                                <a href="{% url 'ciudadanosdimensiones_editar' ciudadano.pk %}"
+                                   class="step-trigger"
+                                   role="tab">
+                                    <span class="bs-stepper-circle">2</span>
+                                    <span class="bs-stepper-label">Dimensiones</span>
+                                </a>
+                            </div>
+                            <div class="line d-none d-sm-inline"></div>
+                            <div class="step d-none d-sm-inline">
+                                <a href="{% url 'grupofamiliar_crear' ciudadano.pk %}"
+                                   class="step-trigger"
+                                   role="tab">
+                                    <span class="bs-stepper-circle">3</span>
+                                    <span class="bs-stepper-label">Grupo Familiar</span>
+                                </a>
+                            </div>
+                            <div class="line d-none d-sm-inline"></div>
+                            <div class="step d-none d-sm-inline">
+                                <a href="{% url 'ciudadanosgrupohogar_crear' ciudadano.pk %}"
+                                   class="step-trigger"
+                                   role="tab">
+                                    <span class="bs-stepper-circle">4</span>
+                                    <span class="bs-stepper-label">Grupo Hogar</span>
+                                </a>
+                            </div>
+                            <div class="line d-none d-sm-inline"></div>
+                            <div class="step active">
+                                <a type="button" class="step-trigger  text-primary" role="tab">
+                                    <span class="bs-stepper-circle">5</span>
+                                    <span class="bs-stepper-label">Alertas</span>
+                                </a>
+                            </div>
+                            <div class="line"></div>
+                            <div class="step">
+                                <a href="{% url 'ciudadanosarchivos_crear' ciudadano.pk %}"
+                                   class="step-trigger"
+                                   role="tab">
+                                    <span class="bs-stepper-circle">6</span>
+                                    <span class="bs-stepper-label">Archivos</span>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h3 class="card-title font-weight-bold ">Agregar alerta</h3>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="agregarAlerta"
+                                              name="agregarAlerta"
+                                              method="POST"
+                                              autocomplete="off"
+                                              novalidate>
+                                            {% csrf_token %}
+                                            <div class="row">
+                                                <div class="form-group col-auto">{{ form.categoria| as_crispy_field }}</div>
+                                                <div class="form-group col-auto">{{ form.nombre| as_crispy_field }}</div>
+                                                <div class="form-group col-auto mt-2">
+                                                    <button class="btn btn-primary mt-sm-4 mt-0" type="submit">Agregar</button>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h3 class="card-title font-weight-bold">Alertas</h3>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            {% for a in alertas %}
+                                                <div class="col-sm-3 px-2 " id="alerta-{{ a.id }}">
+                                                    <button type="button"
+                                                            class="close pr-1 eliminar-alerta-btn"
+                                                            title="Eliminar alerta"
+                                                            data-alerta-id="{{ a.pk }}">×</button>
+                                                    <div class="callout callout-{{ a.alerta.gravedad }} ">
+                                                        <h6 class="font-weight-bold">
+                                                            <i class="fas fa-exclamation-triangle px-1"></i>
+                                                            {{ a.alerta }}
+                                                        </h6>
+                                                    </div>
+                                                </div>
+                                            {% empty %}
+                                                <div class="col-12 text-center">
+                                                    <h6 class="text-muted">Sin alertas</h6>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- botones del pie -->
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <div class="form-group mb-0 mt-3 d-flex justify-content-between">
+                                <a href="{% url 'grupofamiliar_crear' ciudadano.pk %}"
+                                   class="btn btn-secondary mb-3">Volver</a>
+                                <a href="{% url 'ciudadanos_ver' ciudadano.pk %}"
+                                   class="btn btn-primary mb-3">Guardar</a>
+                                <a href="{% url 'ciudadanosarchivos_crear' ciudadano.pk %}"
+                                   class="btn btn-secondary mb-3 float-right">Continuar</a>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- /botones del pie -->
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block customJS %}
+    <script>
+    const alertasSelectUrl = '{% url "alertas_select" %}';
+    const categoriasSelectUrl = '{% url "categorias_select" %}';
+    const alertaAjaxBorrarUrl = '{% url "alerta_ajax_borrar" %}';
+    </script>
+    <script src="{% static 'custom/js/ciudadanosalertas.js' %}"></script>
+{% endblock %}
