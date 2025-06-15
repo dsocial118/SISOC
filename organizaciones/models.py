@@ -1,5 +1,4 @@
 from django.db import models
-from django.forms import ValidationError
 
 
 class TipoOrganizacion(models.Model):

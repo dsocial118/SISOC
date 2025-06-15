@@ -8,7 +8,8 @@ from config.utils import format_fecha_django
 
 class RelevamientoSerializer(serializers.ModelSerializer):
 
-    def clean(self):  # TODO: Refactorizar
+    # TODO: Refactorizar
+    def clean(self):  # pylint: disable=too-many-statements,too-many-branches
         if "fecha_visita" in self.initial_data:
             self.initial_data["fecha_visita"] = format_fecha_django(
                 self.initial_data["fecha_visita"]
