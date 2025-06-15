@@ -7,7 +7,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("comedores", "0034_merge_20250521_2106"),
+        ("comedores", "0023_comedor_codigo_de_proyecto"),
         ("expedientespagos", "0002_remove_expedientepago_acompanamiento"),
     ]
 
