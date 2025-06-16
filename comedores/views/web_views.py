@@ -51,11 +51,6 @@ from comedores.models.comedor import (
     RendicionCuentasFinal,
 )
 
-from admisiones.models.admisiones import (
-    Admision,
-    InformeTecnicoBase,
-    InformeTecnicoJuridico,
-)
 from comedores.models.relevamiento import Prestacion
 from comedores.services.comedor_service import ComedorService
 from comedores.services.relevamiento_service import RelevamientoService
@@ -229,6 +224,7 @@ class ComedorDetailView(DetailView):
                 "rendicion_cuentas_final_activo": rendiciones_mensuales >= 5,
                 "GESTIONAR_API_KEY": os.getenv("GESTIONAR_API_KEY"),
                 "GESTIONAR_API_CREAR_COMEDOR": os.getenv("GESTIONAR_API_CREAR_COMEDOR"),
+                "admision": self.object.admision_set.first(),
             }
         )
 
