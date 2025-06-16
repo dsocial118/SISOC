@@ -10,10 +10,14 @@ from admisiones.models.admisiones import (
     TipoConvenio,
     Documentacion,
     ArchivoAdmision,
-    InformeTecnicoBase,
-    InformeTecnicoJuridico,
+    InformeTecnico,
     InformeTecnicoPDF,
     DocumentosExpediente,
+    Anexo,
+    CampoASubsanar,
+    ObservacionGeneralInforme,
+    FormularioProyectoDisposicion,
+    FormularioProyectoDeConvenio,
 )
 from admisiones.forms.admisiones_forms import (
     DocumentosExpedienteForm,
@@ -21,10 +25,8 @@ from admisiones.forms.admisiones_forms import (
     InformeTecnicoBaseForm,
     CaratularForm,
     ProyectoConvenioForm,
-    ResoForm,
+    ProyectoDisposicionForm,
     LegalesNumIFForm,
-    FormularioRESO,
-    FormularioProyectoDeConvenio,
     LegalesRectificarForm,
 )
 from comedores.models.comedor import Comedor
@@ -32,9 +34,9 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from django.core.files.base import ContentFile
+from weasyprint import HTML
+from django.templatetags.static import static
 from io import BytesIO
-from django.forms.models import model_to_dict
-from xhtml2pdf import pisa
 import logging
 
 logger = logging.getLogger(__name__)
@@ -112,17 +114,18 @@ class AdmisionService:
         comedor = Comedor.objects.get(pk=admision.comedor_id)
         convenios = TipoConvenio.objects.all()
         caratular_form = CaratularForm(instance=admision)
-        informe_base = InformeTecnicoBase.objects.filter(admision=admision).first()
-        informe_juridico = InformeTecnicoJuridico.objects.filter(
-            admision=admision
-        ).first()
+        informe_tecnico = InformeTecnico.objects.filter(admision=admision).first()
+        anexo = Anexo.objects.filter(admision=admision).first()
+        pdf = InformeTecnicoPDF.objects.filter(admision=admision).first()
+
         return {
             "documentos": documentos_info,
             "comedor": comedor,
             "convenios": convenios,
             "caratular_form": caratular_form,
-            "informe_base": informe_base,
-            "informe_juridico": informe_juridico,
+            "informe_tecnico": informe_tecnico,
+            "anexo": anexo,
+            "pdf": pdf,
         }
 
     @staticmethod
@@ -221,21 +224,17 @@ class AdmisionService:
 
     @staticmethod
     def get_queryset_informe_por_tipo(tipo):
-        return (
-            InformeTecnicoJuridico.objects.all()
-            if tipo == "juridico"
-            else InformeTecnicoBase.objects.all()
-        )
+        return InformeTecnico.objects.filter(tipo=tipo)
 
     @staticmethod
     def get_informe_por_tipo_y_pk(tipo, pk):
-        modelo = InformeTecnicoJuridico if tipo == "juridico" else InformeTecnicoBase
-        return get_object_or_404(modelo, pk=pk)
+        return get_object_or_404(InformeTecnico, tipo=tipo, pk=pk)
 
     @staticmethod
-    def actualizar_estado_informe(informe, nuevo_estado, tipo):
+    def actualizar_estado_informe(informe, nuevo_estado, tipo=None):
         informe.estado = nuevo_estado
         informe.save()
+
         if nuevo_estado == "Validado":
             AdmisionService.generar_y_guardar_pdf(informe, tipo)
 
@@ -247,36 +246,52 @@ class AdmisionService:
             if field.name not in ["id", "admision", "estado"]
         ]
 
-        html = render_to_string(
-            "pdf_template.html",
+        html_string = render_to_string(
+            "pdf_informe_tecnico.html",
             {
                 "informe": informe,
                 "campos": campos,
             },
         )
 
-        result = BytesIO()
-        pisa_status = pisa.CreatePDF(html, dest=result)
-        if pisa_status.err:
-            logger.error("Error al generar el PDF con pisa: %s", pisa_status.err)
-            return
+        pdf_file = HTML(string=html_string).write_pdf()
 
         nombre_archivo = f"{tipo}_informe_{informe.id}.pdf"
-        pdf_file = ContentFile(result.getvalue(), name=nombre_archivo)
+        pdf_content = ContentFile(pdf_file, name=nombre_archivo)
 
         InformeTecnicoPDF.objects.create(
             admision=informe.admision,
             tipo=tipo,
             informe_id=informe.id,
-            archivo=pdf_file,
+            archivo=pdf_content,
         )
 
     @staticmethod
     def get_campos_visibles_informe(informe):
+        campos_excluidos_comunes = ["id", "admision", "estado", "tipo"]
+
+        if informe.tipo == "juridico":
+            campos_excluidos_especificos = [
+                "declaracion_jurada_recepcion_subsidios",
+                "constancia_inexistencia_percepcion_otros_subsidios",
+                "organizacion_avalista_1",
+                "organizacion_avalista_2",
+                "material_difusion_vinculado",
+            ]
+        elif informe.tipo == "base":
+            campos_excluidos_especificos = [
+                "validacion_registro_nacional",
+                "IF_relevamiento_territorial",
+            ]
+        else:
+            campos_excluidos_especificos = []
+
+        campos_excluidos = campos_excluidos_comunes + campos_excluidos_especificos
+
         return [
             (field.verbose_name, getattr(informe, field.name))
-            for field in informe._meta.get_fields()
-            if field.name not in ["id", "admision", "estado"]
+            for field in informe._meta.fields
+            if field.name not in campos_excluidos
         ]
 
     @staticmethod
@@ -297,6 +312,8 @@ class AdmisionService:
     @staticmethod
     def verificar_estado_para_revision(informe):
         if informe.estado != "Validado":
+            CampoASubsanar.objects.filter(informe=informe).delete()
+            ObservacionGeneralInforme.objects.filter(informe=informe).delete()
             informe.estado = "Para revision"
 
     @staticmethod
@@ -359,9 +376,9 @@ class AdmisionService:
             for doc in documentaciones
         ]
 
-        reso_formulario = admision.formularios_reso.first()
-        proyecto_formulario = admision.formularios_proyecto_convenio.first()
-        reso_form = ResoForm(instance=admision)
+        reso_formulario = admision.proyecto_disposicion.first()
+        proyecto_formulario = admision.proyecto_convenio.first()
+        reso_form = ProyectoDisposicionForm(instance=admision)
         proyecto_form = ProyectoConvenioForm(instance=admision)
         legales_num_if_form = LegalesNumIFForm(instance=admision)
         documentos_form = DocumentosExpedienteForm(initial={"admision": admision})
@@ -403,11 +420,10 @@ class AdmisionService:
 
     @staticmethod
     def get_informe_por_tipo_convenio(admision):
-        if admision.tipo_convenio_id == 1:
-            return InformeTecnicoBase.objects.filter(admision=admision).first()
-        elif admision.tipo_convenio_id in [2, 3]:
-            return InformeTecnicoJuridico.objects.filter(admision=admision).first()
-        return None
+        tipo = admision.tipo_informe
+        if not tipo:
+            return None
+        return InformeTecnico.objects.filter(admision=admision, tipo=tipo).first()
 
     @staticmethod
     def enviar_a_rectificar(request, admision):
@@ -448,7 +464,9 @@ class AdmisionService:
 
     @staticmethod
     def validar_juridicos(request, admision):
-        reso_completo = FormularioRESO.objects.filter(admision=admision).exists()
+        reso_completo = FormularioProyectoDisposicion.objects.filter(
+            admision=admision
+        ).exists()
         proyecto_completo = FormularioProyectoDeConvenio.objects.filter(
             admision=admision
         ).exists()
@@ -475,15 +493,43 @@ class AdmisionService:
 
     @staticmethod
     def guardar_formulario_reso(request, admision):
-        formulario_existente = FormularioRESO.objects.filter(admision=admision).first()
-        form = ResoForm(request.POST, instance=formulario_existente)
+        formulario_existente = FormularioProyectoDisposicion.objects.filter(
+            admision=admision
+        ).first()
+        form = ProyectoDisposicionForm(request.POST, instance=formulario_existente)
 
         if form.is_valid():
             nuevo_formulario = form.save(commit=False)
             nuevo_formulario.admision = admision
             nuevo_formulario.creado_por = request.user
             nuevo_formulario.save()
-            messages.success(request, "Formulario RESO guardado correctamente.")
+
+            if nuevo_formulario.tipo == "incorporacion":
+                template_name = "pdf_dispo_incorporacion.html"
+            else:
+                template_name = "pdf_dispo_renovacion.html"
+
+            context = {
+                "admision": admision,
+                "formulario": nuevo_formulario,
+            }
+            html_string = render_to_string(template_name, context)
+
+            pdf_filename = f"disposicion_{admision.id}_{nuevo_formulario.id}.pdf"
+            pdf_path = os.path.join(
+                settings.MEDIA_ROOT, "formularios_disposicion", pdf_filename
+            )
+
+            os.makedirs(os.path.dirname(pdf_path), exist_ok=True)
+
+            HTML(string=html_string).write_pdf(pdf_path)
+
+            nuevo_formulario.archivo.name = f"formularios_disposicion/{pdf_filename}"
+            nuevo_formulario.save()
+
+            messages.success(
+                request, "Formulario guardado y PDF generado correctamente."
+            )
         else:
             messages.error(request, "Error al guardar el formulario RESO.")
 
@@ -501,8 +547,28 @@ class AdmisionService:
             nuevo_formulario.admision = admision
             nuevo_formulario.creado_por = request.user
             nuevo_formulario.save()
+
+            context = {
+                "admision": admision,
+                "formulario": nuevo_formulario,
+            }
+            html_string = render_to_string("pdf_convenio.html", context)
+
+            pdf_filename = f"convenio_{admision.id}_{nuevo_formulario.id}.pdf"
+            pdf_path = os.path.join(
+                settings.MEDIA_ROOT, "formularios_convenio", pdf_filename
+            )
+
+            os.makedirs(os.path.dirname(pdf_path), exist_ok=True)
+
+            HTML(string=html_string).write_pdf(pdf_path)
+
+            nuevo_formulario.archivo.name = f"formularios_convenio/{pdf_filename}"
+            nuevo_formulario.save()
+
             messages.success(
-                request, "Formulario Proyecto de Convenio guardado correctamente."
+                request,
+                "PDF de Formulario Proyecto de Convenio generado correctamente.",
             )
         else:
             messages.error(
@@ -549,7 +615,6 @@ class AdmisionService:
         admision.estado = estado_admitido
         admision.save()
 
-        # Importar datos a la app de Acompañamiento
         AcompanamientoService.importar_datos_desde_admision(admision.comedor)
 
         return admision
