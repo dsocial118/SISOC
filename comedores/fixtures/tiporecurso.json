@@ -1,13 +1,13 @@
 [
     {
-        "model": "comedores.tiporecurso",
+        "model": "relevamientos.tiporecurso",
         "pk": 1,
         "fields": {
             "nombre": "Transferencia monetaria"
         }
     },
     {
-        "model": "comedores.tiporecurso",
+        "model": "relevamientos.tiporecurso",
         "pk": 2,
         "fields": {
             "nombre": "Mercadería"

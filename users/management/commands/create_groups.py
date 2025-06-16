@@ -47,11 +47,8 @@ class Command(BaseCommand):
             "Grupos Ver",
             "ReferenteCentro",
         ]
+        self.stdout.write(self.style.SUCCESS(f"Creando grupos de usuario..."))
         for group_name in groups:
             _group, created = Group.objects.get_or_create(name=group_name)
             if created:
                 self.stdout.write(self.style.SUCCESS(f'Grupo "{group_name}" creado'))
-            else:
-                self.stdout.write(
-                    self.style.WARNING(f'Grupo "{group_name}" ya existía')
-                )
