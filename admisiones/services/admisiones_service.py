@@ -27,7 +27,7 @@ from admisiones.forms.admisiones_forms import (
     FormularioProyectoDeConvenio,
     LegalesRectificarForm,
 )
-from comedores.models.comedor import Comedor
+from comedores.models import Comedor
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string

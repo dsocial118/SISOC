@@ -11,7 +11,7 @@ from django.urls import reverse_lazy, reverse
 from expedientespagos.models import ExpedientePago
 from expedientespagos.forms import ExpedientePagoForm
 from expedientespagos.services import ExpedientesPagosService
-from comedores.models.comedor import Comedor
+from comedores.models import Comedor
 
 
 class ExpedientesPagosListView(ListView):
