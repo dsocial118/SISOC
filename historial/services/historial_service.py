@@ -1,6 +1,6 @@
 from django.contrib.contenttypes.models import ContentType
 
-from comedores.models.comedor import DocumentoRendicionFinal
+from rendicioncuentasfinal.models import DocumentoRendicionFinal
 from config.middlewares.threadlocals import get_current_user
 from historial.models import Historial
 
