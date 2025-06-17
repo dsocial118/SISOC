@@ -10,7 +10,6 @@ from configuraciones.decorators import group_required
 from django.utils.decorators import method_decorator
 
 
-
 class CentroListView(LoginRequiredMixin, ListView):
     model = Centro
     template_name = "centros/centro_list.html"
@@ -19,19 +18,10 @@ class CentroListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         queryset = Centro.objects.select_related("faro_asociado", "referente")
-
         user = self.request.user
-        if user.groups.filter(name="ReferenteCentro").exists() and not user.is_superuser:
-            centros_usuario = Centro.objects.filter(referente=user)
 
-            # Si el user es referente de un FARO, incluir también sus adheridos
-            if centros_usuario.filter(tipo="faro").exists():
-                faros_ids = centros_usuario.filter(tipo="faro").values_list("id", flat=True)
-                adheridos = Centro.objects.filter(faro_asociado_id__in=faros_ids)
-                queryset = centros_usuario | adheridos
-            else:
-                # Si solo es referente de adheridos
-                queryset = centros_usuario
+        if user.groups.filter(name="ReferenteCentro").exists() and not user.is_superuser:
+            queryset = queryset.filter(referente=user)
 
         busqueda = self.request.GET.get("busqueda")
         if busqueda:
@@ -42,7 +32,6 @@ class CentroListView(LoginRequiredMixin, ListView):
             )
 
         return queryset.order_by("nombre")
-
 
 
 class CentroDetailView(LoginRequiredMixin, DetailView):
@@ -85,7 +74,6 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
-
 class CentroCreateView(LoginRequiredMixin, CreateView):
     model = Centro
     form_class = CentroForm
@@ -95,7 +83,6 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         messages.success(self.request, "Centro creado exitosamente.")
         return super().form_valid(form)
-
 
 
 class CentroUpdateView(LoginRequiredMixin, UpdateView):
@@ -109,7 +96,6 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_success_url(self):
         return reverse("centro_detail", kwargs={"pk": self.object.pk})
-
 
 
 class CentroDeleteView(LoginRequiredMixin, DeleteView):
