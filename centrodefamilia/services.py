@@ -40,13 +40,17 @@ class ParticipanteService:
     @staticmethod
     def cargar_participantes_desde_lista(lista_dnis, actividad_centro):
         """Carga masiva desde una lista de CUITs"""
-        nuevos = []
-        for cuit in lista_dnis:
-            if not ParticipanteActividad.objects.filter(
-                actividad_centro=actividad_centro, cuit=cuit
-            ).exists():
-                nuevos.append(
-                    ParticipanteActividad(cuit=cuit, actividad_centro=actividad_centro)
-                )
-        ParticipanteActividad.objects.bulk_create(nuevos)
+        existing = set(
+            ParticipanteActividad.objects.filter(
+                actividad_centro=actividad_centro, cuit__in=lista_dnis
+            ).values_list("cuit", flat=True)
+        )
+
+        nuevos = [
+            ParticipanteActividad(cuit=cuit, actividad_centro=actividad_centro)
+            for cuit in lista_dnis
+            if cuit not in existing
+        ]
+
+        ParticipanteActividad.objects.bulk_create(nuevos, ignore_conflicts=True)
         return len(nuevos)
