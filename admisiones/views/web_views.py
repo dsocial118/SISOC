@@ -9,12 +9,16 @@ from admisiones.forms.admisiones_forms import (
     AdmisionForm,
     CaratularForm,
     LegalesRectificarForm,
+    AnexoForm,
 )
 from admisiones.models.admisiones import (
     Admision,
     ArchivoAdmision,
     ArchivoAdmision,
     InformeTecnicoPDF,
+    Anexo,
+    CampoASubsanar,
+    ObservacionGeneralInforme,
 )
 from admisiones.services.admisiones_service import AdmisionService
 from django.views.generic.edit import FormMixin
@@ -69,7 +73,7 @@ def actualizar_estado_archivo(request):
 
 
 class AdmisionesTecnicosListView(ListView):
-    model = Admision  # aunque devolvés Comedor, la clase sigue siendo ListView
+    model = Admision
     template_name = "admisiones_tecnicos_list.html"
     context_object_name = "comedores"
     paginate_by = 10
@@ -186,9 +190,17 @@ class InformeTecnicosCreateView(CreateView):
         tipo = self.kwargs.get("tipo", "base")
         return AdmisionService.get_queryset_informe_por_tipo(tipo)
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        admision_id = self.kwargs.get("admision_id")
+        admision = AdmisionService.get_admision(admision_id)
+        kwargs["admision"] = admision
+        return kwargs
+
     def form_valid(self, form):
         tipo = self.kwargs.get("tipo", "base")
         admision_id = self.kwargs.get("admision_id")
+        form.instance.tipo = tipo
         AdmisionService.preparar_informe_para_creacion(form.instance, admision_id)
         return super().form_valid(form)
 
@@ -199,8 +211,10 @@ class InformeTecnicosCreateView(CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         admision_id = self.kwargs.get("admision_id")
+        anexo = Anexo.objects.filter(admision_id=admision_id).first()
         context["tipo"] = self.kwargs.get("tipo", "base")
         context["admision"] = AdmisionService.get_admision(admision_id)
+        context["anexo"] = anexo
         return context
 
 
@@ -228,12 +242,22 @@ class InformeTecnicosUpdateView(UpdateView):
         context = super().get_context_data(**kwargs)
         tipo = self.kwargs.get("tipo", "base")
         informe = self.object
+        campos_a_subsanar = CampoASubsanar.objects.filter(informe=informe).values_list(
+            "campo", flat=True
+        )
+        try:
+            observacion = ObservacionGeneralInforme.objects.get(informe=informe)
+        except ObservacionGeneralInforme.DoesNotExist:
+            observacion = None
         context.update(
             {
                 "tipo": tipo,
                 "admision": informe.admision,
                 "comedor": informe.admision.comedor,
                 "campos": AdmisionService.get_campos_visibles_informe(informe),
+                "anexo": Anexo.objects.filter(admision_id=informe.admision.id).first(),
+                "campos_a_subsanar": list(campos_a_subsanar),
+                "observacion": observacion,
             }
         )
         return context
@@ -252,8 +276,27 @@ class InformeTecnicoDetailView(DetailView):
         informe = AdmisionService.get_informe_por_tipo_y_pk(tipo, kwargs["pk"])
 
         nuevo_estado = request.POST.get("estado")
+
         if nuevo_estado in ["A subsanar", "Validado"]:
             AdmisionService.actualizar_estado_informe(informe, nuevo_estado, tipo)
+
+            if nuevo_estado == "A subsanar":
+                campos_a_subsanar = request.POST.getlist("campos_a_subsanar")
+                observacion = request.POST.get("observacion", "").strip()
+
+                CampoASubsanar.objects.filter(informe=informe).delete()
+
+                for campo in campos_a_subsanar:
+                    CampoASubsanar.objects.create(informe=informe, campo=campo)
+
+                obs_obj, created = ObservacionGeneralInforme.objects.get_or_create(
+                    informe=informe
+                )
+                obs_obj.texto = observacion
+                obs_obj.save()
+            else:
+                CampoASubsanar.objects.filter(informe=informe).delete()
+                ObservacionGeneralInforme.objects.filter(informe=informe).delete()
 
         admision_id = informe.admision.id
         return HttpResponseRedirect(
@@ -341,3 +384,60 @@ class AdmisionesLegalesDetailView(FormMixin, DetailView):
 
         if "btnDocumentoExpediente" in request.POST:
             return AdmisionService.guardar_documento_expediente(request, admision)
+
+
+class AnexoCreateView(CreateView):
+    model = Anexo
+    form_class = AnexoForm
+    template_name = "anexo_form.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        admision_id = self.kwargs.get("admision_id")
+        admision = Admision.objects.filter(id=admision_id).first()
+        context["admision"] = admision
+        return context
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        admision_id = self.kwargs.get("admision_id")
+        admision = AdmisionService.get_admision(admision_id)
+        kwargs["admision"] = admision
+        return kwargs
+
+    def dispatch(self, request, *args, **kwargs):
+        self.admision = get_object_or_404(Admision, id=kwargs["admision_id"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        form.instance.admision = self.admision
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("admisiones_tecnicos_editar", kwargs={"pk": self.admision.id})
+
+    def form_invalid(self, form):
+        print("Form errors:", form.errors)
+        return super().form_invalid(form)
+
+
+class AnexoUpdateView(UpdateView):
+    model = Anexo
+    form_class = AnexoForm
+    template_name = "anexo_form.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        admision_id = self.kwargs.get("admision_id")
+        admision = Admision.objects.filter(id=admision_id).first()
+        context["admision"] = admision
+        return context
+
+    def get_object(self, queryset=None):
+        admision_id = self.kwargs["admision_id"]
+        return get_object_or_404(Anexo, admision_id=admision_id)
+
+    def get_success_url(self):
+        return reverse(
+            "admisiones_tecnicos_editar", kwargs={"pk": self.object.admision.id}
+        )

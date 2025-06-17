@@ -202,6 +202,7 @@ class ComedorDetailView(DetailView):
                 "rendicion_cuentas_final_activo": rendiciones_mensuales >= 5,
                 "GESTIONAR_API_KEY": os.getenv("GESTIONAR_API_KEY"),
                 "GESTIONAR_API_CREAR_COMEDOR": os.getenv("GESTIONAR_API_CREAR_COMEDOR"),
+                "admision": self.object.admision_set.first(),
             }
         )
 
