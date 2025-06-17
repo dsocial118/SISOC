@@ -139,6 +139,8 @@ INSTALLED_APPS = [
     "historial",
     "acompanamientos",
     "expedientespagos",
+    "relevamientos",
+    "rendicioncuentasfinal",
     "rendicioncuentasmensual",
 ]
 

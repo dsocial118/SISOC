@@ -22,13 +22,10 @@ class Command(BaseCommand):
         email = "1@gmail.com"
         password = "1"
 
+        self.stdout.write(self.style.SUCCESS("Creando usuarios..."))
         # Verificar si el superusuario ya existe
         if not user.objects.filter(username=username).exists():
             user.objects.create_superuser(
                 username=username, email=email, password=password
             )
             self.stdout.write(self.style.SUCCESS(f"Superusuario '{username}' creado."))
-        else:
-            self.stdout.write(
-                self.style.WARNING(f"El superusuario '{username}' ya existe.")
-            )
