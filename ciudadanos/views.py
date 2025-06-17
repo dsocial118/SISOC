@@ -1442,7 +1442,7 @@ class AlertaSelectView(View):
 
 
 class DimensionesUpdateView(SuccessMessageMixin, UpdateView):
-    # FIXME: Crear updateView por cada formulario
+    # FIXME: Crear updateView por cada formulario (cuando se use ciudadano)
     template_name = "ciudadanos/dimension_form.html"
     model = DimensionFamilia
     form_class = DimensionFamiliaForm
@@ -2077,6 +2077,7 @@ class GrupoHogarList(ListView):
         context = super().get_context_data(**kwargs)
 
         # FIXME: Esta query optimizada de "familiares" no se termino de implementar
+        # (cuando se use ciudadano)
         familiares = GrupoFamiliar.objects.filter(
             Q(ciudadano_1=pk) | Q(ciudadano_2=pk)
         ).values(
