@@ -20,9 +20,7 @@ urlpatterns = [
     path("", include("ciudadanos.urls")),
     path("", include("admisiones.urls")),
     path("", include("centrodefamilia.urls")),
-    # Django Debug Toolbar
     path("__debug__/", include("debug_toolbar.urls")),
-    # Healthcheck AWS
     path("", include("healthcheck.urls")),
     path("acompanamientos/", include("acompanamientos.urls")),
     path("expedientespagos/", include("expedientespagos.urls")),
