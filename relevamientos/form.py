@@ -460,4 +460,4 @@ class RelevamientoForm(forms.ModelForm):
 
     class Meta:
         model = Relevamiento
-        fields = ["comedor", "observacion"]
+        fields = ["comedor", "observacion", "territorial_nombre", "territorial_uid"]
