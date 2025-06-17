@@ -3,6 +3,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.urls import reverse_lazy, reverse
 from django.db.models import Q, Count
+from django.core.exceptions import PermissionDenied
 from centrodefamilia.models import Centro, ActividadCentro, ParticipanteActividad
 from centrodefamilia.forms import CentroForm
 from centrodefamilia.services import CentroService
@@ -38,6 +39,20 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
     model = Centro
     template_name = "centros/centro_detail.html"
     context_object_name = "centro"
+
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        user = self.request.user
+
+        es_referente = obj.referente_id == user.id
+        es_adherido_de_faro = (
+            obj.tipo == "adherido" and obj.faro_asociado and obj.faro_asociado.referente_id == user.id
+        )
+
+        if not (es_referente or es_adherido_de_faro or user.is_superuser):
+            raise PermissionDenied
+
+        return obj
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
