@@ -357,13 +357,3 @@ CSRF_TRUSTED_ORIGINS = [
     "http://10.80.5.45",
     "https://api.appsheet.com",
 ]
-
-# Configuración de hosts permitidos TODO: que se haga desde el .env
-ALLOWED_HOSTS = [
-    "com.sisoc.secretarianaf.gob.ar",
-    "localhost",
-    "127.0.0.1",
-    "10.80.9.15",
-    "10.80.5.45",
-    "https://api.appsheet.com",
-]
