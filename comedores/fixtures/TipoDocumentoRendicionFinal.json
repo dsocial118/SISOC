@@ -1,6 +1,6 @@
 [
   {
-    "model": "comedores.TipoDocumentoRendicionFinal",
+    "model": "rendicioncuentasfinal.TipoDocumentoRendicionFinal",
     "pk": 1,
     "fields": {
       "nombre": "Lista de beneficiarios",
@@ -8,7 +8,7 @@
     }
   },
   {
-    "model": "comedores.TipoDocumentoRendicionFinal",
+    "model": "rendicioncuentasfinal.TipoDocumentoRendicionFinal",
     "pk": 2,
     "fields": {
       "nombre": "Certificación mensual de prestaciones mes 1",
@@ -16,7 +16,7 @@
     }
   },
   {
-    "model": "comedores.TipoDocumentoRendicionFinal",
+    "model": "rendicioncuentasfinal.TipoDocumentoRendicionFinal",
     "pk": 3,
     "fields": {
       "nombre": "Certificación mensual de prestaciones mes 2",
@@ -24,7 +24,7 @@
     }
   },
   {
-    "model": "comedores.TipoDocumentoRendicionFinal",
+    "model": "rendicioncuentasfinal.TipoDocumentoRendicionFinal",
     "pk": 4,
     "fields": {
       "nombre": "Certificación mensual de prestaciones mes 3",
@@ -32,7 +32,7 @@
     }
   },
   {
-    "model": "comedores.TipoDocumentoRendicionFinal",
+    "model": "rendicioncuentasfinal.TipoDocumentoRendicionFinal",
     "pk": 5,
     "fields": {
       "nombre": "Certificación mensual de prestaciones mes 4",
@@ -40,7 +40,7 @@
     }
   },
   {
-    "model": "comedores.TipoDocumentoRendicionFinal",
+    "model": "rendicioncuentasfinal.TipoDocumentoRendicionFinal",
     "pk": 6,
     "fields": {
       "nombre": "Certificación mensual de prestaciones mes 5",
@@ -48,7 +48,7 @@
     }
   },
   {
-    "model": "comedores.TipoDocumentoRendicionFinal",
+    "model": "rendicioncuentasfinal.TipoDocumentoRendicionFinal",
     "pk": 7,
     "fields": {
       "nombre": "Certificación mensual de prestaciones mes 6",
@@ -56,7 +56,7 @@
     }
   },
   {
-    "model": "comedores.TipoDocumentoRendicionFinal",
+    "model": "rendicioncuentasfinal.TipoDocumentoRendicionFinal",
     "pk": 8,
     "fields": {
       "nombre": "DDJJ sobre aplicación de fondos del subsidio + Anexo I",
@@ -64,7 +64,7 @@
     }
   },
   {
-    "model": "comedores.TipoDocumentoRendicionFinal",
+    "model": "rendicioncuentasfinal.TipoDocumentoRendicionFinal",
     "pk": 9,
     "fields": {
       "nombre": "Comprobantes de gastos",
@@ -72,7 +72,7 @@
     }
   },
   {
-    "model": "comedores.TipoDocumentoRendicionFinal",
+    "model": "rendicioncuentasfinal.TipoDocumentoRendicionFinal",
     "pk": 10,
     "fields": {
       "nombre": "Constancias de CAE/CAI/CAEA",
@@ -80,7 +80,7 @@
     }
   },
   {
-    "model": "comedores.TipoDocumentoRendicionFinal",
+    "model": "rendicioncuentasfinal.TipoDocumentoRendicionFinal",
     "pk": 11,
     "fields": {
       "nombre": "Constancias de inscripción ARCA",
@@ -88,7 +88,7 @@
     }
   },
   {
-    "model": "comedores.TipoDocumentoRendicionFinal",
+    "model": "rendicioncuentasfinal.TipoDocumentoRendicionFinal",
     "pk": 12,
     "fields": {
       "nombre": "DDJJ para Facturas A",
@@ -96,7 +96,7 @@
     }
   },
   {
-    "model": "comedores.TipoDocumentoRendicionFinal",
+    "model": "rendicioncuentasfinal.TipoDocumentoRendicionFinal",
     "pk": 13,
     "fields": {
       "nombre": "Reporte mensual",
@@ -104,7 +104,7 @@
     }
   },
   {
-    "model": "comedores.TipoDocumentoRendicionFinal",
+    "model": "rendicioncuentasfinal.TipoDocumentoRendicionFinal",
     "pk": 14,
     "fields": {
       "nombre": "Informe Técnico Final",

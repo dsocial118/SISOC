@@ -1,41 +1,41 @@
 [
     {
-        "model": "comedores.tipoespacio",
+        "model": "relevamientos.tipoespacio",
         "pk": 1,
         "fields": {
             "nombre": "Espacio Propio"
         }
     },
     {
-        "model": "comedores.tipoespacio",
+        "model": "relevamientos.tipoespacio",
         "pk": 2,
         "fields": {
             "nombre": "Espacio alquilado"
         }
     },
     {
-        "model": "comedores.tipoespacio",
+        "model": "relevamientos.tipoespacio",
         "pk": 3,
         "fields": {
             "nombre": "Espacio prestado (uso exclusivo)"
         }
     },
     {
-        "model": "comedores.tipoespacio",
+        "model": "relevamientos.tipoespacio",
         "pk": 4,
         "fields": {
             "nombre": "Espacio comunitario compartido"
         }
     },
     {
-        "model": "comedores.tipoespacio",
+        "model": "relevamientos.tipoespacio",
         "pk": 5,
         "fields": {
             "nombre": "Casa de familia"
         }
     },
     {
-        "model": "comedores.tipoespacio",
+        "model": "relevamientos.tipoespacio",
         "pk": 6,
         "fields": {
             "nombre": "Otro"

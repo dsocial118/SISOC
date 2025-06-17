@@ -1,6 +1,6 @@
 from django.db import models
 from users.models import User
-from comedores.models.comedor import Comedor
+from comedores.models import Comedor
 from django.core.exceptions import ValidationError
 from django.conf import settings
 from django.contrib.auth import get_user_model
