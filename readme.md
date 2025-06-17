@@ -28,7 +28,8 @@
 
 ## API
 
-TODO: Agregar documentacion para la API
+https://documenter.getpostman.com/view/14921866/2sAXxMfDXf#01ac9db5-a6b5-4b20-9e8c-973e38884f17
+(No es la mas actualizada, pero sirve. Cualquier duda consultar a Juani o Andy)
 
 ## Variables de entorno
 

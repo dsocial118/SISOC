@@ -1495,7 +1495,8 @@ class DimensionesUpdateView(SuccessMessageMixin, UpdateView):
             .get(id=pk)
         )
 
-        # TODO: Modificar logica para no utilizar los siguientes "None' y crear la dimension segun haga falta
+        # TODO: Modificar logica para no utilizar los siguientes "None'
+        # y crear la dimension segun haga falta (para cuando se use ciudadano)
         context.update(
             {
                 "ciudadano": ciudadano,
@@ -1522,7 +1523,7 @@ class DimensionesUpdateView(SuccessMessageMixin, UpdateView):
     def form_valid(
         self, form
     ):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
-        # TODO: Esto sera refactorizado
+        # TODO: Esto sera refactorizado (para cuando se use ciudadano)
         self.object = form.save(commit=False)
 
         pk = self.kwargs["pk"]

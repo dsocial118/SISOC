@@ -68,7 +68,7 @@ urlpatterns = [
         login_required(CiudadanosListView.as_view()),
         name="ciudadanos",
     ),
-    path(  # TODO: Eliminar esta URL y migrar la busqueda via query string
+    path(  # TODO: Eliminar esta URL y migrar la busqueda via query string (Para cuando se use ciudadano)
         "ciudadanos/listar/<busqueda>",
         login_required(CiudadanosListView.as_view()),
         name="ciudadanos",

@@ -653,7 +653,6 @@ class Prestacion(models.Model):
     Modelo que representa una prestación brindada en un Comedor/Merendero.
     """
 
-    # TODO: Esto tiene que se refactorizado, pero se como hacer los formularios :p
     lunes_desayuno_actual = models.PositiveIntegerField(null=True, blank=True)
     lunes_desayuno_espera = models.PositiveIntegerField(null=True, blank=True)
     lunes_almuerzo_actual = models.PositiveIntegerField(null=True, blank=True)
