@@ -2,9 +2,9 @@ from django.core.validators import MaxValueValidator, MinValueValidator, RegexVa
 from django.db import models
 from django.utils import timezone
 
-from configuraciones.models import Municipio, Provincia
-from configuraciones.models import Localidad
-from configuraciones.models import Sexo
+from core.models import Municipio, Provincia
+from core.models import Localidad
+from core.models import Sexo
 from organizaciones.models import Organizacion
 from ciudadanos.models import EstadoIntervencion
 from duplas.models import Dupla
