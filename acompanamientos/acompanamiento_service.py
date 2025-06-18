@@ -1,5 +1,3 @@
-
-
 from admisiones.models.admisiones import Admision
 from acompanamientos.models.hitos import Hitos, HitosIntervenciones
 from acompanamientos.models.acompanamiento import InformacionRelevante, Prestacion
