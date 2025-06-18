@@ -126,7 +126,8 @@ INSTALLED_APPS = [
     "corsheaders",
     # Aplicaciones propias
     "users",
-    "configuraciones",
+    "core",
+    "configuraciones", # borrar cuando no se use mas
     "dashboard",
     "comedores",
     "organizaciones",

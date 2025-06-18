@@ -768,7 +768,7 @@ class Migration(migrations.Migration):
                         blank=True,
                         null=True,
                         on_delete=django.db.models.deletion.PROTECT,
-                        to="configuraciones.provincia",
+                        to="core.provincia",
                     ),
                 ),
             ],
@@ -900,7 +900,7 @@ class Migration(migrations.Migration):
                     "provincia",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.PROTECT,
-                        to="configuraciones.provincia",
+                        to="core.provincia",
                         verbose_name="Provincia",
                     ),
                 ),
@@ -1019,7 +1019,7 @@ class Migration(migrations.Migration):
                     "provincia",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.PROTECT,
-                        to="configuraciones.provincia",
+                        to="core.provincia",
                         verbose_name="Provincia",
                     ),
                 ),
