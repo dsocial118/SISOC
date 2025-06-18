@@ -48,6 +48,14 @@ class AdmisionService:
 
     @staticmethod
     def get_comedores_with_admision(user):
+        """Obtener comedores relacionados a un usuario.
+
+        Args:
+            user (User): Usuario para filtrar comedores.
+
+        Returns:
+            QuerySet: Comedores anotados con su admisión.
+        """
         admision_subquery = Admision.objects.filter(comedor=OuterRef("pk")).values(
             "id"
         )[:1]
@@ -66,6 +74,14 @@ class AdmisionService:
 
     @staticmethod
     def get_admision_create_context(pk):
+        """Contexto inicial para la creación de una admisión.
+
+        Args:
+            pk (int): Clave primaria del comedor.
+
+        Returns:
+            dict: Datos necesarios para el formulario de admisión.
+        """
         comedor = get_object_or_404(Comedor, pk=pk)
         convenios = TipoConvenio.objects.all()
 
@@ -73,6 +89,15 @@ class AdmisionService:
 
     @staticmethod
     def create_admision(comedor_pk, tipo_convenio_id):
+        """Crear una admisión asociada a un comedor y tipo de convenio.
+
+        Args:
+            comedor_pk (int): Identificador del comedor.
+            tipo_convenio_id (int): Identificador del tipo de convenio.
+
+        Returns:
+            Admision: Instancia creada.
+        """
         comedor = get_object_or_404(Comedor, pk=comedor_pk)
         tipo_convenio = get_object_or_404(TipoConvenio, pk=tipo_convenio_id)
         estado = 1
@@ -83,6 +108,14 @@ class AdmisionService:
 
     @staticmethod
     def get_admision_update_context(admision):
+        """Preparar el contexto necesario para actualizar una admisión.
+
+        Args:
+            admision (Admision): Instancia que será editada.
+
+        Returns:
+            dict: Datos para completar el formulario de actualización.
+        """
         documentaciones = Documentacion.objects.filter(
             models.Q(convenios=admision.tipo_convenio)
         ).distinct()
@@ -130,6 +163,15 @@ class AdmisionService:
 
     @staticmethod
     def update_convenio(admision, nuevo_convenio_id):
+        """Actualizar el tipo de convenio asociado a una admisión.
+
+        Args:
+            admision (Admision): Instancia a modificar.
+            nuevo_convenio_id (int): Identificador del nuevo convenio.
+
+        Returns:
+            bool: ``True`` si se actualizó el convenio.
+        """
         if not nuevo_convenio_id:
             return False
 
@@ -142,6 +184,16 @@ class AdmisionService:
 
     @staticmethod
     def handle_file_upload(admision_id, documentacion_id, archivo):
+        """Guardar o reemplazar un archivo de documentación para una admisión.
+
+        Args:
+            admision_id (int): Identificador de la admisión.
+            documentacion_id (int): Documento asociado.
+            archivo (File): Archivo a guardar.
+
+        Returns:
+            tuple[ArchivoAdmision, bool]: Instancia y bandera de creación.
+        """
         admision = get_object_or_404(Admision, pk=admision_id)
         documentacion = get_object_or_404(Documentacion, pk=documentacion_id)
 
@@ -153,6 +205,14 @@ class AdmisionService:
 
     @staticmethod
     def delete_admision_file(archivo):
+        """Eliminar físicamente un archivo y su registro.
+
+        Args:
+            archivo (ArchivoAdmision): Archivo a eliminar.
+
+        Returns:
+            None
+        """
         if archivo.archivo:
             file_path = os.path.join(settings.MEDIA_ROOT, str(archivo.archivo))
             if os.path.exists(file_path):
@@ -162,6 +222,14 @@ class AdmisionService:
 
     @staticmethod
     def actualizar_estado_ajax(request):
+        """Actualizar el estado de un archivo vía petición AJAX.
+
+        Args:
+            request (HttpRequest): Petición entrante con los datos necesarios.
+
+        Returns:
+            dict: Resultado de la operación.
+        """
         estado = request.POST.get("estado")
         documento_id = request.POST.get("documento_id")
         admision_id = request.POST.get("admision_id")
@@ -192,6 +260,15 @@ class AdmisionService:
 
     @staticmethod
     def update_estado_archivo(archivo, nuevo_estado):
+        """Cambiar el estado de un archivo y verificar la admisión.
+
+        Args:
+            archivo (ArchivoAdmision): Archivo a actualizar.
+            nuevo_estado (str): Valor a asignar.
+
+        Returns:
+            bool: ``True`` si el cambio fue exitoso.
+        """
         if not archivo:
             return False
 
@@ -203,6 +280,14 @@ class AdmisionService:
 
     @staticmethod
     def verificar_estado_admision(admision):
+        """Revisar si todos los archivos fueron aceptados y actualizar el estado.
+
+        Args:
+            admision (Admision): Instancia a validar.
+
+        Returns:
+            None
+        """
         archivos = ArchivoAdmision.objects.filter(admision=admision).only("estado")
 
         if admision.estado_id != 3:
@@ -215,6 +300,14 @@ class AdmisionService:
 
     @staticmethod
     def get_dupla_grupo_por_usuario(user):
+        """Obtener el grupo principal asociado a un usuario de la dupla.
+
+        Args:
+            user (User): Usuario consultado.
+
+        Returns:
+            str: Nombre del grupo principal.
+        """
         if user.groups.filter(name="Abogado Dupla").exists():
             return "Abogado Dupla"
         elif user.groups.filter(name="Tecnico Comedor").exists():
@@ -224,14 +317,41 @@ class AdmisionService:
 
     @staticmethod
     def get_queryset_informe_por_tipo(tipo):
+        """Devolver ``QuerySet`` de informes filtrados por tipo.
+
+        Args:
+            tipo (str): Tipo de informe a buscar.
+
+        Returns:
+            QuerySet: Conjunto de informes filtrado.
+        """
         return InformeTecnico.objects.filter(tipo=tipo)
 
     @staticmethod
     def get_informe_por_tipo_y_pk(tipo, pk):
+        """Obtener un informe por tipo y clave primaria.
+
+        Args:
+            tipo (str): Tipo de informe.
+            pk (int): Identificador del informe.
+
+        Returns:
+            InformeTecnico: Instancia solicitada.
+        """
         return get_object_or_404(InformeTecnico, tipo=tipo, pk=pk)
 
     @staticmethod
     def actualizar_estado_informe(informe, nuevo_estado, tipo=None):
+        """Modificar el estado del informe y generar el PDF si corresponde.
+
+        Args:
+            informe (InformeTecnico): Informe a actualizar.
+            nuevo_estado (str): Nuevo estado a aplicar.
+            tipo (str | None): Tipo de informe para generar PDF.
+
+        Returns:
+            None
+        """
         informe.estado = nuevo_estado
         informe.save()
 
@@ -240,6 +360,15 @@ class AdmisionService:
 
     @staticmethod
     def generar_y_guardar_pdf(informe, tipo):
+        """Crear un archivo PDF a partir del informe técnico.
+
+        Args:
+            informe (InformeTecnico): Informe fuente.
+            tipo (str): Tipo de informe (juridico/base).
+
+        Returns:
+            None
+        """
         campos = [
             (field.verbose_name, field.value_from_object(informe))
             for field in informe._meta.fields
@@ -268,6 +397,14 @@ class AdmisionService:
 
     @staticmethod
     def get_campos_visibles_informe(informe):
+        """Listar pares de etiquetas y valores visibles para un informe.
+
+        Args:
+            informe (InformeTecnico): Informe a procesar.
+
+        Returns:
+            list[tuple[str, Any]]: Pares de etiqueta y valor visibles.
+        """
         campos_excluidos_comunes = ["id", "admision", "estado", "tipo"]
 
         if informe.tipo == "juridico":
@@ -296,21 +433,54 @@ class AdmisionService:
 
     @staticmethod
     def get_admision(admision_id):
+        """Obtener una admisión existente o lanzar ``404``.
+
+        Args:
+            admision_id (int): Identificador de la admisión.
+
+        Returns:
+            Admision: Instancia solicitada.
+        """
         return get_object_or_404(Admision, pk=admision_id)
 
     @staticmethod
     def get_form_class_por_tipo(tipo):
+        """Devolver la clase de formulario correspondiente según el tipo.
+
+        Args:
+            tipo (str): Tipo de informe.
+
+        Returns:
+            type[forms.Form]: Clase de formulario adecuada.
+        """
         return (
             InformeTecnicoJuridicoForm if tipo == "juridico" else InformeTecnicoBaseForm
         )
 
     @staticmethod
     def preparar_informe_para_creacion(instance, admision_id):
+        """Configurar los valores iniciales de un informe recién creado.
+
+        Args:
+            instance (InformeTecnico): Informe a preparar.
+            admision_id (int): Identificador de la admisión vinculada.
+
+        Returns:
+            None
+        """
         instance.admision_id = admision_id
         instance.estado = "Para revision"
 
     @staticmethod
     def verificar_estado_para_revision(informe):
+        """Resetear observaciones y dejar el informe listo para revisión.
+
+        Args:
+            informe (InformeTecnico): Informe a modificar.
+
+        Returns:
+            None
+        """
         if informe.estado != "Validado":
             CampoASubsanar.objects.filter(informe=informe).delete()
             ObservacionGeneralInforme.objects.filter(informe=informe).delete()
@@ -318,6 +488,15 @@ class AdmisionService:
 
     @staticmethod
     def marcar_como_enviado_a_legales(admision, usuario=None):
+        """Marcar la admisión como enviada a legales.
+
+        Args:
+            admision (Admision): Instancia a actualizar.
+            usuario (User | None): Usuario que ejecuta la acción.
+
+        Returns:
+            bool: ``True`` si se modificó el estado.
+        """
         if not admision.enviado_legales:
             admision.enviado_legales = True
             admision.save()
@@ -326,6 +505,15 @@ class AdmisionService:
 
     @staticmethod
     def marcar_como_documentacion_rectificada(admision, usuario=None):
+        """Indicar que la documentación fue rectificada y actualizar estados.
+
+        Args:
+            admision (Admision): Instancia a modificar.
+            usuario (User | None): Usuario que realiza el cambio.
+
+        Returns:
+            bool: ``True`` si hubo modificaciones.
+        """
         cambios = False
 
         if not admision.enviado_legales:
@@ -352,6 +540,14 @@ class AdmisionService:
 
     @staticmethod
     def get_legales_context(admision):
+        """Armar el contexto utilizado en la vista de legales.
+
+        Args:
+            admision (Admision): Instancia sobre la que se trabaja.
+
+        Returns:
+            dict: Datos a renderizar en la vista.
+        """
         documentaciones = Documentacion.objects.filter(
             models.Q(convenios=admision.tipo_convenio)
         ).distinct()
@@ -420,6 +616,14 @@ class AdmisionService:
 
     @staticmethod
     def get_informe_por_tipo_convenio(admision):
+        """Obtener el informe correspondiente al tipo de convenio.
+
+        Args:
+            admision (Admision): Instancia de referencia.
+
+        Returns:
+            InformeTecnico | None: Informe encontrado o ``None``.
+        """
         tipo = admision.tipo_informe
         if not tipo:
             return None
@@ -427,6 +631,15 @@ class AdmisionService:
 
     @staticmethod
     def enviar_a_rectificar(request, admision):
+        """Enviar la admisión a rectificación registrando observaciones.
+
+        Args:
+            request (HttpRequest): Petición con los datos ingresados.
+            admision (Admision): Instancia que se actualizará.
+
+        Returns:
+            HttpResponseRedirect: Redirección a la misma página.
+        """
         form = LegalesRectificarForm(request.POST)
         if form.is_valid():
             observaciones = form.cleaned_data["observaciones"]
@@ -454,6 +667,15 @@ class AdmisionService:
 
     @staticmethod
     def guardar_legales_num_if(request, admision):
+        """Guardar el número de IF provisto por legales.
+
+        Args:
+            request (HttpRequest): Petición con el número ingresado.
+            admision (Admision): Instancia a modificar.
+
+        Returns:
+            HttpResponseRedirect: Redirección a la página actual.
+        """
         form = LegalesNumIFForm(request.POST, instance=admision)
         if form.is_valid():
             form.save()
@@ -464,6 +686,15 @@ class AdmisionService:
 
     @staticmethod
     def validar_juridicos(request, admision):
+        """Cambiar el estado a 'Pendiente de Validación' si se cumplen requisitos.
+
+        Args:
+            request (HttpRequest): Petición de validación.
+            admision (Admision): Instancia sobre la que se opera.
+
+        Returns:
+            HttpResponseRedirect: Redirección a la página actual.
+        """
         reso_completo = FormularioProyectoDisposicion.objects.filter(
             admision=admision
         ).exists()
@@ -493,6 +724,15 @@ class AdmisionService:
 
     @staticmethod
     def guardar_formulario_reso(request, admision):
+        """Guardar el formulario de disposición y generar su PDF.
+
+        Args:
+            request (HttpRequest): Datos del formulario enviado.
+            admision (Admision): Instancia relacionada.
+
+        Returns:
+            HttpResponseRedirect: Redirección al mismo URL.
+        """
         formulario_existente = FormularioProyectoDisposicion.objects.filter(
             admision=admision
         ).first()
@@ -537,6 +777,15 @@ class AdmisionService:
 
     @staticmethod
     def guardar_formulario_proyecto_convenio(request, admision):
+        """Persistir el formulario de convenio y generar el PDF asociado.
+
+        Args:
+            request (HttpRequest): Petición entrante.
+            admision (Admision): Instancia relacionada.
+
+        Returns:
+            HttpResponseRedirect: Redirección al mismo URL.
+        """
         formulario_existente = FormularioProyectoDeConvenio.objects.filter(
             admision=admision
         ).first()
@@ -579,6 +828,15 @@ class AdmisionService:
 
     @staticmethod
     def guardar_documento_expediente(request, admision):
+        """Registrar un nuevo documento de expediente y actualizar el estado.
+
+        Args:
+            request (HttpRequest): Datos y archivos enviados.
+            admision (Admision): Instancia sobre la que se guarda.
+
+        Returns:
+            HttpResponseRedirect: Redirección a la página actual.
+        """
         form = DocumentosExpedienteForm(request.POST, request.FILES)
         if form.is_valid():
             documento = form.save(commit=False)
@@ -608,6 +866,14 @@ class AdmisionService:
 
     @staticmethod
     def comenzar_acompanamiento(admision_id):
+        """Iniciar el acompañamiento importando datos desde la admisión.
+
+        Args:
+            admision_id (int): Identificador de la admisión.
+
+        Returns:
+            Admision: Instancia actualizada.
+        """
         admision = get_object_or_404(Admision, pk=admision_id)
         estado_admitido = EstadoAdmision.objects.get(
             nombre="Admitido - pendiente ejecución"
