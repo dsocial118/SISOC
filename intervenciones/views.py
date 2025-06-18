@@ -18,7 +18,14 @@ from intervenciones.forms import IntervencionForm
 
 @csrf_exempt  # FIXME: eliminar excepcion CSRF
 def sub_estados_intervenciones_ajax(request):
-    """Devolver sub estados disponibles para un tipo de intervención."""
+    """Devolver sub estados disponibles para un tipo de intervención.
+
+    Args:
+        request (HttpRequest): Petición con el ``id`` del tipo.
+
+    Returns:
+        JsonResponse: Lista de subestados en formato Select2.
+    """
     tipo_intervencion_id = request.GET.get("id")
     if tipo_intervencion_id:
         sub_estados = SubIntervencion.objects.filter(
@@ -154,6 +161,15 @@ class IntervencionDeleteView(DeleteView):
 
 
 def subir_archivo_intervencion(request, intervencion_id):
+    """Guardar un archivo adjunto a la intervención.
+
+    Args:
+        request (HttpRequest): Petición que contiene el archivo.
+        intervencion_id (int): Identificador de la intervención.
+
+    Returns:
+        JsonResponse: Resultado de la operación.
+    """
     intervencion = get_object_or_404(Intervencion, id=intervencion_id)
 
     if request.method == "POST" and request.FILES.get("documentacion"):
@@ -168,6 +184,15 @@ def subir_archivo_intervencion(request, intervencion_id):
 
 
 def eliminar_archivo_intervencion(request, intervencion_id):
+    """Eliminar el archivo asociado a una intervención.
+
+    Args:
+        request (HttpRequest): Petición recibida.
+        intervencion_id (int): Identificador de la intervención.
+
+    Returns:
+        HttpResponseRedirect: Redirección al detalle de la intervención.
+    """
     intervencion = get_object_or_404(Intervencion, id=intervencion_id)
 
     if intervencion.documentacion:
