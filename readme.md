@@ -59,6 +59,8 @@ TODO: Agregar documentacion para la API
 
 ## Variables de entorno
 
+Existe un archivo `.env.example` con estos mismos nombres. Puede copiarse a `.env` y completar los valores para iniciar la aplicacion localmente.
+
 ```
 DJANGO_DEBUG=
 DJANGO_SECRET_KEY=
