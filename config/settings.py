@@ -153,7 +153,6 @@ MIDDLEWARE = [
     "django.contrib.admindocs.middleware.XViewMiddleware",
     "silk.middleware.SilkyMiddleware",
     "debug_toolbar.middleware.DebugToolbarMiddleware",
-    "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "config.middlewares.xss_protection.XSSProtectionMiddleware",
     "config.middlewares.threadlocals.ThreadLocalMiddleware",
     "corsheaders.middleware.CorsMiddleware",
