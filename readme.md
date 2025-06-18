@@ -1,11 +1,37 @@
 # SISOC
 
+## Tabla de Contenidos
+
+1. [Arquitectura general](#arquitectura-general)
+2. [Despliegue local](#despliegue-local)
+3. [Estructura de carpetas](#estructura-de-carpetas)
+4. [Formateo y parseo de codigo previo al pull request](#formateo-y-parseo-de-codigo-previo-al-pull-request)
+5. [Variables de entorno](#variables-de-entorno)
+6. [Ejecutar tests automaticos](#ejecutar-tests-automaticos)
+7. [Buenas practicas a seguir](#buenas-practicas-a-seguir)
+8. [Tecnologías utilizadas](#tecnologías-utilizadas)
+
+## Arquitectura general
+
+El proyecto esta basado en **Django** y utiliza **MySQL** como motor de base de datos. Para facilitar la puesta en marcha se provee un entorno con **Docker** y **Docker Compose**. Cada aplicación dentro del repositorio representa un módulo funcional (por ejemplo `comedores`, `relevamientos` o `users`).
+
+Las dependencias de Python se encuentran definidas en [`requirements.txt`](requirements.txt).
+
 ## Despliegue local
 
 1. Clonar el repositorio e ingresar en el
 2. Solicitar al DevOps un dump de la DB y colocarlo en `./docker/mysql/local-dump.sql` para que se cargue en el MySQL **(opcional)**
 3. Ejecutar `docker-compose up` y esperar a que los servicios se levanten (si se aplico un dump, va a tardar unos minutos)
 4. Utilizar el usuario predeterminado. Username: 1. Password: 1 **(opcional)**
+
+## Estructura de carpetas
+
+- **`config/`**: configuración global de Django
+- **`docker/`**: archivos de los contenedores para desarrollo
+- **`comedores/`, `relevamientos/`, `users/`, etc.**: aplicaciones de Django
+- **`templates/`**: plantillas HTML
+- **`static/`**: archivos estáticos (CSS, JS, imágenes)
+- **`**/tests/`**: pruebas automáticas con `pytest`
 
 ## Formateo y parseo de codigo previo al pull request
 ### PyLint (se debe arreglar el codigo manualmente):
@@ -28,7 +54,8 @@
 
 ## API
 
-TODO: Agregar documentacion para la API
+https://documenter.getpostman.com/view/14921866/2sAXxMfDXf#01ac9db5-a6b5-4b20-9e8c-973e38884f17
+(No es la mejor doc... pero sirve. Cualquier duda consultar a Juani o Andy)
 
 ## Variables de entorno
 
