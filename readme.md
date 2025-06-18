@@ -31,8 +31,7 @@ Las dependencias de Python se encuentran definidas en [`requirements.txt`](requi
 - **`comedores/`, `relevamientos/`, `users/`, etc.**: aplicaciones de Django
 - **`templates/`**: plantillas HTML
 - **`static/`**: archivos estáticos (CSS, JS, imágenes)
-- **`tests/`**: pruebas automáticas con `pytest`
-- **`docs/`**: documentación adicional del proyecto
+- **`**/tests/`**: pruebas automáticas con `pytest`
 
 ## Formateo y parseo de codigo previo al pull request
 ### PyLint (se debe arreglar el codigo manualmente):
@@ -55,7 +54,8 @@ Las dependencias de Python se encuentran definidas en [`requirements.txt`](requi
 
 ## API
 
-TODO: Agregar documentacion para la API
+https://documenter.getpostman.com/view/14921866/2sAXxMfDXf#01ac9db5-a6b5-4b20-9e8c-973e38884f17
+(No es la mejor doc... pero sirve. Cualquier duda consultar a Juani o Andy)
 
 ## Variables de entorno
 
