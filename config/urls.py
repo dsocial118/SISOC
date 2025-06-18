@@ -10,7 +10,8 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("django.contrib.auth.urls")),
     path("", include("users.urls")),
-    path("", include("configuraciones.urls")),
+    path("", include("core.urls")),
+    path("", include("core.urls")), # borrar cuando no se use mas
     path("", include("dashboard.urls")),
     path("", include("comedores.urls")),
     path("", include("organizaciones.urls")),
