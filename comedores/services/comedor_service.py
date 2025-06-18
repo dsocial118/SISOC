@@ -13,8 +13,8 @@ from comedores.models import (
 )
 
 from intervenciones.models.intervenciones import Intervencion
-from configuraciones.models import Municipio, Provincia
-from configuraciones.models import Localidad
+from core.models import Municipio, Provincia
+from core.models import Localidad
 from comedores.models import ImagenComedor
 
 
