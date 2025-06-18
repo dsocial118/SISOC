@@ -1,4 +1,5 @@
 from django.http import JsonResponse
+
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
@@ -17,6 +18,7 @@ from intervenciones.forms import IntervencionForm
 
 @csrf_exempt  # FIXME: eliminar excepcion CSRF
 def sub_estados_intervenciones_ajax(request):
+    """Devolver sub estados disponibles para un tipo de intervención."""
     tipo_intervencion_id = request.GET.get("id")
     if tipo_intervencion_id:
         sub_estados = SubIntervencion.objects.filter(

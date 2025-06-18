@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 
 
 class Dupla(models.Model):
+    """Relación entre técnicos y abogados que trabajan como dupla."""
     nombre = models.CharField(max_length=255)
     tecnico = models.ManyToManyField(
         User,
