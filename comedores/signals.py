@@ -1,22 +1,22 @@
 from django.db.models.signals import post_save, pre_delete, pre_save
 from django.dispatch import receiver
-from comedores.models.comedor import (
-    DocumentoRendicionFinal,
+from comedores.models import (
     Observacion,
     Referente,
     Comedor,
-    RendicionCuentasFinal,
-    TipoDocumentoRendicionFinal,
 )
-from comedores.models.relevamiento import Relevamiento
 from comedores.services.clasificacion_comedor_service import ClasificacionComedorService
 from comedores.tasks import (
     AsyncRemoveComedorToGestionar,
-    AsyncRemoveRelevamientoToGestionar,
     AsyncSendComedorToGestionar,
     AsyncSendObservacionToGestionar,
     AsyncSendReferenteToGestionar,
-    AsyncSendRelevamientoToGestionar,
+)
+from relevamientos.models import Relevamiento
+from rendicioncuentasfinal.models import (
+    DocumentoRendicionFinal,
+    RendicionCuentasFinal,
+    TipoDocumentoRendicionFinal,
 )
 
 
@@ -48,17 +48,6 @@ def remove_comedor_to_gestionar(sender, instance, using, **kwargs):
     AsyncRemoveComedorToGestionar(instance.id).start()
 
 
-@receiver(post_save, sender=Relevamiento)
-def send_relevamiento_to_gestionar(sender, instance, created, **kwargs):
-    if created:
-        AsyncSendRelevamientoToGestionar(instance.id).start()
-
-
-@receiver(pre_delete, sender=Relevamiento)
-def remove_relevamiento_to_gestionar(sender, instance, using, **kwargs):
-    AsyncRemoveRelevamientoToGestionar(instance.id).start()
-
-
 @receiver(post_save, sender=Observacion)
 def send_observacion_to_gestionar(sender, instance, created, **kwargs):
     if created:
@@ -71,13 +60,13 @@ def send_referente_to_gestionar(sender, instance, created, **kwargs):
         AsyncSendReferenteToGestionar(instance.id).start()
 
 
-@receiver(post_save, sender=Relevamiento)
-def clasificacion_relevamiento(sender, instance, **kwargs):
-    ClasificacionComedorService.create_clasificacion_relevamiento(instance)
-
-
 @receiver(post_save, sender=RendicionCuentasFinal)
 def crear_documentos_por_defecto(sender, instance, created, **kwargs):
     if created:
         for tipo in TipoDocumentoRendicionFinal.objects.filter(personalizado=False):
             DocumentoRendicionFinal.objects.create(rendicion_final=instance, tipo=tipo)
+
+
+@receiver(post_save, sender=Relevamiento)
+def clasificacion_relevamiento(sender, instance, **kwargs):
+    ClasificacionComedorService.create_clasificacion_relevamiento(instance)

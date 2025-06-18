@@ -1,5 +1,7 @@
 {% extends "includes/main.html" %}
 {% load static %}
+{% load static custom_filters %}
+;
 {% block title %}Comedores - Admisiones{% endblock %}
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
@@ -56,14 +58,17 @@
                                             {% if comedor.admision_id %}
                                                 <a href="{% url 'admisiones_tecnicos_editar' comedor.admision_id %}"
                                                    class="btn btn-warning btn-sm">
-                                                    Editar
+                                                    {% if user|has_group:"Tecnico Comedor" %}Editar{% endif %}
+                                                    {% if user|has_group:"Abogado Dupla" %}Ver{% endif %}
                                                     {% if comedor.estado_legales == "A Rectificar" %}
                                                         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">Rectificar</span>
                                                     {% endif %}
                                                 </a>
                                             {% else %}
-                                                <a href="{% url 'admisiones_tecnicos_crear' comedor.id %}"
-                                                   class="btn btn-primary btn-sm">Crear</a>
+                                                {% if user|has_group:"Tecnico Comedor" %}
+                                                    <a href="{% url 'admisiones_tecnicos_crear' comedor.id %}"
+                                                       class="btn btn-primary btn-sm">Crear</a>
+                                                {% endif %}
                                             {% endif %}
                                         </div>
                                     </td>

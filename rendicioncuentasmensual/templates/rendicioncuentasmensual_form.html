@@ -1,0 +1,78 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% block title %}Detalle de Rendición de Cuenta{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'rendicioncuentasmensual_list' comedorid %}"
+               title="Ver listado de rendiciones">Rendiciones de Cuenta</a>
+        </li>
+        <li class="breadcrumb-item active">{{ form.instance.id|default:"Crear" }} Rendición</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <div class="container mt-4">
+        <h2 class="mb-4">{{ form.instance.id|default:"Crear" }} Rendición de Cuenta</h2>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="row">
+                <!-- Datos de la rendición -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5>Datos de la Rendición</h5>
+                        </div>
+                        <div class="card-body">
+                            {{ form.mes|as_crispy_field }}
+                            {{ form.anio|as_crispy_field }}
+                            {{ form.documento_adjunto|as_crispy_field }}
+                            {{ form.observaciones|as_crispy_field }}
+                        </div>
+                    </div>
+                </div>
+                <!-- Documentación adjunta -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-secondary text-white">
+                            <h5>Documentación Adjunta</h5>
+                        </div>
+                        <div class="card-body" id="documentacion-container">
+                            <!-- Archivos ya cargados -->
+                            {% for archivo in archivos_adjuntos %}
+                                <div class="documentacion-edit-item d-flex align-items-center">
+                                    <div class="flex-grow-1">
+                                        <label>{{ archivo.nombre }}</label>
+                                    </div>
+                                    <button type="button"
+                                            class="btn btn-danger btn-sm remove-existing-documentacion"
+                                            data-id="{{ archivo.id }}">Eliminar</button>
+                                </div>
+                            {% endfor %}
+                            <!-- Formulario para nuevos archivos -->
+                            <div class="documentacion-item d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    {{ documentacion_adjunta_form.nombre|as_crispy_field }}
+                                    {{ documentacion_adjunta_form.archivo|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer text-end d-flex justify-content-between">
+                            <button type="button" class="btn btn-primary" id="add-documentacion">Agregar Archivo</button>
+                            <button type="button" class="btn btn-danger btn-sm" id="remove-documentacion">Eliminar Archivo</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Botones de acción -->
+            <div class="mt-4 text-center">
+                <button type="submit" class="btn btn-success">Guardar</button>
+                <a href="{% url 'rendicioncuentasmensual_list' comedorid %}"
+                   class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+{% endblock %}
+{% block customJS %}
+    <script src="{% static 'custom/js/rendicioncuentasmensual_form.js' %}"></script>
+{% endblock %}
