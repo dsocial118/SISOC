@@ -6,7 +6,6 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("comedores", "0001_initial"),
-        ("core", "0002_move_configuraciones_data"),
     ]
 
     operations = [
