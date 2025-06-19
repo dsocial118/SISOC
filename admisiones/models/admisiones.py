@@ -53,6 +53,9 @@ class Admision(models.Model):
     enviado_legales = models.BooleanField(
         default=False, verbose_name="¿Enviado a legales?"
     )
+    enviado_acompaniamiento = models.BooleanField(
+        default=False, verbose_name="¿Enviado a Acompañamiento?"
+    )
     estado_legales = models.CharField(
         max_length=40,
         choices=ESTADOS_LEGALES,

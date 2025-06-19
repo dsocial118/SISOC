@@ -56,14 +56,18 @@ class AdmisionService:
         Returns:
             QuerySet: Comedores anotados con su admisión.
         """
-        admision_subquery = Admision.objects.filter(comedor=OuterRef("pk")).values(
-            "id"
-        )[:1]
+        admision_subquery = Admision.objects.filter(comedor=OuterRef("pk"))
+
+        if user.is_superuser:
+            queryset = Comedor.objects.all()
+        else:
+            queryset = Comedor.objects.filter(
+                Q(dupla__tecnico=user) | Q(dupla__abogado=user),
+                dupla__estado="Activo"
+            )
 
         return (
-            Comedor.objects.filter(
-                Q(dupla__tecnico=user) | Q(dupla__abogado=user), dupla__estado="Activo"
-            )
+            queryset
             .annotate(
                 admision_id=Subquery(admision_subquery.values("id")[:1]),
                 estado_legales=Subquery(admision_subquery.values("estado_legales")[:1]),
@@ -499,6 +503,23 @@ class AdmisionService:
         """
         if not admision.enviado_legales:
             admision.enviado_legales = True
+            admision.save()
+            return True
+        return False
+
+    @staticmethod
+    def marcar_como_enviado_a_acompaniamiento(admision, usuario=None):
+        """Marcar la admisión como enviada a acompañamiento.
+
+        Args:
+            admision (Admision): Instancia a actualizar.
+            usuario (User | None): Usuario que ejecuta la acción.
+
+        Returns:
+            bool: ``True`` si se modificó el estado.
+        """
+        if not admision.enviado_acompaniamiento:
+            admision.enviado_acompaniamiento = True
             admision.save()
             return True
         return False

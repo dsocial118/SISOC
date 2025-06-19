@@ -32,6 +32,12 @@
                 {% endif %}
             {% endif %}
             {% if user|has_group:"Tecnico Comedor" and not es_crear %}
+                {% if admision.estado_legales == "Finalizado" and not admision.enviado_acompaniamiento %}
+                    <button type="button"
+                            class="btn btn-warning mr-1"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalDisponibilizarAcomp">Disponibilizar a Acompañamiento</button>
+                {% endif %}
                 {% if admision.estado_legales == "A Rectificar" %}
                     <button type="button"
                             class="btn btn-warning mr-1"
@@ -143,6 +149,12 @@
                                                     <i class="bi bi-exclamation-circle-fill text-warning">
                                                     {% endif %}
                                                 </i>
+                                            {% endif %}
+                                            {% if admision.enviado_legales %}
+                                                - Enviado a Legales <i class="bi bi-check-circle-fill text-success"></i>                                                
+                                            {% endif %}
+                                            {% if admision.enviado_acompaniamiento %}
+                                                - Enviado a Acompañamiento <i class="bi bi-check-circle-fill text-success"></i>                                                
                                             {% endif %}
                                         </div>
                                     </li>
@@ -465,6 +477,35 @@
                                                     <button type="submit"
                                                             id="mandarLegalesId"
                                                             name="mandarLegales"
+                                                            class="btn btn-primary">Confirmar</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Modal para confirmar disponibilizar acompañamiento -->
+                                <div class="modal fade"
+                                     id="modalDisponibilizarAcomp"
+                                     tabindex="-1"
+                                     aria-labelledby="modalDisponibilizarAcompLabel"
+                                     aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="modalDisponibilizarAcompLabel">Confirmar disponibilizar a acompañamiento</h5>
+                                                <button type="button"
+                                                        class="btn-close"
+                                                        data-bs-dismiss="modal"
+                                                        aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body mb-2">¿Esta seguro que quiere hacer esta acción?</div>
+                                            <div class="modal-footer">
+                                                <form id="mandarLegalesForm" method="POST" action="">
+                                                    {% csrf_token %}
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                    <button type="submit"
+                                                            id="btnDisponibilizarAcomp_id"
+                                                            name="btnDisponibilizarAcomp"
                                                             class="btn btn-primary">Confirmar</button>
                                                 </form>
                                             </div>
