@@ -62,13 +62,11 @@ class AdmisionService:
             queryset = Comedor.objects.all()
         else:
             queryset = Comedor.objects.filter(
-                Q(dupla__tecnico=user) | Q(dupla__abogado=user),
-                dupla__estado="Activo"
+                Q(dupla__tecnico=user) | Q(dupla__abogado=user), dupla__estado="Activo"
             )
 
         return (
-            queryset
-            .annotate(
+            queryset.annotate(
                 admision_id=Subquery(admision_subquery.values("id")[:1]),
                 estado_legales=Subquery(admision_subquery.values("estado_legales")[:1]),
             )
