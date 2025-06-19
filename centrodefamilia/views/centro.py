@@ -6,10 +6,7 @@ from django.db.models import Q, Count
 from django.core.exceptions import PermissionDenied
 from centrodefamilia.models import Centro, ActividadCentro, ParticipanteActividad
 from centrodefamilia.forms import CentroForm
-from centrodefamilia.services import CentroService
-from configuraciones.decorators import group_required
 from django.utils.decorators import method_decorator
-
 
 class CentroListView(LoginRequiredMixin, ListView):
     model = Centro
@@ -21,8 +18,11 @@ class CentroListView(LoginRequiredMixin, ListView):
         queryset = Centro.objects.select_related("faro_asociado", "referente")
         user = self.request.user
 
+        # Un referente ve solo sus centros y los adheridos asociados a sus centros FARO
         if user.groups.filter(name="ReferenteCentro").exists() and not user.is_superuser:
-            queryset = queryset.filter(referente=user)
+            queryset = queryset.filter(
+                Q(referente=user) | Q(faro_asociado__referente=user)
+            )
 
         busqueda = self.request.GET.get("busqueda")
         if busqueda:
@@ -96,6 +96,15 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy("centro_list")
 
     def form_valid(self, form):
+        user = self.request.user
+
+        # Si es referente, siempre se asigna como referente y solo puede crear adheridos
+        if user.groups.filter(name="ReferenteCentro").exists() and not user.is_superuser:
+            form.instance.referente = user
+            if form.cleaned_data.get("tipo") != "adherido":
+                messages.error(self.request, "Solo puedes crear centros ADHERIDOS.")
+                return self.form_invalid(form)
+
         messages.success(self.request, "Centro creado exitosamente.")
         return super().form_valid(form)
 
@@ -104,6 +113,15 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
     model = Centro
     form_class = CentroForm
     template_name = "centros/centro_form.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        centro = self.get_object()
+        user = request.user
+
+        # Solo el referente del centro o el superadmin puede editar
+        if not (centro.referente_id == user.id or user.is_superuser):
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         messages.success(self.request, "Centro actualizado correctamente.")
@@ -117,6 +135,14 @@ class CentroDeleteView(LoginRequiredMixin, DeleteView):
     model = Centro
     success_url = reverse_lazy("centro_list")
     template_name = "includes/confirm_delete.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        centro = self.get_object()
+        user = request.user
+
+        if not (centro.referente_id == user.id or user.is_superuser):
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
         messages.success(self.request, "Centro eliminado correctamente.")

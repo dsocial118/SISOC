@@ -12,21 +12,22 @@ class CentroForm(forms.ModelForm):
     class Meta:
         model = Centro
         fields = [
+            "tipo",
             "nombre",
+            "codigo",
             "direccion",
             "contacto",
-            "tipo",
-            "activo",
             "faro_asociado",
+            "tipo_organizacion",
+            "foto",
             "referente",
+            "activo",
         ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Filtrar solo usuarios que estén en el grupo 'ReferenteCentro'
-        self.fields["referente"].queryset = User.objects.filter(
-            groups__name="ReferenteCentro"
-        )
+        self.fields["referente"].queryset = User.objects.filter(groups__name="ReferenteCentro")
+        self.fields["faro_asociado"].queryset = Centro.objects.filter(tipo='faro', activo=True)
 
     def clean(self):
         cleaned_data = super().clean()
@@ -34,12 +35,9 @@ class CentroForm(forms.ModelForm):
         faro_asociado = cleaned_data.get("faro_asociado")
 
         if tipo == "adherido" and not faro_asociado:
-            raise ValidationError(
-                "Debe asociar un Centro FARO activo si el centro es ADHERIDO."
-            )
+            raise ValidationError("Debe asociar un Centro FARO activo si el centro es ADHERIDO.")
         if tipo == "faro" and faro_asociado:
             raise ValidationError("Un Centro FARO no puede tener un FARO asociado.")
-
         return cleaned_data
 
 
