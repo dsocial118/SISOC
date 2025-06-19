@@ -5,6 +5,7 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import include, path
 
 urlpatterns = [
+    path("__debug__/", include("debug_toolbar.urls")),
     path("admin/doc/", include("django.contrib.admindocs.urls")),
     path("admin/", admin.site.urls),
     path("", include("django.contrib.auth.urls")),
@@ -18,12 +19,11 @@ urlpatterns = [
     path("", include("duplas.urls")),
     path("", include("ciudadanos.urls")),
     path("", include("admisiones.urls")),
-    # Django Debug Toolbar
-    path("__debug__/", include("debug_toolbar.urls")),
-    # Healthcheck AWS
     path("", include("healthcheck.urls")),
     path("acompanamientos/", include("acompanamientos.urls")),
     path("expedientespagos/", include("expedientespagos.urls")),
+    path("", include("rendicioncuentasfinal.urls")),
+    path("", include("relevamientos.urls")),
     path("rendicioncuentasmensual/", include("rendicioncuentasmensual.urls")),
 ]
 
