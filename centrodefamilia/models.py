@@ -1,6 +1,5 @@
 from django.db import models
 from django.core.exceptions import ValidationError
-
 from django.contrib.auth.models import User
 
 
@@ -28,41 +27,13 @@ class Centro(models.Model):
         on_delete=models.SET_NULL,
         limit_choices_to={"tipo": "faro", "activo": True},
     )
+    codigo = models.CharField(max_length=10, unique=True)
+    tipo_organizacion = models.CharField(max_length=100, blank=True)
+    foto = models.ImageField(upload_to="centros/", blank=True, null=True)
     activo = models.BooleanField(default=True)
 
     def __str__(self):
         return self.nombre
-
-
-class ParticipanteActividad(models.Model):
-    actividad_centro = models.ForeignKey(
-        "ActividadCentro", on_delete=models.CASCADE, verbose_name="Actividad del Centro"
-    )
-    nombre = models.CharField(max_length=100, verbose_name="Nombre")
-    apellido = models.CharField(max_length=100, verbose_name="Apellido")
-    dni = models.CharField(max_length=15, verbose_name="DNI")
-    genero = models.CharField(
-        max_length=20,
-        choices=[
-            ("masculino", "Masculino"),
-            ("femenino", "Femenino"),
-            ("otro", "Otro"),
-        ],
-        verbose_name="Género",
-    )
-    edad = models.PositiveIntegerField(verbose_name="Edad")
-    cuit = models.CharField(max_length=20, verbose_name="CUIT del Participante")
-    fecha_registro = models.DateTimeField(
-        auto_now_add=True, verbose_name="Fecha de Registro"
-    )
-
-    def __str__(self):
-        return f"{self.apellido}, {self.nombre} - {self.actividad_centro}"
-
-    class Meta:
-        verbose_name = "Participante"
-        verbose_name_plural = "Participantes"
-        unique_together = ("actividad_centro", "cuit")
 
 
 class Categoria(models.Model):
@@ -102,7 +73,7 @@ class ActividadCentro(models.Model):
     )
     dias = models.CharField(max_length=100, verbose_name="Días")
     horarios = models.CharField(max_length=100, verbose_name="Horarios")
-    precio = models.PositiveIntegerField(verbose_name="PrecioActividad",null=True, blank=True)
+    precio = models.PositiveIntegerField(verbose_name="PrecioActividad", null=True, blank=True)
     estado = models.CharField(
         max_length=20,
         choices=ESTADO_CHOICES,
@@ -116,3 +87,34 @@ class ActividadCentro(models.Model):
     class Meta:
         verbose_name = "Actividad del Centro"
         verbose_name_plural = "Actividades por Centro"
+
+
+class ParticipanteActividad(models.Model):
+    actividad_centro = models.ForeignKey(
+        ActividadCentro, on_delete=models.CASCADE, verbose_name="Actividad del Centro"
+    )
+    nombre = models.CharField(max_length=100, verbose_name="Nombre")
+    apellido = models.CharField(max_length=100, verbose_name="Apellido")
+    dni = models.CharField(max_length=15, verbose_name="DNI")
+    genero = models.CharField(
+        max_length=20,
+        choices=[
+            ("masculino", "Masculino"),
+            ("femenino", "Femenino"),
+            ("otro", "Otro"),
+        ],
+        verbose_name="Género",
+    )
+    edad = models.PositiveIntegerField(verbose_name="Edad")
+    cuit = models.CharField(max_length=20, verbose_name="CUIT del Participante")
+    fecha_registro = models.DateTimeField(
+        auto_now_add=True, verbose_name="Fecha de Registro"
+    )
+
+    def __str__(self):
+        return f"{self.apellido}, {self.nombre} - {self.actividad_centro}"
+
+    class Meta:
+        verbose_name = "Participante"
+        verbose_name_plural = "Participantes"
+        unique_together = ("actividad_centro", "cuit")
