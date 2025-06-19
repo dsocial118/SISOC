@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <style>
+    body {
+        font-family: Arial, sans-serif;
+        font-size: 10pt;
+        margin: 0;
+        margin-top: 0;
+    }
+
+    h1 {
+        text-align: center;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    th, td {
+        padding: 6px;
+        border: 1px solid #ccc;
+    }
+
+    .logo {
+        width: 150px;
+    }
+
+    @page {
+        size: A4;
+        margin: 1cm 2cm 2.5cm 2cm; /* top, right, bottom, left */
+
+        @bottom-center {
+            content: "Página " counter(page) " de " counter(pages);
+            font-size: 10pt;
+            color: #666;
+        }
+    }
+
+    header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2cm;
+        border-bottom: 1px solid #ccc;
+        padding: 5px 20px;
+        background: white; /* para que tape contenido si es transparente */
+        z-index: 10;
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-left {
+        font-weight: bold;
+        font-size: 10pt;
+        text-align: left;
+        flex-direction: column; /* si hay varios elementos apilados verticalmente */
+        align-items: center;    /* centro horizontal */
+        justify-content: center; /* centro vertical */
+        text-align: center; /* para textos multilínea */
+    }
+
+    .header-right {
+        display: flex;
+        flex-direction: column; /* si hay varios elementos apilados verticalmente */
+        align-items: center;    /* centro horizontal */
+        justify-content: center; /* centro vertical */
+        font-size: 9pt;
+        text-align: center; /* para textos multilínea */
+        line-height: 0.5;
+    }
+
+    .header-right img {
+        max-height: 40px;
+        height: auto;
+        width: auto;
+        margin-bottom: 0px;
+    }
+    main {
+        padding-top: 3cm; /* espacio para el header fijo */
+        margin-bottom: 2.5cm; /* espacio para el footer */
+    }
+    .salto_pagina {
+        page-break-inside: avoid;
+    }
+        </style>
+    </head>
+    <body>
+        <header>
+            <div class="header-content">
+                <div class="header-left">
+                    PROGRAMA ALIMENTAR
+                    <br />
+                    COMUNIDAD
+                </div>
+                <div class="header-right">
+                    <img src="https://www.casarosada.gob.ar/images/escudo_nacional_argentino.png"
+                         style="filter: grayscale(100%);
+                                max-height:40px" />
+                    <br />
+                    Secretaría de Niñez, Adolescencia y Familia
+                    <br />
+                    Ministerio de Capital Humano
+                </div>
+            </div>
+        </header>
+        <main>
+            <h4>INFORME TÉCNICO SOCIAL</h4>
+            Expediente Nro.: {{ expediente_nro }}
+            La {{ nombre_organizacion }}, solicita la incorporación del comedor y/o merendero. “{{ nombre_espacio }}” al Programa “Alimentar Comunidad” con el fin de fortalecer la tarea realizada a favor de las personas en situación de vulnerabilidad, conforme nota identificada como {{ IF }}
+            <table>
+                <tbody>
+                    <tr>
+                        <th>Organización Solicitante</th>
+                    </tr>
+                    <tr>
+                        <th>Nombre:</th>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <th>Domicilio:</th>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <th>Localidad:</th>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <th>Partido:</th>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <th>Provincia:</th>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <th>Teléfono:</th>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <th>Mail:</th>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <th>CUIT:</th>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+            Mediante la Resolución N.° RESOL-2023-230-APN-MDS del 17 de febrero de 2023, modificada por Resolución N.° RESOL-2025-151-APN-MCH del 31 de marzo de 2025 se creó el Programa “ALIMENTAR COMUNIDAD”, a los fines de otorgar una prestación económica para la asistencia a Comedores y Merenderos Comunitarios, conforme a los lineamientos técnicos y operativos fijados en el Anexo - IF-2025-32668963-APN-SSPH#MCH.
+            Los lineamientos del Programa “Alimentar Comunidad” establecen que el mecanismo a utilizar para la asistencia a Comedores y/o Merenderos comunitarios sea mediante la utilización de una tarjeta prepaga física o virtual, otorgada a comedores/ merenderos para que con ella puedan efectuar la compra de alimentos, por un plazo de 6 (SEIS) meses contados a partir del primer fondeo.
+            En ese marco, es necesario realizar un trabajo conjunto y articulado con el fin de implementar dicho Programa para acompañar y consolidar la cobertura de las necesidades básicas de cada habitante.
+            La Institución solicitó la incorporación del Comedor y/o Merendero(tipo comedor) ………(nombre comedor)………………. al Programa Alimentar Comunidad, mediante Nota GDE IF-……(nota gde if)……………………, con la siguiente solicitud:
+            ●	DESAYUNO: por la cantidad de …. <EN LETRAS>  (EN NROS) prestaciones, ….. <EN LETRAS>  (EN NROS) veces por semana.
+            ●	ALMUERZO: por la cantidad de …. <EN LETRAS> (EN NROS ) prestaciones, ….. <EN LETRAS>  (EN NROS) veces por semana
+            ●	MERIENDA: por la cantidad de …. <EN LETRAS> (EN NROS ) prestaciones, …..<EN LETRAS>  (EN NROS) veces por semana.
+            ●	CENA: por la cantidad de …. <EN LETRAS> (EN NROS ) personas, …..<EN LETRAS>  (EN NROS) veces por semana.
+            A los efectos del cumplimiento de los requisitos de admisibilidad al Programa Alimentar Comunidad, se agrega:
+            Las constancias de inexistencia de percepción por parte de la organización solicitante de otros subsidios nacionales para asistencia alimentaria:
+            -	En IF RTA DNSA se informó que el NOMBRE DE LA ORGANIZACIÓN “no tiene convenios de otorgamiento de subsidios vigentes en el componente ’Fortalecimiento a Comedores y Merenderos Comunitarios’”
+            -	En nota IF RTA PNUD se informó que el (nombre COMEDOR) – (DIRECCIÓN comedor) NO resulta beneficiario de complementos alimentarios otorgados por el Programa Abordaje Comunitario en el marco del Programa de las Naciones Unidas para el Desarrollo.
+            EVALUACIÓN TÉCNICA
+            La organización/ fundación/ etc (tipo entidad organización/Te trae el tipo entidad de la org, pero es editable/)……(nombre org)..….., solicita la incorporación del (Comedor y/o Merendero) “…………nombre comedor……….” al Programa “Alimentar Comunidad” con el fin de fortalecer la tarea realizada a favor de las familias en situación de vulnerabilidad.
+            La población destinataria se encuentra ubicada en el Partido ………(Partido Comedor)…………... de la provincia……(Provincia comedor)……………. Es menester destacar que la asistencia alimentaria gratuita que brinda el mismo a personas en situación de vulnerabilidad, resulta necesaria y vital para alcanzar con mayor eficiencia la seguridad alimentaria.
+            Conforme al relevamiento del Programa identificado como IF-_(IF de relevamiento territorial)___, se ha constatado la existencia del (tipo de comedor, si es comedor o merendero) en el territorio, el cual brinda asistencia alimentaria a personas en situación de vulnerabilidad social.
+            Se adecúan las prestaciones entre lo relevado en territorio y lo requerido por la institución solicitante según los criterios del Programa.
+            A continuación, se resumen las cantidades aprobadas:
+            Tipo de Prestación	Cantidad de prestaciones aprobadas (tipo y día)
+            <table class="table table-bordered text-center align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Comida / Día</th>
+                        <th>Lunes</th>
+                        <th>Martes</th>
+                        <th>Miércoles</th>
+                        <th>Jueves</th>
+                        <th>Viernes</th>
+                        <th>Sábado</th>
+                        <th>Domingo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th class="text-start">Desayuno</th>
+                        <td>{{ anexo.desayuno_lunes }}</td>
+                        <td>{{ anexo.desayuno_martes }}</td>
+                        <td>{{ anexo.desayuno_miercoles }}</td>
+                        <td>{{ anexo.desayuno_jueves }}</td>
+                        <td>{{ anexo.desayuno_viernes }}</td>
+                        <td>{{ anexo.desayuno_sabado }}</td>
+                        <td>{{ anexo.desayuno_domingo }}</td>
+                    </tr>
+                    <tr>
+                        <th class="text-start">Almuerzo</th>
+                        <td>{{ anexo.almuerzo_lunes }}</td>
+                        <td>{{ anexo.almuerzo_martes }}</td>
+                        <td>{{ anexo.almuerzo_miercoles }}</td>
+                        <td>{{ anexo.almuerzo_jueves }}</td>
+                        <td>{{ anexo.almuerzo_viernes }}</td>
+                        <td>{{ anexo.almuerzo_sabado }}</td>
+                        <td>{{ anexo.almuerzo_domingo }}</td>
+                    </tr>
+                    <tr>
+                        <th class="text-start">Merienda</th>
+                        <td>{{ anexo.merienda_lunes }}</td>
+                        <td>{{ anexo.merienda_martes }}</td>
+                        <td>{{ anexo.merienda_miercoles }}</td>
+                        <td>{{ anexo.merienda_jueves }}</td>
+                        <td>{{ anexo.merienda_viernes }}</td>
+                        <td>{{ anexo.merienda_sabado }}</td>
+                        <td>{{ anexo.merienda_domingo }}</td>
+                    </tr>
+                    <tr>
+                        <th class="text-start">Cena</th>
+                        <td>{{ anexo.cena_lunes }}</td>
+                        <td>{{ anexo.cena_martes }}</td>
+                        <td>{{ anexo.cena_miercoles }}</td>
+                        <td>{{ anexo.cena_jueves }}</td>
+                        <td>{{ anexo.cena_viernes }}</td>
+                        <td>{{ anexo.cena_sabado }}</td>
+                        <td>{{ anexo.cena_domingo }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            Los criterios técnicos y programáticos establecidos para evaluar la solicitud de cada comedor implican una definición de la cantidad de prestaciones a partir de la comparación entre la información relevada en la visita en territorio y la cantidad solicitada para cada día y para cada tipo de prestación. Se considera como cantidad de prestaciones relevada en territorio a la suma de las prestaciones brindadas en la actualidad más las personas en lista de espera. En esa línea, los criterios se enmarcan en los siguientes parámetros:
+            A.	Cuando la cantidad de prestaciones solicitadas mediante nota sean inferiores al número identificado en el relevamiento en territorio (suma de prestaciones actuales más personas identificadas en lista de espera), deberá prevalecer la cantidad solicitada por la institución entendiendo que la diferencia es cubierta con otro tipo de recursos.
+            B.	Cuando la cantidad de prestaciones solicitadas mediante nota sean superiores a las identificadas en la visita (suma de prestaciones actuales más personas identificadas en la lista de espera) deberá prevalecer el número de prestaciones relevado en la visita.
+            Por todo lo expuesto se considera pertinente la solicitud realizada por la NOMBRE DE LA ORGANIZACIÓN para adherir al (comedor/merendero) “NOMBRE DEL COMEDOR” al Programa Alimentar Comunidad.
+            Todo lo resultante en este Informe Técnico se resume en Anexo identificado como IF-XXXX-X(ANEXO)X-APN-XXXX#MCH
+            Cabe destacar que la tramitación de las presentes actuaciones mediante las cuales se aprueba el convenio de incorporación al Programa mencionado no implica en este acto erogación presupuestaria alguna.
+            Dicha erogación será tramitada pertinentemente en expedientes de pago mensuales a fin de acreditar los fondos correspondientes a los comedores incorporados al Programa Alimentar Comunidad.
+            Consecuentemente, se sugiere dar prosecución al trámite correspondiente.
+        </main>
+    </body>
+</html>
