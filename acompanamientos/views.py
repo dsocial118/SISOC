@@ -5,12 +5,12 @@ from django.views.decorators.http import require_POST
 from django.db.models import Q
 from admisiones.models.admisiones import (
     Admision,
-    InformeTecnicoBase,
+    InformeTecnico,
     DocumentosExpediente,
 )
 from acompanamientos.acompanamiento_service import AcompanamientoService
 from acompanamientos.models.hitos import Hitos
-from comedores.models.comedor import Comedor
+from comedores.models import Comedor
 
 
 @require_POST
@@ -62,7 +62,7 @@ class AcompanamientoDetailView(DetailView):
 
         if admision:
             info_relevante = (
-                InformeTecnicoBase.objects.filter(admision__comedor=comedor)
+                InformeTecnico.objects.filter(admision__comedor=comedor)
                 .order_by("-id")
                 .first()
             )

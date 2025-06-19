@@ -1,9 +1,10 @@
-from comedores.models.relevamiento import (
-    Relevamiento,
-    ClasificacionComedor,
+from relevamientos.models import ClasificacionComedor
+from comedores.models import (
     CategoriaComedor,
 )
 from django.db.models import Case, When, IntegerField
+
+from relevamientos.models import Relevamiento
 
 
 class ClasificacionComedorService:
