@@ -130,7 +130,6 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("core", "0001_initial"),
-        ("configuraciones", "0001_initial"),  # Asegurar que configuraciones existe
     ]
 
     operations = [

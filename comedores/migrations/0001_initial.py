@@ -13,7 +13,6 @@ class Migration(migrations.Migration):
     dependencies = [
         ("organizaciones", "0001_initial"),
         ("ciudadanos", "0001_initial"),
-        ("configuraciones", "0001_initial"),
         ("duplas", "0001_initial"),
     ]
 
