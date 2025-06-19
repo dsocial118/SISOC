@@ -1,19 +1,13 @@
-// FIXME: Eliminar comentarios redundantes de GPT
 document.addEventListener("DOMContentLoaded", function () {
     const addButton = document.getElementById("add-documentacion");
     const container = document.getElementById("documentacion-container");
     const removeButton = document.getElementById("remove-documentacion");
 
     addButton.addEventListener("click", function () {
-        // Clonar el primer formulario de documentación
         const firstItem = container.querySelector(".documentacion-item:last-child");
         const newItem = firstItem.cloneNode(true);
-
-        // Limpiar los valores de los campos en el formulario clonado
         const inputs = newItem.querySelectorAll("input");
         inputs.forEach(input => input.value = "");
-
-        // Agregar el formulario clonado al contenedor
         container.appendChild(newItem);
     });
 
@@ -32,7 +26,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 fetch(`/rendicioncuentasmensual/eliminar-archivo/${archivoId}/`, {
                     method: "POST",
                     headers: {
-                        "X-CSRFToken": "{{ csrf_token }}", // Asegúrate de incluir el token CSRF
+                        "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value,
                     },
                 })
                     .then(response => response.json())
