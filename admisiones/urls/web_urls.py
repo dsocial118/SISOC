@@ -12,6 +12,8 @@ from admisiones.views.web_views import (
     InformeTecnicoDetailView,
     AdmisionesLegalesListView,
     AdmisionesLegalesDetailView,
+    AnexoCreateView,
+    AnexoUpdateView,
 )
 from intervenciones.views import sub_estados_intervenciones_ajax
 
@@ -61,6 +63,16 @@ urlpatterns = [
         "comedores/admision/informe_tecnico/<str:tipo>/<int:pk>/ver/",
         InformeTecnicoDetailView.as_view(),
         name="informe_tecnico_ver",
+    ),
+    path(
+        "comedores/admision/anexo/<int:admision_id>/crear/",
+        AnexoCreateView.as_view(),
+        name="anexo_crear",
+    ),
+    path(
+        "comedores/admision/anexo/<int:admision_id>/editar/",
+        AnexoUpdateView.as_view(),
+        name="anexo_editar",
     ),
     path(
         "ajax/actualizar-estado/",

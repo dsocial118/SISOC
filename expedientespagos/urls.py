@@ -21,19 +21,19 @@ urlpatterns = [
     ),
     path(
         "expedientespagos/<int:pk>/nuevo/",
-        group_required("Area Legales")(ExpedientesPagosCreateView.as_view()),
+        group_required(["Area Legales"])(ExpedientesPagosCreateView.as_view()),
         name="expedientespagos_create",
     ),
     path(
         "expedientespagos/<int:pk>/editar/",
-        group_required(["Tecnico Comedor", "Abogado Dupla"])(
+        group_required(["Tecnico Comedor", "Area Legales"])(
             ExpedientesPagosUpdateView.as_view()
         ),
         name="expedientespagos_update",
     ),
     path(
         "expedientespagos/<int:pk>/eliminar/",
-        group_required("Area Legales")(ExpedientesPagosDeleteView.as_view()),
+        group_required(["Area Legales"])(ExpedientesPagosDeleteView.as_view()),
         name="expedientespagos_delete",
     ),
 ]
