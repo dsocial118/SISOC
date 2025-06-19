@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_GET
 from django.contrib import messages
 from django.views.generic import CreateView, UpdateView, DeleteView, TemplateView
 
@@ -15,7 +15,7 @@ from intervenciones.models.intervenciones import (
 from intervenciones.forms import IntervencionForm
 
 
-@csrf_exempt  # FIXME: eliminar excepcion CSRF
+@require_GET
 def sub_estados_intervenciones_ajax(request):
     tipo_intervencion_id = request.GET.get("id")
     if tipo_intervencion_id:

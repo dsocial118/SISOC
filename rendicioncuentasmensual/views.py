@@ -1,5 +1,5 @@
-from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_object_or_404
+from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.views.generic import (
@@ -15,16 +15,12 @@ from .services import RendicionCuentaMensualService
 from .forms import RendicionCuentaMensualForm, DocumentacionAdjuntaForm
 
 
-@csrf_exempt  # FIXME: Dejar de utilizar el csrf_exempt
+@require_POST
 def eliminar_archivo(request, archivo_id):
-    if request.method == "POST":
-        archivo = get_object_or_404(DocumentacionAdjunta, id=archivo_id)
-        archivo.delete()
-        return JsonResponse(
-            {"success": True, "message": "Archivo eliminado correctamente."}
-        )
+    archivo = get_object_or_404(DocumentacionAdjunta, id=archivo_id)
+    archivo.delete()
     return JsonResponse(
-        {"success": False, "message": "Método no permitido."}, status=405
+        {"success": True, "message": "Archivo eliminado correctamente."}
     )
 
 
