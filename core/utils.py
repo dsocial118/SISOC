@@ -34,9 +34,7 @@ def format_serializer_errors(serializer):
             if field == "non_field_errors":
                 error_messages.append(str(error))
             else:
-                error_messages.append(
-                    f"{field}: {str(error)}"
-                )
+                error_messages.append(f"{field}: {str(error)}")
 
     error_message_str = " | ".join(error_messages)
     return error_message_str

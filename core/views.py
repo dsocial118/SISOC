@@ -26,4 +26,3 @@ def load_localidad(request):
 
 def error_500_view(request):
     return render(request, "500.html")
-

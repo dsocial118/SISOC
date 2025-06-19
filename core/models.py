@@ -111,4 +111,5 @@ class Sexo(models.Model):
         verbose_name = "Sexo"
         verbose_name_plural = "Sexos"
 
+
 # Create your models here.
