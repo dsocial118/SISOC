@@ -11,6 +11,13 @@ from centrodefamilia.views.actividad import (
     ActividadCentroListView,
     ActividadCentroCreateView,
     ActividadCentroUpdateView,
+    cargar_actividades_por_categoria,
+)
+from centrodefamilia.views.orientador import (
+    OrientadorListView,
+    OrientadorCreateView,
+    OrientadorUpdateView,
+    OrientadorDeleteView,
 )
 
 from configuraciones.decorators import group_required
@@ -73,7 +80,19 @@ path(
     group_required(["superadmin", "ReferenteCentro"])(ActividadCentroUpdateView.as_view()),
     name="actividadcentro_edit",
 ),
+path("ajax/actividades/", cargar_actividades_por_categoria, name="ajax_cargar_actividades"),
 
+
+path("centros/<int:centro_id>/orientadores/", OrientadorListView.as_view(), name="orientador_list"),
+
+
+path("centros/<int:centro_id>/orientadores/nuevo/", OrientadorCreateView.as_view(), name="orientador_create"),
+
+
+path("orientadores/<int:pk>/editar/", OrientadorUpdateView.as_view(), name="orientador_update"),
+
+
+path("orientadores/<int:pk>/eliminar/", OrientadorDeleteView.as_view(), name="orientador_delete"),
 
 
 ]

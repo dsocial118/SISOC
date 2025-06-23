@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
+from organizaciones.models import Organizacion
 
 
 class Centro(models.Model):
@@ -9,8 +10,6 @@ class Centro(models.Model):
         ("adherido", "Adherido"),
     ]
     nombre = models.CharField(max_length=200)
-    direccion = models.CharField(max_length=255)
-    contacto = models.CharField(max_length=100)
     referente = models.ForeignKey(
         User,
         on_delete=models.PROTECT,
@@ -28,9 +27,28 @@ class Centro(models.Model):
         limit_choices_to={"tipo": "faro", "activo": True},
     )
     codigo = models.CharField(max_length=10, unique=True)
-    tipo_organizacion = models.CharField(max_length=100, blank=True)
     foto = models.ImageField(upload_to="centros/", blank=True, null=True)
     activo = models.BooleanField(default=True)
+    organizacionasociada = models.ForeignKey(
+        Organizacion,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+    )
+    #datos sede
+    domicilio_sede = models.CharField(max_length=255, verbose_name="Domicilio de la sede")
+    domicilio_actividad = models.CharField(max_length=255, verbose_name="Domicilio de actividades")
+    telefono = models.CharField(max_length=50, verbose_name="Teléfono")
+    celular = models.CharField(max_length=50, verbose_name="Celular")
+    correo = models.EmailField(max_length=100, verbose_name="Correo electrónico")
+    sitio_web = models.URLField(max_length=200, blank=True, null=True, verbose_name="Sitio web")
+    link_redes = models.URLField(max_length=200, blank=True, null=True, verbose_name="Redes sociales")
+    #referente
+    nombre_referente = models.CharField(max_length=100, verbose_name="Nombre del responsable")
+    apellido_referente = models.CharField(max_length=100, verbose_name="Apellido del responsable")
+    telefono_referente = models.CharField(max_length=50, verbose_name="Teléfono del responsable")
+    correo_referente = models.EmailField(max_length=100, verbose_name="Correo del responsable")
+
 
     def __str__(self):
         return self.nombre
@@ -118,3 +136,38 @@ class ParticipanteActividad(models.Model):
         verbose_name = "Participante"
         verbose_name_plural = "Participantes"
         unique_together = ("actividad_centro", "cuit")
+
+class Orientadores(models.Model):
+    centro = models.ForeignKey(
+        Centro, on_delete=models.CASCADE, verbose_name="Centro"
+    )
+    nombre = models.CharField(max_length=100, verbose_name="Nombre")
+    apellido = models.CharField(max_length=100, verbose_name="Apellido")
+    dni = models.CharField(max_length=15, verbose_name="DNI")
+    genero = models.CharField(
+        max_length=20,
+        choices=[
+            ("masculino", "Masculino"),
+            ("femenino", "Femenino"),
+            ("otro", "Otro"),
+        ],
+        verbose_name="Género",
+    )
+    foto = models.ImageField(upload_to="centros/orientador/", blank=True, null=True)
+    cargo = models.CharField(
+        max_length=20,
+        choices=[
+            ("profesor", "profesor"),
+            ("administrativo", "administrativo"),
+            ("otro", "Otro"),
+        ],
+        verbose_name="Género",
+    )
+
+
+    def __str__(self):
+        return f"{self.apellido}, {self.nombre} - {self.dni}"
+
+    class Meta:
+        verbose_name = "Orientador"
+        verbose_name_plural = "Orientadores"

@@ -15,7 +15,7 @@
 <h2 class="text-center display-4 mb-4">Nuevo Centro</h2>
 
 <div class="card card-body shadow">
-    <form method="post">
+    <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         {{ form|crispy }}
 

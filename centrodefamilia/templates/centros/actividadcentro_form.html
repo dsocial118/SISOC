@@ -1,5 +1,7 @@
 {% extends "includes/main.html" %}
 {% load crispy_forms_tags %}
+{% load static %}
+
 
 {% block title %}Nueva Actividad{% endblock %}
 
@@ -24,4 +26,8 @@
         </div>
     </form>
 </div>
+{% endblock %}
+
+{% block customJS %}
+    <script src="{% static 'admin/js/centro_familia_categoria.js' %}"></script>
 {% endblock %}

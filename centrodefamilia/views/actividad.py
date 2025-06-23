@@ -4,9 +4,11 @@ from django.contrib import messages
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 
-from centrodefamilia.models import ActividadCentro, Centro, ParticipanteActividad
+from centrodefamilia.models import ActividadCentro, Centro, ParticipanteActividad , Actividad
 from centrodefamilia.forms import ActividadCentroForm
 from configuraciones.decorators import group_required
+from django.http import JsonResponse
+
 
 
 
@@ -94,3 +96,8 @@ class ActividadCentroUpdateView(UpdateView):
         context = super().get_context_data(**kwargs)
         context["centro_id"] = self.object.centro.pk
         return context
+    
+def cargar_actividades_por_categoria(request):
+    categoria_id = request.GET.get('categoria_id')
+    actividades = Actividad.objects.filter(categoria_id=categoria_id).values('id', 'nombre')
+    return JsonResponse(list(actividades), safe=False)

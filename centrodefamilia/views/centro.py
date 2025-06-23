@@ -63,6 +63,7 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
             .select_related("actividad", "actividad__categoria")
         )
 
+
         participantes = (
             ParticipanteActividad.objects
             .filter(actividad_centro__in=actividades)
@@ -82,6 +83,13 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
             })
 
         context["actividades"] = actividades_con_ganancia
+        context["total_actividades"] = actividades.count()
+        context["total_participantes"] = sum(participantes_map.values())
+        context["centros_adheridos_total"] = Centro.objects.filter(faro_asociado=self.object).count()
+ 
+
+
+
 
         if centro.tipo == "faro":
             context["centros_adheridos"] = Centro.objects.filter(faro_asociado=centro)

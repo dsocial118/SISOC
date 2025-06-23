@@ -55,7 +55,7 @@
                             <th>Nombre</th>
                             <th>Tipo</th>
                             <th>Dirección</th>
-                            <th>Contacto</th>
+                            <th>telefono / celular</th>
                             <th>Estado</th>
                             <th class="notexport" style="width: 15%">Acciones</th>
                         </tr>
@@ -69,8 +69,8 @@
                                    title="Ver detalles">{{ centro.nombre }}</a>
                             </td>
                             <td>{{ centro.get_tipo_display }}</td>
-                            <td>{{ centro.direccion }}</td>
-                            <td>{{ centro.contacto }}</td>
+                            <td>{{ centro.domicilio_sede }}</td>
+                            <td>{{ centro.telefono }} / {{ centro.celular }}</td>
                             <td>
                                 {% if centro.activo %}
                                     <span class="badge badge-success">Activo</span>
