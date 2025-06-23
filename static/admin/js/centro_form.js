@@ -6,22 +6,43 @@ document.addEventListener('DOMContentLoaded', function () {
     const camposFaro = [
         'div_id_nombre',
         'div_id_codigo',
-        'div_id_direccion',
-        'div_id_contacto',
+        'div_id_organizacionasociada',
         'div_id_foto',
         'div_id_referente',
-        'div_id_activo'
+        'div_id_activo',
+        'div_id_domicilio_sede',  // ← agregado
+        'div_id_domicilio_actividad',
+        'div_id_telefono',
+        'div_id_celular',
+        'div_id_correo',
+        'div_id_sitioweb',
+        'div_id_linkredes',
+        'div_id_nombre_referente',
+        'div_id_apellido_referente',
+        'div_id_telefono_referente',
+        'div_id_correo_referente'
     ];
+
     const camposAdherido = [
         'div_id_nombre',
         'div_id_codigo',
-        'div_id_direccion',
-        'div_id_contacto',
+        'div_id_organizacionasociada',
         'div_id_faro_asociado',
-        'div_id_tipo_organizacion',
         'div_id_foto',
         'div_id_referente',
-        'div_id_activo'
+        'div_id_activo',
+        'div_id_domicilio_sede',  // ← agregado
+        'div_id_domicilio_actividad',
+        'div_id_telefono',
+        'div_id_celular',
+        'div_id_correo',
+        'div_id_sitioweb',
+        'div_id_linkredes',
+        'div_id_nombre_referente',
+        'div_id_apellido_referente',
+        'div_id_telefono_referente',
+        'div_id_correo_referente'   
+
     ];
 
     function toggleCampos() {
