@@ -21,7 +21,6 @@ class OrientadorListView(ListView):
         return context
 
 
-
 class OrientadorCreateView(CreateView):
     model = Orientadores
     form_class = OrientadoresForm
@@ -33,8 +32,9 @@ class OrientadorCreateView(CreateView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse_lazy("orientador_list", kwargs={"centro_id": self.kwargs["centro_id"]})
-
+        return reverse_lazy(
+            "orientador_list", kwargs={"centro_id": self.kwargs["centro_id"]}
+        )
 
 
 class OrientadorUpdateView(UpdateView):
@@ -43,8 +43,9 @@ class OrientadorUpdateView(UpdateView):
     template_name = "centros/orientador_form.html"
 
     def get_success_url(self):
-        return reverse_lazy("orientador_list", kwargs={"centro_id": self.object.centro.id})
-
+        return reverse_lazy(
+            "orientador_list", kwargs={"centro_id": self.object.centro.id}
+        )
 
 
 class OrientadorDeleteView(DeleteView):
@@ -52,4 +53,6 @@ class OrientadorDeleteView(DeleteView):
     template_name = "centros/orientador_confirm_delete.html"
 
     def get_success_url(self):
-        return reverse_lazy("orientador_list", kwargs={"centro_id": self.object.centro.id})
+        return reverse_lazy(
+            "orientador_list", kwargs={"centro_id": self.object.centro.id}
+        )

@@ -35,20 +35,35 @@ class Centro(models.Model):
         blank=True,
         null=True,
     )
-    #datos sede
-    domicilio_sede = models.CharField(max_length=255, verbose_name="Domicilio de la sede")
-    domicilio_actividad = models.CharField(max_length=255, verbose_name="Domicilio de actividades")
+    # datos sede
+    domicilio_sede = models.CharField(
+        max_length=255, verbose_name="Domicilio de la sede"
+    )
+    domicilio_actividad = models.CharField(
+        max_length=255, verbose_name="Domicilio de actividades"
+    )
     telefono = models.CharField(max_length=50, verbose_name="Teléfono")
     celular = models.CharField(max_length=50, verbose_name="Celular")
     correo = models.EmailField(max_length=100, verbose_name="Correo electrónico")
-    sitio_web = models.URLField(max_length=200, blank=True, null=True, verbose_name="Sitio web")
-    link_redes = models.URLField(max_length=200, blank=True, null=True, verbose_name="Redes sociales")
-    #referente
-    nombre_referente = models.CharField(max_length=100, verbose_name="Nombre del responsable")
-    apellido_referente = models.CharField(max_length=100, verbose_name="Apellido del responsable")
-    telefono_referente = models.CharField(max_length=50, verbose_name="Teléfono del responsable")
-    correo_referente = models.EmailField(max_length=100, verbose_name="Correo del responsable")
-
+    sitio_web = models.URLField(
+        max_length=200, blank=True, null=True, verbose_name="Sitio web"
+    )
+    link_redes = models.URLField(
+        max_length=200, blank=True, null=True, verbose_name="Redes sociales"
+    )
+    # referente
+    nombre_referente = models.CharField(
+        max_length=100, verbose_name="Nombre del responsable"
+    )
+    apellido_referente = models.CharField(
+        max_length=100, verbose_name="Apellido del responsable"
+    )
+    telefono_referente = models.CharField(
+        max_length=50, verbose_name="Teléfono del responsable"
+    )
+    correo_referente = models.EmailField(
+        max_length=100, verbose_name="Correo del responsable"
+    )
 
     def __str__(self):
         return self.nombre
@@ -91,7 +106,9 @@ class ActividadCentro(models.Model):
     )
     dias = models.CharField(max_length=100, verbose_name="Días")
     horarios = models.CharField(max_length=100, verbose_name="Horarios")
-    precio = models.PositiveIntegerField(verbose_name="PrecioActividad", null=True, blank=True)
+    precio = models.PositiveIntegerField(
+        verbose_name="PrecioActividad", null=True, blank=True
+    )
     estado = models.CharField(
         max_length=20,
         choices=ESTADO_CHOICES,
@@ -137,10 +154,9 @@ class ParticipanteActividad(models.Model):
         verbose_name_plural = "Participantes"
         unique_together = ("actividad_centro", "cuit")
 
+
 class Orientadores(models.Model):
-    centro = models.ForeignKey(
-        Centro, on_delete=models.CASCADE, verbose_name="Centro"
-    )
+    centro = models.ForeignKey(Centro, on_delete=models.CASCADE, verbose_name="Centro")
     nombre = models.CharField(max_length=100, verbose_name="Nombre")
     apellido = models.CharField(max_length=100, verbose_name="Apellido")
     dni = models.CharField(max_length=15, verbose_name="DNI")
@@ -163,7 +179,6 @@ class Orientadores(models.Model):
         ],
         verbose_name="Género",
     )
-
 
     def __str__(self):
         return f"{self.apellido}, {self.nombre} - {self.dni}"
