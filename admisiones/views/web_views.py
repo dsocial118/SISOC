@@ -3,7 +3,7 @@ from django.db.models import Q
 from django.contrib import messages
 from django.http import JsonResponse
 from django.shortcuts import redirect, get_object_or_404
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, ListView, UpdateView, DetailView
 from admisiones.forms.admisiones_forms import (
     AdmisionForm,
@@ -27,9 +27,9 @@ from django.urls import reverse
 from django.http import HttpResponseRedirect
 
 
-@csrf_exempt
+@require_POST
 def subir_archivo_admision(request, admision_id, documentacion_id):
-    if request.method == "POST" and request.FILES.get("archivo"):
+    if request.FILES.get("archivo"):
         archivo_admision, created = AdmisionService.handle_file_upload(
             admision_id, documentacion_id, request.FILES["archivo"]
         )
@@ -146,6 +146,15 @@ class AdmisionesTecnicosUpdateView(UpdateView):
                 messages.info(
                     request, "La admisión ya estaba marcada como enviada a legales."
                 )
+            return redirect(self.request.path_info)
+
+        if "btnDisponibilizarAcomp" in request.POST:
+            if AdmisionService.marcar_como_enviado_a_acompaniamiento(
+                admision, request.user
+            ):
+                messages.success(request, "Se envio a Acompañamiento correctamente.")
+            else:
+                messages.error(request, "Error al enviar a Acompañamiento.")
             return redirect(self.request.path_info)
 
         if "btnRectificarDocumentacion" in request.POST:
