@@ -16,7 +16,6 @@ from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils.http import url_has_allowed_host_and_scheme
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.contrib.messages import get_messages
 
@@ -122,7 +121,6 @@ logger = logging.getLogger("django")
 ROL_ADMIN = "usuarios.rol_admin"
 
 
-@csrf_exempt
 @require_POST
 def actualizar_programas(request, ciudadano_id):
     ciudadano = get_object_or_404(Ciudadano, id=ciudadano_id)

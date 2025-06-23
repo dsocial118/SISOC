@@ -17,7 +17,6 @@
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
             <div class="row">
-                <!-- Datos de la rendición -->
                 <div class="col-md-6">
                     <div class="card">
                         <div class="card-header bg-primary text-white">
@@ -31,14 +30,12 @@
                         </div>
                     </div>
                 </div>
-                <!-- Documentación adjunta -->
                 <div class="col-md-6">
                     <div class="card">
                         <div class="card-header bg-secondary text-white">
                             <h5>Documentación Adjunta</h5>
                         </div>
                         <div class="card-body" id="documentacion-container">
-                            <!-- Archivos ya cargados -->
                             {% for archivo in archivos_adjuntos %}
                                 <div class="documentacion-edit-item d-flex align-items-center">
                                     <div class="flex-grow-1">
@@ -49,7 +46,6 @@
                                             data-id="{{ archivo.id }}">Eliminar</button>
                                 </div>
                             {% endfor %}
-                            <!-- Formulario para nuevos archivos -->
                             <div class="documentacion-item d-flex align-items-center">
                                 <div class="flex-grow-1">
                                     {{ documentacion_adjunta_form.nombre|as_crispy_field }}
@@ -64,7 +60,6 @@
                     </div>
                 </div>
             </div>
-            <!-- Botones de acción -->
             <div class="mt-4 text-center">
                 <button type="submit" class="btn btn-success">Guardar</button>
                 <a href="{% url 'rendicioncuentasmensual_list' comedorid %}"
