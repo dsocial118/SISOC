@@ -4,12 +4,15 @@ from django.contrib import messages
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 
-from centrodefamilia.models import ActividadCentro, Centro, ParticipanteActividad , Actividad
+from centrodefamilia.models import (
+    ActividadCentro,
+    Centro,
+    ParticipanteActividad,
+    Actividad,
+)
 from centrodefamilia.forms import ActividadCentroForm
 from configuraciones.decorators import group_required
 from django.http import JsonResponse
-
-
 
 
 class ActividadCentroListView(ListView):
@@ -18,12 +21,15 @@ class ActividadCentroListView(ListView):
     context_object_name = "actividades"
 
     def get_queryset(self):
-        queryset = super().get_queryset().select_related("centro", "actividad", "actividad__categoria")
+        queryset = (
+            super()
+            .get_queryset()
+            .select_related("centro", "actividad", "actividad__categoria")
+        )
         centro_id = self.request.GET.get("centro")
         if centro_id:
             queryset = queryset.filter(centro_id=centro_id)
         return queryset
-
 
 
 class ActividadCentroCreateView(CreateView):
@@ -55,7 +61,6 @@ class ActividadCentroCreateView(CreateView):
         return reverse("centro_detail", kwargs={"pk": self.centro.pk})
 
 
-
 class ActividadCentroDetailView(DetailView):
     model = ActividadCentro
     template_name = "centros/actividadcentro_detail.html"
@@ -67,12 +72,13 @@ class ActividadCentroDetailView(DetailView):
         participantes = ParticipanteActividad.objects.filter(actividad_centro=actividad)
         cantidad = participantes.count()
         precio = actividad.precio or 0
-        context.update({
-            "participantes": participantes,
-            "precio_total": cantidad * precio,
-        })
+        context.update(
+            {
+                "participantes": participantes,
+                "precio_total": cantidad * precio,
+            }
+        )
         return context
-
 
 
 class ActividadCentroUpdateView(UpdateView):
@@ -96,8 +102,11 @@ class ActividadCentroUpdateView(UpdateView):
         context = super().get_context_data(**kwargs)
         context["centro_id"] = self.object.centro.pk
         return context
-    
+
+
 def cargar_actividades_por_categoria(request):
-    categoria_id = request.GET.get('categoria_id')
-    actividades = Actividad.objects.filter(categoria_id=categoria_id).values('id', 'nombre')
+    categoria_id = request.GET.get("categoria_id")
+    actividades = Actividad.objects.filter(categoria_id=categoria_id).values(
+        "id", "nombre"
+    )
     return JsonResponse(list(actividades), safe=False)

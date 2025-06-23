@@ -1,6 +1,13 @@
 from django import forms
 from django.core.exceptions import ValidationError
-from .models import Centro, ActividadCentro, ParticipanteActividad, Categoria, Actividad ,Orientadores
+from .models import (
+    Centro,
+    ActividadCentro,
+    ParticipanteActividad,
+    Categoria,
+    Actividad,
+    Orientadores,
+)
 from django.contrib.auth.models import User
 
 
@@ -31,8 +38,12 @@ class CentroForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["referente"].queryset = User.objects.filter(groups__name="ReferenteCentro")
-        self.fields["faro_asociado"].queryset = Centro.objects.filter(tipo='faro', activo=True)
+        self.fields["referente"].queryset = User.objects.filter(
+            groups__name="ReferenteCentro"
+        )
+        self.fields["faro_asociado"].queryset = Centro.objects.filter(
+            tipo="faro", activo=True
+        )
 
     def clean(self):
         cleaned_data = super().clean()
@@ -40,7 +51,9 @@ class CentroForm(forms.ModelForm):
         faro_asociado = cleaned_data.get("faro_asociado")
 
         if tipo == "adherido" and not faro_asociado:
-            raise ValidationError("Debe asociar un Centro FARO activo si el centro es ADHERIDO.")
+            raise ValidationError(
+                "Debe asociar un Centro FARO activo si el centro es ADHERIDO."
+            )
         if tipo == "faro" and faro_asociado:
             raise ValidationError("Un Centro FARO no puede tener un FARO asociado.")
         return cleaned_data
@@ -51,12 +64,20 @@ class ActividadCentroForm(forms.ModelForm):
         queryset=Categoria.objects.all(),
         required=False,
         label="Categoría",
-        empty_label="Seleccione una categoría"
+        empty_label="Seleccione una categoría",
     )
 
     class Meta:
         model = ActividadCentro
-        fields = ["categoria", "actividad", "cantidad_personas", "dias", "horarios", "precio", "estado"]
+        fields = [
+            "categoria",
+            "actividad",
+            "cantidad_personas",
+            "dias",
+            "horarios",
+            "precio",
+            "estado",
+        ]
         exclude = ["centro"]
 
     def __init__(self, *args, **kwargs):
@@ -64,10 +85,12 @@ class ActividadCentroForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         # Si se pasó un dato de categoría, filtramos las actividades
-        if 'data' in kwargs:
-            categoria_id = kwargs['data'].get("categoria")
+        if "data" in kwargs:
+            categoria_id = kwargs["data"].get("categoria")
             if categoria_id:
-                self.fields["actividad"].queryset = Actividad.objects.filter(categoria_id=categoria_id)
+                self.fields["actividad"].queryset = Actividad.objects.filter(
+                    categoria_id=categoria_id
+                )
             else:
                 self.fields["actividad"].queryset = Actividad.objects.none()
         else:
@@ -83,7 +106,9 @@ class ActividadCentroForm(forms.ModelForm):
         precio = cleaned_data.get("precio")
 
         if self.centro and self.centro.tipo == "faro" and precio:
-            raise ValidationError("Un centro de tipo FARO no debe tener un precio asignado.")
+            raise ValidationError(
+                "Un centro de tipo FARO no debe tener un precio asignado."
+            )
         return cleaned_data
 
 

@@ -26,10 +26,10 @@ class ParticipanteActividadCreateView(CreateView):
     def get_success_url(self):
         centro_id = self.kwargs.get("centro_id")
         actividad_id = self.kwargs.get("actividad_id")
-        return reverse_lazy("actividadcentro_detail", kwargs={
-            "centro_id": centro_id,
-            "pk": actividad_id
-        })
+        return reverse_lazy(
+            "actividadcentro_detail",
+            kwargs={"centro_id": centro_id, "pk": actividad_id},
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

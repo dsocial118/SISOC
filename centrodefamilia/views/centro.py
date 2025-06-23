@@ -1,4 +1,10 @@
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.views.generic import (
+    ListView,
+    DetailView,
+    CreateView,
+    UpdateView,
+    DeleteView,
+)
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.urls import reverse_lazy, reverse
@@ -7,6 +13,7 @@ from django.core.exceptions import PermissionDenied
 from centrodefamilia.models import Centro, ActividadCentro, ParticipanteActividad
 from centrodefamilia.forms import CentroForm
 from django.utils.decorators import method_decorator
+
 
 class CentroListView(LoginRequiredMixin, ListView):
     model = Centro
@@ -19,7 +26,10 @@ class CentroListView(LoginRequiredMixin, ListView):
         user = self.request.user
 
         # Un referente ve solo sus centros y los adheridos asociados a sus centros FARO
-        if user.groups.filter(name="ReferenteCentro").exists() and not user.is_superuser:
+        if (
+            user.groups.filter(name="ReferenteCentro").exists()
+            and not user.is_superuser
+        ):
             queryset = queryset.filter(
                 Q(referente=user) | Q(faro_asociado__referente=user)
             )
@@ -27,9 +37,9 @@ class CentroListView(LoginRequiredMixin, ListView):
         busqueda = self.request.GET.get("busqueda")
         if busqueda:
             queryset = queryset.filter(
-                Q(nombre__icontains=busqueda) |
-                Q(direccion__icontains=busqueda) |
-                Q(tipo__icontains=busqueda)
+                Q(nombre__icontains=busqueda)
+                | Q(direccion__icontains=busqueda)
+                | Q(tipo__icontains=busqueda)
             )
 
         return queryset.order_by("nombre")
@@ -46,7 +56,9 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
 
         es_referente = obj.referente_id == user.id
         es_adherido_de_faro = (
-            obj.tipo == "adherido" and obj.faro_asociado and obj.faro_asociado.referente_id == user.id
+            obj.tipo == "adherido"
+            and obj.faro_asociado
+            and obj.faro_asociado.referente_id == user.id
         )
 
         if not (es_referente or es_adherido_de_faro or user.is_superuser):
@@ -58,15 +70,12 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         centro = self.object
 
-        actividades = (
-            ActividadCentro.objects.filter(centro=centro)
-            .select_related("actividad", "actividad__categoria")
+        actividades = ActividadCentro.objects.filter(centro=centro).select_related(
+            "actividad", "actividad__categoria"
         )
 
-
         participantes = (
-            ParticipanteActividad.objects
-            .filter(actividad_centro__in=actividades)
+            ParticipanteActividad.objects.filter(actividad_centro__in=actividades)
             .values("actividad_centro")
             .annotate(total=Count("id"))
         )
@@ -77,19 +86,14 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         for actividad in actividades:
             cantidad = participantes_map.get(actividad.id, 0)
             ganancia = (actividad.precio or 0) * cantidad
-            actividades_con_ganancia.append({
-                "obj": actividad,
-                "ganancia": ganancia
-            })
+            actividades_con_ganancia.append({"obj": actividad, "ganancia": ganancia})
 
         context["actividades"] = actividades_con_ganancia
         context["total_actividades"] = actividades.count()
         context["total_participantes"] = sum(participantes_map.values())
-        context["centros_adheridos_total"] = Centro.objects.filter(faro_asociado=self.object).count()
- 
-
-
-
+        context["centros_adheridos_total"] = Centro.objects.filter(
+            faro_asociado=self.object
+        ).count()
 
         if centro.tipo == "faro":
             context["centros_adheridos"] = Centro.objects.filter(faro_asociado=centro)
@@ -107,7 +111,10 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
         user = self.request.user
 
         # Si es referente, siempre se asigna como referente y solo puede crear adheridos
-        if user.groups.filter(name="ReferenteCentro").exists() and not user.is_superuser:
+        if (
+            user.groups.filter(name="ReferenteCentro").exists()
+            and not user.is_superuser
+        ):
             form.instance.referente = user
             if form.cleaned_data.get("tipo") != "adherido":
                 messages.error(self.request, "Solo puedes crear centros ADHERIDOS.")
