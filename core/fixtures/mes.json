@@ -1,0 +1,86 @@
+[
+    {
+        "model": "core.mes",
+        "pk": 1,
+        "fields": {
+            "nombre": "Enero"
+        }
+    },
+    {
+        "model": "core.mes",
+        "pk": 2,
+        "fields": {
+            "nombre": "Febrero"
+        }
+    },
+    {
+        "model": "core.mes",
+        "pk": 3,
+        "fields": {
+            "nombre": "Marzo"
+        }
+    },
+    {
+        "model": "core.mes",
+        "pk": 4,
+        "fields": {
+            "nombre": "Abril"
+        }
+    },
+    {
+        "model": "core.mes",
+        "pk": 5,
+        "fields": {
+            "nombre": "Mayo"
+        }
+    },
+    {
+        "model": "core.mes",
+        "pk": 6,
+        "fields": {
+            "nombre": "Junio"
+        }
+    },
+    {
+        "model": "core.mes",
+        "pk": 7,
+        "fields": {
+            "nombre": "Julio"
+        }
+    },
+    {
+        "model": "core.mes",
+        "pk": 8,
+        "fields": {
+            "nombre": "Agosto"
+        }
+    },
+    {
+        "model": "core.mes",
+        "pk": 9,
+        "fields": {
+            "nombre": "Septiembre"
+        }
+    },
+    {
+        "model": "core.mes",
+        "pk": 10,
+        "fields": {
+            "nombre": "Octubre"
+        }
+    },
+    {
+        "model": "core.mes",
+        "pk": 11,
+        "fields": {
+            "nombre": "Noviembre"
+        }
+    },
+    {
+        "model": "core.mes",
+        "pk": 12,
+        "fields": {
+            "nombre": "Diciembre"
+        }
+    }
+]
