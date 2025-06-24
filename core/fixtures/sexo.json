@@ -1,0 +1,23 @@
+[
+    {
+        "model": "core.sexo",
+        "pk": 1,
+        "fields": {
+            "sexo": "Femenino"
+        }
+    },
+    {
+        "model": "core.sexo",
+        "pk": 2,
+        "fields": {
+            "sexo": "Masculino"
+        }
+    },
+    {
+        "model": "core.sexo",
+        "pk": 3,
+        "fields": {
+            "sexo": "X"
+        }
+    }
+]
