@@ -40,7 +40,7 @@ from duplas.dupla_service import DuplaService
 from rendicioncuentasmensual.services import RendicionCuentaMensualService
 
 
-@method_decorator(csrf_exempt, name="dispatch")  # FIXME: No exceptuar nunca csrf
+@method_decorator(csrf_exempt, name="dispatch")
 class NominaDetailView(TemplateView):
     template_name = "comedor/nomina_detail.html"
     model = Nomina
@@ -143,11 +143,11 @@ class ComedorCreateView(CreateView):
         referente_form = context["referente_form"]
         imagenes = self.request.FILES.getlist("imagenes")
 
-        if referente_form.is_valid():  # Creo y asigno el referente
+        if referente_form.is_valid():
             self.object = form.save(commit=False)
             self.object.referente = referente_form.save()
             self.object.save()
-            for imagen in imagenes:  # Creo las imágenes
+            for imagen in imagenes:
                 try:
                     ComedorService.create_imagenes(imagen, self.object.pk)
                 except Exception:
@@ -208,7 +208,6 @@ class ComedorDetailView(DetailView):
 
         return context
 
-    # TODO: Migrar a una vista @require_POST
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
 
@@ -243,7 +242,7 @@ class ComedorDetailView(DetailView):
             return redirect("comedor_detalle", pk=self.object.id)
 
 
-class AsignarDuplaListView(ListView):  # FIXME: Por que esto es una ListView?
+class AsignarDuplaListView(ListView):
     model = Comedor
     template_name = "comedor/asignar_dupla_form.html"
 
@@ -297,14 +296,14 @@ class ComedorUpdateView(UpdateView):
         referente_form = context["referente_form"]
         imagenes = self.request.FILES.getlist("imagenes")
 
-        if referente_form.is_valid():  # Creo y asigno el referente
+        if referente_form.is_valid():
             self.object = form.save()
             self.object.referente = referente_form.save()
             self.object.save()
 
-            ComedorService.borrar_imagenes(self.request.POST)  # Borro las imagenes
+            ComedorService.borrar_imagenes(self.request.POST)
 
-            for imagen in imagenes:  # Creo las imagenes
+            for imagen in imagenes:
                 try:
                     ComedorService.create_imagenes(imagen, self.object.pk)
                 except Exception:
