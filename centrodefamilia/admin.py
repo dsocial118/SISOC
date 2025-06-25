@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Centro, Actividad, ActividadCentro, ParticipanteActividad, Categoria
+from .models import Centro, Actividad, ParticipanteActividad, Categoria
 
 
 @admin.register(Centro)
