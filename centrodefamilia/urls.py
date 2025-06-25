@@ -1,4 +1,7 @@
 from django.urls import path
+
+from configuraciones.decorators import group_required
+
 from centrodefamilia.views.centro import (
     CentroDeleteView,
     CentroListView,
@@ -19,9 +22,8 @@ from centrodefamilia.views.orientador import (
     OrientadorUpdateView,
     OrientadorDeleteView,
 )
-
-from configuraciones.decorators import group_required
 from centrodefamilia.views.participante import ParticipanteActividadCreateView
+
 
 urlpatterns = [
     path(

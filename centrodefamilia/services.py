@@ -1,5 +1,4 @@
 from .models import Centro, ActividadCentro, ParticipanteActividad
-from django.core.exceptions import ValidationError
 
 
 class CentroService:
