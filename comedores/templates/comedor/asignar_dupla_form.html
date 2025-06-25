@@ -24,7 +24,6 @@
 {% block content %}
     <div class="container mt-4">
         <h2>Asignar Dupla</h2>
-        <!-- Filtro por nombre de dupla -->
         <div class="mb-3">
             <input type="text"
                    id="duplaFilter"
@@ -32,7 +31,6 @@
                    placeholder="Filtrar por nombre de dupla..."
                    onkeyup="filterTable()" />
         </div>
-        <!-- Tabla de duplas activas -->
         <form method="post">
             {% csrf_token %}
             <table class="table table-striped" id="duplaTable">

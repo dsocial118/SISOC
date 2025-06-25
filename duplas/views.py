@@ -64,7 +64,6 @@ class DuplaUpdateView(UpdateView):
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        # Aplicar la lógica de filtrado del formulario
         form.filtrar_campos_tecnico_abogado()
         return form
 

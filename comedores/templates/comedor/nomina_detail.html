@@ -21,16 +21,13 @@
 {% block menu-adicional %}{% endblock %}
 ;
 {% block content %}
-    <!-- card-info -->
     <link rel="stylesheet" href="{% static 'custom/css/nomina.css' %}" />
     <div class="row">
-        <!-- botones -->
         <div class="col-12 my-3 mx-2 d-print-none">
             <a href="{% url 'nomina_crear' object.id %}"
                class="btn btn-primary mr-1">Agregar Persona</a>
             <a href="" class="btn btn-secondary mr-1 print">Imprimir</a>
         </div>
-        <!-- ./botones -->
     </div>
     <div class="row">
         <div class="col-md-12">
@@ -63,7 +60,6 @@
                             <i class="fas fa-female"></i>
                         </div>
                         <div class="card-content">
-                            <!-- TODO Reemplazar una vez implementado cantidad_beneficiarios -->
                             <div class="card-amount">{{ nominaF }}</div>
                             <div class="card-title">Mujeres</div>
                         </div>
@@ -75,7 +71,6 @@
                             <i class="fas fa-tasks"></i>
                         </div>
                         <div class="card-content">
-                            <!-- TODO Reemplazar una vez implementado cantidad_beneficiarios -->
                             <div class="card-amount">{{ espera }}</div>
                             <div class="card-title">Lista de espera</div>
                         </div>
@@ -85,7 +80,6 @@
         </div>
     </div>
     <div class="row p-0 m-0 " id="seleccion">
-        <!-- Datos de ciudadano -->
         <div class="col-sm-4 pb-3">
             <div class="card card-outline card-primary h-100 mb-0">
                 <div class="card-header">
@@ -123,73 +117,70 @@
                 </div>
             </div>
         </div>
-        <!-- /  -->
-        <!-- Datos de indice -->
         <div class="col-sm-3">
-            <div class="row h-100">
-                <div class="col-12"></div>
+            <div class="col-sm-3">
+                <div class="row h-100">
+                    <div class="col-12"></div>
+                </div>
             </div>
-        </div>
-        <!-- /  -->
-        <!-- historial de Intervenciones -->
-        <div class="col-12 mt-3">
-            <div class="card card-primary card-outline">
-                <div class="card-header">
-                    <h3 class="card-title">Historial de Nomina</h3>
-                    <div class="card-tools ">
-                        <button type="button"
-                                class="btn btn-tool d-md-none"
-                                data-card-widget="collapse">
-                            <i class="fas fa-minus"></i>
-                        </button>
+            <div class="col-12 mt-3">
+                <div class="col-12 mt-3">
+                    <div class="card card-primary card-outline">
+                        <div class="card-header">
+                            <h3 class="card-title">Historial de Nomina</h3>
+                            <div class="card-tools ">
+                                <button type="button"
+                                        class="btn btn-tool d-md-none"
+                                        data-card-widget="collapse">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body table-responsive p-0">
+                            <table class="table table-head-fixed table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Nombre</th>
+                                        <th>Apellido</th>
+                                        <th>Sexo</th>
+                                        <th>Documento</th>
+                                        <th>Estado</th>
+                                        <th></th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for e in nomina %}
+                                        <tr>
+                                            <td>{{ e.fecha|date:'d/m/Y' }}</td>
+                                            <td>{{ e.nombre }}</td>
+                                            <td>{{ e.apellido }}</td>
+                                            <td>{{ e.o }}</td>
+                                            <td>{{ e.dni }}</td>
+                                            <td>{{ e.estado }}</td>
+                                            <td>
+                                                <a href="{% url 'nomina_editar' e.id object.id %}">Editar</a>
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'nomina_borrar' e.id object.id %}">Eliminiar</a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
-                <div class="card-body table-responsive p-0">
-                    <table class="table table-head-fixed table-bordered">
-                        <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Nombre</th>
-                                <th>Apellido</th>
-                                <th>Sexo</th>
-                                <th>Documento</th>
-                                <th>Estado</th>
-                                <th></th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for e in nomina %}
-                                <tr>
-                                    <td>{{ e.fecha|date:'d/m/Y' }}</td>
-                                    <td>{{ e.nombre }}</td>
-                                    <td>{{ e.apellido }}</td>
-                                    <td>{{ e.o }}</td>
-                                    <td>{{ e.dni }}</td>
-                                    <td>{{ e.estado }}</td>
-                                    <td>
-                                        <a href="{% url 'nomina_editar' e.id object.id %}">Editar</a>
-                                    </td>
-                                    <td>
-                                        <a href="{% url 'nomina_borrar' e.id object.id %}">Eliminiar</a>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+            </div>
+            <div class="row mt-4 d-print-none">
+                <div class="col-12 mx-2">
+                    <div class="form-group  d-flex justify-content-between">
+                        <a href="{% url 'comedor_detalle' object.id %}"
+                           class="btn btn-secondary">Volver</a>
+                    </div>
                 </div>
             </div>
-        </div>
-        <!-- / -->
-    </div>
-    <div class="row mt-4 d-print-none">
-        <div class="col-12 mx-2">
-            <div class="form-group  d-flex justify-content-between">
-                <a href="{% url 'comedor_detalle' object.id %}"
-                   class="btn btn-secondary">Volver</a>
-            </div>
-        </div>
-    </div>
-{% endblock %}
-;
-{% block customJS %}{% endblock %}
+        {% endblock %}
+        ;
+        {% block customJS %}{% endblock %}
