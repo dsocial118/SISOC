@@ -126,6 +126,7 @@ INSTALLED_APPS = [
     "corsheaders",
     # Aplicaciones propias
     "users",
+    "core",
     "configuraciones",
     "dashboard",
     "comedores",
