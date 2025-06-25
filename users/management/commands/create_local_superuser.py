@@ -17,13 +17,11 @@ class Command(BaseCommand):
 
         user = get_user_model()
 
-        # Datos del superusuario
         username = "1"
         email = "1@gmail.com"
         password = "1"
 
         self.stdout.write(self.style.SUCCESS("Creando usuarios..."))
-        # Verificar si el superusuario ya existe
         if not user.objects.filter(username=username).exists():
             user.objects.create_superuser(
                 username=username, email=email, password=password
