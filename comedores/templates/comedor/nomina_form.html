@@ -16,7 +16,6 @@
 {% load crispy_forms_tags %}
 {% block content %}
     <link rel="stylesheet" href="{% static 'custom/css/nominaform.css' %}" />
-    <!-- Datos de ciudadano -->
     <div class="row mb-3">
         <div class="col-12">
             <div class="card card-outline card-primary ">
@@ -48,14 +47,12 @@
             </div>
         </div>
     </div>
-    <!-- /  -->
     <div class="row">
         <div class="col">
             <form class="needs-validation"
                   novalidate
                   method="POST"
                   enctype="multipart/form-data">
-                <!-- Security token -->
                 {% csrf_token %}
                 <div class="card card-primary card-outline">
                     <div class="card-header">

@@ -71,15 +71,12 @@ class ComedorService:
 
     @staticmethod
     def borrar_imagenes(post):
-        pattern = re.compile(
-            r"^imagen_ciudadano-borrar-(\d+)$"
-        )  # Patron para encontrar los campos de imagenes a borrar
+        pattern = re.compile(r"^imagen_ciudadano-borrar-(\d+)$")
         imagenes_ids = []
-        # Itera sobre los datos POST para encontrar los campos coincidentes con el patron
         for key in post:
             match = pattern.match(key)
             if match:
-                imagen_id = match.group(1)  # Extrae el id al final del nombre del campo
+                imagen_id = match.group(1)
                 imagenes_ids.append(imagen_id)
 
         ImagenComedor.objects.filter(id__in=imagenes_ids).delete()
@@ -165,9 +162,9 @@ class ComedorService:
         if "documento" in referente_data:
             referente_data["documento"] = referente_data["documento"].replace(".", "")
 
-        if referente_instance is None:  # Crear referente
+        if referente_instance is None:
             referente_instance = Referente.objects.create(**referente_data)
-        else:  # Actualizar referente
+        else:
             for field, value in referente_data.items():
                 setattr(referente_instance, field, value)
             referente_instance.save(update_fields=referente_data.keys())
@@ -189,7 +186,6 @@ class ComedorService:
     def get_presupuestos(comedor_id: int):
         beneficiarios = Relevamiento.objects.filter(comedor=comedor_id).first()
 
-        # Inicializamos contadores
         count = {
             "desayuno": 0,
             "almuerzo": 0,
@@ -217,7 +213,6 @@ class ComedorService:
 
         count_beneficiarios = sum(count.values())
 
-        # Cálculo de valores
         valores_comida = ValorComida.objects.filter(tipo__in=count.keys()).values(
             "tipo", "valor"
         )
