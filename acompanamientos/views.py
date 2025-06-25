@@ -106,7 +106,7 @@ class ComedoresAcompanamientoListView(ListView):
         busqueda = self.request.GET.get("busqueda", "").strip().lower()
 
         # Filtramos las admisiones con estado=2 (Finalizada)
-        admisiones = Admision.objects.filter(estado=2)
+        admisiones = Admision.objects.filter(estado=2, enviado_acompaniamiento=True)
 
         # Si no es superusuario, filtramos por dupla asignada
 

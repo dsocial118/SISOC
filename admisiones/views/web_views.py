@@ -148,6 +148,15 @@ class AdmisionesTecnicosUpdateView(UpdateView):
                 )
             return redirect(self.request.path_info)
 
+        if "btnDisponibilizarAcomp" in request.POST:
+            if AdmisionService.marcar_como_enviado_a_acompaniamiento(
+                admision, request.user
+            ):
+                messages.success(request, "Se envio a Acompañamiento correctamente.")
+            else:
+                messages.error(request, "Error al enviar a Acompañamiento.")
+            return redirect(self.request.path_info)
+
         if "btnRectificarDocumentacion" in request.POST:
             if AdmisionService.marcar_como_documentacion_rectificada(
                 admision, request.user
