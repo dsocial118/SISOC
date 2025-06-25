@@ -73,7 +73,6 @@
         </form>
     </div>
     <script>
-    // Filtrar la tabla por nombre de dupla
     function filterTable() {
         const filter = document.getElementById("duplaFilter").value.toUpperCase();
         const table = document.getElementById("duplaTable");
@@ -81,7 +80,7 @@
 
         for (let i = 1; i < rows.length; i++) {
             const cells = rows[i].getElementsByTagName("td");
-            const nameCell = cells[1]; // Columna de nombre
+            const nameCell = cells[1];
             if (nameCell) {
                 const name = nameCell.textContent || nameCell.innerText;
                 rows[i].style.display = name.toUpperCase().indexOf(filter) > -1 ? "" : "none";
