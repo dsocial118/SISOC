@@ -226,9 +226,7 @@ class Nomina(models.Model):
 
     comedor = models.ForeignKey(Comedor, on_delete=models.SET_NULL, null=True)
     fecha = models.DateTimeField(auto_now_add=True)
-    estado = models.ForeignKey(  # FIXME: Por que aca se usa EstadoIntervencion?
-        EstadoIntervencion, on_delete=models.SET_NULL, null=True
-    )
+    estado = models.ForeignKey(EstadoIntervencion, on_delete=models.SET_NULL, null=True)
     observaciones = models.TextField(blank=True, null=True)
     nombre = models.TextField(blank=True, null=True)
     apellido = models.TextField(blank=True, null=True)

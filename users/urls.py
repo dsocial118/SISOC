@@ -13,7 +13,6 @@ from users.views import (
 urlpatterns = [
     path("", UsuariosLoginView.as_view(), name="login"),
     path("logout", (LogoutView.as_view()), name="logout"),
-    # Usuarios
     path(
         "usuarios/",
         group_required("Usuario Ver")(UserListView.as_view()),
@@ -34,7 +33,6 @@ urlpatterns = [
         group_required("Usuario Eliminar")(UserDeleteView.as_view()),
         name="usuario_borrar",
     ),
-    # Grupos
     path(
         "grupos/",
         group_required("Grupos Ver")(GroupListView.as_view()),

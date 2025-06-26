@@ -35,7 +35,7 @@ class ReferenteForm(forms.ModelForm):
             return mail
 
         email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
-        if not isinstance(mail, str):  # Asegurarse de que sea una cadena
+        if not isinstance(mail, str):
             raise ValidationError("El correo electrónico debe ser una cadena válida.")
         if not re.match(email_regex, mail):
             raise ValidationError("Por favor, ingresa un correo electrónico válido.")
@@ -52,10 +52,7 @@ class NominaForm(forms.ModelForm):
         fields = "__all__"
         widgets = {
             "nombre": forms.TextInput(
-                attrs={
-                    "class": "form-control",  # Clase CSS para estilos de Bootstrap o personalizados
-                    "placeholder": "Nombre",  # Placeholder para el campo
-                }
+                attrs={"class": "form-control", "placeholder": "Nombre"}
             ),
             "apellido": forms.TextInput(
                 attrs={
@@ -134,12 +131,8 @@ class ComedorForm(forms.ModelForm):
             )
         else:
             self.fields["provincia"].queryset = Provincia.objects.all()
-            self.fields["municipio"].queryset = (
-                Municipio.objects.none()
-            )  # Evitar la carga total de las instancias
-            self.fields["localidad"].queryset = (
-                Localidad.objects.none()
-            )  # Evitar la carga total de las instancias
+            self.fields["municipio"].queryset = Municipio.objects.none()
+            self.fields["localidad"].queryset = Localidad.objects.none()
 
         if municipio:
             self.fields["municipio"].initial = municipio
