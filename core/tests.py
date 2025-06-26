@@ -6,4 +6,5 @@ from django.test import TestCase
 
 class CoreModelsTestCase(TestCase):
     """Tests for core models"""
+
     pass
