@@ -29,7 +29,7 @@ from django.views.generic import (
     View,
 )
 
-from configuraciones.models import (
+from core.models import (
     Municipio,
     Provincia,
 )
