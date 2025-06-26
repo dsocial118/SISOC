@@ -18,9 +18,9 @@ warnings.warn(
 )
 
 __all__ = [
-    'DailyFileHandler',
-    'convert_string_to_int', 
-    'format_fecha_gestionar',
-    'format_fecha_django',
-    'format_serializer_errors',
+    "DailyFileHandler",
+    "convert_string_to_int",
+    "format_fecha_gestionar",
+    "format_fecha_django",
+    "format_serializer_errors",
 ]

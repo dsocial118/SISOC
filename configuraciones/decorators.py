@@ -13,4 +13,4 @@ warnings.warn(
     stacklevel=2,
 )
 
-__all__ = ['group_required']
+__all__ = ["group_required"]
