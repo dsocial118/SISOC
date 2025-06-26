@@ -3,7 +3,7 @@ from django.http import JsonResponse
 
 from django.shortcuts import render
 
-from configuraciones.models import (
+from core.models import (
     Localidad,
     Municipio,
 )

@@ -1,5 +1,5 @@
 from django.urls import path
-from configuraciones.decorators import group_required
+from core.decorators import group_required
 from admisiones.views.web_views import (
     subir_archivo_admision,
     eliminar_archivo_admision,
