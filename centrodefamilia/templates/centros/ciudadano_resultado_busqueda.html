@@ -1,0 +1,9 @@
+{% for c in ciudadanos %}
+    <div class="card mb-2">
+        <div class="card-body">
+            <strong>{{ c.apellido }}, {{ c.nombre }}</strong> - DNI: {{ c.documento }}
+        </div>
+    </div>
+{% empty %}
+    <p>No se encontraron coincidencias.</p>
+{% endfor %}
