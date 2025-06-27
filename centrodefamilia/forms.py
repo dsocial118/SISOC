@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
+from ciudadanos.models import Sexo, TipoDocumento
 from django.core.exceptions import ValidationError
 from .models import (
     Centro,
@@ -112,38 +113,29 @@ class ActividadCentroForm(forms.ModelForm):
         return cleaned_data
 
 
+
+
 class ParticipanteActividadForm(forms.ModelForm):
+    nombre = forms.CharField(max_length=255, label="Nombre")
+    apellido = forms.CharField(max_length=255, label="Apellido")
+    fecha_nacimiento = forms.DateField(
+        label="Fecha de Nacimiento",
+        widget=forms.DateInput(attrs={"type": "date"})
+    )
+    tipo_documento = forms.ModelChoiceField(
+        queryset=TipoDocumento.objects.all(),
+        label="Tipo de Documento"
+    )
+    dni = forms.IntegerField(label="Documento")
+    genero = forms.ModelChoiceField(
+        queryset=Sexo.objects.all(),
+        label="Sexo"
+    )
+
     class Meta:
         model = ParticipanteActividad
-        fields = [
-            "nombre",
-            "apellido",
-            "dni",
-            "edad",
-            "genero",
-            "cuit",
-        ]
+        fields = []  # no usamos directamente los campos del modelo porque todos se construyen en la vista
 
-    def clean_cuit(self):
-        cuit = self.cleaned_data["cuit"]
-        if not cuit.isdigit() or len(cuit) not in [10, 11]:
-            raise ValidationError("El CUIT debe tener entre 10 y 11 dígitos numéricos.")
-        return cuit
-
-    def clean(self):
-        cleaned_data = super().clean()
-        actividad = cleaned_data.get("actividad_centro")
-        cuit = cleaned_data.get("cuit")
-
-        if actividad and cuit:
-            if ParticipanteActividad.objects.filter(
-                actividad_centro=actividad, cuit=cuit
-            ).exists():
-                raise ValidationError(
-                    "Este CUIT ya está registrado para esta actividad."
-                )
-
-        return cleaned_data
 
 
 class OrientadoresForm(forms.ModelForm):

@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from ciudadanos.models import Ciudadano
 from organizaciones.models import Organizacion
 
 
@@ -122,38 +123,30 @@ class ActividadCentro(models.Model):
         verbose_name = "Actividad del Centro"
         verbose_name_plural = "Actividades por Centro"
 
-
 class ParticipanteActividad(models.Model):
     actividad_centro = models.ForeignKey(
-        ActividadCentro, on_delete=models.CASCADE, verbose_name="Actividad del Centro"
+        ActividadCentro,
+        on_delete=models.CASCADE,
+        verbose_name="Actividad del Centro"
     )
-    nombre = models.CharField(max_length=100, verbose_name="Nombre")
-    apellido = models.CharField(max_length=100, verbose_name="Apellido")
-    dni = models.CharField(max_length=15, verbose_name="DNI")
-    genero = models.CharField(
-        max_length=20,
-        choices=[
-            ("masculino", "Masculino"),
-            ("femenino", "Femenino"),
-            ("otro", "Otro"),
-        ],
-        verbose_name="Género",
+    ciudadano = models.ForeignKey(
+        Ciudadano,
+        on_delete=models.CASCADE,
+        verbose_name="Ciudadano"
     )
-    edad = models.PositiveIntegerField(verbose_name="Edad")
-    cuit = models.CharField(max_length=20, verbose_name="CUIT del Participante")
     fecha_registro = models.DateTimeField(
-        auto_now_add=True, verbose_name="Fecha de Registro"
+        auto_now_add=True,
+        verbose_name="Fecha de Registro"
     )
 
     def __str__(self):
-        return f"{self.apellido}, {self.nombre} - {self.actividad_centro}"
+        return f"{self.ciudadano.apellido}, {self.ciudadano.nombre} - {self.actividad_centro}"
 
     class Meta:
         verbose_name = "Participante"
         verbose_name_plural = "Participantes"
-        unique_together = ("actividad_centro", "cuit")
-
-
+        unique_together = ("actividad_centro", "ciudadano")
+        
 class Orientadores(models.Model):
     centro = models.ForeignKey(Centro, on_delete=models.CASCADE, verbose_name="Centro")
     nombre = models.CharField(max_length=100, verbose_name="Nombre")

@@ -59,25 +59,23 @@
                                 <th>Nombre</th>
                                 <th>Apellido</th>
                                 <th>DNI</th>
-                                <th>Edad</th>
                                 <th>Género</th>
-                                <th>CUIT</th>
+                                
                                 <th>Fecha de Registro</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            {% for p in participantes %}
-                                <tr>
-                                    <td>{{ p.nombre }}</td>
-                                    <td>{{ p.apellido }}</td>
-                                    <td>{{ p.dni }}</td>
-                                    <td>{{ p.edad }}</td>
-                                    <td>{{ p.genero }}</td>
-                                    <td>{{ p.cuit }}</td>
-                                    <td>{{ p.fecha_registro|date:"d/m/Y" }}</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
+<tbody>
+    {% for p in participantes %}
+        <tr>
+            <td>{{ p.ciudadano.nombre }}</td>
+            <td>{{ p.ciudadano.apellido }}</td>
+            <td>{{ p.ciudadano.documento }}</td>
+            <td>{{ p.ciudadano.sexo.sexo }}</td>
+            <td>{{ p.fecha_registro|date:"d/m/Y" }}</td>
+        </tr>
+    {% endfor %}
+</tbody>
+
                     </table>
                 {% else %}
                     <p class="text-center">No hay participantes cargados aún.</p>
