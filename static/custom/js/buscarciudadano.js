@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", function () {
     const inputDni = document.getElementById("busqueda-dni");
     const botonBuscar = document.getElementById("btn-buscar-dni");
+    const buscarUrl = botonBuscar.dataset.url;
 
     const resultadoDiv = document.getElementById("resultado-busqueda");
     const formularioDiv = document.getElementById("formulario-participante");
@@ -9,7 +10,7 @@ document.addEventListener("DOMContentLoaded", function () {
     function buscar() {
         const query = inputDni.value;
         if (query.length >= 4) {
-            fetch(`/centros/buscar-ciudadano/?query=${query}`)
+            fetch(`${buscarUrl}?query=${encodeURIComponent(query)}`)
                 .then((response) => response.json())
                 .then((data) => {
                     resultadoDiv.innerHTML = data.html;
