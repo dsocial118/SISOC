@@ -23,7 +23,6 @@ from centrodefamilia.views.orientador import (
     OrientadorDeleteView,
 )
 from centrodefamilia.views.participante import ParticipanteActividadCreateView  
-from centrodefamilia.views.participante import buscar_ciudadano
 
 
 urlpatterns = [
@@ -110,6 +109,6 @@ urlpatterns = [
         name="orientador_delete",
     ),
 
-    path("centros/buscar-ciudadano/", buscar_ciudadano, name="buscar_ciudadano"),
+   
 
 ]

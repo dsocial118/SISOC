@@ -41,6 +41,6 @@ class ActividadCentroAdmin(admin.ModelAdmin):
 
 @admin.register(ParticipanteActividad)
 class ParticipanteActividadAdmin(admin.ModelAdmin):
-    list_display = ("actividad_centro", "cuit", "fecha_registro")
-    search_fields = ("cuit",)
+    list_display = ("actividad_centro", "ciudadano", "fecha_registro")
+    search_fields = ("ciudadano__apellido", "ciudadano__nombre", "ciudadano__documento")
     list_filter = ("actividad_centro__centro",)
