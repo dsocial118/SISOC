@@ -5,6 +5,9 @@ from django.contrib import messages
 from django.db.models.base import Model
 from django.forms import BaseModelForm
 from django.http import HttpResponse
+from django.core.paginator import Paginator
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
@@ -43,24 +46,32 @@ from rendicioncuentasmensual.services import RendicionCuentaMensualService
 @method_decorator(csrf_exempt, name="dispatch")
 class NominaDetailView(TemplateView):
     template_name = "comedor/nomina_detail.html"
-    model = Nomina
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        pk = self.kwargs["pk"]
+        page = self.request.GET.get("page", 1)
+
         (
-            nomina,
+            page_obj,
             cantidad_nomina_m,
             cantidad_nomina_f,
             espera,
-            cantidad_intervenciones,
-        ) = ComedorService.detalle_de_nomina(self.kwargs)
-        comedor = ComedorService.get_comedor(self.kwargs["pk"])
-        context["nomina"] = nomina
-        context["nominaM"] = cantidad_nomina_m
-        context["nominaF"] = cantidad_nomina_f
-        context["espera"] = espera
-        context["object"] = comedor
-        context["cantidad_nomina"] = cantidad_intervenciones
+            cantidad_total,
+        ) = ComedorService.detalle_de_nomina(pk, page)
+
+        comedor = ComedorService.get_comedor(pk)
+
+        context.update(
+            {
+                "nomina": page_obj,
+                "nominaM": cantidad_nomina_m,
+                "nominaF": cantidad_nomina_f,
+                "espera": espera,
+                "object": comedor,
+                "cantidad_nomina": cantidad_total,
+            }
+        )
 
         return context
 

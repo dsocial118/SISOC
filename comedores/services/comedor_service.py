@@ -1,7 +1,7 @@
 import re
 from typing import Union
 
-from django.db.models import Q
+from django.db.models import Q, Count
 
 from relevamientos.models import Relevamiento
 from comedores.forms.comedor_form import ImagenComedorForm
@@ -47,27 +47,6 @@ class ComedorService:
         comedor.estado = "Asignado a Dupla Técnica"
         comedor.save()
         return comedor
-
-    @staticmethod
-    def detalle_de_nomina(kwargs):
-        nomina = Nomina.objects.filter(comedor=kwargs["pk"])
-        cantidad_nomina_m = Nomina.objects.filter(
-            comedor=kwargs["pk"], sexo__sexo="Masculino"
-        ).count()
-        cantidad_nomina_f = Nomina.objects.filter(
-            comedor=kwargs["pk"], sexo__sexo="Femenino"
-        ).count()
-        espera = Nomina.objects.filter(
-            comedor=kwargs["pk"], estado__nombre="Lista de espera"
-        ).count()
-        cantidad_intervenciones = Nomina.objects.filter(comedor=kwargs["pk"]).count()
-        return (
-            nomina,
-            cantidad_nomina_m,
-            cantidad_nomina_f,
-            espera,
-            cantidad_intervenciones,
-        )
 
     @staticmethod
     def borrar_imagenes(post):
@@ -229,4 +208,34 @@ class ComedorService:
             valor_desayuno,
             valor_almuerzo,
             valor_merienda,
+        )
+
+    @staticmethod
+    def detalle_de_nomina(pk, page=1, per_page=100):
+        qs_nomina = Nomina.objects.filter(comedor_id=pk).select_related(
+            "sexo", "estado"
+        )
+
+        # Cálculos agregados en una sola query
+        resumen = qs_nomina.aggregate(
+            cantidad_nomina_m=Count("id", filter=Q(sexo__sexo="Masculino")),
+            cantidad_nomina_f=Count("id", filter=Q(sexo__sexo="Femenino")),
+            espera=Count("id", filter=Q(estado__nombre="Lista de espera")),
+            cantidad_total=Count("id"),
+        )
+
+        # Paginación
+        from django.core.paginator import Paginator
+
+        paginator = Paginator(
+            qs_nomina.only("nombre", "apellido", "dni", "sexo", "estado"), per_page
+        )
+        page_obj = paginator.get_page(page)
+
+        return (
+            page_obj,  # objetos paginados
+            resumen["cantidad_nomina_m"],
+            resumen["cantidad_nomina_f"],
+            resumen["espera"],
+            resumen["cantidad_total"],
         )
