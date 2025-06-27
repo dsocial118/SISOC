@@ -6,6 +6,8 @@ from centrodefamilia.forms import ParticipanteActividadForm
 from django.http import JsonResponse
 from django.template.loader import render_to_string
 from ciudadanos.models import Ciudadano
+from django.db.models import CharField
+from django.db.models.functions import Cast
 
 
 def buscar_ciudadano(request):
@@ -13,7 +15,9 @@ def buscar_ciudadano(request):
     data = {"html": ""}
 
     if len(query) >= 4:
-        ciudadanos = Ciudadano.objects.filter(documento__icontains=query)[:10]
+        ciudadanos = Ciudadano.objects.annotate(
+            doc_str=Cast("documento", CharField())
+        ).filter(doc_str__startswith=query)[:10]
         html = render_to_string(
             "centros/ciudadano_resultado_busqueda.html",
             {"ciudadanos": ciudadanos},
