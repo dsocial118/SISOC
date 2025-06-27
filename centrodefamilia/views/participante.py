@@ -7,6 +7,7 @@ from django.http import JsonResponse
 from django.template.loader import render_to_string
 from ciudadanos.models import Ciudadano
 
+
 def buscar_ciudadano(request):
     query = request.GET.get("query", "")
     data = {"html": ""}
@@ -14,13 +15,14 @@ def buscar_ciudadano(request):
     if len(query) >= 4:
         ciudadanos = Ciudadano.objects.filter(documento__icontains=query)[:10]
         html = render_to_string(
-            "centros/partials/ciudadano_resultado_busqueda.html",
+            "centros/ciudadano_resultado_busqueda.html",
             {"ciudadanos": ciudadanos},
-            request=request
+            request=request,
         )
         data["html"] = html
 
     return JsonResponse(data)
+
 
 class ParticipanteActividadCreateView(CreateView):
     model = ParticipanteActividad
