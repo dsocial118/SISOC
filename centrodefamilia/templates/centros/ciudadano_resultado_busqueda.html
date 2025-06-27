@@ -1,9 +1,22 @@
-{% for c in ciudadanos %}
-    <div class="card mb-2">
-        <div class="card-body">
-            <strong>{{ c.apellido }}, {{ c.nombre }}</strong> - DNI: {{ c.documento }}
-        </div>
-    </div>
-{% empty %}
-    <p>No se encontraron coincidencias.</p>
-{% endfor %}
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Apellido</th>
+            <th>Nombre</th>
+            <th>DNI</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for c in ciudadanos %}
+            <tr>
+                <td>{{ c.apellido }}</td>
+                <td>{{ c.nombre }}</td>
+                <td>{{ c.documento }}</td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="3">No se encontraron coincidencias.</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
