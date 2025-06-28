@@ -336,7 +336,7 @@ DEBUG_TOOLBAR_CONFIG = {
 
 if DEBUG:
     # Configuración para desarrollo
-    SECURE_HSTS_SECONDS = None
+    SECURE_HSTS_SECONDS = 0
     SECURE_HSTS_INCLUDE_SUBDOMAINS = False
     SECURE_SSL_REDIRECT = False
     SESSION_COOKIE_SECURE = False
