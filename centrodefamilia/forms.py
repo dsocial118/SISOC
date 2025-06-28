@@ -1,8 +1,9 @@
 from django import forms
 from django.contrib.auth.models import User
-from ciudadanos.models import Sexo, TipoDocumento
 from django.core.exceptions import ValidationError
-from .models import (
+
+from ciudadanos.models import Sexo, TipoDocumento
+from centrodefamilia.models import (
     Centro,
     ActividadCentro,
     ParticipanteActividad,
