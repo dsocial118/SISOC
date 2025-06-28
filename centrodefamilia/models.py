@@ -123,20 +123,16 @@ class ActividadCentro(models.Model):
         verbose_name = "Actividad del Centro"
         verbose_name_plural = "Actividades por Centro"
 
+
 class ParticipanteActividad(models.Model):
     actividad_centro = models.ForeignKey(
-        ActividadCentro,
-        on_delete=models.CASCADE,
-        verbose_name="Actividad del Centro"
+        ActividadCentro, on_delete=models.CASCADE, verbose_name="Actividad del Centro"
     )
     ciudadano = models.ForeignKey(
-        Ciudadano,
-        on_delete=models.CASCADE,
-        verbose_name="Ciudadano"
+        Ciudadano, on_delete=models.CASCADE, verbose_name="Ciudadano"
     )
     fecha_registro = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="Fecha de Registro"
+        auto_now_add=True, verbose_name="Fecha de Registro"
     )
 
     def __str__(self):
@@ -146,7 +142,8 @@ class ParticipanteActividad(models.Model):
         verbose_name = "Participante"
         verbose_name_plural = "Participantes"
         unique_together = ("actividad_centro", "ciudadano")
-        
+
+
 class Orientadores(models.Model):
     centro = models.ForeignKey(Centro, on_delete=models.CASCADE, verbose_name="Centro")
     nombre = models.CharField(max_length=100, verbose_name="Nombre")
