@@ -60,7 +60,7 @@
                            class="btn btn-outline-primary btn-sm">Editar</a>
                         <a href="{% url 'centro_list' %}"
                            class="btn btn-outline-secondary btn-sm">Volver</a>
-                        <a href="{% url 'actividadcentro_create' %}?centro={{ centro.id }}"
+                        <a href="{% url 'actividadcentro_create' centro_id=centro.id %}"
                            class="btn btn-outline-success btn-sm">Agregar Actividad</a>
                         {% if centro.tipo == 'faro' %}
                             <a href="{% url 'centro_create' %}?faro={{ centro.id }}"
@@ -183,7 +183,7 @@
                             <div class="col-md-3">
                                 <strong>Organización asociada:</strong>
                                 <br />
-                                {{ centro.organizacionasociada }}
+                                {{ centro.organizacion_asociada }}
                             </div>
                         </div>
                         <div class="row mt-3">

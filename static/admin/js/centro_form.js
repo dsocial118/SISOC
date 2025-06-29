@@ -6,11 +6,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const camposFaro = [
         'div_id_nombre',
         'div_id_codigo',
-        'div_id_organizacionasociada',
+        'div_id_organizacion_asociada',
         'div_id_foto',
         'div_id_referente',
         'div_id_activo',
-        'div_id_domicilio_sede',  // ← agregado
+        'div_id_domicilio_sede',  
         'div_id_domicilio_actividad',
         'div_id_telefono',
         'div_id_celular',
@@ -26,12 +26,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const camposAdherido = [
         'div_id_nombre',
         'div_id_codigo',
-        'div_id_organizacionasociada',
+        'div_id_organizacion_asociada',
         'div_id_faro_asociado',
         'div_id_foto',
         'div_id_referente',
         'div_id_activo',
-        'div_id_domicilio_sede',  // ← agregado
+        'div_id_domicilio_sede',  
         'div_id_domicilio_actividad',
         'div_id_telefono',
         'div_id_celular',

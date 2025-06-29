@@ -1,32 +1,23 @@
+# centrodefamilia/views/participante.py
+
 from django.shortcuts import redirect
 from django.views.generic import CreateView
 from django.urls import reverse_lazy
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+
 from centrodefamilia.models import ParticipanteActividad
 from centrodefamilia.forms import ParticipanteActividadForm
+from centrodefamilia.services.participante_service import ParticipanteService
 from ciudadanos.models import (
     Ciudadano,
-    Archivo,
     CiudadanoPrograma,
-    Derivacion,
-    DimensionEconomia,
-    DimensionEducacion,
-    DimensionFamilia,
-    DimensionSalud,
-    DimensionTrabajo,
-    DimensionVivienda,
-    GrupoFamiliar,
-    GrupoHogar,
-    HistorialAlerta,
+    Programa,
     HistorialCiudadanoProgramas,
-    Intervencion,
-    Llamado,
 )
-from django.db.models import CharField
-from django.db.models.functions import Cast
 
 
-class ParticipanteActividadCreateView(CreateView):
+class ParticipanteActividadCreateView(LoginRequiredMixin, CreateView):
     model = ParticipanteActividad
     form_class = ParticipanteActividadForm
     template_name = "centros/participanteactividad_form.html"
@@ -38,9 +29,6 @@ class ParticipanteActividadCreateView(CreateView):
             initial["actividad_centro"] = actividad_id
         return initial
 
-    def form_valid(self, form):
-        return super().form_valid(form)
-
     def get_success_url(self):
         centro_id = self.kwargs.get("centro_id")
         actividad_id = self.kwargs.get("actividad_id")
@@ -50,57 +38,81 @@ class ParticipanteActividadCreateView(CreateView):
         )
 
     def post(self, request, *args, **kwargs):
+        self.object = None
         actividad_id = self.kwargs.get("actividad_id")
+        user = request.user
 
-        if "documento" in request.POST and "nombre" in request.POST:
+        # 1) Participante existente
+        ciudadano_id = request.POST.get("ciudadano_id")
+        if ciudadano_id:
             try:
-                ciudadano = Ciudadano.objects.get(
-                    documento=request.POST.get("documento")
-                )
-                ParticipanteActividad.objects.create(
-                    actividad_centro_id=actividad_id, ciudadano=ciudadano
-                )
-                messages.success(self.request, "Participante agregado desde búsqueda.")
-                return redirect(self.get_success_url())
+                ciudadano = Ciudadano.objects.get(pk=ciudadano_id)
             except Ciudadano.DoesNotExist:
-                messages.error(self.request, "Ciudadano no encontrado.")
+                messages.error(request, "Ciudadano no encontrado.")
+                return redirect(self.get_success_url())
 
-        form = self.get_form()
-        if form.is_valid():
-            ciudadano = Ciudadano.objects.create(
-                nombre=form.cleaned_data["nombre"],
-                apellido=form.cleaned_data["apellido"],
-                documento=form.cleaned_data["dni"],
-                fecha_nacimiento=form.cleaned_data["fecha_nacimiento"],
-                tipo_documento=form.cleaned_data.get("tipo_documento"),
-                sexo=form.cleaned_data.get("genero"),
+            # 1.a) Asociar a la actividad
+            ParticipanteService.crear_participante(actividad_id, ciudadano)
+
+            # 1.b) Crear o recuperar vínculo en CiudadanoPrograma (programa=1)
+            cp, created = CiudadanoPrograma.objects.get_or_create(
+                ciudadano=ciudadano,
+                programas_id=1,
+                defaults={"creado_por": user}
             )
+            # 1.c) Si se crea nuevo, registrar en historial
+            if created:
+                HistorialCiudadanoProgramas.objects.create(
+                    programa_id=1,
+                    ciudadano=ciudadano,
+                    accion="agregado",
+                    usuario=user
+                )
 
-            # Crear todas las relaciones obligatorias
-            DimensionEconomia.objects.create(ciudadano=ciudadano)
-            DimensionEducacion.objects.create(ciudadano=ciudadano)
-            DimensionFamilia.objects.create(ciudadano=ciudadano)
-            DimensionSalud.objects.create(ciudadano=ciudadano)
-            DimensionTrabajo.objects.create(ciudadano=ciudadano)
-            DimensionVivienda.objects.create(ciudadano=ciudadano)
-            ParticipanteActividad.objects.create(
-                actividad_centro_id=actividad_id, ciudadano=ciudadano
-            )
-
-            messages.success(request, "Ciudadano y Participante creados correctamente.")
+            messages.success(request, "Participante existente agregado correctamente.")
             return redirect(self.get_success_url())
 
-        return super().post(request, *args, **kwargs)
+        # 2) Nuevo ciudadano + dimensiones
+        form = self.get_form()
+        if form.is_valid():
+            nuevo_ciudadano = ParticipanteService.crear_ciudadano_con_dimensiones(
+                form.cleaned_data
+            )
+            # 2.a) Asociación a la actividad
+            ParticipanteService.crear_participante(actividad_id, nuevo_ciudadano)
+            # 2.b) Crear vínculo Ciudadano–Programa
+            CiudadanoPrograma.objects.create(
+                ciudadano=nuevo_ciudadano,
+                programas_id=1,
+                creado_por=user
+            )
+            # 2.c) Registrar en historial
+            HistorialCiudadanoProgramas.objects.create(
+                programa_id=1,
+                ciudadano=nuevo_ciudadano,
+                accion="agregado",
+                usuario=user
+            )
+
+            messages.success(request, "Ciudadano y participante creados correctamente.")
+            return redirect(self.get_success_url())
+
+        return self.form_invalid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         query = self.request.GET.get("query", "")
         if len(query) >= 4:
-            ciudadanos = Ciudadano.objects.annotate(
-                doc_str=Cast("documento", CharField())
-            ).filter(doc_str__startswith=query)[:10]
-            context["ciudadanos"] = ciudadanos
-            context["no_resultados"] = not ciudadanos.exists()
+            from django.db.models import CharField
+            from django.db.models.functions import Cast
+
+            context["ciudadanos"] = (
+                Ciudadano.objects
+                .annotate(doc_str=Cast("documento", CharField()))
+                .filter(doc_str__startswith=query)[:10]
+            )
+            context["no_resultados"] = not context["ciudadanos"].exists()
+
         context["centro_id"] = self.kwargs.get("centro_id")
         context["actividad_id"] = self.kwargs.get("actividad_id")
         return context

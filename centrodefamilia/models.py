@@ -30,7 +30,7 @@ class Centro(models.Model):
     codigo = models.CharField(max_length=10, unique=True)
     foto = models.ImageField(upload_to="centros/", blank=True, null=True)
     activo = models.BooleanField(default=True)
-    organizacionasociada = models.ForeignKey(
+    organizacion_asociada = models.ForeignKey(
         Organizacion,
         on_delete=models.CASCADE,
         blank=True,

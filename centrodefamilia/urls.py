@@ -57,11 +57,6 @@ urlpatterns = [
         name="actividadcentro_list",
     ),
     path(
-        "actividades/nueva/",
-        group_required(["ReferenteCentro"])(ActividadCentroCreateView.as_view()),
-        name="actividadcentro_create",
-    ),
-    path(
         "centros/<int:centro_id>/actividades/nueva/",
         group_required(["ReferenteCentro"])(ActividadCentroCreateView.as_view()),
         name="actividadcentro_create",
@@ -78,14 +73,14 @@ urlpatterns = [
     ),
     path(
         "centros/<int:centro_id>/actividades/<int:pk>/editar/",
-        group_required(["superadmin", "ReferenteCentro"])(
+        group_required(["ReferenteCentro"])(
             ActividadCentroUpdateView.as_view()
         ),
         name="actividadcentro_edit",
     ),
     path(
         "ajax/actividades/",
-        cargar_actividades_por_categoria,
+        group_required(["ReferenteCentro"])(cargar_actividades_por_categoria),
         name="ajax_cargar_actividades",
     ),
     path(
