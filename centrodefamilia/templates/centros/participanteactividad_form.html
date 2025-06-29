@@ -1,87 +1,86 @@
 {% extends "includes/main.html" %}
 {% load static %}
 {% load crispy_forms_tags %}
-
 {% block title %}Agregar Participante{% endblock %}
-
 {% block breadcrumb %}
-<ol class="breadcrumb float-sm-right">
-    <li class="breadcrumb-item">
-        <a href="{% url 'centro_list' %}">Centro de Familia</a>
-    </li>
-    <li class="breadcrumb-item">
-        <a href="{% url 'actividadcentro_list' %}">Actividades</a>
-    </li>
-    <li class="breadcrumb-item active">Nuevo Participante</li>
-</ol>
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'centro_list' %}">Centro de Familia</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'actividadcentro_list' %}">Actividades</a>
+        </li>
+        <li class="breadcrumb-item active">Nuevo Participante</li>
+    </ol>
 {% endblock %}
-
 {% block content %}
-<div class="container">
-    <h2 class="text-center display-4 mb-4">Nuevo Participante</h2>
-
-    {% if messages %}
-        <div>
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-            {% endfor %}
-        </div>
-    {% endif %}
-
-    <form method="get">
-        <div class="form-group">
-            <label for="busqueda-dni">Buscar por DNI (mínimo 4 dígitos):</label>
-            <div class="input-group">
-                <input type="text" class="form-control" name="query" id="busqueda-dni" placeholder="Ingrese DNI" value="{{ request.GET.query }}">
-                <div class="input-group-append">
-                    <button class="btn btn-secondary" type="submit">Buscar</button>
+    <div class="container">
+        <h2 class="text-center display-4 mb-4">Nuevo Participante</h2>
+        {% if messages %}
+            <div>
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show"
+                         role="alert">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        <form method="get">
+            <div class="form-group">
+                <label for="busqueda-dni">Buscar por DNI (mínimo 4 dígitos):</label>
+                <div class="input-group">
+                    <input type="text"
+                           class="form-control"
+                           name="query"
+                           id="busqueda-dni"
+                           placeholder="Ingrese DNI"
+                           value="{{ request.GET.query }}" />
+                    <div class="input-group-append">
+                        <button class="btn btn-secondary" type="submit">Buscar</button>
+                    </div>
                 </div>
             </div>
-        </div>
-    </form>
-
-    {% if ciudadanos %}
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>Apellido</th>
-                    <th>Nombre</th>
-                    <th>DNI</th>
-                    <th>Acción</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for c in ciudadanos %}
-                <tr>
-                    <td>{{ c.apellido }}</td>
-                    <td>{{ c.nombre }}</td>
-                    <td>{{ c.documento }}</td>
-                    <td>
-                        <form method="post" style="display:inline;">
-                            {% csrf_token %}
-                            <input type="hidden" name="documento" value="{{ c.documento }}">
-                            <button type="submit" class="btn btn-sm btn-success">Agregar</button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% endif %}
-
-    {% if no_resultados %}
-        <hr>
-        <h4>No se encontraron resultados. Cargar nuevo ciudadano:</h4>
-        <form method="post">
-            {% csrf_token %}
-            {{ form|crispy }}
-            <button type="submit" class="btn btn-primary">Crear y Asociar</button>
         </form>
-    {% endif %}
-</div>
+        {% if ciudadanos %}
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Apellido</th>
+                        <th>Nombre</th>
+                        <th>DNI</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in ciudadanos %}
+                        <tr>
+                            <td>{{ c.apellido }}</td>
+                            <td>{{ c.nombre }}</td>
+                            <td>{{ c.documento }}</td>
+                            <td>
+                                <form method="post" style="display:inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="documento" value="{{ c.documento }}" />
+                                    <button type="submit" class="btn btn-sm btn-success">Agregar</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+        {% if no_resultados %}
+            <hr />
+            <h4>No se encontraron resultados. Cargar nuevo ciudadano:</h4>
+            <form method="post">
+                {% csrf_token %}
+                {{ form|crispy }}
+                <button type="submit" class="btn btn-primary">Crear y Asociar</button>
+            </form>
+        {% endif %}
+    </div>
 {% endblock %}

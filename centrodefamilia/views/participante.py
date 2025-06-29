@@ -6,11 +6,21 @@ from centrodefamilia.models import ParticipanteActividad
 from centrodefamilia.forms import ParticipanteActividadForm
 from ciudadanos.models import (
     Ciudadano,
-    Archivo, CiudadanoPrograma, Derivacion,
-    DimensionEconomia, DimensionEducacion, DimensionFamilia,
-    DimensionSalud, DimensionTrabajo, DimensionVivienda,
-    GrupoFamiliar, GrupoHogar, HistorialAlerta,
-    HistorialCiudadanoProgramas, Intervencion, Llamado
+    Archivo,
+    CiudadanoPrograma,
+    Derivacion,
+    DimensionEconomia,
+    DimensionEducacion,
+    DimensionFamilia,
+    DimensionSalud,
+    DimensionTrabajo,
+    DimensionVivienda,
+    GrupoFamiliar,
+    GrupoHogar,
+    HistorialAlerta,
+    HistorialCiudadanoProgramas,
+    Intervencion,
+    Llamado,
 )
 from django.db.models import CharField
 from django.db.models.functions import Cast
@@ -44,10 +54,11 @@ class ParticipanteActividadCreateView(CreateView):
 
         if "documento" in request.POST and "nombre" in request.POST:
             try:
-                ciudadano = Ciudadano.objects.get(documento=request.POST.get("documento"))
+                ciudadano = Ciudadano.objects.get(
+                    documento=request.POST.get("documento")
+                )
                 ParticipanteActividad.objects.create(
-                    actividad_centro_id=actividad_id,
-                    ciudadano=ciudadano
+                    actividad_centro_id=actividad_id, ciudadano=ciudadano
                 )
                 messages.success(self.request, "Participante agregado desde búsqueda.")
                 return redirect(self.get_success_url())
@@ -73,8 +84,7 @@ class ParticipanteActividadCreateView(CreateView):
             DimensionTrabajo.objects.create(ciudadano=ciudadano)
             DimensionVivienda.objects.create(ciudadano=ciudadano)
             ParticipanteActividad.objects.create(
-                actividad_centro_id=actividad_id,
-                ciudadano=ciudadano
+                actividad_centro_id=actividad_id, ciudadano=ciudadano
             )
 
             messages.success(request, "Ciudadano y Participante creados correctamente.")
