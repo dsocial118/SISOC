@@ -25,34 +25,24 @@
                    class="btn btn-success btn-sm">Agregar Participante</a>
             </div>
         </div>
+
         <div class="card mb-4">
             <div class="card-body">
-                <p>
-                    <strong>Centro:</strong> {{ actividad.centro.nombre }}
+                <p><strong>Centro:</strong> {{ actividad.centro.nombre }}</p>
+                <p><strong>Categoría:</strong> {{ actividad.actividad.categoria.nombre }}</p>
+                <p><strong>Cantidad de personas:</strong> {{ actividad.cantidad_personas }}</p>
+                <p><strong>Días:</strong>
+                    {% for dia in actividad.dias.all %}
+                        {{ dia.nombre }}{% if not forloop.last %}, {% endif %}
+                    {% empty %}
+                        No asignado
+                    {% endfor %}
                 </p>
-                <p>
-                    <strong>Categoría:</strong> {{ actividad.actividad.categoria.nombre }}
-                </p>
-                <p>
-                    <strong>Cantidad de personas:</strong> {{ actividad.cantidad_personas }}
-                </p>
-<p>
-    <strong>Días:</strong>
-    {% for dia in actividad.dias.all %}
-        {{ dia.nombre }}{% if not forloop.last %}, {% endif %}
-    {% empty %}
-        No asignado
-    {% endfor %}
-</p>
-
-                <p>
-                    <strong>Horarios:</strong> {{ actividad.horarios }}
-                </p>
-                <p>
-                    <strong>Costo total de la actividad:</strong> ${{ precio_total }}
-                </p>
+                <p><strong>Horarios:</strong> {{ actividad.horarios }}</p>
+                <p><strong>Costo total de la actividad:</strong> ${{ precio_total }}</p>
             </div>
         </div>
+
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title font-weight-bold">Nómina de Participantes</h3>
@@ -62,8 +52,7 @@
                     <table class="table table-bordered table-hover table-striped">
                         <thead>
                             <tr>
-                                <th>Nombre</th>
-                                <th>Apellido</th>
+                                <th>Participante</th>
                                 <th>DNI</th>
                                 <th>Género</th>
                                 <th>Fecha de Registro</th>
@@ -72,8 +61,11 @@
                         <tbody>
                             {% for p in participantes %}
                                 <tr>
-                                    <td>{{ p.ciudadano.nombre }}</td>
-                                    <td>{{ p.ciudadano.apellido }}</td>
+                                    <td>
+                                        <a href="{% url 'ciudadanos_ver' p.ciudadano.id %}">
+                                            {{ p.ciudadano.apellido }}, {{ p.ciudadano.nombre }}
+                                        </a>
+                                    </td>
                                     <td>{{ p.ciudadano.documento }}</td>
                                     <td>{{ p.ciudadano.sexo.sexo }}</td>
                                     <td>{{ p.fecha_registro|date:"d/m/Y" }}</td>

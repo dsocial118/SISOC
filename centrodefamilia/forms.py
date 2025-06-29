@@ -25,7 +25,7 @@ class CentroForm(forms.ModelForm):
             "tipo",
             "nombre",
             "codigo",
-            "organizacionasociada",
+            "organizacion_asociada",
             "domicilio_sede",
             "domicilio_actividad",
             "telefono",
@@ -67,6 +67,12 @@ class CentroForm(forms.ModelForm):
 
 
 class ActividadCentroForm(forms.ModelForm):
+    dias = forms.SelectMultiple(
+        attrs={
+            "class": "form-select select2 w-100", 
+            "style": "width: 100%;",
+        }
+    )
     horarios = forms.TimeField(
         label="Hora",
         widget=forms.TimeInput(
@@ -97,10 +103,7 @@ class ActividadCentroForm(forms.ModelForm):
         ]
         exclude = ["centro"]
         widgets = {
-            "dias": forms.SelectMultiple(attrs={
-                "class": "Select-2",
-                "size": "7"
-            }),
+          
             "horarios": forms.TextInput(attrs={"class": "form-control"}),
             "cantidad_personas": forms.NumberInput(attrs={"class": "form-control"}),
             "precio": forms.NumberInput(attrs={"class": "form-control"}),
