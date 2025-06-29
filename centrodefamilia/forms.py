@@ -1,8 +1,9 @@
 from django import forms
 from django.contrib.auth.models import User
-from ciudadanos.models import Sexo, TipoDocumento
 from django.core.exceptions import ValidationError
-from .models import (
+
+from ciudadanos.models import Sexo, TipoDocumento
+from centrodefamilia.models import (
     Centro,
     ActividadCentro,
     ParticipanteActividad,
@@ -138,29 +139,23 @@ class ActividadCentroForm(forms.ModelForm):
         return cleaned_data
 
 
-
-
 class ParticipanteActividadForm(forms.ModelForm):
     nombre = forms.CharField(max_length=255, label="Nombre")
     apellido = forms.CharField(max_length=255, label="Apellido")
     fecha_nacimiento = forms.DateField(
-        label="Fecha de Nacimiento",
-        widget=forms.DateInput(attrs={"type": "date"})
+        label="Fecha de Nacimiento", widget=forms.DateInput(attrs={"type": "date"})
     )
     tipo_documento = forms.ModelChoiceField(
-        queryset=TipoDocumento.objects.all(),
-        label="Tipo de Documento"
+        queryset=TipoDocumento.objects.all(), label="Tipo de Documento"
     )
     dni = forms.IntegerField(label="Documento")
-    genero = forms.ModelChoiceField(
-        queryset=Sexo.objects.all(),
-        label="Sexo"
-    )
+    genero = forms.ModelChoiceField(queryset=Sexo.objects.all(), label="Sexo")
 
     class Meta:
         model = ParticipanteActividad
-        fields = []  # no usamos directamente los campos del modelo porque todos se construyen en la vista
-
+        fields = (
+            []
+        )  # no usamos directamente los campos del modelo porque todos se construyen en la vista
 
 
 class OrientadoresForm(forms.ModelForm):

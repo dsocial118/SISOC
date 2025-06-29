@@ -5,7 +5,6 @@ from django.contrib import messages
 from django.db.models.base import Model
 from django.forms import BaseModelForm
 from django.http import HttpResponse
-from django.core.paginator import Paginator
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import redirect
@@ -19,8 +18,6 @@ from django.views.generic import (
     UpdateView,
     TemplateView,
 )
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
 
 
 from comedores.forms.comedor_form import (

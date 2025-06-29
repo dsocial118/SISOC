@@ -22,7 +22,7 @@ from centrodefamilia.views.orientador import (
     OrientadorUpdateView,
     OrientadorDeleteView,
 )
-from centrodefamilia.views.participante import ParticipanteActividadCreateView  
+from centrodefamilia.views.participante import ParticipanteActividadCreateView
 
 
 urlpatterns = [
@@ -108,7 +108,4 @@ urlpatterns = [
         OrientadorDeleteView.as_view(),
         name="orientador_delete",
     ),
-
-   
-
 ]
