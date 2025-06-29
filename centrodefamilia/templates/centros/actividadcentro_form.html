@@ -25,18 +25,18 @@
     </div>
 {% endblock %}
 {% block customJS %}
-<script src="{% static 'admin/js/centro_familia_categoria.js' %}"></script>
+    <script src="{% static 'admin/js/centro_familia_categoria.js' %}"></script>
     <!-- CSS -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<!-- JS -->
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script>
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+    <!-- JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
   flatpickr(".timepicker", {
     enableTime: true,
     noCalendar: true,
     dateFormat: "H:i",
     time_24hr: true
   });
-</script>
-
+    </script>
 {% endblock %}

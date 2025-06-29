@@ -12,11 +12,10 @@ from centrodefamilia.models import (
     Orientadores,
 )
 
-HORAS_DEL_DIA = [
-    (f"{h:02d}:00", f"{h:02d}:00") for h in range(0, 24)
-] + [
+HORAS_DEL_DIA = [(f"{h:02d}:00", f"{h:02d}:00") for h in range(0, 24)] + [
     (f"{h:02d}:30", f"{h:02d}:30") for h in range(0, 24)
 ]
+
 
 class CentroForm(forms.ModelForm):
     class Meta:
@@ -69,7 +68,7 @@ class CentroForm(forms.ModelForm):
 class ActividadCentroForm(forms.ModelForm):
     dias = forms.SelectMultiple(
         attrs={
-            "class": "form-select select2 w-100", 
+            "class": "form-select select2 w-100",
             "style": "width: 100%;",
         }
     )
@@ -78,10 +77,10 @@ class ActividadCentroForm(forms.ModelForm):
         widget=forms.TimeInput(
             attrs={
                 "class": "form-control timepicker",
-                "placeholder": "Seleccione una hora"
+                "placeholder": "Seleccione una hora",
             }
         ),
-        required=True
+        required=True,
     )
     categoria = forms.ModelChoiceField(
         queryset=Categoria.objects.all(),
@@ -103,7 +102,6 @@ class ActividadCentroForm(forms.ModelForm):
         ]
         exclude = ["centro"]
         widgets = {
-          
             "horarios": forms.TextInput(attrs={"class": "form-control"}),
             "cantidad_personas": forms.NumberInput(attrs={"class": "form-control"}),
             "precio": forms.NumberInput(attrs={"class": "form-control"}),

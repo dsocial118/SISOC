@@ -579,10 +579,10 @@ class CiudadanosDetailView(DetailView):
             for familiar in familiares
             if familiar["ciudadano_1__id"] == int(pk)
         ]
-        context['count_programas'] = cache.get_or_set(
+        context["count_programas"] = cache.get_or_set(
             f"count_programas_{pk}",
             CiudadanoPrograma.objects.filter(ciudadano=pk).count(),
-            60
+            60,
         )
         context["familiares_fk2"] = [
             familiar

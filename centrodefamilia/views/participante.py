@@ -56,17 +56,12 @@ class ParticipanteActividadCreateView(LoginRequiredMixin, CreateView):
 
             # 1.b) Crear o recuperar vínculo en CiudadanoPrograma (programa=1)
             cp, created = CiudadanoPrograma.objects.get_or_create(
-                ciudadano=ciudadano,
-                programas_id=1,
-                defaults={"creado_por": user}
+                ciudadano=ciudadano, programas_id=1, defaults={"creado_por": user}
             )
             # 1.c) Si se crea nuevo, registrar en historial
             if created:
                 HistorialCiudadanoProgramas.objects.create(
-                    programa_id=1,
-                    ciudadano=ciudadano,
-                    accion="agregado",
-                    usuario=user
+                    programa_id=1, ciudadano=ciudadano, accion="agregado", usuario=user
                 )
 
             messages.success(request, "Participante existente agregado correctamente.")
@@ -82,16 +77,14 @@ class ParticipanteActividadCreateView(LoginRequiredMixin, CreateView):
             ParticipanteService.crear_participante(actividad_id, nuevo_ciudadano)
             # 2.b) Crear vínculo Ciudadano–Programa
             CiudadanoPrograma.objects.create(
-                ciudadano=nuevo_ciudadano,
-                programas_id=1,
-                creado_por=user
+                ciudadano=nuevo_ciudadano, programas_id=1, creado_por=user
             )
             # 2.c) Registrar en historial
             HistorialCiudadanoProgramas.objects.create(
                 programa_id=1,
                 ciudadano=nuevo_ciudadano,
                 accion="agregado",
-                usuario=user
+                usuario=user,
             )
 
             messages.success(request, "Ciudadano y participante creados correctamente.")
@@ -106,11 +99,9 @@ class ParticipanteActividadCreateView(LoginRequiredMixin, CreateView):
             from django.db.models import CharField
             from django.db.models.functions import Cast
 
-            context["ciudadanos"] = (
-                Ciudadano.objects
-                .annotate(doc_str=Cast("documento", CharField()))
-                .filter(doc_str__startswith=query)[:10]
-            )
+            context["ciudadanos"] = Ciudadano.objects.annotate(
+                doc_str=Cast("documento", CharField())
+            ).filter(doc_str__startswith=query)[:10]
             context["no_resultados"] = not context["ciudadanos"].exists()
 
         context["centro_id"] = self.kwargs.get("centro_id")

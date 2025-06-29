@@ -1,10 +1,9 @@
 {% extends "includes/main.html" %}
 {% load static crispy_forms_tags %}
-
 {% block head %}
-  <link rel="stylesheet" href="{% static 'custom/css/timeline.css' %}">
-  <link rel="stylesheet" href="{% static 'custom/css/alertas.css' %}">
-  <style>
+    <link rel="stylesheet" href="{% static 'custom/css/timeline.css' %}" />
+    <link rel="stylesheet" href="{% static 'custom/css/alertas.css' %}" />
+    <style>
     /* Unificar colores de header y botones primarios */
     .card-header {
       background-color: #14376b;
@@ -43,360 +42,487 @@
       to   { opacity: 1; transform: translateY(0); }
     }
     .ease-out { animation: easeOutEffect 0.5s ease-out forwards; }
-  </style>
+    </style>
 {% endblock %}
-
 {% block title %}Ciudadano – {{ object.apellido }}, {{ object.nombre }}{% endblock %}
-
 {% block breadcrumb %}
-<ol class="breadcrumb float-sm-right mt-2">
-  <li class="breadcrumb-item"><a href="{% url 'ciudadanos' %}">Ciudadanos</a></li>
-  <li class="breadcrumb-item active">{{ object.apellido }}, {{ object.nombre }}</li>
-</ol>
+    <ol class="breadcrumb float-sm-right mt-2">
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanos' %}">Ciudadanos</a>
+        </li>
+        <li class="breadcrumb-item active">{{ object.apellido }}, {{ object.nombre }}</li>
+    </ol>
 {% endblock %}
-
 {% block content %}
-<div class="container-fluid">
-
-  <!-- Acciones -->
-  <div class="d-flex justify-content-between mb-4">
-    <a href="{% url 'ciudadanos' %}" class="btn btn-outline-secondary">← Volver</a>
-    <div class="btn-group">
-      {% if perms.Usuarios.rol_admin %}
-        <a href="{% url 'ciudadanosderivaciones_historial' object.id %}" class="btn btn-outline-secondary">Derivar</a>
-        <a href="{% url 'ciudadanos_eliminar' object.id %}" class="btn btn-outline-secondary">Eliminar</a>
-      {% endif %}
-      <button class="btn btn-outline-secondary d-print-none" onclick="window.print()">Imprimir</button>
-      <a href="{% url 'ciudadano_intervencion_ver' object.id %}" class="btn btn-outline-secondary">Intervenciones</a>
-      <a href="{% url 'llamados_ver' object.id %}" class="btn btn-outline-secondary">Llamados</a>
-      {% if perms.Usuarios.rol_admin %}
-        <a href="{% url 'ciudadanos_editar' object.id %}" class="btn btn-primary">Editar</a>
-      {% endif %}
-    </div>
-  </div>
-
-  <!-- Indicadores -->
-  <div class="row g-3 mb-4">
-    <div class="col-md-4">
-      <div class="card shadow-sm h-100">
-        <div class="card-body d-flex align-items-center">
-          <i class="fas fa-bell fa-2x text-primary me-3"></i>
-          <div>
-            <h5 class="mb-1">{{ count_alta }}</h5>
-            <a href="{% url 'alertas_listar' object.id %}" class="text-decoration-none">Alertas →</a>
-          </div>
+    <div class="container-fluid">
+        <!-- Acciones -->
+        <div class="d-flex justify-content-between mb-4">
+            <a href="{% url 'ciudadanos' %}" class="btn btn-outline-secondary">← Volver</a>
+            <div class="btn-group">
+                {% if perms.Usuarios.rol_admin %}
+                    <a href="{% url 'ciudadanosderivaciones_historial' object.id %}"
+                       class="btn btn-outline-secondary">Derivar</a>
+                    <a href="{% url 'ciudadanos_eliminar' object.id %}"
+                       class="btn btn-outline-secondary">Eliminar</a>
+                {% endif %}
+                <button class="btn btn-outline-secondary d-print-none"
+                        onclick="window.print()">Imprimir</button>
+                <a href="{% url 'ciudadano_intervencion_ver' object.id %}"
+                   class="btn btn-outline-secondary">Intervenciones</a>
+                <a href="{% url 'llamados_ver' object.id %}"
+                   class="btn btn-outline-secondary">Llamados</a>
+                {% if perms.Usuarios.rol_admin %}
+                    <a href="{% url 'ciudadanos_editar' object.id %}"
+                       class="btn btn-primary">Editar</a>
+                {% endif %}
+            </div>
         </div>
-      </div>
-    </div>
-    <div class="col-md-4">
-      <div class="card shadow-sm h-100">
-        <div class="card-body d-flex align-items-center">
-          <i class="fas fa-exclamation-triangle fa-2x text-warning me-3"></i>
-          <div>
-            <h5 class="mb-1">
-              <span class="badge bg-warning">{{ count_media }}</span>
-              <span class="badge bg-danger">{{ count_baja }}</span>
-            </h5>
-            <a href="{% url 'alertas_listar' object.id %}" class="text-decoration-none">Indicadores →</a>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-4">
-      <div class="card shadow-sm h-100">
-        <div class="card-body d-flex align-items-center">
-          <i class="fas fa-book fa-2x text-success me-3"></i>
-          <div>
-            <h5 class="mb-1">{{ count_programas }}</h5>
-            <a href="{% url 'programas_intervencion' object.id %}" class="text-decoration-none">Programas →</a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Perfil y Mapa -->
-  <div class="row gx-4 mb-5">
-    <div class="col-lg-4">
-      <div class="card shadow-sm rounded-lg overflow-hidden">
-        <div class="card-header text-center">
-          {% if object.foto %}
-            <img src="{{ object.foto.url }}" class="rounded-circle img-thumbnail mb-3" style="width:100px;height:100px" alt="Foto">
-          {% else %}
-            <img src="{% static 'custom/img/default.png' %}" class="rounded-circle img-thumbnail mb-3" style="width:100px;height:100px" alt="Foto">
-          {% endif %}
-          <h5 class="card-title mb-1">{{ object.apellido }}, {{ object.nombre }}</h5>
-          <small>
-            <i class="flag-icon {{ emoji_nacionalidad }}"></i>
-            {{ object.tipo_documento }} {{ object.documento }}
-          </small>
-        </div>
-        <ul class="list-group list-group-flush">
-          <li class="list-group-item d-flex justify-content-between"><span>Sexo</span><span>{{ object.sexo }}</span></li>
-          <li class="list-group-item d-flex justify-content-between"><span>Fecha nacimiento</span><span>{{ object.fecha_nacimiento|date:"d/m/Y" }}</span></li>
-          <li class="list-group-item d-flex justify-content-between"><span>Estado civil</span><span>{{ object.estado_civil|default:"–" }}</span></li>
-          <li class="list-group-item d-flex justify-content-between"><span>Teléfono</span><span>{{ object.telefono|default:"–" }}</span></li>
-          <li class="list-group-item d-flex justify-content-between"><span>Email</span><span>{{ object.email|default:"–" }}</span></li>
-        </ul>
-
-        <!-- Sección de Programas (etiquetas) -->
-        <div class="card-body">
-          <h6 class="text-light mb-2">Programas</h6>
-          {% if object.ciudadano_programa.all %}
-            {% for cp in object.ciudadano_programa.all %}
-              <span class="badge bg-info px-3 py-1 me-1">{{ cp.programas.nombre }}</span>
-            {% endfor %}
-          {% else %}
-            <span class="text-muted">No participa en programas</span>
-          {% endif %}
-        </div>
-
-        <!-- Estado Activo/Inactivo -->
-        <div class="card-body text-center">
-          {% if object.estado %}
-            <span class="badge bg-success px-4 py-2">Activo</span>
-          {% else %}
-            <span class="badge bg-danger px-4 py-2">Inactivo</span>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-
-    <div class="col-lg-8">
-      <div class="card shadow-sm">
-        <div class="card-header"><h5 class="mb-0">Ubicación</h5></div>
-        <div class="ratio ratio-16x9">
-          <iframe src="https://www.google.com/maps/embed?pb=…" allowfullscreen loading="lazy"></iframe>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Dimensiones -->
-  <div>
-    <ul class="nav nav-pills nav-dimensiones" role="tablist">
-      <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#familia" type="button">Familia</button></li>
-      <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#vivienda" type="button">Vivienda</button></li>
-      <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#salud" type="button">Salud</button></li>
-      <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#trabajo" type="button">Trabajo</button></li>
-    </ul>
-    <div class="tab-content">
-      <!-- Familia -->
-      <div class="tab-pane fade show active" id="familia">
-        <div class="table-responsive rounded border mb-4">
-          <table class="table table-striped table-hover mb-0">
-            <tbody>
-              <tr><th>Cantidad de hijos</th><td>{{ dimensionfamilia.cant_hijos|default:"–" }}</td></tr>
-              <tr><th>Otro responsable</th><td>{{ dimensionfamilia.otro_responsable|yesno:"Sí,No" }}</td></tr>
-              <tr><th>Embarazadas</th><td>{{ dimensionfamilia.hay_embarazadas|yesno:"Sí,No" }}</td></tr>
-              <tr><th>Privados de libertad</th><td>{{ dimensionfamilia.hay_priv_libertad|yesno:"Sí,No" }}</td></tr>
-              <tr><th>Salud mental</th><td>{{ dimensionfamilia.hay_prbl_smental|yesno:"Sí,No" }}</td></tr>
-              <tr><th>Enfermedades crónicas</th><td>{{ dimensionfamilia.hay_enf_cronica|yesno:"Sí,No" }}</td></tr>
-              <tr><th>Discapacidad</th><td>{{ dimensionfamilia.hay_fam_discapacidad|yesno:"Sí,No" }}</td></tr>
-              <tr><th>Observaciones</th><td>{{ dimensionfamilia.obs_familia|default:"–" }}</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Vivienda -->
-      <div class="tab-pane fade" id="vivienda">
-        <div class="table-responsive rounded border">
-          <table class="table table-striped table-hover mb-0">
-            <tbody>
-              <tr><th>Posesión</th><td>{{ dimensionvivienda.posesion|default:"–" }}</td></tr>
-              <tr><th>Tipo</th><td>{{ dimensionvivienda.tipo|default:"–" }}</td></tr>
-              <tr><th>Material</th><td>{{ dimensionvivienda.material|default:"–" }}</td></tr>
-              <tr><th>Ambientes</th><td>{{ dimensionvivienda.cant_ambientes|default:"–" }}</td></tr>
-              <tr><th>Baño</th><td>{{ dimensionvivienda.hay_banio|yesno:"Sí,No" }}</td></tr>
-              <tr><th>Agua caliente</th><td>{{ dimensionvivienda.hay_agua_caliente|yesno:"Sí,No" }}</td></tr>
-              <tr><th>Desmoronamiento</th><td>{{ dimensionvivienda.hay_desmoronamiento|yesno:"Sí,No" }}</td></tr>
-              <tr><th>Observaciones</th><td>{{ dimensionvivienda.obs_vivienda|default:"–" }}</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Salud -->
-      <div class="tab-pane fade" id="salud">
-        <div class="table-responsive rounded border">
-          <table class="table table-striped table-hover mb-0">
-            <tbody>
-              <tr><th>Lugar atención</th><td>{{ dimensionsalud.lugares_atencion|default:"–" }}</td></tr>
-              <tr><th>Frecuencia controles</th><td>{{ dimensionsalud.frecuencia_controles_medicos|default:"–" }}</td></tr>
-              <tr><th>Enfermedad</th><td>{{ dimensionsalud.hay_enfermedad|yesno:"Sí,No" }}</td></tr>
-              <tr><th>Cobertura</th><td>{{ dimensionsalud.hay_obra_social|yesno:"Sí,No" }}</td></tr>
-              <tr><th>Discapacidad</th><td>{{ dimensionsalud.hay_discapacidad|yesno:"Sí,No" }}</td></tr>
-              <tr><th>Observaciones</th><td>{{ dimensionsalud.obs_salud|default:"–" }}</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Trabajo -->
-      <div class="tab-pane fade" id="trabajo">
-        <div class="table-responsive rounded border">
-          <table class="table table-striped table-hover mb-0">
-            <tbody>
-              <tr><th>Actualmente trabaja</th><td>{{ dimensiontrabajo.tiene_trabajo|yesno:"Sí,No" }}</td></tr>
-              <tr><th>Ocupación</th><td>{{ dimensiontrabajo.ocupacion|default:"–" }}</td></tr>
-              <tr><th>Contratación</th><td>{{ dimensiontrabajo.modo_contratacion|default:"–" }}</td></tr>
-              <tr><th>Observaciones</th><td>{{ dimensiontrabajo.obs_trabajo|default:"–" }}</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-
- <!-- Programas -->
-  <div class="col-12 mb-4">
-    <div class="card shadow-sm">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Programas</h5>
-      </div>
-      <div class="card-body">
-        {% if ciudadanos_programas %}
-          <div class="row g-2">
-            {% for cp in ciudadanos_programas %}
-              <div class="col-md-6">
-                <div class="card shadow-sm ease-out">
-                  <div class="card-body d-flex justify-content-between align-items-center">
-                    <span class="text-truncate">{{ cp.programas.nombre }}</span>
-                    <button class="btn btn-sm btn-outline-danger borrar-programa" data-program-id="{{ cp.id }}">
-                      <i class="fas fa-trash-alt"></i>
-                    </button>
-                  </div>
+        <!-- Indicadores -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <i class="fas fa-bell fa-2x text-primary me-3"></i>
+                        <div>
+                            <h5 class="mb-1">{{ count_alta }}</h5>
+                            <a href="{% url 'alertas_listar' object.id %}"
+                               class="text-decoration-none">Alertas →</a>
+                        </div>
+                    </div>
                 </div>
-              </div>
-            {% endfor %}
-          </div>
-        {% else %}
-          <div class="text-center py-5 text-muted">
-            <i class="fas fa-clipboard-list fa-3x mb-3"></i><br>
-            No hay programas asignados
-          </div>
-        {% endif %}
-      </div>
-      <div class="card-footer bg-light text-start">
-        <a id="agregar-programa-btn" class="btn btn-sm btn-primary">Agregar</a>
-      </div>
-      <div id="form-programas" class="card-footer bg-light d-none">
-        <form id="ProgramaForm" method="POST" action="{% url 'actualizar_programas' object.id %}">
-          {% csrf_token %}
-          {{ form_prog.programas|as_crispy_field }}
-          <div class="mt-3 text-end">
-            <button type="button" id="cancelar-btn" class="btn btn-outline-secondary btn-sm">Cancelar</button>
-            <button type="submit" class="btn btn-sm btn-primary">Guardar</button>
-          </div>
-        </form>
-      </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <i class="fas fa-exclamation-triangle fa-2x text-warning me-3"></i>
+                        <div>
+                            <h5 class="mb-1">
+                                <span class="badge bg-warning">{{ count_media }}</span>
+                                <span class="badge bg-danger">{{ count_baja }}</span>
+                            </h5>
+                            <a href="{% url 'alertas_listar' object.id %}"
+                               class="text-decoration-none">Indicadores →</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <i class="fas fa-book fa-2x text-success me-3"></i>
+                        <div>
+                            <h5 class="mb-1">{{ count_programas }}</h5>
+                            <a href="{% url 'programas_intervencion' object.id %}"
+                               class="text-decoration-none">Programas →</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Perfil y Mapa -->
+        <div class="row gx-4 mb-5">
+            <div class="col-lg-4">
+                <div class="card shadow-sm rounded-lg overflow-hidden">
+                    <div class="card-header text-center">
+                        {% if object.foto %}
+                            <img src="{{ object.foto.url }}"
+                                 class="rounded-circle img-thumbnail mb-3"
+                                 style="width:100px;
+                                        height:100px"
+                                 alt="Foto" />
+                        {% else %}
+                            <img src="{% static 'custom/img/default.png' %}"
+                                 class="rounded-circle img-thumbnail mb-3"
+                                 style="width:100px;
+                                        height:100px"
+                                 alt="Foto" />
+                        {% endif %}
+                        <h5 class="card-title mb-1">{{ object.apellido }}, {{ object.nombre }}</h5>
+                        <small>
+                            <i class="flag-icon {{ emoji_nacionalidad }}"></i>
+                            {{ object.tipo_documento }} {{ object.documento }}
+                        </small>
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Sexo</span><span>{{ object.sexo }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Fecha nacimiento</span><span>{{ object.fecha_nacimiento|date:"d/m/Y" }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Estado civil</span><span>{{ object.estado_civil|default:"–" }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Teléfono</span><span>{{ object.telefono|default:"–" }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Email</span><span>{{ object.email|default:"–" }}</span>
+                        </li>
+                    </ul>
+                    <!-- Sección de Programas (etiquetas) -->
+                    <div class="card-body">
+                        <h6 class="text-light mb-2">Programas</h6>
+                        {% if object.ciudadano_programa.all %}
+                            {% for cp in object.ciudadano_programa.all %}
+                                <span class="badge bg-info px-3 py-1 me-1">{{ cp.programas.nombre }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span class="text-muted">No participa en programas</span>
+                        {% endif %}
+                    </div>
+                    <!-- Estado Activo/Inactivo -->
+                    <div class="card-body text-center">
+                        {% if object.estado %}
+                            <span class="badge bg-success px-4 py-2">Activo</span>
+                        {% else %}
+                            <span class="badge bg-danger px-4 py-2">Inactivo</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-8">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h5 class="mb-0">Ubicación</h5>
+                    </div>
+                    <div class="ratio ratio-16x9">
+                        <iframe src="https://www.google.com/maps/embed?pb=…"
+                                allowfullscreen
+                                loading="lazy"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Dimensiones -->
+        <div>
+            <ul class="nav nav-pills nav-dimensiones" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active"
+                            data-bs-toggle="pill"
+                            data-bs-target="#familia"
+                            type="button">Familia</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link"
+                            data-bs-toggle="pill"
+                            data-bs-target="#vivienda"
+                            type="button">Vivienda</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link"
+                            data-bs-toggle="pill"
+                            data-bs-target="#salud"
+                            type="button">Salud</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link"
+                            data-bs-toggle="pill"
+                            data-bs-target="#trabajo"
+                            type="button">Trabajo</button>
+                </li>
+            </ul>
+            <div class="tab-content">
+                <!-- Familia -->
+                <div class="tab-pane fade show active" id="familia">
+                    <div class="table-responsive rounded border mb-4">
+                        <table class="table table-striped table-hover mb-0">
+                            <tbody>
+                                <tr>
+                                    <th>Cantidad de hijos</th>
+                                    <td>{{ dimensionfamilia.cant_hijos|default:"–" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Otro responsable</th>
+                                    <td>{{ dimensionfamilia.otro_responsable|yesno:"Sí,No" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Embarazadas</th>
+                                    <td>{{ dimensionfamilia.hay_embarazadas|yesno:"Sí,No" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Privados de libertad</th>
+                                    <td>{{ dimensionfamilia.hay_priv_libertad|yesno:"Sí,No" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Salud mental</th>
+                                    <td>{{ dimensionfamilia.hay_prbl_smental|yesno:"Sí,No" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Enfermedades crónicas</th>
+                                    <td>{{ dimensionfamilia.hay_enf_cronica|yesno:"Sí,No" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Discapacidad</th>
+                                    <td>{{ dimensionfamilia.hay_fam_discapacidad|yesno:"Sí,No" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Observaciones</th>
+                                    <td>{{ dimensionfamilia.obs_familia|default:"–" }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- Vivienda -->
+                <div class="tab-pane fade" id="vivienda">
+                    <div class="table-responsive rounded border">
+                        <table class="table table-striped table-hover mb-0">
+                            <tbody>
+                                <tr>
+                                    <th>Posesión</th>
+                                    <td>{{ dimensionvivienda.posesion|default:"–" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Tipo</th>
+                                    <td>{{ dimensionvivienda.tipo|default:"–" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Material</th>
+                                    <td>{{ dimensionvivienda.material|default:"–" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Ambientes</th>
+                                    <td>{{ dimensionvivienda.cant_ambientes|default:"–" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Baño</th>
+                                    <td>{{ dimensionvivienda.hay_banio|yesno:"Sí,No" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Agua caliente</th>
+                                    <td>{{ dimensionvivienda.hay_agua_caliente|yesno:"Sí,No" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Desmoronamiento</th>
+                                    <td>{{ dimensionvivienda.hay_desmoronamiento|yesno:"Sí,No" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Observaciones</th>
+                                    <td>{{ dimensionvivienda.obs_vivienda|default:"–" }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- Salud -->
+                <div class="tab-pane fade" id="salud">
+                    <div class="table-responsive rounded border">
+                        <table class="table table-striped table-hover mb-0">
+                            <tbody>
+                                <tr>
+                                    <th>Lugar atención</th>
+                                    <td>{{ dimensionsalud.lugares_atencion|default:"–" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Frecuencia controles</th>
+                                    <td>{{ dimensionsalud.frecuencia_controles_medicos|default:"–" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Enfermedad</th>
+                                    <td>{{ dimensionsalud.hay_enfermedad|yesno:"Sí,No" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Cobertura</th>
+                                    <td>{{ dimensionsalud.hay_obra_social|yesno:"Sí,No" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Discapacidad</th>
+                                    <td>{{ dimensionsalud.hay_discapacidad|yesno:"Sí,No" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Observaciones</th>
+                                    <td>{{ dimensionsalud.obs_salud|default:"–" }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- Trabajo -->
+                <div class="tab-pane fade" id="trabajo">
+                    <div class="table-responsive rounded border">
+                        <table class="table table-striped table-hover mb-0">
+                            <tbody>
+                                <tr>
+                                    <th>Actualmente trabaja</th>
+                                    <td>{{ dimensiontrabajo.tiene_trabajo|yesno:"Sí,No" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Ocupación</th>
+                                    <td>{{ dimensiontrabajo.ocupacion|default:"–" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Contratación</th>
+                                    <td>{{ dimensiontrabajo.modo_contratacion|default:"–" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Observaciones</th>
+                                    <td>{{ dimensiontrabajo.obs_trabajo|default:"–" }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Programas -->
+        <div class="col-12 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Programas</h5>
+                </div>
+                <div class="card-body">
+                    {% if ciudadanos_programas %}
+                        <div class="row g-2">
+                            {% for cp in ciudadanos_programas %}
+                                <div class="col-md-6">
+                                    <div class="card shadow-sm ease-out">
+                                        <div class="card-body d-flex justify-content-between align-items-center">
+                                            <span class="text-truncate">{{ cp.programas.nombre }}</span>
+                                            <button class="btn btn-sm btn-outline-danger borrar-programa"
+                                                    data-program-id="{{ cp.id }}">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5 text-muted">
+                            <i class="fas fa-clipboard-list fa-3x mb-3"></i>
+                            <br />
+                            No hay programas asignados
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-light text-start">
+                    <a id="agregar-programa-btn" class="btn btn-sm btn-primary">Agregar</a>
+                </div>
+                <div id="form-programas" class="card-footer bg-light d-none">
+                    <form id="ProgramaForm"
+                          method="POST"
+                          action="{% url 'actualizar_programas' object.id %}">
+                        {% csrf_token %}
+                        {{ form_prog.programas|as_crispy_field }}
+                        <div class="mt-3 text-end">
+                            <button type="button"
+                                    id="cancelar-btn"
+                                    class="btn btn-outline-secondary btn-sm">Cancelar</button>
+                            <button type="submit" class="btn btn-sm btn-primary">Guardar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="row gx-4 mb-5">
+            <!-- Imágenes -->
+            <div class="col-lg-6 mb-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0">Imágenes</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-dark table-striped mb-0 align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Previsualización</th>
+                                        <th>Nombre</th>
+                                        <th>Fecha</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% if files_img %}
+                                        {% for f in files_img %}
+                                            <tr>
+                                                <td style="width:120px;">
+                                                    <img src="{{ MEDIA_URL }}{{ f.archivo.url }}"
+                                                         class="img-fluid rounded"
+                                                         alt="" />
+                                                </td>
+                                                <td>{{ f.archivo.name|truncatechars:30 }}</td>
+                                                <td>{{ f.fecha|date:"d/m/Y" }}</td>
+                                                <td>
+                                                    <a href="{{ MEDIA_URL }}{{ f.archivo.url }}"
+                                                       download
+                                                       class="btn btn-sm btn-outline-light">Descargar</a>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted py-4">Sin imágenes</td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-light text-start">
+                        <a href="{% url 'ciudadanosarchivos_listar' object.id %}"
+                           class="btn btn-sm btn-outline-primary me-2">Ver más</a>
+                        {% if perms.Usuarios.rol_admin %}
+                            <a href="{% url 'ciudadanosarchivos_crear' object.id %}"
+                               class="btn btn-sm btn-primary">Agregar</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <!-- Documentos -->
+            <div class="col-lg-6 mb-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0">Documentos</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-dark table-striped mb-0 align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Documento</th>
+                                        <th>Fecha</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% if files_docs %}
+                                        {% for f in files_docs %}
+                                            <tr>
+                                                <td>{{ f.archivo.name|truncatechars:30 }}</td>
+                                                <td>{{ f.fecha|date:"d/m/Y" }}</td>
+                                                <td>
+                                                    <a href="{{ f.archivo.url }}"
+                                                       download
+                                                       class="btn btn-sm btn-outline-light">Descargar</a>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr>
+                                            <td colspan="3" class="text-center text-muted py-4">Sin documentos</td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-light text-start">
+                        <a href="{% url 'ciudadanosarchivos_listar' object.id %}"
+                           class="btn btn-sm btn-outline-primary me-2">Ver más</a>
+                        {% if perms.Usuarios.rol_admin %}
+                            <a href="{% url 'ciudadanosarchivos_crear' object.id %}"
+                               class="btn btn-sm btn-primary">Agregar</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-
-  <div class="row gx-4 mb-5">
-
-    <!-- Imágenes -->
-    <div class="col-lg-6 mb-4">
-      <div class="card shadow-sm h-100">
-        <div class="card-header"><h5 class="mb-0">Imágenes</h5></div>
-        <div class="card-body p-0">
-          <div class="table-responsive">
-            <table class="table table-dark table-striped mb-0 align-middle">
-              <thead>
-                <tr>
-                  <th>Previsualización</th>
-                  <th>Nombre</th>
-                  <th>Fecha</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% if files_img %}
-                  {% for f in files_img %}
-                    <tr>
-                      <td style="width:120px;">
-                        <img src="{{ MEDIA_URL }}{{ f.archivo.url }}" class="img-fluid rounded" alt="">
-                      </td>
-                      <td>{{ f.archivo.name|truncatechars:30 }}</td>
-                      <td>{{ f.fecha|date:"d/m/Y" }}</td>
-                      <td>
-                        <a href="{{ MEDIA_URL }}{{ f.archivo.url }}" download class="btn btn-sm btn-outline-light">
-                          Descargar
-                        </a>
-                      </td>
-                    </tr>
-                  {% endfor %}
-                {% else %}
-                  <tr>
-                    <td colspan="4" class="text-center text-muted py-4">Sin imágenes</td>
-                  </tr>
-                {% endif %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <div class="card-footer bg-light text-start">
-          <a href="{% url 'ciudadanosarchivos_listar' object.id %}" class="btn btn-sm btn-outline-primary me-2">Ver más</a>
-          {% if perms.Usuarios.rol_admin %}
-            <a href="{% url 'ciudadanosarchivos_crear' object.id %}" class="btn btn-sm btn-primary">Agregar</a>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-
-    <!-- Documentos -->
-    <div class="col-lg-6 mb-4">
-      <div class="card shadow-sm h-100">
-        <div class="card-header"><h5 class="mb-0">Documentos</h5></div>
-        <div class="card-body p-0">
-          <div class="table-responsive">
-            <table class="table table-dark table-striped mb-0 align-middle">
-              <thead>
-                <tr>
-                  <th>Documento</th>
-                  <th>Fecha</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% if files_docs %}
-                  {% for f in files_docs %}
-                    <tr>
-                      <td>{{ f.archivo.name|truncatechars:30 }}</td>
-                      <td>{{ f.fecha|date:"d/m/Y" }}</td>
-                      <td>
-                        <a href="{{ f.archivo.url }}" download class="btn btn-sm btn-outline-light">
-                          Descargar
-                        </a>
-                      </td>
-                    </tr>
-                  {% endfor %}
-                {% else %}
-                  <tr>
-                    <td colspan="3" class="text-center text-muted py-4">Sin documentos</td>
-                  </tr>
-                {% endif %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <div class="card-footer bg-light text-start">
-          <a href="{% url 'ciudadanosarchivos_listar' object.id %}" class="btn btn-sm btn-outline-primary me-2">Ver más</a>
-          {% if perms.Usuarios.rol_admin %}
-            <a href="{% url 'ciudadanosarchivos_crear' object.id %}" class="btn btn-sm btn-primary">Agregar</a>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-</div>
 {% endblock %}
-
 {% block customJS %}
-<script>
+    <script>
 document.addEventListener('DOMContentLoaded', () => {
   $('.select2').select2({ theme: 'bootstrap5' });
 
@@ -430,5 +556,5 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
-</script>
+    </script>
 {% endblock %}
