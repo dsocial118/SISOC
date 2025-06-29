@@ -2,6 +2,8 @@ import re
 from typing import Union
 
 from django.db.models import Q, Count
+from django.core.paginator import Paginator
+
 
 from relevamientos.models import Relevamiento
 from comedores.forms.comedor_form import ImagenComedorForm
@@ -211,29 +213,33 @@ class ComedorService:
         )
 
     @staticmethod
-    def detalle_de_nomina(pk, page=1, per_page=100):
-        qs_nomina = Nomina.objects.filter(comedor_id=pk).select_related(
-            "sexo", "estado"
+    def detalle_de_nomina(comedor_pk, page=1, per_page=100):
+        qs_nomina = Nomina.objects.filter(comedor_id=comedor_pk).select_related(
+            "ciudadano__sexo", "estado"
         )
 
-        # Cálculos agregados en una sola query
         resumen = qs_nomina.aggregate(
-            cantidad_nomina_m=Count("id", filter=Q(sexo__sexo="Masculino")),
-            cantidad_nomina_f=Count("id", filter=Q(sexo__sexo="Femenino")),
+            cantidad_nomina_m=Count("id", filter=Q(ciudadano__sexo__sexo="Masculino")),
+            cantidad_nomina_f=Count("id", filter=Q(ciudadano__sexo__sexo="Femenino")),
             espera=Count("id", filter=Q(estado__nombre="Lista de espera")),
             cantidad_total=Count("id"),
         )
 
-        # Paginación
-        from django.core.paginator import Paginator
-
         paginator = Paginator(
-            qs_nomina.only("nombre", "apellido", "dni", "sexo", "estado"), per_page
+            qs_nomina.only(
+                "fecha",
+                "ciudadano__apellido",
+                "ciudadano__nombre",
+                "ciudadano__sexo",
+                "ciudadano__documento",
+                "estado",
+            ),
+            per_page,
         )
         page_obj = paginator.get_page(page)
 
         return (
-            page_obj,  # objetos paginados
+            page_obj,
             resumen["cantidad_nomina_m"],
             resumen["cantidad_nomina_f"],
             resumen["espera"],

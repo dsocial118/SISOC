@@ -49,8 +49,7 @@ class ParticipanteService:
         """Carga masiva desde una lista de CUITs"""
         existing = set(
             ParticipanteActividad.objects.filter(
-                actividad_centro=actividad_centro,
-                cuit__in=lista_dnis
+                actividad_centro=actividad_centro, cuit__in=lista_dnis
             ).values_list("cuit", flat=True)
         )
         nuevos = [
@@ -87,6 +86,5 @@ class ParticipanteService:
     def crear_participante(actividad_id, ciudadano):
         """Asocia un ciudadano a una actividad"""
         return ParticipanteActividad.objects.create(
-            actividad_centro_id=actividad_id,
-            ciudadano=ciudadano
+            actividad_centro_id=actividad_id, ciudadano=ciudadano
         )

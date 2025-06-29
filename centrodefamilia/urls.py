@@ -73,9 +73,7 @@ urlpatterns = [
     ),
     path(
         "centros/<int:centro_id>/actividades/<int:pk>/editar/",
-        group_required(["ReferenteCentro"])(
-            ActividadCentroUpdateView.as_view()
-        ),
+        group_required(["ReferenteCentro"])(ActividadCentroUpdateView.as_view()),
         name="actividadcentro_edit",
     ),
     path(

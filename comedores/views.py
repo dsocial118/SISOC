@@ -46,78 +46,78 @@ class NominaDetailView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        pk = self.kwargs["pk"]
+        comedor_pk = self.kwargs["pk"]
         page = self.request.GET.get("page", 1)
 
-        (
-            page_obj,
-            cantidad_nomina_m,
-            cantidad_nomina_f,
-            espera,
-            cantidad_total,
-        ) = ComedorService.detalle_de_nomina(pk, page)
+        page_obj, nomina_m, nomina_f, espera, total = ComedorService.detalle_de_nomina(
+            comedor_pk, page
+        )
 
-        comedor = ComedorService.get_comedor(pk)
+        comedor = ComedorService.get_comedor(comedor_pk)
 
         context.update(
             {
                 "nomina": page_obj,
-                "nominaM": cantidad_nomina_m,
-                "nominaF": cantidad_nomina_f,
+                "nominaM": nomina_m,
+                "nominaF": nomina_f,
                 "espera": espera,
+                "cantidad_nomina": total,
                 "object": comedor,
-                "cantidad_nomina": cantidad_total,
             }
         )
-
         return context
 
 
 class NominaCreateView(CreateView):
     model = Nomina
-    template_name = "comedor/nomina_form.html"
     form_class = NominaForm
+    template_name = "comedor/nomina_form.html"
+
+    def get_success_url(self):
+        return reverse_lazy("nomina_ver", kwargs={"pk": self.kwargs["pk"]})
 
     def form_valid(self, form):
-        pk = self.kwargs["pk"]
-        form.save()
-        return redirect("nomina_ver", pk=pk)
+        # vinculamos al comedor y al ciudadano seleccionado
+        form.instance.comedor_id = self.kwargs["pk"]
+        messages.success(self.request, "Persona añadida correctamente a la nómina.")
+        return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        comedor = ComedorService.get_comedor(self.kwargs["pk"])
-
-        context["form"] = self.get_form()
-        context["object"] = comedor
-
+        context["object"] = ComedorService.get_comedor(self.kwargs["pk"])
         return context
-
-
-class NominaDeleteView(DeleteView):
-    model = Nomina
-    template_name = "comedor/nomina_confirm_delete.html"
-
-    def form_valid(self, form):
-        self.object.delete()
-        return redirect("nomina_ver", pk=self.kwargs["pk2"])
 
 
 class NominaUpdateView(UpdateView):
     model = Nomina
     form_class = NominaForm
     template_name = "comedor/nomina_form.html"
+    pk_url_kwarg = "pk2"
+
+    def get_success_url(self):
+        return reverse_lazy("nomina_ver", kwargs={"pk": self.kwargs["pk"]})
 
     def form_valid(self, form):
-        pk = self.kwargs["pk2"]
-        form.save()
-        return redirect("nomina_ver", pk=pk)
+        messages.success(self.request, "Registro de nómina actualizado correctamente.")
+        return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        comedor = ComedorService.get_comedor(self.kwargs["pk2"])
-        context["form"] = self.get_form()
-        context["object"] = comedor
+        context["object"] = ComedorService.get_comedor(self.kwargs["pk"])
         return context
+
+
+class NominaDeleteView(DeleteView):
+    model = Nomina
+    template_name = "comedor/nomina_confirm_delete.html"
+    pk_url_kwarg = "pk2"
+
+    def get_success_url(self):
+        return reverse_lazy("nomina_ver", kwargs={"pk": self.kwargs["pk"]})
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, "Registro de nómina eliminado correctamente.")
+        return super().delete(request, *args, **kwargs)
 
 
 class ComedorListView(ListView):
