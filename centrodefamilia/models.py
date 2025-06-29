@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from ciudadanos.models import Ciudadano
+from configuraciones.models import Dia
 from organizaciones.models import Organizacion
 
 
@@ -104,8 +105,12 @@ class ActividadCentro(models.Model):
     cantidad_personas = models.PositiveIntegerField(
         verbose_name="Cantidad Estimada de Participantes"
     )
-    dias = models.CharField(max_length=100, verbose_name="Días")
-    horarios = models.CharField(max_length=100, verbose_name="Horarios")
+    dias = models.ManyToManyField(
+        to=Dia,
+        related_name="DiaActividad",
+        blank=True,
+    )
+    horarios = models.TimeField()
     precio = models.PositiveIntegerField(
         verbose_name="PrecioActividad", null=True, blank=True
     )

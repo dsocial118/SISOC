@@ -36,9 +36,15 @@
                 <p>
                     <strong>Cantidad de personas:</strong> {{ actividad.cantidad_personas }}
                 </p>
-                <p>
-                    <strong>Días:</strong> {{ actividad.dias }}
-                </p>
+<p>
+    <strong>Días:</strong>
+    {% for dia in actividad.dias.all %}
+        {{ dia.nombre }}{% if not forloop.last %}, {% endif %}
+    {% empty %}
+        No asignado
+    {% endfor %}
+</p>
+
                 <p>
                     <strong>Horarios:</strong> {{ actividad.horarios }}
                 </p>

@@ -11,6 +11,11 @@ from .models import (
     Orientadores,
 )
 
+HORAS_DEL_DIA = [
+    (f"{h:02d}:00", f"{h:02d}:00") for h in range(0, 24)
+] + [
+    (f"{h:02d}:30", f"{h:02d}:30") for h in range(0, 24)
+]
 
 class CentroForm(forms.ModelForm):
     class Meta:
@@ -61,6 +66,16 @@ class CentroForm(forms.ModelForm):
 
 
 class ActividadCentroForm(forms.ModelForm):
+    horarios = forms.TimeField(
+        label="Hora",
+        widget=forms.TimeInput(
+            attrs={
+                "class": "form-control timepicker",
+                "placeholder": "Seleccione una hora"
+            }
+        ),
+        required=True
+    )
     categoria = forms.ModelChoiceField(
         queryset=Categoria.objects.all(),
         required=False,
@@ -80,6 +95,16 @@ class ActividadCentroForm(forms.ModelForm):
             "estado",
         ]
         exclude = ["centro"]
+        widgets = {
+            "dias": forms.SelectMultiple(attrs={
+                "class": "Select-2",
+                "size": "7"
+            }),
+            "horarios": forms.TextInput(attrs={"class": "form-control"}),
+            "cantidad_personas": forms.NumberInput(attrs={"class": "form-control"}),
+            "precio": forms.NumberInput(attrs={"class": "form-control"}),
+            "estado": forms.Select(attrs={"class": "form-control"}),
+        }
 
     def __init__(self, *args, **kwargs):
         self.centro = kwargs.pop("centro", None)
