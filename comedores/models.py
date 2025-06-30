@@ -224,6 +224,8 @@ class Nomina(models.Model):
         Ciudadano,
         on_delete=models.CASCADE,
         related_name="nominas",
+        null=True,
+        blank=True,
     )
     fecha = models.DateTimeField(auto_now_add=True)
     estado = models.ForeignKey(EstadoIntervencion, on_delete=models.SET_NULL, null=True)
