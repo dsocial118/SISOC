@@ -3,46 +3,7 @@
 {% block head %}
     <link rel="stylesheet" href="{% static 'custom/css/timeline.css' %}" />
     <link rel="stylesheet" href="{% static 'custom/css/alertas.css' %}" />
-    <style>
-    /* Unificar colores de header y botones primarios */
-    .card-header {
-      background-color: #14376b;
-      color: #fff;
-    }
-    .btn-primary, .btn-primary:hover, .btn-primary:focus {
-      background-color: #14376b;
-      border-color: #14376b;
-    }
-    .btn-outline-secondary, .btn-outline-secondary:hover {
-      border-color: #14376b;
-      color: #14376b;
-    }
-
-    /* Pestañas personalizadas */
-    .nav-dimensiones {
-      background-color: #f8f9fa;
-      padding: .5rem;
-      border-radius: .5rem;
-      margin-bottom: 1rem;
-    }
-    .nav-dimensiones .nav-link {
-      color: #14376b;
-      font-weight: 500;
-      margin-right: .5rem;
-      border-radius: .375rem;
-    }
-    .nav-dimensiones .nav-link.active {
-      background-color: #14376b;
-      color: #fff;
-    }
-
-    /* Animación de entrada */
-    @keyframes easeOutEffect {
-      from { opacity: 0; transform: translateY(10px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-    .ease-out { animation: easeOutEffect 0.5s ease-out forwards; }
-    </style>
+    <link rel="stylesheet" href="{% static 'custom/css/ciudadano.css' %}" />
 {% endblock %}
 {% block title %}Ciudadano – {{ object.apellido }}, {{ object.nombre }}{% endblock %}
 {% block breadcrumb %}
@@ -57,23 +18,35 @@
     <div class="container-fluid">
         <!-- Acciones -->
         <div class="d-flex justify-content-between mb-4">
-            <a href="{% url 'ciudadanos' %}" class="btn btn-outline-secondary">← Volver</a>
+            <a href="{% url 'ciudadanos' %}" class="btn btn-outline-light">
+                <i class="fas fa-arrow-left me-1"></i> Volver
+            </a>
             <div class="btn-group">
                 {% if perms.Usuarios.rol_admin %}
                     <a href="{% url 'ciudadanosderivaciones_historial' object.id %}"
-                       class="btn btn-outline-secondary">Derivar</a>
+                       class="btn btn-primary text-white">
+                        <i class="fas fa-share-square me-1"></i> Derivar
+                    </a>
                     <a href="{% url 'ciudadanos_eliminar' object.id %}"
-                       class="btn btn-outline-secondary">Eliminar</a>
+                       class="btn btn-danger">
+                        <i class="fas fa-trash-alt me-1"></i> Eliminar
+                    </a>
                 {% endif %}
-                <button class="btn btn-outline-secondary d-print-none"
-                        onclick="window.print()">Imprimir</button>
+                <button class="btn btn-secondary d-print-none" onclick="window.print()">
+                    <i class="fas fa-print me-1"></i> Imprimir
+                </button>
                 <a href="{% url 'ciudadano_intervencion_ver' object.id %}"
-                   class="btn btn-outline-secondary">Intervenciones</a>
-                <a href="{% url 'llamados_ver' object.id %}"
-                   class="btn btn-outline-secondary">Llamados</a>
+                   class="btn btn-purple">
+                    <i class="fas fa-notes-medical me-1"></i> Intervenciones
+                </a>
+                <a href="{% url 'llamados_ver' object.id %}" class="btn btn-success">
+                    <i class="fas fa-phone-alt me-1"></i> Llamados
+                </a>
                 {% if perms.Usuarios.rol_admin %}
                     <a href="{% url 'ciudadanos_editar' object.id %}"
-                       class="btn btn-primary">Editar</a>
+                       class="btn btn-primary">
+                        <i class="fas fa-edit me-1"></i> Editar
+                    </a>
                 {% endif %}
             </div>
         </div>
@@ -123,27 +96,30 @@
         <div class="row gx-4 mb-5">
             <div class="col-lg-4">
                 <div class="card shadow-sm rounded-lg overflow-hidden">
-                    <div class="card-header text-center">
+                    <div class="card-header text-center py-6">
                         {% if object.foto %}
                             <img src="{{ object.foto.url }}"
-                                 class="rounded-circle img-thumbnail mb-3"
-                                 style="width:100px;
-                                        height:100px"
+                                 class="rounded-circle shadow"
+                                 style="width:200px;
+                                        height:200px;
+                                        object-fit:cover"
                                  alt="Foto" />
                         {% else %}
                             <img src="{% static 'custom/img/default.png' %}"
-                                 class="rounded-circle img-thumbnail mb-3"
-                                 style="width:100px;
-                                        height:100px"
+                                 class="rounded-circle shadow"
+                                 style="width:140px;
+                                        height:140px;
+                                        object-fit:cover"
                                  alt="Foto" />
                         {% endif %}
-                        <h5 class="card-title mb-1">{{ object.apellido }}, {{ object.nombre }}</h5>
-                        <small>
-                            <i class="flag-icon {{ emoji_nacionalidad }}"></i>
-                            {{ object.tipo_documento }} {{ object.documento }}
-                        </small>
                     </div>
                     <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Nombre</span><span>{{ object.apellido }}, {{ object.nombre }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Documento</span><span>{{ object.tipo_documento }} {{ object.documento }}</span>
+                        </li>
                         <li class="list-group-item d-flex justify-content-between">
                             <span>Sexo</span><span>{{ object.sexo }}</span>
                         </li>
@@ -159,19 +135,20 @@
                         <li class="list-group-item d-flex justify-content-between">
                             <span>Email</span><span>{{ object.email|default:"–" }}</span>
                         </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Provincia</span><span>{{ object.provincia|default:"–" }}</span>
+                        </li>
                     </ul>
-                    <!-- Sección de Programas (etiquetas) -->
                     <div class="card-body">
-                        <h6 class="text-light mb-2">Programas</h6>
+                        <h6 class="text-muted mb-2">Programas</h6>
                         {% if object.ciudadano_programa.all %}
                             {% for cp in object.ciudadano_programa.all %}
-                                <span class="badge bg-info px-3 py-1 me-1">{{ cp.programas.nombre }}</span>
+                                <span class="badge badge-custom px-3 py-1 me-1">{{ cp.programas.nombre }}</span>
                             {% endfor %}
                         {% else %}
                             <span class="text-muted">No participa en programas</span>
                         {% endif %}
                     </div>
-                    <!-- Estado Activo/Inactivo -->
                     <div class="card-body text-center">
                         {% if object.estado %}
                             <span class="badge bg-success px-4 py-2">Activo</span>
@@ -195,33 +172,36 @@
             </div>
         </div>
         <!-- Dimensiones -->
-        <div>
-            <ul class="nav nav-pills nav-dimensiones" role="tablist">
-                <li class="nav-item">
-                    <button class="nav-link active"
-                            data-bs-toggle="pill"
-                            data-bs-target="#familia"
-                            type="button">Familia</button>
-                </li>
-                <li class="nav-item">
-                    <button class="nav-link"
-                            data-bs-toggle="pill"
-                            data-bs-target="#vivienda"
-                            type="button">Vivienda</button>
-                </li>
-                <li class="nav-item">
-                    <button class="nav-link"
-                            data-bs-toggle="pill"
-                            data-bs-target="#salud"
-                            type="button">Salud</button>
-                </li>
-                <li class="nav-item">
-                    <button class="nav-link"
-                            data-bs-toggle="pill"
-                            data-bs-target="#trabajo"
-                            type="button">Trabajo</button>
-                </li>
-            </ul>
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-dark-blue text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Dimensiones</h5>
+                <ul class="nav nav-pills nav-dimensiones mb-0" role="tablist">
+                    <li class="nav-item">
+                        <button class="nav-link active"
+                                data-bs-toggle="pill"
+                                data-bs-target="#familia"
+                                type="button">Familia</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link"
+                                data-bs-toggle="pill"
+                                data-bs-target="#vivienda"
+                                type="button">Vivienda</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link"
+                                data-bs-toggle="pill"
+                                data-bs-target="#salud"
+                                type="button">Salud</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link"
+                                data-bs-toggle="pill"
+                                data-bs-target="#trabajo"
+                                type="button">Trabajo</button>
+                    </li>
+                </ul>
+            </div>
             <div class="tab-content">
                 <!-- Familia -->
                 <div class="tab-pane fade show active" id="familia">
@@ -373,12 +353,15 @@
                 </div>
                 <div class="card-body">
                     {% if ciudadanos_programas %}
-                        <div class="row g-2">
+                        <div class="row g-3" id="programas_ciudadanos">
                             {% for cp in ciudadanos_programas %}
-                                <div class="col-md-6">
-                                    <div class="card shadow-sm ease-out">
+                                <div class="col-md-2 col-lg-2 mb-2 ease-out">
+                                    <div class="card card-programa shadow-sm h-100 position-relative">
                                         <div class="card-body d-flex justify-content-between align-items-center">
-                                            <span class="text-truncate">{{ cp.programas.nombre }}</span>
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-tag fa-lg text-info me-2"></i>
+                                                <span class="fw-semibold text-truncate" style="max-width: 160px;">{{ cp.programas.nombre }}</span>
+                                            </div>
                                             <button class="btn btn-sm btn-outline-danger borrar-programa"
                                                     data-program-id="{{ cp.id }}">
                                                 <i class="fas fa-trash-alt"></i>
@@ -396,9 +379,7 @@
                         </div>
                     {% endif %}
                 </div>
-                <div class="card-footer bg-light text-start">
-                    <a id="agregar-programa-btn" class="btn btn-sm btn-primary">Agregar</a>
-                </div>
+                <!-- Formulario para agregar programa -->
                 <div id="form-programas" class="card-footer bg-light d-none">
                     <form id="ProgramaForm"
                           method="POST"
@@ -412,6 +393,11 @@
                             <button type="submit" class="btn btn-sm btn-primary">Guardar</button>
                         </div>
                     </form>
+                </div>
+                <div class="card-footer bg-light text-start">
+                    <a href="{% url 'programas_intervencion' object.id %}"
+                       class="btn btn-sm btn-outline-primary me-2">Ver más</a>
+                    {% if perms.Usuarios.rol_admin %}<a id="agregar-programa-btn" class="btn btn-sm btn-primary">+ Agregar</a>{% endif %}
                 </div>
             </div>
         </div>
@@ -522,39 +508,5 @@
     </div>
 {% endblock %}
 {% block customJS %}
-    <script>
-document.addEventListener('DOMContentLoaded', () => {
-  $('.select2').select2({ theme: 'bootstrap5' });
-
-  $('#agregar-programa-btn').click(() => $('#form-programas').toggleClass('d-none'));
-  $('#cancelar-btn').click(() => $('#form-programas').toggleClass('d-none'));
-
-  $('#ProgramaForm').on('submit', function(e) {
-    e.preventDefault();
-    $.post(this.action, $(this).serialize(), data => {
-      data.programas.forEach(pr => {
-        const html = `
-          <div class="col-md-6 ease-out">
-            <div class="card shadow-sm">
-              <div class="card-body d-flex justify-content-between">
-                <span class="text-truncate">${pr.nombre}</span>
-                <button class="btn btn-sm btn-outline-danger borrar-programa" data-program-id="${pr.id}">×</button>
-              </div>
-            </div>
-          </div>`;
-        $('#progamas_ciudadanos .row').append(html);
-      });
-      $('#form-programas').addClass('d-none');
-    });
-  });
-
-  $(document).on('click', '.borrar-programa', function() {
-    const btn = $(this), id = btn.data('program-id');
-    if (!confirm('¿Eliminar programa?')) return;
-    $.post('{% url "eliminar_programa" %}', { csrfmiddlewaretoken: '{{ csrf_token }}', program_id: id }, resp => {
-      if (resp.success) btn.closest('.col-md-6').remove();
-    });
-  });
-});
-    </script>
+    <script src="{% static 'custom/js/ciudadano.js' %}"></script>
 {% endblock %}
