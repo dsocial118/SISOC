@@ -1,0 +1,33 @@
+{% extends "includes/main.html" %}
+{% block content %}
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card shadow border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <h4 class="mb-0">Confirmar Eliminación</h4>
+                    </div>
+                    <div class="card-body">
+                        <p class="lead">¿Estás seguro que querés eliminar al siguiente participante?</p>
+                        <p class="mb-4">
+                            <strong>{{ object.ciudadano.apellido }}, {{ object.ciudadano.nombre }}</strong>
+                            <br />
+                            DNI: <strong>{{ object.ciudadano.documento }}</strong>
+                        </p>
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="d-flex justify-content-between">
+                                <a href="{{ request.META.HTTP_REFERER }}" class="btn btn-secondary">
+                                    <i class="fas fa-times"></i> Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-trash-alt"></i> Eliminar Participante
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
