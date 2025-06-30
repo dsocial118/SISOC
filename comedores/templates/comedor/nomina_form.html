@@ -1,95 +1,39 @@
 {% extends "includes/main.html" %}
-{% load static %}
-{% block title %}Nomina formulario{% endblock %}
-{% block titulo-pagina %}Nomina{% endblock %}
-;
+{% load static crispy_forms_tags %}
+{% block title %}Agregar a Nómina{% endblock %}
 {% block breadcrumb %}
-    <ol class="breadcrumb float-sm-right ">
-        <li class="breadcrumb-item">Nomina</li>
+    <ol class="breadcrumb float-sm-right">
         <li class="breadcrumb-item">
-            <a href="{% url 'comedor_detalle' object.id %}" title="Ver Comedor">{{ object.nombre }} {{ object.apellido }}</a>
+            <a href="{% url 'comedor_detalle' object.id %}">Comedor</a>
         </li>
-        <li class="breadcrumb-item active">Agregar</li>
+        <li class="breadcrumb-item active">Agregar a Nómina</li>
     </ol>
 {% endblock %}
-;
-{% load crispy_forms_tags %}
 {% block content %}
-    <link rel="stylesheet" href="{% static 'custom/css/nominaform.css' %}" />
-    <div class="row mb-3">
-        <div class="col-12">
-            <div class="card card-outline card-primary ">
-                <div class="card-header">
-                    <h3 class="card-title">Detalle del Comedor</h3>
-                </div>
-                <div class="card-body">
-                    <dl class="row">
-                        <dd class="col-sm-2 mb-2">
-                            Nombre
-                        </dd>
-                        <dt class="col-sm-10 mb-2">
-                            <a href="{% url 'comedor_detalle' object.id %}" title="Ver Comedor">{{ object.nombre }}</a>
-                        </dt>
-                        <dd class="col-sm-5 mb-2">
-                            Gestionar
-                        </dd>
-                        <dt class="col-sm-7 mb-2">{{ object.id }}</dt>
-                        <dd class="col-sm-5 mb-2">
-                            Provincia
-                        </dd>
-                        <dt class="col-sm-7 mb-2">{{ object.provincia }}</dt>
-                        <dd class="col-sm-5 mb-2">
-                            Barrio
-                        </dd>
-                        <dt class="col-sm-7 mb-2">{{ object.barrio }}</dt>
-                    </dl>
-                </div>
-            </div>
+    <div class="card shadow-sm">
+        <div class="card-header">
+            <h5 class="mb-0">Agregar Persona a Nómina</h5>
         </div>
-    </div>
-    <div class="row">
-        <div class="col">
-            <form class="needs-validation"
-                  novalidate
-                  method="POST"
-                  enctype="multipart/form-data">
+        <div class="card-body">
+            <form method="post">
                 {% csrf_token %}
-                <div class="card card-primary card-outline">
-                    <div class="card-header">
-                        <h3 class="card-title">Agregar Nomina</h3>
-                    </div>
-                    <div class="card-body ">
-                        <div class="row m-0 p-0">
-                            <input type="hidden" name="comedor" value="{{ object.id }}" />
-                            <div class="col-sm-6">
-                                <div class="form-group">{{ form.nombre| as_crispy_field }}</div>
-                            </div>
-                            <div class="col-sm-6">
-                                <div class="form-group">{{ form.apellido| as_crispy_field }}</div>
-                            </div>
-                            <div class="col-sm-6">
-                                <div class="form-group">{{ form.dni| as_crispy_field }}</div>
-                            </div>
-                            <div class="col-sm-3">
-                                <div class="form-group">{{ form.estado| as_crispy_field }}</div>
-                            </div>
-                            <div class="col-sm-3">
-                                <div class="form-group">{{ form.sexo| as_crispy_field }}</div>
-                            </div>
-                            <div class="col-sm-12">
-                                <div class="form-group">{{ form.observaciones| as_crispy_field }}</div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="row">
+                    <div class="col-md-6">{{ form.ciudadano|as_crispy_field }}</div>
+                    <div class="col-md-6">{{ form.estado|as_crispy_field }}</div>
                 </div>
-                <div class="mt-4 mx-2">
-                    <button class="btn btn-primary mr-1">Confirmar</button>
-                    <a href="{% url 'comedor_detalle' object.id %}"
-                       class="btn btn-secondary">Cancelar</a>
+                {{ form.observaciones|as_crispy_field }}
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                    <a href="{% url 'nomina_ver' object.id %}" class="btn btn-secondary">Cancelar</a>
                 </div>
             </form>
         </div>
     </div>
 {% endblock %}
-{% block customJS %}{% endblock %}
-;
+{% block customJS %}
+    <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    $('.select2').select2({ theme: 'bootstrap5' });
+  });
+    </script>
+{% endblock %}
