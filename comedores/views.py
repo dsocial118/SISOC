@@ -20,6 +20,7 @@ from django.views.generic import (
 )
 
 
+from ciudadanos.models import CiudadanoPrograma, HistorialCiudadanoProgramas
 from comedores.forms.comedor_form import (
     ComedorForm,
     ReferenteForm,
@@ -77,10 +78,25 @@ class NominaCreateView(CreateView):
         return reverse_lazy("nomina_ver", kwargs={"pk": self.kwargs["pk"]})
 
     def form_valid(self, form):
-        # vinculamos al comedor y al ciudadano seleccionado
-        form.instance.comedor_id = self.kwargs["pk"]
+        user = self.request.user
+        ciudadano = form.cleaned_data["ciudadano"]
+        comedor_id = self.kwargs["pk"]
+
+        form.instance.comedor_id = comedor_id
+
+        response = super().form_valid(form)
+
+        created = CiudadanoPrograma.objects.get_or_create(
+            ciudadano=ciudadano, programas_id=2, defaults={"creado_por": user}
+        )
+
+        if created:
+            HistorialCiudadanoProgramas.objects.create(
+                programa_id=2, ciudadano=ciudadano, accion="agregado", usuario=user
+            )
+
         messages.success(self.request, "Persona añadida correctamente a la nómina.")
-        return super().form_valid(form)
+        return response
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

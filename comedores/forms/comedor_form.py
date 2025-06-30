@@ -3,7 +3,6 @@ from django import forms
 from django.core.exceptions import ValidationError
 
 
-
 from ciudadanos.models import Ciudadano
 from comedores.models import (
     Comedor,

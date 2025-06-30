@@ -12,8 +12,12 @@ from centrodefamilia.services.participante_service import ParticipanteService
 from ciudadanos.models import (
     Ciudadano,
     CiudadanoPrograma,
-    Programa,
     HistorialCiudadanoProgramas,
+)
+
+from django.views.generic import (
+    CreateView,
+    DeleteView,
 )
 
 
@@ -107,3 +111,20 @@ class ParticipanteActividadCreateView(LoginRequiredMixin, CreateView):
         context["centro_id"] = self.kwargs.get("centro_id")
         context["actividad_id"] = self.kwargs.get("actividad_id")
         return context
+
+
+class ParticipanteActividadDeleteView(LoginRequiredMixin, DeleteView):
+    model = ParticipanteActividad
+    template_name = "centros/participanteactividad_confirm_delete.html"
+
+    def get_success_url(self):
+        centro_id = self.kwargs["centro_id"]
+        actividad_id = self.kwargs["actividad_id"]
+        return reverse_lazy(
+            "actividadcentro_detail",
+            kwargs={"centro_id": centro_id, "pk": actividad_id},
+        )
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, "Participante eliminado correctamente.")
+        return super().delete(request, *args, **kwargs)
