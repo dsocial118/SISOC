@@ -22,7 +22,10 @@ from centrodefamilia.views.orientador import (
     OrientadorUpdateView,
     OrientadorDeleteView,
 )
-from centrodefamilia.views.participante import ParticipanteActividadCreateView
+from centrodefamilia.views.participante import (
+    ParticipanteActividadCreateView,
+    ParticipanteActividadDeleteView,
+)
 
 
 urlpatterns = [
@@ -100,5 +103,10 @@ urlpatterns = [
         "orientadores/<int:pk>/eliminar/",
         OrientadorDeleteView.as_view(),
         name="orientador_delete",
+    ),
+    path(
+        "centros/<int:centro_id>/actividades/<int:actividad_id>/participantes/<int:pk>/eliminar/",
+        ParticipanteActividadDeleteView.as_view(),
+        name="participanteactividad_delete",
     ),
 ]

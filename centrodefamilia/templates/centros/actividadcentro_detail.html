@@ -61,12 +61,15 @@
                 {% if participantes %}
                     <table class="table table-bordered table-hover table-striped">
                         <thead>
-                            <tr>
-                                <th>Participante</th>
-                                <th>DNI</th>
-                                <th>Género</th>
-                                <th>Fecha de Registro</th>
-                            </tr>
+                            <thead>
+                                <tr>
+                                    <th>Participante</th>
+                                    <th>DNI</th>
+                                    <th>Género</th>
+                                    <th>Fecha de Registro</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
                         </thead>
                         <tbody>
                             {% for p in participantes %}
@@ -77,6 +80,13 @@
                                     <td>{{ p.ciudadano.documento }}</td>
                                     <td>{{ p.ciudadano.sexo.sexo }}</td>
                                     <td>{{ p.fecha_registro|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <a href="{% url 'participanteactividad_delete' centro_id=actividad.centro.id actividad_id=actividad.id pk=p.id %}"
+                                           class="btn btn-danger btn-sm"
+                                           onclick="return confirm('¿Estás seguro que querés eliminar este participante?');">
+                                            Eliminar
+                                        </a>
+                                    </td>
                                 </tr>
                             {% endfor %}
                         </tbody>
