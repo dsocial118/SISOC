@@ -3,19 +3,19 @@ import datetime
 import shutil
 
 
-def borrar_carpetas_logs_viejas(logs_dir):
+def borrar_carpetas_logs_viejas(directory):
     """
     Borra las carpetas de logs que tienen más de 30 días de antigüedad.
 
-    :param logs_dir: Ruta del directorio donde se encuentran las carpetas de logs.
+    :param directory: Ruta del directorio donde se encuentran las carpetas de logs.
     """
-    if not os.path.exists(logs_dir):
-        print(f"La ruta especificada no existe: {logs_dir}")
+    if not os.path.exists(directory):
+        print(f"La ruta especificada no existe: {directory}")
         return
 
     limite_fecha = datetime.datetime.now() - datetime.timedelta(days=30)
-    for carpeta in os.listdir(logs_dir):
-        carpeta_path = os.path.join(logs_dir, carpeta)
+    for carpeta in os.listdir(directory):
+        carpeta_path = os.path.join(directory, carpeta)
 
         if os.path.isdir(carpeta_path):
             try:
@@ -27,11 +27,11 @@ def borrar_carpetas_logs_viejas(logs_dir):
             except ValueError:
                 print(f"Formato inválido para la carpeta: {carpeta}")
         else:
-            print(f"'{carpeta}' no es una carpeta válida en {logs_dir}")
+            print(f"'{carpeta}' no es una carpeta válida en {directory}")
 
 
 if __name__ == "__main__":
     # Ruta del directorio donde se encuentran las carpetas de logs
-    logs_dir = ""  # Cambia esto por la ruta real de tus logs
+    LOGS_DIR = "C:/Users/nehue/Documents/SISOC-Backoffice/logs/"  # Cambia esto por la ruta real de tus logs
 
-    borrar_carpetas_logs_viejas(logs_dir)
+    borrar_carpetas_logs_viejas(LOGS_DIR)
