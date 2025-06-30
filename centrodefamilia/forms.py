@@ -9,7 +9,7 @@ from centrodefamilia.models import (
     ParticipanteActividad,
     Categoria,
     Actividad,
-    Orientadores,
+    Orientador,
 )
 
 HORAS_DEL_DIA = [(f"{h:02d}:00", f"{h:02d}:00") for h in range(0, 24)] + [
@@ -161,7 +161,7 @@ class ParticipanteActividadForm(forms.ModelForm):
 
 class OrientadoresForm(forms.ModelForm):
     class Meta:
-        model = Orientadores
+        model = Orientador
         fields = [
             "nombre",
             "apellido",

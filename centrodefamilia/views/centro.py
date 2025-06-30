@@ -37,9 +37,7 @@ class CentroListView(LoginRequiredMixin, ListView):
         busqueda = self.request.GET.get("busqueda")
         if busqueda:
             queryset = queryset.filter(
-                Q(nombre__icontains=busqueda)
-                | Q(direccion__icontains=busqueda)
-                | Q(tipo__icontains=busqueda)
+                Q(nombre__icontains=busqueda) | Q(tipo__icontains=busqueda)
             )
 
         return queryset.order_by("nombre")

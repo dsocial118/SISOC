@@ -67,14 +67,14 @@ class Centro(models.Model):
     )
 
     def __str__(self):
-        return self.nombre
+        return str(self.nombre)
 
 
 class Categoria(models.Model):
     nombre = models.CharField(max_length=100, verbose_name="Nombre de la Categoría")
 
     def __str__(self):
-        return self.nombre
+        return str(self.nombre)
 
     class Meta:
         verbose_name = "Categoría"
@@ -88,7 +88,7 @@ class Actividad(models.Model):
     )
 
     def __str__(self):
-        return self.nombre
+        return str(self.nombre)
 
 
 class ActividadCentro(models.Model):
@@ -149,7 +149,7 @@ class ParticipanteActividad(models.Model):
         unique_together = ("actividad_centro", "ciudadano")
 
 
-class Orientadores(models.Model):
+class Orientador(models.Model):
     centro = models.ForeignKey(Centro, on_delete=models.CASCADE, verbose_name="Centro")
     nombre = models.CharField(max_length=100, verbose_name="Nombre")
     apellido = models.CharField(max_length=100, verbose_name="Apellido")
@@ -171,7 +171,7 @@ class Orientadores(models.Model):
             ("administrativo", "administrativo"),
             ("otro", "Otro"),
         ],
-        verbose_name="Género",
+        verbose_name="Cargo",
     )
 
     def __str__(self):
