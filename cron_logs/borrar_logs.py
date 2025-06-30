@@ -35,6 +35,6 @@ def borrar_carpetas_logs_viejas(logs_dir):
 
 if __name__ == "__main__":
     # Ruta del directorio donde se encuentran las carpetas de logs
-    logs_dir = "C:/Users/nehue/Documents/SISOC-Backoffice/logs/"  # Cambia esto por la ruta real de tus logs
+    logs_dir = ""  # Cambia esto por la ruta real de tus logs
 
     borrar_carpetas_logs_viejas(logs_dir)
