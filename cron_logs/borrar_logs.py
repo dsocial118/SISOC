@@ -17,13 +17,10 @@ def borrar_carpetas_logs_viejas(logs_dir):
     for carpeta in os.listdir(logs_dir):
         carpeta_path = os.path.join(logs_dir, carpeta)
 
-        # Verificar si es una carpeta
         if os.path.isdir(carpeta_path):
             try:
-                # Intentar convertir el nombre de la carpeta en una fecha (formato año-mes-dia)
                 fecha_carpeta = datetime.datetime.strptime(carpeta, "%Y-%m-%d")
 
-                # Si la carpeta es más antigua que la fecha límite, eliminarla
                 if fecha_carpeta < limite_fecha:
                     print(f"Borrando carpeta: {carpeta_path}")
                     shutil.rmtree(carpeta_path)  # Eliminar la carpeta y su contenido
