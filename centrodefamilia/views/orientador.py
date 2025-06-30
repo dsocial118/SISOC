@@ -1,19 +1,19 @@
 from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
-from centrodefamilia.models import Centro, Orientadores
+from centrodefamilia.models import Centro, Orientador
 from centrodefamilia.forms import OrientadoresForm
 from django.utils.decorators import method_decorator
 
 
 class OrientadorListView(ListView):
-    model = Orientadores
-    template_name = "centros/orientador_list.html"
+    model = Orientador
+    template_name = "centros/orientador_list.html"  # FIXME: Esto no existe
     context_object_name = "orientadores"
 
     def get_queryset(self):
         self.centro = get_object_or_404(Centro, pk=self.kwargs["centro_id"])
-        return Orientadores.objects.filter(centro=self.centro)
+        return Orientador.objects.filter(centro=self.centro)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -22,7 +22,7 @@ class OrientadorListView(ListView):
 
 
 class OrientadorCreateView(CreateView):
-    model = Orientadores
+    model = Orientador
     form_class = OrientadoresForm
     template_name = "centros/orientador_form.html"
 
@@ -38,7 +38,7 @@ class OrientadorCreateView(CreateView):
 
 
 class OrientadorUpdateView(UpdateView):
-    model = Orientadores
+    model = Orientador
     form_class = OrientadoresForm
     template_name = "centros/orientador_form.html"
 
@@ -49,7 +49,7 @@ class OrientadorUpdateView(UpdateView):
 
 
 class OrientadorDeleteView(DeleteView):
-    model = Orientadores
+    model = Orientador
     template_name = "centros/orientador_confirm_delete.html"
 
     def get_success_url(self):
