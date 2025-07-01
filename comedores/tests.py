@@ -24,7 +24,9 @@ class ComedorFactory(factory.django.DjangoModelFactory):
 @pytest.fixture
 def user_fixture(db):
     user_model = get_user_model()
-    user_instance = user_model.objects.create_user(username=fake.user_name(), password="testpass")
+    user_instance = user_model.objects.create_user(
+        username=fake.user_name(), password="testpass"
+    )
     for group_name in [
         "Comedores Ver",
         "Comedores Relevamiento Ver",
@@ -64,9 +66,13 @@ def monkeypatch_comedor_detail_services(monkeypatch, comedor_fixture):
         "rendicioncuentasmensual.services.RendicionCuentaMensualService.cantidad_rendiciones_cuentas_mensuales",
         lambda obj: 5,
     )
-    monkeypatch.setattr(comedor_fixture.relevamiento_set, "order_by", lambda *a, **kw: [])
+    monkeypatch.setattr(
+        comedor_fixture.relevamiento_set, "order_by", lambda *a, **kw: []
+    )
     monkeypatch.setattr(comedor_fixture.relevamiento_set, "count", lambda: 1)
-    monkeypatch.setattr(comedor_fixture.observacion_set, "order_by", lambda *a, **kw: [])
+    monkeypatch.setattr(
+        comedor_fixture.observacion_set, "order_by", lambda *a, **kw: []
+    )
     monkeypatch.setattr(comedor_fixture.imagenes, "values", lambda *a, **kw: [])
     monkeypatch.setattr(
         comedor_fixture.clasificacioncomedor_set.order_by(), "first", lambda: None
@@ -78,11 +84,11 @@ def monkeypatch_comedor_detail_services(monkeypatch, comedor_fixture):
             False
             if user is None
             else (
-                    hasattr(user, "groups")
-                    and (
-                            user.groups.filter(name=group).exists()
-                            or getattr(user, "is_superuser", False)
-                    )
+                hasattr(user, "groups")
+                and (
+                    user.groups.filter(name=group).exists()
+                    or getattr(user, "is_superuser", False)
+                )
             )
         ),
     )
@@ -117,7 +123,9 @@ def test_comedor_detail_view_get_context(client_logged_fixture, comedor_fixture)
 
 
 @pytest.mark.django_db
-def test_comedor_detail_view_post_new_relevamiento(client_logged_fixture, comedor_fixture, monkeypatch):
+def test_comedor_detail_view_post_new_relevamiento(
+    client_logged_fixture, comedor_fixture, monkeypatch
+):
     client = client_logged_fixture
     comedor = comedor_fixture
     relevamiento_mock = mock.Mock()
@@ -131,13 +139,15 @@ def test_comedor_detail_view_post_new_relevamiento(client_logged_fixture, comedo
     response = client.post(url, {"territorial": "1"})
     assert response.status_code == 302
     assert (
-            reverse("relevamiento_detalle", kwargs={"pk": 1, "comedor_pk": comedor.pk})
-            in response.url
+        reverse("relevamiento_detalle", kwargs={"pk": 1, "comedor_pk": comedor.pk})
+        in response.url
     )
 
 
 @pytest.mark.django_db
-def test_comedor_detail_view_post_edit_relevamiento(client_logged_fixture, comedor_fixture, monkeypatch):
+def test_comedor_detail_view_post_edit_relevamiento(
+    client_logged_fixture, comedor_fixture, monkeypatch
+):
     client = client_logged_fixture
     comedor = comedor_fixture
     relevamiento_mock = mock.Mock()
@@ -151,13 +161,15 @@ def test_comedor_detail_view_post_edit_relevamiento(client_logged_fixture, comed
     response = client.post(url, {"territorial_editar": "1"})
     assert response.status_code == 302
     assert (
-            reverse("relevamiento_detalle", kwargs={"pk": 2, "comedor_pk": comedor.pk})
-            in response.url
+        reverse("relevamiento_detalle", kwargs={"pk": 2, "comedor_pk": comedor.pk})
+        in response.url
     )
 
 
 @pytest.mark.django_db
-def test_comedor_detail_view_post_redirects_on_other(client_logged_fixture, comedor_fixture):
+def test_comedor_detail_view_post_redirects_on_other(
+    client_logged_fixture, comedor_fixture
+):
     client = client_logged_fixture
     comedor = comedor_fixture
     url = reverse("comedor_detalle", kwargs={"pk": comedor.pk})
@@ -167,7 +179,9 @@ def test_comedor_detail_view_post_redirects_on_other(client_logged_fixture, come
 
 
 @pytest.mark.django_db
-def test_comedor_detail_view_post_error(monkeypatch, client_logged_fixture, comedor_fixture):
+def test_comedor_detail_view_post_error(
+    monkeypatch, client_logged_fixture, comedor_fixture
+):
     client = client_logged_fixture
     comedor = comedor_fixture
 
