@@ -7,6 +7,7 @@ from admisiones.models.admisiones import (
     Admision,
     InformeTecnico,
     DocumentosExpediente,
+    Anexo,
 )
 from acompanamientos.acompanamiento_service import AcompanamientoService
 from acompanamientos.models.hitos import Hitos
@@ -49,8 +50,8 @@ class AcompanamientoDetailView(DetailView):
         )
         admision = (
             Admision.objects.filter(comedor=comedor)
-            .exclude(num_if__isnull=True)
-            .exclude(num_if="")
+            .exclude(legales_num_if__isnull=True)
+            .exclude(legales_num_if="")
             .order_by("-id")
             .first()
         )
@@ -62,10 +63,13 @@ class AcompanamientoDetailView(DetailView):
 
         if admision:
             info_relevante = (
-                InformeTecnico.objects.filter(admision__comedor=comedor)
-                .order_by("-id")
-                .first()
+                InformeTecnico.objects.filter(admision=admision).order_by("-id").first()
             )
+
+            # Obtener el anexo
+            anexo = Anexo.objects.filter(admision=admision).first()
+            context["anexo"] = anexo
+
             doc_resolucion = (
                 DocumentosExpediente.objects.filter(
                     admision__comedor=comedor, tipo="Resolución"
@@ -78,19 +82,53 @@ class AcompanamientoDetailView(DetailView):
 
         # Asignar valores al contexto
         context["info_relevante"] = info_relevante
-        context["numero_if"] = admision.num_if if admision else None
+        context["numero_if"] = admision.legales_num_if if admision else None
         context["numero_resolucion"] = resolucion
+        # TODO: Implementar lógica real para vencimiento de mandato cuando esté la feature
+        context["vencimiento_mandato"] = "Pendiente de implementación"
 
         # Prestaciones
-        if info_relevante:
-            context["prestaciones_dias"] = [
-                {"tipo": "Desayuno", "cantidad": info_relevante.prestaciones_desayuno},
-                {"tipo": "Almuerzo", "cantidad": info_relevante.prestaciones_almuerzo},
-                {"tipo": "Merienda", "cantidad": info_relevante.prestaciones_merienda},
-                {"tipo": "Cena", "cantidad": info_relevante.prestaciones_cena},
+        if anexo:
+            # Crear estructura de prestaciones por día usando datos del anexo
+            dias = [
+                "lunes",
+                "martes",
+                "miercoles",
+                "jueves",
+                "viernes",
+                "sabado",
+                "domingo",
             ]
+            tipos_comida = ["desayuno", "almuerzo", "merienda", "cena"]
+
+            # Crear estructura de tabla para mostrar prestaciones por día
+            prestaciones_por_dia = []
+            prestaciones_totales = []
+
+            for tipo in tipos_comida:
+                fila = {"tipo": tipo.capitalize()}
+                total_semanal = 0
+
+                for dia in dias:
+                    campo_nombre = f"{tipo}_{dia}"
+                    cantidad = getattr(anexo, campo_nombre, 0) if anexo else 0
+                    fila[dia] = cantidad
+                    total_semanal += cantidad or 0  # Sumar para el total semanal
+
+                prestaciones_por_dia.append(fila)
+                prestaciones_totales.append(
+                    {"tipo": tipo.capitalize(), "cantidad": total_semanal}
+                )
+
+            context["prestaciones_por_dia"] = prestaciones_por_dia
+            context["prestaciones_dias"] = (
+                prestaciones_totales  # Usar totales calculados desde anexo
+            )
+            context["dias_semana"] = [dia.capitalize() for dia in dias]
         else:
+            context["prestaciones_por_dia"] = []
             context["prestaciones_dias"] = []
+            context["dias_semana"] = []
 
         return context
 
