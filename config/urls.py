@@ -20,7 +20,6 @@ urlpatterns = [
     path("", include("ciudadanos.urls")),
     path("", include("admisiones.urls")),
     path("", include("centrodefamilia.urls")),
-    path("__debug__/", include("debug_toolbar.urls")),
     path("", include("healthcheck.urls")),
     path("acompanamientos/", include("acompanamientos.urls")),
     path("expedientespagos/", include("expedientespagos.urls")),
