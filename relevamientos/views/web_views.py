@@ -35,7 +35,9 @@ class RelevamientoCreateView(CreateView):
             self.request.POST if self.request.method == "POST" else None
         )
         data.update(forms)
-        data["comedor"] = RelevamientoFormManager.get_comedor_context(self.kwargs["comedor_pk"])
+        data["comedor"] = RelevamientoFormManager.get_comedor_context(
+            self.kwargs["comedor_pk"]
+        )
         return data
 
     def form_valid(self, form):
@@ -180,14 +182,20 @@ class RelevamientoUpdateView(UpdateView):
                 base_name = name.split("_form", maxsplit=1)[0]
                 instance_map[name] = getattr(self.object, base_name, None)
             if self.object.espacio:
-                instance_map["espacio_cocina_form"] = getattr(self.object.espacio, "cocina", None)
-                instance_map["espacio_prestacion_form"] = getattr(self.object.espacio, "prestacion", None)
+                instance_map["espacio_cocina_form"] = getattr(
+                    self.object.espacio, "cocina", None
+                )
+                instance_map["espacio_prestacion_form"] = getattr(
+                    self.object.espacio, "prestacion", None
+                )
         forms = RelevamientoFormManager.build_forms(
             self.request.POST if self.request.method == "POST" else None,
-            instance_map=instance_map
+            instance_map=instance_map,
         )
         data.update(forms)
-        data["comedor"] = RelevamientoFormManager.get_comedor_context(self.kwargs["comedor_pk"])
+        data["comedor"] = RelevamientoFormManager.get_comedor_context(
+            self.kwargs["comedor_pk"]
+        )
         data["responsable"] = getattr(self.object, "responsable", None)
         return data
 
