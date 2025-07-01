@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from ciudadanos.models import Ciudadano
-from configuraciones.models import Dia
+from configuraciones.models import Dia, Localidad, Municipio, Provincia
 from organizaciones.models import Organizacion
 
 
@@ -37,9 +37,17 @@ class Centro(models.Model):
         null=True,
     )
     # datos sede
-    domicilio_sede = models.CharField(
-        max_length=255, verbose_name="Domicilio de la sede"
+    provincia = models.ForeignKey(to=Provincia, on_delete=models.PROTECT, null=True)
+    municipio = models.ForeignKey(
+        to=Municipio, on_delete=models.SET_NULL, null=True, blank=True
     )
+    localidad = models.ForeignKey(
+        to=Localidad, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    calle = models.CharField(
+        max_length=255, blank=True, null=True
+    )
+    numero = models.PositiveIntegerField(blank=True, null=True)
     domicilio_actividad = models.CharField(
         max_length=255, verbose_name="Domicilio de actividades"
     )

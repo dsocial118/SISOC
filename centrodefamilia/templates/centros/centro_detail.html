@@ -1,113 +1,98 @@
 {% extends "includes/main.html" %}
 {% load static %}
+
 {% block title %}Detalle Centro{% endblock %}
+
 {% block breadcrumb %}
-    <ol class="breadcrumb float-sm-right">
-        <li class="breadcrumb-item">
-            <a href="{% url 'centro_list' %}">Centro de Familia</a>
-        </li>
-        <li class="breadcrumb-item active">Detalle</li>
-    </ol>
+<ol class="breadcrumb float-sm-right">
+    <li class="breadcrumb-item"><a href="{% url 'centro_list' %}">Centro de Familia</a></li>
+    <li class="breadcrumb-item active">Detalle</li>
+</ol>
 {% endblock %}
+
 {% block content %}
-    <div class="container">
-        <!-- Datos del Centro -->
-        <div class="card shadow-lg mb-4 p-4">
-            <div class="d-flex flex-row align-items-start">
-                <div class="me-4" style="width: 240px; height: 240px; flex-shrink: 0;">
-                    {% if centro.foto %}
-                        <img src="{{ centro.foto.url }}"
-                             alt="Foto del Centro"
-                             class="shadow rounded"
-                             style="width: 100%;
-                                    height: 100%;
-                                    object-fit: cover" />
+<div class="container">
+    <!-- Datos del Centro -->
+    <div class="card shadow-lg mb-4 p-4">
+        <div class="d-flex flex-row align-items-start">
+            <div class="me-4" style="width: 240px; height: 240px; flex-shrink: 0;">
+                {% if centro.foto %}
+                    <img src="{{ centro.foto.url }}" alt="Foto del Centro" class="shadow rounded" style="width:100%; height:100%; object-fit:cover" />
+                {% else %}
+                    <div class="d-flex align-items-center justify-content-center bg-light text-muted border rounded" style="width:100%; height:100%">Sin imagen</div>
+                {% endif %}
+                <p class="mt-2 text-muted text-center"><strong>Código:</strong> {{ centro.codigo }}</p>
+            </div>
+            <div class="flex-grow-1 ps-4">
+                <h1 class="display-4 mb-3">{{ centro.nombre }}</h1>
+                <p><strong>Tipo:</strong> {{ centro.get_tipo_display }}</p>
+                <p><strong>Dirección:</strong> {{ centro.calle }}</p>
+                <p><strong>Contacto:</strong> {{ centro.telefono }} – {{ centro.celular }}</p>
+                {% if centro.tipo == 'adherido' %}
+                    <p><strong>Centro FARO asociado:</strong> {{ centro.faro_asociado.nombre }}</p>
+                {% endif %}
+                <p><strong>Estado:</strong>
+                    {% if centro.activo %}
+                        <span class="badge badge-success">Activo</span>
                     {% else %}
-                        <div class="d-flex align-items-center justify-content-center bg-light text-muted border rounded"
-                             style="width: 100%;
-                                    height: 100%">Sin imagen</div>
+                        <span class="badge badge-danger">Inactivo</span>
                     {% endif %}
-                    <p class="mt-2 text-muted text-center">
-                        <strong>Código:</strong> {{ centro.codigo }}
-                    </p>
-                </div>
-                <div class="flex-grow-1 ps-4">
-                    <h1 class="display-4 mb-3">{{ centro.nombre }}</h1>
-                    <p>
-                        <strong>Tipo:</strong> {{ centro.get_tipo_display }}
-                    </p>
-                    <p>
-                        <strong>Dirección:</strong> {{ centro.domicilio_sede }}
-                    </p>
-                    <p>
-                        <strong>Contacto:</strong> {{ centro.telefono }} - {{ centro.celular }}
-                    </p>
-                    {% if centro.tipo == 'adherido' %}
-                        <p>
-                            <strong>Centro FARO asociado:</strong> {{ centro.faro_asociado.nombre }}
-                        </p>
+                </p>
+                <div class="mt-4">
+                    <a href="{% url 'centro_update' centro.id %}" class="btn btn-outline-primary btn-sm">Editar</a>
+                    <a href="{% url 'centro_list' %}" class="btn btn-outline-secondary btn-sm">Volver</a>
+                    <a href="{% url 'actividadcentro_create' centro_id=centro.id %}" class="btn btn-outline-success btn-sm">Agregar Actividad</a>
+                    {% if centro.tipo == 'faro' %}
+                        <a href="{% url 'centro_create' %}?faro={{ centro.id }}" class="btn btn-outline-info btn-sm">Agregar Centro Adherido</a>
                     {% endif %}
-                    <p>
-                        <strong>Estado:</strong>
-                        {% if centro.activo %}
-                            <span class="badge badge-success">Activo</span>
-                        {% else %}
-                            <span class="badge badge-danger">Inactivo</span>
-                        {% endif %}
-                    </p>
-                    <div class="mt-4">
-                        <a href="{% url 'centro_update' centro.id %}"
-                           class="btn btn-outline-primary btn-sm">Editar</a>
-                        <a href="{% url 'centro_list' %}"
-                           class="btn btn-outline-secondary btn-sm">Volver</a>
-                        <a href="{% url 'actividadcentro_create' centro_id=centro.id %}"
-                           class="btn btn-outline-success btn-sm">Agregar Actividad</a>
-                        {% if centro.tipo == 'faro' %}
-                            <a href="{% url 'centro_create' %}?faro={{ centro.id }}"
-                               class="btn btn-outline-info btn-sm">Agregar Centro Adherido</a>
-                        {% endif %}
-                    </div>
                 </div>
             </div>
         </div>
-        <!-- Métricas estilo imagen -->
-        <div class="row mb-4">
-            <div class="col-md-4 mb-3">
-                <div class="d-flex bg-dark rounded overflow-hidden" style="height: 60px;">
-                    <div class="d-flex align-items-center justify-content-center bg-primary px-3 text-white">
-                        <i class="fas fa-running fa-lg"></i>
-                    </div>
-                    <div class="d-flex flex-column justify-content-center px-3 text-white">
-                        <small>Actividades</small>
-                        <strong>{{ total_actividades }}</strong>
-                    </div>
-                </div>
+    </div>
+
+    <!-- Métricas estilo imagen -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="d-flex bg-dark rounded overflow-hidden" style="height:60px;">
+                <div class="d-flex align-items-center justify-content-center bg-primary px-3 text-white"><i class="fas fa-running fa-lg"></i></div>
+                <div class="d-flex flex-column justify-content-center px-3 text-white"><small>Actividades</small><strong>{{ total_actividades }}</strong></div>
             </div>
-            <div class="col-md-4 mb-3">
-                <div class="d-flex bg-dark rounded overflow-hidden" style="height: 60px;">
-                    <div class="d-flex align-items-center justify-content-center bg-success px-3 text-white">
-                        <i class="fas fa-users fa-lg"></i>
-                    </div>
-                    <div class="d-flex flex-column justify-content-center px-3 text-white">
-                        <small>Asistentes</small>
-                        <strong>{{ total_participantes }}</strong>
-                    </div>
-                </div>
-            </div>
-            {% if centro.tipo == "faro" %}
-                <div class="col-md-4 mb-3">
-                    <div class="d-flex bg-dark rounded overflow-hidden" style="height: 60px;">
-                        <div class="d-flex align-items-center justify-content-center bg-info px-3 text-white">
-                            <i class="fas fa-network-wired fa-lg"></i>
-                        </div>
-                        <div class="d-flex flex-column justify-content-center px-3 text-white">
-                            <small>Centros Adheridos</small>
-                            <strong>{{ centros_adheridos_total }}</strong>
-                        </div>
-                    </div>
-                </div>
-            {% endif %}
         </div>
+        <div class="col-md-4 mb-3">
+            <div class="d-flex bg-dark rounded overflow-hidden" style="height:60px;">
+                <div class="d-flex align-items-center justify-content-center bg-success px-3 text-white"><i class="fas fa-users fa-lg"></i></div>
+                <div class="d-flex flex-column justify-content-center px-3 text-white"><small>Asistentes</small><strong>{{ total_participantes }}</strong></div>
+            </div>
+        </div>
+        {% if centro.tipo == 'faro' %}
+        <div class="col-md-4 mb-3">
+            <div class="d-flex bg-dark rounded overflow-hidden" style="height:60px;">
+                <div class="d-flex align-items-center justify-content-center bg-info px-3 text-white"><i class="fas fa-network-wired fa-lg"></i></div>
+                <div class="d-flex flex-column justify-content-center px-3 text-white"><small>Centros Adheridos</small><strong>{{ centros_adheridos_total }}</strong></div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Mapa de ubicación -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-dark text-white"><h5 class="mb-0">Ubicación</h5></div>
+                <div class="card-body p-0" style="height:400px;">
+                    {% if centro.calle %}
+                        <iframe width="100%" height="100%" frameborder="0" style="border:0"
+                                                          src="https://maps.google.com/maps?q={{ object.calle|urlencode }}+{{ object.altura }},+{{ object.localidad|urlencode }},+{{ object.municipio|urlencode }},+{{ object.provincia|urlencode }}&output=embed"
+                                allowfullscreen>
+                        </iframe>
+                    {% else %}
+                        <div class="p-4 text-center text-muted">No hay datos de dirección suficientes para mostrar el mapa.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+        
         <!-- Referente -->
         <div class="accordion mt-5" id="accordionCentroDetalle">
             <div class="accordion-item bg-dark text-white border-secondary">
@@ -190,7 +175,7 @@
                             <div class="col-md-3">
                                 <strong>Domicilio Sede:</strong>
                                 <br />
-                                {{ centro.domicilio_sede }}
+                                {{ centro.calle }}
                             </div>
                             <div class="col-md-3">
                                 <strong>Domicilio Actividad:</strong>

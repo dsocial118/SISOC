@@ -351,25 +351,28 @@
                 </div>
             </div>
         </div>
-        <div class="col-6">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title font-weight-bold mr-3 pt-1">Ubicación</h3>
-                    <div class="card-tools">
-                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                            <i class="fas fa-minus"></i>
-                        </button>
-                    </div>
+         <div class="col-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title font-weight-bold">Ubicación</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
                 </div>
-                <div class="card-body p-0" style="height: 400px;">
-                    <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d26285617.576453168!2d-84.86622600167856!3d-36.46496148004889!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95bccaf5f5fdc667%3A0x3d2f77992af00fa8!2sArgentina!5e0!3m2!1sen!2sar!4v1714519306937!5m2!1sen!2sar"
-                            style="border: 0;
-                                   width: 100%;
-                                   height: 100%"
-                            allowfullscreen=""
-                            loading="lazy">
+            </div>
+            <div class="card-body p-0" style="height: 400px;">
+                {% if comedor.calle and comedor.numero and comedor.localidad and comedor.municipio and comedor.provincia %}
+                    <iframe
+                        width="100%" height="100%" frameborder="0" style="border:0"
+                        src="https://maps.google.com/maps?q={{ comedor.calle|urlencode }}+{{ comedor.numero }},+{{ comedor.localidad.nombre|urlencode }},+{{ comedor.municipio.nombre|urlencode }},+{{ comedor.provincia.nombre|urlencode }}&output=embed"
+                        allowfullscreen>
                     </iframe>
-                </div>
+                {% else %}
+                    <div class="p-4 text-center text-muted">
+                        No hay datos de dirección suficientes para mostrar el mapa.
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
