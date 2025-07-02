@@ -1,15 +1,15 @@
-import os
 from typing import Any
-from django.contrib.auth.models import User
+
 from django.contrib import messages
+from django.contrib.auth.models import User
 from django.db.models.base import Model
 from django.forms import BaseModelForm
 from django.http import HttpResponse
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -18,7 +18,6 @@ from django.views.generic import (
     UpdateView,
     TemplateView,
 )
-
 
 from ciudadanos.models import CiudadanoPrograma, HistorialCiudadanoProgramas
 from comedores.forms.comedor_form import (
@@ -33,12 +32,8 @@ from comedores.models import (
     Observacion,
     Nomina,
 )
-
 from comedores.services.comedor_service import ComedorService
-from relevamientos.service import RelevamientoService
-
 from duplas.dupla_service import DuplaService
-from rendicioncuentasmensual.services import RendicionCuentaMensualService
 
 
 @method_decorator(csrf_exempt, name="dispatch")
