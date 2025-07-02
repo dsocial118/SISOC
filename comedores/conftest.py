@@ -68,11 +68,11 @@ def comedor_fixture(monkeypatch, db):
             False
             if user is None
             else (
-                    hasattr(user, "groups")
-                    and (
-                            user.groups.filter(name=group).exists()
-                            or getattr(user, "is_superuser", False)
-                    )
+                hasattr(user, "groups")
+                and (
+                    user.groups.filter(name=group).exists()
+                    or getattr(user, "is_superuser", False)
+                )
             )
         ),
     )
