@@ -1,5 +1,3 @@
-import threading
-
 import factory
 import pytest
 from django.contrib.auth import get_user_model
@@ -58,9 +56,7 @@ def comedor_fixture(monkeypatch, db):
     )
     monkeypatch.setattr(comedor.relevamiento_set, "order_by", lambda *a, **kw: [])
     monkeypatch.setattr(comedor.relevamiento_set, "count", lambda: 1)
-    monkeypatch.setattr(
-        comedor.observacion_set, "order_by", lambda *a, **kw: []
-    )
+    monkeypatch.setattr(comedor.observacion_set, "order_by", lambda *a, **kw: [])
     monkeypatch.setattr(comedor.imagenes, "values", lambda *a, **kw: [])
     monkeypatch.setattr(
         comedor.clasificacioncomedor_set.order_by(), "first", lambda: None
@@ -72,13 +68,15 @@ def comedor_fixture(monkeypatch, db):
             False
             if user is None
             else (
-                hasattr(user, "groups")
-                and (
-                    user.groups.filter(name=group).exists()
-                    or getattr(user, "is_superuser", False)
-                )
+                    hasattr(user, "groups")
+                    and (
+                            user.groups.filter(name=group).exists()
+                            or getattr(user, "is_superuser", False)
+                    )
             )
         ),
     )
-    monkeypatch.setattr("comedores.tasks.AsyncSendComedorToGestionar.start", lambda self: None)
+    monkeypatch.setattr(
+        "comedores.tasks.AsyncSendComedorToGestionar.start", lambda self: None
+    )
     return comedor
