@@ -13,7 +13,7 @@ def borrar_carpetas_logs_viejas(directory):
         print(f"La ruta especificada no existe: {directory}")
         return
 
-    limite_fecha = datetime.datetime.now() - datetime.timedelta(days=7
+    limite_fecha = datetime.datetime.now() - datetime.timedelta(days=7)
     for carpeta in os.listdir(directory):
         carpeta_path = os.path.join(directory, carpeta)
 
