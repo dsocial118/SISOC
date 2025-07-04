@@ -95,16 +95,6 @@ urlpatterns = [
         name="comedor_intervencion_ver",
     ),
     path(
-        "comedores/nomina/ver/<pk>",
-        group_required(["Comedores Nomina Ver"])(NominaDetailView.as_view()),
-        name="nomina_ver",
-    ),
-    path(
-        "comedores/nomina/crear/<pk>",
-        group_required(["Comedores Nomina Crear"])(NominaCreateView.as_view()),
-        name="nomina_crear",
-    ),
-    path(
         "comedores/intervencion/crear/<pk>",
         group_required(["Comedores Intervencion Crear"])(
             IntervencionCreateView.as_view()
@@ -119,19 +109,9 @@ urlpatterns = [
         name="comedores_intervencion_editar",
     ),
     path(
-        "comedores/nomina/editar/<pk>/<pk2>",
-        group_required(["Comedores Nomina Editar"])(NominaUpdateView.as_view()),
-        name="nomina_editar",
-    ),
-    path(
         "comedores/intervencion/borrar/<int:comedor_id>/<int:intervencion_id>/",
         group_required(["Comedores Nomina Borrar"])(IntervencionDeleteView.as_view()),
         name="comedor_intervencion_borrar",
-    ),
-    path(
-        "comedores/nomina/borrar/<pk>/<pk2>",
-        group_required(["Comedores Nomina Borrar"])(NominaDeleteView.as_view()),
-        name="nomina_borrar",
     ),
     path(
         "comedores/dupla/asignar/<pk>",
@@ -159,5 +139,25 @@ urlpatterns = [
             IntervencionDetailIndividualView.as_view()
         ),
         name="intervencion_detalle",
+    ),
+    path(
+        "comedores/<int:pk>/nomina/",
+        group_required(["Comedores Nomina Ver"])(NominaDetailView.as_view()),
+        name="nomina_ver",
+    ),
+    path(
+        "comedores/<int:pk>/nomina/crear/",
+        group_required(["Comedores Nomina Crear"])(NominaCreateView.as_view()),
+        name="nomina_crear",
+    ),
+    path(
+        "comedores/<int:pk>/nomina/<int:pk2>/editar/",
+        group_required(["Comedores Nomina Editar"])(NominaUpdateView.as_view()),
+        name="nomina_editar",
+    ),
+    path(
+        "comedores/<int:pk>/nomina/<int:pk2>/eliminar/",
+        group_required(["Comedores Nomina Borrar"])(NominaDeleteView.as_view()),
+        name="nomina_borrar",
     ),
 ]

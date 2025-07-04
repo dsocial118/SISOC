@@ -142,6 +142,7 @@ INSTALLED_APPS = [
     "relevamientos",
     "rendicioncuentasfinal",
     "rendicioncuentasmensual",
+    "centrodefamilia",
 ]
 
 # Definición del middleware utilizado por el proyecto
@@ -226,19 +227,15 @@ LOGGING = {
         },
         "error_only": {
             "()": "django.utils.log.CallbackFilter",
-            "callback": lambda r: r.levelno >= logging.ERROR,
+            "callback": lambda r: r.levelno == logging.ERROR,
         },
         "warning_only": {
             "()": "django.utils.log.CallbackFilter",
-            "callback": lambda r: r.levelno >= logging.WARNING,
-        },
-        "debug_only": {
-            "()": "django.utils.log.CallbackFilter",
-            "callback": lambda r: r.levelno == logging.DEBUG,
+            "callback": lambda r: r.levelno == logging.WARNING,
         },
         "critical_only": {
             "()": "django.utils.log.CallbackFilter",
-            "callback": lambda r: r.levelno >= logging.CRITICAL,
+            "callback": lambda r: r.levelno == logging.CRITICAL,
         },
     },
     "formatters": {
@@ -273,13 +270,6 @@ LOGGING = {
             "filename": str(BASE_DIR / "logs/warning.log"),
             "formatter": "verbose",
         },
-        "debug_file": {
-            "level": "DEBUG",
-            "filters": ["debug_only"],
-            "class": "config.utils.DailyFileHandler",
-            "filename": str(BASE_DIR / "logs/debug.log"),
-            "formatter": "verbose",
-        },
         "critical_file": {
             "level": "CRITICAL",
             "filters": ["critical_only"],
@@ -294,7 +284,6 @@ LOGGING = {
                 "info_file",
                 "error_file",
                 "warning_file",
-                "debug_file",
                 "critical_file",
             ],
             "level": "DEBUG",
@@ -333,12 +322,22 @@ DEBUG_TOOLBAR_CONFIG = {
         True if DEBUG else False  # pylint: disable=simplifiable-if-expression
     )
 }
-# Configuración del HSTS para evitar conflictos en AWS previamente configurados
-SECURE_HSTS_SECONDS = None
-SECURE_HSTS_INCLUDE_SUBDOMAINS = False
-SECURE_SSL_REDIRECT = False
-SESSION_COOKIE_SECURE = False
-CSRF_COOKIE_SECURE = False
+
+if DEBUG:
+    # Configuración para desarrollo
+    SECURE_HSTS_SECONDS = 0
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+else:
+    # Configuración para producción
+    SECURE_HSTS_SECONDS = 31536000  # 1 año
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
 
 # Configuracion de Django Rest Framework
 REST_FRAMEWORK = {

@@ -1,0 +1,141 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Centros de Familia{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'centro_list' %}">Centro de Familia</a>
+        </li>
+        <li class="breadcrumb-item active">Listar</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <h2 class="text-center display-4 mb-4">Buscar Centro</h2>
+    <form method="GET">
+        <div class="row">
+            <div class="col-md-10 offset-md-1">
+                <div class="form-group">
+                    <div class="input-group input-group-lg">
+                        <input type="search"
+                               class="form-control form-control-lg"
+                               placeholder="Buscar por nombre, dirección o tipo"
+                               name="busqueda"
+                               value="{{ request.GET.busqueda }}" />
+                        <div class="input-group-append">
+                            <button type="submit" class="btn btn-lg btn-primary">
+                                <i class="fa fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+    <div class="row mt-3">
+        <div class="col-12 text-center">
+            <a href="{% url 'centro_list' %}"
+               class="btn btn-secondary btn-lg d-block d-sm-inline mt-2">Resetear</a>
+            <a href="{% url 'centro_create' %}"
+               class="btn btn-primary btn-lg d-block d-sm-inline mt-2 mr-2">Agregar</a>
+        </div>
+    </div>
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <table class="table table-bordered table-striped projects">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Tipo</th>
+                                <th>Dirección</th>
+                                <th>telefono / celular</th>
+                                <th>Estado</th>
+                                <th class="notexport" style="width: 15%">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for centro in centros %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'centro_detail' centro.id %}"
+                                           class="font-weight-bold link-handler"
+                                           title="Ver detalles">{{ centro.nombre }}</a>
+                                    </td>
+                                    <td>{{ centro.get_tipo_display }}</td>
+                                    <td>{{ centro.domicilio_sede }}</td>
+                                    <td>{{ centro.telefono }} / {{ centro.celular }}</td>
+                                    <td>
+                                        {% if centro.activo %}
+                                            <span class="badge badge-success">Activo</span>
+                                        {% else %}
+                                            <span class="badge badge-danger">Inactivo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'centro_detail' centro.id %}"
+                                               class="btn btn-primary btn-sm">Ver</a>
+                                            <a href="{% url 'centro_update' centro.id %}"
+                                               class="btn btn-primary btn-sm">Editar</a>
+                                            <form method="post"
+                                                  action="{% url 'centro_delete' centro.id %}"
+                                                  style="display:inline">
+                                                {% csrf_token %}
+                                                <button type="submit"
+                                                        class="btn btn-danger btn-sm"
+                                                        onclick="return confirm('¿Estás seguro de que deseas eliminar este centro? Esta acción no se puede deshacer.');">
+                                                    Eliminar
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center">No se encontraron centros.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% if is_paginated %}
+                        <div class="mt-2">
+                            <ul class="pagination">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a href="?page={{ page_obj.previous_page_number }}" class="page-link">Volver</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">Volver</span>
+                                    </li>
+                                {% endif %}
+                                {% for i in page_obj.paginator.page_range %}
+                                    {% if page_obj.number == i %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ i }}</span>
+                                        </li>
+                                    {% elif i > page_obj.number|add:'-5' and i < page_obj.number|add:'5' %}
+                                        <li class="page-item">
+                                            <a href="?page={{ i }}" class="page-link">{{ i }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a href="?page={{ page_obj.next_page_number }}" class="page-link">Continuar</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">Continuar</span>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block customJS %}{% endblock %}

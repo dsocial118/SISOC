@@ -1,7 +1,9 @@
 import re
 from typing import Union
 
-from django.db.models import Q
+from django.db.models import Q, Count
+from django.core.paginator import Paginator
+
 
 from relevamientos.models import Relevamiento
 from comedores.forms.comedor_form import ImagenComedorForm
@@ -49,37 +51,13 @@ class ComedorService:
         return comedor
 
     @staticmethod
-    def detalle_de_nomina(kwargs):
-        nomina = Nomina.objects.filter(comedor=kwargs["pk"])
-        cantidad_nomina_m = Nomina.objects.filter(
-            comedor=kwargs["pk"], sexo__sexo="Masculino"
-        ).count()
-        cantidad_nomina_f = Nomina.objects.filter(
-            comedor=kwargs["pk"], sexo__sexo="Femenino"
-        ).count()
-        espera = Nomina.objects.filter(
-            comedor=kwargs["pk"], estado__nombre="Lista de espera"
-        ).count()
-        cantidad_intervenciones = Nomina.objects.filter(comedor=kwargs["pk"]).count()
-        return (
-            nomina,
-            cantidad_nomina_m,
-            cantidad_nomina_f,
-            espera,
-            cantidad_intervenciones,
-        )
-
-    @staticmethod
     def borrar_imagenes(post):
-        pattern = re.compile(
-            r"^imagen_ciudadano-borrar-(\d+)$"
-        )  # Patron para encontrar los campos de imagenes a borrar
+        pattern = re.compile(r"^imagen_ciudadano-borrar-(\d+)$")
         imagenes_ids = []
-        # Itera sobre los datos POST para encontrar los campos coincidentes con el patron
         for key in post:
             match = pattern.match(key)
             if match:
-                imagen_id = match.group(1)  # Extrae el id al final del nombre del campo
+                imagen_id = match.group(1)
                 imagenes_ids.append(imagen_id)
 
         ImagenComedor.objects.filter(id__in=imagenes_ids).delete()
@@ -165,9 +143,9 @@ class ComedorService:
         if "documento" in referente_data:
             referente_data["documento"] = referente_data["documento"].replace(".", "")
 
-        if referente_instance is None:  # Crear referente
+        if referente_instance is None:
             referente_instance = Referente.objects.create(**referente_data)
-        else:  # Actualizar referente
+        else:
             for field, value in referente_data.items():
                 setattr(referente_instance, field, value)
             referente_instance.save(update_fields=referente_data.keys())
@@ -189,7 +167,6 @@ class ComedorService:
     def get_presupuestos(comedor_id: int):
         beneficiarios = Relevamiento.objects.filter(comedor=comedor_id).first()
 
-        # Inicializamos contadores
         count = {
             "desayuno": 0,
             "almuerzo": 0,
@@ -217,7 +194,6 @@ class ComedorService:
 
         count_beneficiarios = sum(count.values())
 
-        # Cálculo de valores
         valores_comida = ValorComida.objects.filter(tipo__in=count.keys()).values(
             "tipo", "valor"
         )
@@ -234,4 +210,38 @@ class ComedorService:
             valor_desayuno,
             valor_almuerzo,
             valor_merienda,
+        )
+
+    @staticmethod
+    def detalle_de_nomina(comedor_pk, page=1, per_page=100):
+        qs_nomina = Nomina.objects.filter(comedor_id=comedor_pk).select_related(
+            "ciudadano__sexo", "estado"
+        )
+
+        resumen = qs_nomina.aggregate(
+            cantidad_nomina_m=Count("id", filter=Q(ciudadano__sexo__sexo="Masculino")),
+            cantidad_nomina_f=Count("id", filter=Q(ciudadano__sexo__sexo="Femenino")),
+            espera=Count("id", filter=Q(estado__nombre="Lista de espera")),
+            cantidad_total=Count("id"),
+        )
+
+        paginator = Paginator(
+            qs_nomina.only(
+                "fecha",
+                "ciudadano__apellido",
+                "ciudadano__nombre",
+                "ciudadano__sexo",
+                "ciudadano__documento",
+                "estado",
+            ),
+            per_page,
+        )
+        page_obj = paginator.get_page(page)
+
+        return (
+            page_obj,
+            resumen["cantidad_nomina_m"],
+            resumen["cantidad_nomina_f"],
+            resumen["espera"],
+            resumen["cantidad_total"],
         )

@@ -362,7 +362,6 @@
                     </div>
                 </div>
                 <div class="card-body p-0" style="height: 400px;">
-                    <!-- Define una altura fija -->
                     <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d26285617.576453168!2d-84.86622600167856!3d-36.46496148004889!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95bccaf5f5fdc667%3A0x3d2f77992af00fa8!2sArgentina!5e0!3m2!1sen!2sar!4v1714519306937!5m2!1sen!2sar"
                             style="border: 0;
                                    width: 100%;
@@ -553,12 +552,6 @@
                             <div class="comment-text comment-text d-flex flex-column">
                                 Número de Expediente
                                 <span class="username">{{ admision.num_expediente |default_if_none:"-" }}</span>
-                            </div>
-                        </div>
-                        <div class="nav-item col-4 d-flex mb-3">
-                            <div class="comment-text comment-text d-flex flex-column">
-                                Número de IF
-                                <span class="username">{{ admision.num_if |default_if_none:"-" }}</span>
                             </div>
                         </div>
                         <div class="nav-item col-4 d-flex mb-3">
