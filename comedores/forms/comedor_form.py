@@ -1,8 +1,9 @@
+import re
 from django import forms
 from django.core.exceptions import ValidationError
-import re
 
 
+from ciudadanos.models import Ciudadano
 from comedores.models import (
     Comedor,
     Referente,
@@ -35,7 +36,7 @@ class ReferenteForm(forms.ModelForm):
             return mail
 
         email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
-        if not isinstance(mail, str):  # Asegurarse de que sea una cadena
+        if not isinstance(mail, str):
             raise ValidationError("El correo electrónico debe ser una cadena válida.")
         if not re.match(email_regex, mail):
             raise ValidationError("Por favor, ingresa un correo electrónico válido.")
@@ -47,52 +48,19 @@ class ReferenteForm(forms.ModelForm):
 
 
 class NominaForm(forms.ModelForm):
+    ciudadano = forms.ModelChoiceField(
+        queryset=Ciudadano.objects.all(),
+        label="Ciudadano",
+        widget=forms.Select(attrs={"class": "form-control select2"}),
+        help_text="Selecciona un ciudadano del legajo",
+    )
+
     class Meta:
         model = Nomina
-        fields = "__all__"
+        fields = ["ciudadano", "estado", "observaciones"]
         widgets = {
-            "nombre": forms.TextInput(
-                attrs={
-                    "class": "form-control",  # Clase CSS para estilos de Bootstrap o personalizados
-                    "placeholder": "Nombre",  # Placeholder para el campo
-                }
-            ),
-            "apellido": forms.TextInput(
-                attrs={
-                    "class": "form-control",
-                    "placeholder": "Apellido",
-                }
-            ),
-            "dni": forms.TextInput(
-                attrs={
-                    "class": "form-control",
-                    "placeholder": "Documento de Identidad",
-                }
-            ),
-            "sexo": forms.Select(
-                attrs={
-                    "class": "form-control",
-                }
-            ),
-            "estado": forms.Select(
-                attrs={
-                    "class": "form-control",
-                }
-            ),
-            "detalles": forms.Textarea(
-                attrs={
-                    "class": "form-control",
-                    "rows": 3,
-                    "placeholder": "Observaciones",
-                }
-            ),
-        }
-        labels = {
-            "estado": "Estado",
-            "nombre": "Nombre",
-            "apellido": "Apellido",
-            "dni": "Documento de Identidad",
-            "sexo": "Sexo",
+            "estado": forms.Select(attrs={"class": "form-control"}),
+            "observaciones": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
         }
 
 
@@ -134,12 +102,8 @@ class ComedorForm(forms.ModelForm):
             )
         else:
             self.fields["provincia"].queryset = Provincia.objects.all()
-            self.fields["municipio"].queryset = (
-                Municipio.objects.none()
-            )  # Evitar la carga total de las instancias
-            self.fields["localidad"].queryset = (
-                Localidad.objects.none()
-            )  # Evitar la carga total de las instancias
+            self.fields["municipio"].queryset = Municipio.objects.none()
+            self.fields["localidad"].queryset = Localidad.objects.none()
 
         if municipio:
             self.fields["municipio"].initial = municipio

@@ -1,4 +1,3 @@
-# FIXME:
 # import pytest
 # from comedores.serializers.relevamiento_serializer import RelevamientoSerializer
 

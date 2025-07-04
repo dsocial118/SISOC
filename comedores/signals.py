@@ -28,7 +28,7 @@ def send_comedor_to_gestionar(sender, instance, created, **kwargs):
 
 @receiver(pre_save, sender=Comedor)
 def update_comedor_in_gestionar(sender, instance, **kwargs):
-    if instance.pk:  # Solo para updates
+    if instance.pk:
         previous_instance = sender.objects.get(pk=instance.pk)
         for field in instance._meta.fields:
             field_name = field.name
@@ -36,7 +36,7 @@ def update_comedor_in_gestionar(sender, instance, **kwargs):
             old_value = getattr(previous_instance, field_name)
 
             if field_name == "foto_legajo" and not new_value:
-                continue  # Ignorar cambios en foto_legajo si está vacío
+                continue
 
             if new_value != old_value:
                 AsyncSendComedorToGestionar(instance.id).start()

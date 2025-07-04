@@ -4,6 +4,7 @@ from comedores.models import Comedor
 from django.core.exceptions import ValidationError
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 class EstadoAdmision(models.Model):
@@ -52,6 +53,9 @@ class Admision(models.Model):
     enviado_legales = models.BooleanField(
         default=False, verbose_name="¿Enviado a legales?"
     )
+    enviado_acompaniamiento = models.BooleanField(
+        default=False, verbose_name="¿Enviado a Acompañamiento?"
+    )
     estado_legales = models.CharField(
         max_length=40,
         choices=ESTADOS_LEGALES,
@@ -62,6 +66,14 @@ class Admision(models.Model):
     observaciones = models.TextField(
         blank=True, null=True, verbose_name="Observaciones"
     )
+
+    @property
+    def tipo_informe(self):
+        if self.tipo_convenio_id == 1:
+            return "base"
+        elif self.tipo_convenio_id in [2, 3]:
+            return "juridico"
+        return None
 
     class Meta:
         indexes = [
@@ -102,7 +114,7 @@ class ArchivoAdmision(models.Model):
     admision = models.ForeignKey(Admision, on_delete=models.CASCADE)
     documentacion = models.ForeignKey(Documentacion, on_delete=models.CASCADE)
     archivo = models.FileField(
-        upload_to="comedor/admisiones_archivos/", null=True, blank=True
+        upload_to="admisiones/admisiones_archivos/", null=True, blank=True
     )
     estado = models.CharField(
         max_length=20,
@@ -133,36 +145,45 @@ class ArchivoAdmision(models.Model):
         return f"{self.admision.id} - {self.documentacion.nombre}"
 
 
-class InformeTecnicoBase(models.Model):
+class InformeTecnico(models.Model):
     ESTADOS = [
         ("Para revision", "Para revisión"),
         ("Validado", "Validado"),
         ("A subsanar", "A subsanar"),
     ]
+    TIPO_CHOICES = [
+        ("base", "Base"),
+        ("juridico", "Jurídico"),
+    ]
+
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
+    # Campos comunes de los informes tecnicos.
 
     admision = models.ForeignKey(Admision, on_delete=models.SET_NULL, null=True)
-    expediente_nro = models.CharField(max_length=100)
+    expediente_nro = models.CharField("Número Expediente", max_length=100)
 
-    nombre_org = models.CharField(
+    nombre_organizacion = models.CharField(
         "Nombre de la Organización Solicitante", max_length=255
     )
-    domicilio_org = models.CharField(
+    domicilio_organizacion = models.CharField(
         "Domicilio de la Organización Solicitante", max_length=255
     )
-    localidad_org = models.CharField(
+    localidad_organizacion = models.CharField(
         "Localidad de la Organización Solicitante", max_length=255
     )
-    partido_org = models.CharField(
+    partido_organizacion = models.CharField(
         "Partido de la Organización Solicitante", max_length=255
     )
-    provincia_org = models.CharField(
+    provincia_organizacion = models.CharField(
         "Provincia de la Organización Solicitante", max_length=255
     )
-    telefono_org = models.CharField(
+    telefono_organizacion = models.CharField(
         "Teléfono de la Organización Solicitante", max_length=50
     )
-    mail_org = models.EmailField("Mail de la Organización Solicitante")
-    cuit_org = models.CharField("CUIT de la Organización Solicitante", max_length=20)
+    mail_organizacion = models.EmailField("Mail de la Organización Solicitante")
+    cuit_organizacion = models.CharField(
+        "CUIT de la Organización Solicitante", max_length=20
+    )
 
     representante_nombre = models.CharField(
         "Nombre y Apellido del Representante", max_length=255
@@ -173,7 +194,11 @@ class InformeTecnicoBase(models.Model):
     tipo_espacio = models.CharField(
         "Tipo de Espacio Comunitario",
         max_length=50,
-        choices=[("Comedor", "Comedor"), ("Merendero", "Merendero")],
+        choices=[
+            ("Comedor", "Comedor"),
+            ("Merendero", "Merendero"),
+            ("Comedor y Merendero", "Comedor y Merendero"),
+        ],
     )
     nombre_espacio = models.CharField("Nombre del Comedor/Merendero", max_length=255)
     domicilio_espacio = models.CharField(
@@ -188,130 +213,6 @@ class InformeTecnicoBase(models.Model):
         "Provincia del Comedor/Merendero", max_length=255
     )
 
-    responsable_tarjeta_nombre = models.CharField(
-        "Nombre del Responsable de la Tarjeta", max_length=255
-    )
-    responsable_tarjeta_dni = models.CharField(
-        "DNI del Responsable de la Tarjeta", max_length=20
-    )
-    responsable_tarjeta_domicilio = models.CharField(
-        "Domicilio del Responsable", max_length=255
-    )
-    responsable_tarjeta_localidad = models.CharField(
-        "Localidad del Responsable", max_length=255
-    )
-    responsable_tarjeta_provincia = models.CharField(
-        "Provincia del Responsable", max_length=255
-    )
-    responsable_tarjeta_telefono = models.CharField(
-        "Teléfono del Responsable", max_length=50
-    )
-    responsable_tarjeta_mail = models.EmailField("Mail del Responsable")
-
-    declaracion_jurada = models.CharField(
-        "Declaración Jurada sobre recepción de subsidios nacionales", max_length=255
-    )
-    constancia_inexistencia_subsidios = models.CharField(
-        "Constancia de inexistencia de percepción de otros subsidios nacionales",
-        max_length=255,
-    )
-
-    organizacion_avalista_1 = models.CharField(
-        "Organización Avalista 1", max_length=255
-    )
-    organizacion_avalista_2 = models.CharField(
-        "Organización Avalista 2", max_length=255
-    )
-    material_difusion = models.TextField(
-        "Material de difusión vinculado", blank=True, null=True
-    )
-
-    prestaciones_desayuno = models.IntegerField(
-        "Cantidad de Prestaciones Mensuales Desayuno", default=0
-    )
-    prestaciones_almuerzo = models.IntegerField(
-        "Cantidad de Prestaciones Mensuales Almuerzo", default=0
-    )
-    prestaciones_merienda = models.IntegerField(
-        "Cantidad de Prestaciones Mensuales Merienda", default=0
-    )
-    prestaciones_cena = models.IntegerField(
-        "Cantidad de Prestaciones Mensuales Cena", default=0
-    )
-    prestaciones_totales = models.IntegerField(
-        "Total Mensual de Prestaciones", default=0
-    )
-
-    estado = models.CharField(
-        max_length=20,
-        choices=ESTADOS,
-        default="Para revision",
-        verbose_name="Estado de la Solicitud",
-    )
-
-    def __str__(self):
-        return f"{self.nombre_org} - {self.expediente_nro}"
-
-
-class InformeTecnicoJuridico(models.Model):
-    ESTADOS = [
-        ("Para revision", "Para revisión"),
-        ("Validado", "Validado"),
-        ("A subsanar", "A subsanar"),
-    ]
-
-    admision = models.ForeignKey(Admision, on_delete=models.SET_NULL, null=True)
-    expediente_nro = models.CharField("Expediente Nro.", max_length=100)
-
-    # Datos de la organización solicitante
-    nombre_org = models.CharField(
-        "Nombre de la Organización Solicitante", max_length=255
-    )
-    domicilio_org = models.CharField(
-        "Domicilio de la Organización Solicitante", max_length=255
-    )
-    localidad_org = models.CharField(
-        "Localidad de la Organización Solicitante", max_length=255
-    )
-    partido_org = models.CharField(
-        "Partido de la Organización Solicitante", max_length=255
-    )
-    provincia_org = models.CharField(
-        "Provincia de la Organización Solicitante", max_length=255
-    )
-    telefono_org = models.CharField(
-        "Teléfono de la Organización Solicitante", max_length=50
-    )
-    mail_org = models.EmailField("Mail de la Organización Solicitante")
-    cuit_org = models.CharField("CUIT de la Organización Solicitante", max_length=20)
-
-    # Representante
-    representante_nombre = models.CharField(
-        "Nombre y Apellido del Representante", max_length=255
-    )
-    representante_cargo = models.CharField("Cargo del Representante", max_length=100)
-    representante_dni = models.CharField("DNI del Representante", max_length=20)
-
-    # Espacio comunitario
-    tipo_espacio = models.CharField(
-        "Tipo de Espacio Comunitario",
-        max_length=50,
-        choices=[("Comedor", "Comedor"), ("Merendero", "Merendero")],
-    )
-    nombre_espacio = models.CharField("Nombre del Comedor/Merendero", max_length=255)
-    domicilio_espacio = models.CharField(
-        "Domicilio del Comedor/Merendero", max_length=255
-    )
-    barrio_espacio = models.CharField("Barrio del Comedor/Merendero", max_length=255)
-    localidad_espacio = models.CharField(
-        "Localidad del Comedor/Merendero", max_length=255
-    )
-    partido_espacio = models.CharField("Partido del Comedor/Merendero", max_length=255)
-    provincia_espacio = models.CharField(
-        "Provincia del Comedor/Merendero", max_length=255
-    )
-
-    # Responsable de la tarjeta
     responsable_tarjeta_nombre = models.CharField(
         "Nombre del Responsable de la Tarjeta", max_length=255
     )
@@ -331,64 +232,77 @@ class InformeTecnicoJuridico(models.Model):
         "Teléfono del Responsable de la Tarjeta", max_length=50
     )
     responsable_tarjeta_mail = models.EmailField("Mail del Responsable de la Tarjeta")
-
-    # Nota GDE y constancias
     nota_gde_if = models.CharField("Nota GDE IF", max_length=255)
-    personas_desayuno_letras = models.CharField(
-        "Cantidad Personas Desayuno (en letras)", max_length=255
-    )
-    dias_desayuno_letras = models.CharField(
-        "Cantidad Días Desayuno (en letras)", max_length=255
-    )
-    personas_almuerzo_letras = models.CharField(
-        "Cantidad Personas Almuerzo (en letras)", max_length=255
-    )
-    dias_almuerzo_letras = models.CharField(
-        "Cantidad Días Almuerzo (en letras)", max_length=255
-    )
-    personas_merienda_letras = models.CharField(
-        "Cantidad Personas Merienda (en letras)", max_length=255
-    )
-    dias_merienda_letras = models.CharField(
-        "Cantidad Días Merienda (en letras)", max_length=255
-    )
-    personas_cena_letras = models.CharField(
-        "Cantidad Personas Cena (en letras)", max_length=255
-    )
-    dias_cena_letras = models.CharField(
-        "Cantidad Días Cena (en letras)", max_length=255
-    )
-
     constancia_subsidios_dnsa = models.CharField(
         "Constancia IF RTA DNSA sobre subsidios", max_length=255
     )
     constancia_subsidios_pnud = models.CharField(
         "Constancia IF RTA PNUD sobre subsidios", max_length=255
     )
-    validacion_rncm_if = models.CharField(
-        "Validación Registro Nacional Comedores/Merenderos (IF)", max_length=255
-    )
-
-    partido_destinataria = models.CharField(
+    partido_poblacion_destinataria = models.CharField(
         "Partido donde se ubica la población destinataria", max_length=255
     )
-    provincia_destinataria = models.CharField(
+    provincia_poblacion_destinataria = models.CharField(
         "Provincia donde se ubica la población destinataria", max_length=255
+    )
+    prestaciones_desayuno_numero = models.IntegerField(
+        "Cantidad de Prestaciones Semanales Desayuno - En números (Solicitante)",
+        default=0,
+    )
+    prestaciones_almuerzo_numero = models.IntegerField(
+        "Cantidad de Prestaciones Semanales Almuerzo - En números (Solicitante)",
+        default=0,
+    )
+    prestaciones_merienda_numero = models.IntegerField(
+        "Cantidad de Prestaciones Semanales Merienda - En números (Solicitante)",
+        default=0,
+    )
+    prestaciones_cena_numero = models.IntegerField(
+        "Cantidad de Prestaciones Semanales Cena - En números (Solicitante)", default=0
+    )
+
+    prestaciones_desayuno_letras = models.CharField(
+        "Cantidad de Prestaciones Semanales Desayuno - En letras (Solicitante)",
+        max_length=255,
+    )
+    prestaciones_almuerzo_letras = models.CharField(
+        "Cantidad de Prestaciones Semanales Almuerzo - En letras (Solicitante)",
+        max_length=255,
+    )
+    prestaciones_merienda_letras = models.CharField(
+        "Cantidad de Prestaciones Semanales Merienda - En letras (Solicitante)",
+        max_length=255,
+    )
+    prestaciones_cena_letras = models.CharField(
+        "Cantidad de Prestaciones Semanales Cena - En letras (Solicitante)",
+        max_length=255,
     )
     if_relevamiento = models.CharField("IF de relevamiento territorial", max_length=255)
 
-    # Prestaciones aprobadas
-    prestaciones_aprobadas_desayuno = models.IntegerField(
-        "Cantidad de prestaciones aprobadas Desayuno (Lunes a Domingo)", default=0
+    # Exclusivos de organizacion de Base
+    declaracion_jurada_recepcion_subsidios = models.CharField(
+        "Declaración Jurada sobre recepción de subsidios nacionales", max_length=255
     )
-    prestaciones_aprobadas_almuerzo = models.IntegerField(
-        "Cantidad de prestaciones aprobadas Almuerzo (Lunes a Domingo)", default=0
+    constancia_inexistencia_percepcion_otros_subsidios = models.CharField(
+        "Constancia de inexistencia de percepción de otros subsidios nacionales",
+        max_length=255,
     )
-    prestaciones_aprobadas_merienda = models.IntegerField(
-        "Cantidad de prestaciones aprobadas Merienda (Lunes a Domingo)", default=0
+    organizacion_avalista_1 = models.CharField(
+        "Organización Avalista 1", max_length=255
     )
-    prestaciones_aprobadas_cena = models.IntegerField(
-        "Cantidad de prestaciones aprobadas Cena (Lunes a Domingo)", default=0
+    organizacion_avalista_2 = models.CharField(
+        "Organización Avalista 2", max_length=255
+    )
+    material_difusion_vinculado = models.CharField(
+        "Material de difusión vinculado", max_length=255
+    )
+
+    # Exclusivos de organizacion juridica
+    validacion_registro_nacional = models.CharField(
+        "Validación Registro Nacional Comedores/Merenderos", max_length=255
+    )
+    IF_relevamiento_territorial = models.CharField(
+        "IF de relevamiento territorial", max_length=255
     )
 
     estado = models.CharField(
@@ -399,7 +313,102 @@ class InformeTecnicoJuridico(models.Model):
     )
 
     def __str__(self):
-        return f"{self.nombre_org} - {self.expediente_nro}"
+        return f"{self.nombre_organizacion} - {self.expediente_nro}"
+
+
+class CampoASubsanar(models.Model):
+    informe = models.ForeignKey(InformeTecnico, on_delete=models.CASCADE)
+    campo = models.CharField(max_length=100)
+
+
+class ObservacionGeneralInforme(models.Model):
+    informe = models.OneToOneField(InformeTecnico, on_delete=models.CASCADE)
+    texto = models.TextField()
+
+
+class Anexo(models.Model):
+    admision = models.ForeignKey(Admision, on_delete=models.SET_NULL, null=True)
+
+    expediente = models.CharField("Expediente", max_length=100, null=True, blank=True)
+    efector = models.CharField(
+        "Efector (nombre)", max_length=100, null=True, blank=True
+    )
+    tipo_espacio = models.CharField(
+        "Tipo (Comedor / Merendero)",
+        max_length=50,
+        choices=[
+            ("Comedor", "Comedor"),
+            ("Merendero", "Merendero"),
+            ("Comedor y Merendero", "Comedor y Merendero"),
+        ],
+        null=True,
+        blank=True,
+    )
+    domicilio = models.CharField("Domicilio", max_length=150, null=True, blank=True)
+    mail = models.EmailField("Correo Electrónico", null=True, blank=True)
+    responsable_apellido = models.CharField(
+        "Apellido", max_length=150, null=True, blank=True
+    )
+    responsable_nombre = models.CharField(
+        "Nombre", max_length=150, null=True, blank=True
+    )
+    responsable_cuit = models.BigIntegerField(
+        "CUIT / CUIL",
+        validators=[MinValueValidator(10**10), MaxValueValidator(99999999999)],
+        null=True,
+        blank=True,
+    )
+    responsable_domicilio = models.CharField(
+        "Domicilio", max_length=150, null=True, blank=True
+    )
+    responsable_mail = models.EmailField("Correo Electrónico", null=True, blank=True)
+    total_acreditaciones = models.CharField(
+        "Total de acreditaciones a Producir", max_length=150, null=True, blank=True
+    )
+    plazo_ejecucion = models.CharField(
+        "Plazo de Ejecución", max_length=150, null=True, blank=True
+    )
+
+    desayuno_lunes = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    desayuno_martes = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    desayuno_miercoles = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    desayuno_jueves = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    desayuno_viernes = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    desayuno_sabado = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    desayuno_domingo = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+
+    almuerzo_lunes = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    almuerzo_martes = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    almuerzo_miercoles = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    almuerzo_jueves = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    almuerzo_viernes = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    almuerzo_sabado = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    almuerzo_domingo = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+
+    merienda_lunes = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    merienda_martes = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    merienda_miercoles = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    merienda_jueves = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    merienda_viernes = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    merienda_sabado = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    merienda_domingo = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+
+    cena_lunes = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    cena_martes = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    cena_miercoles = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    cena_jueves = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    cena_viernes = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    cena_sabado = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    cena_domingo = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+
+    def __str__(self):
+        return f"Anexo #{self.id}"
 
 
 class InformeTecnicoPDF(models.Model):
@@ -411,7 +420,7 @@ class InformeTecnicoPDF(models.Model):
     )
     informe_id = models.PositiveIntegerField()
     comedor = models.ForeignKey(Comedor, on_delete=models.SET_NULL, null=True)
-    archivo = models.FileField(upload_to="informes_tecnicos/")
+    archivo = models.FileField(upload_to="admisiones/informes_tecnicos/")
     creado = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -432,31 +441,33 @@ class AdmisionHistorial(models.Model):
         return f"{self.campo} cambiado por {self.usuario} el {self.fecha.strftime('%d/%m/%Y %H:%M')}"
 
 
-class FormularioRESO(models.Model):
+class FormularioProyectoDisposicion(models.Model):
     admision = models.ForeignKey(
-        "Admision", on_delete=models.CASCADE, related_name="formularios_reso"
+        "Admision", on_delete=models.CASCADE, related_name="proyecto_disposicion"
     )
-    pregunta1 = models.CharField(max_length=255, blank=True, null=True)
-    pregunta2 = models.CharField(max_length=255, blank=True, null=True)
-    pregunta3 = models.CharField(max_length=255, blank=True, null=True)
+    tipo = models.CharField(
+        max_length=20,
+        choices=[("incorporacion", "Incorporación"), ("renovacion", "Renovación")],
+    )
+    archivo = models.FileField(
+        upload_to="admisiones/formularios_disposicion/", null=True
+    )
     creado = models.DateTimeField(auto_now_add=True)
     creado_por = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True
     )
 
     def __str__(self):
-        return f"Formulario RESO de {self.admision} por {self.creado_por}"
+        return f"Formulario Proyecto de Disposicion de {self.admision} por {self.creado_por}"
 
 
 class FormularioProyectoDeConvenio(models.Model):
     admision = models.ForeignKey(
         "Admision",
         on_delete=models.CASCADE,
-        related_name="formularios_proyecto_convenio",
+        related_name="proyecto_convenio",
     )
-    pregunta1 = models.CharField(max_length=255, blank=True, null=True)
-    pregunta2 = models.CharField(max_length=255, blank=True, null=True)
-    pregunta3 = models.CharField(max_length=255, blank=True, null=True)
+    archivo = models.FileField(upload_to="admisiones/formularios_convenio/", null=True)
     creado = models.DateTimeField(auto_now_add=True)
     creado_por = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True
@@ -473,9 +484,7 @@ class DocumentosExpediente(models.Model):
     nombre = models.CharField(max_length=255, blank=True, null=True)
     tipo = models.CharField(max_length=255, blank=True, null=True)
     value = models.CharField(max_length=255, blank=True, null=True)
-    archivo = models.FileField(
-        upload_to="comedor/admisiones_archivos/expediente", null=True, blank=True
-    )
+    archivo = models.FileField(upload_to="admisiones/expediente", null=True, blank=True)
     rectificar = models.BooleanField(default=False, verbose_name="Rectificar")
     observaciones = models.TextField(
         blank=True, null=True, verbose_name="Observaciones"
