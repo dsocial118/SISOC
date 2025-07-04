@@ -75,7 +75,7 @@ def relevamiento_crear_editar_ajax(request, pk):
             },
             status=200,
         )
-    except Exception as e:
+    except Exception:
         return JsonResponse({"error": "An internal error occurred."}, status=500)
 
 
