@@ -76,7 +76,7 @@ def relevamiento_crear_editar_ajax(request, pk):
             status=200,
         )
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+        return JsonResponse({"error": "An internal error occurred."}, status=500)
 
 
 @method_decorator(csrf_exempt, name="dispatch")
