@@ -1,15 +1,17 @@
 import os
 from typing import Any
-from django.contrib.auth.models import User
+
 from django.contrib import messages
+from django.contrib.auth.models import User
 from django.db.models.base import Model
 from django.forms import BaseModelForm
-from django.http import HttpResponse
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -18,7 +20,6 @@ from django.views.generic import (
     UpdateView,
     TemplateView,
 )
-
 
 from ciudadanos.models import CiudadanoPrograma, HistorialCiudadanoProgramas
 from comedores.forms.comedor_form import (
@@ -33,12 +34,49 @@ from comedores.models import (
     Observacion,
     Nomina,
 )
-
 from comedores.services.comedor_service import ComedorService
-from relevamientos.service import RelevamientoService
-
 from duplas.dupla_service import DuplaService
+from relevamientos.service import RelevamientoService
 from rendicioncuentasmensual.services import RendicionCuentaMensualService
+
+
+@require_POST
+def relevamiento_crear_editar_ajax(request, pk):
+    """Crear o editar un relevamiento de comedor vía AJAX.
+
+    Args:
+        request (HttpRequest): Petición que contiene los datos del relevamiento.
+        pk (int): ID del comedor asociado al relevamiento.
+
+    Returns:
+        JsonResponse: URL de redirección en caso de éxito o mensaje de error.
+    """
+    try:
+        if "territorial" in request.POST:
+            relevamiento = RelevamientoService.create_pendiente(request, pk)
+            messages.success(request, "Relevamiento territorial creado correctamente.")
+        elif "territorial_editar" in request.POST:
+            relevamiento = RelevamientoService.update_territorial(request)
+            messages.success(
+                request, "Relevamiento territorial actualizado correctamente."
+            )
+        else:
+            return JsonResponse({"error": "Acción no reconocida."}, status=400)
+
+        return JsonResponse(
+            {
+                "url": reverse(
+                    "relevamiento_detalle",
+                    kwargs={
+                        "pk": relevamiento.pk,
+                        "comedor_pk": relevamiento.comedor.pk,
+                    },
+                )
+            },
+            status=200,
+        )
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -231,39 +269,6 @@ class ComedorDetailView(DetailView):
         )
 
         return context
-
-    def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
-
-        is_new_relevamiento = "territorial" in request.POST
-        is_edit_relevamiento = "territorial_editar" in request.POST
-
-        if is_new_relevamiento or is_edit_relevamiento:
-            try:
-                relevamiento = None
-                if is_new_relevamiento:
-                    relevamiento = RelevamientoService.create_pendiente(
-                        request, self.object.id
-                    )
-
-                elif is_edit_relevamiento:
-                    relevamiento = RelevamientoService.update_territorial(request)
-
-                return redirect(
-                    reverse(
-                        "relevamiento_detalle",
-                        kwargs={
-                            "pk": relevamiento.pk,
-                            "comedor_pk": relevamiento.comedor.pk,
-                        },
-                    )
-                )
-            except Exception as e:
-                messages.error(request, f"Error al crear el relevamiento: {e}")
-                return redirect("comedor_detalle", pk=self.object.id)
-
-        else:
-            return redirect("comedor_detalle", pk=self.object.id)
 
 
 class AsignarDuplaListView(ListView):
