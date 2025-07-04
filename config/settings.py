@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Definición de entorno
-DEBUG = os.environ.get("DJANGO_DEBUG", default=False)
+DEBUG = os.environ.get("DJANGO_DEBUG", default=False) == "True"
 
 # Definición del directorio base del proyecto
 BASE_DIR = Path(__file__).resolve().parent.parent
