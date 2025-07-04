@@ -66,7 +66,6 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
                 self.fields["mail_organizacion"].initial = organizacion.email
                 self.fields["nombre_espacio"].initial = anexo.efector
                 self.fields["tipo_espacio"].initial = anexo.tipo_espacio
-                self.fields["tipo_espacio"].initial = anexo.tipo_espacio
                 self.fields["barrio_espacio"].initial = comedor.barrio
                 self.fields["localidad_espacio"].initial = comedor.localidad
                 self.fields["partido_espacio"].initial = comedor.partido
