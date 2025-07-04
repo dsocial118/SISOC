@@ -327,7 +327,7 @@ class ObservacionGeneralInforme(models.Model):
 
 
 class Anexo(models.Model):
-    admision = models.ForeignKey(Admision, on_delete=models.SET_NULL, null=True)
+    admision = models.OneToOneField(Admision, on_delete=models.SET_NULL, null=True)
 
     expediente = models.CharField("Expediente", max_length=100, null=True, blank=True)
     efector = models.CharField(
@@ -494,3 +494,21 @@ class DocumentosExpediente(models.Model):
 
     def __str__(self):
         return f"{self.admision.id}"
+
+
+class InformeComplementario(models.Model):
+    admision = models.ForeignKey(Admision, on_delete=models.CASCADE)
+    informe_tecnico = models.ForeignKey(InformeTecnico, on_delete=models.CASCADE)
+    pdf = models.FileField(upload_to="admisiones/informes_complementarios/", null=True)
+    creado = models.DateField(auto_now_add=True, null=True, blank=True)
+    creado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True
+    )
+
+
+class InformeComplementarioCampos(models.Model):
+    campo = models.CharField(max_length=255, blank=False, null=False)
+    value = models.CharField(max_length=255, blank=False, null=False)
+    informe_complementario = models.ForeignKey(
+        InformeComplementario, on_delete=models.CASCADE
+    )
