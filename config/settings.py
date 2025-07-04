@@ -227,19 +227,15 @@ LOGGING = {
         },
         "error_only": {
             "()": "django.utils.log.CallbackFilter",
-            "callback": lambda r: r.levelno >= logging.ERROR,
+            "callback": lambda r: r.levelno == logging.ERROR,
         },
         "warning_only": {
             "()": "django.utils.log.CallbackFilter",
-            "callback": lambda r: r.levelno >= logging.WARNING,
-        },
-        "debug_only": {
-            "()": "django.utils.log.CallbackFilter",
-            "callback": lambda r: r.levelno == logging.DEBUG,
+            "callback": lambda r: r.levelno == logging.WARNING,
         },
         "critical_only": {
             "()": "django.utils.log.CallbackFilter",
-            "callback": lambda r: r.levelno >= logging.CRITICAL,
+            "callback": lambda r: r.levelno == logging.CRITICAL,
         },
     },
     "formatters": {
@@ -274,13 +270,6 @@ LOGGING = {
             "filename": str(BASE_DIR / "logs/warning.log"),
             "formatter": "verbose",
         },
-        "debug_file": {
-            "level": "DEBUG",
-            "filters": ["debug_only"],
-            "class": "config.utils.DailyFileHandler",
-            "filename": str(BASE_DIR / "logs/debug.log"),
-            "formatter": "verbose",
-        },
         "critical_file": {
             "level": "CRITICAL",
             "filters": ["critical_only"],
@@ -295,7 +284,6 @@ LOGGING = {
                 "info_file",
                 "error_file",
                 "warning_file",
-                "debug_file",
                 "critical_file",
             ],
             "level": "DEBUG",
