@@ -1,6 +1,7 @@
 import csv
 from django.core.management.base import BaseCommand
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 from relevamientos.models import Relevamiento, Comedor
 
 
@@ -21,11 +22,18 @@ class Command(BaseCommand):
 
             created = errors = 0
             for row in reader:
-                uid = row.get("ID GESTIONAR")
+                uid = row.get("ID Gestionar")
+                nombre = row.get("Nombre Gestionar")
                 comedor_id = row.get("ID Comedor")
                 try:
                     comedor = Comedor.objects.get(pk=comedor_id)
-                    rv = Relevamiento(territorial_uid=uid, comedor=comedor)
+                    rv = Relevamiento(
+                        territorial_uid=uid,
+                        territorial_nombre=nombre,
+                        comedor=comedor,
+                        fecha_visita=timezone.now(),
+                        estado="Visita pendiente",
+                    )
                     rv.save()  # dispara signals y tu lógica de save()
                     created += 1
                 except Comedor.DoesNotExist:
