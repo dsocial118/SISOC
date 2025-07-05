@@ -10,7 +10,7 @@ from django.contrib import messages
 from django.urls import reverse_lazy, reverse
 from django.db.models import Q, Count
 from django.core.exceptions import PermissionDenied
-from centrodefamilia.models import Centro, ActividadCentro, ParticipanteActividad
+from centrodefamilia.models import Categoria, Centro, ActividadCentro, ParticipanteActividad
 from centrodefamilia.forms import CentroForm
 from django.utils.decorators import method_decorator
 
@@ -53,48 +53,83 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         user = self.request.user
 
         es_referente = obj.referente_id == user.id
-        es_adherido_de_faro = (
+        es_adherido = (
             obj.tipo == "adherido"
             and obj.faro_asociado
             and obj.faro_asociado.referente_id == user.id
         )
-
-        if not (es_referente or es_adherido_de_faro or user.is_superuser):
+        if not (es_referente or es_adherido or user.is_superuser):
             raise PermissionDenied
-
         return obj
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         centro = self.object
 
+        # --- Actividades del centro ---
         actividades = ActividadCentro.objects.filter(centro=centro).select_related(
             "actividad", "actividad__categoria"
         )
 
-        participantes = (
-            ParticipanteActividad.objects.filter(actividad_centro__in=actividades)
-            .values("actividad_centro")
-            .annotate(total=Count("id"))
-        )
+        if centro.tipo == "faro":
+            context["centros_adheridos"] = Centro.objects.filter(
+                faro_asociado=centro, activo=True
+            )
 
-        participantes_map = {p["actividad_centro"]: p["total"] for p in participantes}
+
+        # --- Participantes por actividad ---
+        part_por_actividad = ParticipanteActividad.objects.filter(
+            actividad_centro__in=actividades
+        ).values("actividad_centro").annotate(total=Count("id"))
+        mapa = {p["actividad_centro"]: p["total"] for p in part_por_actividad}
 
         actividades_con_ganancia = []
-        for actividad in actividades:
-            cantidad = participantes_map.get(actividad.id, 0)
-            ganancia = (actividad.precio or 0) * cantidad
-            actividades_con_ganancia.append({"obj": actividad, "ganancia": ganancia})
-
+        for act in actividades:
+            cnt = mapa.get(act.id, 0)
+            gan = (act.precio or 0) * cnt
+            actividades_con_ganancia.append({"obj": act, "ganancia": gan})
         context["actividades"] = actividades_con_ganancia
         context["total_actividades"] = actividades.count()
-        context["total_participantes"] = sum(participantes_map.values())
-        context["centros_adheridos_total"] = Centro.objects.filter(
-            faro_asociado=self.object
-        ).count()
 
+        # --- Total participantes ---
+        total_part = sum(mapa.values())
+        context["total_participantes"] = total_part
+
+        # --- Centros adheridos (si es faro) ---
+        context["centros_adheridos_total"] = Centro.objects.filter(
+            faro_asociado=centro
+        ).count()
         if centro.tipo == "faro":
             context["centros_adheridos"] = Centro.objects.filter(faro_asociado=centro)
+
+        # --- Métricas rápidas: varones, mujeres, mixtas ---
+        # Asumimos que tienes algún campo en ActividadCentro que distinga actividades mixtas.
+        # Aquí un ejemplo contando participantes según sexo:
+        qs_part = ParticipanteActividad.objects.filter(
+            actividad_centro__centro=centro
+        ).select_related("ciudadano__sexo")
+        hombres = qs_part.filter(ciudadano__sexo__sexo__iexact="Masculino").count()
+        mujeres = qs_part.filter(ciudadano__sexo__sexo__iexact="Femenino").count()
+        mixtas = total_part - hombres - mujeres
+
+        context["metricas"] = {
+            "centros_faro": context["centros_adheridos_total"],
+            "categorias": Categoria.objects.count(),  # o tu lógica
+            "actividades": context["total_actividades"],
+            "interacciones": 0,  # si las tienes módelo similar
+            "hombres": hombres,
+            "mujeres": mujeres,
+            "mixtas": mixtas,
+        }
+
+        # --- Nómina asistentes ---
+        # espera = ListaEspera.objects.filter(centro=centro).count()
+        context["asistentes"] = {
+            "total": total_part,
+            "hombres": hombres,
+            "mujeres": mujeres,
+            # "espera": espera,
+        }
 
         return context
 

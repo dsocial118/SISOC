@@ -11,6 +11,7 @@ from centrodefamilia.models import (
     Actividad,
     Orientador,
 )
+from configuraciones.models import Estados
 
 HORAS_DEL_DIA = [(f"{h:02d}:00", f"{h:02d}:00") for h in range(0, 24)] + [
     (f"{h:02d}:30", f"{h:02d}:30") for h in range(0, 24)
@@ -156,12 +157,11 @@ class ParticipanteActividadForm(forms.ModelForm):
     )
     dni = forms.IntegerField(label="Documento")
     genero = forms.ModelChoiceField(queryset=Sexo.objects.all(), label="Sexo")
-
     class Meta:
         model = ParticipanteActividad
         fields = (
             []
-        )  # no usamos directamente los campos del modelo porque todos se construyen en la vista
+        )  
 
 
 class OrientadoresForm(forms.ModelForm):

@@ -1,0 +1,158 @@
+/* -------------------------------------- */
+/* centro_detail.css                      */
+/* unifica todos tus estilos             */
+/* -------------------------------------- */
+
+/* 1) Quita márgenes/paddings horizontales extra */
+.no-gutters {
+  margin: 0;
+  padding: 0;
+}
+
+/* 2) Encabezado full-width con esquinas redondeadas */
+.page-header {
+  border-radius: 0.75rem;
+}
+
+/* 3) Tarjeta de ubicación: contenedor relativo para las pestañas */
+.location-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.5rem;
+}
+
+/* 4) Degradé de fondo en las pestañas laterales */
+.location-card .right-tabs::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 80px;
+  background: linear-gradient(
+    to bottom,
+    #004a7c 0%,
+    #004a7c 25%,
+    #17a2b8 25%,
+    #17a2b8 50%,
+    #169e66 50%,
+    #169e66 75%,
+    #fab300 75%,
+    #fab300 100%
+  );
+  z-index: 0;
+}
+
+/* 5) Contenedor de texto encima del degradé */
+.location-card .right-tabs {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 80px;
+  display: flex;
+  flex-direction: column;
+  z-index: 1;
+}
+
+/* 6) Cada elemento de pestaña vertical */
+.location-card .right-tabs .tab-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  font-weight: bold;
+  color: #fff;
+  padding: 0.5rem 0;
+}
+
+/* 7) Scroll interno en Observaciones */
+.observaciones-card .card-body {
+  max-height: 200px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.3) transparent;
+}
+.observaciones-card .card-body::-webkit-scrollbar {
+  width: 6px;
+}
+.observaciones-card .card-body::-webkit-scrollbar-thumb {
+  background-color: rgba(255,255,255,0.3);
+  border-radius: 3px;
+}
+
+/* 8) Scroll interno en Actividades */
+.actividades-card .table-responsive {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* 9) Reemplaza tonos gris "bg-secondary" por azul oscuro #004a7c */
+.bg-secondary,
+.card-header.bg-secondary,
+.list-group-item.bg-secondary,
+.table thead.bg-secondary th {
+  background-color: #004a7c !important;
+  border-color:   #003459 !important;
+  color: #ffffff !important;
+}
+
+/* 10) Redondear esquinas de encabezados de tablas y cards oscuras */
+.card-header.bg-secondary {
+  border-top-left-radius: 0.375rem;
+  border-top-right-radius: 0.375rem;
+}
+.card.bg-dark {
+  border-radius: 0.5rem;
+}
+
+/* 11) Unificar borde de tablas oscuras */
+.table-dark th,
+.table-dark td {
+  border-color: rgba(255,255,255,0.1);
+}
+
+/* 12) Acentuar enlaces en tablas y badges */
+.table a.text-info {
+  color: #b81717;
+}
+.badge.bg-success {
+  background-color: #28a745 !important;
+}
+.badge.bg-danger {
+  background-color: #dc3545 !important;
+}
+.badge.bg-warning {
+  background-color: #ffc107 !important;
+}
+.badge.bg-info {
+  background-color: #17a2b8 !important;
+}
+
+/* 13) Botones outline personalizados */
+.btn-outline-secondary {
+  border-color: #004a7c;
+  color: #004a7c;
+}
+.btn-outline-secondary:hover {
+  background-color: #004a7c;
+  color: #fff;
+}
+
+/* 14) Hr personalizado */
+hr.border-secondary {
+  border-top-color: #004a7c !important;
+}
+
+/* 15) Asegura que el header del “Centros Adheridos” ocupe full width */
+.card.bg-dark.mb-4 {
+  margin-bottom: 1.5rem;
+}
+
+/* 16) Ajustes finos para tarjetas métricas */
+.card.bg-navy {
+  background-color: #132c47;
+  border: none;
+}

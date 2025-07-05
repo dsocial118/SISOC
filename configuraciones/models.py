@@ -1,5 +1,14 @@
 from django.db import models
 
+class Estados(models.Model):
+    nombre = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        verbose_name = "Estado"
+        verbose_name_plural = "Estados"
 
 class Provincia(models.Model):
     """
