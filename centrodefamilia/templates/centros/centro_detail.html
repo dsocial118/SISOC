@@ -1,11 +1,10 @@
 {% extends "includes/main.html" %}
 {% load static %}
 
-{% block title %}Club Comunicaciones – {{ centro.nombre }}{% endblock %}
+{% block title %}{{ centro.nombre }}{% endblock %}
 
 {% block content %}
 <link rel="stylesheet" href="{% static 'custom/css/centro_detail.css' %}">
-
 <div class="container-fluid no-gutters">
   <!-- ENCABEZADO full width y redondeado -->
   <div class="d-flex bg-primary text-white mb-4 page-header" style="height:100px; width:100%;">
@@ -93,20 +92,7 @@
     </div>
   </div>
 
-<!-- GAUGE: Métricas en Categorías -->
-  <div class="card bg-dark text-white mb-4">
-    <div class="card-header bg-secondary">Métricas en Categorías</div>
-    <div class="card-body">
-      <div class="row">
-        {% for cat in cat_metrics %}
-          <div class="col-6 col-md-3 text-center">
-            <canvas id="gauge-{{ forloop.counter }}" width="150" height="150"></canvas>
-            <div class="mt-2 text-white fw-bold">{{ cat.label }}</div>
-          </div>
-        {% endfor %}
-      </div>
-    </div>
-  </div>
+
 
 <!-- TABLA DE CENTROS ADHERIDOS (solo FARO) -->
 
@@ -406,8 +392,15 @@
   </div>
   {% endfor %}
 
-{{ cat_metrics|json_script:"catMetrics" }}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<div class="row gx-3 mb-4">
+  {% for cat in cat_metrics %}
+    <div class="col-6 col-md-3 text-center">
+      <!-- Cada gauge necesita un contenedor único -->
+      <div id="gauge-container-{{ forloop.counter }}" style="width:150px; height:100px; margin:0 auto"></div>
+      <div class="mt-2 text-white fw-bold">{{ cat.label }}</div>
+    </div>
+  {% endfor %}
+</div>
 <script src="{% static 'js/centrodefamilia.js' %}"></script>
 
 
