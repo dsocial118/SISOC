@@ -1,333 +1,250 @@
 {% extends "includes/main.html" %}
 {% load static %}
 
-{% block title %}Detalle Centro{% endblock %}
-
-{% block breadcrumb %}
-<ol class="breadcrumb float-sm-right">
-    <li class="breadcrumb-item"><a href="{% url 'centro_list' %}">Centro de Familia</a></li>
-    <li class="breadcrumb-item active">Detalle</li>
-</ol>
-{% endblock %}
+{% block title %}Club Comunicaciones – {{ centro.nombre }}{% endblock %}
 
 {% block content %}
-<div class="container">
-    <!-- Datos del Centro -->
-    <div class="card shadow-lg mb-4 p-4">
-        <div class="d-flex flex-row align-items-start">
-            <div class="me-4" style="width: 240px; height: 240px; flex-shrink: 0;">
-                {% if centro.foto %}
-                    <img src="{{ centro.foto.url }}" alt="Foto del Centro" class="shadow rounded" style="width:100%; height:100%; object-fit:cover" />
-                {% else %}
-                    <div class="d-flex align-items-center justify-content-center bg-light text-muted border rounded" style="width:100%; height:100%">Sin imagen</div>
-                {% endif %}
-                <p class="mt-2 text-muted text-center"><strong>Código:</strong> {{ centro.codigo }}</p>
-            </div>
-            <div class="flex-grow-1 ps-4">
-                <h1 class="display-4 mb-3">{{ centro.nombre }}</h1>
-                <p><strong>Tipo:</strong> {{ centro.get_tipo_display }}</p>
-                <p><strong>Dirección:</strong> {{ centro.calle }}</p>
-                <p><strong>Contacto:</strong> {{ centro.telefono }} – {{ centro.celular }}</p>
-                {% if centro.tipo == 'adherido' %}
-                    <p><strong>Centro FARO asociado:</strong> {{ centro.faro_asociado.nombre }}</p>
-                {% endif %}
-                <p><strong>Estado:</strong>
-                    {% if centro.activo %}
-                        <span class="badge badge-success">Activo</span>
-                    {% else %}
-                        <span class="badge badge-danger">Inactivo</span>
-                    {% endif %}
-                </p>
-                <div class="mt-4">
-                    <a href="{% url 'centro_update' centro.id %}" class="btn btn-outline-primary btn-sm">Editar</a>
-                    <a href="{% url 'centro_list' %}" class="btn btn-outline-secondary btn-sm">Volver</a>
-                    <a href="{% url 'actividadcentro_create' centro_id=centro.id %}" class="btn btn-outline-success btn-sm">Agregar Actividad</a>
-                    {% if centro.tipo == 'faro' %}
-                        <a href="{% url 'centro_create' %}?faro={{ centro.id }}" class="btn btn-outline-info btn-sm">Agregar Centro Adherido</a>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
+<link rel="stylesheet" href="{% static 'custom/css/centro_detail.css' %}">
 
-    <!-- Métricas estilo imagen -->
-    <div class="row mb-4">
-        <div class="col-md-4 mb-3">
-            <div class="d-flex bg-dark rounded overflow-hidden" style="height:60px;">
-                <div class="d-flex align-items-center justify-content-center bg-primary px-3 text-white"><i class="fas fa-running fa-lg"></i></div>
-                <div class="d-flex flex-column justify-content-center px-3 text-white"><small>Actividades</small><strong>{{ total_actividades }}</strong></div>
-            </div>
+<div class="container-fluid no-gutters">
+  <!-- ENCABEZADO full width y redondeado -->
+  <div class="d-flex bg-primary text-white mb-4 page-header" style="height:100px; width:100%;">
+    <div style="width:60px; background:#004a7c;"></div>
+    <div class="flex-grow-1 d-flex align-items-center justify-content-between px-4">
+      <h1 class="mb-0" style="font-size:2rem;">{{ centro.nombre }}</h1>
+      <span class="badge bg-success" style="font-size:1rem;">{{ centro.get_tipo_display }}</span>
+    </div>
+    <div style="width:80px;"></div>
+  </div>
+
+  <!-- UBICACIÓN con barras laterales -->
+  <div class="d-flex bg-dark text-white rounded mb-4 location-card" style="height:300px;">
+    <div class="d-flex align-items-center justify-content-center"
+         style="width:60px; background:#004a7c; writing-mode: vertical-rl; text-orientation: upright; font-weight:bold;">
+      Ubicación
+    </div>
+    <div style="width:350px; padding:1rem;">
+      {% if centro.calle and centro.numero and centro.localidad and centro.municipio and centro.provincia %}
+        <iframe
+          src="https://maps.google.com/maps?q={{ centro.calle|urlencode }}+{{ centro.numero }},+{{ centro.localidad.nombre|urlencode }},+{{ centro.municipio.nombre|urlencode }},+{{ centro.provincia.nombre|urlencode }}&output=embed"
+          width="100%" height="100%" frameborder="0"
+          style="border:0; border-radius:8px;"
+          allowfullscreen>
+        </iframe>
+      {% else %}
+        <div class="h-100 d-flex align-items-center justify-content-center text-muted">
+          Sin mapa disponible
         </div>
-        <div class="col-md-4 mb-3">
-            <div class="d-flex bg-dark rounded overflow-hidden" style="height:60px;">
-                <div class="d-flex align-items-center justify-content-center bg-success px-3 text-white"><i class="fas fa-users fa-lg"></i></div>
-                <div class="d-flex flex-column justify-content-center px-3 text-white"><small>Asistentes</small><strong>{{ total_participantes }}</strong></div>
-            </div>
-        </div>
+      {% endif %}
+    </div>
+    <div class="flex-grow-1 p-4">
+      <h5 class="text-white">Ubicación</h5>
+      <hr class="border-secondary">
+      <ul class="list-unstyled mb-4" style="column-count:2; column-gap:2rem;">
+        <li><i class="fas fa-road me-2 text-info"></i>Calle: {{ centro.calle }} {{ centro.numero }}</li>
+        <li><i class="fas fa-arrows-alt-h me-2 text-info"></i>Entre Calle1: {{ centro.entre_calle_1 }}</li>
+        <li><i class="fas fa-arrows-alt-h me-2 text-info"></i>Entre Calle2: {{ centro.entre_calle_2 }}</li>
+        <li><i class="fas fa-globe-americas me-2 text-info"></i>{{ centro.localidad }}, {{ centro.provincia }}</li>
+        <li><i class="fas fa-map-pin me-2 text-info"></i>C.P.: {{ centro.codigo_postal }}</li>
+        <li><i class="fas fa-crosshairs me-2 text-info"></i>
+          <a href="https://maps.google.com/?q={{ centro.lat }},{{ centro.lng }}" class="text-info">
+            {{ centro.lat }}, {{ centro.lng }}
+          </a>
+        </li>
+      </ul>
+      <div class="mt-4">
+        <a href="{% url 'centro_update' centro.id %}" class="btn btn-outline-primary btn-sm">Editar</a>
+        <a href="{% url 'centro_list' %}" class="btn btn-outline-secondary btn-sm">Volver</a>
+        <a href="{% url 'actividadcentro_create' centro_id=centro.id %}" class="btn btn-outline-success btn-sm">Agregar Actividad</a>
         {% if centro.tipo == 'faro' %}
-        <div class="col-md-4 mb-3">
-            <div class="d-flex bg-dark rounded overflow-hidden" style="height:60px;">
-                <div class="d-flex align-items-center justify-content-center bg-info px-3 text-white"><i class="fas fa-network-wired fa-lg"></i></div>
-                <div class="d-flex flex-column justify-content-center px-3 text-white"><small>Centros Adheridos</small><strong>{{ centros_adheridos_total }}</strong></div>
-            </div>
-        </div>
+          <a href="{% url 'centro_create' %}?faro={{ centro.id }}" class="btn btn-outline-info btn-sm">Agregar Centro Adherido</a>
         {% endif %}
+      </div>
+    </div>
+    <div class="right-tabs">
+      <div class="tab-item">Información Básica</div>
+      <div class="tab-item">Datos</div>
+      <div class="tab-item">Relevamientos</div>
+      <div class="tab-item">Interacciones</div>
+    </div>
+  </div>
+
+  <!-- MÉTRICAS RÁPIDAS -->
+  <div class="d-flex gap-3 mb-4">
+    <div class="flex-fill card bg-navy text-white text-center p-3">
+      <i class="fas fa-lightbulb fa-2x mb-2 text-warning"></i>
+      <div>Centro Adheridos</div>
+      <strong>{{ metricas.centros_faro }}</strong>
+    </div>
+    <div class="flex-fill card bg-navy text-white text-center p-3">
+      <i class="fas fa-folder-open fa-2x mb-2 text-info"></i>
+      <div>Categorías</div>
+      <strong>{{ metricas.categorias }}</strong>
+    </div>
+    <div class="flex-fill card bg-navy text-white text-center p-3">
+      <i class="fas fa-running fa-2x mb-2 text-success"></i>
+      <div>Actividades</div>
+      <strong>{{ metricas.actividades }}</strong>
+    </div>
+    <div class="flex-fill card bg-navy text-white text-center p-3">
+      <i class="fas fa-chart-line fa-2x mb-2 text-primary"></i>
+      <div>Interacciones</div>
+      <strong>{{ metricas.interacciones }}</strong>
+    </div>
+  </div>
+
+  {# --- TABLA DE CENTROS ADHERIDOS (solo para FARO) --- #}
+  {% if centros_adheridos %}
+    <div class="card bg-dark text-white mb-4">
+      <div class="card-header bg-secondary">
+        Centros Adheridos
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-dark table-striped mb-0">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Tipo</th>
+                <th>Activo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for adh in centros_adheridos %}
+                <tr>
+                  <td>
+                    <a href="{% url 'centro_detail' adh.id %}"
+                       class="text-info text-decoration-none">
+                      {{ adh.nombre }}
+                    </a>
+                  </td>
+                  <td>{{ adh.get_tipo_display }}</td>
+                  <td>
+                    {% if adh.activo %}
+                      <span class="badge bg-success">Sí</span>
+                    {% else %}
+                      <span class="badge bg-danger">No</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- NÓMINA ASISTENTES -->
+  <div class="row gx-3 mb-4">
+    <div class="col-md-3">
+      <div class="card bg-dark text-white h-100">
+        <div class="card-header bg-secondary">Nómina Asistentes</div>
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item d-flex justify-content-between align-items-center bg-navy text-white">
+            <div><i class="fas fa-users fa-lg me-2"></i>Asistentes</div>
+            <span class="badge rounded-pill bg-warning">{{ asistentes.total }}</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center bg-navy text-white">
+            <div><i class="fas fa-male fa-lg me-2"></i>Hombres</div>
+            <span class="badge rounded-pill bg-info">{{ asistentes.hombres }}</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center bg-navy text-white">
+            <div><i class="fas fa-female fa-lg me-2"></i>Mujeres</div>
+            <span class="badge rounded-pill bg-danger">{{ asistentes.mujeres }}</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center bg-navy text-white">
+            <div><i class="fas fa-list fa-lg me-2"></i>Lista de espera</div>
+            <span class="badge rounded-pill bg-danger">{{ asistentes.espera }}</span>
+          </li>
+        </ul>
+      </div>
     </div>
 
-    <!-- Mapa de ubicación -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-dark text-white"><h5 class="mb-0">Ubicación</h5></div>
-                <div class="card-body p-0" style="height:400px;">
-                    {% if centro.calle %}
-                        <iframe width="100%" height="100%" frameborder="0" style="border:0"
-                                                          src="https://maps.google.com/maps?q={{ object.calle|urlencode }}+{{ object.altura }},+{{ object.localidad|urlencode }},+{{ object.municipio|urlencode }},+{{ object.provincia|urlencode }}&output=embed"
-                                allowfullscreen>
-                        </iframe>
-                    {% else %}
-                        <div class="p-4 text-center text-muted">No hay datos de dirección suficientes para mostrar el mapa.</div>
-                    {% endif %}
-                </div>
-            </div>
+    <!-- REPORTE CABAL & DETALLES ADMISIÓN -->
+    <div class="col-md-9">
+      <div class="row gx-3">
+        <div class="col-md-6">
+          <div class="card bg-dark text-white p-3 h-100">
+            <h5>Reporte CABAL</h5>
+            {{ reporte_cabal|safe }}
+          </div>
         </div>
+        <div class="col-md-6">
+          <div class="card bg-dark text-white p-3 h-100">
+            <h5>Detalles de admisión</h5>
+            <ul class="list-unstyled">
+              <li><strong>Fecha:</strong> {{ admision.fecha }}</li>
+              <li><strong>N° expediente:</strong> {{ admision.numero_expediente }}</li>
+              <li><strong>N° IF:</strong> {{ admision.numero_if }}</li>
+              <li><strong>Estado:</strong> {{ admision.estado }}</li>
+              <li><strong>Dupla:</strong> {{ admision.dupla }}</li>
+              <li><strong>Convenio:</strong> {{ admision.tipo_convenio }}</li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
-        
-        <!-- Referente -->
-        <div class="accordion mt-5" id="accordionCentroDetalle">
-            <div class="accordion-item bg-dark text-white border-secondary">
-                <h2 class="accordion-header" id="headingReferente">
-                    <button class="accordion-button bg-dark text-white collapsed"
-                            type="button"
-                            data-bs-toggle="collapse"
-                            data-bs-target="#collapseReferente"
-                            aria-expanded="false"
-                            aria-controls="collapseReferente">Datos del Referente</button>
-                </h2>
-                <div id="collapseReferente"
-                     class="accordion-collapse collapse show"
-                     aria-labelledby="headingReferente"
-                     data-bs-parent="#accordionCentroDetalle">
-                    <div class="accordion-body">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <strong>Nombre:</strong>
-                                <br />
-                                {{ centro.nombre_referente }} {{ centro.apellido_referente }}
-                            </div>
-                            <div class="col-md-3">
-                                <strong>Número de contacto:</strong>
-                                <br />
-                                {{ centro.telefono_referente }}
-                            </div>
-                            <div class="col-md-3">
-                                <strong>Mail de contacto:</strong>
-                                <br />
-                                {{ centro.correo_referente }}
-                            </div>
-                            <div class="col-md-3">
-                                <strong>Usuario asignado:</strong>
-                                <br />
-                                {{ centro.referente.get_full_name }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
+  </div>
+
+  <!-- ACTIVIDADES CONFIGURADAS y OBSERVACIONES -->
+  <div class="row gx-3 mb-4">
+    <div class="col-md-6">
+      <div class="card bg-dark text-white actividades-card h-100">
+        <div class="card-header bg-secondary">Actividades Configuradas</div>
+        <div class="card-body p-3">
+          {% if actividades %}
+            <div class="table-responsive">
+              <table class="table table-dark table-striped mb-0">
+                <thead>
+                  <tr>
+                    <th>Actividad</th>
+                    <th>Categoría</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for act in actividades %}
+                    <tr>
+                      <td>
+                        <a href="{% url 'actividadcentro_detail' centro_id=act.obj.centro.id pk=act.obj.id %}"
+                           class="text-info text-decoration-none">
+                          {{ act.obj.actividad.nombre }}
+                        </a>
+                      </td>
+                      <td>{{ act.obj.actividad.categoria.nombre }}</td>
+                      <td>{{ act.obj.get_estado_display }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
             </div>
-            <!-- Información General del Centro -->
-            <div class="accordion-item bg-dark text-white border-secondary">
-                <h2 class="accordion-header" id="headingGeneral">
-                    <button class="accordion-button bg-dark text-white collapsed"
-                            type="button"
-                            data-bs-toggle="collapse"
-                            data-bs-target="#collapseGeneral"
-                            aria-expanded="false"
-                            aria-controls="collapseGeneral">Datos Generales del Centro</button>
-                </h2>
-                <div id="collapseGeneral"
-                     class="accordion-collapse collapse"
-                     aria-labelledby="headingGeneral"
-                     data-bs-parent="#accordionCentroDetalle">
-                    <div class="accordion-body">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <strong>Tipo:</strong>
-                                <br />
-                                {{ centro.get_tipo_display }}
-                            </div>
-                            <div class="col-md-3">
-                                <strong>Nombre:</strong>
-                                <br />
-                                {{ centro.nombre }}
-                            </div>
-                            <div class="col-md-3">
-                                <strong>Código:</strong>
-                                <br />
-                                {{ centro.codigo }}
-                            </div>
-                            <div class="col-md-3">
-                                <strong>Organización asociada:</strong>
-                                <br />
-                                {{ centro.organizacion_asociada }}
-                            </div>
-                        </div>
-                        <div class="row mt-3">
-                            <div class="col-md-3">
-                                <strong>Domicilio Sede:</strong>
-                                <br />
-                                {{ centro.calle }}
-                            </div>
-                            <div class="col-md-3">
-                                <strong>Domicilio Actividad:</strong>
-                                <br />
-                                {{ centro.domicilio_actividad }}
-                            </div>
-                            <div class="col-md-3">
-                                <strong>Teléfono:</strong>
-                                <br />
-                                {{ centro.telefono }}
-                            </div>
-                            <div class="col-md-3">
-                                <strong>Celular:</strong>
-                                <br />
-                                {{ centro.celular }}
-                            </div>
-                        </div>
-                        <div class="row mt-3">
-                            <div class="col-md-4">
-                                <strong>Correo:</strong>
-                                <br />
-                                {{ centro.correo }}
-                            </div>
-                            <div class="col-md-4">
-                                <strong>Sitio Web:</strong>
-                                <br />
-                                {{ centro.sitio_web }}
-                            </div>
-                            <div class="col-md-4">
-                                <strong>Redes Sociales:</strong>
-                                <br />
-                                {{ centro.link_redes }}
-                            </div>
-                        </div>
-                        {% if centro.tipo == 'adherido' and centro.faro_asociado %}
-                            <div class="row mt-3">
-                                <div class="col-md-6">
-                                    <strong>Centro FARO asociado:</strong>
-                                    <br />
-                                    {{ centro.faro_asociado.nombre }}
-                                </div>
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
+          {% else %}
+            <p>No hay actividades registradas.</p>
+          {% endif %}
         </div>
-        <!-- Tarjetas de tablas -->
-        <div class="row mt-3">
-            <div class="col-md-6">
-                <div class="card w-100 h-100">
-                    <div class="card-header bg-dark text-white">
-                        <strong>Actividades Configuradas</strong>
-                    </div>
-                    <div class="card-body p-3" style="overflow-y: auto;">
-                        <input type="text"
-                               id="filtro-actividades"
-                               class="form-control mb-3"
-                               placeholder="Buscar actividad..." />
-                        <div class="table-responsive">
-                            <table id="tabla-actividades"
-                                   class="table table-striped table-hover table-bordered mb-0"
-                                   style="width: 100%">
-                                <thead class="thead-dark">
-                                    <tr>
-                                        <th>Actividad</th>
-                                        <th>Categoría</th>
-                                        <th>Estado</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for actividad in actividades %}
-                                        <tr>
-                                            <td>
-                                                <a href="{% url 'actividadcentro_detail' centro_id=actividad.obj.centro.id pk=actividad.obj.id %}">
-                                                    {{ actividad.obj.actividad.nombre }}
-                                                </a>
-                                            </td>
-                                            <td>{{ actividad.obj.actividad.categoria.nombre }}</td>
-                                            <td>
-                                                <span class="badge badge-secondary">{{ actividad.obj.get_estado_display }}</span>
-                                            </td>
-                                            <td>
-                                                <a href="{% url 'actividadcentro_detail' centro_id=actividad.obj.centro.id pk=actividad.obj.id %}"
-                                                   class="btn btn-sm btn-outline-primary">Ver</a>
-                                            </td>
-                                        </tr>
-                                    {% empty %}
-                                        <tr>
-                                            <td colspan="4" class="text-center">No hay actividades configuradas.</td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% if centro.tipo == 'faro' %}
-                <div class="col-md-6">
-                    <div class="card w-100 h-100">
-                        <div class="card-header bg-dark text-white">
-                            <strong>Centros Adheridos</strong>
-                        </div>
-                        <div class="card-body p-3">
-                            <input type="text"
-                                   id="filtro-adheridos"
-                                   class="form-control mb-3"
-                                   placeholder="Buscar centro adherido..." />
-                            <div class="table-responsive">
-                                <table class="table table-striped table-hover table-bordered mb-0"
-                                       style="width: 100%">
-                                    <thead>
-                                        <tr>
-                                            <th>Nombre</th>
-                                            <th>Dirección</th>
-                                            <th>Contacto</th>
-                                            <th>Estado</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for adherido in centros_adheridos %}
-                                            <tr>
-                                                <td>
-                                                    <a href="{% url 'centro_detail' adherido.id %}">{{ adherido.nombre }}</a>
-                                                </td>
-                                                <td>{{ adherido.direccion }}</td>
-                                                <td>{{ adherido.contacto }}</td>
-                                                <td>
-                                                    {% if adherido.activo %}
-                                                        <span class="badge badge-success">Activo</span>
-                                                    {% else %}
-                                                        <span class="badge badge-secondary">Inactivo</span>
-                                                    {% endif %}
-                                                </td>
-                                            </tr>
-                                        {% empty %}
-                                            <tr>
-                                                <td colspan="4" class="text-center">No hay centros adheridos registrados.</td>
-                                            </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            {% endif %}
-        </div>
+      </div>
     </div>
-{% endblock %}
-{% block customJS %}
-    <script src="{% static 'admin/js/filtroactividades.js' %}"></script>
+
+    <div class="col-md-6">
+      <div class="card bg-dark text-white observaciones-card h-100">
+        <div class="card-header bg-secondary">Observaciones</div>
+        <div class="card-body">
+          {% if observaciones %}
+            <ul class="list-unstyled mb-0">
+              {% for obs in observaciones %}
+                <li class="mb-3">
+                  <small class="text-muted">{{ obs.fecha }} – {{ obs.autor }}</small>
+                  <p class="mb-0">{{ obs.texto }}</p>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p>No hay observaciones registradas.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
