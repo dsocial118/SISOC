@@ -88,3 +88,13 @@ class ParticipanteService:
         return ParticipanteActividad.objects.create(
             actividad_centro_id=actividad_id, ciudadano=ciudadano
         )
+
+def validar_ciudadano_en_rango_para_actividad(ciudadano, actividad_centro):
+        """
+        Solo permite inscribir ciudadanos con ID entre 1921 y 3904 en actividades de centros adheridos.
+        """
+        if actividad_centro.centro.tipo == "adherido":
+            if not (1 <= ciudadano.id <= 1984):
+                raise ValueError(
+                    f"El ciudadano ID {ciudadano.id} no está habilitado para inscribirse en este centro adherido."
+                )

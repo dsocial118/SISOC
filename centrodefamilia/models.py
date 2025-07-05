@@ -118,7 +118,8 @@ class ActividadCentro(models.Model):
         related_name="DiaActividad",
         blank=True,
     )
-    horarios = models.TimeField()
+    horariosdesde = models.TimeField()
+    horarioshasta = models.TimeField(null=True, blank=True)
     precio = models.PositiveIntegerField(
         verbose_name="PrecioActividad", null=True, blank=True
     )

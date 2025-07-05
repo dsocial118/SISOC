@@ -1,5 +1,5 @@
 from centrodefamilia.models import Actividad
-
+from centrodefamilia.models import ActividadCentro
 
 def actividades_disponibles_para_centro():
     """

@@ -10,9 +10,10 @@ from django.contrib import messages
 from django.urls import reverse_lazy, reverse
 from django.db.models import Q, Count
 from django.core.exceptions import PermissionDenied
+from django.core.paginator import Paginator
+
 from centrodefamilia.models import Categoria, Centro, ActividadCentro, ParticipanteActividad
 from centrodefamilia.forms import CentroForm
-from django.utils.decorators import method_decorator
 
 
 class CentroListView(LoginRequiredMixin, ListView):
@@ -22,25 +23,17 @@ class CentroListView(LoginRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        queryset = Centro.objects.select_related("faro_asociado", "referente")
+        qs = Centro.objects.select_related("faro_asociado", "referente")
         user = self.request.user
 
-        # Un referente ve solo sus centros y los adheridos asociados a sus centros FARO
-        if (
-            user.groups.filter(name="ReferenteCentro").exists()
-            and not user.is_superuser
-        ):
-            queryset = queryset.filter(
-                Q(referente=user) | Q(faro_asociado__referente=user)
-            )
+        if user.groups.filter(name="ReferenteCentro").exists() and not user.is_superuser:
+            qs = qs.filter(Q(referente=user) | Q(faro_asociado__referente=user))
 
-        busqueda = self.request.GET.get("busqueda")
-        if busqueda:
-            queryset = queryset.filter(
-                Q(nombre__icontains=busqueda) | Q(tipo__icontains=busqueda)
-            )
+        busq = self.request.GET.get("busqueda")
+        if busq:
+            qs = qs.filter(Q(nombre__icontains=busq) | Q(tipo__icontains=busq))
 
-        return queryset.order_by("nombre")
+        return qs.order_by("nombre")
 
 
 class CentroDetailView(LoginRequiredMixin, DetailView):
@@ -51,7 +44,6 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
     def get_object(self, queryset=None):
         obj = super().get_object(queryset)
         user = self.request.user
-
         es_referente = obj.referente_id == user.id
         es_adherido = (
             obj.tipo == "adherido"
@@ -66,45 +58,65 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         centro = self.object
 
-        # --- Actividades del centro ---
-        actividades = ActividadCentro.objects.filter(centro=centro).select_related(
-            "actividad", "actividad__categoria"
+        #
+        # 1) Actividades del propio centro
+        #
+        qs_centro = (
+            ActividadCentro.objects
+            .filter(centro=centro)
+            .select_related("actividad", "actividad__categoria")
         )
+        part_por_act = (
+            ParticipanteActividad.objects
+            .filter(actividad_centro__in=qs_centro)
+            .values("actividad_centro")
+            .annotate(total=Count("id"))
+        )
+        mapa = {p["actividad_centro"]: p["total"] for p in part_por_act}
 
-        if centro.tipo == "faro":
-            context["centros_adheridos"] = Centro.objects.filter(
-                faro_asociado=centro, activo=True
-            )
-
-
-        # --- Participantes por actividad ---
-        part_por_actividad = ParticipanteActividad.objects.filter(
-            actividad_centro__in=actividades
-        ).values("actividad_centro").annotate(total=Count("id"))
-        mapa = {p["actividad_centro"]: p["total"] for p in part_por_actividad}
-
-        actividades_con_ganancia = []
-        for act in actividades:
+        actividades = []
+        for act in qs_centro:
             cnt = mapa.get(act.id, 0)
-            gan = (act.precio or 0) * cnt
-            actividades_con_ganancia.append({"obj": act, "ganancia": gan})
-        context["actividades"] = actividades_con_ganancia
-        context["total_actividades"] = actividades.count()
+            actividades.append({"obj": act, "ganancia": (act.precio or 0) * cnt})
 
-        # --- Total participantes ---
-        total_part = sum(mapa.values())
-        context["total_participantes"] = total_part
+        context["actividades"] = actividades
+        context["total_actividades"] = qs_centro.count()
 
-        # --- Centros adheridos (si es faro) ---
-        context["centros_adheridos_total"] = Centro.objects.filter(
-            faro_asociado=centro
-        ).count()
+        #
+        # 2) Paginación de TODAS las actividades (actividades_paginados)
+        #
+# (2) Paginación de TODAS las actividades (actividades_paginados)
+        todas_acts = (
+            ActividadCentro.objects
+            # Excluyo las del centro que estamos viendo
+            .exclude(centro=centro)
+            .select_related("actividad", "actividad__categoria", "centro")
+            .order_by("centro__nombre", "actividad__nombre")
+        )
+        pag_all = Paginator(todas_acts, 5)
+        page_act = self.request.GET.get("page_act")
+        context["actividades_paginados"] = pag_all.get_page(page_act)
+
+
+        #
+        # 3) Centros adheridos y su paginación
+        #
         if centro.tipo == "faro":
-            context["centros_adheridos"] = Centro.objects.filter(faro_asociado=centro)
+            qs_adheridos = Centro.objects.filter(
+                faro_asociado=centro, activo=True
+            ).order_by("nombre")
+        else:
+            qs_adheridos = Centro.objects.none()
 
-        # --- Métricas rápidas: varones, mujeres, mixtas ---
-        # Asumimos que tienes algún campo en ActividadCentro que distinga actividades mixtas.
-        # Aquí un ejemplo contando participantes según sexo:
+        context["centros_adheridos_total"] = qs_adheridos.count()
+        pag_centros = Paginator(qs_adheridos, 5)
+        page = self.request.GET.get("page")
+        context["centros_adheridos_paginados"] = pag_centros.get_page(page)
+
+        #
+        # 4) Métricas y asistentes (sin cambios)
+        #
+        total_part = sum(mapa.values())
         qs_part = ParticipanteActividad.objects.filter(
             actividad_centro__centro=centro
         ).select_related("ciudadano__sexo")
@@ -114,25 +126,59 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
 
         context["metricas"] = {
             "centros_faro": context["centros_adheridos_total"],
-            "categorias": Categoria.objects.count(),  # o tu lógica
+            "categorias": Categoria.objects.count(),
             "actividades": context["total_actividades"],
-            "interacciones": 0,  # si las tienes módelo similar
+            "interacciones": 0,
             "hombres": hombres,
             "mujeres": mujeres,
             "mixtas": mixtas,
         }
+        context["asistentes"] = {"total": total_part, "hombres": hombres, "mujeres": mujeres}
 
-        # --- Nómina asistentes ---
-        # espera = ListaEspera.objects.filter(centro=centro).count()
-        context["asistentes"] = {
-            "total": total_part,
-            "hombres": hombres,
-            "mujeres": mujeres,
-            # "espera": espera,
+
+        qs_cat = (
+            ParticipanteActividad.objects
+              .filter(actividad_centro__centro=centro)
+              .values('actividad_centro__actividad__categoria__nombre')
+              .annotate(
+                female=Count('id',
+                             filter=Q(ciudadano__sexo__sexo__iexact='Femenino')),
+                male  =Count('id',
+                             filter=Q(ciudadano__sexo__sexo__iexact='Masculino')),
+              )
+        )
+
+        # Define aquí tu paleta de colores por categoría
+        color_map = {
+            'Tecnología': {'colorF':'#F5C90F','colorM':'#FFC107'},
+            'Educación':  {'colorF':'#8BC5EA','colorM':'#BBDEFB'},
+            'Arte':       {'colorF':'#EC719D','colorM':'#F8BBD0'},
+            'Deporte':    {'colorF':'#F44336','colorM':'#FFCDD2'},
         }
+        default_colors = {'colorF':'#6c757d','colorM':'#adb5bd'}
+
+        cat_metrics = []
+        for entrada in qs_cat:
+            label = entrada['actividad_centro__actividad__categoria__nombre']
+            f = entrada['female']
+            m = entrada['male']
+            total = f + m
+            # evita división por cero
+            pct_f = round(100 * f / total) if total else 0
+            pct_m = 100 - pct_f if total else 0
+
+            cols = color_map.get(label, default_colors)
+            cat_metrics.append({
+                'label':   label,
+                'female':  pct_f,
+                'male':    pct_m,
+                'colorF':  cols['colorF'],
+                'colorM':  cols['colorM'],
+            })
+
+        context['cat_metrics'] = cat_metrics
 
         return context
-
 
 class CentroCreateView(LoginRequiredMixin, CreateView):
     model = Centro
@@ -140,19 +186,29 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
     template_name = "centros/centro_form.html"
     success_url = reverse_lazy("centro_list")
 
+    def get_initial(self):
+        initial = super().get_initial()
+        faro_id = self.request.GET.get("faro")
+        if faro_id:
+            # fijamos tipo y faro_asociado iniciales
+            initial["tipo"] = "adherido"
+            initial["faro_asociado"] = faro_id
+        return initial
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        # avisamos al form si venimos con faro=
+        kwargs["from_faro"] = bool(self.request.GET.get("faro"))
+        return kwargs
+
     def form_valid(self, form):
         user = self.request.user
-
-        # Si es referente, siempre se asigna como referente y solo puede crear adheridos
-        if (
-            user.groups.filter(name="ReferenteCentro").exists()
-            and not user.is_superuser
-        ):
+        # Si se creó con faro=, garantizamos referinte + tipo
+        if form.cleaned_data.get("tipo") == "adherido":
+            # opcional: asignar el faro como self.object.faro_asociado
+            form.instance.faro_asociado_id = self.request.GET.get("faro")
+        if user.groups.filter(name="ReferenteCentro").exists() and not user.is_superuser:
             form.instance.referente = user
-            if form.cleaned_data.get("tipo") != "adherido":
-                messages.error(self.request, "Solo puedes crear centros ADHERIDOS.")
-                return self.form_invalid(form)
-
         messages.success(self.request, "Centro creado exitosamente.")
         return super().form_valid(form)
 
@@ -165,8 +221,6 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
     def dispatch(self, request, *args, **kwargs):
         centro = self.get_object()
         user = request.user
-
-        # Solo el referente del centro o el superadmin puede editar
         if not (centro.referente_id == user.id or user.is_superuser):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
@@ -187,7 +241,6 @@ class CentroDeleteView(LoginRequiredMixin, DeleteView):
     def dispatch(self, request, *args, **kwargs):
         centro = self.get_object()
         user = request.user
-
         if not (centro.referente_id == user.id or user.is_superuser):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)

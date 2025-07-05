@@ -93,46 +93,90 @@
     </div>
   </div>
 
-  {# --- TABLA DE CENTROS ADHERIDOS (solo para FARO) --- #}
-  {% if centros_adheridos %}
-    <div class="card bg-dark text-white mb-4">
-      <div class="card-header bg-secondary">
-        Centros Adheridos
-      </div>
-      <div class="card-body p-0">
-        <div class="table-responsive">
-          <table class="table table-dark table-striped mb-0">
-            <thead>
-              <tr>
-                <th>Nombre</th>
-                <th>Tipo</th>
-                <th>Activo</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for adh in centros_adheridos %}
-                <tr>
-                  <td>
-                    <a href="{% url 'centro_detail' adh.id %}"
-                       class="text-info text-decoration-none">
-                      {{ adh.nombre }}
-                    </a>
-                  </td>
-                  <td>{{ adh.get_tipo_display }}</td>
-                  <td>
-                    {% if adh.activo %}
-                      <span class="badge bg-success">Sí</span>
-                    {% else %}
-                      <span class="badge bg-danger">No</span>
-                    {% endif %}
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+<!-- GAUGE: Métricas en Categorías -->
+  <div class="card bg-dark text-white mb-4">
+    <div class="card-header bg-secondary">Métricas en Categorías</div>
+    <div class="card-body">
+      <div class="row">
+        {% for cat in cat_metrics %}
+          <div class="col-6 col-md-3 text-center">
+            <canvas id="gauge-{{ forloop.counter }}" width="150" height="150"></canvas>
+            <div class="mt-2 text-white fw-bold">{{ cat.label }}</div>
+          </div>
+        {% endfor %}
       </div>
     </div>
+  </div>
+
+<!-- TABLA DE CENTROS ADHERIDOS (solo FARO) -->
+
+  <!-- 1) TABLA DE CENTROS ADHERIDOS (solo FARO) -->
+  {% if centro.tipo == 'faro' %}
+  <div class="card bg-dark text-white mb-4">
+    <div class="card-header bg-secondary d-flex align-items-center">
+      <h5 class="mb-0">Centros Adheridos</h5>
+      <input id="filterCentros"
+             class="form-control form-control-sm bg-dark text-white border-secondary ms-auto"
+             style="width:180px"
+             placeholder="Buscar centro…">
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table id="tablaCentros" class="table table-dark table-striped mb-0">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Tipo</th>
+              <th>Activo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for adh in centros_adheridos_paginados %}
+            <tr>
+              <td>
+                <a href="{% url 'centro_detail' adh.id %}" class="text-info">{{ adh.nombre }}</a>
+              </td>
+              <td>{{ adh.get_tipo_display }}</td>
+              <td>
+                {% if adh.activo %}
+                  <span class="badge bg-success">Sí</span>
+                {% else %}
+                  <span class="badge bg-danger">No</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if not centros_adheridos_paginados %}
+        <div class="p-3 text-center text-muted">No hay centros adheridos.</div>
+      {% endif %}
+    </div>
+    {% if centros_adheridos_paginados.has_other_pages %}
+    <div class="card-footer bg-dark text-center">
+      <ul class="pagination justify-content-center mb-0">
+        {% if centros_adheridos_paginados.has_previous %}
+        <li class="page-item">
+          <a class="page-link bg-secondary text-white"
+             href="?page={{ centros_adheridos_paginados.previous_page_number }}">Anterior</a>
+        </li>
+        {% endif %}
+        {% for i in centros_adheridos_paginados.paginator.page_range %}
+        <li class="page-item {% if centros_adheridos_paginados.number == i %}active{% endif %}">
+          <a class="page-link bg-secondary text-white" href="?page={{ i }}">{{ i }}</a>
+        </li>
+        {% endfor %}
+        {% if centros_adheridos_paginados.has_next %}
+        <li class="page-item">
+          <a class="page-link bg-secondary text-white"
+             href="?page={{ centros_adheridos_paginados.next_page_number }}">Siguiente</a>
+        </li>
+        {% endif %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
   {% endif %}
 
   <!-- NÓMINA ASISTENTES -->
@@ -191,7 +235,7 @@
   <div class="row gx-3 mb-4">
     <div class="col-md-6">
       <div class="card bg-dark text-white actividades-card h-100">
-        <div class="card-header bg-secondary">Actividades Configuradas</div>
+        <div class="card-header bg-secondary">Actividades en curso</div>
         <div class="card-body p-3">
           {% if actividades %}
             <div class="table-responsive">
@@ -246,5 +290,128 @@
       </div>
     </div>
   </div>
+<!-- 2) TABLA DE TODAS LAS ACTIVIDADES (con POPUP) -->
+  <div class="card bg-dark text-white mb-4">
+    <div class="card-header bg-secondary d-flex align-items-center">
+      <h5 class="mb-0">Todas las Actividades</h5>
+      <input id="filterActividades"
+             class="form-control form-control-sm bg-dark text-white border-secondary ms-auto"
+             style="width:180px"
+             placeholder="Buscar actividad…">
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table id="tablaActividades" class="table table-dark table-striped mb-0">
+          <thead>
+            <tr>
+              <th>Centro</th>
+              <th>Actividad</th>
+              <th>Categoría</th>
+              <th>Estado</th>
+              <th class="text-end">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ac in actividades_paginados %}
+            <tr>
+              <td>{{ ac.centro.nombre }}</td>
+              <td>{{ ac.actividad.nombre }}</td>
+              <td>{{ ac.actividad.categoria.nombre }}</td>
+              <td>{{ ac.get_estado_display }}</td>
+              <td class="text-end">
+                <button class="btn btn-outline-info btn-sm"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalAct{{ ac.id }}">
+                  Detalles
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if not actividades_paginados %}
+        <div class="p-3 text-center text-muted">No hay actividades.</div>
+      {% endif %}
+    </div>
+    {% if actividades_paginados.has_other_pages %}
+    <div class="card-footer bg-dark text-center">
+      <ul class="pagination justify-content-center mb-0">
+        {% if actividades_paginados.has_previous %}
+        <li class="page-item">
+          <a class="page-link bg-secondary text-white"
+             href="?page_act={{ actividades_paginados.previous_page_number }}">Anterior</a>
+        </li>
+        {% endif %}
+        {% for i in actividades_paginados.paginator.page_range %}
+        <li class="page-item {% if actividades_paginados.number == i %}active{% endif %}">
+          <a class="page-link bg-secondary text-white"
+             href="?page_act={{ i }}">{{ i }}</a>
+        </li>
+        {% endfor %}
+        {% if actividades_paginados.has_next %}
+        <li class="page-item">
+          <a class="page-link bg-secondary text-white"
+             href="?page_act={{ actividades_paginados.next_page_number }}">Siguiente</a>
+        </li>
+        {% endif %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- MODALES “Detalles” PARA CADA ACTIVIDAD -->
+  {% for ac in actividades_paginados %}
+  <div class="modal fade" id="modalAct{{ ac.id }}" tabindex="-1" aria-labelledby="modalActLabel{{ ac.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
+      <div class="modal-content bg-dark text-white">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalActLabel{{ ac.id }}">
+            {{ ac.actividad.nombre }} – {{ ac.centro.nombre }}
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <dl class="row text-white">
+            <dt class="col-5">Cantidad estimada</dt>
+            <dd class="col-7">{{ ac.cantidad_personas }}</dd>
+
+            <dt class="col-5">Días</dt>
+            <dd class="col-7">
+              {% for d in ac.dias.all %}
+                <span class="badge bg-secondary">{{ d.nombre }}</span>
+              {% empty %}
+                <span class="text-muted">No especificado</span>
+              {% endfor %}
+            </dd>
+
+            <dt class="col-5">Horario desde</dt>
+            <dd class="col-7">{{ ac.horariosdesde}}</dd>
+            <dt class="col-5">Horario hasta</dt>
+            <dd class="col-7">{{ ac.horarioshasta }}</dd>
+
+            <dt class="col-5">Precio</dt>
+            <dd class="col-7">
+              {% if ac.precio %}${{ ac.precio }}{% else %}
+                <span class="text-muted">Gratuita</span>
+              {% endif %}
+            </dd>
+
+            <dt class="col-5">Estado</dt>
+            <dd class="col-7">{{ ac.get_estado_display }}</dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
+{{ cat_metrics|json_script:"catMetrics" }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'js/centrodefamilia.js' %}"></script>
+
+
+
+
 </div>
 {% endblock %}
