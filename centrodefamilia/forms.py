@@ -49,13 +49,27 @@ class CentroForm(forms.ModelForm):
 
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["referente"].queryset = User.objects.filter(
-            groups__name="ReferenteCentro"
-        )
-        self.fields["faro_asociado"].queryset = Centro.objects.filter(
-            tipo="faro", activo=True
-        )
+            # capturamos el flag
+            from_faro = kwargs.pop("from_faro", False)
+            super().__init__(*args, **kwargs)
+
+            # Si vengo desde ?faro=, fijo y deshabilito el campo 'tipo'
+            if from_faro:
+                self.fields["tipo"].initial = "adherido"
+                self.fields["tipo"].disabled = True
+                # opcional: esconder el select y usar hidden
+                self.fields["tipo"].widget = forms.HiddenInput()
+
+                # también deshabilitamos el selector de faro_asociado
+                self.fields["faro_asociado"].disabled = True
+
+            # tu lógica existente de queryset…
+            self.fields["referente"].queryset = User.objects.filter(
+                groups__name="ReferenteCentro"
+            )
+            self.fields["faro_asociado"].queryset = Centro.objects.filter(
+                tipo="faro", activo=True
+            )
 
     def clean(self):
         cleaned_data = super().clean()
@@ -78,8 +92,18 @@ class ActividadCentroForm(forms.ModelForm):
             "style": "width: 100%;",
         }
     )
-    horarios = forms.TimeField(
-        label="Hora",
+    horariosdesde = forms.TimeField(
+        label="Hora Desde",
+        widget=forms.TimeInput(
+            attrs={
+                "class": "form-control timepicker",
+                "placeholder": "Seleccione una hora",
+            }
+        ),
+        required=True,
+    )
+    horarioshasta = forms.TimeField(
+        label="Hora Hasta",
         widget=forms.TimeInput(
             attrs={
                 "class": "form-control timepicker",
@@ -102,13 +126,15 @@ class ActividadCentroForm(forms.ModelForm):
             "actividad",
             "cantidad_personas",
             "dias",
-            "horarios",
+            "horariosdesde",
+            "horarioshasta",
             "precio",
             "estado",
         ]
         exclude = ["centro"]
         widgets = {
-            "horarios": forms.TextInput(attrs={"class": "form-control"}),
+            "horariosdesde": forms.TextInput(attrs={"class": "form-control"}),
+            "horarioshasta": forms.TextInput(attrs={"class": "form-control"}),
             "cantidad_personas": forms.NumberInput(attrs={"class": "form-control"}),
             "precio": forms.NumberInput(attrs={"class": "form-control"}),
             "estado": forms.Select(attrs={"class": "form-control"}),

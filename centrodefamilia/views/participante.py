@@ -6,9 +6,12 @@ from django.urls import reverse_lazy
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from centrodefamilia.models import ParticipanteActividad
+from centrodefamilia.models import ActividadCentro, ParticipanteActividad
 from centrodefamilia.forms import ParticipanteActividadForm
-from centrodefamilia.services.participante_service import ParticipanteService
+from centrodefamilia.services.participante_service import (
+    ParticipanteService,
+    validar_ciudadano_en_rango_para_actividad,  # ✅ Validación demo
+)
 from ciudadanos.models import (
     Ciudadano,
     CiudadanoPrograma,
@@ -46,6 +49,13 @@ class ParticipanteActividadCreateView(LoginRequiredMixin, CreateView):
         actividad_id = self.kwargs.get("actividad_id")
         user = request.user
 
+        # Recuperar actividad para validación
+        try:
+            actividad_centro = ActividadCentro.objects.get(pk=actividad_id)
+        except ActividadCentro.DoesNotExist:
+            messages.error(request, "Actividad no encontrada.")
+            return redirect(self.get_success_url())
+
         # 1) Participante existente
         ciudadano_id = request.POST.get("ciudadano_id")
         if ciudadano_id:
@@ -55,14 +65,20 @@ class ParticipanteActividadCreateView(LoginRequiredMixin, CreateView):
                 messages.error(request, "Ciudadano no encontrado.")
                 return redirect(self.get_success_url())
 
-            # 1.a) Asociar a la actividad
+            # ✅ Validación demo ESTE COMENTARIO SIRVE PARA BORAR LA VALIDACION POST DEMO 
+            #NO ME ODIES JUANI
+            try:
+                validar_ciudadano_en_rango_para_actividad(ciudadano, actividad_centro)
+            except ValueError as e:
+                messages.error(request, str(e))
+                return redirect(self.get_success_url())
+
+            # ✅ Validación demo
             ParticipanteService.crear_participante(actividad_id, ciudadano)
 
-            # 1.b) Crear o recuperar vínculo en CiudadanoPrograma (programa=1)
             cp, created = CiudadanoPrograma.objects.get_or_create(
                 ciudadano=ciudadano, programas_id=1, defaults={"creado_por": user}
             )
-            # 1.c) Si se crea nuevo, registrar en historial
             if created:
                 HistorialCiudadanoProgramas.objects.create(
                     programa_id=1, ciudadano=ciudadano, accion="agregado", usuario=user
@@ -77,13 +93,18 @@ class ParticipanteActividadCreateView(LoginRequiredMixin, CreateView):
             nuevo_ciudadano = ParticipanteService.crear_ciudadano_con_dimensiones(
                 form.cleaned_data
             )
-            # 2.a) Asociación a la actividad
+
+            # ✅ Validación demo
+            try:
+                validar_ciudadano_en_rango_para_actividad(nuevo_ciudadano, actividad_centro)
+            except ValueError as e:
+                messages.error(request, str(e))
+                return redirect(self.get_success_url())
+
             ParticipanteService.crear_participante(actividad_id, nuevo_ciudadano)
-            # 2.b) Crear vínculo Ciudadano–Programa
             CiudadanoPrograma.objects.create(
                 ciudadano=nuevo_ciudadano, programas_id=1, creado_por=user
             )
-            # 2.c) Registrar en historial
             HistorialCiudadanoProgramas.objects.create(
                 programa_id=1,
                 ciudadano=nuevo_ciudadano,
