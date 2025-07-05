@@ -221,6 +221,7 @@ LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "filters": {
+        # Filtros para separar logs por nivel de severidad
         "info_only": {
             "()": "django.utils.log.CallbackFilter",
             "callback": lambda r: r.levelno == logging.INFO,
@@ -237,8 +238,16 @@ LOGGING = {
             "()": "django.utils.log.CallbackFilter",
             "callback": lambda r: r.levelno == logging.CRITICAL,
         },
+        # Filtros para diferenciar entorno de desarrollo y producción
+        "require_debug_true": {
+            "()": "django.utils.log.RequireDebugTrue",  # Solo se activa cuando DEBUG=True
+        },
+        "require_debug_false": {
+            "()": "django.utils.log.RequireDebugFalse",  # Solo se activa cuando DEBUG=False
+        },
     },
     "formatters": {
+        # Formatters definen cómo se verán los mensajes de log
         "verbose": {
             "format": "[{asctime}] {module} {levelname} {name}: {message}",
             "style": "{",
@@ -249,6 +258,7 @@ LOGGING = {
         },
     },
     "handlers": {
+        # Handlers para almacenar logs por nivel de severidad en archivos separados
         "info_file": {
             "level": "INFO",
             "filters": ["info_only"],
@@ -277,21 +287,66 @@ LOGGING = {
             "filename": str(BASE_DIR / "logs/critical.log"),
             "formatter": "verbose",
         },
+        # Handlers específicos para desarrollo
+        "debug_file": {
+            "level": "DEBUG",
+            "filters": ["require_debug_true"],  # Solo activo en desarrollo
+            "class": "config.utils.DailyFileHandler",
+            "filename": str(BASE_DIR / "logs/debug.log"),
+            "formatter": "verbose",
+        },
+        # Handler para consola, útil durante desarrollo
+        "console": {
+            "level": "DEBUG",
+            "filters": ["require_debug_true"],  # Solo activo en desarrollo
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
     },
     "loggers": {
+        # Logger principal para toda la aplicación Django
         "django": {
-            "handlers": [
-                "info_file",
-                "error_file",
-                "warning_file",
-                "critical_file",
-            ],
-            "level": "DEBUG",
+            # Handlers diferentes según el entorno
+            "handlers": (
+                [
+                    "info_file",
+                    "error_file",
+                    "warning_file",
+                    "critical_file",
+                    "debug_file",  # Solo activo en desarrollo
+                    "console",  # Solo activo en desarrollo
+                ]
+                if DEBUG
+                else [
+                    "info_file",
+                    "error_file",
+                    "warning_file",
+                    "critical_file",
+                ]
+            ),
+            # En desarrollo: nivel DEBUG, en producción: nivel INFO (más seguro)
+            "level": "DEBUG" if DEBUG else "INFO",
             "propagate": True,
         },
+        # Logger específico para solicitudes HTTP
         "django.request": {
             "handlers": ["error_file"],
             "level": "ERROR",
+            "propagate": False,
+        },
+        # Logger específico para seguridad (más restrictivo en producción)
+        "django.security": {
+            "handlers": ["error_file"],
+            # En producción usa nivel WARNING para mayor seguridad
+            "level": "INFO" if DEBUG else "WARNING",
+            "propagate": False,
+        },
+        # Logger para SQL (en producción solo registra errores)
+        "django.db.backends": {
+            # En desarrollo registra todas las consultas SQL para debug
+            # En producción solo registra errores de base de datos
+            "handlers": ["debug_file"] if DEBUG else ["error_file"],
+            "level": "DEBUG" if DEBUG else "ERROR",
             "propagate": False,
         },
     },
