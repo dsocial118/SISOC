@@ -4,14 +4,15 @@ from centrodefamilia.services.participante_service import ParticipanteService
 from ciudadanos.models import TipoDocumento, Sexo, Ciudadano
 from datetime import datetime
 
+
 class Command(BaseCommand):
-    help = 'Crea ciudadanos con sus dimensiones desde un archivo Excel'
+    help = "Crea ciudadanos con sus dimensiones desde un archivo Excel"
 
     def add_arguments(self, parser):
-        parser.add_argument('archivo_excel', type=str, help='Ruta al archivo .xlsx')
+        parser.add_argument("archivo_excel", type=str, help="Ruta al archivo .xlsx")
 
     def handle(self, *args, **kwargs):
-        archivo_excel = kwargs['archivo_excel']
+        archivo_excel = kwargs["archivo_excel"]
 
         try:
             df = pd.read_excel(archivo_excel)
@@ -29,7 +30,9 @@ class Command(BaseCommand):
                     "apellido": str(row["apellido"]).strip(),
                     "dni": str(row["dni"]).strip(),
                     "fecha_nacimiento": self.parse_fecha(row["fecha_nacimiento"]),
-                    "tipo_documento": self.get_tipo_documento(row.get("tipo_documento")),
+                    "tipo_documento": self.get_tipo_documento(
+                        row.get("tipo_documento")
+                    ),
                     "genero": self.get_sexo(row.get("genero")),
                 }
 
@@ -37,15 +40,23 @@ class Command(BaseCommand):
                     ParticipanteService.crear_ciudadano_con_dimensiones(data)
                     exitosos += 1
                 else:
-                    self.stdout.write(self.style.NOTICE(f"Fila {i + 2}: Ciudadano duplicado (omitido)"))
+                    self.stdout.write(
+                        self.style.NOTICE(
+                            f"Fila {i + 2}: Ciudadano duplicado (omitido)"
+                        )
+                    )
                     duplicados += 1
 
             except Exception as e:
                 self.stderr.write(self.style.ERROR(f"Error en fila {i + 2}: {e}"))
                 errores.append(i + 2)
 
-        self.stdout.write(self.style.SUCCESS(f"{exitosos} ciudadanos creados correctamente."))
-        self.stdout.write(self.style.WARNING(f"{duplicados} ciudadanos omitidos por duplicado."))
+        self.stdout.write(
+            self.style.SUCCESS(f"{exitosos} ciudadanos creados correctamente.")
+        )
+        self.stdout.write(
+            self.style.WARNING(f"{duplicados} ciudadanos omitidos por duplicado.")
+        )
         if errores:
             self.stdout.write(self.style.ERROR(f"Errores en filas: {errores}"))
 
@@ -74,4 +85,6 @@ class Command(BaseCommand):
             raise ValueError(f"Sexo no encontrado: {valor}")
 
     def ciudadano_ya_existe(self, tipo_documento, dni):
-        return Ciudadano.objects.filter(tipo_documento=tipo_documento, documento=dni).exists()
+        return Ciudadano.objects.filter(
+            tipo_documento=tipo_documento, documento=dni
+        ).exists()

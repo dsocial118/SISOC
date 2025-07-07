@@ -12,7 +12,13 @@ from django.db.models import Q, Count
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 
-from centrodefamilia.models import Categoria, Centro, ActividadCentro, Expediente, ParticipanteActividad
+from centrodefamilia.models import (
+    Categoria,
+    Centro,
+    ActividadCentro,
+    Expediente,
+    ParticipanteActividad,
+)
 from centrodefamilia.forms import CentroForm
 
 
@@ -26,7 +32,10 @@ class CentroListView(LoginRequiredMixin, ListView):
         qs = Centro.objects.select_related("faro_asociado", "referente")
         user = self.request.user
 
-        if user.groups.filter(name="ReferenteCentro").exists() and not user.is_superuser:
+        if (
+            user.groups.filter(name="ReferenteCentro").exists()
+            and not user.is_superuser
+        ):
             qs = qs.filter(Q(referente=user) | Q(faro_asociado__referente=user))
 
         busq = self.request.GET.get("busqueda")
@@ -57,22 +66,19 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         centro = self.object
-        qs_exp = Expediente.objects.filter(centro=centro).order_by('-fecha_subida')
+        qs_exp = Expediente.objects.filter(centro=centro).order_by("-fecha_subida")
         paginator_exp = Paginator(qs_exp, 3)
-        page_exp = self.request.GET.get('page_exp')
-        context['expedientes_cabal'] = paginator_exp.get_page(page_exp)
+        page_exp = self.request.GET.get("page_exp")
+        context["expedientes_cabal"] = paginator_exp.get_page(page_exp)
 
         #
         # 1) Actividades del propio centro
         #
-        qs_centro = (
-            ActividadCentro.objects
-            .filter(centro=centro)
-            .select_related("actividad", "actividad__categoria")
+        qs_centro = ActividadCentro.objects.filter(centro=centro).select_related(
+            "actividad", "actividad__categoria"
         )
         part_por_act = (
-            ParticipanteActividad.objects
-            .filter(actividad_centro__in=qs_centro)
+            ParticipanteActividad.objects.filter(actividad_centro__in=qs_centro)
             .values("actividad_centro")
             .annotate(total=Count("id"))
         )
@@ -89,7 +95,7 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         #
         # 2) Paginación de TODAS las actividades (actividades_paginados)
         #
-# (2) Paginación de TODAS las actividades (actividades_paginados)
+        # (2) Paginación de TODAS las actividades (actividades_paginados)
         todas_acts = (
             ActividadCentro.objects
             # Excluyo las del centro que estamos viendo
@@ -100,7 +106,6 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         pag_all = Paginator(todas_acts, 5)
         page_act = self.request.GET.get("page_act")
         context["actividades_paginados"] = pag_all.get_page(page_act)
-
 
         #
         # 3) Centros adheridos y su paginación
@@ -137,13 +142,14 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
             "mujeres": mujeres,
             "mixtas": mixtas,
         }
-        context["asistentes"] = {"total": total_part, "hombres": hombres, "mujeres": mujeres}
-
-
-        
-        
+        context["asistentes"] = {
+            "total": total_part,
+            "hombres": hombres,
+            "mujeres": mujeres,
+        }
 
         return context
+
 
 class CentroCreateView(LoginRequiredMixin, CreateView):
     model = Centro
@@ -172,7 +178,10 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
         if form.cleaned_data.get("tipo") == "adherido":
             # opcional: asignar el faro como self.object.faro_asociado
             form.instance.faro_asociado_id = self.request.GET.get("faro")
-        if user.groups.filter(name="ReferenteCentro").exists() and not user.is_superuser:
+        if (
+            user.groups.filter(name="ReferenteCentro").exists()
+            and not user.is_superuser
+        ):
             form.instance.referente = user
         messages.success(self.request, "Centro creado exitosamente.")
         return super().form_valid(form)

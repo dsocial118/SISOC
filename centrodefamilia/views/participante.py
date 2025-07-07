@@ -43,7 +43,9 @@ class ParticipanteActividadCreateView(LoginRequiredMixin, CreateView):
                     actividad_id=actividad_id,
                     ciudadano_id=ciudadano_id,
                 )
-                messages.success(request, "Participante existente agregado correctamente.")
+                messages.success(
+                    request, "Participante existente agregado correctamente."
+                )
             else:
                 form = self.get_form()
                 if not form.is_valid():
@@ -53,7 +55,9 @@ class ParticipanteActividadCreateView(LoginRequiredMixin, CreateView):
                     actividad_id=actividad_id,
                     datos=form.cleaned_data,
                 )
-                messages.success(request, "Ciudadano y participante creados correctamente.")
+                messages.success(
+                    request, "Ciudadano y participante creados correctamente."
+                )
             return redirect(self.get_success_url())
 
         except (LookupError, ValueError) as e:

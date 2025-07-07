@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from ciudadanos.models import Ciudadano
-from configuraciones.models import Dia, Localidad, Municipio, Provincia , Estados
+from configuraciones.models import Dia, Localidad, Municipio, Provincia, Estados
 from organizaciones.models import Organizacion
 
 
@@ -44,9 +44,7 @@ class Centro(models.Model):
     localidad = models.ForeignKey(
         to=Localidad, on_delete=models.SET_NULL, null=True, blank=True
     )
-    calle = models.CharField(
-        max_length=255, blank=True, null=True
-    )
+    calle = models.CharField(max_length=255, blank=True, null=True)
     numero = models.PositiveIntegerField(blank=True, null=True)
     domicilio_actividad = models.CharField(
         max_length=255, verbose_name="Domicilio de actividades"
@@ -149,11 +147,8 @@ class ParticipanteActividad(models.Model):
         auto_now_add=True, verbose_name="Fecha de Registro"
     )
 
-
     def __str__(self):
         return f"{self.ciudadano.apellido}, {self.ciudadano.nombre} - {self.actividad_centro}"
-    
-
 
     class Meta:
         verbose_name = "Participante"
@@ -162,13 +157,12 @@ class ParticipanteActividad(models.Model):
 
 
 class Expediente(models.Model):
-    centro = models.ForeignKey(Centro, on_delete=models.CASCADE, related_name='expedientes_cabal')
-    archivo = models.FileField(upload_to='informes_cabal/')
+    centro = models.ForeignKey(
+        Centro, on_delete=models.CASCADE, related_name="expedientes_cabal"
+    )
+    archivo = models.FileField(upload_to="informes_cabal/")
     periodo = models.DateField(help_text="Fecha del informe")
     fecha_subida = models.DateTimeField(auto_now_add=True)
     usuario = models.ForeignKey(User, on_delete=models.PROTECT)
     procesado = models.BooleanField(default=False)
     errores = models.TextField(blank=True)
-
-
-

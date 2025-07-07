@@ -19,20 +19,22 @@ def procesar_informe(ruta_archivo: str) -> dict:
     }
     :raises ValidationError: si el nombre no coincide o la fecha es inválida
     """
-    nombre = ruta_archivo.split('/')[-1]  # extrae solo el fichero
+    nombre = ruta_archivo.split("/")[-1]  # extrae solo el fichero
     # busca la fecha en formato YYYYMMDD
-    m = re.match(r'^CABAL_(\d{8})_.*\.pdf$', nombre, re.IGNORECASE)
+    m = re.match(r"^CABAL_(\d{8})_.*\.pdf$", nombre, re.IGNORECASE)
     if not m:
-        raise ValidationError(f"Nombre de archivo no cumple el patrón esperado: {nombre}")
+        raise ValidationError(
+            f"Nombre de archivo no cumple el patrón esperado: {nombre}"
+        )
 
     fecha_str = m.group(1)
     try:
-        fecha = datetime.strptime(fecha_str, '%Y%m%d').date()
+        fecha = datetime.strptime(fecha_str, "%Y%m%d").date()
     except ValueError:
         raise ValidationError(f"Fecha inválida en el nombre de archivo: {fecha_str}")
 
     return {
-        'fecha_periodo': fecha,
-        'nombre_original': nombre,
-        'ruta': ruta_archivo,
+        "fecha_periodo": fecha,
+        "nombre_original": nombre,
+        "ruta": ruta_archivo,
     }

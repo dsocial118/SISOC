@@ -149,6 +149,5 @@ class ParticipanteService:
         return list(
             Ciudadano.objects.annotate(doc_str=Cast("documento", CharField()))
             .filter(doc_str__startswith=cleaned)
-            .order_by("documento")
-            [:max_results]
+            .order_by("documento")[:max_results]
         )

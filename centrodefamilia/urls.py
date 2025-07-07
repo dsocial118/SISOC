@@ -1,6 +1,11 @@
 from django.urls import path
 
-from centrodefamilia.views.informecabal import ExpedienteCreateView, ExpedienteDetailView, ExpedienteListView, ExpedienteUpdateView
+from centrodefamilia.views.informecabal import (
+    ExpedienteCreateView,
+    ExpedienteDetailView,
+    ExpedienteListView,
+    ExpedienteUpdateView,
+)
 from configuraciones.decorators import group_required
 
 from centrodefamilia.views.centro import (
@@ -79,15 +84,29 @@ urlpatterns = [
         group_required(["ReferenteCentro"])(cargar_actividades_por_categoria),
         name="ajax_cargar_actividades",
     ),
-    
     path(
         "centros/<int:centro_id>/actividades/<int:actividad_id>/participantes/<int:pk>/eliminar/",
         ParticipanteActividadDeleteView.as_view(),
         name="participanteactividad_delete",
     ),
-    path('centro/<int:centro_id>/expedientes/', ExpedienteListView.as_view(), name='expediente_list'),
-    path('centro/<int:centro_id>/expedientes/nuevo/', ExpedienteCreateView.as_view(), name='expediente_create'),
-    path('centro/<int:centro_id>/expedientes/<int:pk>/', ExpedienteDetailView.as_view(), name='expediente_detail'),  
-    path('centro/<int:centro_id>/expedientes/<int:pk>/editar/',
-         ExpedienteUpdateView.as_view(), name='expediente_update'),
+    path(
+        "centro/<int:centro_id>/expedientes/",
+        ExpedienteListView.as_view(),
+        name="expediente_list",
+    ),
+    path(
+        "centro/<int:centro_id>/expedientes/nuevo/",
+        ExpedienteCreateView.as_view(),
+        name="expediente_create",
+    ),
+    path(
+        "centro/<int:centro_id>/expedientes/<int:pk>/",
+        ExpedienteDetailView.as_view(),
+        name="expediente_detail",
+    ),
+    path(
+        "centro/<int:centro_id>/expedientes/<int:pk>/editar/",
+        ExpedienteUpdateView.as_view(),
+        name="expediente_update",
+    ),
 ]
