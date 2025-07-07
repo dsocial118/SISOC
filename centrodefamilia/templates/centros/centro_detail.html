@@ -5,16 +5,19 @@
     <link rel="stylesheet" href="{% static 'custom/css/centro_detail.css' %}" />
     <div class="container-fluid no-gutters">
         <!-- ENCABEZADO full width y redondeado -->
-        <div class="d-flex bg-primary text-white mb-4 page-header"
-             style="height:100px;
-                    width:100%">
-            <div style="width:60px; background:#004a7c;"></div>
-            <div class="flex-grow-1 d-flex align-items-center justify-content-between px-4">
-                <h1 class="mb-0" style="font-size:2rem;">{{ centro.nombre }}</h1>
-                <span class="badge bg-success" style="font-size:1rem;">{{ centro.get_tipo_display }}</span>
-            </div>
-            <div style="width:80px;"></div>
-        </div>
+{# centro_detail.html #}
+<div class="card mb-4 page-header">
+  <div class="card-body">
+    <div class="header-bar"></div>
+    <h1 class="header-title">
+      {{ centro.nombre|capfirst }}
+      <span class="separator">|</span>
+      <span class="badge header-badge">{{ centro.get_tipo_display|capfirst }}</span>
+    </h1>
+  </div>
+</div>
+
+
         <!-- UBICACIÓN con barras laterales -->
         <div class="d-flex bg-dark text-white rounded mb-4 location-card"
              style="height:300px">
@@ -289,6 +292,8 @@
                                         <tr>
                                             <th>Actividad</th>
                                             <th>Categoría</th>
+                                            <th>Dias</th>
+                                            <th>Horario</th>
                                             <th>Estado</th>
                                         </tr>
                                     </thead>
@@ -302,6 +307,12 @@
                                                     </a>
                                                 </td>
                                                 <td>{{ act.obj.actividad.categoria.nombre }}</td>
+                                                  <td>
+    {% for dia in act.obj.dias.all %}
+      {{ dia.nombre }}{% if not forloop.last %}, {% endif %}
+    {% empty %}—{% endfor %}
+  </td>
+                                                <td>{{ act.obj.horariosdesde}} - {{ act.obj.horarioshasta}}</td>
                                                 <td>{{ act.obj.get_estado_display }}</td>
                                             </tr>
                                         {% endfor %}
@@ -465,6 +476,6 @@
                 </div>
             {% endfor %}
         </div>
-        <script src="{% static 'js/centrodefamilia.js' %}"></script>
+        <script src="{% static 'custom/js/centrodefamilia.js' %}"></script>
     </div>
 {% endblock %}

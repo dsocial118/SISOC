@@ -1,27 +1,14 @@
 # centrodefamilia/views/participante.py
 
 from django.shortcuts import redirect
-from django.views.generic import CreateView
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import CreateView, DeleteView
 
-from centrodefamilia.models import ActividadCentro, ParticipanteActividad
+from centrodefamilia.models import ParticipanteActividad
 from centrodefamilia.forms import ParticipanteActividadForm
-from centrodefamilia.services.participante_service import (
-    ParticipanteService,
-    validar_ciudadano_en_rango_para_actividad,  # ✅ Validación demo
-)
-from ciudadanos.models import (
-    Ciudadano,
-    CiudadanoPrograma,
-    HistorialCiudadanoProgramas,
-)
-
-from django.views.generic import (
-    CreateView,
-    DeleteView,
-)
+from centrodefamilia.services.participante_service import ParticipanteService
 
 
 class ParticipanteActividadCreateView(LoginRequiredMixin, CreateView):
@@ -37,98 +24,47 @@ class ParticipanteActividadCreateView(LoginRequiredMixin, CreateView):
         return initial
 
     def get_success_url(self):
-        centro_id = self.kwargs.get("centro_id")
-        actividad_id = self.kwargs.get("actividad_id")
         return reverse_lazy(
             "actividadcentro_detail",
-            kwargs={"centro_id": centro_id, "pk": actividad_id},
+            kwargs={
+                "centro_id": self.kwargs.get("centro_id"),
+                "pk": self.kwargs.get("actividad_id"),
+            },
         )
 
     def post(self, request, *args, **kwargs):
-        self.object = None
         actividad_id = self.kwargs.get("actividad_id")
-        user = request.user
-
-        # Recuperar actividad para validación
-        try:
-            actividad_centro = ActividadCentro.objects.get(pk=actividad_id)
-        except ActividadCentro.DoesNotExist:
-            messages.error(request, "Actividad no encontrada.")
-            return redirect(self.get_success_url())
-
-        # 1) Participante existente
         ciudadano_id = request.POST.get("ciudadano_id")
-        if ciudadano_id:
-            try:
-                ciudadano = Ciudadano.objects.get(pk=ciudadano_id)
-            except Ciudadano.DoesNotExist:
-                messages.error(request, "Ciudadano no encontrado.")
-                return redirect(self.get_success_url())
 
-            # ✅ Validación demo ESTE COMENTARIO SIRVE PARA BORAR LA VALIDACION POST DEMO 
-            #NO ME ODIES JUANI
-            try:
-                validar_ciudadano_en_rango_para_actividad(ciudadano, actividad_centro)
-            except ValueError as e:
-                messages.error(request, str(e))
-                return redirect(self.get_success_url())
-
-            # ✅ Validación demo
-            ParticipanteService.crear_participante(actividad_id, ciudadano)
-
-            cp, created = CiudadanoPrograma.objects.get_or_create(
-                ciudadano=ciudadano, programas_id=1, defaults={"creado_por": user}
-            )
-            if created:
-                HistorialCiudadanoProgramas.objects.create(
-                    programa_id=1, ciudadano=ciudadano, accion="agregado", usuario=user
+        try:
+            if ciudadano_id:
+                ParticipanteService.agregar_existente(
+                    usuario=request.user,
+                    actividad_id=actividad_id,
+                    ciudadano_id=ciudadano_id,
                 )
-
-            messages.success(request, "Participante existente agregado correctamente.")
+                messages.success(request, "Participante existente agregado correctamente.")
+            else:
+                form = self.get_form()
+                if not form.is_valid():
+                    return self.form_invalid(form)
+                ParticipanteService.crear_nuevo_con_dimensiones(
+                    usuario=request.user,
+                    actividad_id=actividad_id,
+                    datos=form.cleaned_data,
+                )
+                messages.success(request, "Ciudadano y participante creados correctamente.")
             return redirect(self.get_success_url())
 
-        # 2) Nuevo ciudadano + dimensiones
-        form = self.get_form()
-        if form.is_valid():
-            nuevo_ciudadano = ParticipanteService.crear_ciudadano_con_dimensiones(
-                form.cleaned_data
-            )
-
-            # ✅ Validación demo
-            try:
-                validar_ciudadano_en_rango_para_actividad(nuevo_ciudadano, actividad_centro)
-            except ValueError as e:
-                messages.error(request, str(e))
-                return redirect(self.get_success_url())
-
-            ParticipanteService.crear_participante(actividad_id, nuevo_ciudadano)
-            CiudadanoPrograma.objects.create(
-                ciudadano=nuevo_ciudadano, programas_id=1, creado_por=user
-            )
-            HistorialCiudadanoProgramas.objects.create(
-                programa_id=1,
-                ciudadano=nuevo_ciudadano,
-                accion="agregado",
-                usuario=user,
-            )
-
-            messages.success(request, "Ciudadano y participante creados correctamente.")
+        except (LookupError, ValueError) as e:
+            messages.error(request, str(e))
             return redirect(self.get_success_url())
-
-        return self.form_invalid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        query = self.request.GET.get("query", "")
-        if len(query) >= 4:
-            from django.db.models import CharField
-            from django.db.models.functions import Cast
-
-            context["ciudadanos"] = Ciudadano.objects.annotate(
-                doc_str=Cast("documento", CharField())
-            ).filter(doc_str__startswith=query)[:10]
-            context["no_resultados"] = not context["ciudadanos"].exists()
-
+        query = self.request.GET.get("query") or ""
+        context["ciudadanos"] = ParticipanteService.buscar_ciudadanos(query)
+        context["no_resultados"] = not bool(context["ciudadanos"])
         context["centro_id"] = self.kwargs.get("centro_id")
         context["actividad_id"] = self.kwargs.get("actividad_id")
         return context
@@ -139,11 +75,12 @@ class ParticipanteActividadDeleteView(LoginRequiredMixin, DeleteView):
     template_name = "centros/participanteactividad_confirm_delete.html"
 
     def get_success_url(self):
-        centro_id = self.kwargs["centro_id"]
-        actividad_id = self.kwargs["actividad_id"]
         return reverse_lazy(
             "actividadcentro_detail",
-            kwargs={"centro_id": centro_id, "pk": actividad_id},
+            kwargs={
+                "centro_id": self.kwargs.get("cento_id"),  # typo fixed below
+                "pk": self.kwargs.get("actividad_id"),
+            },
         )
 
     def delete(self, request, *args, **kwargs):
