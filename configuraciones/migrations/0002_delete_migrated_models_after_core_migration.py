@@ -1,4 +1,3 @@
-
 from django.db import migrations
 
 
@@ -7,8 +6,11 @@ class Migration(migrations.Migration):
     dependencies = [
         ("core", "0001_initial"),
         ("provincias", "0002_alter_personafisica_provincia_and_more"),
-        ("ciudadanos", "0002_alter_ciudadano_localidad_alter_ciudadano_municipio_and_more"),
-        ("comedores", "0002_alter_comedor_localidad_alter_comedor_municipio_and_more"),
+        (
+            "ciudadanos",
+            "0002_alter_ciudadano_localidad_alter_ciudadano_municipio_and_more",
+        ),
+        ("comedores", "0003_alter_comedor_localidad_alter_comedor_municipio_and_more"),
         ("cdi", "0002_alter_centrodesarrolloinfantil_dias_funcionamiento_and_more"),
         ("configuraciones", "0001_initial"),
     ]
