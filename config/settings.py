@@ -271,13 +271,6 @@ LOGGING = {
             "filename": str(BASE_DIR / "logs/warning.log"),
             "formatter": "verbose",
         },
-        "debug_file": {
-            "level": "DEBUG",
-            "filters": ["debug_only"],
-            "class": "core.utils.DailyFileHandler",
-            "filename": str(BASE_DIR / "logs/debug.log"),
-            "formatter": "verbose",
-        },
         "critical_file": {
             "level": "CRITICAL",
             "filters": ["critical_only"],
