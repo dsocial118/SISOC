@@ -11,7 +11,7 @@ from centrodefamilia.models import (
     Categoria,
     Actividad,
     )
-from configuraciones.models import Estados
+from configuraciones.models import Dia, Estados
 
 HORAS_DEL_DIA = [(f"{h:02d}:00", f"{h:02d}:00") for h in range(0, 24)] + [
     (f"{h:02d}:30", f"{h:02d}:30") for h in range(0, 24)
@@ -86,11 +86,13 @@ class CentroForm(forms.ModelForm):
 
 
 class ActividadCentroForm(forms.ModelForm):
-    dias = forms.SelectMultiple(
-        attrs={
-            "class": "form-select select2 w-100",
-            "style": "width: 100%;",
-        }
+    dias = forms.ModelMultipleChoiceField(
+        queryset=Dia.objects.all(),
+        required=False,
+        label="Días",
+        widget=forms.SelectMultiple(
+                attrs={"class": "select2 w-100", "multiple": True}
+            ),
     )
     horariosdesde = forms.TimeField(
         label="Hora Desde",
@@ -117,6 +119,7 @@ class ActividadCentroForm(forms.ModelForm):
         required=False,
         label="Categoría",
         empty_label="Seleccione una categoría",
+        widget=forms.Select(attrs={"class": "form-control"})
     )
 
     class Meta:
@@ -133,6 +136,8 @@ class ActividadCentroForm(forms.ModelForm):
         ]
         exclude = ["centro"]
         widgets = {
+            "categoria": forms.Select(attrs={"class": "form-select  w-100"}),
+            "actividad": forms.Select(attrs={"class": "form-select  w-100"}),
             "horariosdesde": forms.TextInput(attrs={"class": "form-control"}),
             "horarioshasta": forms.TextInput(attrs={"class": "form-control"}),
             "cantidad_personas": forms.NumberInput(attrs={"class": "form-control"}),
@@ -140,23 +145,37 @@ class ActividadCentroForm(forms.ModelForm):
             "estado": forms.Select(attrs={"class": "form-control"}),
         }
 
+
+        
+
     def __init__(self, *args, **kwargs):
         self.centro = kwargs.pop("centro", None)
         super().__init__(*args, **kwargs)
 
-        # Si se pasó un dato de categoría, filtramos las actividades
-        if "data" in kwargs:
-            categoria_id = kwargs["data"].get("categoria")
-            if categoria_id:
-                self.fields["actividad"].queryset = Actividad.objects.filter(
-                    categoria_id=categoria_id
-                )
+        if self.data:
+            cat_id = self.data.get("categoria")
+            if cat_id:
+                self.fields["actividad"].queryset = Actividad.objects.filter(categoria_id=cat_id)
             else:
                 self.fields["actividad"].queryset = Actividad.objects.none()
+
+        elif self.instance and self.instance.pk:
+            # Obtener categoría desde la actividad relacionada
+            actividad = self.instance.actividad
+            cat_id = actividad.categoria_id if actividad else None
+            self.initial["categoria"] = cat_id
+
+            if cat_id:
+                self.fields["actividad"].queryset = Actividad.objects.filter(categoria_id=cat_id)
+            else:
+                self.fields["actividad"].queryset = Actividad.objects.none()
+
+            self.initial["actividad"] = self.instance.actividad_id
+            self.initial["dias"] = [d.pk for d in self.instance.dias.all()]
+
         else:
             self.fields["actividad"].queryset = Actividad.objects.none()
 
-        # Si es FARO, ocultar el campo precio
         if self.centro and self.centro.tipo == "faro":
             self.fields["precio"].widget = forms.HiddenInput()
             self.fields["precio"].required = False
@@ -164,7 +183,6 @@ class ActividadCentroForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         precio = cleaned_data.get("precio")
-
         if self.centro and self.centro.tipo == "faro" and precio:
             raise ValidationError(
                 "Un centro de tipo FARO no debe tener un precio asignado."

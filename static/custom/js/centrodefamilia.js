@@ -1,69 +1,67 @@
 // centrodefamilia.js
 
 document.addEventListener("DOMContentLoaded", function() {
-  //
   // 1) FILTROS EN VIVO
-  //
+
   // Filtrar Centros
-  const fc = document.getElementById('filterCentros');
-  const tbC = document.querySelector('#tablaCentros tbody');
-  if (fc && tbC) {
-    fc.addEventListener('input', () => {
-      const term = fc.value.trim().toLowerCase();
-      tbC.querySelectorAll('tr').forEach(row => {
-        const nombre = row.cells[0].textContent.trim().toLowerCase();
-        row.style.display = nombre.startsWith(term) ? '' : 'none';
+  const filtroCentros = document.getElementById('filterCentros');
+  const tablaCentros = document.querySelector('#tablaCentros tbody');
+  if (filtroCentros && tablaCentros) {
+    filtroCentros.addEventListener('input', () => {
+      const termino = filtroCentros.value.trim().toLowerCase();
+      tablaCentros.querySelectorAll('tr').forEach(fila => {
+        const nombre = fila.cells[0].textContent.trim().toLowerCase();
+        fila.style.display = nombre.startsWith(termino) ? '' : 'none';
       });
     });
   }
 
   // Filtrar Actividades (por Centro, Actividad, Categoría, Estado)
-  const fa = document.getElementById('filterActividades');
-  const tbA = document.querySelector('#tablaActividades tbody');
-  if (fa && tbA) {
-    fa.addEventListener('input', () => {
-      const term = fa.value.trim().toLowerCase();
-      tbA.querySelectorAll('tr').forEach(row => {
-        // recorre las cuatro columnas relevantes
-        const texts = Array.from(row.cells)
+  const filtroActividades = document.getElementById('filterActividades');
+  const tablaActividades = document.querySelector('#tablaActividades tbody');
+  if (filtroActividades && tablaActividades) {
+    filtroActividades.addEventListener('input', () => {
+      const termino = filtroActividades.value.trim().toLowerCase();
+      tablaActividades.querySelectorAll('tr').forEach(fila => {
+        const textos = Array.from(fila.cells)
           .slice(0, 4)
-          .map(cell => cell.textContent.trim().toLowerCase());
-        const matches = texts.some(text => text.startsWith(term));
-        row.style.display = matches ? '' : 'none';
+          .map(celda => celda.textContent.trim().toLowerCase());
+        const coincide = textos.some(texto => texto.startsWith(termino));
+        fila.style.display = coincide ? '' : 'none';
       });
     });
   }
 
-  //
-  // 2) AJAX PAGINACIÓN PARA INFORMES CABAL
-  //
-  document.addEventListener('click', function(e) {
-    // Solo enlaces dentro de la paginación de expedientes
-    const link = e.target.closest('#expedientes-container .pagination a');
-    if (!link) return;
-    e.preventDefault();
-    fetch(link.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-      .then(resp => resp.text())
+  // 2) AJAX PARA PAGINACIÓN DE INFORMES CABAL
+  document.addEventListener('click', function(evento) {
+    const enlace = evento.target.closest('#expedientes-container .pagination a');
+    if (!enlace) return;
+    evento.preventDefault();
+    fetch(enlace.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(respuesta => respuesta.text())
       .then(html => {
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
-        const nuevo = doc.querySelector('#expedientes-container');
-        if (nuevo) {
-          document.querySelector('#expedientes-container').innerHTML = nuevo.innerHTML;
+        const nuevoContenedor = doc.querySelector('#expedientes-container');
+        if (nuevoContenedor) {
+          document.querySelector('#expedientes-container').innerHTML =
+            nuevoContenedor.innerHTML;
         }
       });
   });
 
-
-  const se = document.getElementById('searchExpedientes');
-  const tbE = document.querySelector('#tablaExpedientes tbody');
-  if (se && tbE) {
-    se.addEventListener('input', () => {
-      const term = se.value.trim().toLowerCase();
-      tbE.querySelectorAll('tr').forEach(row => {
-        const file   = row.cells[0].textContent.trim().toLowerCase();
-        const period = row.cells[1].textContent.trim().toLowerCase();
-        row.style.display = (file.includes(term) || period.includes(term)) ? '' : 'none';
+  // Filtrar Expedientes
+  const buscadorExpedientes = document.getElementById('searchExpedientes');
+  const tablaExpedientes = document.querySelector('#tablaExpedientes tbody');
+  if (buscadorExpedientes && tablaExpedientes) {
+    buscadorExpedientes.addEventListener('input', () => {
+      const termino = buscadorExpedientes.value.trim().toLowerCase();
+      tablaExpedientes.querySelectorAll('tr').forEach(fila => {
+        const archivo = fila.cells[0].textContent.trim().toLowerCase();
+        const periodo = fila.cells[1].textContent.trim().toLowerCase();
+        fila.style.display = (archivo.includes(termino) || periodo.includes(termino))
+          ? '' 
+          : 'none';
       });
     });
   }

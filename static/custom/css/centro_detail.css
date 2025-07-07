@@ -3,15 +3,61 @@
 /* unifica todos tus estilos             */
 /* -------------------------------------- */
 
+/* 0) Importar fuente para encabezados */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap');
+
 /* 1) Quita márgenes/paddings horizontales extra */
 .no-gutters {
   margin: 0;
   padding: 0;
 }
 
-/* 2) Encabezado full-width con esquinas redondeadas */
+/* 2) Header personalizado “Club Comunicaciones | Centro Adherido” */
 .page-header {
-  border-radius: 0.75rem;
+  border-radius: 0.75rem;   /* esquinas suaves */
+  overflow: hidden;         /* recortar cualquier desborde */
+}
+.page-header .card-body {
+  background-color: #132c47; /* azul oscuro */
+  height: 100px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+.header-bar {
+  width: 8px;               /* franja viva más delgada */
+  height: 100%;
+  background-color: #004a7c; /* azul vivo */
+  flex-shrink: 0;
+}
+.header-title {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: 2rem;
+  color: #ffffff;
+  margin: 0;
+  padding: 0 1rem;          /* espacio a izquierda/derecha */
+  display: flex;
+  align-items: center;
+}
+.separator {
+  font-size: 1.5rem;
+  line-height: 1;
+  color: #ffffff;
+  margin: 0 0.5rem;
+}
+
+/* 🔧  Ajuste de la etiqueta verde: fondo muy transparente + borde oscuro */
+.header-badge {
+  display: inline-block;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  color: #28a745;                         /* texto verde */
+  background-color: rgba(40, 167, 69, 0.1); /* verde muy transparente */
+  border: 1px solid #28a745;              /* borde verde oscuro */
+  border-radius: 0.375rem;
+  text-transform: none;
 }
 
 /* 3) Tarjeta de ubicación: contenedor relativo para las pestañas */
@@ -20,7 +66,6 @@
   overflow: hidden;
   border-radius: 0.5rem;
 }
-
 /* 4) Degradé de fondo en las pestañas laterales */
 .location-card .right-tabs::before {
   content: '';
@@ -42,7 +87,6 @@
   );
   z-index: 0;
 }
-
 /* 5) Contenedor de texto encima del degradé */
 .location-card .right-tabs {
   position: absolute;
@@ -54,7 +98,6 @@
   flex-direction: column;
   z-index: 1;
 }
-
 /* 6) Cada elemento de pestaña vertical */
 .location-card .right-tabs .tab-item {
   flex: 1;
