@@ -4,7 +4,6 @@ from django.utils import timezone
 
 from core.models import Municipio, Provincia
 from core.models import Localidad
-from core.models import Sexo
 from organizaciones.models import Organizacion
 from ciudadanos.models import Ciudadano, EstadoIntervencion
 from duplas.models import Dupla
