@@ -1,27 +1,33 @@
 from django.urls import path
 
+from configuraciones.decorators import group_required
+
+
 from centrodefamilia.views.informecabal import (
     ExpedienteCreateView,
     ExpedienteDetailView,
     ExpedienteListView,
     ExpedienteUpdateView,
 )
-from configuraciones.decorators import group_required
+
 
 from centrodefamilia.views.centro import (
-    CentroDeleteView,
-    CentroListView,
     CentroCreateView,
-    CentroUpdateView,
+    CentroDeleteView,
     CentroDetailView,
+    CentroListView,
+    CentroUpdateView,
 )
+
 from centrodefamilia.views.actividad import (
+    ActividadCentroCreateView,
     ActividadCentroDetailView,
     ActividadCentroListView,
-    ActividadCentroCreateView,
     ActividadCentroUpdateView,
     cargar_actividades_por_categoria,
 )
+
+
 from centrodefamilia.views.participante import (
     ParticipanteActividadCreateView,
     ParticipanteActividadDeleteView,
