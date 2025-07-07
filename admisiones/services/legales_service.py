@@ -6,6 +6,7 @@ from django.template.loader import render_to_string
 from weasyprint import HTML
 import os
 from django.conf import settings
+from django.db.models import Q
 import logging
 
 from admisiones.models.admisiones import (
