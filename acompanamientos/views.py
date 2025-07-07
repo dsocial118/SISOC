@@ -1,4 +1,3 @@
-
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
 from django.views.generic import ListView, DetailView
@@ -14,7 +13,7 @@ def restaurar_hito(request, comedor_id):
     hito = get_object_or_404(Hitos, comedor_id=comedor_id)
 
     if hasattr(hito, campo):
-        setattr(hito, campo, False)  
+        setattr(hito, campo, False)
         hito.save()
         messages.success(
             request, f"El campo '{campo}' ha sido restaurado correctamente."
@@ -34,10 +33,10 @@ class AcompanamientoDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor = self.object
-        
+
         context["hitos"] = AcompanamientoService.obtener_hitos(comedor)
-        context["es_tecnico_comedor"] = AcompanamientoService.verificar_permisos_tecnico_comedor(
-            self.request.user
+        context["es_tecnico_comedor"] = (
+            AcompanamientoService.verificar_permisos_tecnico_comedor(self.request.user)
         )
 
         admision_data = AcompanamientoService.obtener_datos_admision(comedor)
@@ -55,12 +54,12 @@ class ComedoresAcompanamientoListView(ListView):
     model = Comedor
     template_name = "lista_comedores.html"
     context_object_name = "comedores"
-    paginate_by = 10  
+    paginate_by = 10
 
     def get_queryset(self):
         user = self.request.user
         busqueda = self.request.GET.get("busqueda", "")
-        
+
         return AcompanamientoService.obtener_comedores_acompanamiento(user, busqueda)
 
     def get_context_data(self, **kwargs):
