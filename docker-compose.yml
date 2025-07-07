@@ -28,9 +28,6 @@ services:
     ports:
       - "8001:8000"
       - "3000:3000" # Debugger
-    depends_on:
-      mysql:
-        condition: service_healthy
     volumes:
       - .:/sisoc/
 
