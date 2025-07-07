@@ -1,6 +1,6 @@
 from django.urls import path
 
-from configuraciones.decorators import group_required
+from core.decorators import group_required
 from rendicioncuentasfinal.views import (
     DocumentosRendicionCuentasFinalListView,
     RendicionCuentasFinalDetailView,
