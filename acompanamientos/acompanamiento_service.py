@@ -253,7 +253,4 @@ class AcompanamientoService:
         Returns:
             bool: True si tiene permisos, False en caso contrario.
         """
-        return (
-            user.is_superuser
-            or user.groups.filter(name="Tecnico Comedor").exists()
-        )
+        return user.is_superuser or user.groups.filter(name="Tecnico Comedor").exists()
