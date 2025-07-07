@@ -1,5 +1,6 @@
 from django.db import models
 
+
 class Estados(models.Model):
     nombre = models.CharField(max_length=255)
 
@@ -9,6 +10,7 @@ class Estados(models.Model):
     class Meta:
         verbose_name = "Estado"
         verbose_name_plural = "Estados"
+
 
 class Provincia(models.Model):
     """

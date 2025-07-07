@@ -6,7 +6,10 @@ from django.views.generic import ListView, DetailView, CreateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 
-from centrodefamilia.models import Centro, Expediente  # ajusta la ruta si lo tienes en otro módulo
+from centrodefamilia.models import (
+    Centro,
+    Expediente,
+)  # ajusta la ruta si lo tienes en otro módulo
 from centrodefamilia.forms import ExpedienteCabalForm
 from centrodefamilia.services.informescabal import procesar_informe
 from django.views.generic import (
@@ -24,17 +27,14 @@ class ExpedienteListView(LoginRequiredMixin, ListView):
     context_object_name = "expedientes"
 
     def get_queryset(self):
-        return (
-            Expediente.objects
-            .filter(centro_id=self.kwargs['centro_id'])
-            .order_by('-periodo')
+        return Expediente.objects.filter(centro_id=self.kwargs["centro_id"]).order_by(
+            "-periodo"
         )
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['centro'] = get_object_or_404(Centro, pk=self.kwargs['centro_id'])
+        ctx["centro"] = get_object_or_404(Centro, pk=self.kwargs["centro_id"])
         return ctx
-
 
 
 class ExpedienteCreateView(CreateView):
@@ -74,7 +74,7 @@ class ExpedienteDetailView(LoginRequiredMixin, DetailView):
         ctx = super().get_context_data(**ctx)
         ctx["centro"] = self.centro
         return ctx
-    
+
     def get_success_url(self):
         return reverse("expediente_list", kwargs={"centro_id": self.centro.id})
 
