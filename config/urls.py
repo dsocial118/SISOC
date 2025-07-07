@@ -20,6 +20,7 @@ urlpatterns = [
     path("", include("duplas.urls")),
     path("", include("ciudadanos.urls")),
     path("", include("admisiones.urls")),
+    path("", include("centrodefamilia.urls")),
     path("", include("healthcheck.urls")),
     path("acompanamientos/", include("acompanamientos.urls")),
     path("expedientespagos/", include("expedientespagos.urls")),

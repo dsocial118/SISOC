@@ -6,7 +6,7 @@ from core.models import Municipio, Provincia
 from core.models import Localidad
 from core.models import Sexo
 from organizaciones.models import Organizacion
-from ciudadanos.models import EstadoIntervencion
+from ciudadanos.models import Ciudadano, EstadoIntervencion
 from duplas.models import Dupla
 
 
@@ -220,18 +220,17 @@ class Comedor(models.Model):
 
 
 class Nomina(models.Model):
-    """
-    Guardado de las intervenciones realizadas a un ciudadano.
-    """
-
-    comedor = models.ForeignKey(Comedor, on_delete=models.SET_NULL, null=True)
+    comedor = models.ForeignKey("Comedor", on_delete=models.SET_NULL, null=True)
+    ciudadano = models.ForeignKey(
+        Ciudadano,
+        on_delete=models.CASCADE,
+        related_name="nominas",
+        null=True,
+        blank=True,
+    )
     fecha = models.DateTimeField(auto_now_add=True)
     estado = models.ForeignKey(EstadoIntervencion, on_delete=models.SET_NULL, null=True)
     observaciones = models.TextField(blank=True, null=True)
-    nombre = models.TextField(blank=True, null=True)
-    apellido = models.TextField(blank=True, null=True)
-    dni = models.IntegerField(blank=True, null=True)
-    sexo = models.ForeignKey(Sexo, on_delete=models.SET_NULL, default=1, null=True)
 
     class Meta:
         ordering = ["-fecha"]

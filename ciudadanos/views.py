@@ -11,7 +11,8 @@ from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import models, transaction
-from django.db.models import Case, IntegerField, Q, Value, When
+from django.db.models import Case, IntegerField, Q, Value, When, CharField
+from django.db.models.functions import Cast
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
@@ -261,21 +262,29 @@ class CiudadanosReportesListView(ListView):
         if data_organismo:
             filters &= Q(organismo=data_organismo)
         if nombre_completo_ciudadano:
-            filters &= (
-                Q(ciudadano__nombre__icontains=nombre_completo_ciudadano)
-                | Q(ciudadano__apellido__icontains=nombre_completo_ciudadano)
-                | Q(ciudadano__documento__icontains=nombre_completo_ciudadano)
+            filters &= Q(ciudadano__nombre__icontains=nombre_completo_ciudadano) | Q(
+                ciudadano__apellido__icontains=nombre_completo_ciudadano
             )
         if data_estado:
             filters &= Q(estado=data_estado)
         if data_fecha_desde:
             filters &= Q(fecha_creado__gte=data_fecha_desde)
 
-        object_list = (
-            Derivacion.objects.filter(filters)
-            .select_related("programa", "organismo", "ciudadano")
-            .distinct()
-        )
+        object_list = Derivacion.objects.annotate(
+            doc_str=Cast("ciudadano__documento", CharField())
+        ).filter(filters)
+        if nombre_completo_ciudadano:
+            if nombre_completo_ciudadano.isnumeric():
+                object_list = object_list.filter(
+                    doc_str__startswith=nombre_completo_ciudadano
+                )
+            else:
+                object_list = object_list.filter(
+                    doc_str__icontains=nombre_completo_ciudadano
+                )
+        object_list = object_list.select_related(
+            "programa", "organismo", "ciudadano"
+        ).distinct()
 
         if not object_list.exists():
             messages.warning(self.request, "La búsqueda no arrojó resultados.")
@@ -309,7 +318,8 @@ class CiudadanosListView(ListView):
             if query:
                 filter_condition = Q(apellido__icontains=query)
                 if query.isnumeric():
-                    filter_condition |= Q(documento__contains=query)
+                    queryset = queryset.annotate(doc_str=Cast("documento", CharField()))
+                    filter_condition |= Q(doc_str__startswith=query)
                 queryset = queryset.filter(filter_condition)
             self._cached_queryset = (
                 queryset  # pylint: disable=attribute-defined-outside-init
@@ -569,6 +579,11 @@ class CiudadanosDetailView(DetailView):
             for familiar in familiares
             if familiar["ciudadano_1__id"] == int(pk)
         ]
+        context["count_programas"] = cache.get_or_set(
+            f"count_programas_{pk}",
+            CiudadanoPrograma.objects.filter(ciudadano=pk).count(),
+            60,
+        )
         context["familiares_fk2"] = [
             familiar
             for familiar in familiares
@@ -975,10 +990,14 @@ def busqueda_familiares(request):
             ciudadanos_asociados_ids.add(ciudadano_2_id)
 
     paginate_by = 10
-    familiares = Ciudadano.objects.filter(
-        ~Q(id=ciudadano_principal_id)
-        & (Q(apellido__icontains=busqueda) | Q(documento__icontains=busqueda))
-    ).exclude(id__in=ciudadanos_asociados_ids)
+    familiares = (
+        Ciudadano.objects.annotate(doc_str=Cast("documento", CharField()))
+        .filter(
+            ~Q(id=ciudadano_principal_id)
+            & (Q(apellido__icontains=busqueda) | Q(doc_str__startswith=busqueda))
+        )
+        .exclude(id__in=ciudadanos_asociados_ids)
+    )
 
     if familiares.exists() and busqueda:
         paginator = Paginator(familiares, paginate_by)
@@ -1131,16 +1150,19 @@ class DerivacionBuscar(TemplateView):
         query = self.request.GET.get("busqueda")
         if query:
             derivaciones_filtrado = (
-                derivaciones.filter(
+                derivaciones.annotate(doc_str=Cast("ciudadano__documento", CharField()))
+                .filter(
                     Q(ciudadano__apellido__icontains=query)
-                    | Q(ciudadano__documento__icontains=query)
+                    | Q(doc_str__startswith=query)
                 )
                 .values("ciudadano")
                 .distinct()
             )
-            ciudadanos_filtrado = ciudadanos.filter(
-                Q(apellido__icontains=query) | Q(documento__icontains=query)
-            ).distinct()
+            ciudadanos_filtrado = (
+                ciudadanos.annotate(doc_str=Cast("documento", CharField()))
+                .filter(Q(apellido__icontains=query) | Q(doc_str__startswith=query))
+                .distinct()
+            )
 
             if derivaciones_filtrado:
                 sin_derivaciones = ciudadanos_filtrado.exclude(
@@ -1207,11 +1229,14 @@ class DerivacionListView(ListView):
         query = self.request.GET.get("busqueda")
 
         if query:
-            object_list = model.filter(
-                Q(ciudadano__apellido__icontains=query)
-                | Q(ciudadano__documento__icontains=query)
-            ).distinct()
-
+            object_list = (
+                model.annotate(doc_str=Cast("ciudadano__documento", CharField()))
+                .filter(
+                    Q(ciudadano__apellido__icontains=query)
+                    | Q(doc_str__startswith=query)
+                )
+                .distinct()
+            )
         else:
             object_list = model.all()
 
@@ -2025,10 +2050,14 @@ def busqueda_hogar(request):
             ciudadanos_asociados_ids.add(ciudadano_2)
 
     paginate_by = 10
-    hogares = Ciudadano.objects.filter(
-        ~Q(id=ciudadano_principal_id)
-        & (Q(apellido__icontains=busqueda) | Q(documento__icontains=busqueda))
-    ).exclude(id__in=ciudadanos_asociados_ids)
+    hogares = (
+        Ciudadano.objects.annotate(doc_str=Cast("documento", CharField()))
+        .filter(
+            ~Q(id=ciudadano_principal_id)
+            & (Q(apellido__icontains=busqueda) | Q(doc_str__startswith=busqueda))
+        )
+        .exclude(id__in=ciudadanos_asociados_ids)
+    )
 
     if hogares.exists() and busqueda:
         paginator = Paginator(hogares, paginate_by)
