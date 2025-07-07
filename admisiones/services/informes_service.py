@@ -136,7 +136,7 @@ class InformeService:
         return {
             "tipo": tipo,
             "admision": admision,
-            "anexo": admision.anexo if hasattr(admision, "anexo") else None,
+            "anexo": Anexo.objects.filter(admision=admision).last(),
         }
 
     @staticmethod
@@ -154,9 +154,7 @@ class InformeService:
             "admision": informe.admision,
             "comedor": informe.admision.comedor,
             "campos": InformeService.get_campos_visibles_informe(informe),
-            "anexo": (
-                informe.admision.anexo if hasattr(informe.admision, "anexo") else None
-            ),
+            "anexo": Anexo.objects.filter(admision=informe.admision).last(),
             "campos_a_subsanar": list(campos_a_subsanar),
             "observacion": observacion,
         }

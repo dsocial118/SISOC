@@ -327,7 +327,7 @@ class ObservacionGeneralInforme(models.Model):
 
 
 class Anexo(models.Model):
-    admision = models.OneToOneField(Admision, on_delete=models.SET_NULL, null=True)
+    admision = models.ForeignKey(Admision, on_delete=models.SET_NULL, null=True)
 
     expediente = models.CharField("Expediente", max_length=100, null=True, blank=True)
     efector = models.CharField(

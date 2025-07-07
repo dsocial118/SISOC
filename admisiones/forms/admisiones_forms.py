@@ -54,7 +54,7 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
 
         if admision:
             try:
-                anexo = Anexo.objects.get(admision=admision)
+                anexo = Anexo.objects.filter(admision=admision).last()
                 nombre = anexo.responsable_nombre or ""
                 apellido = anexo.responsable_apellido or ""
                 comedor = admision.comedor
@@ -115,7 +115,7 @@ class InformeTecnicoBaseForm(forms.ModelForm):
 
         if admision:
             try:
-                anexo = Anexo.objects.get(admision=admision)
+                anexo = Anexo.objects.filter(admision=admision).last()
                 nombre = anexo.responsable_nombre or ""
                 apellido = anexo.responsable_apellido or ""
                 comedor = admision.comedor
