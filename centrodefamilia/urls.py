@@ -1,5 +1,6 @@
 from django.urls import path
 
+from centrodefamilia.views.informecabal import ExpedienteCreateView, ExpedienteDetailView, ExpedienteListView, ExpedienteUpdateView
 from configuraciones.decorators import group_required
 
 from centrodefamilia.views.centro import (
@@ -15,12 +16,6 @@ from centrodefamilia.views.actividad import (
     ActividadCentroCreateView,
     ActividadCentroUpdateView,
     cargar_actividades_por_categoria,
-)
-from centrodefamilia.views.orientador import (
-    OrientadorListView,
-    OrientadorCreateView,
-    OrientadorUpdateView,
-    OrientadorDeleteView,
 )
 from centrodefamilia.views.participante import (
     ParticipanteActividadCreateView,
@@ -84,29 +79,15 @@ urlpatterns = [
         group_required(["ReferenteCentro"])(cargar_actividades_por_categoria),
         name="ajax_cargar_actividades",
     ),
-    path(
-        "centros/<int:centro_id>/orientadores/",
-        OrientadorListView.as_view(),
-        name="orientador_list",
-    ),
-    path(
-        "centros/<int:centro_id>/orientadores/nuevo/",
-        OrientadorCreateView.as_view(),
-        name="orientador_create",
-    ),
-    path(
-        "orientadores/<int:pk>/editar/",
-        OrientadorUpdateView.as_view(),
-        name="orientador_update",
-    ),
-    path(
-        "orientadores/<int:pk>/eliminar/",
-        OrientadorDeleteView.as_view(),
-        name="orientador_delete",
-    ),
+    
     path(
         "centros/<int:centro_id>/actividades/<int:actividad_id>/participantes/<int:pk>/eliminar/",
         ParticipanteActividadDeleteView.as_view(),
         name="participanteactividad_delete",
     ),
+    path('centro/<int:centro_id>/expedientes/', ExpedienteListView.as_view(), name='expediente_list'),
+    path('centro/<int:centro_id>/expedientes/nuevo/', ExpedienteCreateView.as_view(), name='expediente_create'),
+    path('centro/<int:centro_id>/expedientes/<int:pk>/', ExpedienteDetailView.as_view(), name='expediente_detail'),  
+    path('centro/<int:centro_id>/expedientes/<int:pk>/editar/',
+         ExpedienteUpdateView.as_view(), name='expediente_update'),
 ]

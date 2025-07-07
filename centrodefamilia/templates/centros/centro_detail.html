@@ -1,410 +1,470 @@
 {% extends "includes/main.html" %}
 {% load static %}
-
 {% block title %}{{ centro.nombre }}{% endblock %}
-
 {% block content %}
-<link rel="stylesheet" href="{% static 'custom/css/centro_detail.css' %}">
-<div class="container-fluid no-gutters">
-  <!-- ENCABEZADO full width y redondeado -->
-  <div class="d-flex bg-primary text-white mb-4 page-header" style="height:100px; width:100%;">
-    <div style="width:60px; background:#004a7c;"></div>
-    <div class="flex-grow-1 d-flex align-items-center justify-content-between px-4">
-      <h1 class="mb-0" style="font-size:2rem;">{{ centro.nombre }}</h1>
-      <span class="badge bg-success" style="font-size:1rem;">{{ centro.get_tipo_display }}</span>
-    </div>
-    <div style="width:80px;"></div>
-  </div>
-
-  <!-- UBICACIÓN con barras laterales -->
-  <div class="d-flex bg-dark text-white rounded mb-4 location-card" style="height:300px;">
-    <div class="d-flex align-items-center justify-content-center"
-         style="width:60px; background:#004a7c; writing-mode: vertical-rl; text-orientation: upright; font-weight:bold;">
-      Ubicación
-    </div>
-    <div style="width:350px; padding:1rem;">
-      {% if centro.calle and centro.numero and centro.localidad and centro.municipio and centro.provincia %}
-        <iframe
-          src="https://maps.google.com/maps?q={{ centro.calle|urlencode }}+{{ centro.numero }},+{{ centro.localidad.nombre|urlencode }},+{{ centro.municipio.nombre|urlencode }},+{{ centro.provincia.nombre|urlencode }}&output=embed"
-          width="100%" height="100%" frameborder="0"
-          style="border:0; border-radius:8px;"
-          allowfullscreen>
-        </iframe>
-      {% else %}
-        <div class="h-100 d-flex align-items-center justify-content-center text-muted">
-          Sin mapa disponible
-        </div>
-      {% endif %}
-    </div>
-    <div class="flex-grow-1 p-4">
-      <h5 class="text-white">Ubicación</h5>
-      <hr class="border-secondary">
-      <ul class="list-unstyled mb-4" style="column-count:2; column-gap:2rem;">
-        <li><i class="fas fa-road me-2 text-info"></i>Calle: {{ centro.calle }} {{ centro.numero }}</li>
-        <li><i class="fas fa-arrows-alt-h me-2 text-info"></i>Entre Calle1: {{ centro.entre_calle_1 }}</li>
-        <li><i class="fas fa-arrows-alt-h me-2 text-info"></i>Entre Calle2: {{ centro.entre_calle_2 }}</li>
-        <li><i class="fas fa-globe-americas me-2 text-info"></i>{{ centro.localidad }}, {{ centro.provincia }}</li>
-        <li><i class="fas fa-map-pin me-2 text-info"></i>C.P.: {{ centro.codigo_postal }}</li>
-        <li><i class="fas fa-crosshairs me-2 text-info"></i>
-          <a href="https://maps.google.com/?q={{ centro.lat }},{{ centro.lng }}" class="text-info">
-            {{ centro.lat }}, {{ centro.lng }}
-          </a>
-        </li>
-      </ul>
-      <div class="mt-4">
-        <a href="{% url 'centro_update' centro.id %}" class="btn btn-outline-primary btn-sm">Editar</a>
-        <a href="{% url 'centro_list' %}" class="btn btn-outline-secondary btn-sm">Volver</a>
-        <a href="{% url 'actividadcentro_create' centro_id=centro.id %}" class="btn btn-outline-success btn-sm">Agregar Actividad</a>
-        {% if centro.tipo == 'faro' %}
-          <a href="{% url 'centro_create' %}?faro={{ centro.id }}" class="btn btn-outline-info btn-sm">Agregar Centro Adherido</a>
-        {% endif %}
-      </div>
-    </div>
-    <div class="right-tabs">
-      <div class="tab-item">Información Básica</div>
-      <div class="tab-item">Datos</div>
-      <div class="tab-item">Relevamientos</div>
-      <div class="tab-item">Interacciones</div>
-    </div>
-  </div>
-
-  <!-- MÉTRICAS RÁPIDAS -->
-  <div class="d-flex gap-3 mb-4">
-    <div class="flex-fill card bg-navy text-white text-center p-3">
-      <i class="fas fa-lightbulb fa-2x mb-2 text-warning"></i>
-      <div>Centro Adheridos</div>
-      <strong>{{ metricas.centros_faro }}</strong>
-    </div>
-    <div class="flex-fill card bg-navy text-white text-center p-3">
-      <i class="fas fa-folder-open fa-2x mb-2 text-info"></i>
-      <div>Categorías</div>
-      <strong>{{ metricas.categorias }}</strong>
-    </div>
-    <div class="flex-fill card bg-navy text-white text-center p-3">
-      <i class="fas fa-running fa-2x mb-2 text-success"></i>
-      <div>Actividades</div>
-      <strong>{{ metricas.actividades }}</strong>
-    </div>
-    <div class="flex-fill card bg-navy text-white text-center p-3">
-      <i class="fas fa-chart-line fa-2x mb-2 text-primary"></i>
-      <div>Interacciones</div>
-      <strong>{{ metricas.interacciones }}</strong>
-    </div>
-  </div>
-
-
-
-<!-- TABLA DE CENTROS ADHERIDOS (solo FARO) -->
-
-  <!-- 1) TABLA DE CENTROS ADHERIDOS (solo FARO) -->
-  {% if centro.tipo == 'faro' %}
-  <div class="card bg-dark text-white mb-4">
-    <div class="card-header bg-secondary d-flex align-items-center">
-      <h5 class="mb-0">Centros Adheridos</h5>
-      <input id="filterCentros"
-             class="form-control form-control-sm bg-dark text-white border-secondary ms-auto"
-             style="width:180px"
-             placeholder="Buscar centro…">
-    </div>
-    <div class="card-body p-0">
-      <div class="table-responsive">
-        <table id="tablaCentros" class="table table-dark table-striped mb-0">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Tipo</th>
-              <th>Activo</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for adh in centros_adheridos_paginados %}
-            <tr>
-              <td>
-                <a href="{% url 'centro_detail' adh.id %}" class="text-info">{{ adh.nombre }}</a>
-              </td>
-              <td>{{ adh.get_tipo_display }}</td>
-              <td>
-                {% if adh.activo %}
-                  <span class="badge bg-success">Sí</span>
-                {% else %}
-                  <span class="badge bg-danger">No</span>
-                {% endif %}
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      {% if not centros_adheridos_paginados %}
-        <div class="p-3 text-center text-muted">No hay centros adheridos.</div>
-      {% endif %}
-    </div>
-    {% if centros_adheridos_paginados.has_other_pages %}
-    <div class="card-footer bg-dark text-center">
-      <ul class="pagination justify-content-center mb-0">
-        {% if centros_adheridos_paginados.has_previous %}
-        <li class="page-item">
-          <a class="page-link bg-secondary text-white"
-             href="?page={{ centros_adheridos_paginados.previous_page_number }}">Anterior</a>
-        </li>
-        {% endif %}
-        {% for i in centros_adheridos_paginados.paginator.page_range %}
-        <li class="page-item {% if centros_adheridos_paginados.number == i %}active{% endif %}">
-          <a class="page-link bg-secondary text-white" href="?page={{ i }}">{{ i }}</a>
-        </li>
-        {% endfor %}
-        {% if centros_adheridos_paginados.has_next %}
-        <li class="page-item">
-          <a class="page-link bg-secondary text-white"
-             href="?page={{ centros_adheridos_paginados.next_page_number }}">Siguiente</a>
-        </li>
-        {% endif %}
-      </ul>
-    </div>
-    {% endif %}
-  </div>
-  {% endif %}
-
-  <!-- NÓMINA ASISTENTES -->
-  <div class="row gx-3 mb-4">
-    <div class="col-md-3">
-      <div class="card bg-dark text-white h-100">
-        <div class="card-header bg-secondary">Nómina Asistentes</div>
-        <ul class="list-group list-group-flush">
-          <li class="list-group-item d-flex justify-content-between align-items-center bg-navy text-white">
-            <div><i class="fas fa-users fa-lg me-2"></i>Asistentes</div>
-            <span class="badge rounded-pill bg-warning">{{ asistentes.total }}</span>
-          </li>
-          <li class="list-group-item d-flex justify-content-between align-items-center bg-navy text-white">
-            <div><i class="fas fa-male fa-lg me-2"></i>Hombres</div>
-            <span class="badge rounded-pill bg-info">{{ asistentes.hombres }}</span>
-          </li>
-          <li class="list-group-item d-flex justify-content-between align-items-center bg-navy text-white">
-            <div><i class="fas fa-female fa-lg me-2"></i>Mujeres</div>
-            <span class="badge rounded-pill bg-danger">{{ asistentes.mujeres }}</span>
-          </li>
-          <li class="list-group-item d-flex justify-content-between align-items-center bg-navy text-white">
-            <div><i class="fas fa-list fa-lg me-2"></i>Lista de espera</div>
-            <span class="badge rounded-pill bg-danger">{{ asistentes.espera }}</span>
-          </li>
-        </ul>
-      </div>
-    </div>
-
-    <!-- REPORTE CABAL & DETALLES ADMISIÓN -->
-    <div class="col-md-9">
-      <div class="row gx-3">
-        <div class="col-md-6">
-          <div class="card bg-dark text-white p-3 h-100">
-            <h5>Reporte CABAL</h5>
-            {{ reporte_cabal|safe }}
-          </div>
-        </div>
-        <div class="col-md-6">
-          <div class="card bg-dark text-white p-3 h-100">
-            <h5>Detalles de admisión</h5>
-            <ul class="list-unstyled">
-              <li><strong>Fecha:</strong> {{ admision.fecha }}</li>
-              <li><strong>N° expediente:</strong> {{ admision.numero_expediente }}</li>
-              <li><strong>N° IF:</strong> {{ admision.numero_if }}</li>
-              <li><strong>Estado:</strong> {{ admision.estado }}</li>
-              <li><strong>Dupla:</strong> {{ admision.dupla }}</li>
-              <li><strong>Convenio:</strong> {{ admision.tipo_convenio }}</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ACTIVIDADES CONFIGURADAS y OBSERVACIONES -->
-  <div class="row gx-3 mb-4">
-    <div class="col-md-6">
-      <div class="card bg-dark text-white actividades-card h-100">
-        <div class="card-header bg-secondary">Actividades en curso</div>
-        <div class="card-body p-3">
-          {% if actividades %}
-            <div class="table-responsive">
-              <table class="table table-dark table-striped mb-0">
-                <thead>
-                  <tr>
-                    <th>Actividad</th>
-                    <th>Categoría</th>
-                    <th>Estado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for act in actividades %}
-                    <tr>
-                      <td>
-                        <a href="{% url 'actividadcentro_detail' centro_id=act.obj.centro.id pk=act.obj.id %}"
-                           class="text-info text-decoration-none">
-                          {{ act.obj.actividad.nombre }}
-                        </a>
-                      </td>
-                      <td>{{ act.obj.actividad.categoria.nombre }}</td>
-                      <td>{{ act.obj.get_estado_display }}</td>
-                    </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
+    <link rel="stylesheet" href="{% static 'custom/css/centro_detail.css' %}" />
+    <div class="container-fluid no-gutters">
+        <!-- ENCABEZADO full width y redondeado -->
+        <div class="d-flex bg-primary text-white mb-4 page-header"
+             style="height:100px;
+                    width:100%">
+            <div style="width:60px; background:#004a7c;"></div>
+            <div class="flex-grow-1 d-flex align-items-center justify-content-between px-4">
+                <h1 class="mb-0" style="font-size:2rem;">{{ centro.nombre }}</h1>
+                <span class="badge bg-success" style="font-size:1rem;">{{ centro.get_tipo_display }}</span>
             </div>
-          {% else %}
-            <p>No hay actividades registradas.</p>
-          {% endif %}
+            <div style="width:80px;"></div>
         </div>
-      </div>
-    </div>
-
-    <div class="col-md-6">
-      <div class="card bg-dark text-white observaciones-card h-100">
-        <div class="card-header bg-secondary">Observaciones</div>
-        <div class="card-body">
-          {% if observaciones %}
-            <ul class="list-unstyled mb-0">
-              {% for obs in observaciones %}
-                <li class="mb-3">
-                  <small class="text-muted">{{ obs.fecha }} – {{ obs.autor }}</small>
-                  <p class="mb-0">{{ obs.texto }}</p>
-                </li>
-              {% endfor %}
-            </ul>
-          {% else %}
-            <p>No hay observaciones registradas.</p>
-          {% endif %}
+        <!-- UBICACIÓN con barras laterales -->
+        <div class="d-flex bg-dark text-white rounded mb-4 location-card"
+             style="height:300px">
+            <div class="d-flex align-items-center justify-content-center"
+                 style="width:60px;
+                        background:#004a7c;
+                        writing-mode: vertical-rl;
+                        text-orientation: upright;
+                        font-weight:bold">Ubicación</div>
+            <div style="width:350px; padding:1rem;">
+                {% if centro.calle and centro.numero and centro.localidad and centro.municipio and centro.provincia %}
+                    <iframe src="https://maps.google.com/maps?q={{ centro.calle|urlencode }}+{{ centro.numero }},+{{ centro.localidad.nombre|urlencode }},+{{ centro.municipio.nombre|urlencode }},+{{ centro.provincia.nombre|urlencode }}&output=embed"
+                            width="100%"
+                            height="100%"
+                            frameborder="0"
+                            style="border:0;
+                                   border-radius:8px"
+                            allowfullscreen>
+                    </iframe>
+                {% else %}
+                    <div class="h-100 d-flex align-items-center justify-content-center text-muted">Sin mapa disponible</div>
+                {% endif %}
+            </div>
+            <div class="flex-grow-1 p-4">
+                <h5 class="text-white">Ubicación</h5>
+                <hr class="border-secondary" />
+                <ul class="list-unstyled mb-4" style="column-count:2; column-gap:2rem;">
+                    <li>
+                        <i class="fas fa-road me-2 text-info"></i>Calle: {{ centro.calle }} {{ centro.numero }}
+                    </li>
+                    <li>
+                        <i class="fas fa-arrows-alt-h me-2 text-info"></i>Entre Calle1: {{ centro.entre_calle_1 }}
+                    </li>
+                    <li>
+                        <i class="fas fa-arrows-alt-h me-2 text-info"></i>Entre Calle2: {{ centro.entre_calle_2 }}
+                    </li>
+                    <li>
+                        <i class="fas fa-globe-americas me-2 text-info"></i>{{ centro.localidad }}, {{ centro.provincia }}
+                    </li>
+                    <li>
+                        <i class="fas fa-map-pin me-2 text-info"></i>C.P.: {{ centro.codigo_postal }}
+                    </li>
+                    <li>
+                        <i class="fas fa-crosshairs me-2 text-info"></i>
+                        <a href="https://maps.google.com/?q={{ centro.lat }},{{ centro.lng }}"
+                           class="text-info">{{ centro.lat }}, {{ centro.lng }}</a>
+                    </li>
+                </ul>
+                <div class="mt-4">
+                    <a href="{% url 'centro_update' centro.id %}"
+                       class="btn btn-outline-primary btn-sm">Editar</a>
+                    <a href="{% url 'centro_list' %}"
+                       class="btn btn-outline-secondary btn-sm">Volver</a>
+                    <a href="{% url 'actividadcentro_create' centro_id=centro.id %}"
+                       class="btn btn-outline-success btn-sm">Agregar Actividad</a>
+                    {% if centro.tipo == 'faro' %}
+                        <a href="{% url 'centro_create' %}?faro={{ centro.id }}"
+                           class="btn btn-outline-info btn-sm">Agregar Centro Adherido</a>
+                    {% endif %}
+                    <!-- Nuevo botón Expediente CABAL -->
+                    <a href="{% url 'expediente_list' centro.id %}"
+                       class="btn btn-outline-warning btn-sm">Agregar Expediente CABAL</a>
+                </div>
+            </div>
+            <div class="right-tabs">
+                <div class="tab-item">Información Básica</div>
+                <div class="tab-item">Datos</div>
+                <div class="tab-item">Relevamientos</div>
+                <div class="tab-item">Interacciones</div>
+            </div>
         </div>
-      </div>
-    </div>
-  </div>
-<!-- 2) TABLA DE TODAS LAS ACTIVIDADES (con POPUP) -->
-  <div class="card bg-dark text-white mb-4">
-    <div class="card-header bg-secondary d-flex align-items-center">
-      <h5 class="mb-0">Todas las Actividades</h5>
-      <input id="filterActividades"
-             class="form-control form-control-sm bg-dark text-white border-secondary ms-auto"
-             style="width:180px"
-             placeholder="Buscar actividad…">
-    </div>
-    <div class="card-body p-0">
-      <div class="table-responsive">
-        <table id="tablaActividades" class="table table-dark table-striped mb-0">
-          <thead>
-            <tr>
-              <th>Centro</th>
-              <th>Actividad</th>
-              <th>Categoría</th>
-              <th>Estado</th>
-              <th class="text-end">Acción</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for ac in actividades_paginados %}
-            <tr>
-              <td>{{ ac.centro.nombre }}</td>
-              <td>{{ ac.actividad.nombre }}</td>
-              <td>{{ ac.actividad.categoria.nombre }}</td>
-              <td>{{ ac.get_estado_display }}</td>
-              <td class="text-end">
-                <button class="btn btn-outline-info btn-sm"
-                        data-bs-toggle="modal"
-                        data-bs-target="#modalAct{{ ac.id }}">
-                  Detalles
-                </button>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      {% if not actividades_paginados %}
-        <div class="p-3 text-center text-muted">No hay actividades.</div>
-      {% endif %}
-    </div>
-    {% if actividades_paginados.has_other_pages %}
-    <div class="card-footer bg-dark text-center">
-      <ul class="pagination justify-content-center mb-0">
-        {% if actividades_paginados.has_previous %}
-        <li class="page-item">
-          <a class="page-link bg-secondary text-white"
-             href="?page_act={{ actividades_paginados.previous_page_number }}">Anterior</a>
-        </li>
+        <!-- MÉTRICAS RÁPIDAS -->
+        <div class="d-flex gap-3 mb-4">
+            <div class="flex-fill card bg-navy text-white text-center p-3">
+                <i class="fas fa-lightbulb fa-2x mb-2 text-warning"></i>
+                <div>Centro Adheridos</div>
+                <strong>{{ metricas.centros_faro }}</strong>
+            </div>
+            <div class="flex-fill card bg-navy text-white text-center p-3">
+                <i class="fas fa-folder-open fa-2x mb-2 text-info"></i>
+                <div>Categorías</div>
+                <strong>{{ metricas.categorias }}</strong>
+            </div>
+            <div class="flex-fill card bg-navy text-white text-center p-3">
+                <i class="fas fa-running fa-2x mb-2 text-success"></i>
+                <div>Actividades</div>
+                <strong>{{ metricas.actividades }}</strong>
+            </div>
+            <div class="flex-fill card bg-navy text-white text-center p-3">
+                <i class="fas fa-chart-line fa-2x mb-2 text-primary"></i>
+                <div>Interacciones</div>
+                <strong>{{ metricas.interacciones }}</strong>
+            </div>
+        </div>
+        <!-- TABLA DE CENTROS ADHERIDOS (solo FARO) -->
+        <!-- 1) TABLA DE CENTROS ADHERIDOS (solo FARO) -->
+        {% if centro.tipo == 'faro' %}
+            <div class="card bg-dark text-white mb-4">
+                <div class="card-header bg-secondary d-flex align-items-center">
+                    <h5 class="mb-0">Centros Adheridos</h5>
+                    <input id="filterCentros"
+                           class="form-control form-control-sm bg-dark text-white border-secondary ms-auto"
+                           style="width:180px"
+                           placeholder="Buscar centro…" />
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table id="tablaCentros" class="table table-dark table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Tipo</th>
+                                    <th>Activo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for adh in centros_adheridos_paginados %}
+                                    <tr>
+                                        <td>
+                                            <a href="{% url 'centro_detail' adh.id %}" class="text-info">{{ adh.nombre }}</a>
+                                        </td>
+                                        <td>{{ adh.get_tipo_display }}</td>
+                                        <td>
+                                            {% if adh.activo %}
+                                                <span class="badge bg-success">Sí</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">No</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% if not centros_adheridos_paginados %}
+                        <div class="p-3 text-center text-muted">No hay centros adheridos.</div>
+                    {% endif %}
+                </div>
+                {% if centros_adheridos_paginados.has_other_pages %}
+                    <div class="card-footer bg-dark text-center">
+                        <ul class="pagination justify-content-center mb-0">
+                            {% if centros_adheridos_paginados.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link bg-secondary text-white"
+                                       href="?page={{ centros_adheridos_paginados.previous_page_number }}">Anterior</a>
+                                </li>
+                            {% endif %}
+                            {% for i in centros_adheridos_paginados.paginator.page_range %}
+                                <li class="page-item {% if centros_adheridos_paginados.number == i %}active{% endif %}">
+                                    <a class="page-link bg-secondary text-white" href="?page={{ i }}">{{ i }}</a>
+                                </li>
+                            {% endfor %}
+                            {% if centros_adheridos_paginados.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link bg-secondary text-white"
+                                       href="?page={{ centros_adheridos_paginados.next_page_number }}">Siguiente</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                {% endif %}
+            </div>
         {% endif %}
-        {% for i in actividades_paginados.paginator.page_range %}
-        <li class="page-item {% if actividades_paginados.number == i %}active{% endif %}">
-          <a class="page-link bg-secondary text-white"
-             href="?page_act={{ i }}">{{ i }}</a>
-        </li>
+        <!-- NÓMINA ASISTENTES -->
+        <div class="row gx-3 mb-4">
+            <div class="col-md-3">
+                <div class="card bg-dark text-white h-100">
+                    <div class="card-header bg-secondary">Nómina Asistentes</div>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center bg-navy text-white">
+                            <div>
+                                <i class="fas fa-users fa-lg me-2"></i>Asistentes
+                            </div>
+                            <span class="badge rounded-pill bg-warning">{{ asistentes.total }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center bg-navy text-white">
+                            <div>
+                                <i class="fas fa-male fa-lg me-2"></i>Hombres
+                            </div>
+                            <span class="badge rounded-pill bg-info">{{ asistentes.hombres }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center bg-navy text-white">
+                            <div>
+                                <i class="fas fa-female fa-lg me-2"></i>Mujeres
+                            </div>
+                            <span class="badge rounded-pill bg-danger">{{ asistentes.mujeres }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center bg-navy text-white">
+                            <div>
+                                <i class="fas fa-list fa-lg me-2"></i>Lista de espera
+                            </div>
+                            <span class="badge rounded-pill bg-danger">{{ asistentes.espera }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <!-- REPORTE CABAL & DETALLES ADMISIÓN -->
+            <div class="col-md-9">
+               <div id="expedientes-container" class="card bg-dark text-white mb-4">
+                    <div class="card-header bg-secondary">Informes CABAL</div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-dark table-striped mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Archivo</th>
+                                        <th>Periodo</th>
+                                        <th>Fecha de carga</th>
+                                        <th class="text-end">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for exp in expedientes_cabal %}
+                                        <tr>
+                                            <td>
+                                                {% if exp.archivo %}
+                                                    <a href="{{ exp.archivo.url }}" target="_blank" class="text-info">{{ exp.archivo.name|cut:"informes_cabal/" }}</a>
+                                                {% else %}
+                                                    <span class="text-muted">Sin archivo</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ exp.periodo|date:"m/Y" }}</td>
+                                            <td>{{ exp.fecha_subida|date:"d/m/Y H:i" }}</td>
+                                            <td class="text-end">
+                                                <a href="{% url 'expediente_detail' centro_id=centro.id pk=exp.id %}"
+                                                   class="btn btn-sm btn-outline-info">Ver informe</a>
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted py-3">No hay informes cargados.</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% if expedientes_cabal.has_other_pages %}
+                        <ul class="pagination justify-content-center mb-0">
+                            {% if expedientes_cabal.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link"
+                                       href="?page_exp={{ expedientes_cabal.previous_page_number }}">«</a>
+                                </li>
+                            {% endif %}
+                            {% for num in expedientes_cabal.paginator.page_range %}
+                                <li class="page-item {% if expedientes_cabal.number == num %}active{% endif %}">
+                                    <a class="page-link" href="?page_exp={{ num }}">{{ num }}</a>
+                                </li>
+                            {% endfor %}
+                            {% if expedientes_cabal.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link"
+                                       href="?page_exp={{ expedientes_cabal.next_page_number }}">»</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <!-- ACTIVIDADES CONFIGURADAS y OBSERVACIONES -->
+        <div class="row gx-3 mb-4">
+            <div class="col-md-6">
+                <div class="card bg-dark text-white actividades-card h-100">
+                    <div class="card-header bg-secondary">Actividades en curso</div>
+                    <div class="card-body p-3">
+                        {% if actividades %}
+                            <div class="table-responsive">
+                                <table class="table table-dark table-striped mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Actividad</th>
+                                            <th>Categoría</th>
+                                            <th>Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for act in actividades %}
+                                            <tr>
+                                                <td>
+                                                    <a href="{% url 'actividadcentro_detail' centro_id=act.obj.centro.id pk=act.obj.id %}"
+                                                       class="text-info text-decoration-none">
+                                                        {{ act.obj.actividad.nombre }}
+                                                    </a>
+                                                </td>
+                                                <td>{{ act.obj.actividad.categoria.nombre }}</td>
+                                                <td>{{ act.obj.get_estado_display }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <p>No hay actividades registradas.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card bg-dark text-white observaciones-card h-100">
+                    <div class="card-header bg-secondary">Observaciones</div>
+                    <div class="card-body">
+                        {% if observaciones %}
+                            <ul class="list-unstyled mb-0">
+                                {% for obs in observaciones %}
+                                    <li class="mb-3">
+                                        <small class="text-muted">{{ obs.fecha }} – {{ obs.autor }}</small>
+                                        <p class="mb-0">{{ obs.texto }}</p>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p>No hay observaciones registradas.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- 2) TABLA DE TODAS LAS ACTIVIDADES (con POPUP) -->
+        <div class="card bg-dark text-white mb-4">
+            <div class="card-header bg-secondary d-flex align-items-center">
+                <h5 class="mb-0">Todas las Actividades</h5>
+                <input id="filterActividades"
+                       class="form-control form-control-sm bg-dark text-white border-secondary ms-auto"
+                       style="width:180px"
+                       placeholder="Buscar actividad…" />
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table id="tablaActividades" class="table table-dark table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>Centro</th>
+                                <th>Actividad</th>
+                                <th>Categoría</th>
+                                <th>Estado</th>
+                                <th class="text-end">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ac in actividades_paginados %}
+                                <tr>
+                                    <td>{{ ac.centro.nombre }}</td>
+                                    <td>{{ ac.actividad.nombre }}</td>
+                                    <td>{{ ac.actividad.categoria.nombre }}</td>
+                                    <td>{{ ac.get_estado_display }}</td>
+                                    <td class="text-end">
+                                        <button class="btn btn-outline-info btn-sm"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modalAct{{ ac.id }}">Detalles</button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if not actividades_paginados %}<div class="p-3 text-center text-muted">No hay actividades.</div>{% endif %}
+            </div>
+            {% if actividades_paginados.has_other_pages %}
+                <div class="card-footer bg-dark text-center">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if actividades_paginados.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link bg-secondary text-white"
+                                   href="?page_act={{ actividades_paginados.previous_page_number }}">Anterior</a>
+                            </li>
+                        {% endif %}
+                        {% for i in actividades_paginados.paginator.page_range %}
+                            <li class="page-item {% if actividades_paginados.number == i %}active{% endif %}">
+                                <a class="page-link bg-secondary text-white" href="?page_act={{ i }}">{{ i }}</a>
+                            </li>
+                        {% endfor %}
+                        {% if actividades_paginados.has_next %}
+                            <li class="page-item">
+                                <a class="page-link bg-secondary text-white"
+                                   href="?page_act={{ actividades_paginados.next_page_number }}">Siguiente</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+        <!-- MODALES “Detalles” PARA CADA ACTIVIDAD -->
+        {% for ac in actividades_paginados %}
+            <div class="modal fade"
+                 id="modalAct{{ ac.id }}"
+                 tabindex="-1"
+                 aria-labelledby="modalActLabel{{ ac.id }}"
+                 aria-hidden="true">
+                <div class="modal-dialog modal-dialog-scrollable modal-lg">
+                    <div class="modal-content bg-dark text-white">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalActLabel{{ ac.id }}">{{ ac.actividad.nombre }} – {{ ac.centro.nombre }}</h5>
+                            <button type="button"
+                                    class="btn-close btn-close-white"
+                                    data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <dl class="row text-white">
+                                <dt class="col-5">Cantidad estimada</dt>
+                                <dd class="col-7">
+                                    {{ ac.cantidad_personas }}
+                                </dd>
+                                <dt class="col-5">Días</dt>
+                                <dd class="col-7">
+                                    {% for d in ac.dias.all %}
+                                        <span class="badge bg-secondary">{{ d.nombre }}</span>
+                                    {% empty %}
+                                        <span class="text-muted">No especificado</span>
+                                    {% endfor %}
+                                </dd>
+                                <dt class="col-5">Horario desde</dt>
+                                <dd class="col-7">
+                                    {{ ac.horariosdesde }}
+                                </dd>
+                                <dt class="col-5">Horario hasta</dt>
+                                <dd class="col-7">
+                                    {{ ac.horarioshasta }}
+                                </dd>
+                                <dt class="col-5">Precio</dt>
+                                <dd class="col-7">
+                                    {% if ac.precio %}
+                                        ${{ ac.precio }}
+                                    {% else %}
+                                        <span class="text-muted">Gratuita</span>
+                                    {% endif %}
+                                </dd>
+                                <dt class="col-5">Estado</dt>
+                                <dd class="col-7">
+                                    {{ ac.get_estado_display }}
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
         {% endfor %}
-        {% if actividades_paginados.has_next %}
-        <li class="page-item">
-          <a class="page-link bg-secondary text-white"
-             href="?page_act={{ actividades_paginados.next_page_number }}">Siguiente</a>
-        </li>
-        {% endif %}
-      </ul>
-    </div>
-    {% endif %}
-  </div>
-
-  <!-- MODALES “Detalles” PARA CADA ACTIVIDAD -->
-  {% for ac in actividades_paginados %}
-  <div class="modal fade" id="modalAct{{ ac.id }}" tabindex="-1" aria-labelledby="modalActLabel{{ ac.id }}" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-scrollable modal-lg">
-      <div class="modal-content bg-dark text-white">
-        <div class="modal-header">
-          <h5 class="modal-title" id="modalActLabel{{ ac.id }}">
-            {{ ac.actividad.nombre }} – {{ ac.centro.nombre }}
-          </h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        <div class="row gx-3 mb-4">
+            {% for cat in cat_metrics %}
+                <div class="col-6 col-md-3 text-center">
+                    <!-- Cada gauge necesita un contenedor único -->
+                    <div id="gauge-container-{{ forloop.counter }}"
+                         style="width:150px;
+                                height:100px;
+                                margin:0 auto"></div>
+                    <div class="mt-2 text-white fw-bold">{{ cat.label }}</div>
+                </div>
+            {% endfor %}
         </div>
-        <div class="modal-body">
-          <dl class="row text-white">
-            <dt class="col-5">Cantidad estimada</dt>
-            <dd class="col-7">{{ ac.cantidad_personas }}</dd>
-
-            <dt class="col-5">Días</dt>
-            <dd class="col-7">
-              {% for d in ac.dias.all %}
-                <span class="badge bg-secondary">{{ d.nombre }}</span>
-              {% empty %}
-                <span class="text-muted">No especificado</span>
-              {% endfor %}
-            </dd>
-
-            <dt class="col-5">Horario desde</dt>
-            <dd class="col-7">{{ ac.horariosdesde}}</dd>
-            <dt class="col-5">Horario hasta</dt>
-            <dd class="col-7">{{ ac.horarioshasta }}</dd>
-
-            <dt class="col-5">Precio</dt>
-            <dd class="col-7">
-              {% if ac.precio %}${{ ac.precio }}{% else %}
-                <span class="text-muted">Gratuita</span>
-              {% endif %}
-            </dd>
-
-            <dt class="col-5">Estado</dt>
-            <dd class="col-7">{{ ac.get_estado_display }}</dd>
-          </dl>
-        </div>
-      </div>
+        <script src="{% static 'js/centrodefamilia.js' %}"></script>
     </div>
-  </div>
-  {% endfor %}
-
-<div class="row gx-3 mb-4">
-  {% for cat in cat_metrics %}
-    <div class="col-6 col-md-3 text-center">
-      <!-- Cada gauge necesita un contenedor único -->
-      <div id="gauge-container-{{ forloop.counter }}" style="width:150px; height:100px; margin:0 auto"></div>
-      <div class="mt-2 text-white fw-bold">{{ cat.label }}</div>
-    </div>
-  {% endfor %}
-</div>
-<script src="{% static 'js/centrodefamilia.js' %}"></script>
-
-
-
-
-</div>
 {% endblock %}
