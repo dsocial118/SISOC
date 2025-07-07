@@ -1,7 +1,14 @@
-from admisiones.models.admisiones import Admision
+from django.db.models import Q
+from admisiones.models.admisiones import (
+    Admision,
+    InformeTecnico,
+    DocumentosExpediente,
+    Anexo,
+)
 from acompanamientos.models.hitos import Hitos, HitosIntervenciones
 from acompanamientos.models.acompanamiento import InformacionRelevante, Prestacion
 from intervenciones.models.intervenciones import Intervencion, SubIntervencion
+from comedores.models import Comedor
 
 
 class AcompanamientoService:
@@ -93,3 +100,160 @@ class AcompanamientoService:
                 merienda=prestacion.merienda,
                 cena=prestacion.cena,
             )
+
+    @staticmethod
+    def obtener_datos_admision(comedor):
+        """Obtener todos los datos relacionados con la admisión de un comedor.
+
+        Args:
+            comedor: Comedor del cual obtener los datos de admisión.
+
+        Returns:
+            dict: Diccionario con datos de admisión, info relevante, anexo, etc.
+        """
+        admision = (
+            Admision.objects.filter(comedor=comedor)
+            .exclude(legales_num_if__isnull=True)
+            .exclude(legales_num_if="")
+            .order_by("-id")
+            .first()
+        )
+
+        info_relevante = None
+        anexo = None
+        resolucion = None
+
+        if admision:
+            info_relevante = (
+                InformeTecnico.objects.filter(admision=admision).order_by("-id").first()
+            )
+            anexo = Anexo.objects.filter(admision=admision).first()
+
+            doc_resolucion = (
+                DocumentosExpediente.objects.filter(
+                    admision__comedor=comedor, tipo="Resolución"
+                )
+                .order_by("-creado")
+                .first()
+            )
+            if doc_resolucion:
+                resolucion = doc_resolucion.value or doc_resolucion.nombre
+
+        return {
+            "admision": admision,
+            "info_relevante": info_relevante,
+            "anexo": anexo,
+            "numero_if": admision.legales_num_if if admision else None,
+            "numero_resolucion": resolucion,
+            "vencimiento_mandato": "Pendiente de implementación",
+        }
+
+    @staticmethod
+    def obtener_prestaciones_detalladas(anexo):
+        """Procesar los datos del anexo para generar las prestaciones por día y totales.
+
+        Args:
+            anexo: Anexo con los datos de prestaciones.
+
+        Returns:
+            dict: Diccionario con prestaciones_por_dia, prestaciones_dias y dias_semana.
+        """
+        if not anexo:
+            return {
+                "prestaciones_por_dia": [],
+                "prestaciones_dias": [],
+                "dias_semana": [],
+            }
+
+        dias = [
+            "lunes",
+            "martes",
+            "miercoles",
+            "jueves",
+            "viernes",
+            "sabado",
+            "domingo",
+        ]
+        tipos_comida = ["desayuno", "almuerzo", "merienda", "cena"]
+
+        prestaciones_por_dia = []
+        prestaciones_totales = []
+
+        for tipo in tipos_comida:
+            fila = {"tipo": tipo.capitalize()}
+            total_semanal = 0
+
+            for dia in dias:
+                campo_nombre = f"{tipo}_{dia}"
+                cantidad = getattr(anexo, campo_nombre, 0)
+                fila[dia] = cantidad
+                total_semanal += cantidad or 0
+
+            prestaciones_por_dia.append(fila)
+            prestaciones_totales.append(
+                {"tipo": tipo.capitalize(), "cantidad": total_semanal}
+            )
+
+        return {
+            "prestaciones_por_dia": prestaciones_por_dia,
+            "prestaciones_dias": prestaciones_totales,
+            "dias_semana": [dia.capitalize() for dia in dias],
+        }
+
+    @staticmethod
+    def obtener_comedores_acompanamiento(user, busqueda=None):
+        """Obtener comedores que tienen admisiones finalizadas y están en acompañamiento.
+
+        Args:
+            user: Usuario actual para aplicar filtros de permisos.
+            busqueda: Término de búsqueda opcional.
+
+        Returns:
+            QuerySet: Comedores filtrados.
+        """
+        # Filtramos las admisiones con estado=2 (Finalizada)
+        admisiones = Admision.objects.filter(estado=2, enviado_acompaniamiento=True)
+
+        if (
+            not user.is_superuser
+            and not user.groups.filter(name="Area Legales").exists()
+        ):
+            admisiones = admisiones.filter(
+                Q(comedor__dupla__abogado=user) | Q(comedor__dupla__tecnico=user)
+            )
+
+        comedor_ids = admisiones.values_list("comedor_id", flat=True).distinct()
+
+        queryset = Comedor.objects.filter(id__in=comedor_ids).select_related(
+            "referente", "tipocomedor", "provincia"
+        )
+
+        if busqueda:
+            busqueda = busqueda.strip().lower()
+            queryset = queryset.filter(
+                Q(nombre__icontains=busqueda)
+                | Q(provincia__nombre__icontains=busqueda)
+                | Q(tipocomedor__nombre__icontains=busqueda)
+                | Q(calle__icontains=busqueda)
+                | Q(numero__icontains=busqueda)
+                | Q(referente__nombre__icontains=busqueda)
+                | Q(referente__apellido__icontains=busqueda)
+                | Q(referente__celular__icontains=busqueda)
+            )
+
+        return queryset
+
+    @staticmethod
+    def verificar_permisos_tecnico_comedor(user):
+        """Verificar si el usuario tiene permisos de técnico de comedor.
+
+        Args:
+            user: Usuario a verificar.
+
+        Returns:
+            bool: True si tiene permisos, False en caso contrario.
+        """
+        return (
+            user.is_superuser
+            or user.groups.filter(name="Tecnico Comedor").exists()
+        )
