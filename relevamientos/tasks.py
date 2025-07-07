@@ -1,3 +1,4 @@
+from django.utils import timezone
 import os
 import threading
 import logging
@@ -37,7 +38,7 @@ class AsyncSendRelevamientoToGestionar(threading.Thread):
                     "Fecha de visita": (
                         relevamiento.fecha_visita.strftime("%Y-%m-%d")
                         if relevamiento.fecha_visita
-                        else ""
+                        else timezone.now().strftime("%Y-%m-%d")
                     ),
                     "Id_Comedor": f"{relevamiento.comedor.id}",
                 }
