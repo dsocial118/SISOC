@@ -13,7 +13,7 @@ def borrar_carpetas_logs_viejas(directory):
         print(f"La ruta especificada no existe: {directory}")
         return
 
-    limite_fecha = datetime.datetime.now() - datetime.timedelta(days=30)
+    limite_fecha = datetime.datetime.now() - datetime.timedelta(days=7)
     for carpeta in os.listdir(directory):
         carpeta_path = os.path.join(directory, carpeta)
 
@@ -32,6 +32,6 @@ def borrar_carpetas_logs_viejas(directory):
 
 if __name__ == "__main__":
     # Ruta del directorio donde se encuentran las carpetas de logs
-    LOGS_DIR = "C:/Users/nehue/Documents/SISOC-Backoffice/logs/"  # Cambia esto por la ruta real de tus logs
+    LOGS_DIR = "/home/admin-ssies/SISOC-Backoffice/logs/"
 
     borrar_carpetas_logs_viejas(LOGS_DIR)

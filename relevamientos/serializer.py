@@ -3,7 +3,7 @@ from rest_framework import serializers
 from relevamientos.models import Relevamiento
 
 from relevamientos.service import RelevamientoService
-from config.utils import format_fecha_django
+from core.utils import format_fecha_django
 
 
 class RelevamientoSerializer(serializers.ModelSerializer):
