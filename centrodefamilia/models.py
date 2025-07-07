@@ -161,34 +161,14 @@ class ParticipanteActividad(models.Model):
         unique_together = ("actividad_centro", "ciudadano")
 
 
-class Orientador(models.Model):
-    centro = models.ForeignKey(Centro, on_delete=models.CASCADE, verbose_name="Centro")
-    nombre = models.CharField(max_length=100, verbose_name="Nombre")
-    apellido = models.CharField(max_length=100, verbose_name="Apellido")
-    dni = models.CharField(max_length=15, verbose_name="DNI")
-    genero = models.CharField(
-        max_length=20,
-        choices=[
-            ("masculino", "Masculino"),
-            ("femenino", "Femenino"),
-            ("otro", "Otro"),
-        ],
-        verbose_name="Género",
-    )
-    foto = models.ImageField(upload_to="centros/orientador/", blank=True, null=True)
-    cargo = models.CharField(
-        max_length=20,
-        choices=[
-            ("profesor", "profesor"),
-            ("administrativo", "administrativo"),
-            ("otro", "Otro"),
-        ],
-        verbose_name="Cargo",
-    )
+class Expediente(models.Model):
+    centro = models.ForeignKey(Centro, on_delete=models.CASCADE, related_name='expedientes_cabal')
+    archivo = models.FileField(upload_to='informes_cabal/')
+    periodo = models.DateField(help_text="Fecha del informe")
+    fecha_subida = models.DateTimeField(auto_now_add=True)
+    usuario = models.ForeignKey(User, on_delete=models.PROTECT)
+    procesado = models.BooleanField(default=False)
+    errores = models.TextField(blank=True)
 
-    def __str__(self):
-        return f"{self.apellido}, {self.nombre} - {self.dni}"
 
-    class Meta:
-        verbose_name = "Orientador"
-        verbose_name_plural = "Orientadores"
+

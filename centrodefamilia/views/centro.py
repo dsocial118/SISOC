@@ -12,7 +12,7 @@ from django.db.models import Q, Count
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 
-from centrodefamilia.models import Categoria, Centro, ActividadCentro, ParticipanteActividad
+from centrodefamilia.models import Categoria, Centro, ActividadCentro, Expediente, ParticipanteActividad
 from centrodefamilia.forms import CentroForm
 
 
@@ -57,6 +57,10 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         centro = self.object
+        qs_exp = Expediente.objects.filter(centro=centro).order_by('-fecha_subida')
+        paginator_exp = Paginator(qs_exp, 3)
+        page_exp = self.request.GET.get('page_exp')
+        context['expedientes_cabal'] = paginator_exp.get_page(page_exp)
 
         #
         # 1) Actividades del propio centro
@@ -136,47 +140,8 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         context["asistentes"] = {"total": total_part, "hombres": hombres, "mujeres": mujeres}
 
 
-        qs_cat = (
-            ParticipanteActividad.objects
-              .filter(actividad_centro__centro=centro)
-              .values('actividad_centro__actividad__categoria__nombre')
-              .annotate(
-                female=Count('id',
-                             filter=Q(ciudadano__sexo__sexo__iexact='Femenino')),
-                male  =Count('id',
-                             filter=Q(ciudadano__sexo__sexo__iexact='Masculino')),
-              )
-        )
-
-        # Define aquí tu paleta de colores por categoría
-        color_map = {
-            'Tecnología': {'colorF':'#F5C90F','colorM':'#FFC107'},
-            'Educación':  {'colorF':'#8BC5EA','colorM':'#BBDEFB'},
-            'Arte':       {'colorF':'#EC719D','colorM':'#F8BBD0'},
-            'Deporte':    {'colorF':'#F44336','colorM':'#FFCDD2'},
-        }
-        default_colors = {'colorF':'#6c757d','colorM':'#adb5bd'}
-
-        cat_metrics = []
-        for entrada in qs_cat:
-            label = entrada['actividad_centro__actividad__categoria__nombre']
-            f = entrada['female']
-            m = entrada['male']
-            total = f + m
-            # evita división por cero
-            pct_f = round(100 * f / total) if total else 0
-            pct_m = 100 - pct_f if total else 0
-
-            cols = color_map.get(label, default_colors)
-            cat_metrics.append({
-                'label':   label,
-                'female':  pct_f,
-                'male':    pct_m,
-                'colorF':  cols['colorF'],
-                'colorM':  cols['colorM'],
-            })
-
-        context['cat_metrics'] = cat_metrics
+        
+        
 
         return context
 

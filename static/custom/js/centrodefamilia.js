@@ -33,4 +33,38 @@ document.addEventListener("DOMContentLoaded", function() {
       });
     });
   }
+
+  //
+  // 2) AJAX PAGINACIÓN PARA INFORMES CABAL
+  //
+  document.addEventListener('click', function(e) {
+    // Solo enlaces dentro de la paginación de expedientes
+    const link = e.target.closest('#expedientes-container .pagination a');
+    if (!link) return;
+    e.preventDefault();
+    fetch(link.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(resp => resp.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const nuevo = doc.querySelector('#expedientes-container');
+        if (nuevo) {
+          document.querySelector('#expedientes-container').innerHTML = nuevo.innerHTML;
+        }
+      });
+  });
+
+
+  const se = document.getElementById('searchExpedientes');
+  const tbE = document.querySelector('#tablaExpedientes tbody');
+  if (se && tbE) {
+    se.addEventListener('input', () => {
+      const term = se.value.trim().toLowerCase();
+      tbE.querySelectorAll('tr').forEach(row => {
+        const file   = row.cells[0].textContent.trim().toLowerCase();
+        const period = row.cells[1].textContent.trim().toLowerCase();
+        row.style.display = (file.includes(term) || period.includes(term)) ? '' : 'none';
+      });
+    });
+  }
 });

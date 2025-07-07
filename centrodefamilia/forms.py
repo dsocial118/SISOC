@@ -6,11 +6,11 @@ from ciudadanos.models import Sexo, TipoDocumento
 from centrodefamilia.models import (
     Centro,
     ActividadCentro,
+    Expediente,
     ParticipanteActividad,
     Categoria,
     Actividad,
-    Orientador,
-)
+    )
 from configuraciones.models import Estados
 
 HORAS_DEL_DIA = [(f"{h:02d}:00", f"{h:02d}:00") for h in range(0, 24)] + [
@@ -190,24 +190,25 @@ class ParticipanteActividadForm(forms.ModelForm):
         )  
 
 
-class OrientadoresForm(forms.ModelForm):
-    class Meta:
-        model = Orientador
-        fields = [
-            "nombre",
-            "apellido",
-            "dni",
-            "genero",
-            "foto",
-            "cargo",
-        ]
-        widgets = {
-            "genero": forms.Select(attrs={"class": "form-control"}),
-            "cargo": forms.Select(attrs={"class": "form-control"}),
-        }
 
-    def clean_dni(self):
-        dni = self.cleaned_data.get("dni")
-        if not dni.isdigit():
-            raise forms.ValidationError("El DNI debe contener solo números.")
-        return dni
+
+
+class ExpedienteCabalForm(forms.ModelForm):
+    periodo = forms.DateField(
+        label="Periodo",
+        widget=forms.DateInput(attrs={
+            "type": "date",
+            "class": "form-control form-control-sm",
+        })
+    )
+    archivo = forms.FileField(
+        label="Archivo",
+        widget=forms.ClearableFileInput(attrs={
+            "class": "form-control form-control-sm",
+            "accept": ".pdf,.xlsx,.csv",
+        })
+    )
+
+    class Meta:
+        model = Expediente
+        fields = ["periodo", "archivo"]
