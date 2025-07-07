@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from ciudadanos.models import Ciudadano
-from configuraciones.models import Dia
+from core.models import Dia
 from organizaciones.models import Organizacion
 
 
