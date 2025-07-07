@@ -332,10 +332,10 @@ if DEBUG:
     CSRF_COOKIE_SECURE = False
 else:
     # Configuración para producción
-    SECURE_HSTS_SECONDS = 31536000  # 1 año
+    SECURE_HSTS_SECONDS = 0  # Cambiar a 31536000 cuando tengamos HTTPS
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
-    SECURE_SSL_REDIRECT = True
+    SECURE_SSL_REDIRECT = False  # Cambiar a True cuando tengamos HTTPS
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
 
