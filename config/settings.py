@@ -19,6 +19,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "static_root"
+STATICFILES_STORAGE = "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
+
 
 MEDIA_URL = "media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media/")
@@ -177,17 +179,6 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
             ],
-            # "loaders": [(
-            #     "django.template.loaders.cached.Loader",
-            #     [
-            #         "django_cotton.cotton_loader.Loader",
-            #         "django.template.loaders.filesystem.Loader",
-            #         "django.template.loaders.app_directories.Loader",
-            #     ],
-            # )],
-            # "builtins": [
-            #     "django_cotton.templatetags.cotton"
-            # ],
         },
     },
 ]
@@ -360,6 +351,9 @@ CSRF_TRUSTED_ORIGINS = [
     "http://10.80.5.45",
     "https://api.appsheet.com",
 ]
+CSRF_COOKIE_NAME = (
+    "csrftoken_v2"  # Cambiar en caso de conflicto con formularios cacheados
+)
 
 # Configuración de hosts permitidos TODO: que se haga desde el .env
 ALLOWED_HOSTS = [

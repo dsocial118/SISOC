@@ -314,7 +314,9 @@
                                                                     {% elif doc.estado == "Pendiente" %}
                                                                         <td class="ps-3" id="estado-{{ doc.id }}">{{ doc.estado }}</td>
                                                                     {% elif doc.estado == "A Validar Abogado" %}
-                                                                        {% if request.user|has_group:"Tecnico Comedor" %}<td class="ps-3" id="estado-{{ doc.id }}">A Validar Abogado</td>{% endif %}
+                                                                        {% if request.user|has_group:"Tecnico Comedor" %}
+                                                                            <td class="ps-3" id="estado-{{ doc.id }}">A Validar Abogado</td>
+                                                                        {% endif %}
                                                                         {% if request.user|has_group:"Abogado Dupla" %}
                                                                             <td id="estado-{{ doc.id }}">
                                                                                 <select class="form-control"
@@ -351,7 +353,9 @@
                                                                                 </select>
                                                                             </td>
                                                                         {% endif %}
-                                                                        {% if request.user|has_group:"Abogado Dupla" %}<td class="ps-3" id="estado-{{ doc.id }}">{{ doc.estado }}</td>{% endif %}
+                                                                        {% if request.user|has_group:"Abogado Dupla" %}
+                                                                            <td class="ps-3" id="estado-{{ doc.id }}">{{ doc.estado }}</td>
+                                                                        {% endif %}
                                                                     {% endif %}
                                                                     <td>
                                                                         {% if doc.archivo_url %}
