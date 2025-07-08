@@ -333,11 +333,11 @@ if DEBUG:
 else:
     # Configuración para producción
     SECURE_HSTS_SECONDS = 0  # Cambiar a 31536000 cuando tengamos HTTPS
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+    SECURE_HSTS_PRELOAD = False
     SECURE_SSL_REDIRECT = False  # Cambiar a True cuando tengamos HTTPS
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
 
 # Configuracion de Django Rest Framework
 REST_FRAMEWORK = {
