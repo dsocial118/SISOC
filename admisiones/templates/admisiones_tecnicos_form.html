@@ -68,6 +68,8 @@
                         {% endif %}
                     {% endif %}
                 {% else %}
+                    <a href="{% url 'informe_complementario_ver' tipo=informe_tecnico.tipo pk=informe_tecnico.id %}"
+                       class="btn btn-primary mr-1">Informe Técnico Complementario</a>
                     {% if not admision.enviado_legales %}
                         <button type="button"
                                 class="btn btn-primary mr-1"
@@ -200,6 +202,17 @@
                                                             <div class="comment-text">
                                                                 PDF Informe Técnico:
                                                                 <span class="fw-bold"><a href="{{ pdf.archivo.url }}" target="_blank"><i class="bi bi-filetype-pdf text-info h4 ms-3 text-bold"></i></a></span>
+                                                            </div>
+                                                        </li>
+                                                    {% endif %}
+                                                    {% if informes_complementarios %}
+                                                        <li class="nav-item">
+                                                            <div class="comment-text">
+                                                                PDF Informes Complementarios:
+                                                                {% for i in informes_complementarios %}
+                                                                    <span class="fw-bold"><a href="{{ i.pdf.url }}" target="_blank"><i class="bi bi-filetype-pdf text-info h4 ms-3 text-bold"></i>{{ i.creado |date:'d/m/Y' }}</a></span>
+                                                                    <br />
+                                                                {% endfor %}
                                                             </div>
                                                         </li>
                                                     {% endif %}

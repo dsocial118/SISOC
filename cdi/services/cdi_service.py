@@ -2,7 +2,7 @@ from typing import Union
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from cdi.models import CentroDesarrolloInfantil
-from configuraciones.models import Mes, Dia, Turno
+from core.models import Mes, Dia, Turno
 
 
 class CentroDesarrolloInfantilService:

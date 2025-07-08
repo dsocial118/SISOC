@@ -1,20 +1,20 @@
 [
     {
-        "model": "configuraciones.sexo",
+        "model": "core.sexo",
         "pk": 1,
         "fields": {
             "sexo": "Femenino"
         }
     },
     {
-        "model": "configuraciones.sexo",
+        "model": "core.sexo",
         "pk": 2,
         "fields": {
             "sexo": "Masculino"
         }
     },
     {
-        "model": "configuraciones.sexo",
+        "model": "core.sexo",
         "pk": 3,
         "fields": {
             "sexo": "X"
