@@ -42,13 +42,19 @@ class AcompanamientoDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor = self.object
-        context["hitos"] = AcompanamientoService.obtener_hitos(comedor)
+
+        # Optimización: Cache de grupos del usuario
+        user_groups = list(self.request.user.groups.values_list("name", flat=True))
         context["es_tecnico_comedor"] = (
-            self.request.user.is_superuser
-            or self.request.user.groups.filter(name="Tecnico Comedor").exists()
+            self.request.user.is_superuser or "Tecnico Comedor" in user_groups
         )
+
+        context["hitos"] = AcompanamientoService.obtener_hitos(comedor)
+
+        # Optimización: Query única con select_related para evitar múltiples queries
         admision = (
-            Admision.objects.filter(comedor=comedor)
+            Admision.objects.select_related("comedor")
+            .filter(comedor=comedor)
             .exclude(num_if__isnull=True)
             .exclude(num_if="")
             .order_by("-id")
@@ -61,14 +67,13 @@ class AcompanamientoDetailView(DetailView):
         doc_resolucion = None
 
         if admision:
+            # Optimización: Usar la admision ya obtenida en lugar de filtrar por comedor
             info_relevante = (
-                InformeTecnico.objects.filter(admision__comedor=comedor)
-                .order_by("-id")
-                .first()
+                InformeTecnico.objects.filter(admision=admision).order_by("-id").first()
             )
             doc_resolucion = (
                 DocumentosExpediente.objects.filter(
-                    admision__comedor=comedor, tipo="Resolución"
+                    admision=admision, tipo="Resolución"
                 )
                 .order_by("-creado")
                 .first()
@@ -105,26 +110,22 @@ class ComedoresAcompanamientoListView(ListView):
         user = self.request.user
         busqueda = self.request.GET.get("busqueda", "").strip().lower()
 
-        # Filtramos las admisiones con estado=2 (Finalizada)
-        admisiones = Admision.objects.filter(estado=2, enviado_acompaniamiento=True)
+        # Optimización: Cache de grupos del usuario para evitar queries repetidas
+        user_groups = list(user.groups.values_list("name", flat=True))
+        is_area_legales = "Area Legales" in user_groups
+
+        # Optimización: Query más eficiente usando JOIN en lugar de subquery
+        queryset = (
+            Comedor.objects.select_related("referente", "tipocomedor", "provincia")
+            .filter(admision__estado=2, admision__enviado_acompaniamiento=True)
+            .distinct()
+        )
 
         # Si no es superusuario, filtramos por dupla asignada
-
-        if (
-            not user.is_superuser
-            and not user.groups.filter(name="Area Legales").exists()
-        ):
-            admisiones = admisiones.filter(
-                Q(comedor__dupla__abogado=user) | Q(comedor__dupla__tecnico=user)
-            )
-
-        # Obtenemos los IDs de los comedores que tienen admisiones finalizadas
-        comedor_ids = admisiones.values_list("comedor_id", flat=True).distinct()
-
-        # Filtramos los comedores
-        queryset = Comedor.objects.filter(id__in=comedor_ids).select_related(
-            "referente", "tipocomedor", "provincia"
-        )
+        if not user.is_superuser and not is_area_legales:
+            queryset = queryset.select_related(
+                "dupla__abogado", "dupla__tecnico"
+            ).filter(Q(dupla__abogado=user) | Q(dupla__tecnico=user))
 
         # Aplicamos búsqueda global
         if busqueda:
