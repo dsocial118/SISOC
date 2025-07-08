@@ -15,10 +15,17 @@ class AcompanamientoService:
         Returns:
             None
         """
-        hitos_existente = Hitos.objects.filter(comedor=intervenciones.comedor).first()
+        # Optimización: select_related para evitar query adicional al comedor
+        hitos_existente = (
+            Hitos.objects.select_related("comedor")
+            .filter(comedor=intervenciones.comedor)
+            .first()
+        )
+
         if intervenciones.subintervencion is None:
             intervenciones.subintervencion = SubIntervencion()
             intervenciones.subintervencion.nombre = ""
+
         hitos_a_actualizar = HitosIntervenciones.objects.filter(
             intervencion=intervenciones.tipo_intervencion.nombre,
             subintervencion=intervenciones.subintervencion.nombre,
@@ -57,7 +64,7 @@ class AcompanamientoService:
         Returns:
             Hitos | None
         """
-        return Hitos.objects.filter(comedor=comedor).first()
+        return Hitos.objects.select_related("comedor").filter(comedor=comedor).first()
 
     @staticmethod
     def importar_datos_desde_admision(comedor):
