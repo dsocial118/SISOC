@@ -1,5 +1,5 @@
 from django.views.generic import ListView, CreateView, DetailView, UpdateView
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.contrib import messages
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
@@ -10,7 +10,7 @@ from centrodefamilia.models import (
     ParticipanteActividad,
     Actividad,
 )
-from centrodefamilia.forms import ActividadCentroForm
+from centrodefamilia.forms import ActividadCentroForm, ActividadForm
 from configuraciones.decorators import group_required
 from django.http import JsonResponse
 
@@ -110,3 +110,13 @@ def cargar_actividades_por_categoria(request):
         "id", "nombre"
     )
     return JsonResponse(list(actividades), safe=False)
+
+
+class ActividadCreateView(CreateView):
+    model = Actividad
+    form_class = ActividadForm
+    template_name = "centros/actividad_form.html"
+    success_url = reverse_lazy("centro_list")
+
+    def test_func(self):
+        return self.request.user.is_superuser
