@@ -1,6 +1,6 @@
 from django.urls import path
 from django.contrib.auth.views import LogoutView
-from configuraciones.decorators import group_required
+from core.decorators import group_required
 from users.views import (
     UsuariosLoginView,
     UserListView,

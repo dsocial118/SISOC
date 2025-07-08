@@ -114,8 +114,8 @@
         </header>
         <main>
             <h4>INFORME TÉCNICO SOCIAL</h4>
-            Expediente Nro.: {{ expediente_nro }}
-            La {{ nombre_organizacion }}, solicita la incorporación del comedor y/o merendero. “{{ nombre_espacio }}” al Programa “Alimentar Comunidad” con el fin de fortalecer la tarea realizada a favor de las personas en situación de vulnerabilidad, conforme nota identificada como {{ IF }}
+            Expediente Nro.: {{ informe.expediente_nro }}
+            La {{ informe.nombre_organizacion }}, solicita la incorporación del comedor y/o merendero. “{{ informe.nombre_espacio }}” al Programa “Alimentar Comunidad” con el fin de fortalecer la tarea realizada a favor de las personas en situación de vulnerabilidad, conforme nota identificada como {{ IF }}
             <table>
                 <tbody>
                     <tr>
@@ -123,35 +123,35 @@
                     </tr>
                     <tr>
                         <th>Nombre:</th>
-                        <td></td>
+                        <td>{{ informe.nombre_organizacion }}</td>
                     </tr>
                     <tr>
                         <th>Domicilio:</th>
-                        <td></td>
+                        <td>{{ informe.domicilio_organizacion }}</td>
                     </tr>
                     <tr>
                         <th>Localidad:</th>
-                        <td></td>
+                        <td>{{ informe.localidad_organizacion }}</td>
                     </tr>
                     <tr>
                         <th>Partido:</th>
-                        <td></td>
+                        <td>{{ informe.partido_organizacion }}</td>
                     </tr>
                     <tr>
                         <th>Provincia:</th>
-                        <td></td>
+                        <td>{{ informe.provincia_organizacion }}</td>
                     </tr>
                     <tr>
                         <th>Teléfono:</th>
-                        <td></td>
+                        <td>{{ informe.telefono_organizacion }}</td>
                     </tr>
                     <tr>
                         <th>Mail:</th>
-                        <td></td>
+                        <td>{{ informe.mail_organizacion }}</td>
                     </tr>
                     <tr>
                         <th>CUIT:</th>
-                        <td></td>
+                        <td>{{ informe.cuit_organizacion }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -230,14 +230,16 @@
                     </tr>
                 </tbody>
             </table>
-            Los criterios técnicos y programáticos establecidos para evaluar la solicitud de cada comedor implican una definición de la cantidad de prestaciones a partir de la comparación entre la información relevada en la visita en territorio y la cantidad solicitada para cada día y para cada tipo de prestación. Se considera como cantidad de prestaciones relevada en territorio a la suma de las prestaciones brindadas en la actualidad más las personas en lista de espera. En esa línea, los criterios se enmarcan en los siguientes parámetros:
-            A.	Cuando la cantidad de prestaciones solicitadas mediante nota sean inferiores al número identificado en el relevamiento en territorio (suma de prestaciones actuales más personas identificadas en lista de espera), deberá prevalecer la cantidad solicitada por la institución entendiendo que la diferencia es cubierta con otro tipo de recursos.
-            B.	Cuando la cantidad de prestaciones solicitadas mediante nota sean superiores a las identificadas en la visita (suma de prestaciones actuales más personas identificadas en la lista de espera) deberá prevalecer el número de prestaciones relevado en la visita.
-            Por todo lo expuesto se considera pertinente la solicitud realizada por la NOMBRE DE LA ORGANIZACIÓN para adherir al (comedor/merendero) “NOMBRE DEL COMEDOR” al Programa Alimentar Comunidad.
-            Todo lo resultante en este Informe Técnico se resume en Anexo identificado como IF-XXXX-X(ANEXO)X-APN-XXXX#MCH
-            Cabe destacar que la tramitación de las presentes actuaciones mediante las cuales se aprueba el convenio de incorporación al Programa mencionado no implica en este acto erogación presupuestaria alguna.
-            Dicha erogación será tramitada pertinentemente en expedientes de pago mensuales a fin de acreditar los fondos correspondientes a los comedores incorporados al Programa Alimentar Comunidad.
-            Consecuentemente, se sugiere dar prosecución al trámite correspondiente.
+            <div class="salto_pagina">
+                Los criterios técnicos y programáticos establecidos para evaluar la solicitud de cada comedor implican una definición de la cantidad de prestaciones a partir de la comparación entre la información relevada en la visita en territorio y la cantidad solicitada para cada día y para cada tipo de prestación. Se considera como cantidad de prestaciones relevada en territorio a la suma de las prestaciones brindadas en la actualidad más las personas en lista de espera. En esa línea, los criterios se enmarcan en los siguientes parámetros:
+                A.	Cuando la cantidad de prestaciones solicitadas mediante nota sean inferiores al número identificado en el relevamiento en territorio (suma de prestaciones actuales más personas identificadas en lista de espera), deberá prevalecer la cantidad solicitada por la institución entendiendo que la diferencia es cubierta con otro tipo de recursos.
+                B.	Cuando la cantidad de prestaciones solicitadas mediante nota sean superiores a las identificadas en la visita (suma de prestaciones actuales más personas identificadas en la lista de espera) deberá prevalecer el número de prestaciones relevado en la visita.
+                Por todo lo expuesto se considera pertinente la solicitud realizada por la NOMBRE DE LA ORGANIZACIÓN para adherir al (comedor/merendero) “NOMBRE DEL COMEDOR” al Programa Alimentar Comunidad.
+                Todo lo resultante en este Informe Técnico se resume en Anexo identificado como IF-XXXX-X(ANEXO)X-APN-XXXX#MCH
+                Cabe destacar que la tramitación de las presentes actuaciones mediante las cuales se aprueba el convenio de incorporación al Programa mencionado no implica en este acto erogación presupuestaria alguna.
+                Dicha erogación será tramitada pertinentemente en expedientes de pago mensuales a fin de acreditar los fondos correspondientes a los comedores incorporados al Programa Alimentar Comunidad.
+                Consecuentemente, se sugiere dar prosecución al trámite correspondiente.
+            </div>
         </main>
     </body>
 </html>

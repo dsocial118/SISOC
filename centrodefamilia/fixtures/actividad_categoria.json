@@ -1,0 +1,62 @@
+[
+  {
+    "model": "centrodefamilia.categoria",
+    "pk": 1,
+    "fields": {
+      "nombre": "Deporte"
+    }
+  },
+  {
+    "model": "centrodefamilia.categoria",
+    "pk": 2,
+    "fields": {
+      "nombre": "Cultura"
+    }
+  },
+  {
+    "model": "centrodefamilia.categoria",
+    "pk": 3,
+    "fields": {
+      "nombre": "Educación"
+    }
+  },
+  {
+    "model": "centrodefamilia.categoria",
+    "pk": 4,
+    "fields": {
+      "nombre": "Salud"
+    }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 1,
+    "fields": {
+      "nombre": "Fútbol infantil",
+      "categoria": 1
+    }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 2,
+    "fields": {
+      "nombre": "Taller de pintura",
+      "categoria": 2
+    }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 3,
+    "fields": {
+      "nombre": "Apoyo escolar primario",
+      "categoria": 3
+    }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 4,
+    "fields": {
+      "nombre": "Charla sobre nutrición",
+      "categoria": 4
+    }
+  }
+]
