@@ -126,6 +126,7 @@ INSTALLED_APPS = [
     "corsheaders",
     # Aplicaciones propias
     "users",
+    "core",
     "configuraciones",
     "dashboard",
     "comedores",
@@ -252,28 +253,28 @@ LOGGING = {
         "info_file": {
             "level": "INFO",
             "filters": ["info_only"],
-            "class": "config.utils.DailyFileHandler",
+            "class": "core.utils.DailyFileHandler",
             "filename": str(BASE_DIR / "logs/info.log"),
             "formatter": "verbose",
         },
         "error_file": {
             "level": "ERROR",
             "filters": ["error_only"],
-            "class": "config.utils.DailyFileHandler",
+            "class": "core.utils.DailyFileHandler",
             "filename": str(BASE_DIR / "logs/error.log"),
             "formatter": "verbose",
         },
         "warning_file": {
             "level": "WARNING",
             "filters": ["warning_only"],
-            "class": "config.utils.DailyFileHandler",
+            "class": "core.utils.DailyFileHandler",
             "filename": str(BASE_DIR / "logs/warning.log"),
             "formatter": "verbose",
         },
         "critical_file": {
             "level": "CRITICAL",
             "filters": ["critical_only"],
-            "class": "config.utils.DailyFileHandler",
+            "class": "core.utils.DailyFileHandler",
             "filename": str(BASE_DIR / "logs/critical.log"),
             "formatter": "verbose",
         },
@@ -332,12 +333,12 @@ if DEBUG:
     CSRF_COOKIE_SECURE = False
 else:
     # Configuración para producción
-    SECURE_HSTS_SECONDS = 31536000  # 1 año
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
-    SECURE_SSL_REDIRECT = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 0  # Cambiar a 31536000 cuando tengamos HTTPS
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+    SECURE_HSTS_PRELOAD = False
+    SECURE_SSL_REDIRECT = False  # Cambiar a True cuando tengamos HTTPS
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
 
 # Configuracion de Django Rest Framework
 REST_FRAMEWORK = {

@@ -1,5 +1,33 @@
 [
   {
+    "model": "centrodefamilia.categoria",
+    "pk": 1,
+    "fields": {
+      "nombre": "Deporte"
+    }
+  },
+  {
+    "model": "centrodefamilia.categoria",
+    "pk": 2,
+    "fields": {
+      "nombre": "Cultura"
+    }
+  },
+  {
+    "model": "centrodefamilia.categoria",
+    "pk": 3,
+    "fields": {
+      "nombre": "Educación"
+    }
+  },
+  {
+    "model": "centrodefamilia.categoria",
+    "pk": 4,
+    "fields": {
+      "nombre": "Salud"
+    }
+  },
+  {
     "model": "centrodefamilia.actividad",
     "pk": 1,
     "fields": {
