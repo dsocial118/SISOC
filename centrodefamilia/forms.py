@@ -228,3 +228,33 @@ class ExpedienteCabalForm(forms.ModelForm):
     class Meta:
         model = Expediente
         fields = ["periodo", "archivo"]
+
+
+class ActividadForm(forms.ModelForm):
+    nombre = forms.CharField(
+        label="Nombre de la Actividad",
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control form-control-sm",
+                "placeholder": "Ej. Taller de oficio",
+            }
+        ),
+    )
+    categoria = forms.ModelChoiceField(
+        label="Categoría",
+        queryset=None,
+        widget=forms.Select(
+            attrs={
+                "class": "form-control form-control-sm",
+            }
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Podés cargar dinámicamente las categorías
+        self.fields["categoria"].queryset = Categoria.objects.all()
+
+    class Meta:
+        model = Actividad
+        fields = ["categoria", "nombre"]
