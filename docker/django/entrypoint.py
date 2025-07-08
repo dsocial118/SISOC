@@ -5,6 +5,7 @@ import pymysql
 import shutil
 from pathlib import Path
 
+
 def wait_for_mysql():
     """
     Espera a que MySQL esté disponible antes de continuar.
