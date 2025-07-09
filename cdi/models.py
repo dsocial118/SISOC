@@ -2,8 +2,8 @@ from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils import timezone
 
-from configuraciones.models import Municipio, Provincia
-from configuraciones.models import Localidad, Mes, Dia, Turno
+from core.models import Municipio, Provincia
+from core.models import Localidad, Mes, Dia, Turno
 from organizaciones.models import Organizacion
 
 

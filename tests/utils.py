@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 from comedores.models import Comedor
-from configuraciones.models import Provincia
+from core.models import Provincia
 from relevamientos.models import (
     Relevamiento,
     CantidadColaboradores,

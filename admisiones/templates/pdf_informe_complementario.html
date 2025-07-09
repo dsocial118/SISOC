@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <style>
+        body { font-family: sans-serif; }
+        h1 { text-align: center; }
+        .campo { margin-bottom: 1em; }
+        </style>
+    </head>
+    <body>
+        <h1>Informe Complementario</h1>
+        <p>
+            <strong>Fecha:</strong> {{ informe.creado }}
+        </p>
+        <p>
+            <strong>Creado por:</strong> {{ informe.creado_por }}
+        </p>
+        <hr />
+        {% for campo in campos %}
+            <div class="campo">
+                <strong>{{ campo.campo }}:</strong> {{ campo.value }}
+            </div>
+        {% endfor %}
+    </body>
+</html>
