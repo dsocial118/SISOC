@@ -11,8 +11,8 @@ from comedores.models import (
     Nomina,
 )
 
-from configuraciones.models import Municipio, Provincia
-from configuraciones.models import Localidad
+from core.models import Municipio, Provincia
+from core.models import Localidad
 
 
 class ReferenteForm(forms.ModelForm):

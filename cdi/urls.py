@@ -7,7 +7,7 @@ from cdi.views import (
     CDIUpdateView,
     CDIDeleteView,
 )
-from configuraciones.decorators import group_required
+from core.decorators import group_required
 
 urlpatterns = [
     path(
