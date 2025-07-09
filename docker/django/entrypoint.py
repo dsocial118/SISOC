@@ -2,6 +2,8 @@ import os
 import subprocess
 import time
 import pymysql
+import shutil
+from pathlib import Path
 
 
 def wait_for_mysql():
@@ -10,14 +12,23 @@ def wait_for_mysql():
     Usa las variables de entorno DATABASE_HOST, DATABASE_PORT, DATABASE_USER y DATABASE_PASSWORD.
     Se puede omitir con la variable WAIT_FOR_DB=false.
     """
-    host = os.getenv("DATABASE_HOST", "mysql")
-    port = int(os.getenv("DATABASE_PORT", "3307"))
-    user = os.getenv("DATABASE_USER", "root")
-    password = os.getenv("DATABASE_PASSWORD", "root1-password2")
+    host = os.getenv("DATABASE_HOST")
+    port = int(os.getenv("DATABASE_PORT"))
+    user = os.getenv("DATABASE_USER")
+    password = os.getenv("DATABASE_PASSWORD")
     wait_for_db = os.getenv("WAIT_FOR_DB", "true").lower() == "true"
 
     if not wait_for_db:
         print("⏭️  Se omite la espera por MySQL (WAIT_FOR_DB=false)")
+        return
+
+    if not all([host, user, password]):
+        print(
+            "❌ Error: Faltan variables de entorno para la conexión a la base de datos"
+        )
+        print(
+            "   Asegúrese de definir DATABASE_HOST, DATABASE_USER y DATABASE_PASSWORD"
+        )
         return
 
     print("⏳ Esperando que MySQL esté disponible...")
@@ -55,6 +66,7 @@ def run_server():
     environment = os.getenv("ENVIRONMENT", "dev").lower()
 
     if environment == "prd":
+        cache_busting()
         print("🚀 Iniciando Django en modo producción con Gunicorn...")
         subprocess.run(
             [
@@ -75,6 +87,17 @@ def run_server():
     else:
         print("🧪 Iniciando Django en modo desarrollo...")
         subprocess.run(["python", "manage.py", "runserver", "0.0.0.0:8000"])
+
+
+def cache_busting():
+    static_root = (
+        Path(__file__).resolve().parent.parent / "static_root"
+    )  # Raíz del proyecto
+    if static_root.exists() and static_root.is_dir():
+        print(f"🧹 Eliminando carpeta de estáticos: {static_root}")
+        shutil.rmtree(static_root)
+    print("📦 Ejecutando collectstatic para cache busting...")
+    subprocess.run(["python", "manage.py", "collectstatic", "--noinput"])
 
 
 if __name__ == "__main__":
