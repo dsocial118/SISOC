@@ -6,7 +6,7 @@ from django.db import models
 from django.urls import reverse
 from django.contrib.auth.models import User
 
-from configuraciones.models import Provincia, Localidad, Municipio, Sexo
+from core.models import Provincia, Localidad, Municipio, Sexo
 
 
 class Dimension(models.Model):
