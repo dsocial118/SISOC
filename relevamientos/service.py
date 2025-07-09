@@ -668,98 +668,46 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
     def populate_anexo_data(  # pylint: disable=too-many-statements,too-many-branches
         anexo_data,
     ):
-  
-        if "tipo_insumo" in anexo_data:
-            anexo_data["tipo_insumo"] = RelevamientoService.get_object_or_none(
-            TipoInsumos, "nombre__iexact", anexo_data["tipo_insumo"])
-
-        if "frecuencia_insumo" in anexo_data:
-            anexo_data["frecuencia_insumo"] = RelevamientoService.get_object_or_none(
-                TipoFrecuenciaInsumos, "nombre__iexact", anexo_data["frecuencia_insumo"]
-            )
-
-        if "tecnologia" in anexo_data:
-            anexo_data["tecnologia"] = RelevamientoService.get_object_or_none(
-                TipoTecnologia, "nombre__iexact", anexo_data["tecnologia"]
-            )
-
-        if "acceso_comedor" in anexo_data:
-            anexo_data["acceso_comedor"] = RelevamientoService.get_object_or_none(
-                TipoAccesoComedor, "nombre__iexact", anexo_data["acceso_comedor"]
-            )
-
-        if "distancia_transporte" in anexo_data:
-            anexo_data["distancia_transporte"] = RelevamientoService.get_object_or_none(
-                TipoDistanciaTransporte, "nombre__iexact", anexo_data["distancia_transporte"]
-            )
-
-        if "comedor_merendero" in anexo_data:
-            anexo_data["comedor_merendero"] = RelevamientoService.convert_to_boolean(anexo_data["comedor_merendero"])
-
-        if "insumos_organizacion" in anexo_data:
-            anexo_data["insumos_organizacion"] = RelevamientoService.convert_to_boolean(anexo_data["insumos_organizacion"])
-
-        if "servicio_internet" in anexo_data:
-            if (
-                anexo_data["servicio_internet"] != ""
-                and anexo_data["servicio_internet"] == "Y"
-            ):
-                anexo_data["servicio_internet"] = True
-            elif (
-                anexo_data["servicio_internet"] != ""
-                and anexo_data["servicio_internet"] == "N"
-            ):
-                anexo_data["servicio_internet"] = False
-            elif anexo_data["servicio_internet"] == "":
-                anexo_data["servicio_internet"] = None
-
-        if "zona_inundable" in anexo_data:
-            anexo_data["zona_inundable"] = RelevamientoService.convert_to_boolean(anexo_data["zona_inundable"])
-
-        if "actividades_jardin_maternal" in anexo_data:
-            anexo_data["actividades_jardin_maternal"] = RelevamientoService.convert_to_boolean(anexo_data["actividades_jardin_maternal"])
-
-        if "actividades_jardin_infantes" in anexo_data:
-            anexo_data["actividades_jardin_infantes"] = RelevamientoService.convert_to_boolean(anexo_data["actividades_jardin_infantes"])
-
-        if "apoyo_escolar" in anexo_data:
-            anexo_data["apoyo_escolar"] = RelevamientoService.convert_to_boolean(anexo_data["apoyo_escolar"])
-
-        if "alfabetizacion_terminalidad" in anexo_data:
-            anexo_data["alfabetizacion_terminalidad"] = RelevamientoService.convert_to_boolean(anexo_data["alfabetizacion_terminalidad"])
-
-        if "capacitaciones_talleres" in anexo_data:
-            anexo_data["capacitaciones_talleres"] = RelevamientoService.convert_to_boolean(anexo_data["capacitaciones_talleres"])
-
-        if "promocion_salud" in anexo_data:
-            anexo_data["promocion_salud"] = RelevamientoService.convert_to_boolean(anexo_data["promocion_salud"])
-
-        if "actividades_discapacidad" in anexo_data:
-            anexo_data["actividades_discapacidad"] = RelevamientoService.convert_to_boolean(anexo_data["actividades_discapacidad"])
-
-        if "necesidades_alimentarias" in anexo_data:
-            anexo_data["necesidades_alimentarias"] = RelevamientoService.convert_to_boolean(anexo_data["necesidades_alimentarias"])
-
-        if "actividades_recreativas" in anexo_data:
-            anexo_data["actividades_recreativas"] = RelevamientoService.convert_to_boolean(anexo_data["actividades_recreativas"])
-
-        if "actividades_culturales" in anexo_data:
-            anexo_data["actividades_culturales"] = RelevamientoService.convert_to_boolean(anexo_data["actividades_culturales"])
-
-        if "emprendimientos_productivos" in anexo_data:
-            anexo_data["emprendimientos_productivos"] = RelevamientoService.convert_to_boolean(anexo_data["emprendimientos_productivos"])
-
-        if "actividades_religiosas" in anexo_data:
-            anexo_data["actividades_religiosas"] = RelevamientoService.convert_to_boolean(anexo_data["actividades_religiosas"])
-
-        if "actividades_huerta" in anexo_data:
-            anexo_data["actividades_huerta"] = RelevamientoService.convert_to_boolean(anexo_data["actividades_huerta"])
-
-        if "espacio_huerta" in anexo_data:
-            anexo_data["espacio_huerta"] = RelevamientoService.convert_to_boolean(anexo_data["espacio_huerta"])
-
-        if "otras_actividades" in anexo_data:
-            anexo_data["otras_actividades"] = RelevamientoService.convert_to_boolean(anexo_data["otras_actividades"])
+        transformations = {
+            "tipo_insumo": lambda x: RelevamientoService.get_object_or_none(
+                TipoInsumos, "nombre__iexact", x
+            ),
+            "frecuencia_insumo": lambda x: RelevamientoService.get_object_or_none(
+                TipoFrecuenciaInsumos, "nombre__iexact", x
+            ),
+            "tecnologia": lambda x: RelevamientoService.get_object_or_none(
+                TipoTecnologia, "nombre__iexact", x
+            ),
+            "acceso_comedor": lambda x: RelevamientoService.get_object_or_none(
+                TipoAccesoComedor, "nombre__iexact", x
+            ),
+            "distancia_transporte": lambda x: RelevamientoService.get_object_or_none(
+                TipoDistanciaTransporte, "nombre__iexact", x
+            ),
+            "comedor_merendero": RelevamientoService.convert_to_boolean,
+            "insumos_organizacion": RelevamientoService.convert_to_boolean,
+            "servicio_internet": lambda x: (
+                True if x == "Y" else False if x == "N" else None
+            ),
+            "zona_inundable": RelevamientoService.convert_to_boolean,
+            "actividades_jardin_maternal": RelevamientoService.convert_to_boolean,
+            "actividades_jardin_infantes": RelevamientoService.convert_to_boolean,
+            "apoyo_escolar": RelevamientoService.convert_to_boolean,
+            "alfabetizacion_terminalidad": RelevamientoService.convert_to_boolean,
+            "capacitaciones_talleres": RelevamientoService.convert_to_boolean,
+            "promocion_salud": RelevamientoService.convert_to_boolean,
+            "actividades_discapacidad": RelevamientoService.convert_to_boolean,
+            "necesidades_alimentarias": RelevamientoService.convert_to_boolean,
+            "actividades_recreativas": RelevamientoService.convert_to_boolean,
+            "actividades_culturales": RelevamientoService.convert_to_boolean,
+            "emprendimientos_productivos": RelevamientoService.convert_to_boolean,
+            "actividades_religiosas": RelevamientoService.convert_to_boolean,
+            "actividades_huerta": RelevamientoService.convert_to_boolean,
+            "espacio_huerta": RelevamientoService.convert_to_boolean,
+            "otras_actividades": RelevamientoService.convert_to_boolean,
+            'veces_recibio_insumos_2024': lambda x: x if x else None,
+        }
+        anexo_data = RelevamientoService.populate_data(anexo_data, transformations)
 
         if "veces_recibio_insumos_2024" in anexo_data:
             anexo_data["veces_recibio_insumos_2024"] = convert_string_to_int(
