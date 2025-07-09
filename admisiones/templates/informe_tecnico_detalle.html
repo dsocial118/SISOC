@@ -19,7 +19,7 @@
                    class="btn btn-secondary mr-1 backbutton-handler">Volver</a>
             </div>
             <div class="col-auto">
-                {% if user|has_group:"Abogado Dupla" %}
+                {% if request.user|has_group:"Abogado Dupla" %}
                     {% if object.estado != "Validado" %}
                         <a href="#"
                            class="btn btn-primary mr-1"
@@ -38,7 +38,7 @@
                             <h6 class="mb-1">{{ nombre }}</h6>
                             <p class="mb-1">{{ valor }}</p>
                         </div>
-                        {% if user|has_group:"Abogado Dupla" and object.estado != "Validado" %}
+                        {% if request.user|has_group:"Abogado Dupla" and object.estado != "Validado" %}
                             <div class="form-check">
                                 <input class="form-check-input campo-subsanar"
                                        type="checkbox"

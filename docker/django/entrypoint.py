@@ -2,6 +2,8 @@ import os
 import subprocess
 import time
 import pymysql
+import shutil
+from pathlib import Path
 
 
 def wait_for_mysql():
@@ -64,6 +66,7 @@ def run_server():
     environment = os.getenv("ENVIRONMENT", "dev").lower()
 
     if environment == "prd":
+        cache_busting()
         print("🚀 Iniciando Django en modo producción con Gunicorn...")
         subprocess.run(
             [
@@ -84,6 +87,17 @@ def run_server():
     else:
         print("🧪 Iniciando Django en modo desarrollo...")
         subprocess.run(["python", "manage.py", "runserver", "0.0.0.0:8000"])
+
+
+def cache_busting():
+    static_root = (
+        Path(__file__).resolve().parent.parent / "static_root"
+    )  # Raíz del proyecto
+    if static_root.exists() and static_root.is_dir():
+        print(f"🧹 Eliminando carpeta de estáticos: {static_root}")
+        shutil.rmtree(static_root)
+    print("📦 Ejecutando collectstatic para cache busting...")
+    subprocess.run(["python", "manage.py", "collectstatic", "--noinput"])
 
 
 if __name__ == "__main__":

@@ -3,7 +3,7 @@ from django.forms import ValidationError
 from django.utils import timezone
 from django.contrib.auth.models import User
 
-from configuraciones.models import Provincia
+from core.models import Provincia
 
 
 class Rubro(models.Model):

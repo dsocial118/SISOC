@@ -25,12 +25,8 @@ services:
       dockerfile: ./docker/django/Dockerfile
     env_file:
       - .env
-    ports:
       - ${DOCKER_DJANGO_PORT_FORWARD}:${DOCKER_DJANGO_PORT}
       - ${DOCKER_DEBUGGER_PORT_FORWARD}:${DOCKER_DEBUGGER_PORT}
-    depends_on:
-      mysql:
-        condition: service_healthy
     volumes:
       - .:/sisoc/
 
