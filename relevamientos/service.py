@@ -758,66 +758,46 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def populate_punto_entregas_data(punto_entregas_data):
-        if "tipo_comedor" in punto_entregas_data:
-            punto_entregas_data["tipo_comedor"] = RelevamientoService.get_object_or_none(
-                TipoDeComedor, "nombre__iexact", punto_entregas_data["tipo_comedor"]
-            )
 
-        if "frecuencia_entrega_bolsones" in punto_entregas_data:
-            punto_entregas_data["frecuencia_entrega_bolsones"] = RelevamientoService.get_object_or_none(
-                TipoFrecuenciaBolsones, "nombre__iexact", punto_entregas_data["frecuencia_entrega_bolsones"]
-            )
-
-        if "tipo_modulo_bolsones" in punto_entregas_data:
-            punto_entregas_data["tipo_modulo_bolsones"] = RelevamientoService.get_object_or_none(
-                TipoModuloBolsones, "nombre__iexact", punto_entregas_data["tipo_modulo_bolsones"]
-            )
-
-        if "existe_punto_entregas" in punto_entregas_data:
-            punto_entregas_data["existe_punto_entregas"] = RelevamientoService.convert_to_boolean(punto_entregas_data["existe_punto_entregas"])
-
-        if "funciona_punto_entregas" in punto_entregas_data:
-            punto_entregas_data["funciona_punto_entregas"] =RelevamientoService.convert_to_boolean(punto_entregas_data["funciona_punto_entregas"])
-
-        if "observa_entregas" in punto_entregas_data:
-            punto_entregas_data["observa_entregas"] = RelevamientoService.convert_to_boolean(punto_entregas_data["observa_entregas"])
-
-        if "retiran_mercaderias_distribucion" in punto_entregas_data:
-            punto_entregas_data["retiran_mercaderias_distribucion"] = RelevamientoService.convert_to_boolean(punto_entregas_data["retiran_mercaderias_distribucion"] )
-
-        if "retiran_mercaderias_comercio" in punto_entregas_data:
-            punto_entregas_data["retiran_mercaderias_comercio"] = RelevamientoService.convert_to_boolean(punto_entregas_data["retiran_mercaderias_comercio"])
-
-        if "reciben_dinero" in punto_entregas_data:
-            punto_entregas_data["reciben_dinero"] =RelevamientoService.convert_to_boolean(punto_entregas_data["reciben_dinero"])
-
-        if "registran_entrega_bolsones" in punto_entregas_data:
-            punto_entregas_data["registran_entrega_bolsones"] = RelevamientoService.convert_to_boolean(punto_entregas_data["registran_entrega_bolsones"])
+        transformations = {
+            "tipo_comedor": lambda x: RelevamientoService.get_object_or_none(
+                TipoDeComedor, "nombre__iexact", x
+            ),
+            "frecuencia_entrega_bolsones": lambda x: RelevamientoService.get_object_or_none(
+                TipoFrecuenciaBolsones, "nombre__iexact", x
+            ),
+            "tipo_modulo_bolsones": lambda x: RelevamientoService.get_object_or_none(
+                TipoModuloBolsones, "nombre__iexact", x
+            ),
+            "existe_punto_entregas": RelevamientoService.convert_to_boolean,
+            "funciona_punto_entregas": RelevamientoService.convert_to_boolean,
+            "observa_entregas": RelevamientoService.convert_to_boolean,
+            "retiran_mercaderias_distribucion": RelevamientoService.convert_to_boolean,
+            "retiran_mercaderias_comercio": RelevamientoService.convert_to_boolean,
+            "reciben_dinero": RelevamientoService.convert_to_boolean,
+            "registran_entrega_bolsones": RelevamientoService.convert_to_boolean,
+        }
+        punto_entregas_data = RelevamientoService.populate_data(
+            punto_entregas_data, transformations
+        )
 
         return punto_entregas_data
 
     @staticmethod
     def populate_compras_data(compras_data):
-        if "almacen_cercano" in compras_data:
-            compras_data["almacen_cercano"] = RelevamientoService.convert_to_boolean(compras_data["almacen_cercano"])
-        if "verduleria" in compras_data:
-            compras_data["verduleria"] = RelevamientoService.convert_to_boolean(compras_data["verduleria"])
-        if "granja" in compras_data:
-            compras_data["granja"] = RelevamientoService.convert_to_boolean(compras_data["granja"])
-        if "carniceria" in compras_data:
-            compras_data["carniceria"] = RelevamientoService.convert_to_boolean(compras_data["carniceria"])
-        if "pescaderia" in compras_data:
-            compras_data["pescaderia"] = RelevamientoService.convert_to_boolean(compras_data["pescaderia"])
-        if "supermercado" in compras_data:
-            compras_data["supermercado"] = RelevamientoService.convert_to_boolean(compras_data["supermercado"])
-        if "mercado_central" in compras_data:
-            compras_data["mercado_central"] = RelevamientoService.convert_to_boolean(compras_data["mercado_central"])
-        if "ferias_comunales" in compras_data:
-            compras_data["ferias_comunales"] = RelevamientoService.convert_to_boolean(compras_data["ferias_comunales"])
-        if "mayoristas" in compras_data:
-            compras_data["mayoristas"] = RelevamientoService.convert_to_boolean(compras_data["mayoristas"])
-        if "otro" in compras_data:
-            compras_data["otro"] = RelevamientoService.convert_to_boolean(compras_data["otro"])
+        transformations = {
+            "almacen_cercano": RelevamientoService.convert_to_boolean,
+            "verduleria": RelevamientoService.convert_to_boolean,
+            "granja": RelevamientoService.convert_to_boolean,
+            "carniceria": RelevamientoService.convert_to_boolean,
+            "pescaderia": RelevamientoService.convert_to_boolean,
+            "supermercado": RelevamientoService.convert_to_boolean,
+            "mercado_central": RelevamientoService.convert_to_boolean,
+            "ferias_comunales": RelevamientoService.convert_to_boolean,
+            "mayoristas": RelevamientoService.convert_to_boolean,
+            "otro": RelevamientoService.convert_to_boolean,
+        }
+        compras_data = RelevamientoService.populate_data(compras_data, transformations)
 
         return compras_data
 
@@ -837,231 +817,33 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
     def populate_prestacion_data(
         prestacion_data,
     ):  # pylint: disable=too-many-statements,too-many-branches
+        dias = [
+            "lunes",
+            "martes",
+            "miercoles",
+            "jueves",
+            "viernes",
+            "sabado",
+            "domingo",
+        ]
+        comidas = [
+            "desayuno",
+            "almuerzo",
+            "merienda",
+            "cena",
+        ]
+        aoe = [
+            "actual",
+            "espera",
+        ]
 
-        if "lunes_desayuno_actual" in prestacion_data:
-            prestacion_data["lunes_desayuno_actual"] = convert_string_to_int(
-                prestacion_data["lunes_desayuno_actual"]
-            )
-        if "lunes_desayuno_espera" in prestacion_data:
-            prestacion_data["lunes_desayuno_espera"] = convert_string_to_int(
-                prestacion_data["lunes_desayuno_espera"]
-            )
-        if "lunes_almuerzo_actual" in prestacion_data:
-            prestacion_data["lunes_almuerzo_actual"] = convert_string_to_int(
-                prestacion_data["lunes_almuerzo_actual"]
-            )
-        if "lunes_almuerzo_espera" in prestacion_data:
-            prestacion_data["lunes_almuerzo_espera"] = convert_string_to_int(
-                prestacion_data["lunes_almuerzo_espera"]
-            )
-        if "lunes_merienda_actual" in prestacion_data:
-            prestacion_data["lunes_merienda_actual"] = convert_string_to_int(
-                prestacion_data["lunes_merienda_actual"]
-            )
-        if "lunes_merienda_espera" in prestacion_data:
-            prestacion_data["lunes_merienda_espera"] = convert_string_to_int(
-                prestacion_data["lunes_merienda_espera"]
-            )
-        if "lunes_cena_actual" in prestacion_data:
-            prestacion_data["lunes_cena_actual"] = convert_string_to_int(
-                prestacion_data["lunes_cena_actual"]
-            )
-        if "lunes_cena_espera" in prestacion_data:
-            prestacion_data["lunes_cena_espera"] = convert_string_to_int(
-                prestacion_data["lunes_cena_espera"]
-            )
-        if "martes_desayuno_actual" in prestacion_data:
-            prestacion_data["martes_desayuno_actual"] = convert_string_to_int(
-                prestacion_data["martes_desayuno_actual"]
-            )
-        if "martes_desayuno_espera" in prestacion_data:
-            prestacion_data["martes_desayuno_espera"] = convert_string_to_int(
-                prestacion_data["martes_desayuno_espera"]
-            )
-        if "martes_almuerzo_actual" in prestacion_data:
-            prestacion_data["martes_almuerzo_actual"] = convert_string_to_int(
-                prestacion_data["martes_almuerzo_actual"]
-            )
-        if "martes_almuerzo_espera" in prestacion_data:
-            prestacion_data["martes_almuerzo_espera"] = convert_string_to_int(
-                prestacion_data["martes_almuerzo_espera"]
-            )
-        if "martes_merienda_actual" in prestacion_data:
-            prestacion_data["martes_merienda_actual"] = convert_string_to_int(
-                prestacion_data["martes_merienda_actual"]
-            )
-        if "martes_merienda_espera" in prestacion_data:
-            prestacion_data["martes_merienda_espera"] = convert_string_to_int(
-                prestacion_data["martes_merienda_espera"]
-            )
-        if "martes_cena_actual" in prestacion_data:
-            prestacion_data["martes_cena_actual"] = convert_string_to_int(
-                prestacion_data["martes_cena_actual"]
-            )
-        if "martes_cena_espera" in prestacion_data:
-            prestacion_data["martes_cena_espera"] = convert_string_to_int(
-                prestacion_data["martes_cena_espera"]
-            )
-        if "miercoles_desayuno_actual" in prestacion_data:
-            prestacion_data["miercoles_desayuno_actual"] = convert_string_to_int(
-                prestacion_data["miercoles_desayuno_actual"]
-            )
-        if "miercoles_desayuno_espera" in prestacion_data:
-            prestacion_data["miercoles_desayuno_espera"] = convert_string_to_int(
-                prestacion_data["miercoles_desayuno_espera"]
-            )
-        if "miercoles_almuerzo_actual" in prestacion_data:
-            prestacion_data["miercoles_almuerzo_actual"] = convert_string_to_int(
-                prestacion_data["miercoles_almuerzo_actual"]
-            )
-        if "miercoles_almuerzo_espera" in prestacion_data:
-            prestacion_data["miercoles_almuerzo_espera"] = convert_string_to_int(
-                prestacion_data["miercoles_almuerzo_espera"]
-            )
-        if "miercoles_merienda_actual" in prestacion_data:
-            prestacion_data["miercoles_merienda_actual"] = convert_string_to_int(
-                prestacion_data["miercoles_merienda_actual"]
-            )
-        if "miercoles_merienda_espera" in prestacion_data:
-            prestacion_data["miercoles_merienda_espera"] = convert_string_to_int(
-                prestacion_data["miercoles_merienda_espera"]
-            )
-        if "miercoles_cena_actual" in prestacion_data:
-            prestacion_data["miercoles_cena_actual"] = convert_string_to_int(
-                prestacion_data["miercoles_cena_actual"]
-            )
-        if "miercoles_cena_espera" in prestacion_data:
-            prestacion_data["miercoles_cena_espera"] = convert_string_to_int(
-                prestacion_data["miercoles_cena_espera"]
-            )
-        if "jueves_desayuno_actual" in prestacion_data:
-            prestacion_data["jueves_desayuno_actual"] = convert_string_to_int(
-                prestacion_data["jueves_desayuno_actual"]
-            )
-        if "jueves_desayuno_espera" in prestacion_data:
-            prestacion_data["jueves_desayuno_espera"] = convert_string_to_int(
-                prestacion_data["jueves_desayuno_espera"]
-            )
-        if "jueves_almuerzo_actual" in prestacion_data:
-            prestacion_data["jueves_almuerzo_actual"] = convert_string_to_int(
-                prestacion_data["jueves_almuerzo_actual"]
-            )
-        if "jueves_almuerzo_espera" in prestacion_data:
-            prestacion_data["jueves_almuerzo_espera"] = convert_string_to_int(
-                prestacion_data["jueves_almuerzo_espera"]
-            )
-        if "jueves_merienda_actual" in prestacion_data:
-            prestacion_data["jueves_merienda_actual"] = convert_string_to_int(
-                prestacion_data["jueves_merienda_actual"]
-            )
-        if "jueves_merienda_espera" in prestacion_data:
-            prestacion_data["jueves_merienda_espera"] = convert_string_to_int(
-                prestacion_data["jueves_merienda_espera"]
-            )
-        if "jueves_cena_actual" in prestacion_data:
-            prestacion_data["jueves_cena_actual"] = convert_string_to_int(
-                prestacion_data["jueves_cena_actual"]
-            )
-        if "jueves_cena_espera" in prestacion_data:
-            prestacion_data["jueves_cena_espera"] = convert_string_to_int(
-                prestacion_data["jueves_cena_espera"]
-            )
-        if "viernes_desayuno_actual" in prestacion_data:
-            prestacion_data["viernes_desayuno_actual"] = convert_string_to_int(
-                prestacion_data["viernes_desayuno_actual"]
-            )
-        if "viernes_desayuno_espera" in prestacion_data:
-            prestacion_data["viernes_desayuno_espera"] = convert_string_to_int(
-                prestacion_data["viernes_desayuno_espera"]
-            )
-        if "viernes_almuerzo_actual" in prestacion_data:
-            prestacion_data["viernes_almuerzo_actual"] = convert_string_to_int(
-                prestacion_data["viernes_almuerzo_actual"]
-            )
-        if "viernes_almuerzo_espera" in prestacion_data:
-            prestacion_data["viernes_almuerzo_espera"] = convert_string_to_int(
-                prestacion_data["viernes_almuerzo_espera"]
-            )
-        if "viernes_merienda_actual" in prestacion_data:
-            prestacion_data["viernes_merienda_actual"] = convert_string_to_int(
-                prestacion_data["viernes_merienda_actual"]
-            )
-        if "viernes_merienda_espera" in prestacion_data:
-            prestacion_data["viernes_merienda_espera"] = convert_string_to_int(
-                prestacion_data["viernes_merienda_espera"]
-            )
-        if "viernes_cena_actual" in prestacion_data:
-            prestacion_data["viernes_cena_actual"] = convert_string_to_int(
-                prestacion_data["viernes_cena_actual"]
-            )
-        if "viernes_cena_espera" in prestacion_data:
-            prestacion_data["viernes_cena_espera"] = convert_string_to_int(
-                prestacion_data["viernes_cena_espera"]
-            )
-        if "sabado_desayuno_actual" in prestacion_data:
-            prestacion_data["sabado_desayuno_actual"] = convert_string_to_int(
-                prestacion_data["sabado_desayuno_actual"]
-            )
-        if "sabado_desayuno_espera" in prestacion_data:
-            prestacion_data["sabado_desayuno_espera"] = convert_string_to_int(
-                prestacion_data["sabado_desayuno_espera"]
-            )
-        if "sabado_almuerzo_actual" in prestacion_data:
-            prestacion_data["sabado_almuerzo_actual"] = convert_string_to_int(
-                prestacion_data["sabado_almuerzo_actual"]
-            )
-        if "sabado_almuerzo_espera" in prestacion_data:
-            prestacion_data["sabado_almuerzo_espera"] = convert_string_to_int(
-                prestacion_data["sabado_almuerzo_espera"]
-            )
-        if "sabado_merienda_actual" in prestacion_data:
-            prestacion_data["sabado_merienda_actual"] = convert_string_to_int(
-                prestacion_data["sabado_merienda_actual"]
-            )
-        if "sabado_merienda_espera" in prestacion_data:
-            prestacion_data["sabado_merienda_espera"] = convert_string_to_int(
-                prestacion_data["sabado_merienda_espera"]
-            )
-        if "sabado_cena_actual" in prestacion_data:
-            prestacion_data["sabado_cena_actual"] = convert_string_to_int(
-                prestacion_data["sabado_cena_actual"]
-            )
-        if "sabado_cena_espera" in prestacion_data:
-            prestacion_data["sabado_cena_espera"] = convert_string_to_int(
-                prestacion_data["sabado_cena_espera"]
-            )
-        if "domingo_desayuno_actual" in prestacion_data:
-            prestacion_data["domingo_desayuno_actual"] = convert_string_to_int(
-                prestacion_data["domingo_desayuno_actual"]
-            )
-        if "domingo_desayuno_espera" in prestacion_data:
-            prestacion_data["domingo_desayuno_espera"] = convert_string_to_int(
-                prestacion_data["domingo_desayuno_espera"]
-            )
-        if "domingo_almuerzo_actual" in prestacion_data:
-            prestacion_data["domingo_almuerzo_actual"] = convert_string_to_int(
-                prestacion_data["domingo_almuerzo_actual"]
-            )
-        if "domingo_almuerzo_espera" in prestacion_data:
-            prestacion_data["domingo_almuerzo_espera"] = convert_string_to_int(
-                prestacion_data["domingo_almuerzo_espera"]
-            )
-        if "domingo_merienda_actual" in prestacion_data:
-            prestacion_data["domingo_merienda_actual"] = convert_string_to_int(
-                prestacion_data["domingo_merienda_actual"]
-            )
-        if "domingo_merienda_espera" in prestacion_data:
-            prestacion_data["domingo_merienda_espera"] = convert_string_to_int(
-                prestacion_data["domingo_merienda_espera"]
-            )
-        if "domingo_cena_actual" in prestacion_data:
-            prestacion_data["domingo_cena_actual"] = convert_string_to_int(
-                prestacion_data["domingo_cena_actual"]
-            )
-        if "domingo_cena_espera" in prestacion_data:
-            prestacion_data["domingo_cena_espera"] = convert_string_to_int(
-                prestacion_data["domingo_cena_espera"]
-            )
+        for dia in dias:
+            for comida in comidas:
+                for estado in aoe:
+                    key = f"{dia}_{comida}_{estado}"
+                    if key in prestacion_data:
+                        prestacion_data[key] = convert_string_to_int(prestacion_data[key])
+        
         return prestacion_data
 
     @staticmethod
