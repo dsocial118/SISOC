@@ -147,7 +147,7 @@
                                 {% for adh in centros_adheridos_paginados %}
                                     <tr>
                                         <td>
-                                            <a href="{% url 'centro_detail' adh.id %}" class="text-info">{{ adh.nombre }}</a>
+                                            <a class="text-info">{{ adh.nombre }}</a>
                                         </td>
                                         <td>{{ adh.get_tipo_display }}</td>
                                         <td>
@@ -438,7 +438,7 @@
                         </div>
                         <div class="modal-body">
                             <dl class="row text-white">
-                                <dt class="col-5">Cantidad estimada</dt>
+                                <dt class="col-5">Cupo Total</dt>
                                 <dd class="col-7">
                                     {{ ac.cantidad_personas }}
                                 </dd>

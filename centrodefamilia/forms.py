@@ -85,6 +85,12 @@ class CentroForm(forms.ModelForm):
 
 
 class ActividadCentroForm(forms.ModelForm):
+    sexoact = forms.ModelMultipleChoiceField(
+        queryset=Sexo.objects.all(),
+        required=False,
+        label="Actividad dirigida a...",
+        widget=forms.SelectMultiple(attrs={"class": "select2 w-100", "multiple": True}),
+    )
     dias = forms.ModelMultipleChoiceField(
         queryset=Dia.objects.all(),
         required=False,
@@ -125,6 +131,7 @@ class ActividadCentroForm(forms.ModelForm):
             "categoria",
             "actividad",
             "cantidad_personas",
+            "sexoact",
             "dias",
             "horariosdesde",
             "horarioshasta",

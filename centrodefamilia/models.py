@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from ciudadanos.models import Ciudadano
-from core.models import Dia, Localidad, Municipio, Provincia
+from core.models import Dia, Localidad, Municipio, Provincia, Sexo
 from organizaciones.models import Organizacion
 
 
@@ -114,6 +114,12 @@ class ActividadCentro(models.Model):
     dias = models.ManyToManyField(
         to=Dia,
         related_name="DiaActividad",
+        blank=True,
+    )
+    sexoact = models.ManyToManyField(
+        to=Sexo,
+        related_name="sexoactividad",
+        verbose_name="Actividad Dirigida a ",
         blank=True,
     )
     horariosdesde = models.TimeField()

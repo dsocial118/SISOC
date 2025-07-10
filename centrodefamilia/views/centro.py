@@ -66,14 +66,14 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         centro = self.object
+
+        # 1) Expedientes del centro (con paginación)
         qs_exp = Expediente.objects.filter(centro=centro).order_by("-fecha_subida")
         paginator_exp = Paginator(qs_exp, 3)
         page_exp = self.request.GET.get("page_exp")
         context["expedientes_cabal"] = paginator_exp.get_page(page_exp)
 
-        #
-        # 1) Actividades del propio centro
-        #
+        # 2) Actividades del centro y ganancia estimada
         qs_centro = ActividadCentro.objects.filter(centro=centro).select_related(
             "actividad", "actividad__categoria"
         )
@@ -92,14 +92,9 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         context["actividades"] = actividades
         context["total_actividades"] = qs_centro.count()
 
-        #
-        # 2) Paginación de TODAS las actividades (actividades_paginados)
-        #
-        # (2) Paginación de TODAS las actividades (actividades_paginados)
+        # 3) Paginación de TODAS las actividades (de otros centros)
         todas_acts = (
-            ActividadCentro.objects
-            # Excluyo las del centro que estamos viendo
-            .exclude(centro=centro)
+            ActividadCentro.objects.exclude(centro=centro)
             .select_related("actividad", "actividad__categoria", "centro")
             .order_by("centro__nombre", "actividad__nombre")
         )
@@ -107,9 +102,7 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         page_act = self.request.GET.get("page_act")
         context["actividades_paginados"] = pag_all.get_page(page_act)
 
-        #
-        # 3) Centros adheridos y su paginación
-        #
+        # 4) Centros adheridos (si este es FARO)
         if centro.tipo == "faro":
             qs_adheridos = Centro.objects.filter(
                 faro_asociado=centro, activo=True
@@ -122,9 +115,7 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         page = self.request.GET.get("page")
         context["centros_adheridos_paginados"] = pag_centros.get_page(page)
 
-        #
-        # 4) Métricas y asistentes (sin cambios)
-        #
+        # 5) Métricas y asistentes (uso correcto de select_related)
         total_part = sum(mapa.values())
         qs_part = ParticipanteActividad.objects.filter(
             actividad_centro__centro=centro
@@ -161,22 +152,18 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
         initial = super().get_initial()
         faro_id = self.request.GET.get("faro")
         if faro_id:
-            # fijamos tipo y faro_asociado iniciales
             initial["tipo"] = "adherido"
             initial["faro_asociado"] = faro_id
         return initial
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        # avisamos al form si venimos con faro=
         kwargs["from_faro"] = bool(self.request.GET.get("faro"))
         return kwargs
 
     def form_valid(self, form):
         user = self.request.user
-        # Si se creó con faro=, garantizamos referinte + tipo
         if form.cleaned_data.get("tipo") == "adherido":
-            # opcional: asignar el faro como self.object.faro_asociado
             form.instance.faro_asociado_id = self.request.GET.get("faro")
         if (
             user.groups.filter(name="ReferenteCentro").exists()
