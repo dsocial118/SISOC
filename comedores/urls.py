@@ -15,6 +15,7 @@ from comedores.views import (
     NominaDeleteView,
     NominaUpdateView,
     AsignarDuplaListView,
+    relevamiento_crear_editar_ajax,
 )
 
 from intervenciones.views import (
@@ -159,5 +160,10 @@ urlpatterns = [
         "comedores/<int:pk>/nomina/<int:pk2>/eliminar/",
         group_required(["Comedores Nomina Borrar"])(NominaDeleteView.as_view()),
         name="nomina_borrar",
+    ),
+    path(
+        "comedores/ajax/<pk>/relevamiento/",
+        relevamiento_crear_editar_ajax,
+        name="relevamiento_create_edit_ajax",
     ),
 ]
