@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.db.models import Q
 
 from ciudadanos.models import Sexo, TipoDocumento
 from centrodefamilia.models import (
@@ -44,12 +45,27 @@ class CentroForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # Optimización: Cargar solo usuarios ReferenteCentro con select_related
         self.fields["referente"].queryset = User.objects.filter(
             groups__name="ReferenteCentro"
-        )
+        ).only("id", "username", "first_name", "last_name")
+
+        # Optimización: Cargar solo centros faro activos
         self.fields["faro_asociado"].queryset = Centro.objects.filter(
             tipo="faro", activo=True
-        )
+        ).only("id", "nombre")
+
+        # Optimización: Usar empty_label y limitar queryset para organizaciones
+        # Solo cargar las primeras 100 organizaciones para evitar query lenta
+        from organizaciones.models import Organizacion
+
+        self.fields["organizacion_asociada"].queryset = Organizacion.objects.only(
+            "id", "nombre", "cuit"
+        )[
+            :100
+        ]  # Limitar a las primeras 100
+        self.fields["organizacion_asociada"].empty_label = "Seleccionar organización..."
 
     def clean(self):
         cleaned_data = super().clean()
