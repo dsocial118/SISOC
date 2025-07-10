@@ -1,6 +1,6 @@
 import pandas as pd
 from django.core.management.base import BaseCommand, CommandError
-from centrodefamilia.services.participante_service import ParticipanteService
+from centrodefamilia.services.participante import ParticipanteService
 from ciudadanos.models import TipoDocumento, Sexo, Ciudadano
 from datetime import datetime
 

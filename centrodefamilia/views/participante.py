@@ -1,5 +1,4 @@
 # centrodefamilia/views/participante.py
-
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.contrib import messages
@@ -8,7 +7,12 @@ from django.views.generic import CreateView, DeleteView
 
 from centrodefamilia.models import ParticipanteActividad
 from centrodefamilia.forms import ParticipanteActividadForm
-from centrodefamilia.services.participante_service import ParticipanteService
+from centrodefamilia.services.participante import (
+    AlreadyRegistered,
+    CupoExcedido,
+    ParticipanteService,
+    SexoNoPermitido,
+)
 
 
 class ParticipanteActividadCreateView(LoginRequiredMixin, CreateView):
@@ -35,34 +39,38 @@ class ParticipanteActividadCreateView(LoginRequiredMixin, CreateView):
     def post(self, request, *args, **kwargs):
         actividad_id = self.kwargs.get("actividad_id")
         ciudadano_id = request.POST.get("ciudadano_id")
+        form = self.get_form()
+
+        # Si no es un agregado existente y el form no es válido, mostrar errores
+        if not ciudadano_id and not form.is_valid():
+            return self.form_invalid(form)
 
         try:
-            if ciudadano_id:
-                ParticipanteService.agregar_existente(
-                    usuario=request.user,
-                    actividad_id=actividad_id,
-                    ciudadano_id=ciudadano_id,
-                )
+            tipo, _ = ParticipanteService.procesar_creacion(
+                usuario=request.user,
+                actividad_id=actividad_id,
+                ciudadano_id=ciudadano_id,
+                datos=form.cleaned_data if not ciudadano_id else None,
+            )
+
+            if tipo == "existente":
                 messages.success(
                     request, "Participante existente agregado correctamente."
                 )
             else:
-                form = self.get_form()
-                if not form.is_valid():
-                    return self.form_invalid(form)
-                ParticipanteService.crear_nuevo_con_dimensiones(
-                    usuario=request.user,
-                    actividad_id=actividad_id,
-                    datos=form.cleaned_data,
-                )
                 messages.success(
                     request, "Ciudadano y participante creados correctamente."
                 )
-            return redirect(self.get_success_url())
 
+        except AlreadyRegistered as e:
+            messages.warning(request, str(e))
+        except CupoExcedido as e:
+            messages.warning(request, str(e))
+        except SexoNoPermitido as e:
+            messages.warning(request, str(e))
         except (LookupError, ValueError) as e:
             messages.error(request, str(e))
-            return redirect(self.get_success_url())
+        return redirect(self.get_success_url())
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -82,7 +90,7 @@ class ParticipanteActividadDeleteView(LoginRequiredMixin, DeleteView):
         return reverse_lazy(
             "actividadcentro_detail",
             kwargs={
-                "centro_id": self.kwargs.get("cento_id"),  # typo fixed below
+                "centro_id": self.kwargs.get("centro_id"),
                 "pk": self.kwargs.get("actividad_id"),
             },
         )

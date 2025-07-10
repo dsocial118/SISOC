@@ -35,8 +35,10 @@
         <div class="col-12 text-center">
             <a href="{% url 'centro_list' %}"
                class="btn btn-secondary btn-lg d-block d-sm-inline mt-2">Resetear</a>
-            <a href="{% url 'centro_create' %}"
-               class="btn btn-primary btn-lg d-block d-sm-inline mt-2 mr-2">Agregar</a>
+            {% if request.user.is_superuser or request.user.groups.all.0.name == 'CDF SSE' %}
+                <a href="{% url 'centro_create' %}"
+                   class="btn btn-primary btn-lg d-block d-sm-inline mt-2 mr-2">Agregar</a>
+            {% endif %}
             {% if request.user.is_superuser or request.user.groups.all.0.name == 'CDF SSE' %}
                 <a href="{% url 'actividad_create_sola' %}"
                    class="btn btn-primary btn-lg d-block d-sm-inline mt-2 mr-2">Agregar Actividad</a>
@@ -82,16 +84,18 @@
                                                class="btn btn-primary btn-sm">Ver</a>
                                             <a href="{% url 'centro_update' centro.id %}"
                                                class="btn btn-primary btn-sm">Editar</a>
-                                            <form method="post"
-                                                  action="{% url 'centro_delete' centro.id %}"
-                                                  style="display:inline">
-                                                {% csrf_token %}
-                                                <button type="submit"
-                                                        class="btn btn-danger btn-sm"
-                                                        onclick="return confirm('¿Estás seguro de que deseas eliminar este centro? Esta acción no se puede deshacer.');">
-                                                    Eliminar
-                                                </button>
-                                            </form>
+                                            {% if request.user.is_superuser or request.user.groups.all.0.name == 'CDF SSE' %}
+                                                <form method="post"
+                                                      action="{% url 'centro_delete' centro.id %}"
+                                                      style="display:inline">
+                                                    {% csrf_token %}
+                                                    <button type="submit"
+                                                            class="btn btn-danger btn-sm"
+                                                            onclick="return confirm('¿Estás seguro de que deseas eliminar este centro? Esta acción no se puede deshacer.');">
+                                                        Eliminar
+                                                    </button>
+                                                </form>
+                                            {% endif %}
                                         </div>
                                     </td>
                                 </tr>

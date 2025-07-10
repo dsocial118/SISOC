@@ -3,6 +3,7 @@ from django.urls import reverse, reverse_lazy
 from django.contrib import messages
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
+from django.http import JsonResponse
 
 from centrodefamilia.models import (
     ActividadCentro,
@@ -12,7 +13,6 @@ from centrodefamilia.models import (
 )
 from centrodefamilia.forms import ActividadCentroForm, ActividadForm
 from configuraciones.decorators import group_required
-from django.http import JsonResponse
 
 
 class ActividadCentroListView(ListView):
@@ -69,9 +69,15 @@ class ActividadCentroDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         actividad = self.get_object()
-        participantes = ParticipanteActividad.objects.filter(actividad_centro=actividad)
+
+        # Traigo participantes con select_related para evitar N+1
+        participantes = ParticipanteActividad.objects.filter(
+            actividad_centro=actividad
+        ).select_related("ciudadano")
+
         cantidad = participantes.count()
         precio = actividad.precio or 0
+
         context.update(
             {
                 "participantes": participantes,

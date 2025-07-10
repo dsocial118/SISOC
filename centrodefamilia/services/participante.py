@@ -1,13 +1,7 @@
-from django.core.exceptions import ValidationError
 from django.db.models import CharField
 from django.db.models.functions import Cast
 
-from centrodefamilia.models import (
-    ActividadCentro,
-    ParticipanteActividad,
-    Centro,
-)
-
+from centrodefamilia.models import Centro, ActividadCentro, ParticipanteActividad
 from ciudadanos.models import (
     Ciudadano,
     DimensionEconomia,
@@ -19,6 +13,18 @@ from ciudadanos.models import (
     CiudadanoPrograma,
     HistorialCiudadanoProgramas,
 )
+
+
+class AlreadyRegistered(Exception):
+    """Se lanza cuando un ciudadano ya está inscrito en la actividad."""
+
+
+class CupoExcedido(Exception):
+    """Se lanza cuando la actividad alcanzó su cupo máximo."""
+
+
+class SexoNoPermitido(Exception):
+    """Se lanza cuando el sexo del ciudadano no está permitido en la actividad."""
 
 
 def puede_operar(centro):
@@ -37,11 +43,10 @@ def validar_cuit(cuit):
 
 
 def validar_ciudadano_en_rango_para_actividad(ciudadano, actividad_centro):
-    if actividad_centro.centro.tipo == "adherido":
-        if not (1 <= ciudadano.id <= 1984):
-            raise ValueError(
-                f"El ciudadano ID {ciudadano.id} no está habilitado para inscribirse en este centro adherido."
-            )
+    if actividad_centro.centro.tipo == "adherido" and not 1 <= ciudadano.id <= 1984:
+        raise ValueError(
+            f"El ciudadano ID {ciudadano.id} no está habilitado para inscribirse en este centro adherido."
+        )
 
 
 class ActividadService:
@@ -62,15 +67,19 @@ class ParticipanteService:
 
     @staticmethod
     def cargar_participantes_desde_lista(lista_dnis, actividad_centro):
+        """Carga masiva desde una lista de documentos (DNI)"""
         existing = set(
             ParticipanteActividad.objects.filter(
-                actividad_centro=actividad_centro, cuit__in=lista_dnis
-            ).values_list("cuit", flat=True)
+                actividad_centro=actividad_centro,
+                ciudadano__documento__in=lista_dnis
+            ).values_list("ciudadano__documento", flat=True)
         )
+        ciudadanos = Ciudadano.objects.filter(documento__in=lista_dnis)
+
         nuevos = [
-            ParticipanteActividad(cuit=cuit, actividad_centro=actividad_centro)
-            for cuit in lista_dnis
-            if cuit not in existing
+            ParticipanteActividad(ciudadano=c, actividad_centro=actividad_centro)
+            for c in ciudadanos
+            if c.documento not in existing
         ]
         ParticipanteActividad.objects.bulk_create(nuevos, ignore_conflicts=True)
         return len(nuevos)
@@ -108,7 +117,7 @@ class ParticipanteService:
 
     @staticmethod
     def asignar_programa(ciudadano, usuario, programa_id=1):
-        cp, created = CiudadanoPrograma.objects.get_or_create(
+        _, created = CiudadanoPrograma.objects.get_or_create(
             ciudadano=ciudadano,
             programas_id=programa_id,
             defaults={"creado_por": usuario},
@@ -122,24 +131,50 @@ class ParticipanteService:
             )
 
     @classmethod
-    def agregar_existente(cls, usuario, actividad_id, ciudadano_id):
-        actividad = ActividadService.obtener_o_error(actividad_id)
-        ciudadano = Ciudadano.objects.filter(pk=ciudadano_id).first()
-        if not ciudadano:
-            raise LookupError("Ciudadano no encontrado.")
-        cls.validar_ciudadano(ciudadano, actividad)
-        participante = cls.crear_participante(actividad_id, ciudadano)
-        cls.asignar_programa(ciudadano, usuario)
-        return participante
+    def procesar_creacion(cls, usuario, actividad_id, datos=None, ciudadano_id=None):
+        # Validar inscripción duplicada
+        if ciudadano_id and ParticipanteActividad.objects.filter(
+            actividad_centro_id=actividad_id,
+            ciudadano_id=ciudadano_id
+        ).exists():
+            raise AlreadyRegistered("Este ciudadano ya está inscrito en la actividad.")
 
-    @classmethod
-    def crear_nuevo_con_dimensiones(cls, usuario, actividad_id, datos):
+        # Verificar cupo
         actividad = ActividadService.obtener_o_error(actividad_id)
-        ciudadano = cls.crear_ciudadano_con_dimensiones(datos)
+        total = ParticipanteActividad.objects.filter(
+            actividad_centro_id=actividad_id
+        ).count()
+        if total >= actividad.cantidad_personas:
+            raise CupoExcedido(
+                "Se alcanzó el cupo máximo de asistentes para esta actividad."
+            )
+
+        # Obtener o crear ciudadano
+        if ciudadano_id:
+            ciudadano = Ciudadano.objects.filter(pk=ciudadano_id).first()
+            if not ciudadano:
+                raise LookupError("Ciudadano no encontrado.")
+        else:
+            # Validar sexo antes de crear
+            genero = datos.get("genero")
+            if actividad.sexoact.exists() and genero not in actividad.sexoact.all():
+                raise SexoNoPermitido(
+                    "El sexo del ciudadano no coincide con los permitidos para esta actividad."
+                )
+            ciudadano = cls.crear_ciudadano_con_dimensiones(datos)
+
+        # Validar sexo para todos los casos
+        if actividad.sexoact.exists() and ciudadano.sexo not in actividad.sexoact.all():
+            raise SexoNoPermitido(
+                "El sexo del ciudadano no coincide con los permitidos para esta actividad."
+            )
+
+        # Registrar participante
         cls.validar_ciudadano(ciudadano, actividad)
         participante = cls.crear_participante(actividad_id, ciudadano)
         cls.asignar_programa(ciudadano, usuario)
-        return participante
+        tipo = "existente" if ciudadano_id else "nuevo"
+        return tipo, participante
 
     @staticmethod
     def buscar_ciudadanos(query, max_results=10):
@@ -151,3 +186,9 @@ class ParticipanteService:
             .filter(doc_str__startswith=cleaned)
             .order_by("documento")[:max_results]
         )
+
+    @staticmethod
+    def obtener_participantes_con_ciudadanos(actividad_centro):
+        return ParticipanteActividad.objects.filter(
+            actividad_centro=actividad_centro
+        ).select_related("ciudadano")

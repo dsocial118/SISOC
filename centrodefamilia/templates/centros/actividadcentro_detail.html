@@ -37,6 +37,17 @@
                     <strong>Cantidad de personas:</strong> {{ actividad.cantidad_personas }}
                 </p>
                 <p>
+                    <strong>Dirigido a personas:</strong>
+                    {% if actividad.sexoact.exists %}
+                        {% for s in actividad.sexoact.all %}
+                            {{ s.sexo }}
+                            {% if not forloop.last %}{% endif %}
+                        {% endfor %}
+                    {% else %}
+                        Todos los sexos
+                    {% endif %}
+                </p>
+                <p>
                     <strong>Días:</strong>
                     {% for dia in actividad.dias.all %}
                         {{ dia.nombre }}
