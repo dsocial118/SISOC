@@ -1,7 +1,6 @@
 from centrodefamilia.models import Actividad
 
 
-
 def actividades_disponibles_para_centro():
     """
     Devuelve todas las actividades cargadas por el técnico
