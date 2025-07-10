@@ -70,8 +70,7 @@ class ParticipanteService:
         """Carga masiva desde una lista de documentos (DNI)"""
         existing = set(
             ParticipanteActividad.objects.filter(
-                actividad_centro=actividad_centro,
-                ciudadano__documento__in=lista_dnis
+                actividad_centro=actividad_centro, ciudadano__documento__in=lista_dnis
             ).values_list("ciudadano__documento", flat=True)
         )
         ciudadanos = Ciudadano.objects.filter(documento__in=lista_dnis)
@@ -133,10 +132,12 @@ class ParticipanteService:
     @classmethod
     def procesar_creacion(cls, usuario, actividad_id, datos=None, ciudadano_id=None):
         # Validar inscripción duplicada
-        if ciudadano_id and ParticipanteActividad.objects.filter(
-            actividad_centro_id=actividad_id,
-            ciudadano_id=ciudadano_id
-        ).exists():
+        if (
+            ciudadano_id
+            and ParticipanteActividad.objects.filter(
+                actividad_centro_id=actividad_id, ciudadano_id=ciudadano_id
+            ).exists()
+        ):
             raise AlreadyRegistered("Este ciudadano ya está inscrito en la actividad.")
 
         # Verificar cupo
