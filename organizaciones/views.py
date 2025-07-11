@@ -39,7 +39,7 @@ class OrganizacionListView(ListView):
                     | Q(email__icontains=query)
                 )
                 .select_related()
-                      .select_related("tipo_entidad", "subtipo_entidad", "tipo_organizacion")
+                .select_related("tipo_entidad", "subtipo_entidad", "tipo_organizacion")
                 .only(
                     "id",
                     "nombre",
@@ -69,7 +69,10 @@ class OrganizacionListView(ListView):
                 )
                 .order_by("-id")
             )
-ateView(CreateView):
+        return queryset
+
+
+class OrganizacionCreateView(CreateView):
     model = Organizacion
     form_class = OrganizacionForm
     template_name = "organizacion_form.html"
