@@ -28,14 +28,45 @@ class OrganizacionListView(ListView):
 
     def get_queryset(self):
         query = self.request.GET.get("busqueda")
-        queryset = Organizacion.objects.all()
 
         if query:
-            queryset = queryset.filter(
-                Q(nombre__icontains=query)
-                | Q(cuit__icontains=query)
-                | Q(telefono__icontains=query)
-                | Q(email__icontains=query)
+            # Solo ejecutar queries cuando hay búsqueda específica
+            queryset = (
+                Organizacion.objects.filter(
+                    Q(nombre__icontains=query)
+                    | Q(cuit__icontains=query)
+                    | Q(telefono__icontains=query)
+                    | Q(email__icontains=query)
+                )
+                .select_related("tipo_entidad", "subtipo_entidad", "tipo_organizacion")
+                .only(
+                    "id",
+                    "nombre",
+                    "cuit",
+                    "telefono",
+                    "email",
+                    "tipo_entidad__nombre",
+                    "subtipo_entidad__nombre",
+                    "tipo_organizacion__nombre",
+                )
+            )
+        else:
+            # Para la vista inicial sin búsqueda, usar paginación eficiente
+            queryset = (
+                Organizacion.objects.select_related(
+                    "tipo_entidad", "subtipo_entidad", "tipo_organizacion"
+                )
+                .only(
+                    "id",
+                    "nombre",
+                    "cuit",
+                    "telefono",
+                    "email",
+                    "tipo_entidad__nombre",
+                    "subtipo_entidad__nombre",
+                    "tipo_organizacion__nombre",
+                )
+                .order_by("-id")
             )
 
         return queryset
