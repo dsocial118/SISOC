@@ -1,23 +1,17 @@
 # centrodefamilia/views/participante.py
-
 from django.shortcuts import redirect
-from django.views.generic import CreateView
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import CreateView, DeleteView
 
 from centrodefamilia.models import ParticipanteActividad
 from centrodefamilia.forms import ParticipanteActividadForm
-from centrodefamilia.services.participante_service import ParticipanteService
-from ciudadanos.models import (
-    Ciudadano,
-    CiudadanoPrograma,
-    HistorialCiudadanoProgramas,
-)
-
-from django.views.generic import (
-    CreateView,
-    DeleteView,
+from centrodefamilia.services.participante import (
+    AlreadyRegistered,
+    CupoExcedido,
+    ParticipanteService,
+    SexoNoPermitido,
 )
 
 
@@ -34,80 +28,55 @@ class ParticipanteActividadCreateView(LoginRequiredMixin, CreateView):
         return initial
 
     def get_success_url(self):
-        centro_id = self.kwargs.get("centro_id")
-        actividad_id = self.kwargs.get("actividad_id")
         return reverse_lazy(
             "actividadcentro_detail",
-            kwargs={"centro_id": centro_id, "pk": actividad_id},
+            kwargs={
+                "centro_id": self.kwargs.get("centro_id"),
+                "pk": self.kwargs.get("actividad_id"),
+            },
         )
 
     def post(self, request, *args, **kwargs):
-        self.object = None
         actividad_id = self.kwargs.get("actividad_id")
-        user = request.user
-
-        # 1) Participante existente
         ciudadano_id = request.POST.get("ciudadano_id")
-        if ciudadano_id:
-            try:
-                ciudadano = Ciudadano.objects.get(pk=ciudadano_id)
-            except Ciudadano.DoesNotExist:
-                messages.error(request, "Ciudadano no encontrado.")
-                return redirect(self.get_success_url())
+        form = self.get_form()
 
-            # 1.a) Asociar a la actividad
-            ParticipanteService.crear_participante(actividad_id, ciudadano)
+        # Si no es un agregado existente y el form no es válido, mostrar errores
+        if not ciudadano_id and not form.is_valid():
+            return self.form_invalid(form)
 
-            # 1.b) Crear o recuperar vínculo en CiudadanoPrograma (programa=1)
-            cp, created = CiudadanoPrograma.objects.get_or_create(
-                ciudadano=ciudadano, programas_id=1, defaults={"creado_por": user}
+        try:
+            tipo, _ = ParticipanteService.procesar_creacion(
+                usuario=request.user,
+                actividad_id=actividad_id,
+                ciudadano_id=ciudadano_id,
+                datos=form.cleaned_data if not ciudadano_id else None,
             )
-            # 1.c) Si se crea nuevo, registrar en historial
-            if created:
-                HistorialCiudadanoProgramas.objects.create(
-                    programa_id=1, ciudadano=ciudadano, accion="agregado", usuario=user
+
+            if tipo == "existente":
+                messages.success(
+                    request, "Participante existente agregado correctamente."
+                )
+            else:
+                messages.success(
+                    request, "Ciudadano y participante creados correctamente."
                 )
 
-            messages.success(request, "Participante existente agregado correctamente.")
-            return redirect(self.get_success_url())
-
-        # 2) Nuevo ciudadano + dimensiones
-        form = self.get_form()
-        if form.is_valid():
-            nuevo_ciudadano = ParticipanteService.crear_ciudadano_con_dimensiones(
-                form.cleaned_data
-            )
-            # 2.a) Asociación a la actividad
-            ParticipanteService.crear_participante(actividad_id, nuevo_ciudadano)
-            # 2.b) Crear vínculo Ciudadano–Programa
-            CiudadanoPrograma.objects.create(
-                ciudadano=nuevo_ciudadano, programas_id=1, creado_por=user
-            )
-            # 2.c) Registrar en historial
-            HistorialCiudadanoProgramas.objects.create(
-                programa_id=1,
-                ciudadano=nuevo_ciudadano,
-                accion="agregado",
-                usuario=user,
-            )
-
-            messages.success(request, "Ciudadano y participante creados correctamente.")
-            return redirect(self.get_success_url())
-
-        return self.form_invalid(form)
+        except AlreadyRegistered as e:
+            messages.warning(request, str(e))
+        except CupoExcedido as e:
+            messages.warning(request, str(e))
+        except SexoNoPermitido as e:
+            messages.warning(request, str(e))
+        except (LookupError, ValueError) as e:
+            messages.error(request, str(e))
+        return redirect(self.get_success_url())
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        query = self.request.GET.get("query", "")
-        if len(query) >= 4:
-            from django.db.models import CharField
-            from django.db.models.functions import Cast
-
-            context["ciudadanos"] = Ciudadano.objects.annotate(
-                doc_str=Cast("documento", CharField())
-            ).filter(doc_str__startswith=query)[:10]
-            context["no_resultados"] = not context["ciudadanos"].exists()
-
+        query = self.request.GET.get("query") or ""
+        context["ciudadanos"] = ParticipanteService.buscar_ciudadanos(query)
+        context["no_resultados"] = not bool(context["ciudadanos"])
         context["centro_id"] = self.kwargs.get("centro_id")
         context["actividad_id"] = self.kwargs.get("actividad_id")
         return context
@@ -118,11 +87,12 @@ class ParticipanteActividadDeleteView(LoginRequiredMixin, DeleteView):
     template_name = "centros/participanteactividad_confirm_delete.html"
 
     def get_success_url(self):
-        centro_id = self.kwargs["centro_id"]
-        actividad_id = self.kwargs["actividad_id"]
         return reverse_lazy(
             "actividadcentro_detail",
-            kwargs={"centro_id": centro_id, "pk": actividad_id},
+            kwargs={
+                "centro_id": self.kwargs.get("centro_id"),
+                "pk": self.kwargs.get("actividad_id"),
+            },
         )
 
     def delete(self, request, *args, **kwargs):
