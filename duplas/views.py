@@ -12,7 +12,6 @@ from django.views.generic import (
 )
 from duplas.models import Dupla
 from duplas.forms import DuplaForm
-from duplas.dupla_service import DuplaService
 from comedores.services.comedor_service import ComedorService
 
 
