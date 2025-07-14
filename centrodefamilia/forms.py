@@ -10,7 +10,7 @@ from centrodefamilia.models import (
     ParticipanteActividad,
     Categoria,
     Actividad,
-    Orientador,
+    Expediente,
 )
 
 HORAS_DEL_DIA = [(f"{h:02d}:00", f"{h:02d}:00") for h in range(0, 24)] + [
@@ -26,7 +26,6 @@ class CentroForm(forms.ModelForm):
             "nombre",
             "codigo",
             "organizacion_asociada",
-            "domicilio_sede",
             "domicilio_actividad",
             "telefono",
             "celular",
@@ -175,24 +174,27 @@ class ParticipanteActividadForm(forms.ModelForm):
         )  # no usamos directamente los campos del modelo porque todos se construyen en la vista
 
 
-class OrientadoresForm(forms.ModelForm):
+class ExpedienteCabalForm(forms.ModelForm):
     class Meta:
-        model = Orientador
+        model = Expediente
         fields = [
-            "nombre",
-            "apellido",
-            "dni",
-            "genero",
-            "foto",
-            "cargo",
+            "archivo",
+            "periodo",
         ]
         widgets = {
-            "genero": forms.Select(attrs={"class": "form-control"}),
-            "cargo": forms.Select(attrs={"class": "form-control"}),
+            "archivo": forms.FileInput(attrs={"class": "form-control"}),
+            "periodo": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
         }
 
-    def clean_dni(self):
-        dni = self.cleaned_data.get("dni")
-        if not dni.isdigit():
-            raise forms.ValidationError("El DNI debe contener solo números.")
-        return dni
+
+class ActividadForm(forms.ModelForm):
+    class Meta:
+        model = Actividad
+        fields = [
+            "nombre",
+            "categoria",
+        ]
+        widgets = {
+            "nombre": forms.TextInput(attrs={"class": "form-control"}),
+            "categoria": forms.Select(attrs={"class": "form-control"}),
+        }
