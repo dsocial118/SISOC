@@ -179,14 +179,24 @@ class ParticipanteService:
 
     @staticmethod
     def buscar_ciudadanos(query, max_results=10):
-        cleaned = (query or "").strip().lower()
-        if len(cleaned) < 4:
-            return []
-        return list(
-            Ciudadano.objects.annotate(doc_str=Cast("documento", CharField()))
-            .filter(doc_str__startswith=cleaned)
-            .order_by("documento")[:max_results]
-        )
+            cleaned = (query or "").strip()
+            if len(cleaned) < 4 or not cleaned.isdigit():
+                return []
+
+            # Longitud máxima de documento en la base (según tus validadores, 8 o 9 dígitos)
+            MAX_DIGITS = 9
+            prefix = int(cleaned)
+            # Construimos el rango numérico para el prefijo dado:
+            factor = 10 ** (MAX_DIGITS - len(cleaned))
+            start = prefix * factor
+            end = start + factor - 1
+
+            qs = (
+                Ciudadano.objects
+                .filter(documento__gte=start, documento__lte=end)
+                .order_by("documento")[:max_results]
+            )
+            return list(qs)
 
     @staticmethod
     def obtener_participantes_con_ciudadanos(actividad_centro):
