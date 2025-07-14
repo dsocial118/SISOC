@@ -201,30 +201,35 @@ class ComedorDetailView(DetailView):
             cached_presupuestos = cache.get(cache_key)
 
             if cached_presupuestos:
-                return cached_presupuestos
+                presupuestos_tuple = cached_presupuestos
+            else:
+                presupuestos_tuple = ComedorService.get_presupuestos(
+                    self.object.id,
+                    relevamientos_prefetched=self.object.relevamientos_optimized,
+                )
+                cache.set(cache_key, presupuestos_tuple, 300)
+        else:
+            presupuestos_tuple = ComedorService.get_presupuestos(self.object.id)
 
-            presupuestos_data = ComedorService.get_presupuestos(
-                self.object.id,
-                relevamientos_prefetched=self.object.relevamientos_optimized,
-            )
-            cache.set(cache_key, presupuestos_data, 300)
-            return presupuestos_data
-
-        return ComedorService.get_presupuestos(self.object.id)
-
-    def get_context_data(self, **kwargs) -> dict[str, Any]:
-        context = super().get_context_data(**kwargs)
-
-        # Obtener datos de presupuestos
-        presupuestos_data = self._get_presupuestos_data()
+        # Desempaquetar la tupla y crear diccionario
         (
             count_beneficiarios,
             valor_cena,
             valor_desayuno,
             valor_almuerzo,
             valor_merienda,
-        ) = presupuestos_data
+        ) = presupuestos_tuple
 
+        return {
+            "count_beneficiarios": count_beneficiarios,
+            "presupuesto_desayuno": valor_desayuno,
+            "presupuesto_almuerzo": valor_almuerzo,
+            "presupuesto_merienda": valor_merienda,
+            "presupuesto_cena": valor_cena,
+        }
+
+    def _get_relaciones_optimizadas(self):
+        """Obtiene datos de relaciones usando prefetch cuando sea posible."""
         # Optimización: Usar rendiciones prefetched en lugar de query adicional
         rendiciones_mensuales = (
             len(self.object.rendiciones_optimized)
@@ -276,24 +281,37 @@ class ComedorDetailView(DetailView):
             else list(self.object.imagenes.values("imagen"))
         )
 
-        context.update(
-            {
-                "relevamientos": relevamientos,
-                "observaciones": observaciones,
-                "count_relevamientos": count_relevamientos,
-                "count_beneficiarios": count_beneficiarios,
-                "presupuesto_desayuno": valor_desayuno,
-                "presupuesto_almuerzo": valor_almuerzo,
-                "presupuesto_merienda": valor_merienda,
-                "presupuesto_cena": valor_cena,
-                "imagenes": imagenes,
-                "comedor_categoria": comedor_categoria,
-                "rendicion_cuentas_final_activo": rendiciones_mensuales >= 5,
-                "GESTIONAR_API_KEY": os.getenv("GESTIONAR_API_KEY"),
-                "GESTIONAR_API_CREAR_COMEDOR": os.getenv("GESTIONAR_API_CREAR_COMEDOR"),
-                "admision": admision,
-            }
-        )
+        return {
+            "relevamientos": relevamientos,
+            "observaciones": observaciones,
+            "count_relevamientos": count_relevamientos,
+            "imagenes": imagenes,
+            "comedor_categoria": comedor_categoria,
+            "rendicion_cuentas_final_activo": rendiciones_mensuales >= 5,
+            "admision": admision,
+        }
+
+    def _get_environment_config(self):
+        """Obtiene configuración del entorno."""
+        return {
+            "GESTIONAR_API_KEY": os.getenv("GESTIONAR_API_KEY"),
+            "GESTIONAR_API_CREAR_COMEDOR": os.getenv("GESTIONAR_API_CREAR_COMEDOR"),
+        }
+
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+
+        # Obtener datos de presupuestos
+        presupuestos_data = self._get_presupuestos_data()
+
+        # Obtener datos optimizados de relaciones
+        relaciones_data = self._get_relaciones_optimizadas()
+
+        # Obtener configuración del entorno
+        env_config = self._get_environment_config()
+
+        # Combinar todos los datos en el contexto
+        context.update({**presupuestos_data, **relaciones_data, **env_config})
 
         return context
 
