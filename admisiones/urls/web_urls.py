@@ -52,17 +52,20 @@ urlpatterns = [
     ),
     path(
         "comedores/admision/informe_tecnico/<str:tipo>/<int:admision_id>/crear/",
-        InformeTecnicosCreateView.as_view(),
+         group_required(["Comedores", "Tecnico Comedor"])(
+        InformeTecnicosCreateView.as_view()),
         name="informe_tecnico_crear",
     ),
     path(
         "comedores/admision/informe_tecnico/<str:tipo>/<int:pk>/editar/",
-        InformeTecnicosUpdateView.as_view(),
+         group_required(["Comedores", "Tecnico Comedor"])(
+        InformeTecnicosUpdateView.as_view()),
         name="informe_tecnico_editar",
     ),
     path(
         "comedores/admision/informe_tecnico/<str:tipo>/<int:pk>/ver/",
-        InformeTecnicoDetailView.as_view(),
+         group_required(["Comedores", "Tecnico Comedor"])(
+        InformeTecnicoDetailView.as_view()),
         name="informe_tecnico_ver",
     ),
     path(
