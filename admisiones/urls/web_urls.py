@@ -52,38 +52,40 @@ urlpatterns = [
     ),
     path(
         "comedores/admision/informe_tecnico/<str:tipo>/<int:admision_id>/crear/",
-         group_required(["Comedores", "Tecnico Comedor"])(
-        InformeTecnicosCreateView.as_view()),
+        group_required(["Comedores", "Tecnico Comedor"])(
+            InformeTecnicosCreateView.as_view()
+        ),
         name="informe_tecnico_crear",
     ),
     path(
         "comedores/admision/informe_tecnico/<str:tipo>/<int:pk>/editar/",
-         group_required(["Comedores", "Tecnico Comedor"])(
-        InformeTecnicosUpdateView.as_view()),
+        group_required(["Comedores", "Tecnico Comedor"])(
+            InformeTecnicosUpdateView.as_view()
+        ),
         name="informe_tecnico_editar",
     ),
     path(
         "comedores/admision/informe_tecnico/<str:tipo>/<int:pk>/ver/",
-         group_required(["Comedores", "Tecnico Comedor"])(
-        InformeTecnicoDetailView.as_view()),
+        group_required(["Comedores", "Tecnico Comedor"])(
+            InformeTecnicoDetailView.as_view()
+        ),
         name="informe_tecnico_ver",
     ),
     path(
         "comedores/admision/informe_complementario/<str:tipo>/<int:pk>/ver/",
         group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(
-        InformeTecnicoComplementarioDetailView.as_view()),
+            InformeTecnicoComplementarioDetailView.as_view()
+        ),
         name="informe_complementario_ver",
     ),
     path(
         "comedores/admision/anexo/<int:admision_id>/crear/",
-         group_required(["Comedores", "Tecnico Comedor"])(
-        AnexoCreateView.as_view()),
+        group_required(["Comedores", "Tecnico Comedor"])(AnexoCreateView.as_view()),
         name="anexo_crear",
     ),
     path(
         "comedores/admision/anexo/<int:admision_id>/editar/",
-         group_required(["Comedores", "Tecnico Comedor"])(
-        AnexoUpdateView.as_view()),
+        group_required(["Comedores", "Tecnico Comedor"])(AnexoUpdateView.as_view()),
         name="anexo_editar",
     ),
     path(
