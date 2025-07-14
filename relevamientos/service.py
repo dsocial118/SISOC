@@ -41,7 +41,7 @@ from relevamientos.models import (
     TipoTecnologia,
 )
 from relevamientos.tasks import AsyncSendRelevamientoToGestionar
-from config.utils import convert_string_to_int
+from core.utils import convert_string_to_int
 
 
 # TODO: Refactorizar todo esto, pylint esta muriendo aca

@@ -1,3 +1,4 @@
+{# templates/centros/participanteactividad_form.html #}
 {% extends "includes/main.html" %}
 {% load static %}
 {% load crispy_forms_tags %}
@@ -29,6 +30,7 @@
                 {% endfor %}
             </div>
         {% endif %}
+        {# Form de búsqueda #}
         <form method="get">
             <div class="form-group">
                 <label for="busqueda-dni">Buscar por DNI (mínimo 4 dígitos):</label>
@@ -45,6 +47,7 @@
                 </div>
             </div>
         </form>
+        {# Resultados de la búsqueda #}
         {% if ciudadanos %}
             <table class="table table-bordered">
                 <thead>
@@ -73,7 +76,8 @@
                 </tbody>
             </table>
         {% endif %}
-        {% if no_resultados %}
+        {# Form de creación solo si busqué (query no vacío) y no hubo resultados #}
+        {% if request.GET.query and no_resultados %}
             <hr />
             <h4>No se encontraron resultados. Cargar nuevo ciudadano:</h4>
             <form method="post">

@@ -3,18 +3,18 @@ services:
   mysql:
     image: mysql:8.0
     environment:
-      MYSQL_ROOT_PASSWORD: root1-password2
-      MYSQL_DATABASE: sisoc-local
-      MYSQL_TCP_PORT: 3307
+      MYSQL_ROOT_PASSWORD: ${DATABASE_PASSWORD}
+      MYSQL_DATABASE: ${DATABASE_NAME}
+      DOCKER_MYSQL_PORT: ${DOCKER_MYSQL_PORT}
     volumes:
       - mysql_data:/var/lib/mysql
       - ./docker/mysql/local-dump.sql:/docker-entrypoint-initdb.d/local-dump.sql
     ports:
-      - 3308:3307
+      - ${DOCKER_MYSQL_PORT_FORWARD}:${DOCKER_MYSQL_PORT}
     expose:
-      - 3307
+      - ${DOCKER_MYSQL_PORT}
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-P", "3307"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-P", "${DOCKER_MYSQL_PORT}"]
       interval: 10s
       timeout: 10s
       retries: 5
@@ -26,11 +26,8 @@ services:
     env_file:
       - .env
     ports:
-      - "8001:8000"
-      - "3000:3000" # Debugger
-    depends_on:
-      mysql:
-        condition: service_healthy
+      - ${DOCKER_DJANGO_PORT_FORWARD}:${DOCKER_DJANGO_PORT}
+      - ${DOCKER_DEBUGGER_PORT_FORWARD}:${DOCKER_DEBUGGER_PORT}
     volumes:
       - .:/sisoc/
 

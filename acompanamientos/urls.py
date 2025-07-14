@@ -1,6 +1,6 @@
 from django.urls import path
 from acompanamientos import views
-from configuraciones.decorators import group_required
+from core.decorators import group_required
 
 urlpatterns = [
     path(
