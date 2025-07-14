@@ -139,6 +139,16 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         if centro.tipo == "faro":
             context["centros_adheridos"] = centros_adheridos
 
+        # Add metricas and asistentes to the context
+        context["metricas"] = {
+            "total_ganancia": sum(item["ganancia"] for item in actividades_con_ganancia),
+            "promedio_ganancia": (
+                sum(item["ganancia"] for item in actividades_con_ganancia) / len(actividades_con_ganancia)
+                if actividades_con_ganancia
+                else 0
+            ),
+        }
+        context["asistentes"] = sum(participantes_map.values())
         return context
 
 
