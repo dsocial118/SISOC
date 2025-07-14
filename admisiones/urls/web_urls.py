@@ -70,17 +70,20 @@ urlpatterns = [
     ),
     path(
         "comedores/admision/informe_complementario/<str:tipo>/<int:pk>/ver/",
-        InformeTecnicoComplementarioDetailView.as_view(),
+        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(
+        InformeTecnicoComplementarioDetailView.as_view()),
         name="informe_complementario_ver",
     ),
     path(
         "comedores/admision/anexo/<int:admision_id>/crear/",
-        AnexoCreateView.as_view(),
+         group_required(["Comedores", "Tecnico Comedor"])(
+        AnexoCreateView.as_view()),
         name="anexo_crear",
     ),
     path(
         "comedores/admision/anexo/<int:admision_id>/editar/",
-        AnexoUpdateView.as_view(),
+         group_required(["Comedores", "Tecnico Comedor"])(
+        AnexoUpdateView.as_view()),
         name="anexo_editar",
     ),
     path(
