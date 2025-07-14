@@ -191,58 +191,39 @@ class ComedorDetailView(DetailView):
     def get_object(self, queryset=None):
         return ComedorService.get_comedor_detail_object(self.kwargs["pk"])
 
-    def get_context_data(self, **kwargs) -> dict[str, Any]:
-        context = super().get_context_data(**kwargs)
-
-        # Optimización: usar datos prefetched cuando estén disponibles
+    def _get_presupuestos_data(self):
+        """Obtiene datos de presupuestos usando cache y datos prefetched cuando sea posible."""
         if (
             hasattr(self.object, "relevamientos_optimized")
             and self.object.relevamientos_optimized
         ):
-            # Cache optimizado para el cálculo de presupuestos
             cache_key = f"presupuestos_comedor_{self.object.id}"
             cached_presupuestos = cache.get(cache_key)
 
             if cached_presupuestos:
-                (
-                    count_beneficiarios,
-                    valor_cena,
-                    valor_desayuno,
-                    valor_almuerzo,
-                    valor_merienda,
-                ) = cached_presupuestos
-            else:
-                # Usar datos prefetched en lugar de hacer nueva query
-                (
-                    count_beneficiarios,
-                    valor_cena,
-                    valor_desayuno,
-                    valor_almuerzo,
-                    valor_merienda,
-                ) = ComedorService.get_presupuestos(
-                    self.object.id,
-                    relevamientos_prefetched=self.object.relevamientos_optimized,
-                )
-                cache.set(
-                    cache_key,
-                    (
-                        count_beneficiarios,
-                        valor_cena,
-                        valor_desayuno,
-                        valor_almuerzo,
-                        valor_merienda,
-                    ),
-                    300,
-                )
-        else:
-            # Fallback al método original
-            (
-                count_beneficiarios,
-                valor_cena,
-                valor_desayuno,
-                valor_almuerzo,
-                valor_merienda,
-            ) = ComedorService.get_presupuestos(self.object.id)
+                return cached_presupuestos
+
+            presupuestos_data = ComedorService.get_presupuestos(
+                self.object.id,
+                relevamientos_prefetched=self.object.relevamientos_optimized,
+            )
+            cache.set(cache_key, presupuestos_data, 300)
+            return presupuestos_data
+
+        return ComedorService.get_presupuestos(self.object.id)
+
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+
+        # Obtener datos de presupuestos
+        presupuestos_data = self._get_presupuestos_data()
+        (
+            count_beneficiarios,
+            valor_cena,
+            valor_desayuno,
+            valor_almuerzo,
+            valor_merienda,
+        ) = presupuestos_data
 
         # Optimización: Usar rendiciones prefetched en lugar de query adicional
         rendiciones_mensuales = (

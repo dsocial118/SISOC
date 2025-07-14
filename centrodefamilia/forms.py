@@ -1,9 +1,9 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from django.db.models import Q
 
 from ciudadanos.models import Sexo, TipoDocumento
+from organizaciones.models import Organizacion
 from centrodefamilia.models import (
     Centro,
     ActividadCentro,
@@ -57,8 +57,6 @@ class CentroForm(forms.ModelForm):
 
         # Optimización: Usar empty_label y limitar queryset para organizaciones
         # Solo cargar las primeras 100 organizaciones para evitar query lenta
-        from organizaciones.models import Organizacion
-
         self.fields["organizacion_asociada"].queryset = Organizacion.objects.only(
             "id", "nombre", "cuit"
         )[

@@ -11,9 +11,9 @@ from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import models, transaction
-from django.db.models import Case, Q, When, CharField, Count
+from django.db.models import Case, Q, When, CharField, Count, Prefetch
 from django.db.models.functions import Cast
-from django.http import HttpResponseRedirect, JsonResponse
+from django.http import HttpResponseRedirect, JsonResponse, Http404
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -391,8 +391,6 @@ class CiudadanosDetailView(DetailView):
             queryset = queryset.filter(pk=pk)
 
         # Optimizar la carga del ciudadano con prefetch_related
-        from django.db.models import Prefetch
-
         try:
             self.object = (
                 queryset.select_related(
@@ -473,10 +471,8 @@ class CiudadanosDetailView(DetailView):
                 .get()
             )
             return self.object
-        except Ciudadano.DoesNotExist:
-            from django.http import Http404
-
-            raise Http404("Ciudadano no encontrado")
+        except Ciudadano.DoesNotExist as exc:
+            raise Http404("Ciudadano no encontrado") from exc
 
     def get_context_data(
         self, **kwargs
