@@ -66,10 +66,10 @@ class IntervencionDetailView(TemplateView):
 
         # Cache los tipos e intervenciones para evitar consultas repetidas
         context["tipos_intervencion"] = cache.get_or_set(
-            "tipos_intervencion_all", TipoIntervencion.objects.all(), 300
+            "tipos_intervencion_all", list(TipoIntervencion.objects.all()), 300
         )
         context["destinatarios"] = cache.get_or_set(
-            "destinatarios_all", TipoDestinatario.objects.all(), 300
+            "destinatarios_all", list(TipoDestinatario.objects.all()), 300
         )
         context["intervenciones"] = intervenciones
         context["object"] = comedor
