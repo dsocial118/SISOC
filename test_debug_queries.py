@@ -174,7 +174,9 @@ def show_query_analysis():
             print(f"  {i}. [{query['time']}s] {sql}")
 
 
-def test_view_queries(view_class, url_pattern, model_class, view_name, pk=None, pk_kwarg="pk"):
+def test_view_queries(
+    view_class, url_pattern, model_class, view_name, pk=None, pk_kwarg="pk"
+):
     """Framework genérico para probar queries de cualquier vista"""
 
     # Verificar que existe al menos un objeto del modelo
@@ -245,7 +247,11 @@ def test_view_queries(view_class, url_pattern, model_class, view_name, pk=None, 
         if connection.queries:
             print(f"\n🔍 Queries en {view_name}:")
             for i, query in enumerate(connection.queries, 1):
-                sql = query["sql"][:100] + "..." if len(query["sql"]) > 100 else query["sql"]
+                sql = (
+                    query["sql"][:100] + "..."
+                    if len(query["sql"]) > 100
+                    else query["sql"]
+                )
                 time = query["time"]
                 print(f"  {i}. [{time}s] {sql}")
 
@@ -254,6 +260,7 @@ def test_view_queries(view_class, url_pattern, model_class, view_name, pk=None, 
     except Exception as e:
         print(f"❌ Error en {view_name}: {e}")
         import traceback
+
         traceback.print_exc()
         return False, 0
 
@@ -275,16 +282,16 @@ def test_all_views():
         Ciudadano,
         "CiudadanosDetailView",
         pk=True,
-        pk_kwarg="pk"  # CiudadanosDetailView usa 'pk' por defecto
+        pk_kwarg="pk",  # CiudadanosDetailView usa 'pk' por defecto
     )
     results["CiudadanosDetailView"] = queries
 
     # Test ComedoresAcompanamientoListView (acompañamientos)
     # Debug Toolbar: 14 queries en 33.73ms
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     from acompanamientos.views import ComedoresAcompanamientoListView
     from comedores.models import Comedor
-    
+
     success, queries = test_view_queries(
         ComedoresAcompanamientoListView,
         "/acompanamientos/acompanamiento/",
@@ -295,25 +302,27 @@ def test_all_views():
     results["ComedoresAcompanamientoListView"] = queries
 
     # Test AcompanamientoDetailView
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     try:
         from acompanamientos.views import AcompanamientoDetailView
+
         success, queries = test_view_queries(
-            AcompanamientoDetailView, 
-            "/acompanamientos/ver/{comedor_id}/", 
+            AcompanamientoDetailView,
+            "/acompanamientos/ver/{comedor_id}/",
             Comedor,  # Usa el modelo Comedor
             "AcompanamientoDetailView (acompañamientos/detail)",
             pk=True,
-            pk_kwarg="comedor_id"  # Usar comedor_id como especifica la vista
+            pk_kwarg="comedor_id",  # Usar comedor_id como especifica la vista
         )
         results["AcompanamientoDetailView"] = queries
     except Exception as e:
         print(f"❌ No se pudo probar AcompanamientoDetailView: {e}")
 
     # Test ComedorListView
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     try:
         from comedores.views import ComedorListView
+
         success, queries = test_view_queries(
             ComedorListView,
             "/comedores/",
@@ -326,25 +335,27 @@ def test_all_views():
         print(f"❌ No se pudo probar ComedorListView: {e}")
 
     # Test ComedorDetailView
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     try:
         from comedores.views import ComedorDetailView
+
         success, queries = test_view_queries(
             ComedorDetailView,
             "/comedores/ver/{pk}/",
             Comedor,
             "ComedorDetailView (comedores/detail)",
             pk=True,
-            pk_kwarg="pk"  # ComedorDetailView usa 'pk' por defecto
+            pk_kwarg="pk",  # ComedorDetailView usa 'pk' por defecto
         )
         results["ComedorDetailView"] = queries
     except Exception as e:
         print(f"❌ No se pudo probar ComedorDetailView: {e}")
 
     # Test CiudadanosListView
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     try:
         from ciudadanos.views import CiudadanosListView
+
         success, queries = test_view_queries(
             CiudadanosListView,
             "/ciudadanos/",
@@ -357,10 +368,11 @@ def test_all_views():
         print(f"❌ No se pudo probar CiudadanosListView: {e}")
 
     # Test OrganizacionListView
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     try:
         from organizaciones.views import OrganizacionListView
         from organizaciones.models import Organizacion
+
         success, queries = test_view_queries(
             OrganizacionListView,
             "/organizaciones/",
@@ -373,27 +385,29 @@ def test_all_views():
         print(f"❌ No se pudo probar OrganizacionListView: {e}")
 
     # Test OrganizacionDetailView
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     try:
         from organizaciones.views import OrganizacionDetailView
         from organizaciones.models import Organizacion
+
         success, queries = test_view_queries(
             OrganizacionDetailView,
             "/organizaciones/ver/{pk}/",
             Organizacion,
             "OrganizacionDetailView (organizaciones/detail)",
             pk=True,
-            pk_kwarg="pk"
+            pk_kwarg="pk",
         )
         results["OrganizacionDetailView"] = queries
     except Exception as e:
         print(f"❌ No se pudo probar OrganizacionDetailView: {e}")
 
     # Test DuplaListView
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     try:
         from duplas.views import DuplaListView
         from duplas.models import Dupla
+
         success, queries = test_view_queries(
             DuplaListView,
             "/duplas/",
@@ -406,27 +420,29 @@ def test_all_views():
         print(f"❌ No se pudo probar DuplaListView: {e}")
 
     # Test DuplaDetailView
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     try:
         from duplas.views import DuplaDetailView
         from duplas.models import Dupla
+
         success, queries = test_view_queries(
             DuplaDetailView,
             "/duplas/ver/{pk}/",
             Dupla,
             "DuplaDetailView (duplas/detail)",
             pk=True,
-            pk_kwarg="pk"
+            pk_kwarg="pk",
         )
         results["DuplaDetailView"] = queries
     except Exception as e:
         print(f"❌ No se pudo probar DuplaDetailView: {e}")
 
     # Test ExpedientesPagosListView
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     try:
         from expedientespagos.views import ExpedientesPagosListView
         from expedientespagos.models import ExpedientePago
+
         success, queries = test_view_queries(
             ExpedientesPagosListView,
             "/expedientes-pagos/",
@@ -439,27 +455,29 @@ def test_all_views():
         print(f"❌ No se pudo probar ExpedientesPagosListView: {e}")
 
     # Test ExpedientesPagosDetailView
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     try:
         from expedientespagos.views import ExpedientesPagosDetailView
         from expedientespagos.models import ExpedientePago
+
         success, queries = test_view_queries(
             ExpedientesPagosDetailView,
             "/expedientes-pagos/ver/{pk}/",
             ExpedientePago,
             "ExpedientesPagosDetailView (expedientes/detail)",
             pk=True,
-            pk_kwarg="pk"
+            pk_kwarg="pk",
         )
         results["ExpedientesPagosDetailView"] = queries
     except Exception as e:
         print(f"❌ No se pudo probar ExpedientesPagosDetailView: {e}")
 
     # Test RendicionCuentaMensualListView
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     try:
         from rendicioncuentasmensual.views import RendicionCuentaMensualListView
         from rendicioncuentasmensual.models import RendicionCuentaMensual
+
         success, queries = test_view_queries(
             RendicionCuentaMensualListView,
             "/rendicion-mensual/",
@@ -472,27 +490,29 @@ def test_all_views():
         print(f"❌ No se pudo probar RendicionCuentaMensualListView: {e}")
 
     # Test RendicionCuentaMensualDetailView
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     try:
         from rendicioncuentasmensual.views import RendicionCuentaMensualDetailView
         from rendicioncuentasmensual.models import RendicionCuentaMensual
+
         success, queries = test_view_queries(
             RendicionCuentaMensualDetailView,
             "/rendicion-mensual/ver/{pk}/",
             RendicionCuentaMensual,
             "RendicionCuentaMensualDetailView (rendicion-mensual/detail)",
             pk=True,
-            pk_kwarg="pk"
+            pk_kwarg="pk",
         )
         results["RendicionCuentaMensualDetailView"] = queries
     except Exception as e:
         print(f"❌ No se pudo probar RendicionCuentaMensualDetailView: {e}")
 
     # Test DerivacionListView (ciudadanos adicional)
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     try:
         from ciudadanos.views import DerivacionListView
         from ciudadanos.models import Derivacion
+
         success, queries = test_view_queries(
             DerivacionListView,
             "/ciudadanos/derivaciones/",
@@ -505,27 +525,29 @@ def test_all_views():
         print(f"❌ No se pudo probar DerivacionListView: {e}")
 
     # Test DerivacionDetailView (ciudadanos adicional)
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     try:
         from ciudadanos.views import DerivacionDetailView
         from ciudadanos.models import Derivacion
+
         success, queries = test_view_queries(
             DerivacionDetailView,
             "/ciudadanos/derivaciones/ver/{pk}/",
             Derivacion,
             "DerivacionDetailView (ciudadanos/derivaciones/detail)",
             pk=True,
-            pk_kwarg="pk"
+            pk_kwarg="pk",
         )
         results["DerivacionDetailView"] = queries
     except Exception as e:
         print(f"❌ No se pudo probar DerivacionDetailView: {e}")
 
     # Test AlertaListView (ciudadanos adicional)
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     try:
         from ciudadanos.views import AlertaListView
         from ciudadanos.models import Alerta
+
         success, queries = test_view_queries(
             AlertaListView,
             "/ciudadanos/alertas/",
@@ -556,21 +578,25 @@ def test_all_views():
 
 if __name__ == "__main__":
     print("🔍 Probando todas las vistas del sistema SISOC...")
-    
+
     # Probar todas las vistas
     results = test_all_views()
-    
+
     if results:
         print("\n📊 Análisis general:")
         show_query_analysis()
-        
+
         # Mostrar recomendaciones
         print("\n💡 Recomendaciones:")
         for view_name, query_count in results.items():
             if query_count > 25:
-                print(f"  ⚠️ {view_name}: Considerar optimización ({query_count} queries)")
+                print(
+                    f"  ⚠️ {view_name}: Considerar optimización ({query_count} queries)"
+                )
             elif query_count > 15:
-                print(f"  📝 {view_name}: Revisar si se puede mejorar ({query_count} queries)")
+                print(
+                    f"  📝 {view_name}: Revisar si se puede mejorar ({query_count} queries)"
+                )
             else:
                 print(f"  ✅ {view_name}: Buen rendimiento ({query_count} queries)")
 
