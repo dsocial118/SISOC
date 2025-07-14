@@ -8,7 +8,7 @@ from django.views.generic import (
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.urls import reverse_lazy, reverse
-from django.db.models import Q, Count , F, ExpressionWrapper, IntegerField
+from django.db.models import Q, Count, F, ExpressionWrapper, IntegerField
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 
@@ -45,7 +45,6 @@ class CentroListView(LoginRequiredMixin, ListView):
         return qs.order_by("nombre")
 
 
-
 class CentroDetailView(LoginRequiredMixin, DetailView):
     model = Centro
     template_name = "centros/centro_detail.html"
@@ -70,19 +69,20 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
 
         # 1) Expedientes del centro (con paginación)
         qs_exp = Expediente.objects.filter(centro=centro).order_by("-fecha_subida")
-        context["expedientes_cabal"] = Paginator(qs_exp, 3).get_page(self.request.GET.get("page_exp"))
+        context["expedientes_cabal"] = Paginator(qs_exp, 3).get_page(
+            self.request.GET.get("page_exp")
+        )
 
         # 2) Actividades del centro con ganancia calculada en la base
         qs_acts = (
-            ActividadCentro.objects
-            .filter(centro=centro)
+            ActividadCentro.objects.filter(centro=centro)
             .select_related("actividad", "actividad__categoria")
             .annotate(
                 inscritos=Count("participanteactividad", distinct=True),
                 ganancia=ExpressionWrapper(
                     F("precio") * F("inscritos"),
                     output_field=IntegerField(),
-                )
+                ),
             )
         )
         context["actividades"] = list(qs_acts)
@@ -90,24 +90,31 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
 
         # 3) Paginación de todas las actividades de otros centros
         otras = (
-            ActividadCentro.objects
-            .exclude(centro=centro)
+            ActividadCentro.objects.exclude(centro=centro)
             .select_related("actividad", "actividad__categoria", "centro")
             .order_by("centro__nombre", "actividad__nombre")
         )
-        context["actividades_paginados"] = Paginator(otras, 5).get_page(self.request.GET.get("page_act"))
+        context["actividades_paginados"] = Paginator(otras, 5).get_page(
+            self.request.GET.get("page_act")
+        )
 
         # 4) Centros adheridos (si este es FARO)
         if centro.tipo == "faro":
-            adheridos = Centro.objects.filter(faro_asociado=centro, activo=True).order_by("nombre")
+            adheridos = Centro.objects.filter(
+                faro_asociado=centro, activo=True
+            ).order_by("nombre")
         else:
             adheridos = Centro.objects.none()
-        context["centros_adheridos_paginados"] = Paginator(adheridos, 5).get_page(self.request.GET.get("page"))
+        context["centros_adheridos_paginados"] = Paginator(adheridos, 5).get_page(
+            self.request.GET.get("page")
+        )
         context["centros_adheridos_total"] = adheridos.count()
 
         # 5) Métricas y asistentes
         total_part = sum(a.inscritos for a in qs_acts)
-        qs_part = ParticipanteActividad.objects.filter(actividad_centro__centro=centro).select_related("ciudadano__sexo")
+        qs_part = ParticipanteActividad.objects.filter(
+            actividad_centro__centro=centro
+        ).select_related("ciudadano__sexo")
         hombres = qs_part.filter(ciudadano__sexo__sexo__iexact="Masculino").count()
         mujeres = qs_part.filter(ciudadano__sexo__sexo__iexact="Femenino").count()
         mixtas = total_part - hombres - mujeres

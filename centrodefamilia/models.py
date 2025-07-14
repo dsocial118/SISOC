@@ -144,7 +144,7 @@ class ActividadCentro(models.Model):
 
 class ParticipanteActividad(models.Model):
     actividad_centro = models.ForeignKey(
-        'ActividadCentro', on_delete=models.CASCADE, verbose_name="Actividad del Centro"
+        "ActividadCentro", on_delete=models.CASCADE, verbose_name="Actividad del Centro"
     )
     ciudadano = models.ForeignKey(
         Ciudadano, on_delete=models.CASCADE, verbose_name="Ciudadano"
