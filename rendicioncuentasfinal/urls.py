@@ -50,7 +50,7 @@ urlpatterns = [
     ),
     path(
         "rendicion_cuentas_final/listar/",
-        group_required(["Area Contable", "Area Legales"])(
+        group_required(["Area Contable", "Area Legales", "Tecnico Comedor"])(
             DocumentosRendicionCuentasFinalListView.as_view()
         ),
         name="rendicion_cuentas_final_listar",

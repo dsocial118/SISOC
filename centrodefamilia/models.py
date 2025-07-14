@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from ciudadanos.models import Ciudadano
-from core.models import Dia
+from core.models import Dia, Localidad, Municipio, Provincia, Sexo
 from organizaciones.models import Organizacion
 
 
@@ -37,9 +37,15 @@ class Centro(models.Model):
         null=True,
     )
     # datos sede
-    domicilio_sede = models.CharField(
-        max_length=255, verbose_name="Domicilio de la sede"
+    provincia = models.ForeignKey(to=Provincia, on_delete=models.PROTECT, null=True)
+    municipio = models.ForeignKey(
+        to=Municipio, on_delete=models.SET_NULL, null=True, blank=True
     )
+    localidad = models.ForeignKey(
+        to=Localidad, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    calle = models.CharField(max_length=255, blank=True, null=True)
+    numero = models.PositiveIntegerField(blank=True, null=True)
     domicilio_actividad = models.CharField(
         max_length=255, verbose_name="Domicilio de actividades"
     )
@@ -110,7 +116,14 @@ class ActividadCentro(models.Model):
         related_name="DiaActividad",
         blank=True,
     )
-    horarios = models.TimeField()
+    sexoact = models.ManyToManyField(
+        to=Sexo,
+        related_name="sexoactividad",
+        verbose_name="Actividad Dirigida a ",
+        blank=True,
+    )
+    horariosdesde = models.TimeField()
+    horarioshasta = models.TimeField(null=True, blank=True)
     precio = models.PositiveIntegerField(
         verbose_name="PrecioActividad", null=True, blank=True
     )
@@ -149,34 +162,13 @@ class ParticipanteActividad(models.Model):
         unique_together = ("actividad_centro", "ciudadano")
 
 
-class Orientador(models.Model):
-    centro = models.ForeignKey(Centro, on_delete=models.CASCADE, verbose_name="Centro")
-    nombre = models.CharField(max_length=100, verbose_name="Nombre")
-    apellido = models.CharField(max_length=100, verbose_name="Apellido")
-    dni = models.CharField(max_length=15, verbose_name="DNI")
-    genero = models.CharField(
-        max_length=20,
-        choices=[
-            ("masculino", "Masculino"),
-            ("femenino", "Femenino"),
-            ("otro", "Otro"),
-        ],
-        verbose_name="Género",
+class Expediente(models.Model):
+    centro = models.ForeignKey(
+        Centro, on_delete=models.CASCADE, related_name="expedientes_cabal"
     )
-    foto = models.ImageField(upload_to="centros/orientador/", blank=True, null=True)
-    cargo = models.CharField(
-        max_length=20,
-        choices=[
-            ("profesor", "profesor"),
-            ("administrativo", "administrativo"),
-            ("otro", "Otro"),
-        ],
-        verbose_name="Cargo",
-    )
-
-    def __str__(self):
-        return f"{self.apellido}, {self.nombre} - {self.dni}"
-
-    class Meta:
-        verbose_name = "Orientador"
-        verbose_name_plural = "Orientadores"
+    archivo = models.FileField(upload_to="informes_cabal/")
+    periodo = models.DateField(help_text="Fecha del informe")
+    fecha_subida = models.DateTimeField(auto_now_add=True)
+    usuario = models.ForeignKey(User, on_delete=models.PROTECT)
+    procesado = models.BooleanField(default=False)
+    errores = models.TextField(blank=True)

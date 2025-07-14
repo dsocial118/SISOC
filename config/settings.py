@@ -19,6 +19,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "static_root"
+STATICFILES_STORAGE = "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
+
 
 MEDIA_URL = "media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media/")
@@ -177,17 +179,6 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
             ],
-            # "loaders": [(
-            #     "django.template.loaders.cached.Loader",
-            #     [
-            #         "django_cotton.cotton_loader.Loader",
-            #         "django.template.loaders.filesystem.Loader",
-            #         "django.template.loaders.app_directories.Loader",
-            #     ],
-            # )],
-            # "builtins": [
-            #     "django_cotton.templatetags.cotton"
-            # ],
         },
     },
 ]
@@ -196,11 +187,11 @@ TEMPLATES = [
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        "NAME": os.getenv("DATABASE_NAME", "sisoc-local"),
-        "USER": os.getenv("DATABASE_USER", "root"),
-        "PASSWORD": os.getenv("DATABASE_PASSWORD", "root1-password2"),
-        "HOST": os.getenv("DATABASE_HOST", "mysql"),
-        "PORT": os.getenv("DATABASE_PORT", "3307"),
+        "NAME": os.environ.get("DATABASE_NAME"),
+        "USER": os.environ.get("DATABASE_USER"),
+        "PASSWORD": os.environ.get("DATABASE_PASSWORD"),
+        "HOST": os.environ.get("DATABASE_HOST"),
+        "PORT": os.environ.get("DATABASE_PORT"),
         "OPTIONS": {
             "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
             "charset": "utf8mb4",
@@ -334,11 +325,11 @@ if DEBUG:
 else:
     # Configuración para producción
     SECURE_HSTS_SECONDS = 0  # Cambiar a 31536000 cuando tengamos HTTPS
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+    SECURE_HSTS_PRELOAD = False
     SECURE_SSL_REDIRECT = False  # Cambiar a True cuando tengamos HTTPS
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
 
 # Configuracion de Django Rest Framework
 REST_FRAMEWORK = {
@@ -360,6 +351,9 @@ CSRF_TRUSTED_ORIGINS = [
     "http://10.80.5.45",
     "https://api.appsheet.com",
 ]
+CSRF_COOKIE_NAME = (
+    "csrftoken_v2"  # Cambiar en caso de conflicto con formularios cacheados
+)
 
 # Configuración de hosts permitidos TODO: que se haga desde el .env
 ALLOWED_HOSTS = [

@@ -25,13 +25,13 @@
                class="btn btn-secondary mr-1">Volver</a>
         </div>
         <div class="col-auto">
-            {% if user|has_group:"Abogado Dupla" %}
+            {% if request.user|has_group:"Abogado Dupla" %}
                 {% if informe_tecnico %}
                     <a href="{% url 'informe_tecnico_ver' tipo=informe_tecnico.tipo pk=informe_tecnico.id %}"
                        class="btn btn-primary mr-1">Ver Informe Técnico</a>
                 {% endif %}
             {% endif %}
-            {% if user|has_group:"Tecnico Comedor" and not es_crear %}
+            {% if request.user|has_group:"Tecnico Comedor" and not es_crear %}
                 {% if admision.estado_legales == "Finalizado" and not admision.enviado_acompaniamiento %}
                     <button type="button"
                             class="btn btn-warning mr-1"
@@ -127,7 +127,7 @@
                                 <div class="comment-text">
                                     Tipo Convenio:
                                     <span class="fw-bold">{{ admision.tipo_convenio.nombre| default_if_none:"-" }}
-                                        {% if user|has_group:"Tecnico Comedor" %}
+                                        {% if request.user|has_group:"Tecnico Comedor" %}
                                             {% if admision.estado.nombre == "Pendiente" %}
                                                 <button type="button"
                                                         class="btn btn-primary btn-sm ms-3 mb-1"
@@ -314,8 +314,10 @@
                                                                     {% elif doc.estado == "Pendiente" %}
                                                                         <td class="ps-3" id="estado-{{ doc.id }}">{{ doc.estado }}</td>
                                                                     {% elif doc.estado == "A Validar Abogado" %}
-                                                                        {% if user|has_group:"Tecnico Comedor" %}<td class="ps-3" id="estado-{{ doc.id }}">A Validar Abogado</td>{% endif %}
-                                                                        {% if user|has_group:"Abogado Dupla" %}
+                                                                        {% if request.user|has_group:"Tecnico Comedor" %}
+                                                                            <td class="ps-3" id="estado-{{ doc.id }}">A Validar Abogado</td>
+                                                                        {% endif %}
+                                                                        {% if request.user|has_group:"Abogado Dupla" %}
                                                                             <td id="estado-{{ doc.id }}">
                                                                                 <select class="form-control"
                                                                                         onchange="actualizarEstado(this)"
@@ -332,7 +334,7 @@
                                                                             </td>
                                                                         {% endif %}
                                                                     {% else %}
-                                                                        {% if user|has_group:"Tecnico Comedor" %}
+                                                                        {% if request.user|has_group:"Tecnico Comedor" %}
                                                                             <td id="estado-{{ doc.id }}">
                                                                                 <select class="form-control"
                                                                                         onchange="actualizarEstado(this)"
@@ -351,14 +353,16 @@
                                                                                 </select>
                                                                             </td>
                                                                         {% endif %}
-                                                                        {% if user|has_group:"Abogado Dupla" %}<td class="ps-3" id="estado-{{ doc.id }}">{{ doc.estado }}</td>{% endif %}
+                                                                        {% if request.user|has_group:"Abogado Dupla" %}
+                                                                            <td class="ps-3" id="estado-{{ doc.id }}">{{ doc.estado }}</td>
+                                                                        {% endif %}
                                                                     {% endif %}
                                                                     <td>
                                                                         {% if doc.archivo_url %}
                                                                             <a href="{{ doc.archivo_url }}"
                                                                                target="_blank"
                                                                                class="btn btn-primary btn-sm">Ver Archivo</a>
-                                                                            {% if user|has_group:"Tecnico Comedor" %}
+                                                                            {% if request.user|has_group:"Tecnico Comedor" %}
                                                                                 <button class="btn btn-secondary btn-sm" disabled>Archivado</button>
                                                                                 {% if admision.estado.nombre != "Finalizada" %}
                                                                                     <button class="btn btn-sm btn-danger fw-bold px-3"
@@ -368,7 +372,7 @@
                                                                                 {% endif %}
                                                                             {% endif %}
                                                                         {% else %}
-                                                                            {% if user|has_group:"Tecnico Comedor" %}
+                                                                            {% if request.user|has_group:"Tecnico Comedor" %}
                                                                                 <input type="file" id="file-{{ doc.id }}" />
                                                                                 <button class="btn btn-primary btn-sm"
                                                                                         onclick="subirArchivo({{ admision.id }}, {{ doc.id }})">
