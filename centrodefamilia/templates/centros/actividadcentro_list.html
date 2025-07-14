@@ -26,7 +26,8 @@
                                 <th>Centro</th>
                                 <th>Actividad</th>
                                 <th>Días</th>
-                                <th>Horarios</th>
+                                <th>Horarios desde</th>
+                                <th>Horarios hasta</th>
                                 <th>Estado</th>
                             </tr>
                         </thead>
@@ -36,7 +37,8 @@
                                     <td>{{ actividad.centro.nombre }}</td>
                                     <td>{{ actividad.actividad.nombre }}</td>
                                     <td>{{ actividad.dias }}</td>
-                                    <td>{{ actividad.horarios }}</td>
+                                    <td>{{ actividad.horariosdesde }}</td>
+                                    <td>{{ actividad.horarioshasta }}</td>
                                     <td>
                                         <span class="badge badge-info">{{ actividad.get_estado_display }}</span>
                                     </td>

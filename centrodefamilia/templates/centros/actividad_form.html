@@ -1,0 +1,28 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Nueva Actividad{% endblock %}
+{% block content %}
+    <div class="container-fluid no-gutters">
+        <div class="card bg-dark text-white mb-4">
+            <div class="card-header bg-secondary">Nueva Actividad</div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form.non_field_errors }}
+                    <div class="mb-3">
+                        <label class="form-label text-white">{{ form.categoria.label }}</label>
+                        {{ form.categoria }}
+                        {{ form.categoria.errors }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-white">{{ form.nombre.label }}</label>
+                        {{ form.nombre }}
+                        {{ form.nombre.errors }}
+                    </div>
+                    <button type="submit" class="btn btn-outline-success">Guardar</button>
+                    <a href="{% url 'centro_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

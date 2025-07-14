@@ -1,5 +1,5 @@
 from django.urls import path
-from configuraciones.decorators import group_required
+from core.decorators import group_required
 from admisiones.views.web_views import (
     subir_archivo_admision,
     eliminar_archivo_admision,
@@ -10,6 +10,7 @@ from admisiones.views.web_views import (
     InformeTecnicosCreateView,
     InformeTecnicosUpdateView,
     InformeTecnicoDetailView,
+    InformeTecnicoComplementarioDetailView,
     AdmisionesLegalesListView,
     AdmisionesLegalesDetailView,
     AnexoCreateView,
@@ -63,6 +64,11 @@ urlpatterns = [
         "comedores/admision/informe_tecnico/<str:tipo>/<int:pk>/ver/",
         InformeTecnicoDetailView.as_view(),
         name="informe_tecnico_ver",
+    ),
+    path(
+        "comedores/admision/informe_complementario/<str:tipo>/<int:pk>/ver/",
+        InformeTecnicoComplementarioDetailView.as_view(),
+        name="informe_complementario_ver",
     ),
     path(
         "comedores/admision/anexo/<int:admision_id>/crear/",

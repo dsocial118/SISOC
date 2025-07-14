@@ -10,9 +10,16 @@ from django.contrib import messages
 from django.urls import reverse_lazy, reverse
 from django.db.models import Q, Count
 from django.core.exceptions import PermissionDenied
-from centrodefamilia.models import Centro, ActividadCentro, ParticipanteActividad
+from django.core.paginator import Paginator
+
+from centrodefamilia.models import (
+    Categoria,
+    Centro,
+    ActividadCentro,
+    Expediente,
+    ParticipanteActividad,
+)
 from centrodefamilia.forms import CentroForm
-from django.utils.decorators import method_decorator
 
 
 class CentroListView(LoginRequiredMixin, ListView):
@@ -22,25 +29,20 @@ class CentroListView(LoginRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        queryset = Centro.objects.select_related("faro_asociado", "referente")
+        qs = Centro.objects.select_related("faro_asociado", "referente")
         user = self.request.user
 
-        # Un referente ve solo sus centros y los adheridos asociados a sus centros FARO
         if (
             user.groups.filter(name="ReferenteCentro").exists()
             and not user.is_superuser
         ):
-            queryset = queryset.filter(
-                Q(referente=user) | Q(faro_asociado__referente=user)
-            )
+            qs = qs.filter(Q(referente=user) | Q(faro_asociado__referente=user))
 
-        busqueda = self.request.GET.get("busqueda")
-        if busqueda:
-            queryset = queryset.filter(
-                Q(nombre__icontains=busqueda) | Q(tipo__icontains=busqueda)
-            )
+        busq = self.request.GET.get("busqueda")
+        if busq:
+            qs = qs.filter(Q(nombre__icontains=busq) | Q(tipo__icontains=busq))
 
-        return queryset.order_by("nombre")
+        return qs.order_by("nombre")
 
 
 class CentroDetailView(LoginRequiredMixin, DetailView):
@@ -51,50 +53,91 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
     def get_object(self, queryset=None):
         obj = super().get_object(queryset)
         user = self.request.user
-
         es_referente = obj.referente_id == user.id
-        es_adherido_de_faro = (
+        es_adherido = (
             obj.tipo == "adherido"
             and obj.faro_asociado
             and obj.faro_asociado.referente_id == user.id
         )
-
-        if not (es_referente or es_adherido_de_faro or user.is_superuser):
+        if not (es_referente or es_adherido or user.is_superuser):
             raise PermissionDenied
-
         return obj
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         centro = self.object
 
-        actividades = ActividadCentro.objects.filter(centro=centro).select_related(
+        # 1) Expedientes del centro (con paginación)
+        qs_exp = Expediente.objects.filter(centro=centro).order_by("-fecha_subida")
+        paginator_exp = Paginator(qs_exp, 3)
+        page_exp = self.request.GET.get("page_exp")
+        context["expedientes_cabal"] = paginator_exp.get_page(page_exp)
+
+        # 2) Actividades del centro y ganancia estimada
+        qs_centro = ActividadCentro.objects.filter(centro=centro).select_related(
             "actividad", "actividad__categoria"
         )
-
-        participantes = (
-            ParticipanteActividad.objects.filter(actividad_centro__in=actividades)
+        part_por_act = (
+            ParticipanteActividad.objects.filter(actividad_centro__in=qs_centro)
             .values("actividad_centro")
             .annotate(total=Count("id"))
         )
+        mapa = {p["actividad_centro"]: p["total"] for p in part_por_act}
 
-        participantes_map = {p["actividad_centro"]: p["total"] for p in participantes}
+        actividades = []
+        for act in qs_centro:
+            cnt = mapa.get(act.id, 0)
+            actividades.append({"obj": act, "ganancia": (act.precio or 0) * cnt})
 
-        actividades_con_ganancia = []
-        for actividad in actividades:
-            cantidad = participantes_map.get(actividad.id, 0)
-            ganancia = (actividad.precio or 0) * cantidad
-            actividades_con_ganancia.append({"obj": actividad, "ganancia": ganancia})
+        context["actividades"] = actividades
+        context["total_actividades"] = qs_centro.count()
 
-        context["actividades"] = actividades_con_ganancia
-        context["total_actividades"] = actividades.count()
-        context["total_participantes"] = sum(participantes_map.values())
-        context["centros_adheridos_total"] = Centro.objects.filter(
-            faro_asociado=self.object
-        ).count()
+        # 3) Paginación de TODAS las actividades (de otros centros)
+        todas_acts = (
+            ActividadCentro.objects.exclude(centro=centro)
+            .select_related("actividad", "actividad__categoria", "centro")
+            .order_by("centro__nombre", "actividad__nombre")
+        )
+        pag_all = Paginator(todas_acts, 5)
+        page_act = self.request.GET.get("page_act")
+        context["actividades_paginados"] = pag_all.get_page(page_act)
 
+        # 4) Centros adheridos (si este es FARO)
         if centro.tipo == "faro":
-            context["centros_adheridos"] = Centro.objects.filter(faro_asociado=centro)
+            qs_adheridos = Centro.objects.filter(
+                faro_asociado=centro, activo=True
+            ).order_by("nombre")
+        else:
+            qs_adheridos = Centro.objects.none()
+
+        context["centros_adheridos_total"] = qs_adheridos.count()
+        pag_centros = Paginator(qs_adheridos, 5)
+        page = self.request.GET.get("page")
+        context["centros_adheridos_paginados"] = pag_centros.get_page(page)
+
+        # 5) Métricas y asistentes (uso correcto de select_related)
+        total_part = sum(mapa.values())
+        qs_part = ParticipanteActividad.objects.filter(
+            actividad_centro__centro=centro
+        ).select_related("ciudadano__sexo")
+        hombres = qs_part.filter(ciudadano__sexo__sexo__iexact="Masculino").count()
+        mujeres = qs_part.filter(ciudadano__sexo__sexo__iexact="Femenino").count()
+        mixtas = total_part - hombres - mujeres
+
+        context["metricas"] = {
+            "centros_faro": context["centros_adheridos_total"],
+            "categorias": Categoria.objects.count(),
+            "actividades": context["total_actividades"],
+            "interacciones": 0,
+            "hombres": hombres,
+            "mujeres": mujeres,
+            "mixtas": mixtas,
+        }
+        context["asistentes"] = {
+            "total": total_part,
+            "hombres": hombres,
+            "mujeres": mujeres,
+        }
 
         return context
 
@@ -105,19 +148,28 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
     template_name = "centros/centro_form.html"
     success_url = reverse_lazy("centro_list")
 
+    def get_initial(self):
+        initial = super().get_initial()
+        faro_id = self.request.GET.get("faro")
+        if faro_id:
+            initial["tipo"] = "adherido"
+            initial["faro_asociado"] = faro_id
+        return initial
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["from_faro"] = bool(self.request.GET.get("faro"))
+        return kwargs
+
     def form_valid(self, form):
         user = self.request.user
-
-        # Si es referente, siempre se asigna como referente y solo puede crear adheridos
+        if form.cleaned_data.get("tipo") == "adherido":
+            form.instance.faro_asociado_id = self.request.GET.get("faro")
         if (
             user.groups.filter(name="ReferenteCentro").exists()
             and not user.is_superuser
         ):
             form.instance.referente = user
-            if form.cleaned_data.get("tipo") != "adherido":
-                messages.error(self.request, "Solo puedes crear centros ADHERIDOS.")
-                return self.form_invalid(form)
-
         messages.success(self.request, "Centro creado exitosamente.")
         return super().form_valid(form)
 
@@ -130,8 +182,6 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
     def dispatch(self, request, *args, **kwargs):
         centro = self.get_object()
         user = request.user
-
-        # Solo el referente del centro o el superadmin puede editar
         if not (centro.referente_id == user.id or user.is_superuser):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
@@ -152,7 +202,6 @@ class CentroDeleteView(LoginRequiredMixin, DeleteView):
     def dispatch(self, request, *args, **kwargs):
         centro = self.get_object()
         user = request.user
-
         if not (centro.referente_id == user.id or user.is_superuser):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
