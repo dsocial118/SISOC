@@ -52,7 +52,7 @@ def run_django_commands():
     subprocess.run(["python", "manage.py", "migrate", "--noinput"])
 
     # Cargar los fixtures condicionalmente, si se quiere forzar añadir `--force`
-    # subprocess.run(["python", "manage.py", "load_fixtures"])
+    subprocess.run(["python", "manage.py", "load_fixtures"])
 
     subprocess.run(["python", "manage.py", "create_test_users"])
     subprocess.run(["python", "manage.py", "create_groups"])
