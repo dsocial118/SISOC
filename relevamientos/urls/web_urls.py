@@ -22,21 +22,21 @@ urlpatterns = [
         name="relevamiento_crear",
     ),
     path(
-        "comedores/<comedor_pk>/relevamiento/<pk>",
+        "comedores/<comedor_pk>/relevamiento/<int:pk>",
         group_required(["Comedores Relevamiento Detalle"])(
             RelevamientoDetailView.as_view()
         ),
         name="relevamiento_detalle",
     ),
     path(
-        "comedores/<comedor_pk>/relevamiento/<pk>/editar",
+        "comedores/<comedor_pk>/relevamiento/<int:pk>/editar",
         group_required(["Comedores Relevamiento Editar"])(
             RelevamientoUpdateView.as_view()
         ),
         name="relevamiento_editar",
     ),
     path(
-        "comedores/<comedor_pk>/relevamiento/<pk>/eliminar",
+        "comedores/<comedor_pk>/relevamiento/<int:pk>/eliminar",
         group_required(["Comedores Relevamiento Editar"])(
             RelevamientoDeleteView.as_view()
         ),
