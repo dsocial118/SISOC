@@ -27,14 +27,14 @@ urlpatterns = [
         name="admisiones_tecnicos_listar",
     ),
     path(
-        "comedores/admisiones/tecnicos/crear/<pk>",
+        "comedores/admisiones/tecnicos/crear/<int:pk>",
         group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(
             AdmisionesTecnicosCreateView.as_view()
         ),
         name="admisiones_tecnicos_crear",
     ),
     path(
-        "comedores/admisiones/tecnicos/editar/<pk>",
+        "comedores/admisiones/tecnicos/editar/<int:pk>",
         group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(
             AdmisionesTecnicosUpdateView.as_view()
         ),
@@ -100,7 +100,7 @@ urlpatterns = [
         name="admisiones_legales_listar",
     ),
     path(
-        "comedores/admisiones/legales/ver/<pk>",
+        "comedores/admisiones/legales/ver/<int:pk>",
         group_required(["Area Legales"])(AdmisionesLegalesDetailView.as_view()),
         name="admisiones_legales_ver",
     ),
