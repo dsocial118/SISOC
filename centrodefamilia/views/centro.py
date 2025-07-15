@@ -32,10 +32,7 @@ class CentroListView(LoginRequiredMixin, ListView):
         qs = Centro.objects.select_related("faro_asociado", "referente")
         user = self.request.user
 
-        if (
-            user.groups.filter(name="ReferenteCentro").exists()
-            and not user.is_superuser
-        ):
+        if user.groups.filter(name="ReferenteCentro").exists() and not user.is_superuser:
             qs = qs.filter(Q(referente=user) | Q(faro_asociado__referente=user))
 
         busq = self.request.GET.get("busqueda")
@@ -43,6 +40,15 @@ class CentroListView(LoginRequiredMixin, ListView):
             qs = qs.filter(Q(nombre__icontains=busq) | Q(tipo__icontains=busq))
 
         return qs.order_by("nombre")
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['can_cdf_sse'] = (
+            self.request.user.is_superuser
+            or self.request.user.groups.filter(name="CDF SSE").exists()
+        )
+        return ctx
+
 
 
 class CentroDetailView(LoginRequiredMixin, DetailView):
