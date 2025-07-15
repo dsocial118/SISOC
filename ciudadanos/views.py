@@ -18,6 +18,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
+from django.conf import settings
 from django.contrib.messages import get_messages
 
 from django.views.generic import (
@@ -231,17 +232,17 @@ class CiudadanosReportesListView(ListView):
         organismos = cache.get("organismos")
         if not organismos:
             organismos = Organismo.objects.all().values("id", "nombre")
-            cache.set("organismos", organismos, 60)
+            cache.set("organismos", organismos, settings.DEFAULT_CACHE_TIMEOUT)
 
         programas = cache.get("programas")
         if not programas:
             programas = Programa.objects.all().values("id", "nombre")
-            cache.set("programas", programas, 60)
+            cache.set("programas", programas, settings.DEFAULT_CACHE_TIMEOUT)
 
         estados = cache.get("estados_derivacion")
         if not estados:
             estados = EstadoDerivacion.objects.all().values("id", "estado")
-            cache.set("estados_derivacion", estados, 60)
+            cache.set("estados_derivacion", estados, settings.DEFAULT_CACHE_TIMEOUT)
 
         context["organismos"] = organismos
         context["programas"] = programas
@@ -569,7 +570,9 @@ class CiudadanosDetailView(DetailView):
                 "salud": dimensionsalud,
                 "trabajo": dimensiontrabajo,
             }
-            cache.set(cache_key_dims, dimensiones, 300)  # Cache por 5 minutos
+            cache.set(
+                cache_key_dims, dimensiones, settings.DEFAULT_CACHE_TIMEOUT
+            )  # Cache por 5 minutos
 
         # Archivos usando datos prefetched
         files = getattr(ciudadano, "archivos_optimized", [])
@@ -597,7 +600,9 @@ class CiudadanosDetailView(DetailView):
                 "datos_json": datos_json,
                 "emoji_nacionalidad": emoji_nacionalidad,
             }
-            cache.set(cache_key, cached_data, 300)  # Cache por 5 minutos
+            cache.set(
+                cache_key, cached_data, settings.DEFAULT_CACHE_TIMEOUT
+            )  # Cache por 5 minutos
 
         # Obtener hogar familiares (si es necesario)
         hogar_familiares = cache.get_or_set(

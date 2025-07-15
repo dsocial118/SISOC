@@ -11,6 +11,7 @@ from django.urls import reverse_lazy, reverse
 from django.db.models import Q, Count, F, ExpressionWrapper, IntegerField
 from django.core.exceptions import PermissionDenied
 from django.core.cache import cache
+from django.conf import settings
 from centrodefamilia.models import Centro, ActividadCentro, ParticipanteActividad
 from centrodefamilia.forms import CentroForm
 from django.utils.decorators import method_decorator
@@ -33,7 +34,9 @@ class CentroListView(LoginRequiredMixin, ListView):
                 user.groups.filter(name="ReferenteCentro").exists()
                 and not user.is_superuser
             )
-            cache.set(cache_key, is_referente, 300)  # Cache por 5 minutos
+            cache.set(
+                cache_key, is_referente, settings.DEFAULT_CACHE_TIMEOUT
+            )  # Cache por 5 minutos
 
         queryset = Centro.objects.select_related("faro_asociado", "referente")
 
@@ -60,8 +63,6 @@ class CentroListView(LoginRequiredMixin, ListView):
         return context
 
 
-
-
 class CentroDetailView(LoginRequiredMixin, DetailView):
     model = Centro
     template_name = "centros/centro_detail.html"
@@ -86,7 +87,7 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
                 user.groups.filter(name="ReferenteCentro").exists()
                 and not user.is_superuser
             )
-            cache.set(cache_key, is_referente_grupo, 300)
+            cache.set(cache_key, is_referente_grupo, settings.DEFAULT_CACHE_TIMEOUT)
 
         es_referente = obj.referente_id == user.id
         es_adherido_de_faro = (
@@ -143,9 +144,12 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
 
         # Add metricas and asistentes to the context
         context["metricas"] = {
-            "total_ganancia": sum(item["ganancia"] for item in actividades_con_ganancia),
+            "total_ganancia": sum(
+                item["ganancia"] for item in actividades_con_ganancia
+            ),
             "promedio_ganancia": (
-                sum(item["ganancia"] for item in actividades_con_ganancia) / len(actividades_con_ganancia)
+                sum(item["ganancia"] for item in actividades_con_ganancia)
+                / len(actividades_con_ganancia)
                 if actividades_con_ganancia
                 else 0
             ),
@@ -172,7 +176,9 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
                 user.groups.filter(name="ReferenteCentro").exists()
                 and not user.is_superuser
             )
-            cache.set(cache_key, is_referente, 300)  # Cache por 5 minutos
+            cache.set(
+                cache_key, is_referente, settings.DEFAULT_CACHE_TIMEOUT
+            )  # Cache por 5 minutos
 
         # Si es referente, siempre se asigna como referente y solo puede crear adheridos
         if is_referente:
