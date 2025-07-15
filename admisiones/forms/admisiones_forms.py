@@ -33,6 +33,14 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
             "IF_relevamiento_territorial": "IF Relevamiento Territorial",
             "if_relevamiento": "IF Relevamiento",
         }
+        widgets = {
+            "fecha_vencimiento_mandatos": forms.DateInput(
+                attrs={
+                    "type": "date",
+                    "class": "form-control",
+                }
+            )
+        }
 
     def __init__(self, *args, **kwargs):
         admision = kwargs.pop("admision", None)
@@ -64,6 +72,7 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
                 self.fields["nombre_organizacion"].initial = organizacion.nombre
                 self.fields["cuit_organizacion"].initial = organizacion.cuit
                 self.fields["mail_organizacion"].initial = organizacion.email
+                self.fields["telefono_organizacion"].initial = organizacion.telefono
                 self.fields["nombre_espacio"].initial = anexo.efector
                 self.fields["tipo_espacio"].initial = anexo.tipo_espacio
                 self.fields["barrio_espacio"].initial = comedor.barrio
@@ -93,6 +102,14 @@ class InformeTecnicoBaseForm(forms.ModelForm):
             "validacion_registro_nacional",
             "IF_relevamiento_territorial",
         ]
+        widgets = {
+            "fecha_vencimiento_mandatos": forms.DateInput(
+                attrs={
+                    "type": "date",
+                    "class": "form-control",
+                }
+            ),
+        }
 
     def __init__(self, *args, **kwargs):
         admision = kwargs.pop("admision", None)
@@ -124,8 +141,8 @@ class InformeTecnicoBaseForm(forms.ModelForm):
                 self.fields["nombre_organizacion"].initial = organizacion.nombre
                 self.fields["cuit_organizacion"].initial = organizacion.cuit
                 self.fields["mail_organizacion"].initial = organizacion.email
+                self.fields["telefono_organizacion"].initial = organizacion.telefono
                 self.fields["nombre_espacio"].initial = anexo.efector
-                self.fields["tipo_espacio"].initial = anexo.tipo_espacio
                 self.fields["tipo_espacio"].initial = anexo.tipo_espacio
                 self.fields["barrio_espacio"].initial = comedor.barrio
                 self.fields["localidad_espacio"].initial = comedor.localidad

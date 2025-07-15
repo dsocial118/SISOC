@@ -18,18 +18,18 @@
     {% endblock %}
     {% block content %}
         <div class="row">
-            <div class="col-6">
-                <a href="{% url 'expedientespagos_list' comedor.id %}"
-                   class="btn btn-primary btn-lg mb-3">
-                    <i class="fas fa-plus"></i>Expedientes de Pagos
+            <div class="col-auto">
+                <a href="{% url 'comedor_intervencion_ver' comedor.id %}"
+                   class="btn btn-primary mb-3">
+                    <i class="fas fa-plus me-2"></i>Intervenciones
                 </a>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-6">
+                <a href="{% url 'expedientespagos_list' comedor.id %}"
+                   class="btn btn-primary mb-3">
+                    <i class="fas fa-plus me-2"></i>Expedientes de Pagos
+                </a>
                 <a href="{% url 'rendicioncuentasmensual_list' comedor.id %}"
-                   class="btn btn-primary btn-lg mb-3">
-                    <i class="fas fa-plus"></i>Rendicion de Cuenta Mensual
+                   class="btn btn-primary mb-3">
+                    <i class="fas fa-plus me-2"></i>Rendicion de Cuenta Mensual
                 </a>
             </div>
         </div>
@@ -48,8 +48,8 @@
                                     info_relevante.expediente_nro |default:"-" }}
                                 </li>
                                 <li class="list-group-item">
-                                    <strong>Número de Resolución:</strong> {{
-                                    numero_resolucion|default:"-" }}
+                                    <strong>Número de Disposición:</strong> {{
+                                    numero_disposicion|default:"-" }}
                                 </li>
                                 <li class="list-group-item">
                                     <strong>IF de Relevamiento:</strong> {{
@@ -57,7 +57,20 @@
                                 </li>
                                 <li class="list-group-item">
                                     <strong>Vencimiento de Mandato:</strong>
-                                    <span class="text-muted">{{ vencimiento_mandato|default:"No disponible" }}</span>
+                                    <span class="text-muted">{{ info_relevante.fecha_vencimiento_mandatos|date:'d/m/Y' |default_if_none:"-" }}</span>
+                                </li>
+                                {% comment %}
+                                <li class="list-group-item">
+                                    <div class="row">
+                                        <div class="col-auto"><strong class="text-nowrap">Fecha de primera acreditación:</strong></div>
+                                        <div class="col-auto"><input type="date" name="fecha_vencimiento_mandatos" class="form-control w-100 ms-2" /></div>
+                                        <div class="col-auto"><button class="btn btn-sm btn-primary">Modificar</button></div>
+                                    </div>
+                                </li>
+                                {% endcomment %}
+                                <li class="list-group-item">
+                                    <strong>Codigo de proyecto:</strong> {{
+                                    comedor.codigo_de_proyecto|default:"-" }}
                                 </li>
                             </ul>
                         {% else %}
