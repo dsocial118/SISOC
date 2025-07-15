@@ -26,11 +26,16 @@ def invalidate_cache_pattern(pattern):
 
     Args:
         pattern: Patrón de clave de cache (ej: "comedor_*")
+
+    Note:
+        Actualmente no implementado para backend locmem.
+        Se implementará cuando se migre a Redis.
     """
     # Nota: Django cache no soporta wildcard deletion por defecto
     # Para implementación completa necesitaríamos usar Redis con scan
     # Por ahora, usaremos claves específicas
-    pass
+    logger = __import__("logging").getLogger(__name__)
+    logger.warning(f"Pattern invalidation not implemented for pattern: {pattern}")
 
 
 # Funciones específicas para invalidar cache por modelo

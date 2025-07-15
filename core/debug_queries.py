@@ -3,7 +3,25 @@
 Script para depurar las optimizaciones de queries en las vistas del sistema SISOC
 
 Para ejecutar este script:
-  docker-compose exec django python manage.py shell -c "from core.debug_queries import debug_all_views; debug_all_views()"
+  docker-compose exec django python manage.py shell -c "from core.debug_queries import debu        if hasattr(view, "get_object"):
+            # Vista de detalle
+            print(f"🔄 Ejecutando get_object() para {view_name}...")
+            obj = view.get_object()
+            _ = len(connection.queries)  # queries_after_get_object (no usado)
+
+            # Asignar el objeto a la vista para evitar errores
+            view.object = obj
+
+            print(f"🔄 Ejecutando get_context_data() para {view_name}...")
+            _ = view.get_context_data(object=obj)  # context (no usado)
+        else:
+            # Vista de lista
+            print(f"🔄 Ejecutando get_queryset() para {view_name}...")
+            queryset = view.get_queryset()
+            _ = len(connection.queries)  # queries_after_queryset (no usado)
+
+            print(f"🔄 Ejecutando get_context_data() para {view_name}...")
+            _ = view.get_context_data(object_list=queryset)  # context (no usado)all_views()"
 
 O importar las funciones desde Django shell:
   docker-compose exec django python manage.py shell
@@ -12,26 +30,23 @@ O importar las funciones desde Django shell:
 """
 import os
 import sys
+
 import django
-from django.conf import settings
+from django.contrib.auth.models import User
 from django.db import connection, reset_queries
+from django.test import RequestFactory
+
+from ciudadanos.models import Ciudadano
+from ciudadanos.views import CiudadanosDetailView
 
 # Configurar Django (solo si se ejecuta directamente)
 if __name__ == "__main__":
-    import sys
-    import os
-
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
     django.setup()
 
-from ciudadanos.models import Ciudadano
-from ciudadanos.views import CiudadanosDetailView
-from django.test import RequestFactory
-from django.contrib.auth.models import User
 
-
-def debug_ciudadano_detail_queries():
+def debug_ciudadano_detail_queries():  # pylint: disable=too-many-locals,too-many-statements
     """Depura el método get_object y get_context_data de CiudadanosDetailView"""
 
     # Verificar que existe al menos un ciudadano
@@ -108,7 +123,7 @@ def debug_ciudadano_detail_queries():
                 print(f"  {i}. [{time}s] {sql}")
 
         # Mostrar estadísticas del contexto
-        print(f"\n📈 Estadísticas del contexto:")
+        print("\n📈 Estadísticas del contexto:")
         print(f"  🚨 Alertas cargadas: {context.get('count_alertas', 0)}")
         print(f"  👨‍👩‍👧‍👦 Familiares cargados: {context.get('count_familia', 0)}")
         print(f"  📋 Programas: {context.get('count_programas', 0)}")
@@ -179,7 +194,7 @@ def show_query_analysis():
         connection.queries, key=lambda x: float(x["time"]), reverse=True
     )[:3]
     if slow_queries:
-        print(f"\n🐌 3 queries más lentas:")
+        print("\n🐌 3 queries más lentas:")
         for i, query in enumerate(slow_queries, 1):
             sql = (
                 query["sql"][:100] + "..." if len(query["sql"]) > 100 else query["sql"]
@@ -187,7 +202,7 @@ def show_query_analysis():
             print(f"  {i}. [{query['time']}s] {sql}")
 
 
-def debug_view_queries(
+def debug_view_queries(  # pylint: disable=too-many-locals,too-many-statements,too-many-branches
     view_class, url_pattern, model_class, view_name, pk=None, pk_kwarg="pk"
 ):
     """Framework genérico para depurar queries de cualquier vista"""
@@ -278,7 +293,7 @@ def debug_view_queries(
         return False, 0
 
 
-def debug_all_views():
+def debug_all_views():  # pylint: disable=too-many-locals,too-many-statements,too-many-branches,unused-variable
     """Depura todas las vistas principales del sistema"""
 
     print("🔍 Depurando queries en todas las vistas principales...\n")
@@ -289,7 +304,7 @@ def debug_all_views():
     from ciudadanos.views import CiudadanosDetailView
     from ciudadanos.models import Ciudadano
 
-    success, queries = debug_view_queries(
+    _, queries = debug_view_queries(
         CiudadanosDetailView,
         "/ciudadanos/ver/{pk}/",
         Ciudadano,
