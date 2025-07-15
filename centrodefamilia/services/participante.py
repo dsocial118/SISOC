@@ -184,9 +184,8 @@ class ParticipanteService:
 
         qs = (
             Ciudadano.objects
-                # crea un campo virtual doc_str con el 'documento' casteado a texto
-                .annotate(doc_str=Cast("documento", CharField()))
-                # filtra los que empiecen por lo que tipeó el usuario
+                # asegúrate de usar django.db.models.CharField() aquí
+                .annotate(doc_str=Cast("documento", output_field=CharField()))
                 .filter(doc_str__startswith=cleaned)
                 .order_by("documento")[:max_results]
         )
