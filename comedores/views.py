@@ -3,6 +3,7 @@ from typing import Any
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.core.cache import cache
+from django.conf import settings
 from django.db.models.base import Model
 from django.forms import BaseModelForm
 from django.http import HttpResponse, JsonResponse
@@ -207,7 +208,11 @@ class ComedorDetailView(DetailView):
                     self.object.id,
                     relevamientos_prefetched=self.object.relevamientos_optimized,
                 )
-                cache.set(cache_key, presupuestos_tuple, 300)
+                cache.set(
+                    cache_key,
+                    presupuestos_tuple,
+                    getattr(settings, "COMEDOR_CACHE_TIMEOUT", 300),
+                )
         else:
             presupuestos_tuple = ComedorService.get_presupuestos(self.object.id)
 

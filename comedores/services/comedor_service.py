@@ -3,7 +3,8 @@ from typing import Union
 
 from django.db.models import Q, Count
 from django.core.paginator import Paginator
-
+from django.core.cache import cache
+from django.conf import settings
 
 from relevamientos.models import Relevamiento
 from comedores.forms.comedor_form import ImagenComedorForm
@@ -177,7 +178,9 @@ class ComedorService:
                 tipo__in=["desayuno", "almuerzo", "merienda", "cena"]
             ).values("tipo", "valor")
             valor_map = {item["tipo"].lower(): item["valor"] for item in valores_comida}
-            cache.set("valores_comida_map", valor_map, 300)  # Cache por 5 minutos
+            cache.set(
+                "valores_comida_map", valor_map, settings.DEFAULT_CACHE_TIMEOUT
+            )  # Cache por 5 minutos
 
     @staticmethod
     def get_ubicaciones_ids(data):
@@ -243,7 +246,9 @@ class ComedorService:
                 tipo__in=["desayuno", "almuerzo", "merienda", "cena"]
             ).values("tipo", "valor")
             valor_map = {item["tipo"].lower(): item["valor"] for item in valores_comida}
-            cache.set("valores_comida_map", valor_map, 300)  # Cache por 5 minutos
+            cache.set(
+                "valores_comida_map", valor_map, settings.DEFAULT_CACHE_TIMEOUT
+            )  # Cache por 5 minutos
 
         # Usar relevamientos prefetched si están disponibles
         if relevamientos_prefetched:
