@@ -35,9 +35,7 @@ class CentroListView(LoginRequiredMixin, ListView):
         # Solo mostrar los centros donde el usuario es referente directo
         # o referente del faro asociado. El resto quedan ocultos.
         if user.groups.filter(name="ReferenteCentro").exists():
-            qs = qs.filter(
-                Q(referente=user)
-            )
+            qs = qs.filter(Q(referente=user))
         else:
             # Si no eres ReferenteCentro, no ves ninguno
             return Centro.objects.none()
@@ -45,14 +43,9 @@ class CentroListView(LoginRequiredMixin, ListView):
         # Filtro por búsqueda de texto, si aplica
         busq = self.request.GET.get("busqueda")
         if busq:
-            qs = qs.filter(
-                Q(nombre__icontains=busq) |
-                Q(tipo__icontains=busq)
-            )
+            qs = qs.filter(Q(nombre__icontains=busq) | Q(tipo__icontains=busq))
 
         return qs.order_by("nombre")
-
-
 
 
 class CentroDetailView(LoginRequiredMixin, DetailView):
