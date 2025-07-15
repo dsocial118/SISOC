@@ -208,6 +208,25 @@ if "pytest" in sys.argv:  # DB para testing
     }
 
 
+# Configuración de Cache
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "unique-snowflake",
+    }
+}
+
+# Configuración global de tiempos de cache (en segundos)
+DEFAULT_CACHE_TIMEOUT = 300  # 5 minutos por defecto
+DASHBOARD_CACHE_TIMEOUT = 300  # 5 minutos para dashboard
+COMEDOR_CACHE_TIMEOUT = 300  # 5 minutos para comedores
+CIUDADANO_CACHE_TIMEOUT = 300  # 5 minutos para ciudadanos
+INTERVENCIONES_CACHE_TIMEOUT = (
+    1800  # 30 minutos para tipos de intervención (cambian poco)
+)
+CENTROFAMILIA_CACHE_TIMEOUT = 300  # 5 minutos para centro de familia
+
+
 # Configuracion de logging
 LOGGING = {
     "version": 1,

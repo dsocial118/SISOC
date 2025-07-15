@@ -33,6 +33,10 @@ class RendicionCuentaMensualListView(ListView):
     context_object_name = "rendiciones_cuentas_mensuales"
     paginate_by = 10
 
+    def get_queryset(self):
+        """Retorna rendiciones ordenadas para evitar warning de paginación"""
+        return RendicionCuentaMensual.objects.order_by("-id")
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor_id = self.kwargs.get("comedor_id")
