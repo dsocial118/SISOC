@@ -11,7 +11,15 @@ from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import models, transaction
-from django.db.models import Case, IntegerField, Q, Value, When, CharField, TextField, Prefetch, Count
+from django.db.models import (
+    Case,
+    Q,
+    When,
+    CharField,
+    TextField,
+    Prefetch,
+    Count,
+)
 from django.db.models.functions import Cast
 from django.http import HttpResponseRedirect, JsonResponse, Http404
 from django.shortcuts import get_object_or_404, redirect
