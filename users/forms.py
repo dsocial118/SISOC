@@ -22,6 +22,7 @@ class UserCreationForm(forms.ModelForm):
             user.groups.set(self.cleaned_data["groups"])
         return user
 
+
 class CustomUserChangeForm(forms.ModelForm):
     password = forms.CharField(
         widget=forms.PasswordInput,
