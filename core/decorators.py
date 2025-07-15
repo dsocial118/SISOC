@@ -17,7 +17,8 @@ def group_required(group_names):
     def decorator(view_func):
         @wraps(view_func)
         def _wrapped_view(request, *args, **kwargs):
-            if not in_group(request.user):
+            is_in = in_group(request.user)
+            if not is_in:
                 raise PermissionDenied
             return view_func(request, *args, **kwargs)
 
