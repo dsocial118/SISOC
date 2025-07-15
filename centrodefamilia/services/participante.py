@@ -181,17 +181,10 @@ class ParticipanteService:
         cleaned = (query or "").strip()
         if len(cleaned) < 4 or not cleaned.isdigit():
             return []
-        qs = (
-            Ciudadano.objects
-            .extra(
-                where=["CAST(documento AS CHAR) LIKE %s"],
-                params=[cleaned + "%"]
-            )
-            .order_by("documento")[:max_results]
-        )
+        qs = Ciudadano.objects.extra(
+            where=["CAST(documento AS CHAR) LIKE %s"], params=[cleaned + "%"]
+        ).order_by("documento")[:max_results]
         return list(qs)
-
-
 
     @staticmethod
     def obtener_participantes_con_ciudadanos(actividad_centro):

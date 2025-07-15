@@ -51,10 +51,7 @@ class CentroListView(LoginRequiredMixin, ListView):
         # Filtro de texto
         busq = self.request.GET.get("busqueda", "").strip()
         if busq:
-            qs = qs.filter(
-                Q(nombre__icontains=busq) |
-                Q(tipo__icontains=busq)
-            )
+            qs = qs.filter(Q(nombre__icontains=busq) | Q(tipo__icontains=busq))
 
         return qs.order_by("nombre")
 
@@ -64,12 +61,9 @@ class CentroListView(LoginRequiredMixin, ListView):
 
         # Control de botones “Agregar”
         ctx["can_add"] = (
-            user.is_superuser or
-            user.groups.filter(name="CDF SSE").exists()
+            user.is_superuser or user.groups.filter(name="CDF SSE").exists()
         )
         return ctx
-
-
 
 
 class CentroDetailView(LoginRequiredMixin, DetailView):
