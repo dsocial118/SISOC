@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Any
 from django.contrib.auth.models import User
@@ -41,6 +42,43 @@ from relevamientos.service import RelevamientoService
 
 from duplas.dupla_service import DuplaService
 from rendicioncuentasmensual.services import RendicionCuentaMensualService
+from rendicioncuentasmensual.services import RendicionCuentaMensualService
+
+
+logger = logging.getLogger("django")
+
+
+@require_POST
+def relevamiento_crear_editar_ajax(request, pk):
+    try:
+        if "territorial" in request.POST:
+            relevamiento = RelevamientoService.create_pendiente(request, pk)
+            messages.success(request, "Relevamiento territorial creado correctamente.")
+        elif "territorial_editar" in request.POST:
+            relevamiento = RelevamientoService.update_territorial(request)
+            messages.success(
+                request, "Relevamiento territorial actualizado correctamente."
+            )
+        else:
+            messages.error(request, "Acción no reconocida.")
+            return redirect("comedor_detail", pk=pk)
+
+        return redirect(
+            "relevamiento_detalle",
+            pk=relevamiento.pk,
+            comedor_pk=relevamiento.comedor.pk,
+        )
+    except Exception as e:
+        logger.error(
+            "Error al procesar relevamiento para comedor %s: %s",
+            pk,
+            e,
+            exc_info=True,
+        )
+        messages.error(
+            request, "Hubo un error al guardar el relevamiento. Intenta de nuevo."
+        )
+        return redirect("comedor_detail", pk=pk)
 
 
 @method_decorator(csrf_exempt, name="dispatch")
