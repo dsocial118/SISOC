@@ -8,7 +8,7 @@ from django.views.generic import (
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.urls import reverse_lazy, reverse
-from django.db.models import Q, Count
+from django.db.models import Q, Count, F, ExpressionWrapper, IntegerField
 from django.core.exceptions import PermissionDenied
 from django.core.cache import cache
 from centrodefamilia.models import Centro, ActividadCentro, ParticipanteActividad
@@ -58,6 +58,8 @@ class CentroListView(LoginRequiredMixin, ListView):
         cache_key = f"user_is_referente_{user.id}"
         context["user_is_referente"] = cache.get(cache_key, False)
         return context
+
+
 
 
 class CentroDetailView(LoginRequiredMixin, DetailView):

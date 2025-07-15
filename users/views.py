@@ -3,7 +3,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.views import LoginView
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
-from .forms import UserCreationForm
+from .forms import CustomUserChangeForm, UserCreationForm
 
 
 class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
@@ -30,7 +30,7 @@ class UserCreateView(AdminRequiredMixin, CreateView):
 
 class UserUpdateView(AdminRequiredMixin, UpdateView):
     model = User
-    form_class = UserCreationForm
+    form_class = CustomUserChangeForm
     template_name = "user/user_form.html"
     success_url = reverse_lazy("usuarios")
 
