@@ -8,7 +8,7 @@ from django.views.generic import (
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.urls import reverse_lazy, reverse
-from django.db.models import Q, Count
+from django.db.models import Q, Count, F, ExpressionWrapper, IntegerField
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 
@@ -32,17 +32,38 @@ class CentroListView(LoginRequiredMixin, ListView):
         qs = Centro.objects.select_related("faro_asociado", "referente")
         user = self.request.user
 
-        if (
-            user.groups.filter(name="ReferenteCentro").exists()
-            and not user.is_superuser
-        ):
-            qs = qs.filter(Q(referente=user) | Q(faro_asociado__referente=user))
+        # 1) Superuser ve todo
+        if user.is_superuser:
+            pass
 
-        busq = self.request.GET.get("busqueda")
+        # 2) CDF SSE ve todo
+        elif user.groups.filter(name="CDF SSE").exists():
+            pass
+
+        # 3) ReferenteCentro ve SOLO los centros donde es referente
+        elif user.groups.filter(name="ReferenteCentro").exists():
+            qs = qs.filter(referente=user)
+
+        # 4) Resto de usuarios no ven nada
+        else:
+            return Centro.objects.none()
+
+        # Filtro de texto
+        busq = self.request.GET.get("busqueda", "").strip()
         if busq:
             qs = qs.filter(Q(nombre__icontains=busq) | Q(tipo__icontains=busq))
 
         return qs.order_by("nombre")
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        user = self.request.user
+
+        # Control de botones “Agregar”
+        ctx["can_add"] = (
+            user.is_superuser or user.groups.filter(name="CDF SSE").exists()
+        )
+        return ctx
 
 
 class CentroDetailView(LoginRequiredMixin, DetailView):
@@ -69,54 +90,49 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
 
         # 1) Expedientes del centro (con paginación)
         qs_exp = Expediente.objects.filter(centro=centro).order_by("-fecha_subida")
-        paginator_exp = Paginator(qs_exp, 3)
-        page_exp = self.request.GET.get("page_exp")
-        context["expedientes_cabal"] = paginator_exp.get_page(page_exp)
-
-        # 2) Actividades del centro y ganancia estimada
-        qs_centro = ActividadCentro.objects.filter(centro=centro).select_related(
-            "actividad", "actividad__categoria"
+        context["expedientes_cabal"] = Paginator(qs_exp, 3).get_page(
+            self.request.GET.get("page_exp")
         )
-        part_por_act = (
-            ParticipanteActividad.objects.filter(actividad_centro__in=qs_centro)
-            .values("actividad_centro")
-            .annotate(total=Count("id"))
+
+        # 2) Actividades del centro con ganancia calculada en la base
+        qs_acts = (
+            ActividadCentro.objects.filter(centro=centro)
+            .select_related("actividad", "actividad__categoria")
+            .annotate(
+                inscritos=Count("participanteactividad", distinct=True),
+                ganancia=ExpressionWrapper(
+                    F("precio") * F("inscritos"),
+                    output_field=IntegerField(),
+                ),
+            )
         )
-        mapa = {p["actividad_centro"]: p["total"] for p in part_por_act}
+        context["actividades"] = list(qs_acts)
+        context["total_actividades"] = qs_acts.count()
 
-        actividades = []
-        for act in qs_centro:
-            cnt = mapa.get(act.id, 0)
-            actividades.append({"obj": act, "ganancia": (act.precio or 0) * cnt})
-
-        context["actividades"] = actividades
-        context["total_actividades"] = qs_centro.count()
-
-        # 3) Paginación de TODAS las actividades (de otros centros)
-        todas_acts = (
+        # 3) Paginación de todas las actividades de otros centros
+        otras = (
             ActividadCentro.objects.exclude(centro=centro)
             .select_related("actividad", "actividad__categoria", "centro")
             .order_by("centro__nombre", "actividad__nombre")
         )
-        pag_all = Paginator(todas_acts, 5)
-        page_act = self.request.GET.get("page_act")
-        context["actividades_paginados"] = pag_all.get_page(page_act)
+        context["actividades_paginados"] = Paginator(otras, 5).get_page(
+            self.request.GET.get("page_act")
+        )
 
         # 4) Centros adheridos (si este es FARO)
         if centro.tipo == "faro":
-            qs_adheridos = Centro.objects.filter(
+            adheridos = Centro.objects.filter(
                 faro_asociado=centro, activo=True
             ).order_by("nombre")
         else:
-            qs_adheridos = Centro.objects.none()
+            adheridos = Centro.objects.none()
+        context["centros_adheridos_paginados"] = Paginator(adheridos, 5).get_page(
+            self.request.GET.get("page")
+        )
+        context["centros_adheridos_total"] = adheridos.count()
 
-        context["centros_adheridos_total"] = qs_adheridos.count()
-        pag_centros = Paginator(qs_adheridos, 5)
-        page = self.request.GET.get("page")
-        context["centros_adheridos_paginados"] = pag_centros.get_page(page)
-
-        # 5) Métricas y asistentes (uso correcto de select_related)
-        total_part = sum(mapa.values())
+        # 5) Métricas y asistentes
+        total_part = sum(a.inscritos for a in qs_acts)
         qs_part = ParticipanteActividad.objects.filter(
             actividad_centro__centro=centro
         ).select_related("ciudadano__sexo")

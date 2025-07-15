@@ -1,6 +1,4 @@
-from django.db.models import CharField
-from django.db.models.functions import Cast
-
+from django.forms import CharField
 from centrodefamilia.models import Centro, ActividadCentro, ParticipanteActividad
 from ciudadanos.models import (
     Ciudadano,
@@ -13,6 +11,7 @@ from ciudadanos.models import (
     CiudadanoPrograma,
     HistorialCiudadanoProgramas,
 )
+from django.db.models.functions import Cast
 
 
 class AlreadyRegistered(Exception):
@@ -43,7 +42,7 @@ def validar_cuit(cuit):
 
 
 def validar_ciudadano_en_rango_para_actividad(ciudadano, actividad_centro):
-    if actividad_centro.centro.tipo == "adherido" and not 1 <= ciudadano.id <= 1984:
+    if actividad_centro.centro.tipo == "adherido" and not 1 <= ciudadano.id <= 1000:
         raise ValueError(
             f"El ciudadano ID {ciudadano.id} no está habilitado para inscribirse en este centro adherido."
         )
@@ -179,14 +178,13 @@ class ParticipanteService:
 
     @staticmethod
     def buscar_ciudadanos(query, max_results=10):
-        cleaned = (query or "").strip().lower()
-        if len(cleaned) < 4:
+        cleaned = (query or "").strip()
+        if len(cleaned) < 4 or not cleaned.isdigit():
             return []
-        return list(
-            Ciudadano.objects.annotate(doc_str=Cast("documento", CharField()))
-            .filter(doc_str__startswith=cleaned)
-            .order_by("documento")[:max_results]
-        )
+        qs = Ciudadano.objects.extra(
+            where=["CAST(documento AS CHAR) LIKE %s"], params=[cleaned + "%"]
+        ).order_by("documento")[:max_results]
+        return list(qs)
 
     @staticmethod
     def obtener_participantes_con_ciudadanos(actividad_centro):

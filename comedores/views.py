@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Any
 
@@ -5,7 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.models import User
 from django.db.models.base import Model
 from django.forms import BaseModelForm
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
@@ -40,17 +41,11 @@ from relevamientos.service import RelevamientoService
 from rendicioncuentasmensual.services import RendicionCuentaMensualService
 
 
+logger = logging.getLogger("django")
+
+
 @require_POST
 def relevamiento_crear_editar_ajax(request, pk):
-    """Crear o editar un relevamiento de comedor vía AJAX.
-
-    Args:
-        request (HttpRequest): Petición que contiene los datos del relevamiento.
-        pk (int): ID del comedor asociado al relevamiento.
-
-    Returns:
-        JsonResponse: URL de redirección en caso de éxito o mensaje de error.
-    """
     try:
         if "territorial" in request.POST:
             relevamiento = RelevamientoService.create_pendiente(request, pk)
@@ -61,22 +56,25 @@ def relevamiento_crear_editar_ajax(request, pk):
                 request, "Relevamiento territorial actualizado correctamente."
             )
         else:
-            return JsonResponse({"error": "Acción no reconocida."}, status=400)
+            messages.error(request, "Acción no reconocida.")
+            return redirect("comedor_detail", pk=pk)
 
-        return JsonResponse(
-            {
-                "url": reverse(
-                    "relevamiento_detalle",
-                    kwargs={
-                        "pk": relevamiento.pk,
-                        "comedor_pk": relevamiento.comedor.pk,
-                    },
-                )
-            },
-            status=200,
+        return redirect(
+            "relevamiento_detalle",
+            pk=relevamiento.pk,
+            comedor_pk=relevamiento.comedor.pk,
         )
-    except Exception:
-        return JsonResponse({"error": "An internal error occurred."}, status=500)
+    except Exception as e:
+        logger.error(
+            "Error al procesar relevamiento para comedor %s: %s",
+            pk,
+            e,
+            exc_info=True,
+        )
+        messages.error(
+            request, "Hubo un error al guardar el relevamiento. Intenta de nuevo."
+        )
+        return redirect("comedor_detail", pk=pk)
 
 
 @method_decorator(csrf_exempt, name="dispatch")

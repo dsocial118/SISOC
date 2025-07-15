@@ -11,7 +11,7 @@ from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import models, transaction
-from django.db.models import Case, IntegerField, Q, Value, When, CharField
+from django.db.models import Case, IntegerField, Q, Value, When, CharField, TextField
 from django.db.models.functions import Cast
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
@@ -314,11 +314,10 @@ class CiudadanosListView(ListView):
                 )
             )
             query = self.request.GET.get("busqueda", "")
-
             if query:
                 filter_condition = Q(apellido__icontains=query)
                 if query.isnumeric():
-                    queryset = queryset.annotate(doc_str=Cast("documento", CharField()))
+                    queryset = queryset.annotate(doc_str=Cast("documento", TextField()))
                     filter_condition |= Q(doc_str__startswith=query)
                 queryset = queryset.filter(filter_condition)
             self._cached_queryset = (
@@ -991,7 +990,7 @@ def busqueda_familiares(request):
 
     paginate_by = 10
     familiares = (
-        Ciudadano.objects.annotate(doc_str=Cast("documento", CharField()))
+        Ciudadano.objects.annotate(doc_str=Cast("documento", TextField()))
         .filter(
             ~Q(id=ciudadano_principal_id)
             & (Q(apellido__icontains=busqueda) | Q(doc_str__startswith=busqueda))
@@ -1159,11 +1158,10 @@ class DerivacionBuscar(TemplateView):
                 .distinct()
             )
             ciudadanos_filtrado = (
-                ciudadanos.annotate(doc_str=Cast("documento", CharField()))
+                ciudadanos.annotate(doc_str=Cast("documento", TextField()))
                 .filter(Q(apellido__icontains=query) | Q(doc_str__startswith=query))
                 .distinct()
             )
-
             if derivaciones_filtrado:
                 sin_derivaciones = ciudadanos_filtrado.exclude(
                     id__in=derivaciones_filtrado
@@ -2051,7 +2049,7 @@ def busqueda_hogar(request):
 
     paginate_by = 10
     hogares = (
-        Ciudadano.objects.annotate(doc_str=Cast("documento", CharField()))
+        Ciudadano.objects.annotate(doc_str=Cast("documento", TextField()))
         .filter(
             ~Q(id=ciudadano_principal_id)
             & (Q(apellido__icontains=busqueda) | Q(doc_str__startswith=busqueda))
