@@ -35,14 +35,14 @@
         <div class="col-12 text-center">
             <a href="{% url 'centro_list' %}"
                class="btn btn-secondary btn-lg d-block d-sm-inline mt-2">Resetear</a>
-            {% if request.user.is_superuser or request.user.groups.all.0.name == 'CDF SSE' %}
-                <a href="{% url 'centro_create' %}"
-                   class="btn btn-primary btn-lg d-block d-sm-inline mt-2 mr-2">Agregar</a>
-            {% endif %}
-            {% if request.user.is_superuser or request.user.groups.all.0.name == 'CDF SSE' %}
-                <a href="{% url 'actividad_create_sola' %}"
-                   class="btn btn-primary btn-lg d-block d-sm-inline mt-2 mr-2">Agregar Actividad</a>
-            {% endif %}
+                    {% if request.user.is_superuser or request.user.groups.filter(name="CDF SSE").exists %}
+                        <a href="{% url 'centro_create' %}"
+                        class="btn btn-primary btn-lg d-block d-sm-inline mt-2 mr-2">Agregar</a>
+                    {% endif %}
+                    {% if request.user.is_superuser or request.user.groups.filter(name="CDF SSE").exists %}
+                        <a href="{% url 'actividad_create_sola' %}"
+                        class="btn btn-primary btn-lg d-block d-sm-inline mt-2 mr-2">Agregar Actividad</a>
+                    {% endif %}
         </div>
     </div>
     <div class="row mt-5">
