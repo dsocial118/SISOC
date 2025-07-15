@@ -1,6 +1,14 @@
 #!/usr/bin/env python3
 """
-Script para depurar las optimizaciones de queries en CiudadanosDetailView
+Script para depurar las optimizaciones de queries en las vistas del sistema SISOC
+
+Para ejecutar este script:
+  docker-compose exec django python manage.py shell -c "from core.debug_queries import debug_all_views; debug_all_views()"
+
+O importar las funciones desde Django shell:
+  docker-compose exec django python manage.py shell
+  >>> from core.debug_queries import debug_all_views, debug_ciudadano_detail_queries
+  >>> debug_all_views()
 """
 import os
 import sys
@@ -8,9 +16,14 @@ import django
 from django.conf import settings
 from django.db import connection, reset_queries
 
-# Configurar Django
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
-django.setup()
+# Configurar Django (solo si se ejecuta directamente)
+if __name__ == "__main__":
+    import sys
+    import os
+
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+    django.setup()
 
 from ciudadanos.models import Ciudadano
 from ciudadanos.views import CiudadanosDetailView
@@ -18,8 +31,8 @@ from django.test import RequestFactory
 from django.contrib.auth.models import User
 
 
-def test_ciudadano_detail_queries_direct():
-    """Prueba directa del método get_object y get_context_data"""
+def debug_ciudadano_detail_queries():
+    """Depura el método get_object y get_context_data de CiudadanosDetailView"""
 
     # Verificar que existe al menos un ciudadano
     try:
@@ -38,9 +51,9 @@ def test_ciudadano_detail_queries_direct():
 
         # Crear usuario de prueba si no existe
         try:
-            user = User.objects.get(username="testuser")
+            user = User.objects.get(username="debuguser")
         except User.DoesNotExist:
-            user = User.objects.create_user(username="testuser", password="testpass")
+            user = User.objects.create_user(username="debuguser", password="debugpass")
 
         request.user = user
 
@@ -133,7 +146,7 @@ def test_ciudadano_detail_queries_direct():
         return True
 
     except Exception as e:
-        print(f"❌ Error al ejecutar la prueba: {e}")
+        print(f"❌ Error al ejecutar el debug: {e}")
         import traceback
 
         traceback.print_exc()
@@ -174,10 +187,10 @@ def show_query_analysis():
             print(f"  {i}. [{query['time']}s] {sql}")
 
 
-def test_view_queries(
+def debug_view_queries(
     view_class, url_pattern, model_class, view_name, pk=None, pk_kwarg="pk"
 ):
-    """Framework genérico para probar queries de cualquier vista"""
+    """Framework genérico para depurar queries de cualquier vista"""
 
     # Verificar que existe al menos un objeto del modelo
     try:
@@ -204,9 +217,9 @@ def test_view_queries(
 
     # Crear usuario de prueba si no existe
     try:
-        user = User.objects.get(username="testuser")
+        user = User.objects.get(username="debuguser")
     except User.DoesNotExist:
-        user = User.objects.create_user(username="testuser", password="testpass")
+        user = User.objects.create_user(username="debuguser", password="debugpass")
 
     request.user = user
 
@@ -265,18 +278,18 @@ def test_view_queries(
         return False, 0
 
 
-def test_all_views():
-    """Prueba todas las vistas principales del sistema"""
+def debug_all_views():
+    """Depura todas las vistas principales del sistema"""
 
-    print("🔍 Probando queries en todas las vistas principales...\n")
+    print("🔍 Depurando queries en todas las vistas principales...\n")
 
     results = {}
 
-    # Test CiudadanosDetailView (ya optimizada)
+    # Debug CiudadanosDetailView (ya optimizada)
     from ciudadanos.views import CiudadanosDetailView
     from ciudadanos.models import Ciudadano
 
-    success, queries = test_view_queries(
+    success, queries = debug_view_queries(
         CiudadanosDetailView,
         "/ciudadanos/ver/{pk}/",
         Ciudadano,
@@ -286,13 +299,13 @@ def test_all_views():
     )
     results["CiudadanosDetailView"] = queries
 
-    # Test ComedoresAcompanamientoListView (acompañamientos)
+    # Debug ComedoresAcompanamientoListView (acompañamientos)
     # Debug Toolbar: 14 queries en 33.73ms
     print("\n" + "=" * 50)
     from acompanamientos.views import ComedoresAcompanamientoListView
     from comedores.models import Comedor
 
-    success, queries = test_view_queries(
+    success, queries = debug_view_queries(
         ComedoresAcompanamientoListView,
         "/acompanamientos/acompanamiento/",
         Comedor,
@@ -301,12 +314,12 @@ def test_all_views():
     )
     results["ComedoresAcompanamientoListView"] = queries
 
-    # Test AcompanamientoDetailView
+    # Debug AcompanamientoDetailView
     print("\n" + "=" * 50)
     try:
         from acompanamientos.views import AcompanamientoDetailView
 
-        success, queries = test_view_queries(
+        success, queries = debug_view_queries(
             AcompanamientoDetailView,
             "/acompanamientos/ver/{comedor_id}/",
             Comedor,  # Usa el modelo Comedor
@@ -316,14 +329,14 @@ def test_all_views():
         )
         results["AcompanamientoDetailView"] = queries
     except Exception as e:
-        print(f"❌ No se pudo probar AcompanamientoDetailView: {e}")
+        print(f"❌ No se pudo depurar AcompanamientoDetailView: {e}")
 
-    # Test ComedorListView
+    # Debug ComedorListView
     print("\n" + "=" * 50)
     try:
         from comedores.views import ComedorListView
 
-        success, queries = test_view_queries(
+        success, queries = debug_view_queries(
             ComedorListView,
             "/comedores/",
             Comedor,
@@ -332,14 +345,14 @@ def test_all_views():
         )
         results["ComedorListView"] = queries
     except Exception as e:
-        print(f"❌ No se pudo probar ComedorListView: {e}")
+        print(f"❌ No se pudo depurar ComedorListView: {e}")
 
-    # Test ComedorDetailView
+    # Debug ComedorDetailView
     print("\n" + "=" * 50)
     try:
         from comedores.views import ComedorDetailView
 
-        success, queries = test_view_queries(
+        success, queries = debug_view_queries(
             ComedorDetailView,
             "/comedores/ver/{pk}/",
             Comedor,
@@ -349,14 +362,14 @@ def test_all_views():
         )
         results["ComedorDetailView"] = queries
     except Exception as e:
-        print(f"❌ No se pudo probar ComedorDetailView: {e}")
+        print(f"❌ No se pudo depurar ComedorDetailView: {e}")
 
-    # Test CiudadanosListView
+    # Debug CiudadanosListView
     print("\n" + "=" * 50)
     try:
         from ciudadanos.views import CiudadanosListView
 
-        success, queries = test_view_queries(
+        success, queries = debug_view_queries(
             CiudadanosListView,
             "/ciudadanos/",
             Ciudadano,
@@ -365,15 +378,15 @@ def test_all_views():
         )
         results["CiudadanosListView"] = queries
     except Exception as e:
-        print(f"❌ No se pudo probar CiudadanosListView: {e}")
+        print(f"❌ No se pudo depurar CiudadanosListView: {e}")
 
-    # Test OrganizacionListView
+    # Debug OrganizacionListView
     print("\n" + "=" * 50)
     try:
         from organizaciones.views import OrganizacionListView
         from organizaciones.models import Organizacion
 
-        success, queries = test_view_queries(
+        success, queries = debug_view_queries(
             OrganizacionListView,
             "/organizaciones/",
             Organizacion,
@@ -382,15 +395,15 @@ def test_all_views():
         )
         results["OrganizacionListView"] = queries
     except Exception as e:
-        print(f"❌ No se pudo probar OrganizacionListView: {e}")
+        print(f"❌ No se pudo depurar OrganizacionListView: {e}")
 
-    # Test OrganizacionDetailView
+    # Debug OrganizacionDetailView
     print("\n" + "=" * 50)
     try:
         from organizaciones.views import OrganizacionDetailView
         from organizaciones.models import Organizacion
 
-        success, queries = test_view_queries(
+        success, queries = debug_view_queries(
             OrganizacionDetailView,
             "/organizaciones/ver/{pk}/",
             Organizacion,
@@ -400,15 +413,15 @@ def test_all_views():
         )
         results["OrganizacionDetailView"] = queries
     except Exception as e:
-        print(f"❌ No se pudo probar OrganizacionDetailView: {e}")
+        print(f"❌ No se pudo depurar OrganizacionDetailView: {e}")
 
-    # Test DuplaListView
+    # Debug DuplaListView
     print("\n" + "=" * 50)
     try:
         from duplas.views import DuplaListView
         from duplas.models import Dupla
 
-        success, queries = test_view_queries(
+        success, queries = debug_view_queries(
             DuplaListView,
             "/duplas/",
             Dupla,
@@ -417,15 +430,15 @@ def test_all_views():
         )
         results["DuplaListView"] = queries
     except Exception as e:
-        print(f"❌ No se pudo probar DuplaListView: {e}")
+        print(f"❌ No se pudo depurar DuplaListView: {e}")
 
-    # Test DuplaDetailView
+    # Debug DuplaDetailView
     print("\n" + "=" * 50)
     try:
         from duplas.views import DuplaDetailView
         from duplas.models import Dupla
 
-        success, queries = test_view_queries(
+        success, queries = debug_view_queries(
             DuplaDetailView,
             "/duplas/ver/{pk}/",
             Dupla,
@@ -435,15 +448,15 @@ def test_all_views():
         )
         results["DuplaDetailView"] = queries
     except Exception as e:
-        print(f"❌ No se pudo probar DuplaDetailView: {e}")
+        print(f"❌ No se pudo depurar DuplaDetailView: {e}")
 
-    # Test ExpedientesPagosListView
+    # Debug ExpedientesPagosListView
     print("\n" + "=" * 50)
     try:
         from expedientespagos.views import ExpedientesPagosListView
         from expedientespagos.models import ExpedientePago
 
-        success, queries = test_view_queries(
+        success, queries = debug_view_queries(
             ExpedientesPagosListView,
             "/expedientes-pagos/",
             ExpedientePago,
@@ -452,15 +465,15 @@ def test_all_views():
         )
         results["ExpedientesPagosListView"] = queries
     except Exception as e:
-        print(f"❌ No se pudo probar ExpedientesPagosListView: {e}")
+        print(f"❌ No se pudo depurar ExpedientesPagosListView: {e}")
 
-    # Test ExpedientesPagosDetailView
+    # Debug ExpedientesPagosDetailView
     print("\n" + "=" * 50)
     try:
         from expedientespagos.views import ExpedientesPagosDetailView
         from expedientespagos.models import ExpedientePago
 
-        success, queries = test_view_queries(
+        success, queries = debug_view_queries(
             ExpedientesPagosDetailView,
             "/expedientes-pagos/ver/{pk}/",
             ExpedientePago,
@@ -470,15 +483,15 @@ def test_all_views():
         )
         results["ExpedientesPagosDetailView"] = queries
     except Exception as e:
-        print(f"❌ No se pudo probar ExpedientesPagosDetailView: {e}")
+        print(f"❌ No se pudo depurar ExpedientesPagosDetailView: {e}")
 
-    # Test RendicionCuentaMensualListView
+    # Debug RendicionCuentaMensualListView
     print("\n" + "=" * 50)
     try:
         from rendicioncuentasmensual.views import RendicionCuentaMensualListView
         from rendicioncuentasmensual.models import RendicionCuentaMensual
 
-        success, queries = test_view_queries(
+        success, queries = debug_view_queries(
             RendicionCuentaMensualListView,
             "/rendicion-mensual/",
             RendicionCuentaMensual,
@@ -487,15 +500,15 @@ def test_all_views():
         )
         results["RendicionCuentaMensualListView"] = queries
     except Exception as e:
-        print(f"❌ No se pudo probar RendicionCuentaMensualListView: {e}")
+        print(f"❌ No se pudo depurar RendicionCuentaMensualListView: {e}")
 
-    # Test RendicionCuentaMensualDetailView
+    # Debug RendicionCuentaMensualDetailView
     print("\n" + "=" * 50)
     try:
         from rendicioncuentasmensual.views import RendicionCuentaMensualDetailView
         from rendicioncuentasmensual.models import RendicionCuentaMensual
 
-        success, queries = test_view_queries(
+        success, queries = debug_view_queries(
             RendicionCuentaMensualDetailView,
             "/rendicion-mensual/ver/{pk}/",
             RendicionCuentaMensual,
@@ -505,15 +518,15 @@ def test_all_views():
         )
         results["RendicionCuentaMensualDetailView"] = queries
     except Exception as e:
-        print(f"❌ No se pudo probar RendicionCuentaMensualDetailView: {e}")
+        print(f"❌ No se pudo depurar RendicionCuentaMensualDetailView: {e}")
 
-    # Test DerivacionListView (ciudadanos adicional)
+    # Debug DerivacionListView (ciudadanos adicional)
     print("\n" + "=" * 50)
     try:
         from ciudadanos.views import DerivacionListView
         from ciudadanos.models import Derivacion
 
-        success, queries = test_view_queries(
+        success, queries = debug_view_queries(
             DerivacionListView,
             "/ciudadanos/derivaciones/",
             Derivacion,
@@ -522,15 +535,15 @@ def test_all_views():
         )
         results["DerivacionListView"] = queries
     except Exception as e:
-        print(f"❌ No se pudo probar DerivacionListView: {e}")
+        print(f"❌ No se pudo depurar DerivacionListView: {e}")
 
-    # Test DerivacionDetailView (ciudadanos adicional)
+    # Debug DerivacionDetailView (ciudadanos adicional)
     print("\n" + "=" * 50)
     try:
         from ciudadanos.views import DerivacionDetailView
         from ciudadanos.models import Derivacion
 
-        success, queries = test_view_queries(
+        success, queries = debug_view_queries(
             DerivacionDetailView,
             "/ciudadanos/derivaciones/ver/{pk}/",
             Derivacion,
@@ -540,15 +553,15 @@ def test_all_views():
         )
         results["DerivacionDetailView"] = queries
     except Exception as e:
-        print(f"❌ No se pudo probar DerivacionDetailView: {e}")
+        print(f"❌ No se pudo depurar DerivacionDetailView: {e}")
 
-    # Test AlertaListView (ciudadanos adicional)
+    # Debug AlertaListView (ciudadanos adicional)
     print("\n" + "=" * 50)
     try:
         from ciudadanos.views import AlertaListView
         from ciudadanos.models import Alerta
 
-        success, queries = test_view_queries(
+        success, queries = debug_view_queries(
             AlertaListView,
             "/ciudadanos/alertas/",
             Alerta,
@@ -557,7 +570,7 @@ def test_all_views():
         )
         results["AlertaListView"] = queries
     except Exception as e:
-        print(f"❌ No se pudo probar AlertaListView: {e}")
+        print(f"❌ No se pudo depurar AlertaListView: {e}")
 
     # Resumen final
     print("\n📊 Resumen de queries por vista:")
@@ -577,10 +590,10 @@ def test_all_views():
 
 
 if __name__ == "__main__":
-    print("🔍 Probando todas las vistas del sistema SISOC...")
+    print("🔍 Depurando todas las vistas del sistema SISOC...")
 
-    # Probar todas las vistas
-    results = test_all_views()
+    # Depurar todas las vistas
+    results = debug_all_views()
 
     if results:
         print("\n📊 Análisis general:")
