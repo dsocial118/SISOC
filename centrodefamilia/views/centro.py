@@ -58,7 +58,7 @@ class CentroListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         # Pasar información cacheada al contexto para evitar re-query en templates
         user = self.request.user
-        
+
         cache_key = f"user_is_referente_{user.id}"
         context["user_is_referente"] = cache.get(cache_key, False)
 
@@ -68,6 +68,7 @@ class CentroListView(LoginRequiredMixin, ListView):
         )
 
         return ctx
+
 
 class CentroDetailView(LoginRequiredMixin, DetailView):
     model = Centro

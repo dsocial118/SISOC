@@ -7,9 +7,10 @@ from django.core.cache import cache
 from django.conf import settings
 from django.db.models.base import Model
 from django.forms import BaseModelForm
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
@@ -41,7 +42,6 @@ from comedores.services.comedor_service import ComedorService
 from relevamientos.service import RelevamientoService
 
 from duplas.dupla_service import DuplaService
-from rendicioncuentasmensual.services import RendicionCuentaMensualService
 from rendicioncuentasmensual.services import RendicionCuentaMensualService
 
 
@@ -565,35 +565,3 @@ class ObservacionDeleteView(DeleteView):
         comedor = self.object.comedor
 
         return reverse_lazy("comedor_detalle", kwargs={"pk": comedor.id})
-
-
-@csrf_exempt
-def relevamiento_crear_editar_ajax(request, pk):
-    """
-    Vista AJAX para crear o editar relevamientos.
-    Maneja tanto la creación de nuevos relevamientos como la edición de territoriales.
-    """
-
-    if request.method != "POST":
-        return JsonResponse({"error": "Método no permitido"}, status=405)
-
-    try:
-        # Verificar si es una acción de editar territorial
-        if "relevamiento_id" in request.POST:
-            # Editar territorial de relevamiento existente
-            RelevamientoService.update_territorial(request)
-            relevamiento_id = request.POST.get("relevamiento_id")
-            url = reverse(
-                "relevamiento_detalle", kwargs={"pk": pk, "pk2": relevamiento_id}
-            )
-        else:
-            # Crear nuevo relevamiento
-            relevamiento = RelevamientoService.create_pendiente(request, pk)
-            url = reverse(
-                "relevamiento_detalle", kwargs={"pk": pk, "pk2": relevamiento.pk}
-            )
-
-        return JsonResponse({"url": url})
-
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)

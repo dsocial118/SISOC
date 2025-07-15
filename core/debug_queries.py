@@ -1,3 +1,5 @@
+# pylint: skip-file
+
 #!/usr/bin/env python3
 """
 Script para depurar las optimizaciones de queries en las vistas del sistema SISOC
@@ -162,7 +164,6 @@ def debug_ciudadano_detail_queries():  # pylint: disable=too-many-locals,too-man
 
     except Exception as e:
         print(f"❌ Error al ejecutar el debug: {e}")
-        import traceback
 
         traceback.print_exc()
         return False
