@@ -181,15 +181,16 @@ class ParticipanteService:
         cleaned = (query or "").strip()
         if len(cleaned) < 4 or not cleaned.isdigit():
             return []
-
         qs = (
             Ciudadano.objects
-                # asegúrate de usar django.db.models.CharField() aquí
-                .annotate(doc_str=Cast("documento", output_field=CharField()))
-                .filter(doc_str__startswith=cleaned)
-                .order_by("documento")[:max_results]
+            .extra(
+                where=["CAST(documento AS CHAR) LIKE %s"],
+                params=[cleaned + "%"]
+            )
+            .order_by("documento")[:max_results]
         )
         return list(qs)
+
 
 
     @staticmethod
