@@ -1,13 +1,13 @@
 import json
 from pathlib import Path
-from comedores.models.comedor import Comedor
-from comedores.models.relevamiento import (
+from comedores.models import Comedor
+from core.models import Provincia
+from relevamientos.models import (
     Relevamiento,
+    CantidadColaboradores,
     TipoEspacio,
     TipoModalidadPrestacion,
-    CantidadColaboradores,
 )
-from configuraciones.models import Provincia
 
 
 class TestUtils:

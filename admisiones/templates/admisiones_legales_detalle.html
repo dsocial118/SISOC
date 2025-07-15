@@ -14,7 +14,7 @@
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
         <div class="breadcrumb-item">
-            <a href="{% url 'admisiones_legales_listar' %}">Legales - Expedientes</a>
+            <a href="{% url 'admisiones_legales_listar' %}">Expedientes</a>
         </div>
         <div class="breadcrumb-item active">{{ admision.num_expediente }}</div>
     </ol>
@@ -28,22 +28,30 @@
         </div>
         <div class="col-auto">
             {% if admision.estado_legales == "Rectificado" or admision.estado_legales == None %}
-                <button type="button"
-                        class="btn btn-primary mr-1"
-                        data-bs-toggle="modal"
-                        data-bs-target="#modalValidaciosJuridicos">Validación Jurídicos</button>
-                <button type="button"
-                        class="btn btn-primary mr-1"
-                        data-bs-toggle="modal"
-                        data-bs-target="#modalLegalesNumIF">Agregar Número IF</button>
-                <button type="button"
-                        class="btn btn-primary mr-1"
-                        data-bs-toggle="modal"
-                        data-bs-target="#modalFormReso">Formulario RESO</button>
-                <button type="button"
-                        class="btn btn-primary mr-1"
-                        data-bs-toggle="modal"
-                        data-bs-target="#modalFormConvenio">Formulario Proyecto de Convenio</button>
+                {% if formulario_proyecto_completo and formulario_reso_completo and admision.legales_num_if %}
+                    <button type="button"
+                            class="btn btn-primary mr-1"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalValidaciosJuridicos">Validación Jurídicos</button>
+                {% endif %}
+                {% if not admision.legales_num_if %}
+                    <button type="button"
+                            class="btn btn-primary mr-1"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalLegalesNumIF">Agregar Número IF</button>
+                {% endif %}
+                {% if not formulario_reso_completo and admision.legales_num_if %}
+                    <button type="button"
+                            class="btn btn-primary mr-1"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalFormReso">Formulario Proyecto Disposición</button>
+                {% endif %}
+                {% if not formulario_proyecto_completo and formulario_reso_completo and admision.legales_num_if %}
+                    <button type="button"
+                            class="btn btn-primary mr-1"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalFormConvenio">Formulario Proyecto de Convenio</button>
+                {% endif %}
                 {% if not formulario_proyecto_completo and not formulario_reso_completo and not admision.legales_num_if %}
                     <button type="button"
                             class="btn btn-warning mr-1"
@@ -62,17 +70,12 @@
                 <button type="button"
                         class="btn btn-primary mr-1"
                         data-bs-toggle="modal"
-                        data-bs-tipo="Resolución"
-                        data-bs-label="Cargue el Número de Resolución"
-                        data-bs-target="#modalDocumentoExpediente">Resolución</button>
-            {% elif admision.estado_legales == "Resolución Generada" %}
-                <button type="button"
-                        class="btn btn-primary mr-1"
-                        data-bs-toggle="modal"
-                        data-bs-tipo="Firma Convenio"
-                        data-bs-label="Cargue el IF del Convenio"
-                        data-bs-target="#modalDocumentoExpediente">Firma Convenio</button>
-            {% elif admision.estado_legales == "Convenio Firmado" %}
+                        data-bs-tipo="Disposición"
+                        data-bs-label="Cargue el Número de Disposición"
+                        data-bs-target="#modalDocumentoExpediente">Disposición</button>
+            {% elif admision.estado_legales == "Disposición Generada" %}
+                {% comment %}<button type="button" class="btn btn-primary mr-1" data-bs-toggle="modal" data-bs-tipo="Firma Convenio" data-bs-label="Cargue el IF del Convenio" data-bs-target="#modalDocumentoExpediente">Firma Convenio</button>
+            {% elif admision.estado_legales == "Convenio Firmado" %}{% endcomment %}
                 <button type="button"
                         class="btn btn-primary mr-1"
                         data-bs-toggle="modal"
@@ -104,9 +107,9 @@
                         </li>
                         <li class="nav-item">
                             <div class="comment-text">
-                                Formulario RESO:
+                                Formulario Proyecto Disposición:
                                 {% if formulario_reso_completo %}
-                                    <i class="bi bi-check-circle-fill text-success"></i>
+                                    <a href="{{ formulario_reso.archivo.url }}" target="_blank"><i class="bi bi-filetype-pdf text-info h5 mx-2 text-bold"></i></a><i class="bi bi-check-circle-fill text-success"></i>
                                 {% else %}
                                     <i class="bi bi-x-circle-fill text-danger"></i>
                                 {% endif %}
@@ -116,7 +119,7 @@
                             <div class="comment-text">
                                 Formulario Proyecto de Convenio:
                                 {% if formulario_proyecto_completo %}
-                                    <i class="bi bi-check-circle-fill text-success"></i>
+                                    <a href="{{ formulario_proyecto.archivo.url }}" target="_blank"><i class="bi bi-filetype-pdf text-info h5 mx-2 text-bold"></i></a><i class="bi bi-check-circle-fill text-success"></i>
                                 {% else %}
                                     <i class="bi bi-x-circle-fill text-danger"></i>
                                 {% endif %}
@@ -134,14 +137,15 @@
                         </li>
                         <li class="nav-item">
                             <div class="comment-text">
-                                Resolución:
-                                {% if value_resolucion %}
-                                    <span class="fw-bold">{{ value_resolucion }}</span> <i class="bi bi-check-circle-fill text-success"></i>
+                                Disposición:
+                                {% if value_disposicion %}
+                                    <span class="fw-bold">{{ value_disposicion }}</span> <i class="bi bi-check-circle-fill text-success"></i>
                                 {% else %}
                                     <i class="bi bi-x-circle-fill text-danger"></i>
                                 {% endif %}
                             </div>
                         </li>
+                        {% comment %}
                         <li class="nav-item">
                             <div class="comment-text">
                                 Firma Convenio:
@@ -152,6 +156,7 @@
                                 {% endif %}
                             </div>
                         </li>
+                        {% endcomment %}
                         <li class="nav-item">
                             <div class="comment-text">
                                 Numero CONV:
@@ -197,17 +202,22 @@
                                 <span class="fw-bold">{{ admision.num_expediente |default_if_none:"-" }}</span>
                             </div>
                         </li>
-                        <li class="nav-item">
-                            <div class="comment-text">
-                                Número de IF:
-                                <span class="fw-bold">{{ admision.num_if |default_if_none:"-" }}</span>
-                            </div>
-                        </li>
                         {% if pdf_url %}
                             <li class="nav-item">
                                 <div class="comment-text">
                                     Informe Técnico:
-                                    <a href="{{ pdf_url }}" class="btn btn-primary btn-sm" target="_blank">📄 PDF</a>
+                                    <a href="{{ pdf_url }}" target="_blank"><i class="bi bi-filetype-pdf text-info h4 ms-3 text-bold"></i></a>
+                                </div>
+                            </li>
+                        {% endif %}
+                        {% if informes_complementarios %}
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Informes Complementarios:
+                                    {% for i in informes_complementarios %}
+                                        <span class="fw-bold"><a href="{{ i.pdf.url }}" target="_blank"><i class="bi bi-filetype-pdf text-info h4 ms-3 text-bold"></i>{{ i.creado |date:'d/m/Y' }}</a></span>
+                                        <br />
+                                    {% endfor %}
                                 </div>
                             </li>
                         {% endif %}
@@ -319,7 +329,15 @@
                                     <tr id="fila-{{ doc.id }}">
                                         <td class="ps-3">{{ cambio.fecha|date:'d/m/Y H:i' }}</td>
                                         <td class="ps-3">{{ cambio.campo }}</td>
-                                        <td class="ps-3">{{ cambio.valor_nuevo| default_if_none:"-" }}</td>
+                                        <td class="ps-3">
+                                            {% if cambio.valor_nuevo == "True" %}
+                                                Si
+                                            {% elif cambio.valor_nuevo == "False" %}
+                                                No
+                                            {% else %}
+                                                {{ cambio.valor_nuevo| default_if_none:"-" }}
+                                            {% endif %}
+                                        </td>
                                         <td class="ps-3">{{ cambio.usuario.username }}</td>
                                     </tr>
                                 {% endfor %}
@@ -336,7 +354,7 @@
          tabindex="-1"
          aria-labelledby="modalValidaciosJuridicosLabel"
          aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalValidaciosJuridicosLabel">Confirmar cambio de estado "Pendiente de Validación"</h5>
@@ -405,7 +423,7 @@
                 <form method="POST" action="">
                     {% csrf_token %}
                     <div class="modal-header">
-                        <h5 class="modal-title">Formulario RESO</h5>
+                        <h5 class="modal-title">Formulario Disposición</h5>
                         <button type="button"
                                 class="btn-close"
                                 data-bs-dismiss="modal"
@@ -439,15 +457,13 @@
                                 data-bs-dismiss="modal"
                                 aria-label="Close"></button>
                     </div>
-                    <div class="modal-body">
-                        {% for field in proyecto_form %}<div class="col-md-6 mb-3">{{ field|as_crispy_field }}</div>{% endfor %}
-                    </div>
+                    <div class="modal-body">Generará el PDF del Formulario Proyecto de Convenio.</div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit"
                                 class="btn btn-primary"
                                 name="btnProyectoConvenio"
-                                id="btnProyectoConvenio_id">Guardar</button>
+                                id="btnProyectoConvenio_id">Aceptar</button>
                     </div>
                 </form>
             </div>

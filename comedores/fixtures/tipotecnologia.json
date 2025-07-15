@@ -1,27 +1,27 @@
 [
     {
-        "model": "comedores.tipotecnologia",
+        "model": "relevamientos.tipotecnologia",
         "pk": 1,
         "fields": {
             "nombre": "Computadora"
         }
     },
     {
-        "model": "comedores.tipotecnologia",
+        "model": "relevamientos.tipotecnologia",
         "pk": 2,
         "fields": {
             "nombre": "Celular"
         }
     },
     {
-        "model": "comedores.tipotecnologia",
+        "model": "relevamientos.tipotecnologia",
         "pk": 3,
         "fields": {
             "nombre": "Ambos"
         }
     },
     {
-        "model": "comedores.tipotecnologia",
+        "model": "relevamientos.tipotecnologia",
         "pk": 4,
         "fields": {
             "nombre": "Ninguno"

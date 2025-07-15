@@ -1,0 +1,114 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Detalle Actividad{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'centro_list' %}">Centro de Familia</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'actividadcentro_list' %}">Actividades</a>
+        </li>
+        <li class="breadcrumb-item active">Detalle</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="display-4 mb-0">{{ actividad.actividad.nombre }} - {{ actividad.centro.nombre }}</h2>
+            <div>
+                <a href="{% url 'centro_detail' actividad.centro.id %}"
+                   class="btn btn-secondary mr-2">Volver</a>
+                <a href="{% url 'actividadcentro_edit' centro_id=actividad.centro.id pk=actividad.id %}"
+                   class="btn btn-warning btn-sm">Editar</a>
+                <a href="{% url 'participanteactividad_create' centro_id=actividad.centro.id actividad_id=actividad.id %}"
+                   class="btn btn-success btn-sm">Agregar Participante</a>
+            </div>
+        </div>
+        <div class="card mb-4">
+            <div class="card-body">
+                <p>
+                    <strong>Centro:</strong> {{ actividad.centro.nombre }}
+                </p>
+                <p>
+                    <strong>Categoría:</strong> {{ actividad.actividad.categoria.nombre }}
+                </p>
+                <p>
+                    <strong>Cantidad de personas:</strong> {{ actividad.cantidad_personas }}
+                </p>
+                <p>
+                    <strong>Dirigido a personas:</strong>
+                    {% if actividad.sexoact.exists %}
+                        {% for s in actividad.sexoact.all %}
+                            {{ s.sexo }}
+                            {% if not forloop.last %}{% endif %}
+                        {% endfor %}
+                    {% else %}
+                        Todos los sexos
+                    {% endif %}
+                </p>
+                <p>
+                    <strong>Días:</strong>
+                    {% for dia in actividad.dias.all %}
+                        {{ dia.nombre }}
+                        {% if not forloop.last %},{% endif %}
+                    {% empty %}
+                        No asignado
+                    {% endfor %}
+                </p>
+                <p>
+                    <strong>Horarios desde:</strong> {{ actividad.horariosdesde }}
+                </p>
+                <p>
+                    <strong>Horarios hasta:</strong> {{ actividad.horarioshasta }}
+                </p>
+                <p>
+                    <strong>Costo total de la actividad:</strong> ${{ precio_total }}
+                </p>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title font-weight-bold">Nómina de Participantes</h3>
+            </div>
+            <div class="card-body table-responsive">
+                {% if participantes %}
+                    <table class="table table-bordered table-hover table-striped">
+                        <thead>
+                            <thead>
+                                <tr>
+                                    <th>Participante</th>
+                                    <th>DNI</th>
+                                    <th>Género</th>
+                                    <th>Fecha de Registro</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                        </thead>
+                        <tbody>
+                            {% for p in participantes %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'ciudadanos_ver' p.ciudadano.id %}">{{ p.ciudadano.apellido }}, {{ p.ciudadano.nombre }}</a>
+                                    </td>
+                                    <td>{{ p.ciudadano.documento }}</td>
+                                    <td>{{ p.ciudadano.sexo.sexo }}</td>
+                                    <td>{{ p.fecha_registro|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <a href="{% url 'participanteactividad_delete' centro_id=actividad.centro.id actividad_id=actividad.id pk=p.id %}"
+                                           class="btn btn-danger btn-sm"
+                                           onclick="return confirm('¿Estás seguro que querés eliminar este participante?');">
+                                            Eliminar
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p class="text-center">No hay participantes cargados aún.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

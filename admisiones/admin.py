@@ -6,11 +6,10 @@ from admisiones.models.admisiones import (
     TipoDocumentacion,
     Documentacion,
     ArchivoAdmision,
-    InformeTecnicoBase,
-    InformeTecnicoJuridico,
+    InformeTecnico,
     InformeTecnicoPDF,
     AdmisionHistorial,
-    FormularioRESO,
+    FormularioProyectoDisposicion,
     FormularioProyectoDeConvenio,
     DocumentosExpediente,
 )
@@ -21,10 +20,9 @@ admin.site.register(Admision)
 admin.site.register(TipoDocumentacion)
 admin.site.register(Documentacion)
 admin.site.register(ArchivoAdmision)
-admin.site.register(InformeTecnicoBase)
-admin.site.register(InformeTecnicoJuridico)
+admin.site.register(InformeTecnico)
 admin.site.register(InformeTecnicoPDF)
 admin.site.register(AdmisionHistorial)
-admin.site.register(FormularioRESO)
+admin.site.register(FormularioProyectoDisposicion)
 admin.site.register(FormularioProyectoDeConvenio)
 admin.site.register(DocumentosExpediente)

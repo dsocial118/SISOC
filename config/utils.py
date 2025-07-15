@@ -1,12 +1,26 @@
-import logging
-from datetime import datetime
-from pathlib import Path
+# DEPRECATED: All utilities migrated to core.utils
+# This file is kept for Django compatibility only
 
+import warnings
 
-class DailyFileHandler(logging.FileHandler):
-    def __init__(self, filename, mode="a", encoding=None, delay=False):
-        current_date = datetime.now().strftime("%Y-%m-%d")
-        daily_folder = Path(filename).parent / current_date
-        daily_folder.mkdir(parents=True, exist_ok=True)
-        daily_filename = daily_folder / Path(filename).name
-        super().__init__(daily_filename, mode, encoding, delay)
+from core.utils import (  # noqa
+    DailyFileHandler,
+    convert_string_to_int,
+    format_fecha_gestionar,
+    format_fecha_django,
+    format_serializer_errors,
+)
+
+warnings.warn(
+    "config.utils is deprecated. Use core.utils instead",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
+__all__ = [
+    "DailyFileHandler",
+    "convert_string_to_int",
+    "format_fecha_gestionar",
+    "format_fecha_django",
+    "format_serializer_errors",
+]

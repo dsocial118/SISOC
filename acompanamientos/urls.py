@@ -1,18 +1,18 @@
 from django.urls import path
 from acompanamientos import views
-from configuraciones.decorators import group_required
+from core.decorators import group_required
 
 urlpatterns = [
     path(
         "acompanamiento/<int:comedor_id>/detalle/",
-        group_required(["Acompanamiento Detalle"])(
+        group_required(["Acompanamiento Detalle", "Area Legales", "Tecnico Comedor"])(
             views.AcompanamientoDetailView.as_view()
         ),
         name="detalle_acompanamiento",
     ),
     path(
         "acompanamiento/",
-        group_required(["Acompanamiento Listar"])(
+        group_required(["Acompanamiento Listar", "Area Legales", "Tecnico Comedor"])(
             views.ComedoresAcompanamientoListView.as_view()
         ),
         name="lista_comedores_acompanamiento",
