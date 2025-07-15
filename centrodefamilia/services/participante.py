@@ -1,6 +1,4 @@
-from django.db.models import CharField
-from django.db.models.functions import Cast
-
+from django.forms import CharField
 from centrodefamilia.models import Centro, ActividadCentro, ParticipanteActividad
 from ciudadanos.models import (
     Ciudadano,
@@ -13,6 +11,7 @@ from ciudadanos.models import (
     CiudadanoPrograma,
     HistorialCiudadanoProgramas,
 )
+from django.db.models.functions import Cast
 
 
 class AlreadyRegistered(Exception):
@@ -179,14 +178,20 @@ class ParticipanteService:
 
     @staticmethod
     def buscar_ciudadanos(query, max_results=10):
-        cleaned = (query or "").strip().lower()
-        if len(cleaned) < 4:
+        cleaned = (query or "").strip()
+        if len(cleaned) < 4 or not cleaned.isdigit():
             return []
-        return list(
-            Ciudadano.objects.annotate(doc_str=Cast("documento", CharField()))
-            .filter(doc_str__startswith=cleaned)
+        qs = (
+            Ciudadano.objects
+            .extra(
+                where=["CAST(documento AS CHAR) LIKE %s"],
+                params=[cleaned + "%"]
+            )
             .order_by("documento")[:max_results]
         )
+        return list(qs)
+
+
 
     @staticmethod
     def obtener_participantes_con_ciudadanos(actividad_centro):

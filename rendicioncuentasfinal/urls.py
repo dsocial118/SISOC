@@ -14,7 +14,7 @@ from rendicioncuentasfinal.views import (
 
 urlpatterns = [
     path(
-        "comedores/<pk>/rendicion_cuentas_final",
+        "comedores/<int:pk>/rendicion_cuentas_final/",
         group_required(["Tecnico Comedor"])(RendicionCuentasFinalDetailView.as_view()),
         name="rendicion_cuentas_final",
     ),

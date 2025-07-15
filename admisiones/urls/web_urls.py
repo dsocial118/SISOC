@@ -27,14 +27,14 @@ urlpatterns = [
         name="admisiones_tecnicos_listar",
     ),
     path(
-        "comedores/admisiones/tecnicos/crear/<pk>",
+        "comedores/admisiones/tecnicos/crear/<int:pk>",
         group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(
             AdmisionesTecnicosCreateView.as_view()
         ),
         name="admisiones_tecnicos_crear",
     ),
     path(
-        "comedores/admisiones/tecnicos/editar/<pk>",
+        "comedores/admisiones/tecnicos/editar/<int:pk>",
         group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(
             AdmisionesTecnicosUpdateView.as_view()
         ),
@@ -52,32 +52,40 @@ urlpatterns = [
     ),
     path(
         "comedores/admision/informe_tecnico/<str:tipo>/<int:admision_id>/crear/",
-        InformeTecnicosCreateView.as_view(),
+        group_required(["Comedores", "Tecnico Comedor"])(
+            InformeTecnicosCreateView.as_view()
+        ),
         name="informe_tecnico_crear",
     ),
     path(
         "comedores/admision/informe_tecnico/<str:tipo>/<int:pk>/editar/",
-        InformeTecnicosUpdateView.as_view(),
+        group_required(["Comedores", "Tecnico Comedor"])(
+            InformeTecnicosUpdateView.as_view()
+        ),
         name="informe_tecnico_editar",
     ),
     path(
         "comedores/admision/informe_tecnico/<str:tipo>/<int:pk>/ver/",
-        InformeTecnicoDetailView.as_view(),
+        group_required(["Comedores", "Tecnico Comedor"])(
+            InformeTecnicoDetailView.as_view()
+        ),
         name="informe_tecnico_ver",
     ),
     path(
         "comedores/admision/informe_complementario/<str:tipo>/<int:pk>/ver/",
-        InformeTecnicoComplementarioDetailView.as_view(),
+        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(
+            InformeTecnicoComplementarioDetailView.as_view()
+        ),
         name="informe_complementario_ver",
     ),
     path(
         "comedores/admision/anexo/<int:admision_id>/crear/",
-        AnexoCreateView.as_view(),
+        group_required(["Comedores", "Tecnico Comedor"])(AnexoCreateView.as_view()),
         name="anexo_crear",
     ),
     path(
         "comedores/admision/anexo/<int:admision_id>/editar/",
-        AnexoUpdateView.as_view(),
+        group_required(["Comedores", "Tecnico Comedor"])(AnexoUpdateView.as_view()),
         name="anexo_editar",
     ),
     path(
@@ -92,7 +100,7 @@ urlpatterns = [
         name="admisiones_legales_listar",
     ),
     path(
-        "comedores/admisiones/legales/ver/<pk>",
+        "comedores/admisiones/legales/ver/<int:pk>",
         group_required(["Area Legales"])(AdmisionesLegalesDetailView.as_view()),
         name="admisiones_legales_ver",
     ),
