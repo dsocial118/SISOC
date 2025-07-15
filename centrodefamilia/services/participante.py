@@ -1,3 +1,4 @@
+from django.forms import CharField
 from centrodefamilia.models import Centro, ActividadCentro, ParticipanteActividad
 from ciudadanos.models import (
     Ciudadano,
@@ -10,6 +11,7 @@ from ciudadanos.models import (
     CiudadanoPrograma,
     HistorialCiudadanoProgramas,
 )
+from django.db.models.functions import Cast
 
 
 class AlreadyRegistered(Exception):
@@ -180,18 +182,16 @@ class ParticipanteService:
         if len(cleaned) < 4 or not cleaned.isdigit():
             return []
 
-        # Longitud máxima de documento en la base (según tus validadores, 8 o 9 dígitos)
-        max_digits = 9
-        prefix = int(cleaned)
-        # Construimos el rango numérico para el prefijo dado:
-        factor = 10 ** (max_digits - len(cleaned))
-        start = prefix * factor
-        end = start + factor - 1
-
-        qs = Ciudadano.objects.filter(
-            documento__gte=start, documento__lte=end
-        ).order_by("documento")[:max_results]
+        qs = (
+            Ciudadano.objects
+                # crea un campo virtual doc_str con el 'documento' casteado a texto
+                .annotate(doc_str=Cast("documento", CharField()))
+                # filtra los que empiecen por lo que tipeó el usuario
+                .filter(doc_str__startswith=cleaned)
+                .order_by("documento")[:max_results]
+        )
         return list(qs)
+
 
     @staticmethod
     def obtener_participantes_con_ciudadanos(actividad_centro):
