@@ -52,11 +52,9 @@
             });
 
             if (isValid) {
-                // Si es válido, ocultar paso 1 y mostrar paso 2
                 step1.classList.add("d-none");
                 step2.classList.remove("d-none");
             } else {
-                // Resaltar campos inválidos
                 formStep1.forEach(input => {
                     if (input.tagName === "SELECT") {
                         if (input.value === "") {
@@ -94,8 +92,6 @@
 
         function cargarTipoIntervencion() {
             const tipoIntervencionId = this.value;
-
-            // Limpiar las opciones actuales del select de subintervenciones
             subIntervencionSelect.innerHTML = '<option value="">Seleccione una opción</option>';
             subIntervencionSelect.removeAttribute("required");
 

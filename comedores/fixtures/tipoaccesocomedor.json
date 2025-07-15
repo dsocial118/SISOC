@@ -1,20 +1,20 @@
 [
     {
-        "model": "comedores.tipoaccesocomedor",
+        "model": "relevamientos.tipoaccesocomedor",
         "pk": 1,
         "fields": {
             "nombre": "Calle de tierra"
         }
     },
     {
-        "model": "comedores.tipoaccesocomedor",
+        "model": "relevamientos.tipoaccesocomedor",
         "pk": 2,
         "fields": {
             "nombre": "Calle con mejorado"
         }
     },
     {
-        "model": "comedores.tipoaccesocomedor",
+        "model": "relevamientos.tipoaccesocomedor",
         "pk": 3,
         "fields": {
             "nombre": "Calle asfaltada"

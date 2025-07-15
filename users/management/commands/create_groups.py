@@ -56,12 +56,11 @@ class Command(BaseCommand):
             "Técnico Subir Cruces",
             "Técnico Validar Resultado Cruce",
             "Técnico Registrar Informe Pago"
+            "ReferenteCentro",
+            "CDF SSE",
         ]
+        self.stdout.write(self.style.SUCCESS(f"Creando grupos de usuario..."))
         for group_name in groups:
             _group, created = Group.objects.get_or_create(name=group_name)
             if created:
                 self.stdout.write(self.style.SUCCESS(f'Grupo "{group_name}" creado'))
-            else:
-                self.stdout.write(
-                    self.style.WARNING(f'Grupo "{group_name}" ya existía')
-                )

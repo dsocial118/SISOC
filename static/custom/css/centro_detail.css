@@ -1,0 +1,270 @@
+/* -------------------------------------- */
+/* centro_detail.css (versión final FIX)  */
+/* unifica todos tus estilos             */
+/* -------------------------------------- */
+
+/* 0) Variables de color */
+:root {
+  --clr-bg-primary: #132c47;
+  --clr-bg-secondary: #1e2d3f;
+  --clr-contrast: #004a7c;
+  --clr-accent-00: #056c68;
+  --clr-accent-01: #068782;
+  --clr-accent-02: #06a29c;
+  --clr-accent-03: #09b4ae;
+  --clr-positive: #28a745;
+  --clr-border-light: rgba(255,255,255,0.4);
+}
+
+/* 0b) Transiciones suaves globales */
+* {
+  transition: background-color .2s ease, color .2s ease, border-color .2s ease;
+}
+
+/* 1) Reset márgenes/paddings */
+.no-gutters {
+  margin: 0;
+  padding: 0;
+}
+
+/* 1b) Acciones “Volver” / “Imprimir” */
+.header-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.header-actions .btn {
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.7);
+  background: transparent;
+  border-radius: 1.5rem;
+  padding: 0.25rem 1rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+.header-actions .btn:hover {
+  background-color: rgba(255,255,255,0.1);
+}
+
+/* 2) ENCABEZADO full-width, esquinas redondeadas */
+.page-header {
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.page-header .card-body {
+  background-color: var(--clr-bg-primary);
+  height: 100px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+.header-bar {
+  width: 8px;
+  height: 100%;
+  background-color: var(--clr-contrast);
+}
+.header-title {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: 2rem;
+  color: #fff;
+  margin: 0;
+  padding: 0 1rem;
+  display: flex;
+  align-items: center;
+}
+.separator {
+  font-size: 1.5rem;
+  color: #fff;
+  margin: 0 0.5rem;
+}
+.header-badge {
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  color: var(--clr-positive);
+  background-color: rgba(40,167,69,0.15);
+  border: 1px solid var(--clr-positive);
+  border-radius: 0.375rem;
+  text-transform: none;
+}
+
+/* 3) TARJETA DE UBICACIÓN */
+.location-card {
+  position: relative;
+  border-radius: 0.5rem;
+  background-color: var(--clr-bg-secondary);
+  color: #fff;
+  display: flex !important;
+  height: 300px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+/* 3a) pestaña izquierda “Ubicación” – TEXTO ROTADO IGUAL QUE DERECHA */
+.location-card .left-tab {
+  position: relative;
+  width: 60px;
+  background-color: var(--clr-accent-00);
+  /* NO writing-mode ni flex aquí */
+}
+.location-card .left-tab .tab-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%) rotate(-90deg);
+  transform-origin: center;
+  white-space: nowrap;
+  font-weight: bold;
+  font-size: 0.875rem;
+  color: #fff;
+}
+
+/* 3b) contenedor del mapa */
+.location-card .map-container {
+  width: 350px;
+  padding: 1rem;
+  flex-shrink: 0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: transparent;
+}
+
+/* 3c) contenedor de detalles */
+.location-card .details-container {
+  flex-grow: 1;
+  padding: 1rem 1.5rem;
+}
+.location-card .details-container h5 {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+.location-card .details-container h5 + hr {
+  border-top: 1px solid rgba(255,255,255,0.5);
+  margin: 0 0 1rem;
+}
+.location-card .details-container ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  column-count: 2;
+  column-gap: 2rem;
+}
+.location-card .details-container ul li {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+.location-card .details-container ul li i {
+  width: 1.25rem;
+  margin-right: 0.5rem;
+  color: var(--clr-contrast);
+}
+
+/* 4) Pestañas verticales DERECHA (4 franjas escalonadas) */
+.location-card .right-tabs {
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  display: flex;
+  width: 240px;  /* 4×60px */
+  z-index: 1;
+}
+.location-card .right-tabs .tab-item {
+  position: relative;
+  width: 60px;
+  border-left: 1px solid var(--clr-border-light);
+  box-sizing: border-box;
+}
+.location-card .right-tabs .tab-item:first-child {
+  border-left: none;
+}
+.location-card .right-tabs .tab-item:nth-child(1) { background-color: var(--clr-accent-00); }
+.location-card .right-tabs .tab-item:nth-child(2) { background-color: var(--clr-accent-01); }
+.location-card .right-tabs .tab-item:nth-child(3) { background-color: var(--clr-accent-02); }
+.location-card .right-tabs .tab-item:nth-child(4) { background-color: var(--clr-accent-03); }
+.location-card .right-tabs .tab-item .tab-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%) rotate(-90deg);
+  transform-origin: center;
+  white-space: nowrap;
+  font-weight: bold;
+  font-size: 0.875rem;
+  color: #fff;
+}
+
+/* 5) Scroll interno en Observaciones */
+.observaciones-card .card-body {
+  max-height: 200px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.3) transparent;
+}
+.observaciones-card .card-body::-webkit-scrollbar {
+  width: 6px;
+}
+.observaciones-card .card-body::-webkit-scrollbar-thumb {
+  background-color: rgba(255,255,255,0.3);
+  border-radius: 3px;
+}
+
+/* 6) Scroll interno en Actividades */
+.actividades-card .table-responsive {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* 7) Tonos secundarios unificados */
+.bg-secondary,
+.card-header.bg-secondary,
+.list-group-item.bg-secondary,
+.table thead.bg-secondary th {
+  background-color: var(--clr-contrast) !important;
+  border-color: darken(var(--clr-contrast),10%) !important;
+  color: #fff !important;
+}
+
+/* 8) Bordes redondeados en cards y tablas */
+.card-header.bg-secondary {
+  border-top-left-radius: 0.375rem;
+  border-top-right-radius: 0.375rem;
+}
+.card.bg-dark {
+  border-radius: 0.5rem;
+}
+
+/* 9) Borde tablas oscuras */
+.table-dark th,
+.table-dark td {
+  border-color: rgba(255,255,255,0.1);
+}
+
+/* 10) Acentos en enlaces y badges */
+.table a.text-info { color: var(--clr-accent-02); }
+.badge.bg-success { background-color: var(--clr-positive) !important; }
+.badge.bg-danger  { background-color: #dc3545 !important; }
+.badge.bg-warning { background-color: #ffc107 !important; }
+.badge.bg-info    { background-color: #17a2b8 !important; }
+
+/* 11) Botones outline personalizados */
+.btn-outline-secondary {
+  border-color: var(--clr-contrast);
+  color: var(--clr-contrast);
+}
+.btn-outline-secondary:hover {
+  background-color: var(--clr-contrast);
+  color: #fff;
+}
+
+/* 12) Hr personalizado */
+hr.border-secondary {
+  border-top-color: var(--clr-contrast) !important;
+}
+
+/* 13) Ajustes métricas */
+.card.bg-navy {
+  background-color: var(--clr-bg-primary);
+  border: none;
+}

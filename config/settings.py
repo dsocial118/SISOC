@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Definición de entorno
-DEBUG = os.environ.get("DJANGO_DEBUG", default=False)
+DEBUG = os.environ.get("DJANGO_DEBUG", default=False) == "True"
 
 # Definición del directorio base del proyecto
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -19,6 +19,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "static_root"
+STATICFILES_STORAGE = "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
+
 
 MEDIA_URL = "media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media/")
@@ -126,6 +128,7 @@ INSTALLED_APPS = [
     "corsheaders",
     # Aplicaciones propias
     "users",
+    "core",
     "configuraciones",
     "dashboard",
     "comedores",
@@ -139,6 +142,10 @@ INSTALLED_APPS = [
     "historial",
     "acompanamientos",
     "expedientespagos",
+    "relevamientos",
+    "rendicioncuentasfinal",
+    "rendicioncuentasmensual",
+    "centrodefamilia",
     "celiaquia",
 ]
 
@@ -173,17 +180,6 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
             ],
-            # "loaders": [(
-            #     "django.template.loaders.cached.Loader",
-            #     [
-            #         "django_cotton.cotton_loader.Loader",
-            #         "django.template.loaders.filesystem.Loader",
-            #         "django.template.loaders.app_directories.Loader",
-            #     ],
-            # )],
-            # "builtins": [
-            #     "django_cotton.templatetags.cotton"
-            # ],
         },
     },
 ]
@@ -192,11 +188,11 @@ TEMPLATES = [
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        "NAME": os.getenv("DATABASE_NAME", "sisoc-local"),
-        "USER": os.getenv("DATABASE_USER", "root"),
-        "PASSWORD": os.getenv("DATABASE_PASSWORD", "root1-password2"),
-        "HOST": os.getenv("DATABASE_HOST", "mysql"),
-        "PORT": os.getenv("DATABASE_PORT", "3307"),
+        "NAME": os.environ.get("DATABASE_NAME"),
+        "USER": os.environ.get("DATABASE_USER"),
+        "PASSWORD": os.environ.get("DATABASE_PASSWORD"),
+        "HOST": os.environ.get("DATABASE_HOST"),
+        "PORT": os.environ.get("DATABASE_PORT"),
         "OPTIONS": {
             "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
             "charset": "utf8mb4",
@@ -224,19 +220,15 @@ LOGGING = {
         },
         "error_only": {
             "()": "django.utils.log.CallbackFilter",
-            "callback": lambda r: r.levelno >= logging.ERROR,
+            "callback": lambda r: r.levelno == logging.ERROR,
         },
         "warning_only": {
             "()": "django.utils.log.CallbackFilter",
-            "callback": lambda r: r.levelno >= logging.WARNING,
-        },
-        "debug_only": {
-            "()": "django.utils.log.CallbackFilter",
-            "callback": lambda r: r.levelno == logging.DEBUG,
+            "callback": lambda r: r.levelno == logging.WARNING,
         },
         "critical_only": {
             "()": "django.utils.log.CallbackFilter",
-            "callback": lambda r: r.levelno >= logging.CRITICAL,
+            "callback": lambda r: r.levelno == logging.CRITICAL,
         },
     },
     "formatters": {
@@ -253,35 +245,28 @@ LOGGING = {
         "info_file": {
             "level": "INFO",
             "filters": ["info_only"],
-            "class": "config.utils.DailyFileHandler",
+            "class": "core.utils.DailyFileHandler",
             "filename": str(BASE_DIR / "logs/info.log"),
             "formatter": "verbose",
         },
         "error_file": {
             "level": "ERROR",
             "filters": ["error_only"],
-            "class": "config.utils.DailyFileHandler",
+            "class": "core.utils.DailyFileHandler",
             "filename": str(BASE_DIR / "logs/error.log"),
             "formatter": "verbose",
         },
         "warning_file": {
             "level": "WARNING",
             "filters": ["warning_only"],
-            "class": "config.utils.DailyFileHandler",
+            "class": "core.utils.DailyFileHandler",
             "filename": str(BASE_DIR / "logs/warning.log"),
-            "formatter": "verbose",
-        },
-        "debug_file": {
-            "level": "DEBUG",
-            "filters": ["debug_only"],
-            "class": "config.utils.DailyFileHandler",
-            "filename": str(BASE_DIR / "logs/debug.log"),
             "formatter": "verbose",
         },
         "critical_file": {
             "level": "CRITICAL",
             "filters": ["critical_only"],
-            "class": "config.utils.DailyFileHandler",
+            "class": "core.utils.DailyFileHandler",
             "filename": str(BASE_DIR / "logs/critical.log"),
             "formatter": "verbose",
         },
@@ -292,7 +277,6 @@ LOGGING = {
                 "info_file",
                 "error_file",
                 "warning_file",
-                "debug_file",
                 "critical_file",
             ],
             "level": "DEBUG",
@@ -331,12 +315,22 @@ DEBUG_TOOLBAR_CONFIG = {
         True if DEBUG else False  # pylint: disable=simplifiable-if-expression
     )
 }
-# Configuración del HSTS para evitar conflictos en AWS previamente configurados
-SECURE_HSTS_SECONDS = None
-SECURE_HSTS_INCLUDE_SUBDOMAINS = False
-SECURE_SSL_REDIRECT = False
-SESSION_COOKIE_SECURE = False
-CSRF_COOKIE_SECURE = False
+
+if DEBUG:
+    # Configuración para desarrollo
+    SECURE_HSTS_SECONDS = 0
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+else:
+    # Configuración para producción
+    SECURE_HSTS_SECONDS = 0  # Cambiar a 31536000 cuando tengamos HTTPS
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+    SECURE_HSTS_PRELOAD = False
+    SECURE_SSL_REDIRECT = False  # Cambiar a True cuando tengamos HTTPS
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
 
 # Configuracion de Django Rest Framework
 REST_FRAMEWORK = {
@@ -358,6 +352,9 @@ CSRF_TRUSTED_ORIGINS = [
     "http://10.80.5.45",
     "https://api.appsheet.com",
 ]
+CSRF_COOKIE_NAME = (
+    "csrftoken_v2"  # Cambiar en caso de conflicto con formularios cacheados
+)
 
 # Configuración de hosts permitidos TODO: que se haga desde el .env
 ALLOWED_HOSTS = [
