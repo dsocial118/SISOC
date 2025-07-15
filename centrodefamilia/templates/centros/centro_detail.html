@@ -308,26 +308,25 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {% for act in actividades %}
+                                       {% for act in actividades %}
                                             <tr>
                                                 <td>
-                                                    <a href="{% url 'actividadcentro_detail' centro_id=act.obj.centro.id pk=act.obj.id %}"
-                                                       class="text-info text-decoration-none">
-                                                        {{ act.obj.actividad.nombre }}
+                                                    <a href="{% url 'actividadcentro_detail' centro_id=centro.id pk=act.id %}"
+                                                    class="text-info text-decoration-none">
+                                                        {{ act.actividad.nombre }}
                                                     </a>
                                                 </td>
-                                                <td>{{ act.obj.actividad.categoria.nombre }}</td>
+                                                <td>{{ act.actividad.categoria.nombre }}</td>
                                                 <td>
-                                                    {% for dia in act.obj.dias.all %}
-                                                        {{ dia.nombre }}
-                                                        {% if not forloop.last %},{% endif %}
-                                                    {% empty %}—
-                                                    {% endfor %}
+                                                    {% for dia in act.dias.all %}
+                                                        {{ dia.nombre }}{% if not forloop.last %}, {% endif %}
+                                                    {% empty %}—{% endfor %}
                                                 </td>
-                                                <td>{{ act.obj.horariosdesde }} - {{ act.obj.horarioshasta }}</td>
-                                                <td>{{ act.obj.get_estado_display }}</td>
+                                                <td>{{ act.horariosdesde }} - {{ act.horarioshasta }}</td>
+                                                <td>{{ act.get_estado_display }}</td>
                                             </tr>
                                         {% endfor %}
+
                                     </tbody>
                                 </table>
                             </div>
