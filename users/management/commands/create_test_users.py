@@ -47,14 +47,14 @@ class Command(BaseCommand):
             {
                 "username": "1",
                 "email": "1@gmail.com",
-                "password": "1",
+                "password": "qa1234",
                 "is_superuser": True,
                 "grupos": [],
             },
             {
                 "username": "abogadoqa",
                 "email": "abogadoqa@example.com",
-                "password": "abogadoqa",
+                "password": "qa1234",
                 "is_superuser": False,
                 "grupos": [
                     "Abogado Dupla",
@@ -71,7 +71,7 @@ class Command(BaseCommand):
             {
                 "username": "tecnicoqa",
                 "email": "tecnicoqa@example.com",
-                "password": "tecnicoqa",
+                "password": "qa1234",
                 "is_superuser": False,
                 "grupos": [
                     "Acompanamiento Detalle",
@@ -95,7 +95,7 @@ class Command(BaseCommand):
             {
                 "username": "legalesqa",
                 "email": "legalesqa@example.com",
-                "password": "legalesqa",
+                "password": "qa1234",
                 "is_superuser": False,
                 "grupos": [
                     "Comedores",
@@ -113,7 +113,7 @@ class Command(BaseCommand):
             {
                 "username": "contableqa",
                 "email": "contableqa@example.com",
-                "password": "contableqa",
+                "password": "qa1234",
                 "is_superuser": False,
                 "grupos": [
                     "Comedores",
