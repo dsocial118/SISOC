@@ -51,6 +51,17 @@ class AsyncSendComedorToGestionar(threading.Thread):
                     ),
                     "partido": comedor.partido if comedor.partido else "",
                     "barrio": comedor.barrio if comedor.barrio else "",
+                    "lote": comedor.lote if comedor.lote else "",
+                    "manzana": comedor.manzana if comedor.manzana else "",
+                    "piso": comedor.piso if comedor.piso else "",
+                    "longitud": comedor.longitud if comedor.longitud else "",
+                    "latitud": comedor.latitud if comedor.latitud else "",
+                    "Organizacion": (
+                        comedor.organizacion.nombre if comedor.organizacion else ""
+                    ),
+                    "departamento": (
+                        comedor.departamento if comedor.departamento else ""
+                    ),
                     "codigo_postal": (
                         comedor.codigo_postal if comedor.codigo_postal else ""
                     ),
