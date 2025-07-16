@@ -2,12 +2,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
 from django.views.generic import ListView, DetailView
 from django.views.decorators.http import require_POST
-from django.db.models import Q
-from admisiones.models.admisiones import (
-    Admision,
-    InformeTecnico,
-    DocumentosExpediente,
-)
+
 from acompanamientos.acompanamiento_service import AcompanamientoService
 from acompanamientos.models.hitos import Hitos
 from comedores.models import Comedor
@@ -30,6 +25,7 @@ def restaurar_hito(request, comedor_id):
 
     # Redirige a la página anterior
     return redirect(request.META.get("HTTP_REFERER", "/"))
+
 
 class AcompanamientoDetailView(DetailView):
     model = Comedor
@@ -59,12 +55,15 @@ class AcompanamientoDetailView(DetailView):
         context["numero_if"] = datos_admision.get("numero_if")
         context["numero_disposicion"] = datos_admision.get("numero_disposicion")
 
-        prestaciones_detalle = AcompanamientoService.obtener_prestaciones_detalladas(anexo)
+        prestaciones_detalle = AcompanamientoService.obtener_prestaciones_detalladas(
+            anexo
+        )
 
-        context["prestaciones_por_dia"] = prestaciones_detalle.get("prestaciones_por_dia", [])
+        context["prestaciones_por_dia"] = prestaciones_detalle.get(
+            "prestaciones_por_dia", []
+        )
         context["prestaciones_dias"] = prestaciones_detalle.get("prestaciones_dias", [])
         context["dias_semana"] = prestaciones_detalle.get("dias_semana", [])
-
 
         return context
 
