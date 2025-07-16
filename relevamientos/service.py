@@ -22,7 +22,6 @@ from relevamientos.models import (
     FuenteRecursos,
     FuncionamientoPrestacion,
     MotivoExcepcion,
-    Prestacion,
     PuntoEntregas,
     Relevamiento,
     TipoAccesoComedor,
@@ -42,6 +41,7 @@ from relevamientos.models import (
 )
 from relevamientos.tasks import AsyncSendRelevamientoToGestionar
 from core.utils import convert_string_to_int
+from core.models import Prestacion
 
 
 # TODO: Refactorizar todo esto, pylint esta muriendo aca
