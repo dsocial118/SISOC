@@ -232,20 +232,15 @@ class AcompanamientoService:
         is_area_legales = "Area Legales" in user_groups
 
         # Optimización: Query más eficiente usando JOIN en lugar de subquery
-        queryset = (
-            Comedor.objects.select_related(
-                "referente", "tipocomedor", "provincia", "dupla__abogado"
-            )
-            .prefetch_related("dupla__tecnico")
-            .filter(admision__estado=2, admision__enviado_acompaniamiento=True)
-            .distinct()
-        )
+        queryset = Comedor.objects.select_related(
+            "referente", "tipocomedor", "provincia", "dupla__abogado"
+        ).prefetch_related("dupla__tecnico")
 
         # Si no es superusuario, filtramos por dupla asignada
         if not user.is_superuser and not is_area_legales:
-            queryset = queryset.select_related(
-                "dupla__abogado", "dupla__tecnico"
-            ).filter(Q(dupla__abogado=user) | Q(dupla__tecnico=user))
+            queryset = queryset.select_related("dupla__abogado").filter(
+                Q(dupla__abogado=user) | Q(dupla__tecnico=user)
+            )
 
         # Aplicamos búsqueda global
         if busqueda:
