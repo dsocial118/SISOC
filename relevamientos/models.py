@@ -4,6 +4,7 @@ from django.forms import ValidationError
 from django.utils import timezone
 
 from comedores.models import CategoriaComedor, Comedor, Referente, TipoDeComedor
+from core.models import Prestacion
 
 
 class TipoInsumos(models.Model):
@@ -642,80 +643,6 @@ class FuenteCompras(models.Model):
     class Meta:
         verbose_name = "Fuente de compras"
         verbose_name_plural = "Fuentes de compras"
-
-
-class Prestacion(models.Model):
-    """
-    Modelo que representa una prestación brindada en un Comedor/Merendero.
-    """
-
-    # TODO: Esto tiene que se refactorizado, pero se como hacer los formularios :p
-    lunes_desayuno_actual = models.PositiveIntegerField(null=True, blank=True)
-    lunes_desayuno_espera = models.PositiveIntegerField(null=True, blank=True)
-    lunes_almuerzo_actual = models.PositiveIntegerField(null=True, blank=True)
-    lunes_almuerzo_espera = models.PositiveIntegerField(null=True, blank=True)
-    lunes_merienda_actual = models.PositiveIntegerField(null=True, blank=True)
-    lunes_merienda_espera = models.PositiveIntegerField(null=True, blank=True)
-    lunes_cena_actual = models.PositiveIntegerField(null=True, blank=True)
-    lunes_cena_espera = models.PositiveIntegerField(null=True, blank=True)
-
-    martes_desayuno_actual = models.PositiveIntegerField(null=True, blank=True)
-    martes_desayuno_espera = models.PositiveIntegerField(null=True, blank=True)
-    martes_almuerzo_actual = models.PositiveIntegerField(null=True, blank=True)
-    martes_almuerzo_espera = models.PositiveIntegerField(null=True, blank=True)
-    martes_merienda_actual = models.PositiveIntegerField(null=True, blank=True)
-    martes_merienda_espera = models.PositiveIntegerField(null=True, blank=True)
-    martes_cena_actual = models.PositiveIntegerField(null=True, blank=True)
-    martes_cena_espera = models.PositiveIntegerField(null=True, blank=True)
-
-    miercoles_desayuno_actual = models.PositiveIntegerField(null=True, blank=True)
-    miercoles_desayuno_espera = models.PositiveIntegerField(null=True, blank=True)
-    miercoles_almuerzo_actual = models.PositiveIntegerField(null=True, blank=True)
-    miercoles_almuerzo_espera = models.PositiveIntegerField(null=True, blank=True)
-    miercoles_merienda_actual = models.PositiveIntegerField(null=True, blank=True)
-    miercoles_merienda_espera = models.PositiveIntegerField(null=True, blank=True)
-    miercoles_cena_actual = models.PositiveIntegerField(null=True, blank=True)
-    miercoles_cena_espera = models.PositiveIntegerField(null=True, blank=True)
-
-    jueves_desayuno_actual = models.PositiveIntegerField(null=True, blank=True)
-    jueves_desayuno_espera = models.PositiveIntegerField(null=True, blank=True)
-    jueves_almuerzo_actual = models.PositiveIntegerField(null=True, blank=True)
-    jueves_almuerzo_espera = models.PositiveIntegerField(null=True, blank=True)
-    jueves_merienda_actual = models.PositiveIntegerField(null=True, blank=True)
-    jueves_merienda_espera = models.PositiveIntegerField(null=True, blank=True)
-    jueves_cena_actual = models.PositiveIntegerField(null=True, blank=True)
-    jueves_cena_espera = models.PositiveIntegerField(null=True, blank=True)
-
-    viernes_desayuno_actual = models.PositiveIntegerField(null=True, blank=True)
-    viernes_desayuno_espera = models.PositiveIntegerField(null=True, blank=True)
-    viernes_almuerzo_actual = models.PositiveIntegerField(null=True, blank=True)
-    viernes_almuerzo_espera = models.PositiveIntegerField(null=True, blank=True)
-    viernes_merienda_actual = models.PositiveIntegerField(null=True, blank=True)
-    viernes_merienda_espera = models.PositiveIntegerField(null=True, blank=True)
-    viernes_cena_actual = models.PositiveIntegerField(null=True, blank=True)
-    viernes_cena_espera = models.PositiveIntegerField(null=True, blank=True)
-
-    sabado_desayuno_actual = models.PositiveIntegerField(null=True, blank=True)
-    sabado_desayuno_espera = models.PositiveIntegerField(null=True, blank=True)
-    sabado_almuerzo_actual = models.PositiveIntegerField(null=True, blank=True)
-    sabado_almuerzo_espera = models.PositiveIntegerField(null=True, blank=True)
-    sabado_merienda_actual = models.PositiveIntegerField(null=True, blank=True)
-    sabado_merienda_espera = models.PositiveIntegerField(null=True, blank=True)
-    sabado_cena_actual = models.PositiveIntegerField(null=True, blank=True)
-    sabado_cena_espera = models.PositiveIntegerField(null=True, blank=True)
-
-    domingo_desayuno_actual = models.PositiveIntegerField(null=True, blank=True)
-    domingo_desayuno_espera = models.PositiveIntegerField(null=True, blank=True)
-    domingo_almuerzo_actual = models.PositiveIntegerField(null=True, blank=True)
-    domingo_almuerzo_espera = models.PositiveIntegerField(null=True, blank=True)
-    domingo_merienda_actual = models.PositiveIntegerField(null=True, blank=True)
-    domingo_merienda_espera = models.PositiveIntegerField(null=True, blank=True)
-    domingo_cena_actual = models.PositiveIntegerField(null=True, blank=True)
-    domingo_cena_espera = models.PositiveIntegerField(null=True, blank=True)
-
-    class Meta:
-        verbose_name = "Prestacion"
-        verbose_name_plural = "Prestaciones"
 
 
 class Anexo(models.Model):

@@ -18,7 +18,8 @@ from relevamientos.form import (
     PuntosEntregaForm,
     RelevamientoForm,
 )
-from relevamientos.models import Prestacion, Relevamiento
+from relevamientos.models import Relevamiento
+from core.models import Prestacion
 from relevamientos.service import RelevamientoService
 from django.views.generic import (
     CreateView,
