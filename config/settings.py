@@ -358,6 +358,7 @@ CSRF_COOKIE_NAME = (
 # Configuración de hosts permitidos TODO: que se haga desde el .env
 ALLOWED_HOSTS = [
     "com.sisoc.secretarianaf.gob.ar",
+    "sisoc.secretarianaf.gob.ar",
     "localhost",
     "127.0.0.1",
     "10.80.9.15",
