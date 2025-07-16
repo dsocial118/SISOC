@@ -110,37 +110,7 @@ class ComedoresAcompanamientoListView(ListView):
         user = self.request.user
         busqueda = self.request.GET.get("busqueda", "").strip().lower()
 
-        # Optimización: Cache de grupos del usuario para evitar queries repetidas
-        user_groups = list(user.groups.values_list("name", flat=True))
-        is_area_legales = "Area Legales" in user_groups
-
-        # Optimización: Query más eficiente usando JOIN en lugar de subquery
-        queryset = (
-            Comedor.objects.select_related("referente", "tipocomedor", "provincia")
-            .filter(admision__estado=2, admision__enviado_acompaniamiento=True)
-            .distinct()
-        )
-
-        # Si no es superusuario, filtramos por dupla asignada
-        if not user.is_superuser and not is_area_legales:
-            queryset = queryset.select_related(
-                "dupla__abogado", "dupla__tecnico"
-            ).filter(Q(dupla__abogado=user) | Q(dupla__tecnico=user))
-
-        # Aplicamos búsqueda global
-        if busqueda:
-            queryset = queryset.filter(
-                Q(nombre__icontains=busqueda)
-                | Q(provincia__nombre__icontains=busqueda)
-                | Q(tipocomedor__nombre__icontains=busqueda)
-                | Q(calle__icontains=busqueda)
-                | Q(numero__icontains=busqueda)
-                | Q(referente__nombre__icontains=busqueda)
-                | Q(referente__apellido__icontains=busqueda)
-                | Q(referente__celular__icontains=busqueda)
-            )
-
-        return queryset
+        return AcompanamientoService.obtener_comedores_acompanamiento(user, busqueda)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
