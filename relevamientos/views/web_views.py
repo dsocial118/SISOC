@@ -135,20 +135,24 @@ class RelevamientoDetailView(DetailView):
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
 
-        relevamiento = Relevamiento.objects.get(pk=self.get_object()["id"])
-        context["relevamiento"]["gas"] = (
+        # Optimización: Usar self.object en lugar de nueva query
+        relevamiento = self.object
+
+        # Crear un diccionario para los datos adicionales del relevamiento
+        relevamiento_data = {}
+        relevamiento_data["gas"] = (
             RelevamientoService.separate_string(
                 relevamiento.espacio.cocina.abastecimiento_combustible.all()
             )
             if relevamiento.espacio
             else None
         )
-        context["prestacion"] = (
-            Prestacion.objects.get(pk=relevamiento.prestacion.id)
-            if relevamiento.prestacion
-            else None
-        )
-        context["relevamiento"]["donaciones"] = (
+
+        # Optimización: Usar select_related, prestacion ya está cargada
+        context["prestacion"] = relevamiento.prestacion
+
+        # Optimización: Todas las relaciones ya están prefetched
+        relevamiento_data["donaciones"] = (
             RelevamientoService.separate_string(
                 relevamiento.recursos.recursos_donaciones_particulares.all()
             )
@@ -156,7 +160,7 @@ class RelevamientoDetailView(DetailView):
             else None
         )
 
-        context["relevamiento"]["nacional"] = (
+        relevamiento_data["nacional"] = (
             RelevamientoService.separate_string(
                 relevamiento.recursos.recursos_estado_nacional.all()
             )
@@ -164,7 +168,7 @@ class RelevamientoDetailView(DetailView):
             else None
         )
 
-        context["relevamiento"]["provincial"] = (
+        relevamiento_data["provincial"] = (
             RelevamientoService.separate_string(
                 relevamiento.recursos.recursos_estado_provincial.all()
             )
@@ -172,7 +176,7 @@ class RelevamientoDetailView(DetailView):
             else None
         )
 
-        context["relevamiento"]["municipal"] = (
+        relevamiento_data["municipal"] = (
             RelevamientoService.separate_string(
                 relevamiento.recursos.recursos_estado_municipal.all()
             )
@@ -180,7 +184,7 @@ class RelevamientoDetailView(DetailView):
             else None
         )
 
-        context["relevamiento"]["otras"] = (
+        relevamiento_data["otras"] = (
             RelevamientoService.separate_string(
                 relevamiento.recursos.recursos_otros.all()
             )
@@ -188,7 +192,7 @@ class RelevamientoDetailView(DetailView):
             else None
         )
 
-        context["relevamiento"]["Entregas"] = (
+        relevamiento_data["Entregas"] = (
             RelevamientoService.separate_string(
                 relevamiento.punto_entregas.frecuencia_recepcion_mercaderias.all()
             )
@@ -196,10 +200,61 @@ class RelevamientoDetailView(DetailView):
             else None
         )
 
+        # Agregar los datos adicionales al contexto
+        context["relevamiento_data"] = relevamiento_data
+
         return context
 
     def get_object(self, queryset=None):
-        return RelevamientoService.get_relevamiento_detail_object(self.kwargs["pk"])
+        # Optimización: Retornar objeto completo con todas las relaciones optimizadas
+        return (
+            Relevamiento.objects.select_related(
+                "comedor",
+                "comedor__referente",
+                "comedor__provincia",
+                "comedor__municipio",
+                "comedor__localidad",
+                "prestacion",
+                "espacio",
+                "espacio__cocina",
+                "espacio__cocina__abastecimiento_agua",
+                "espacio__tipo_espacio_fisico",
+                "espacio__prestacion",
+                "espacio__prestacion__desague_hinodoro",
+                "espacio__prestacion__gestion_quejas",
+                "espacio__prestacion__frecuencia_limpieza",
+                "recursos",
+                "recursos__frecuencia_donaciones_particulares",
+                "recursos__frecuencia_estado_nacional",
+                "recursos__frecuencia_estado_provincial",
+                "recursos__frecuencia_estado_municipal",
+                "recursos__frecuencia_otros",
+                "colaboradores",
+                "colaboradores__cantidad_colaboradores",
+                "compras",
+                "anexo",
+                "anexo__tipo_insumo",
+                "anexo__frecuencia_insumo",
+                "anexo__tecnologia",
+                "anexo__acceso_comedor",
+                "anexo__distancia_transporte",
+                "punto_entregas",
+                "funcionamiento",
+                "funcionamiento__modalidad_prestacion",
+                "responsable_relevamiento",
+                "excepcion",
+            )
+            .prefetch_related(
+                "espacio__cocina__abastecimiento_combustible",
+                "recursos__recursos_donaciones_particulares",
+                "recursos__recursos_estado_nacional",
+                "recursos__recursos_estado_provincial",
+                "recursos__recursos_estado_municipal",
+                "recursos__recursos_otros",
+                "punto_entregas__frecuencia_recepcion_mercaderias",
+            )
+            .get(pk=self.kwargs["pk"])
+        )
 
 
 class RelevamientoUpdateView(UpdateView):
