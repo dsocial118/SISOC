@@ -464,7 +464,8 @@
                                                             data-bs-dismiss="modal"
                                                             aria-label="Close"></button>
                                                 </div>
-                                                <form method="post">
+                                                <form method="post"
+                                                      action="{% url 'relevamiento_create_edit_ajax' comedor.pk %}">
                                                     {% csrf_token %}
                                                     <div class="modal-body">
                                                         <div class="mb-3">
@@ -502,7 +503,8 @@
                                                 data-bs-dismiss="modal"
                                                 aria-label="Close"></button>
                                     </div>
-                                    <form method="post">
+                                    <form method="post"
+                                          action="{% url 'relevamiento_create_edit_ajax' comedor.pk %}">
                                         {% csrf_token %}
                                         <div class="modal-body">
                                             <div class="mb-3">

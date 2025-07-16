@@ -1,5 +1,5 @@
 from django.http import JsonResponse
-
+from django.core.cache import cache
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views.decorators.http import require_GET
@@ -64,8 +64,13 @@ class IntervencionDetailView(TemplateView):
         if destinatario:
             intervenciones = intervenciones.filter(destinatario_id=destinatario)
 
-        context["tipos_intervencion"] = TipoIntervencion.objects.all()
-        context["destinatarios"] = TipoDestinatario.objects.all()
+        # Cache los tipos e intervenciones para evitar consultas repetidas
+        context["tipos_intervencion"] = cache.get_or_set(
+            "tipos_intervencion_all", list(TipoIntervencion.objects.all()), 300
+        )
+        context["destinatarios"] = cache.get_or_set(
+            "destinatarios_all", list(TipoDestinatario.objects.all()), 300
+        )
         context["intervenciones"] = intervenciones
         context["object"] = comedor
         context["cantidad_intervenciones"] = cantidad_intervenciones

@@ -87,7 +87,7 @@
                     </a>
                 </li>
             {% endif %}
-            {% if request.user|has_group:"Area Legales" or request.user|has_group:"Area Contable" %}
+            {% if request.user|has_group:"Area Legales" or request.user|has_group:"Area Contable" or request.user|has_group:"Tecnico Comedor" %}
                 <li class="nav-item">
                     <a href="{% url 'rendicion_cuentas_final_listar' %}"
                        class="nav-link {% if 'rendicion_cuentas_final/listar' in pagina_actual %}active{% endif %}">

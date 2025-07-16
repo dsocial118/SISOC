@@ -86,7 +86,21 @@ def validar_documento_rendicion_cuentas_final(request, documento_id):
 def eliminar_documento_rendicion_cuentas_final(request, documento_id):
     documento = get_object_or_404(DocumentoRendicionFinal, id=documento_id)
 
-    documento.delete()
+    if documento.documento:
+        documento.documento.delete(save=False)
+
+    estado_no_presentado = EstadoDocumentoRendicionFinal.objects.get(
+        nombre="No presentado"
+    )
+    documento.estado = estado_no_presentado
+    documento.fecha_modificacion = timezone.now()
+    documento.save()
+
+    HistorialService.registrar_historial(
+        accion="Documento eliminado",
+        instancia=documento,
+    )
+
     messages.success(request, "Documento eliminado correctamente.")
 
     return redirect(request.META.get("HTTP_REFERER", "/"))
