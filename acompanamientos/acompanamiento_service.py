@@ -135,10 +135,11 @@ class AcompanamientoService:
                 InformeTecnico.objects.filter(admision=admision).order_by("-id").first()
             )
             anexo = Anexo.objects.filter(admision=admision).first()
+            comedor = Comedor.objects.filter(id=admision.comedor_id).first()
 
             doc_resolucion = (
                 DocumentosExpediente.objects.filter(
-                    admision__comedor=comedor, tipo="Resolución"
+                    admision=admision, tipo="Disposición"
                 )
                 .order_by("-creado")
                 .first()
@@ -148,11 +149,11 @@ class AcompanamientoService:
 
         return {
             "admision": admision,
+            "comedor": comedor,
             "info_relevante": info_relevante,
             "anexo": anexo,
             "numero_if": admision.legales_num_if if admision else None,
-            "numero_resolucion": resolucion,
-            "vencimiento_mandato": "Pendiente de implementación",
+            "numero_disposicion": resolucion,
         }
 
     @staticmethod
