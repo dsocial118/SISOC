@@ -67,7 +67,7 @@ class CentroListView(LoginRequiredMixin, ListView):
             user.is_superuser or user.groups.filter(name="CDF SSE").exists()
         )
 
-        return ctx
+        return context
 
 
 class CentroDetailView(LoginRequiredMixin, DetailView):

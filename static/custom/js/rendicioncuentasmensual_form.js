@@ -16,9 +16,12 @@ document.addEventListener("DOMContentLoaded", function () {
         if (items.length > 1) {
             items[items.length - 1].remove();
         } else {
-            alert("Debe haber al menos un archivo adjunto.");
+            const inputs = items[0].querySelectorAll("input, textarea, select");
+            inputs.forEach(input => input.value = "");
         }
     });
+
+
     container.addEventListener("click", function (event) {
         if (event.target.classList.contains("remove-existing-documentacion")) {
             const archivoId = event.target.getAttribute("data-id");
