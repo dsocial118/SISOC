@@ -232,8 +232,10 @@ class AcompanamientoService:
 
         comedor_ids = admisiones.values_list("comedor_id", flat=True).distinct()
 
-        queryset = Comedor.objects.filter(id__in=comedor_ids).select_related(
-            "referente", "tipocomedor", "provincia"
+        queryset = (
+            Comedor.objects.filter(id__in=comedor_ids)
+            .select_related("referente", "tipocomedor", "provincia", "dupla")
+            .prefetch_related("dupla__tecnico")
         )
 
         if busqueda:
