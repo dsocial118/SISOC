@@ -6,7 +6,8 @@ from admisiones.models.admisiones import (
     Anexo,
 )
 from acompanamientos.models.hitos import Hitos, HitosIntervenciones
-from acompanamientos.models.acompanamiento import InformacionRelevante, Prestacion
+from acompanamientos.models.acompanamiento import InformacionRelevante
+from core.models import Prestacion
 from intervenciones.models.intervenciones import Intervencion, SubIntervencion
 from comedores.models import Comedor
 
