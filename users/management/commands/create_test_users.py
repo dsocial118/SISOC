@@ -47,7 +47,7 @@ class Command(BaseCommand):
             {
                 "username": "1",
                 "email": "1@gmail.com",
-                "password": "qa1234",
+                "password": "1",
                 "is_superuser": True,
                 "grupos": [],
             },

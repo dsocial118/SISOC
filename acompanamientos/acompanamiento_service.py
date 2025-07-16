@@ -210,36 +210,45 @@ class AcompanamientoService:
 
     @staticmethod
     def obtener_comedores_acompanamiento(user, busqueda=None):
-        """Obtener comedores que tienen admisiones finalizadas y están en acompañamiento.
+        """
+        Obtiene un queryset de objetos Comedor que cumplen con los criterios de acompañamiento,
+        filtrando según el usuario y una búsqueda opcional.
+
+        - Si el usuario es superusuario o pertenece al grupo "Area Legales", obtiene todos los comedores
+          con admisión en estado 2 y enviados a acompañamiento.
+        - Si no, filtra los comedores donde el usuario es abogado o técnico asignado en la dupla.
+        - Permite aplicar un filtro de búsqueda global sobre varios campos relacionados (nombre, provincia,
+          tipo de comedor, dirección, referente, etc.).
 
         Args:
-            user: Usuario actual para aplicar filtros de permisos.
-            busqueda: Término de búsqueda opcional.
+            user (User): Usuario autenticado que realiza la consulta.
+            busqueda (str, optional): Texto de búsqueda global para filtrar los resultados. Por defecto es None.
 
         Returns:
-            QuerySet: Comedores filtrados.
+            QuerySet: QuerySet de objetos Comedor filtrados según los criterios especificados.
         """
-        # Filtramos las admisiones con estado=2 (Finalizada)
-        admisiones = Admision.objects.filter(estado=2, enviado_acompaniamiento=True)
+        # Optimización: Cache de grupos del usuario para evitar queries repetidas
+        user_groups = list(user.groups.values_list("name", flat=True))
+        is_area_legales = "Area Legales" in user_groups
 
-        if (
-            not user.is_superuser
-            and not user.groups.filter(name="Area Legales").exists()
-        ):
-            admisiones = admisiones.filter(
-                Q(comedor__dupla__abogado=user) | Q(comedor__dupla__tecnico=user)
-            )
-
-        comedor_ids = admisiones.values_list("comedor_id", flat=True).distinct()
-
+        # Optimización: Query más eficiente usando JOIN en lugar de subquery
         queryset = (
-            Comedor.objects.filter(id__in=comedor_ids)
-            .select_related("referente", "tipocomedor", "provincia", "dupla")
+            Comedor.objects.select_related(
+                "referente", "tipocomedor", "provincia", "dupla__abogado"
+            )
             .prefetch_related("dupla__tecnico")
+            .filter(admision__estado=2, admision__enviado_acompaniamiento=True)
+            .distinct()
         )
 
+        # Si no es superusuario, filtramos por dupla asignada
+        if not user.is_superuser and not is_area_legales:
+            queryset = queryset.select_related(
+                "dupla__abogado", "dupla__tecnico"
+            ).filter(Q(dupla__abogado=user) | Q(dupla__tecnico=user))
+
+        # Aplicamos búsqueda global
         if busqueda:
-            busqueda = busqueda.strip().lower()
             queryset = queryset.filter(
                 Q(nombre__icontains=busqueda)
                 | Q(provincia__nombre__icontains=busqueda)
