@@ -56,6 +56,7 @@ class AsyncSendComedorToGestionar(threading.Thread):
                     "piso": comedor.piso if comedor.piso else "",
                     "longitud": comedor.longitud if comedor.longitud else "",
                     "latitud": comedor.latitud if comedor.latitud else "",
+                    "programa": comedor.programa.nombre if comedor.programa else "",
                     "Organizacion": (
                         comedor.organizacion.nombre if comedor.organizacion else ""
                     ),
