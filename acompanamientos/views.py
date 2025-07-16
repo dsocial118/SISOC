@@ -2,6 +2,12 @@ from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
 from django.views.generic import ListView, DetailView
 from django.views.decorators.http import require_POST
+from django.db.models import Q
+from admisiones.models.admisiones import (
+    Admision,
+    InformeTecnico,
+    DocumentosExpediente,
+)
 from acompanamientos.acompanamiento_service import AcompanamientoService
 from acompanamientos.models.hitos import Hitos
 from comedores.models import Comedor
@@ -12,8 +18,9 @@ def restaurar_hito(request, comedor_id):
     campo = request.POST.get("campo")
     hito = get_object_or_404(Hitos, comedor_id=comedor_id)
 
+    # Verifica si el campo existe en el modelo
     if hasattr(hito, campo):
-        setattr(hito, campo, False)
+        setattr(hito, campo, False)  # Cambia el valor del campo a False (0)
         hito.save()
         messages.success(
             request, f"El campo '{campo}' ha sido restaurado correctamente."
@@ -21,9 +28,11 @@ def restaurar_hito(request, comedor_id):
     else:
         messages.error(request, f"El campo '{campo}' no existe en el modelo Hitos.")
 
+    # Redirige a la página anterior
     return redirect(request.META.get("HTTP_REFERER", "/"))
 
 
+# TODO: Sincronizar con la tarea de Pablo
 class AcompanamientoDetailView(DetailView):
     model = Comedor
     template_name = "acompañamiento_detail.html"
@@ -34,18 +43,59 @@ class AcompanamientoDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         comedor = self.object
 
-        context["hitos"] = AcompanamientoService.obtener_hitos(comedor)
+        # Optimización: Cache de grupos del usuario
+        user_groups = list(self.request.user.groups.values_list("name", flat=True))
         context["es_tecnico_comedor"] = (
-            AcompanamientoService.verificar_permisos_tecnico_comedor(self.request.user)
+            self.request.user.is_superuser or "Tecnico Comedor" in user_groups
         )
 
-        admision_data = AcompanamientoService.obtener_datos_admision(comedor)
-        context.update(admision_data)
+        context["hitos"] = AcompanamientoService.obtener_hitos(comedor)
 
-        prestaciones_data = AcompanamientoService.obtener_prestaciones_detalladas(
-            admision_data.get("anexo")
+        # Optimización: Query única con select_related para evitar múltiples queries
+        admision = (
+            Admision.objects.select_related("comedor")
+            .filter(comedor=comedor)
+            .exclude(num_if__isnull=True)
+            .exclude(num_if="")
+            .order_by("-id")
+            .first()
         )
-        context.update(prestaciones_data)
+        context["admision"] = admision
+
+        info_relevante = None
+        resolucion = None
+        doc_resolucion = None
+
+        if admision:
+            # Optimización: Usar la admision ya obtenida en lugar de filtrar por comedor
+            info_relevante = (
+                InformeTecnico.objects.filter(admision=admision).order_by("-id").first()
+            )
+            doc_resolucion = (
+                DocumentosExpediente.objects.filter(
+                    admision=admision, tipo="Resolución"
+                )
+                .order_by("-creado")
+                .first()
+            )
+        if doc_resolucion:
+            resolucion = doc_resolucion.value or doc_resolucion.nombre
+
+        # Asignar valores al contexto
+        context["info_relevante"] = info_relevante
+        context["numero_if"] = admision.num_if if admision else None
+        context["numero_resolucion"] = resolucion
+
+        # Prestaciones
+        if info_relevante:
+            context["prestaciones_dias"] = [
+                {"tipo": "Desayuno", "cantidad": info_relevante.prestaciones_desayuno},
+                {"tipo": "Almuerzo", "cantidad": info_relevante.prestaciones_almuerzo},
+                {"tipo": "Merienda", "cantidad": info_relevante.prestaciones_merienda},
+                {"tipo": "Cena", "cantidad": info_relevante.prestaciones_cena},
+            ]
+        else:
+            context["prestaciones_dias"] = []
 
         return context
 
@@ -54,13 +104,43 @@ class ComedoresAcompanamientoListView(ListView):
     model = Comedor
     template_name = "lista_comedores.html"
     context_object_name = "comedores"
-    paginate_by = 10
+    paginate_by = 10  # Cantidad de resultados por página
 
     def get_queryset(self):
         user = self.request.user
-        busqueda = self.request.GET.get("busqueda", "")
+        busqueda = self.request.GET.get("busqueda", "").strip().lower()
 
-        return AcompanamientoService.obtener_comedores_acompanamiento(user, busqueda)
+        # Optimización: Cache de grupos del usuario para evitar queries repetidas
+        user_groups = list(user.groups.values_list("name", flat=True))
+        is_area_legales = "Area Legales" in user_groups
+
+        # Optimización: Query más eficiente usando JOIN en lugar de subquery
+        queryset = (
+            Comedor.objects.select_related("referente", "tipocomedor", "provincia")
+            .filter(admision__estado=2, admision__enviado_acompaniamiento=True)
+            .distinct()
+        )
+
+        # Si no es superusuario, filtramos por dupla asignada
+        if not user.is_superuser and not is_area_legales:
+            queryset = queryset.select_related(
+                "dupla__abogado", "dupla__tecnico"
+            ).filter(Q(dupla__abogado=user) | Q(dupla__tecnico=user))
+
+        # Aplicamos búsqueda global
+        if busqueda:
+            queryset = queryset.filter(
+                Q(nombre__icontains=busqueda)
+                | Q(provincia__nombre__icontains=busqueda)
+                | Q(tipocomedor__nombre__icontains=busqueda)
+                | Q(calle__icontains=busqueda)
+                | Q(numero__icontains=busqueda)
+                | Q(referente__nombre__icontains=busqueda)
+                | Q(referente__apellido__icontains=busqueda)
+                | Q(referente__celular__icontains=busqueda)
+            )
+
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
