@@ -35,12 +35,12 @@
         <div class="col-12 text-center">
             <a href="{% url 'centro_list' %}"
                class="btn btn-secondary btn-lg d-block d-sm-inline mt-2">Resetear</a>
-                    {% if can_cdf_sse %}
-                        <a href="{% url 'centro_create' %}"
-                        class="btn btn-primary btn-lg d-block d-sm-inline mt-2 mr-2">Agregar</a>
-                        <a href="{% url 'actividad_create_sola' %}"
-                        class="btn btn-primary btn-lg d-block d-sm-inline mt-2 mr-2">Agregar Actividad</a>
-                    {% endif %}
+            {% if can_add %}
+                <a href="{% url 'centro_create' %}"
+                   class="btn btn-primary btn-lg d-block d-sm-inline mt-2 mr-2">Agregar</a>
+                <a href="{% url 'actividad_create_sola' %}"
+                   class="btn btn-primary btn-lg d-block d-sm-inline mt-2 mr-2">Agregar Actividad</a>
+            {% endif %}
         </div>
     </div>
     <div class="row mt-5">

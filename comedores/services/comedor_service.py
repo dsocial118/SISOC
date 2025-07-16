@@ -3,7 +3,8 @@ from typing import Union
 
 from django.db.models import Q, Count
 from django.core.paginator import Paginator
-
+from django.core.cache import cache
+from django.conf import settings
 
 from relevamientos.models import Relevamiento
 from comedores.forms.comedor_form import ImagenComedorForm
@@ -64,8 +65,11 @@ class ComedorService:
 
     @staticmethod
     def get_comedores_filtrados(query: Union[str, None] = None):
+        # Optimización: usar select_related en lugar de prefetch_related con values()
         queryset = (
-            Comedor.objects.prefetch_related("provincia", "referente")
+            Comedor.objects.select_related(
+                "provincia", "municipio", "localidad", "referente", "tipocomedor"
+            )
             .values(
                 "id",
                 "nombre",
@@ -97,18 +101,86 @@ class ComedorService:
 
     @staticmethod
     def get_comedor_detail_object(comedor_id: int):
+        from django.db.models import Prefetch
+        from comedores.models import Observacion
+        from relevamientos.models import ClasificacionComedor
+        from admisiones.models.admisiones import Admision
+        from rendicioncuentasmensual.models import RendicionCuentaMensual
+
+        # Precargar cache de valores de comida para evitar query adicional
+        ComedorService._preload_valores_comida_cache()
+
         return (
             Comedor.objects.select_related(
                 "provincia",
+                "municipio",
+                "localidad",
                 "referente",
                 "organizacion",
                 "programa",
                 "tipocomedor",
                 "dupla",
             )
-            .prefetch_related("expedientes_pagos")
+            .prefetch_related(
+                "expedientes_pagos",
+                # Prefetch para imágenes optimizado - solo el campo imagen
+                Prefetch(
+                    "imagenes",
+                    queryset=ImagenComedor.objects.only("imagen"),
+                    to_attr="imagenes_optimized",
+                ),
+                # Prefetch para relevamientos ordenados por estado e id descendente
+                Prefetch(
+                    "relevamiento_set",
+                    queryset=Relevamiento.objects.select_related("prestacion").order_by(
+                        "-estado", "-id"
+                    ),
+                    to_attr="relevamientos_optimized",
+                ),
+                # Prefetch para observaciones ordenadas por fecha de visita (solo las últimas 3)
+                Prefetch(
+                    "observacion_set",
+                    queryset=Observacion.objects.order_by("-fecha_visita")[:3],
+                    to_attr="observaciones_optimized",
+                ),
+                # Prefetch para clasificaciones ordenadas por fecha (solo la primera)
+                Prefetch(
+                    "clasificacioncomedor_set",
+                    queryset=ClasificacionComedor.objects.select_related(
+                        "categoria"
+                    ).order_by("-fecha"),
+                    to_attr="clasificaciones_optimized",
+                ),
+                # Prefetch para admisiones
+                Prefetch(
+                    "admision_set",
+                    queryset=Admision.objects.select_related("tipo_convenio", "estado"),
+                    to_attr="admisiones_optimized",
+                ),
+                # Prefetch para rendiciones mensuales - solo contar
+                Prefetch(
+                    "rendiciones_cuentas_mensuales",
+                    queryset=RendicionCuentaMensual.objects.only("id"),
+                    to_attr="rendiciones_optimized",
+                ),
+            )
             .get(pk=comedor_id)
         )
+
+    @staticmethod
+    def _preload_valores_comida_cache():
+        """Precarga los valores de comida en cache para evitar queries adicionales"""
+        from django.core.cache import cache
+
+        valor_map = cache.get("valores_comida_map")
+        if not valor_map:
+            valores_comida = ValorComida.objects.filter(
+                tipo__in=["desayuno", "almuerzo", "merienda", "cena"]
+            ).values("tipo", "valor")
+            valor_map = {item["tipo"].lower(): item["valor"] for item in valores_comida}
+            cache.set(
+                "valores_comida_map", valor_map, settings.DEFAULT_CACHE_TIMEOUT
+            )  # Cache por 5 minutos
 
     @staticmethod
     def get_ubicaciones_ids(data):
@@ -164,8 +236,33 @@ class ComedorService:
             return imagen_comedor.errors
 
     @staticmethod
-    def get_presupuestos(comedor_id: int):
-        beneficiarios = Relevamiento.objects.filter(comedor=comedor_id).first()
+    def get_presupuestos(comedor_id: int, relevamientos_prefetched=None):
+        from django.core.cache import cache
+
+        # Cache de valores de comida para evitar consultas repetidas
+        valor_map = cache.get("valores_comida_map")
+        if not valor_map:
+            valores_comida = ValorComida.objects.filter(
+                tipo__in=["desayuno", "almuerzo", "merienda", "cena"]
+            ).values("tipo", "valor")
+            valor_map = {item["tipo"].lower(): item["valor"] for item in valores_comida}
+            cache.set(
+                "valores_comida_map", valor_map, settings.DEFAULT_CACHE_TIMEOUT
+            )  # Cache por 5 minutos
+
+        # Usar relevamientos prefetched si están disponibles
+        if relevamientos_prefetched:
+            beneficiarios = (
+                relevamientos_prefetched[0] if relevamientos_prefetched else None
+            )
+        else:
+            # Fallback: consulta directa solo si no hay datos prefetched
+            beneficiarios = (
+                Relevamiento.objects.select_related("prestacion")
+                .filter(comedor=comedor_id)
+                .only("prestacion")
+                .first()
+            )
 
         count = {
             "desayuno": 0,
@@ -194,11 +291,7 @@ class ComedorService:
 
         count_beneficiarios = sum(count.values())
 
-        valores_comida = ValorComida.objects.filter(tipo__in=count.keys()).values(
-            "tipo", "valor"
-        )
-        valor_map = {item["tipo"].lower(): item["valor"] for item in valores_comida}
-
+        # Usar valores de comida cacheados
         valor_cena = count["cena"] * valor_map.get("cena", 0)
         valor_desayuno = count["desayuno"] * valor_map.get("desayuno", 0)
         valor_almuerzo = count["almuerzo"] * valor_map.get("almuerzo", 0)

@@ -1,6 +1,6 @@
-import calendar  # pylint: disable=too-many-lines
+# pylint: disable=too-many-lines
+import calendar
 import json
-
 import locale
 import logging
 from datetime import date, datetime, timedelta
@@ -11,13 +11,22 @@ from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import models, transaction
-from django.db.models import Case, IntegerField, Q, Value, When, CharField
+from django.db.models import (
+    Case,
+    Q,
+    When,
+    CharField,
+    TextField,
+    Prefetch,
+    Count,
+)
 from django.db.models.functions import Cast
-from django.http import HttpResponseRedirect, JsonResponse
+from django.http import HttpResponseRedirect, JsonResponse, Http404
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
+from django.conf import settings
 from django.contrib.messages import get_messages
 
 from django.views.generic import (
@@ -231,17 +240,17 @@ class CiudadanosReportesListView(ListView):
         organismos = cache.get("organismos")
         if not organismos:
             organismos = Organismo.objects.all().values("id", "nombre")
-            cache.set("organismos", organismos, 60)
+            cache.set("organismos", organismos, settings.DEFAULT_CACHE_TIMEOUT)
 
         programas = cache.get("programas")
         if not programas:
             programas = Programa.objects.all().values("id", "nombre")
-            cache.set("programas", programas, 60)
+            cache.set("programas", programas, settings.DEFAULT_CACHE_TIMEOUT)
 
         estados = cache.get("estados_derivacion")
         if not estados:
             estados = EstadoDerivacion.objects.all().values("id", "estado")
-            cache.set("estados_derivacion", estados, 60)
+            cache.set("estados_derivacion", estados, settings.DEFAULT_CACHE_TIMEOUT)
 
         context["organismos"] = organismos
         context["programas"] = programas
@@ -300,25 +309,28 @@ class CiudadanosListView(ListView):
 
     def get_queryset(self):
         if not hasattr(self, "_cached_queryset"):
+            # Optimización: Solo cargar campos necesarios para la lista
             queryset = (
                 super()
                 .get_queryset()
+                .select_related("tipo_documento", "sexo", "localidad")  # Evitar N+1
                 .only(
                     "id",
                     "apellido",
                     "nombre",
                     "documento",
-                    "tipo_documento",
-                    "sexo",
+                    "tipo_documento__tipo",
+                    "sexo__sexo",
+                    "localidad__nombre",
                     "estado",
                 )
+                .order_by("-id")  # Orden consistente para paginación
             )
             query = self.request.GET.get("busqueda", "")
-
             if query:
                 filter_condition = Q(apellido__icontains=query)
                 if query.isnumeric():
-                    queryset = queryset.annotate(doc_str=Cast("documento", CharField()))
+                    queryset = queryset.annotate(doc_str=Cast("documento", TextField()))
                     filter_condition |= Q(doc_str__startswith=query)
                 queryset = queryset.filter(filter_condition)
             self._cached_queryset = (
@@ -333,11 +345,15 @@ class CiudadanosListView(ListView):
             self.object_list = (
                 self.get_queryset()
             )  # pylint: disable=attribute-defined-outside-init
-            size_queryset = self.object_list.count()
-            if size_queryset == 1:
-                pk = self.object_list.first().id
+
+            # Optimización: Evitar count() costoso y usar exists() + slice para verificar resultados
+            # Solo verificar si hay 0, 1 o más resultados
+            first_two = list(self.object_list[:2])
+
+            if len(first_two) == 1:
+                pk = first_two[0].id
                 return redirect("ciudadanos_ver", pk=pk)
-            elif size_queryset == 0:
+            elif len(first_two) == 0:
                 messages.warning(self.request, "La búsqueda no arrojó resultados.")
 
         return super().get(request, *args, **kwargs)
@@ -349,9 +365,15 @@ class CiudadanosListView(ListView):
         page_obj = context.get("page_obj")
 
         if page_obj:
-            context["page_range"] = page_obj.paginator.get_elided_page_range(
-                number=page_obj.number
-            )
+            # Optimización: Usar get_elided_page_range solo si es necesario
+            # y limitar el rango para evitar procesamiento excesivo
+            try:
+                context["page_range"] = page_obj.paginator.get_elided_page_range(
+                    number=page_obj.number, on_each_side=2, on_ends=1
+                )
+            except AttributeError:
+                # Fallback para versiones anteriores de Django
+                context["page_range"] = page_obj.paginator.page_range
 
         context.update(
             {
@@ -367,6 +389,99 @@ class CiudadanosDetailView(DetailView):
     model = Ciudadano
     template_name = "ciudadanos/ciudadano_detail.html"
 
+    def get_object(self, queryset=None):
+        """Optimiza la carga del ciudadano con todas sus relaciones"""
+        if queryset is None:
+            queryset = self.get_queryset()
+
+        pk = self.kwargs.get(self.pk_url_kwarg)
+        if pk is not None:
+            queryset = queryset.filter(pk=pk)
+
+        # Optimizar la carga del ciudadano con prefetch_related
+        try:
+            self.object = (
+                queryset.select_related(
+                    "nacionalidad",
+                    "sexo",
+                    "tipo_documento",
+                    "estado_civil",
+                    "provincia",
+                    "municipio",
+                    "localidad",
+                )
+                .prefetch_related(
+                    Prefetch(
+                        "alertas",
+                        queryset=Alerta.objects.select_related("categoria__dimension"),
+                        to_attr="alertas_optimized",
+                    ),
+                    Prefetch(
+                        "hist_ciudadano_alerta",
+                        queryset=HistorialAlerta.objects.select_related(
+                            "alerta__categoria__dimension"
+                        ).order_by("-fecha_inicio"),
+                        to_attr="historial_optimized",
+                    ),
+                    Prefetch(
+                        "ciudadano1",
+                        queryset=GrupoFamiliar.objects.select_related(
+                            "ciudadano_2", "vinculo"
+                        ).only(
+                            "id",
+                            "vinculo",
+                            "vinculo_inverso",
+                            "ciudadano_2__nombre",
+                            "ciudadano_2__apellido",
+                            "ciudadano_2__id",
+                            "ciudadano_2__foto",
+                            "vinculo__vinculo",
+                        ),
+                        to_attr="familia_1_optimized",
+                    ),
+                    Prefetch(
+                        "ciudadano2",
+                        queryset=GrupoFamiliar.objects.select_related(
+                            "ciudadano_1", "vinculo"
+                        ).only(
+                            "id",
+                            "vinculo",
+                            "vinculo_inverso",
+                            "ciudadano_1__nombre",
+                            "ciudadano_1__apellido",
+                            "ciudadano_1__id",
+                            "ciudadano_1__foto",
+                            "vinculo__vinculo",
+                        ),
+                        to_attr="familia_2_optimized",
+                    ),
+                    Prefetch(
+                        "archivo_set",
+                        queryset=Archivo.objects.filter(
+                            Q(tipo="Imagen") | Q(tipo="Documento")
+                        ).only("id", "archivo", "fecha", "tipo", "ciudadano_id"),
+                        to_attr="archivos_optimized",
+                    ),
+                    Prefetch(
+                        "ciudadano_programa",
+                        queryset=CiudadanoPrograma.objects.select_related("programas")
+                        .only(
+                            "id",
+                            "programas__nombre",
+                            "programas__id",
+                            "fecha_creado",
+                            "ciudadano_id",
+                        )
+                        .order_by("-fecha_creado"),
+                        to_attr="programas_optimized",
+                    ),
+                )
+                .get()
+            )
+            return self.object
+        except Ciudadano.DoesNotExist as exc:
+            raise Http404("Ciudadano no encontrado") from exc
+
     def get_context_data(
         self, **kwargs
     ):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
@@ -374,61 +489,134 @@ class CiudadanosDetailView(DetailView):
         context = super().get_context_data(**kwargs)
 
         ciudadano = context["object"]
-
         fecha_actual = datetime.now().date()
 
-        ciudadano_alertas = cache.get("ciudadano_alertas")
-        alertas = cache.get("alertas")
-        familiares = cache.get("familiares")
-        hogar_familiares = cache.get("hogar_familiares")
-        files = cache.get("files")
-        ciudadano_alertas_organizadas = cache.get("ciudadano_alertas_organizadas")
-        count_alertas = cache.get("count_alertas")
-        count_alta = cache.get("count_alta")
-        count_media = cache.get("count_media")
-        count_baja = cache.get("count_baja")
-        alertas_alta = cache.get("alertas_alta")
-        alertas_media = cache.get("alertas_media")
-        alertas_baja = cache.get("alertas_baja")
-        historial_alertas = cache.get("historial_alertas")
-        count_intervenciones = cache.get("count_intervenciones")
-        dimensionfamilia = cache.get("dimensionfamilia")
-        dimensionvivienda = cache.get("dimensionvivienda")
-        dimensionsalud = cache.get("dimensionsalud")
-        dimensiontrabajo = cache.get("dimensiontrabajo")
-        datos_json = cache.get("datos_json")
-        emoji_nacionalidad = cache.get("emoji_nacionalidad")
+        # Usar los datos ya prefetched en lugar de hacer queries adicionales
+        ciudadano_alertas = getattr(ciudadano, "alertas_optimized", [])
+        alertas = getattr(ciudadano, "historial_optimized", [])
 
-        if not ciudadano_alertas:
-            ciudadano_alertas = Alerta.objects.filter(ciudadano=pk).select_related(
-                "categoria"
+        # Usar datos prefetched para familiares
+        familiares_1 = (
+            [
+                {
+                    "ciudadano_1__id": pk,
+                    "ciudadano_1__nombre": ciudadano.nombre,
+                    "ciudadano_1__apellido": ciudadano.apellido,
+                    "ciudadano_1__foto": ciudadano.foto,
+                    "ciudadano_2__id": rel.ciudadano_2.id,
+                    "ciudadano_2__nombre": rel.ciudadano_2.nombre,
+                    "ciudadano_2__apellido": rel.ciudadano_2.apellido,
+                    "ciudadano_2__foto": rel.ciudadano_2.foto,
+                    "vinculo": rel.vinculo.vinculo if rel.vinculo else "",
+                    "vinculo_inverso": rel.vinculo_inverso,
+                }
+                for rel in ciudadano.familia_1_optimized
+            ]
+            if hasattr(ciudadano, "familia_1_optimized")
+            else []
+        )
+
+        familiares_2 = (
+            [
+                {
+                    "ciudadano_2__id": pk,
+                    "ciudadano_2__nombre": ciudadano.nombre,
+                    "ciudadano_2__apellido": ciudadano.apellido,
+                    "ciudadano_2__foto": ciudadano.foto,
+                    "ciudadano_1__id": rel.ciudadano_1.id,
+                    "ciudadano_1__nombre": rel.ciudadano_1.nombre,
+                    "ciudadano_1__apellido": rel.ciudadano_1.apellido,
+                    "ciudadano_1__foto": rel.ciudadano_1.foto,
+                    "vinculo": rel.vinculo.vinculo if rel.vinculo else "",
+                    "vinculo_inverso": rel.vinculo_inverso,
+                }
+                for rel in ciudadano.familia_2_optimized
+            ]
+            if hasattr(ciudadano, "familia_2_optimized")
+            else []
+        )
+
+        # Organizacion de alertas optimizada
+        alertas_criticas = [
+            alerta for alerta in ciudadano_alertas if alerta.gravedad == "Critica"
+        ]
+        alertas_importantes = [
+            alerta for alerta in ciudadano_alertas if alerta.gravedad == "Importante"
+        ]
+        alertas_precaucion = [
+            alerta for alerta in ciudadano_alertas if alerta.gravedad == "Precaución"
+        ]
+
+        # Cargar dimensiones de manera eficiente usando cache
+        cache_key_dims = f"ciudadano_dimensions_{pk}"
+        dimensiones = cache.get(cache_key_dims)
+        if not dimensiones:
+            try:
+                dimensionfamilia = DimensionFamilia.objects.get(ciudadano_id=pk)
+            except DimensionFamilia.DoesNotExist:
+                dimensionfamilia = None
+
+            try:
+                dimensionvivienda = DimensionVivienda.objects.get(ciudadano_id=pk)
+            except DimensionVivienda.DoesNotExist:
+                dimensionvivienda = None
+
+            try:
+                dimensionsalud = DimensionSalud.objects.get(ciudadano_id=pk)
+            except DimensionSalud.DoesNotExist:
+                dimensionsalud = None
+
+            try:
+                dimensiontrabajo = DimensionTrabajo.objects.get(ciudadano_id=pk)
+            except DimensionTrabajo.DoesNotExist:
+                dimensiontrabajo = None
+
+            dimensiones = {
+                "familia": dimensionfamilia,
+                "vivienda": dimensionvivienda,
+                "salud": dimensionsalud,
+                "trabajo": dimensiontrabajo,
+            }
+            cache.set(
+                cache_key_dims, dimensiones, settings.DEFAULT_CACHE_TIMEOUT
+            )  # Cache por 5 minutos
+
+        # Archivos usando datos prefetched
+        files = getattr(ciudadano, "archivos_optimized", [])
+
+        # Programas usando datos prefetched
+        ciudadanos_programas = getattr(ciudadano, "programas_optimized", [])
+
+        # Cache solo los cálculos pesados
+        cache_key = f"ciudadano_context_{pk}"
+        cached_data = cache.get(cache_key)
+        if not cached_data:
+            # Solo contar derivaciones, no cargar todas
+            count_intervenciones = Derivacion.objects.filter(ciudadano=pk).count()
+            count_programas = len(ciudadanos_programas)
+            datos_json = self.grafico_evolucion_de_riesgo(fecha_actual, alertas)
+            emoji_nacionalidad = (
+                EMOJIS_BANDERAS.get(str(ciudadano.nacionalidad), "")
+                if ciudadano.nacionalidad
+                else ""
             )
-            cache.set("ciudadano_alertas", ciudadano_alertas, 60)
-        if not alertas:
-            alertas = HistorialAlerta.objects.filter(ciudadano=pk).values(
-                "fecha_inicio", "fecha_fin", "alerta__categoria__dimension"
-            )
-            cache.set("alertas", alertas, 60)
-        if not familiares:
-            familiares = GrupoFamiliar.objects.filter(
-                Q(ciudadano_1=pk) | Q(ciudadano_2=pk)
-            ).values(
-                "ciudadano_1__nombre",
-                "ciudadano_1__apellido",
-                "ciudadano_1__id",
-                "ciudadano_1__foto",
-                "ciudadano_2__nombre",
-                "ciudadano_2__apellido",
-                "ciudadano_2__id",
-                "ciudadano_2__foto",
-                "vinculo",
-                "vinculo_inverso",
-            )
-            cache.set("familiares", familiares, 60)
-        if not hogar_familiares:
-            hogar_familiares = GrupoHogar.objects.filter(
-                Q(ciudadano_1Hogar=pk) | Q(ciudadano_2Hogar=pk)
-            ).values(
+
+            cached_data = {
+                "count_intervenciones": count_intervenciones,
+                "count_programas": count_programas,
+                "datos_json": datos_json,
+                "emoji_nacionalidad": emoji_nacionalidad,
+            }
+            cache.set(
+                cache_key, cached_data, settings.DEFAULT_CACHE_TIMEOUT
+            )  # Cache por 5 minutos
+
+        # Obtener hogar familiares (si es necesario)
+        hogar_familiares = cache.get_or_set(
+            f"hogar_familiares_{pk}",
+            GrupoHogar.objects.filter(Q(ciudadano_1Hogar=pk) | Q(ciudadano_2Hogar=pk))
+            .select_related("ciudadano_1Hogar", "ciudadano_2Hogar")
+            .values(
                 "ciudadano_2Hogar_id",
                 "ciudadano_2Hogar",
                 "ciudadano_1Hogar_id",
@@ -438,211 +626,50 @@ class CiudadanosDetailView(DetailView):
                 "ciudadano_1Hogar__foto",
                 "ciudadano_2Hogar__foto",
                 "estado_relacion",
-            )
-            cache.set("hogar_familiares", hogar_familiares, 60)
-        if not files:
-            files = Archivo.objects.filter(
-                Q(tipo="Imagen") | Q(tipo="Documento"), ciudadano=pk
-            )
-            cache.set("files", files, 60)
-        if not ciudadano_alertas_organizadas:
-            ciudadano_alertas_organizadas = ciudadano_alertas.annotate(
-                es_critica=Case(
-                    When(gravedad="Critica", then=Value(1)),
-                    default=Value(0),
-                    output_field=IntegerField(),
-                ),
-                es_importante=Case(
-                    When(gravedad="Importante", then=Value(1)),
-                    default=Value(0),
-                    output_field=IntegerField(),
-                ),
-                es_precaucion=Case(
-                    When(gravedad="Precaución", then=Value(1)),
-                    default=Value(0),
-                    output_field=IntegerField(),
-                ),
-            )
-            cache.set(
-                "ciudadano_alertas_organizadas", ciudadano_alertas_organizadas, 60
-            )
-        if not count_alertas:
-            count_alertas = ciudadano_alertas.count()
-            cache.set("count_alertas", count_alertas, 60)
-        if not count_alta:
-            count_alta = ciudadano_alertas_organizadas.filter(es_critica=True).count()
-            cache.set("count_alta", count_alta, 60)
-        if not count_media:
-            count_media = ciudadano_alertas_organizadas.filter(
-                es_importante=True
-            ).count()
-            cache.set("count_media", count_media, 60)
-        if not count_baja:
-            count_baja = ciudadano_alertas_organizadas.filter(
-                es_precaucion=True
-            ).count()
-            cache.set("count_baja", count_baja, 60)
-        if not alertas_alta:
-            alertas_alta = ciudadano_alertas_organizadas.filter(es_critica=True)
-            cache.set("alertas_alta", alertas_alta, 60)
-        if not alertas_media:
-            alertas_media = ciudadano_alertas_organizadas.filter(es_importante=True)
-            cache.set("alertas_media", alertas_media, 60)
-        if not alertas_baja:
-            alertas_baja = ciudadano_alertas_organizadas.filter(es_precaucion=True)
-            cache.set("alertas_baja", alertas_baja, 60)
-        if not historial_alertas:
-            historial_alertas = alertas.exists()
-            cache.set("historial_alertas", historial_alertas, 60)
-        if not count_intervenciones:
-            count_intervenciones = Derivacion.objects.filter(ciudadano=pk).count()
-            cache.set("count_intervenciones", count_intervenciones, 60)
-        if not dimensionfamilia:
-            dimensionfamilia = (
-                DimensionFamilia.objects.filter(ciudadano=pk)
-                .values(
-                    "cant_hijos",
-                    "otro_responsable",
-                    "hay_embarazadas",
-                    "hay_priv_libertad",
-                    "hay_prbl_smental",
-                    "hay_enf_cronica",
-                    "obs_familia",
-                    "hay_fam_discapacidad",
-                )
-                .first()
-            )
-            cache.set("dimensionfamilia", dimensionfamilia, 60)
-        if not dimensionvivienda:
-            dimensionvivienda = (
-                DimensionVivienda.objects.filter(ciudadano=pk)
-                .values(
-                    "posesion",
-                    "tipo",
-                    "material",
-                    "pisos",
-                    "cant_ambientes",
-                    "cant_camas",
-                    "cant_hogares",
-                    "cant_convivientes",
-                    "cant_menores",
-                    "hay_banio",
-                    "hay_agua_caliente",
-                    "hay_desmoronamiento",
-                    "ubicacion_vivienda",
-                    "PoseenPC",
-                    "Poseeninternet",
-                    "PoseenCelular",
-                    "obs_vivienda",
-                )
-                .first()
-            )
-            cache.set("dimensionvivienda", dimensionvivienda, 60)
-
-        if not dimensionsalud:
-            dimensionsalud = (
-                DimensionSalud.objects.filter(ciudadano=pk)
-                .values(
-                    "lugares_atencion",
-                    "frecuencia_controles_medicos",
-                    "hay_enfermedad",
-                    "hay_obra_social",
-                    "hay_discapacidad",
-                    "hay_cud",
-                    "obs_salud",
-                )
-                .first()
-            )
-            cache.set("dimensionsalud", dimensionsalud, 60)
-        if not dimensiontrabajo:
-            dimensiontrabajo = (
-                DimensionTrabajo.objects.filter(ciudadano=pk)
-                .values(
-                    "tiene_trabajo",
-                    "ocupacion",
-                    "modo_contratacion",
-                    "conviviente_trabaja",
-                    "obs_trabajo",
-                )
-                .first()
-            )
-            cache.set("dimensiontrabajo", dimensiontrabajo, 60)
-        if not datos_json:
-            datos_json = self.grafico_evolucion_de_riesgo(fecha_actual, alertas)
-            cache.set("datos_json", datos_json, 60)
-        if not emoji_nacionalidad:
-            emoji_nacionalidad = EMOJIS_BANDERAS.get(ciudadano.nacionalidad, "")
-            cache.set("emoji_nacionalidad", emoji_nacionalidad, 60)
-
-        context["familiares_fk1"] = [
-            familiar
-            for familiar in familiares
-            if familiar["ciudadano_1__id"] == int(pk)
-        ]
-        context["count_programas"] = cache.get_or_set(
-            f"count_programas_{pk}",
-            CiudadanoPrograma.objects.filter(ciudadano=pk).count(),
+            ),
             60,
         )
-        context["familiares_fk2"] = [
-            familiar
-            for familiar in familiares
-            if familiar["ciudadano_2__id"] == int(pk)
-        ]
-        context["count_familia"] = len(familiares)
 
-        context["hogar_familiares_fk1"] = [
-            familiar
-            for familiar in hogar_familiares
-            if familiar["ciudadano_1Hogar"] == int(pk)
-        ]
-        context["hogar_familiares_fk2"] = [
-            familiar
-            for familiar in hogar_familiares
-            if familiar["ciudadano_2Hogar"] == int(pk)
-        ]
-        context["hogar_count_familia"] = len(hogar_familiares)
-
-        context["files_img"] = files.filter(tipo="Imagen")
-        context["files_docs"] = files.filter(tipo="Documento")
-
-        context["count_alertas"] = count_alertas
-        context["count_alta"] = count_alta
-        context["count_media"] = count_media
-        context["count_baja"] = count_baja
-
-        context["alertas_alta"] = alertas_alta
-        context["alertas_media"] = alertas_media
-        context["alertas_baja"] = alertas_baja
-
-        context["historial_alertas"] = historial_alertas
-
-        context["count_intervenciones"] = count_intervenciones
-
-        context["dimensionfamilia"] = dimensionfamilia
-
-        context["dimensionvivienda"] = dimensionvivienda
-
-        context["dimensionsalud"] = dimensionsalud
-
-        context["dimensiontrabajo"] = dimensiontrabajo
-
-        context["datos_json"] = datos_json
-
-        context["emoji_nacionalidad"] = emoji_nacionalidad
-
-        # PROGRAMAS
-        context["form_prog"] = ProgramaForm()
-        ciudadano_programas = CiudadanoPrograma.objects.filter(ciudadano=pk)
-        if ciudadano_programas.exists():
-            context["ciudadanos_programas"] = ciudadano_programas
+        context.update(
+            {
+                "familiares_fk1": familiares_1,
+                "familiares_fk2": familiares_2,
+                "count_familia": len(familiares_1) + len(familiares_2),
+                "hogar_familiares_fk1": [
+                    f for f in hogar_familiares if f["ciudadano_1Hogar"] == int(pk)
+                ],
+                "hogar_familiares_fk2": [
+                    f for f in hogar_familiares if f["ciudadano_2Hogar"] == int(pk)
+                ],
+                "hogar_count_familia": len(hogar_familiares),
+                "files_img": [f for f in files if f.tipo == "Imagen"],
+                "files_docs": [f for f in files if f.tipo == "Documento"],
+                "count_alertas": len(ciudadano_alertas),
+                "count_alta": len(alertas_criticas),
+                "count_media": len(alertas_importantes),
+                "count_baja": len(alertas_precaucion),
+                "alertas_alta": alertas_criticas,
+                "alertas_media": alertas_importantes,
+                "alertas_baja": alertas_precaucion,
+                "historial_alertas": len(alertas) > 0,
+                "dimensionfamilia": dimensiones["familia"],
+                "dimensionvivienda": dimensiones["vivienda"],
+                "dimensionsalud": dimensiones["salud"],
+                "dimensiontrabajo": dimensiones["trabajo"],
+                "form_prog": ProgramaForm(),
+                "ciudadanos_programas": (
+                    ciudadanos_programas if ciudadanos_programas else None
+                ),
+                **cached_data,
+            }
+        )
 
         return context
 
     def grafico_evolucion_de_riesgo(
         self, fecha_actual, alertas
     ):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
-        if alertas.exists():
+        if alertas:  # Changed from alertas.exists() to check if list is not empty
             primer_dia_siguiente_mes = datetime(
                 fecha_actual.year, fecha_actual.month % 12 + 1, 1
             )
@@ -650,11 +677,23 @@ class CiudadanosDetailView(DetailView):
                 primer_dia_siguiente_mes - timedelta(days=365)
             )
 
-            alertas_ultimo_anio = alertas.filter(
-                Q(fecha_inicio__gt=fecha_inicio_doce_meses_excepto_mes_anterior)
-                | Q(fecha_fin__gt=fecha_inicio_doce_meses_excepto_mes_anterior)
-                | Q(fecha_fin__isnull=True)
-            ).distinct()
+            # Filter alertas list instead of using queryset filter
+            alertas_ultimo_anio = []
+            for alerta in alertas:
+                if (
+                    (
+                        alerta.fecha_inicio
+                        and alerta.fecha_inicio
+                        > fecha_inicio_doce_meses_excepto_mes_anterior
+                    )
+                    or (
+                        alerta.fecha_fin
+                        and alerta.fecha_fin
+                        > fecha_inicio_doce_meses_excepto_mes_anterior
+                    )
+                    or alerta.fecha_fin is None
+                ):
+                    alertas_ultimo_anio.append(alerta)
 
             dimensiones = {
                 str(dimension.id).strip(): dimension.dimension
@@ -667,9 +706,10 @@ class CiudadanosDetailView(DetailView):
             }
 
             for alerta in alertas_ultimo_anio:
-                dimension = alerta["alerta__categoria__dimension"]
-                fecha_inicio = alerta["fecha_inicio"]
-                fecha_fin = alerta["fecha_fin"] or fecha_actual
+                # Access object attributes instead of dict keys
+                dimension = str(alerta.alerta.categoria.dimension.id)
+                fecha_inicio = alerta.fecha_inicio
+                fecha_fin = alerta.fecha_fin or fecha_actual
 
                 meses_activos = []
                 while fecha_inicio <= fecha_fin:
@@ -678,7 +718,8 @@ class CiudadanosDetailView(DetailView):
                     fecha_inicio = fecha_inicio.replace(day=1)
 
                 for mes in meses_activos:
-                    datos_por_dimension[dimension][mes - 1] += 1
+                    if dimension in datos_por_dimension:
+                        datos_por_dimension[dimension][mes - 1] += 1
 
             mes_actual = fecha_actual.month
             datos_por_dimension = {
@@ -991,7 +1032,7 @@ def busqueda_familiares(request):
 
     paginate_by = 10
     familiares = (
-        Ciudadano.objects.annotate(doc_str=Cast("documento", CharField()))
+        Ciudadano.objects.annotate(doc_str=Cast("documento", TextField()))
         .filter(
             ~Q(id=ciudadano_principal_id)
             & (Q(apellido__icontains=busqueda) | Q(doc_str__startswith=busqueda))
@@ -1124,33 +1165,34 @@ class DerivacionBuscar(TemplateView):
 
     def get(self, request, *args, **kwargs):  # pylint: disable=too-many-locals
         context = self.get_context_data(**kwargs)
-        ciudadanos = cache.get("ciudadanos")
-        derivaciones = cache.get("derivaciones")
-        con_derivaciones = cache.get("con_derivaciones")
-        sin_derivaciones = cache.get("sin_derivaciones")
 
-        if not ciudadanos:
-            ciudadanos = Ciudadano.objects.all()
-            cache.set("ciudadanos", ciudadanos, 60)
-        if not derivaciones:
-            derivaciones = Derivacion.objects.all()
-            cache.set("derivaciones", derivaciones, 60)
-        if not con_derivaciones:
-            con_derivaciones = Derivacion.objects.none()
-            cache.set("con_derivaciones", con_derivaciones, 60)
-        if not sin_derivaciones:
-            sin_derivaciones = Ciudadano.objects.none()
-            cache.set("sin_derivaciones", sin_derivaciones, 60)
+        # Solo cargar datos cuando se haga una búsqueda específica
+        barrios = cache.get_or_set(
+            "ciudadanos_barrios",
+            Ciudadano.objects.values_list("barrio", flat=True).distinct(),
+            300,
+        )
+        circuitos = cache.get_or_set(
+            "circuitos_list", Circuito.objects.all().values_list("id", "circuito"), 300
+        )
+        localidad = cache.get_or_set(
+            "nacionalidades_list",
+            Nacionalidad.objects.all().values_list("id", "nacionalidad"),
+            300,
+        )
 
-        barrios = ciudadanos.values_list("barrio")
-        circuitos = Circuito.objects.all().values_list("id", "circuito")
-        localidad = Nacionalidad.objects.all().values_list("id", "nacionalidad")
         mostrar_resultados = False
         mostrar_btn_resetear = False
         query = self.request.GET.get("busqueda")
+        con_derivaciones = Derivacion.objects.none()
+        sin_derivaciones = Ciudadano.objects.none()
+
         if query:
+            # Solo buscar cuando se proporcione un término de búsqueda
             derivaciones_filtrado = (
-                derivaciones.annotate(doc_str=Cast("ciudadano__documento", CharField()))
+                Derivacion.objects.annotate(
+                    doc_str=Cast("ciudadano__documento", CharField())
+                )
                 .filter(
                     Q(ciudadano__apellido__icontains=query)
                     | Q(doc_str__startswith=query)
@@ -1159,12 +1201,11 @@ class DerivacionBuscar(TemplateView):
                 .distinct()
             )
             ciudadanos_filtrado = (
-                ciudadanos.annotate(doc_str=Cast("documento", CharField()))
+                Ciudadano.objects.annotate(doc_str=Cast("documento", TextField()))
                 .filter(Q(apellido__icontains=query) | Q(doc_str__startswith=query))
                 .distinct()
             )
-
-            if derivaciones_filtrado:
+            if derivaciones_filtrado.exists():
                 sin_derivaciones = ciudadanos_filtrado.exclude(
                     id__in=derivaciones_filtrado
                 )
@@ -1175,7 +1216,7 @@ class DerivacionBuscar(TemplateView):
             else:
                 sin_derivaciones = ciudadanos_filtrado
 
-            if not derivaciones_filtrado and not ciudadanos_filtrado:
+            if not derivaciones_filtrado.exists() and not ciudadanos_filtrado.exists():
                 messages.warning(self.request, "La búsqueda no arrojó resultados")
 
             mostrar_btn_resetear = True
@@ -1198,49 +1239,60 @@ class DerivacionListView(ListView):
     def get_context_data(self, **kwargs):
         context = super(DerivacionListView, self).get_context_data(**kwargs)
 
-        model = cache.get("model")
-        if not model:
-            model = Derivacion.objects.all()
-            cache.set("model", model, 60)
+        # Cache estados para evitar consultas repetidas
+        estado_pendiente = cache.get_or_set(
+            "estado_pendiente",
+            EstadoDerivacion.objects.filter(estado="Pendiente").first(),
+            300,
+        )
+        estado_aceptada = cache.get_or_set(
+            "estado_aceptada",
+            EstadoDerivacion.objects.filter(estado="Aceptada").first(),
+            300,
+        )
+        estado_analisis = cache.get_or_set(
+            "estado_analisis",
+            EstadoDerivacion.objects.filter(estado="En análisis").first(),
+            300,
+        )
+        estado_asesoradas = cache.get_or_set(
+            "estado_asesoradas",
+            EstadoDerivacion.objects.filter(estado="Asesoramiento").first(),
+            300,
+        )
 
-        context["pendientes"] = model.filter(
-            estado=EstadoDerivacion.objects.filter(estado="Pendiente").first()
+        # Optimización: usar una sola query con agregaciones para contar todos los estados
+        counts = Derivacion.objects.aggregate(
+            pendientes=Count(Case(When(estado=estado_pendiente, then=1))),
+            aceptadas=Count(Case(When(estado=estado_aceptada, then=1))),
+            analisis=Count(Case(When(estado=estado_analisis, then=1))),
+            asesoradas=Count(Case(When(estado=estado_asesoradas, then=1))),
+            enviadas=Count(Case(When(usuario=self.request.user, then=1))),
         )
-        context["aceptadas"] = model.filter(
-            estado=EstadoDerivacion.objects.filter(estado="Aceptada").first()
-        )
-        context["analisis"] = model.filter(
-            estado=EstadoDerivacion.objects.filter(estado="En análisis").first()
-        )
-        context["asesoradas"] = model.filter(
-            estado=EstadoDerivacion.objects.filter(estado="Asesoramiento").first()
-        )
-        context["enviadas"] = model.filter(usuario=self.request.user)
+
+        context.update(counts)
         return context
 
     # Funcion de busqueda
 
     def get_queryset(self):
-        model = cache.get("model")
-        if model is None:
-            model = Derivacion.objects.all()
-            cache.set("model", model, 60)
+        # Optimización: usar select_related para evitar N+1 queries
+        queryset = Derivacion.objects.select_related(
+            "ciudadano", "programa", "organismo", "estado", "usuario"
+        )
 
         query = self.request.GET.get("busqueda")
-
         if query:
-            object_list = (
-                model.annotate(doc_str=Cast("ciudadano__documento", CharField()))
+            queryset = (
+                queryset.annotate(doc_str=Cast("ciudadano__documento", CharField()))
                 .filter(
                     Q(ciudadano__apellido__icontains=query)
                     | Q(doc_str__startswith=query)
                 )
                 .distinct()
             )
-        else:
-            object_list = model.all()
 
-        return object_list.order_by("-estado")
+        return queryset.order_by("-fecha_creado")
 
 
 class DerivacionCreateView(CreateView):
@@ -1306,20 +1358,41 @@ class DerivacionHistorial(ListView):
         context = super(DerivacionHistorial, self).get_context_data(**kwargs)
         pk = self.kwargs.get("pk")
 
-        ciudadano = Ciudadano.objects.filter(id=pk).first()
-        historial = Derivacion.objects.filter(ciudadano_id=pk)
+        # Optimización: cargar solo campos necesarios del ciudadano
+        ciudadano = Ciudadano.objects.only("id", "nombre", "apellido").get(id=pk)
+
+        # Optimización: usar prefetch con select_related para historial
+        historial = Derivacion.objects.filter(ciudadano_id=pk).select_related(
+            "estado", "programa", "organismo"
+        )
+
+        # Optimización: usar cache para estados y una sola query con agregaciones
+        estado_pendiente = cache.get_or_set(
+            "estado_pendiente_hist",
+            EstadoDerivacion.objects.filter(estado="Pendiente").first(),
+            300,
+        )
+        estado_aceptada = cache.get_or_set(
+            "estado_aceptada_hist",
+            EstadoDerivacion.objects.filter(estado="Aceptada").first(),
+            300,
+        )
+        estado_rechazada = cache.get_or_set(
+            "estado_rechazada_hist",
+            EstadoDerivacion.objects.filter(estado="Rechazada").first(),
+            300,
+        )
+
+        # Optimización: una sola query para contar todos los estados
+        counts = historial.aggregate(
+            pendientes=Count(Case(When(estado=estado_pendiente, then=1))),
+            admitidas=Count(Case(When(estado=estado_aceptada, then=1))),
+            rechazadas=Count(Case(When(estado=estado_rechazada, then=1))),
+        )
 
         context["historial"] = historial
         context["ciudadano"] = ciudadano
-        context["pendientes"] = historial.filter(
-            estado=EstadoDerivacion.objects.filter(estado="Pendiente").first()
-        ).count()
-        context["admitidas"] = historial.filter(
-            estado=EstadoDerivacion.objects.filter(estado="Aceptada").first()
-        ).count()
-        context["rechazadas"] = historial.filter(
-            estado=EstadoDerivacion.objects.filter(estado="Rechazada").first()
-        ).count()
+        context.update(counts)
         return context
 
 
@@ -1413,7 +1486,7 @@ class DeleteAlerta(View):
             ).first()
 
             if registro_historial:
-                registro_historial.eliminada_por = request.user.usuarios
+                registro_historial.eliminada_por = request.user.username
                 registro_historial.fecha_fin = date.today()
                 registro_historial.save()
 
@@ -2051,7 +2124,7 @@ def busqueda_hogar(request):
 
     paginate_by = 10
     hogares = (
-        Ciudadano.objects.annotate(doc_str=Cast("documento", CharField()))
+        Ciudadano.objects.annotate(doc_str=Cast("documento", TextField()))
         .filter(
             ~Q(id=ciudadano_principal_id)
             & (Q(apellido__icontains=busqueda) | Q(doc_str__startswith=busqueda))
