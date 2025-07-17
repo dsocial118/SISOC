@@ -35,7 +35,7 @@ class ImportacionService:
                 lambda x: x.date() if hasattr(x, 'date') else x
             )
 
-        sample = df.head(max_rows).to_dict(orient='records')
+        sample = df.head(max_rows).fillna('').values.tolist()
         return {
             'headers': list(df.columns),
             'rows': sample
