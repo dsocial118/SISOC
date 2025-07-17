@@ -35,7 +35,6 @@
                                 <th>Comedor</th>
                                 <th>Tipo convenio</th>
                                 <th>Num Expediente</th>
-                                <th>Num IF</th>
                                 <th>Modificado</th>
                                 <th>Estado</th>
                                 <th style="width: 10%" class="notexport">Acciones</th>
@@ -51,7 +50,6 @@
                                     </td>
                                     <td>{{ admision.tipo_convenio.nombre }}</td>
                                     <td>{{ admision.num_expediente }}</td>
-                                    <td>{{ admision.num_if }}</td>
                                     <td>{{ admision.modificado|date:'d/m/Y' }}</td>
                                     <td>{{ admision.estado_legales| default_if_none:"-" }}</td>
                                     <td>

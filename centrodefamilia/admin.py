@@ -29,7 +29,8 @@ class ActividadCentroAdmin(admin.ModelAdmin):
         "get_categoria",
         "cantidad_personas",
         "dias",
-        "horarios",
+        "horariosdesde",
+        "horarioshasta",
     )
     list_filter = ("centro", "actividad", "actividad__categoria")
 
