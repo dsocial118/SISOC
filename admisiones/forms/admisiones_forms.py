@@ -69,10 +69,6 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
                 organizacion = comedor.organizacion
 
                 self.fields["expediente_nro"].initial = anexo.expediente
-                self.fields["nombre_organizacion"].initial = organizacion.nombre
-                self.fields["cuit_organizacion"].initial = organizacion.cuit
-                self.fields["mail_organizacion"].initial = organizacion.email
-                self.fields["telefono_organizacion"].initial = organizacion.telefono
                 self.fields["nombre_espacio"].initial = anexo.efector
                 self.fields["tipo_espacio"].initial = anexo.tipo_espacio
                 self.fields["barrio_espacio"].initial = comedor.barrio
@@ -87,6 +83,12 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
                     anexo.responsable_domicilio
                 )
                 self.fields["responsable_tarjeta_mail"].initial = anexo.responsable_mail
+                
+                if organizacion:
+                    self.fields["nombre_organizacion"].initial = organizacion.nombre
+                    self.fields["cuit_organizacion"].initial = organizacion.cuit
+                    self.fields["mail_organizacion"].initial = organizacion.email
+                    self.fields["telefono_organizacion"].initial = organizacion.telefono
 
             except Anexo.DoesNotExist:
                 pass
@@ -138,10 +140,6 @@ class InformeTecnicoBaseForm(forms.ModelForm):
                 organizacion = comedor.organizacion
 
                 self.fields["expediente_nro"].initial = anexo.expediente
-                self.fields["nombre_organizacion"].initial = organizacion.nombre
-                self.fields["cuit_organizacion"].initial = organizacion.cuit
-                self.fields["mail_organizacion"].initial = organizacion.email
-                self.fields["telefono_organizacion"].initial = organizacion.telefono
                 self.fields["nombre_espacio"].initial = anexo.efector
                 self.fields["tipo_espacio"].initial = anexo.tipo_espacio
                 self.fields["barrio_espacio"].initial = comedor.barrio
@@ -156,6 +154,11 @@ class InformeTecnicoBaseForm(forms.ModelForm):
                     anexo.responsable_domicilio
                 )
                 self.fields["responsable_tarjeta_mail"].initial = anexo.responsable_mail
+                if organizacion:
+                    self.fields["nombre_organizacion"].initial = organizacion.nombre
+                    self.fields["cuit_organizacion"].initial = organizacion.cuit
+                    self.fields["mail_organizacion"].initial = organizacion.email
+                    self.fields["telefono_organizacion"].initial = organizacion.telefono
 
             except Anexo.DoesNotExist:
                 pass
