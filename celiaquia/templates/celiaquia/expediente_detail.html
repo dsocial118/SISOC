@@ -1,3 +1,4 @@
+<!-- templates/celiaquia/expediente_detail.html -->
 {% extends "includes/main.html" %}
 {% load static %}
 
@@ -14,20 +15,18 @@
 <div class="mb-3">
   <a href="{% url 'expediente_list' %}" class="btn btn-outline-secondary btn-sm">← Volver</a>
   {% if expediente.estado.nombre == 'CREADO' %}
-    <form class="d-inline" method="post" action="{% url 'expediente_update' expediente.pk %}">
-      {% csrf_token %}
-      <button class="btn btn-outline-primary btn-sm">Editar Metadatos</button>
-    </form>
+    <a href="{% url 'expediente_update' expediente.pk %}" class="btn btn-outline-primary btn-sm ms-2">Editar Metadatos</a>
   {% endif %}
 </div>
 
-{# Vista previa del Excel antes de importar #}
+{# Vista previa del Excel #}
 {% if preview %}
   <div class="card mb-4">
     <div class="card-header bg-light">
       <h5 class="mb-0">Vista previa del Excel</h5>
     </div>
     <div class="card-body">
+      <div id="preview-error-detail" class="text-danger mb-2"></div>
       <div class="table-responsive">
         <table class="table table-sm">
           <thead>
@@ -38,37 +37,24 @@
             </tr>
           </thead>
           <tbody>
-            {% for row in preview.sample_rows %}
+            {% for row in preview.rows %}
               <tr>
-                {% for h in preview.headers %}
-                  <td>{{ row[h] }}</td>
+                {% for cell in row %}
+                  <td>{{ cell }}</td>
                 {% endfor %}
               </tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
-      <form method="post" action="{% url 'expediente_import' expediente.pk %}">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-primary mt-3">
-          Crear legajos
-        </button>
-      </form>
+      <button id="btn-create-legajos" class="btn btn-primary mt-3">Crear legajos</button>
     </div>
   </div>
 {% elif preview_error %}
   <div class="alert alert-danger">{{ preview_error }}</div>
 {% endif %}
 
-{# Mensaje de resultado tras la importación #}
-{% if import_result %}
-  <div class="alert alert-info">
-    Se crearon <strong>{{ import_result.validos }}</strong> legajos y
-    <strong>{{ import_result.errores }}</strong> con error.
-  </div>
-{% endif %}
-
-{# Tabla de legajos ya existentes en el expediente #}
+{# Tabla de legajos #}
 <div class="card mb-4">
   <div class="card-header bg-light">
     <h5 class="mb-0">Legajos del Expediente</h5>
@@ -81,7 +67,7 @@
             <th>DNI</th>
             <th>Nombre</th>
             <th>Estado</th>
-            <th class="text-end">Archivo</th>
+            <th class="text-end">Acción</th>
           </tr>
         </thead>
         <tbody>
@@ -90,9 +76,7 @@
               <td>{{ leg.ciudadano.documento }}</td>
               <td>{{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}</td>
               <td>
-                <span class="badge
-                  {% if leg.estado.nombre == 'DOCUMENTO_PENDIENTE' %}bg-warning
-                  {% else %}bg-success{% endif %}">
+                <span class="badge {% if leg.estado.nombre == 'DOCUMENTO_PENDIENTE' %}bg-warning{% else %}bg-success{% endif %}">
                   {{ leg.estado.display_name }}
                 </span>
               </td>
@@ -100,10 +84,7 @@
                 {% if leg.archivo %}
                   <a href="{{ leg.archivo.url }}" class="btn btn-sm btn-outline-info">Ver</a>
                 {% else %}
-                  <a href="{% url 'legajo_archivo_upload' expediente.pk leg.pk %}"
-                     class="btn btn-sm btn-primary">
-                    Subir Archivo
-                  </a>
+                  <a href="{% url 'legajo_archivo_upload' expediente.pk leg.pk %}" class="btn btn-sm btn-primary">Subir Archivo</a>
                 {% endif %}
               </td>
             </tr>
@@ -117,17 +98,21 @@
     </div>
   </div>
 
-  {% if legajos %}
+  {% if legajos and expediente.estado.nombre == 'CREADO' %}
     <div class="card-footer text-end">
-      <form method="post" action="{% url 'expediente_confirm' expediente.pk %}">
-        {% csrf_token %}
-        <button type="submit"
-                class="btn btn-success"
-                {% if legajos|length != import_result.validos %}disabled{% endif %}>
-          Confirmar Envío
-        </button>
-      </form>
+      <button id="btn-confirm" class="btn btn-success"
+              {% if legajos|length < preview.rows|length %}disabled{% endif %}>
+        Confirmar Envío
+      </button>
     </div>
   {% endif %}
 </div>
+{% endblock %}
+
+{% block customJS %}
+  <script>
+    const CREATE_LEGAJOS_URL = "{% url 'crear_legajos' expediente.pk %}";
+    const CONFIRM_URL        = "{% url 'expediente_confirm' expediente.pk %}";
+  </script>
+  <script src="{% static 'custom/js/expediente_detail.js' %}"></script>
 {% endblock %}
