@@ -2,8 +2,8 @@ from django.core.validators import MaxValueValidator, MinValueValidator, RegexVa
 from django.db import models
 from django.utils import timezone
 
-from configuraciones.models import Municipio, Provincia
-from configuraciones.models import Localidad
+from core.models import Municipio, Provincia
+from core.models import Localidad
 from organizaciones.models import Organizacion
 from ciudadanos.models import Ciudadano, EstadoIntervencion
 from duplas.models import Dupla
@@ -266,7 +266,6 @@ class Observacion(models.Model):
         indexes = [
             models.Index(fields=["comedor"]),
         ]
-        unique_together = [["comedor", "fecha_visita"]]
         verbose_name = "Observacion"
         verbose_name_plural = "Observaciones"
 

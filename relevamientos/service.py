@@ -41,7 +41,7 @@ from relevamientos.models import (
     TipoTecnologia,
 )
 from relevamientos.tasks import AsyncSendRelevamientoToGestionar
-from config.utils import convert_string_to_int
+from core.utils import convert_string_to_int
 
 
 # TODO: Refactorizar todo esto, pylint esta muriendo aca
@@ -177,7 +177,6 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                     "responsable_relevamiento__mail",
                     "responsable_relevamiento__celular",
                     "responsable_relevamiento__documento",
-                    "responsable_relevamiento__funcion",
                     "comedor__comienzo",
                     "comedor__id",
                     "comedor__calle",

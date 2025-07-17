@@ -1,7 +1,14 @@
-from admisiones.models.admisiones import Admision
+from django.db.models import Q
+from admisiones.models.admisiones import (
+    Admision,
+    InformeTecnico,
+    DocumentosExpediente,
+    Anexo,
+)
 from acompanamientos.models.hitos import Hitos, HitosIntervenciones
 from acompanamientos.models.acompanamiento import InformacionRelevante, Prestacion
 from intervenciones.models.intervenciones import Intervencion, SubIntervencion
+from comedores.models import Comedor
 
 
 class AcompanamientoService:
@@ -15,10 +22,17 @@ class AcompanamientoService:
         Returns:
             None
         """
-        hitos_existente = Hitos.objects.filter(comedor=intervenciones.comedor).first()
+        # Optimización: select_related para evitar query adicional al comedor
+        hitos_existente = (
+            Hitos.objects.select_related("comedor")
+            .filter(comedor=intervenciones.comedor)
+            .first()
+        )
+
         if intervenciones.subintervencion is None:
             intervenciones.subintervencion = SubIntervencion()
             intervenciones.subintervencion.nombre = ""
+
         hitos_a_actualizar = HitosIntervenciones.objects.filter(
             intervencion=intervenciones.tipo_intervencion.nombre,
             subintervencion=intervenciones.subintervencion.nombre,
@@ -57,7 +71,7 @@ class AcompanamientoService:
         Returns:
             Hitos | None
         """
-        return Hitos.objects.filter(comedor=comedor).first()
+        return Hitos.objects.select_related("comedor").filter(comedor=comedor).first()
 
     @staticmethod
     def importar_datos_desde_admision(comedor):
@@ -93,3 +107,164 @@ class AcompanamientoService:
                 merienda=prestacion.merienda,
                 cena=prestacion.cena,
             )
+
+    @staticmethod
+    def obtener_datos_admision(comedor):
+        """Obtener todos los datos relacionados con la admisión de un comedor.
+
+        Args:
+            comedor: Comedor del cual obtener los datos de admisión.
+
+        Returns:
+            dict: Diccionario con datos de admisión, info relevante, anexo, etc.
+        """
+        admision = (
+            Admision.objects.filter(comedor=comedor)
+            .exclude(legales_num_if__isnull=True)
+            .exclude(legales_num_if="")
+            .order_by("-id")
+            .first()
+        )
+
+        info_relevante = None
+        anexo = None
+        resolucion = None
+
+        if admision:
+            info_relevante = (
+                InformeTecnico.objects.filter(admision=admision).order_by("-id").first()
+            )
+            anexo = Anexo.objects.filter(admision=admision).first()
+            comedor = Comedor.objects.filter(id=admision.comedor_id).first()
+
+            doc_resolucion = (
+                DocumentosExpediente.objects.filter(
+                    admision=admision, tipo="Disposición"
+                )
+                .order_by("-creado")
+                .first()
+            )
+            if doc_resolucion:
+                resolucion = doc_resolucion.value or doc_resolucion.nombre
+
+        return {
+            "admision": admision,
+            "comedor": comedor,
+            "info_relevante": info_relevante,
+            "anexo": anexo,
+            "numero_if": admision.legales_num_if if admision else None,
+            "numero_disposicion": resolucion,
+        }
+
+    @staticmethod
+    def obtener_prestaciones_detalladas(anexo):
+        """Procesar los datos del anexo para generar las prestaciones por día y totales.
+
+        Args:
+            anexo: Anexo con los datos de prestaciones.
+
+        Returns:
+            dict: Diccionario con prestaciones_por_dia, prestaciones_dias y dias_semana.
+        """
+        if not anexo:
+            return {
+                "prestaciones_por_dia": [],
+                "prestaciones_dias": [],
+                "dias_semana": [],
+            }
+
+        dias = [
+            "lunes",
+            "martes",
+            "miercoles",
+            "jueves",
+            "viernes",
+            "sabado",
+            "domingo",
+        ]
+        tipos_comida = ["desayuno", "almuerzo", "merienda", "cena"]
+
+        prestaciones_por_dia = []
+        prestaciones_totales = []
+
+        for tipo in tipos_comida:
+            fila = {"tipo": tipo.capitalize()}
+            total_semanal = 0
+
+            for dia in dias:
+                campo_nombre = f"{tipo}_{dia}"
+                cantidad = getattr(anexo, campo_nombre, 0)
+                fila[dia] = cantidad
+                total_semanal += cantidad or 0
+
+            prestaciones_por_dia.append(fila)
+            prestaciones_totales.append(
+                {"tipo": tipo.capitalize(), "cantidad": total_semanal}
+            )
+
+        return {
+            "prestaciones_por_dia": prestaciones_por_dia,
+            "prestaciones_dias": prestaciones_totales,
+            "dias_semana": [dia.capitalize() for dia in dias],
+        }
+
+    @staticmethod
+    def obtener_comedores_acompanamiento(user, busqueda=None):
+        """
+        Obtiene un queryset de objetos Comedor que cumplen con los criterios de acompañamiento,
+        filtrando según el usuario y una búsqueda opcional.
+
+        - Si el usuario es superusuario o pertenece al grupo "Area Legales", obtiene todos los comedores
+          con admisión en estado 2 y enviados a acompañamiento.
+        - Si no, filtra los comedores donde el usuario es abogado o técnico asignado en la dupla.
+        - Permite aplicar un filtro de búsqueda global sobre varios campos relacionados (nombre, provincia,
+          tipo de comedor, dirección, referente, etc.).
+
+        Args:
+            user (User): Usuario autenticado que realiza la consulta.
+            busqueda (str, optional): Texto de búsqueda global para filtrar los resultados. Por defecto es None.
+
+        Returns:
+            QuerySet: QuerySet de objetos Comedor filtrados según los criterios especificados.
+        """
+        # Optimización: Cache de grupos del usuario para evitar queries repetidas
+        user_groups = list(user.groups.values_list("name", flat=True))
+        is_area_legales = "Area Legales" in user_groups
+
+        # Optimización: Query más eficiente usando JOIN en lugar de subquery
+        queryset = Comedor.objects.select_related(
+            "referente", "tipocomedor", "provincia", "dupla__abogado"
+        ).prefetch_related("dupla__tecnico")
+
+        # Si no es superusuario, filtramos por dupla asignada
+        if not user.is_superuser and not is_area_legales:
+            queryset = queryset.select_related("dupla__abogado").filter(
+                Q(dupla__abogado=user) | Q(dupla__tecnico=user)
+            )
+
+        # Aplicamos búsqueda global
+        if busqueda:
+            queryset = queryset.filter(
+                Q(nombre__icontains=busqueda)
+                | Q(provincia__nombre__icontains=busqueda)
+                | Q(tipocomedor__nombre__icontains=busqueda)
+                | Q(calle__icontains=busqueda)
+                | Q(numero__icontains=busqueda)
+                | Q(referente__nombre__icontains=busqueda)
+                | Q(referente__apellido__icontains=busqueda)
+                | Q(referente__celular__icontains=busqueda)
+            )
+
+        return queryset
+
+    @staticmethod
+    def verificar_permisos_tecnico_comedor(user):
+        """Verificar si el usuario tiene permisos de técnico de comedor.
+
+        Args:
+            user: Usuario a verificar.
+
+        Returns:
+            bool: True si tiene permisos, False en caso contrario.
+        """
+        return user.is_superuser or user.groups.filter(name="Tecnico Comedor").exists()

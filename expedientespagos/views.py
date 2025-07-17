@@ -20,6 +20,10 @@ class ExpedientesPagosListView(ListView):
     context_object_name = "expedientespagos"
     paginate_by = 10
 
+    def get_queryset(self):
+        """Retorna expedientes ordenados para evitar warning de paginación"""
+        return ExpedientePago.objects.order_by("-id")
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor_id = self.kwargs.get("pk")
