@@ -1,55 +1,59 @@
+{# templates/celiaquia/expediente_form.html #}
 {% extends "includes/main.html" %}
 {% load static crispy_forms_tags %}
-{% block title %}Expediente{% endblock %}
 
-{% block breadcrumb %}
-<ol class="breadcrumb float-sm-right px-3">
-    <li class="breadcrumb-item">
-        <a href="{% url 'celiaquia_expedientes_listar' %}">Expedientes</a>
-    </li>
-    {% if expediente %}
-        <li class="breadcrumb-item">
-            <a href="{% url 'celiaquia_expedientes_detalle' expediente.id %}">Expediente {{ expediente.id }}</a>
-        </li>
-        <li class="breadcrumb-item active">Editar</li>
-    {% else %}
-        <li class="breadcrumb-item active">Agregar</li>
-    {% endif %}
-</ol>
+{% block title %}
+  {% if view.object %}Editar Expediente{% else %}Crear Expediente{% endif %}
 {% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between mb-3">
-    <div>
-        {% if expediente %}
-            <a href="{% url 'celiaquia_expedientes_detalle' expediente.id %}" class='btn btn-secondary'>Volver</a>
-        {% else %}
-            <a href="{% url 'celiaquia_expedientes_listar' %}" class='btn btn-secondary'>Volver</a>
-        {% endif %}
-    </div>
-</div>
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h3 class="card-title mb-4 text-center">
+          {% if view.object %}Editar Expediente{% else %}Crear Expediente{% endif %}
+        </h3>
+        <form id="expediente-form" method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          {{ form|crispy }}
 
-<div class="row">
-    <div class="col-12">
-        <form method="post">
-            {% csrf_token %}
-            <div class="card card-primary card-outline">
-                <div class="card-header mb-3">
-                    <h3 class="card-title">
-                        {% if expediente %}Editar{% else %}Crear{% endif %} Expediente
-                    </h3>
-                </div>
-                <div class="card-body">
-                    <div class="form-row">
-                        <div class="col-md-6">{{ form.provincia|as_crispy_field }}</div>
-                        <div class="col-md-6">{{ form.observaciones|as_crispy_field }}</div>
-                    </div>
-                </div>
+          {# Contenedor de error para la previsualización #}
+          <div id="preview-error" class="text-danger mt-2"></div>
+
+          <div class="d-flex justify-content-between mt-3">
+            <button type="button" id="btn-preview" class="btn btn-outline-secondary">
+              Previsualizar Excel
+            </button>
+            <div>
+              <button type="submit" class="btn btn-success me-2">Guardar</button>
+              <a href="{% url 'expediente_list' %}" class="btn btn-secondary">Cancelar</a>
             </div>
-            <div class="d-flex justify-content-end">
-                <button class="btn btn-success mx-1" type="submit">Guardar expediente</button>
-            </div>
+          </div>
         </form>
+
+        {# Contenedor para la tabla de preview, oculto por defecto #}
+        <div id="preview-container" class="mt-4 d-none">
+          <h5>Vista previa del Excel</h5>
+          <div class="table-responsive">
+            <table id="preview-table" class="table table-bordered mb-0">
+              <thead>
+                <tr id="preview-headers"></tr>
+              </thead>
+              <tbody id="preview-rows"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
 </div>
+{% endblock %}
+
+{% block customJS %}
+  {# Inyectamos la URL de preview antes del script #}
+  <script type="text/javascript">
+    window.PREVIEW_URL = "{% url 'expediente_preview_excel' %}";
+  </script>
+  <script src="{% static 'custom/js/celiaquia.js' %}"></script>
 {% endblock %}

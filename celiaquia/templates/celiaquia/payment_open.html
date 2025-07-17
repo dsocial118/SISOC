@@ -1,25 +1,24 @@
-
 {% extends "includes/main.html" %}
 {% load crispy_forms_tags %}
-{% block title %}Subir Cruce{% endblock %}
+{% block title %}Abrir Pago{% endblock %}
 {% block breadcrumb %}
 <ol class="breadcrumb float-sm-right">
   <li class="breadcrumb-item"><a href="{% url 'expediente_list' %}">Expedientes</a></li>
-  <li class="breadcrumb-item active">Subir Cruce</li>
+  <li class="breadcrumb-item active">Abrir Pago</li>
 </ol>
 {% endblock %}
 {% block content %}
 <div class="row justify-content-center">
-  <div class="col-md-6">
+  <div class="col-md-5">
     <div class="card shadow-sm">
       <div class="card-body">
-        <h4 class="card-title mb-4 text-center">Nuevo Archivo de Cruce</h4>
-        <form method="post" enctype="multipart/form-data">
+        <h5 class="card-title mb-3">Abrir Proceso de Pago</h5>
+        <form method="post">
           {% csrf_token %}
           {{ form|crispy }}
-          <div class="d-flex justify-content-between mt-4">
-            <a href="{% url 'expediente_detail' expediente.pk %}" class="btn btn-secondary">Cancelar</a>
-            <button type="submit" class="btn btn-primary">Subir</button>
+          <div class="d-flex justify-content-end mt-4">
+            <a href="{% url 'expediente_detail' expediente.pk %}" class="btn btn-secondary me-2">Cancelar</a>
+            <button type="submit" class="btn btn-success">Abrir Pago</button>
           </div>
         </form>
       </div>

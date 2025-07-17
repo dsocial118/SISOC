@@ -1,0 +1,77 @@
+[
+  {
+    "model": "celiaquia.estadoexpediente",
+    "pk": 1,
+    "fields": { "nombre": "CREADO" }
+  },
+  {
+    "model": "celiaquia.estadoexpediente",
+    "pk": 2,
+    "fields": { "nombre": "CONFIRMACION_DE_ENVIO" }
+  },
+  {
+    "model": "celiaquia.estadoexpediente",
+    "pk": 3,
+    "fields": { "nombre": "EN_ESPERA" }
+  },
+  {
+    "model": "celiaquia.estadoexpediente",
+    "pk": 4,
+    "fields": { "nombre": "ASIGNADO" }
+  },
+  {
+    "model": "celiaquia.estadoexpediente",
+    "pk": 5,
+    "fields": { "nombre": "PROCESO_DE_CRUCE" }
+  },
+  {
+    "model": "celiaquia.estadoexpediente",
+    "pk": 6,
+    "fields": { "nombre": "CRUCE_FINALIZADO" }
+  },
+  {
+    "model": "celiaquia.estadoexpediente",
+    "pk": 7,
+    "fields": { "nombre": "PAGO_ABIERTO" }
+  },
+  {
+    "model": "celiaquia.estadoexpediente",
+    "pk": 8,
+    "fields": { "nombre": "PAGO_CERRADO" }
+  },
+  {
+    "model": "celiaquia.estadolegajo",
+    "pk": 1,
+    "fields": { "nombre": "DOCUMENTO_PENDIENTE" }
+  },
+  {
+    "model": "celiaquia.estadolegajo",
+    "pk": 2,
+    "fields": { "nombre": "ARCHIVO_CARGADO" }
+  },
+  {
+    "model": "celiaquia.organismo",
+    "pk": 1,
+    "fields": { "nombre": "Syntis" }
+  },
+  {
+    "model": "celiaquia.organismo",
+    "pk": 2,
+    "fields": { "nombre": "Salud" }
+  },
+  {
+    "model": "celiaquia.organismo",
+    "pk": 3,
+    "fields": { "nombre": "Renaper" }
+  },
+  {
+    "model": "celiaquia.tipocruce",
+    "pk": 1,
+    "fields": { "nombre": "Aprobado" }
+  },
+  {
+    "model": "celiaquia.tipocruce",
+    "pk": 2,
+    "fields": { "nombre": "Rechazado" }
+  }
+]

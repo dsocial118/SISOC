@@ -1,172 +1,133 @@
 {% extends "includes/main.html" %}
 {% load static %}
-{% load celiaquia_filters %}
 
-{% block title %}Detalle de Expediente{% endblock %}
+{% block title %}Expediente {{ expediente.codigo }}{% endblock %}
+
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right">
+  <li class="breadcrumb-item"><a href="{% url 'expediente_list' %}">Expedientes</a></li>
+  <li class="breadcrumb-item active">{{ expediente.codigo }}</li>
+</ol>
+{% endblock %}
 
 {% block content %}
-<div class="container">
-  <h2 class="mt-4 mb-3">Detalle del Expediente</h2>
-   <div class="d-flex justify-content-end gap-2 flex-wrap m-3">
-      {% if expediente.estado.nombre == "Creado" %}
-        <a href="{% url 'celiaquia_expedientes_formulario' expediente.id %}" class="btn btn-info">Cargar Personas</a>
-        <form method="post" action="{% url 'celiaquia_expedientes_confirmar' expediente.id %}" class="d-inline">
-          {% csrf_token %}
-          <button type="submit" class="btn btn-success">Finalizar Expediente</button>
-        </form>
-      {% endif %}
-
-      {% if puede_subir_cruces %}
-        <a href="{% url 'celiaquia_cruce_archivos_subir' expediente.id %}" class="btn btn-warning">Subir Archivos de Cruce</a>
-      {% endif %}
-
-      {% if puede_confirmar_nomina %}
-        <form method="post" action="{% url 'celiaquia_cruce_validar' expediente.id %}" class="d-inline">
-          {% csrf_token %}
-          <button type="submit" class="btn btn-success">Confirmar Nómina</button>
-        </form>
-      {% endif %}
-      <a href="{% url 'celiaquia_carga_masiva' expediente.id %}" class="btn btn-outline-primary">Carga Masiva Excel</a>
-
-    </div>
-
-  <div class="card mb-4">
-    <div class="card-header"><strong>Información del Expediente</strong></div>
-    <div class="card-body">
-      <p><strong>ID:</strong> {{ expediente.id }}</p>
-      <p><strong>Estado:</strong> {{ expediente.estado.nombre }}</p>
-      <p><strong>Fecha de creación:</strong> {{ expediente.fecha_creacion }}</p>
-      {% if expediente.tecnico_asignado %}
-        <p><strong>Técnico asignado:</strong> {{ expediente.tecnico_asignado.get_full_name|default:expediente.tecnico_asignado.username }}</p>
-      {% endif %}
-    </div>
-  </div>
-
-  {% if expediente.estado.nombre == "Finalizado por Provincia" and tecnicos %}
-<div class="card mb-4">
-  <div class="card-header"><strong>Asignar Técnico</strong></div>
-  <div class="card-body">
-    <form method="post" action="{% url 'celiaquia_expedientes_asignar' expediente.id %}">
+<div class="mb-3">
+  <a href="{% url 'expediente_list' %}" class="btn btn-outline-secondary btn-sm">← Volver</a>
+  {% if expediente.estado.nombre == 'CREADO' %}
+    <form class="d-inline" method="post" action="{% url 'expediente_update' expediente.pk %}">
       {% csrf_token %}
-      <div class="form-group">
-        <label for="tecnico">Seleccionar Técnico:</label>
-        <select name="tecnico" id="tecnico" class="form-control" required>
-          {% for tecnico in tecnicos %}
-            <option value="{{ tecnico.id }}">{{ tecnico.get_full_name|default:tecnico.username }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <button type="submit" class="btn btn-primary mt-2">Asignar</button>
+      <button class="btn btn-outline-primary btn-sm">Editar Metadatos</button>
     </form>
-  </div>
+  {% endif %}
 </div>
-{% endif %}
-  
 
-    {% if resultado_cruce %}
-    <div class="card mb-4">
-    <div class="card-header"><strong>Nómina Final Validada</strong></div>
+{# Vista previa del Excel antes de importar #}
+{% if preview %}
+  <div class="card mb-4">
+    <div class="card-header bg-light">
+      <h5 class="mb-0">Vista previa del Excel</h5>
+    </div>
     <div class="card-body">
-        <ul>
-        {% for fila in resultado_cruce %}
-            <li>{{ fila.dni }}</li>
-        {% endfor %}
-        </ul>
-    </div>
-    </div>
-    {% endif %}
-
-
-  {% if page_obj %}
-    <div class="card mb-4">
-      <div class="card-header"><strong>Ciudadanos Cargados</strong></div>
-      <div class="card-body table-responsive">
-        <table class="table table-striped table-bordered">
-          <thead class="thead-light">
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead>
             <tr>
-              <th>Apellido</th>
-              <th>Nombre</th>
-              <th>DNI</th>
-              <th>Sexo</th>
-              <th>Fecha de Nacimiento</th>
+              {% for h in preview.headers %}
+                <th>{{ h|capfirst }}</th>
+              {% endfor %}
             </tr>
           </thead>
           <tbody>
-            {% for persona in page_obj %}
+            {% for row in preview.sample_rows %}
               <tr>
-                <td>{{ persona.apellido }}</td>
-                <td>{{ persona.nombre }}</td>
-                <td>{{ persona.dni }}</td>
-                <td>{{ persona.sexo }}</td>
-                <td>{{ persona.fecha_nacimiento }}</td>
+                {% for h in preview.headers %}
+                  <td>{{ row[h] }}</td>
+                {% endfor %}
               </tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
+      <form method="post" action="{% url 'expediente_import' expediente.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary mt-3">
+          Crear legajos
+        </button>
+      </form>
     </div>
-
-    <div class="pagination">
-      <span class="step-links">
-        {% if page_obj.has_previous %}
-          <a href="?page=1">&laquo; Primero</a>
-          <a href="?page={{ page_obj.previous_page_number }}">Anterior</a>
-        {% endif %}
-
-        <span class="current">
-          Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}.
-        </span>
-
-        {% if page_obj.has_next %}
-          <a href="?page={{ page_obj.next_page_number }}">Siguiente</a>
-          <a href="?page={{ page_obj.paginator.num_pages }}">Última &raquo;</a>
-        {% endif %}
-      </span>
-    </div>
-  {% else %}
-    <div class="alert alert-info mt-3">No hay personas asociadas al expediente.</div>
-  {% endif %}
-
-  {% if expediente.archivos_cruce.exists %}
-    <div class="card mb-4">
-      <div class="card-header"><strong>Archivos de Cruce</strong></div>
-      <div class="card-body">
-        <div class="table-responsive">
-          <table class="table table-bordered table-striped">
-            <thead class="thead-light">
-              <tr>
-                <th>Archivo</th>
-                <th>Organismo</th>
-                <th>Tipo</th>
-                <th>Fecha de subida</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for archivo in expediente.archivos_cruce.all %}
-                <tr>
-                  <td>
-                    <a href="{{ archivo.archivo.url }}" target="_blank">
-                      {{ archivo.archivo.name|cut:"cruces/" }}
-                    </a>
-                  </td>
-                  <td>{{ archivo.get_organismo_display }}</td>
-                  <td>{{ archivo.get_tipo_display }}</td>
-                  <td>{{ archivo.fecha_subida|date:"d/m/Y H:i" }}</td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  {% else %}
-    {% if puede_subir_cruces %}
-      <div class="alert alert-info">Todavía no se han subido archivos de cruce.</div>
-    {% endif %}
-  {% endif %}
-
-  <div class="mt-3">
-    <a href="{% url 'celiaquia_expedientes_listar' %}" class="btn btn-secondary">Volver al listado</a>
   </div>
+{% elif preview_error %}
+  <div class="alert alert-danger">{{ preview_error }}</div>
+{% endif %}
+
+{# Mensaje de resultado tras la importación #}
+{% if import_result %}
+  <div class="alert alert-info">
+    Se crearon <strong>{{ import_result.validos }}</strong> legajos y
+    <strong>{{ import_result.errores }}</strong> con error.
+  </div>
+{% endif %}
+
+{# Tabla de legajos ya existentes en el expediente #}
+<div class="card mb-4">
+  <div class="card-header bg-light">
+    <h5 class="mb-0">Legajos del Expediente</h5>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>DNI</th>
+            <th>Nombre</th>
+            <th>Estado</th>
+            <th class="text-end">Archivo</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for leg in legajos %}
+            <tr>
+              <td>{{ leg.ciudadano.documento }}</td>
+              <td>{{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}</td>
+              <td>
+                <span class="badge
+                  {% if leg.estado.nombre == 'DOCUMENTO_PENDIENTE' %}bg-warning
+                  {% else %}bg-success{% endif %}">
+                  {{ leg.estado.display_name }}
+                </span>
+              </td>
+              <td class="text-end">
+                {% if leg.archivo %}
+                  <a href="{{ leg.archivo.url }}" class="btn btn-sm btn-outline-info">Ver</a>
+                {% else %}
+                  <a href="{% url 'legajo_archivo_upload' expediente.pk leg.pk %}"
+                     class="btn btn-sm btn-primary">
+                    Subir Archivo
+                  </a>
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="4" class="text-center py-3 text-muted">No hay legajos cargados.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% if legajos %}
+    <div class="card-footer text-end">
+      <form method="post" action="{% url 'expediente_confirm' expediente.pk %}">
+        {% csrf_token %}
+        <button type="submit"
+                class="btn btn-success"
+                {% if legajos|length != import_result.validos %}disabled{% endif %}>
+          Confirmar Envío
+        </button>
+      </form>
+    </div>
+  {% endif %}
 </div>
 {% endblock %}
