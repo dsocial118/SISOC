@@ -1,106 +1,111 @@
 {% extends "includes/main.html" %}
 {% load static %}
 {% block title %}Expedientes Celiaquía{% endblock %}
-
 {% block breadcrumb %}
 <ol class="breadcrumb float-sm-right">
-    <li class="breadcrumb-item"><a href="#">Celiaquía</a></li>
-    <li class="breadcrumb-item active">Expedientes</li>
+  <li class="breadcrumb-item"><a href="{% url 'expediente_list' %}">Expedientes</a></li>
+  <li class="breadcrumb-item active">Listar</li>
 </ol>
 {% endblock %}
-
 {% block content %}
-<h2 class="text-center display-4 mb-4">Listado de Expedientes</h2>
-
-<form method="GET">
-    <div class="row">
-        <div class="col-md-10 offset-md-1">
-            <div class="form-group">
-                <div class="input-group input-group-lg">
-                    <input type="search"
-                           class="form-control form-control-lg"
-                           placeholder="Buscar por provincia u observaciones"
-                           name="busqueda" />
-                    <div class="input-group-append">
-                        <button type="submit" class="btn btn-lg btn-primary">
-                            <i class="fa fa-search"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</form>
-
-<div class="row mt-3">
-    <div class="col-12 text-center">
-        <a href="{% url 'celiaquia_expedientes_listar' %}" class="btn btn-secondary btn-lg d-block d-sm-inline mt-2">Resetear</a>
-        {% if perms.celiaquia.add_expediente %}
-            <a href="{% url 'celiaquia_expedientes_crear' %}" class="btn btn-primary btn-lg d-block d-sm-inline mt-2 mr-2">Agregar</a>
-        {% endif %}
-    </div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2 class="h3">Mis Expedientes</h2>
+ <a href="{% url 'expediente_create' %}" class="btn btn-primary">
+   <i class="fa fa-plus-circle me-1"></i> Nuevo Expediente
+ </a>
 </div>
 
-<div class="row mt-5">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body">
-                <table class="table table-bordered table-striped projects">
-                    <thead>
-                        <tr>
-                            <th>Provincia</th>
-                            <th>Fecha de creación</th>
-                            <th>Estado</th>
-                            <th>Observaciones</th>
-                            <th style="width: 15%" class="notexport">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for expediente in expedientes %}
-                        <tr>
-                            <td>{{ expediente.provincia }}</td>
-                            <td>{{ expediente.fecha_creacion|date:"d/m/Y H:i" }}</td>
-                            <td>{{ expediente.estado.nombre }}</td>
-                            <td>{{ expediente.observaciones|truncatewords:15 }}</td>
-                            <td>
-                                <div class="btn-group" role="group">
-                                    <a href="{% url 'celiaquia_expedientes_detalle' expediente.id %}" class="btn btn-primary btn-sm">Ver</a>
-                                    {% if expediente.estado.nombre == 'Creado' %}
-                                        <a href="{% url 'celiaquia_expedientes_editar' expediente.id %}" class="btn btn-secondary btn-sm">Editar</a>
-                                    {% endif %}
-                                </div>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="5" class="text-center">No se encontraron expedientes.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% if is_paginated %}
-                <div class="mt-2">
-                    <ul class="pagination justify-content-center">
-                        {% if page_obj.has_previous %}
-                        <li class="page-item">
-                            <a href="?page={{ page_obj.previous_page_number }}" class="page-link">Anterior</a>
-                        </li>
-                        {% endif %}
-                        {% for num in page_obj.paginator.page_range %}
-                        <li class="page-item {% if page_obj.number == num %}active{% endif %}">
-                            <a href="?page={{ num }}" class="page-link">{{ num }}</a>
-                        </li>
-                        {% endfor %}
-                        {% if page_obj.has_next %}
-                        <li class="page-item">
-                            <a href="?page={{ page_obj.next_page_number }}" class="page-link">Siguiente</a>
-                        </li>
-                        {% endif %}
-                    </ul>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
+<form method="get" class="mb-3">
+  <div class="input-group input-group-lg">
+    <input type="search" name="q" value="{{ request.GET.q }}"
+           class="form-control form-control-lg" placeholder="Buscar por código o estado…">
+    <button class="btn btn-lg btn-outline-secondary" type="submit">
+      <i class="fa fa-search"></i>
+    </button>
+  </div>
+</form>
+
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover table-striped mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Código</th>
+          <th>Fecha creación</th>
+          <th>Estado</th>
+          <th class="text-end">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for exp in expedientes %}
+        <tr>
+          <td>
+            <a href="{% url 'expediente_detail' exp.pk %}" class="fw-bold">{{ exp.codigo }}</a>
+          </td>
+          <td>{{ exp.fecha_creacion|date:"d/m/Y H:i" }}</td>
+          <td>
+            <span class="badge 
+              {% if exp.estado.nombre == 'CREADO' %}bg-secondary
+              {% elif exp.estado.nombre == 'CONFIRMACION_DE_ENVIO' %}bg-warning
+              {% elif exp.estado.nombre == 'EN_ESPERA' %}bg-info
+              {% elif exp.estado.nombre == 'ASIGNADO' %}bg-primary
+              {% elif exp.estado.nombre == 'PROCESO_DE_CRUCE' %}bg-dark
+              {% elif exp.estado.nombre == 'CRUCE_FINALIZADO' %}bg-success
+              {% else %}bg-light text-dark{% endif %}">
+              {{ exp.estado.display_name }}
+
+            </span>
+          </td>
+          <td class="text-end">
+            <a href="{% url 'expediente_detail' exp.pk %}" class="btn btn-sm btn-outline-primary">
+              Ver
+            </a>
+{% if exp.estado.nombre == 'CREADO' %}
+  <a href="{% url 'expediente_update' exp.pk %}" class="btn btn-sm btn-outline-secondary">
+    Editar
+  </a>
+{% endif %}
+
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4" class="text-center text-muted py-3">
+            No hay expedientes registrados.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if is_paginated %}
+  <div class="card-footer">
+    <nav>
+      <ul class="pagination justify-content-center mb-0">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.previous_page_number }}">« Anterior</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">« Anterior</span></li>
+        {% endif %}
+        {% for i in page_obj.paginator.page_range %}
+          {% if page_obj.number == i %}
+          <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+          {% elif i >= page_obj.number|add:"-2" and i <= page_obj.number|add:"2" %}
+          <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+          {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente »</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">Siguiente »</span></li>
+        {% endif %}
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
 </div>
 {% endblock %}

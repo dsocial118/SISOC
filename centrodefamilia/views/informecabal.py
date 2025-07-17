@@ -30,6 +30,14 @@ class ExpedienteListView(LoginRequiredMixin, ListView):
         return Expediente.objects.filter(centro_id=self.kwargs["centro_id"]).order_by(
             "-periodo"
         )
+    
+    # en ExpedienteListView.get_context_data
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        for exp in ctx['expedientes']:
+            exp.human_state = exp.estado.nombre.replace('_', ' ').capitalize()
+        return ctx
+
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
