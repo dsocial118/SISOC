@@ -83,7 +83,7 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
                     anexo.responsable_domicilio
                 )
                 self.fields["responsable_tarjeta_mail"].initial = anexo.responsable_mail
-                
+
                 if organizacion:
                     self.fields["nombre_organizacion"].initial = organizacion.nombre
                     self.fields["cuit_organizacion"].initial = organizacion.cuit
