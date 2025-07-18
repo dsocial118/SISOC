@@ -445,9 +445,11 @@ class ComedorUpdateView(UpdateView):
         context = self.get_context_data()
         referente_form = context["referente_form"]
         imagenes = self.request.FILES.getlist("imagenes")
+        dupla_original = self.object.dupla
 
         if referente_form.is_valid():
-            self.object = form.save()
+            self.object = form.save(commit=False)
+            self.object.dupla = dupla_original
             self.object.referente = referente_form.save()
             self.object.save()
 

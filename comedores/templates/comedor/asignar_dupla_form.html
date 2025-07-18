@@ -48,7 +48,7 @@
                             <td>{{ dupla.nombre }}</td>
                             <td>
                                 {% for tecnico in dupla.tecnico.all %}
-                                    {{ tecnico.nombre }}
+                                    {{ tecnico }}
                                     {% if not forloop.last %},{% endif %}
                                 {% endfor %}
                             </td>

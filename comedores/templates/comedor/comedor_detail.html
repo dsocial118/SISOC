@@ -208,7 +208,7 @@
                                         <div class="nav-item d-flex col-6">
                                             <div class="comment-text comment-text d-flex flex-column">
                                                 Tipo de Comedor
-                                                <span class="username">{{ comedor.tipo_comedor | default_if_none:"-" }}</span>
+                                                <span class="username">{{ comedor.tipo_comedor.nombre | default_if_none:"-" }}</span>
                                             </div>
                                         </div>
                                     </div>
