@@ -96,16 +96,24 @@ class RelevamientoSerializer(serializers.ModelSerializer):
             )
 
         if "prestacion" in self.initial_data:
-            prestacion_instance = (
-                self.instance.prestacion
-                if self.instance and self.instance.prestacion
-                else None
-            )
-            self.initial_data["prestacion"] = (
-                RelevamientoService.create_or_update_prestacion(
-                    self.initial_data["prestacion"], prestacion_instance
-                ).id
-            )
+            # Usar la nueva función que maneja el modelo unificado
+            comedor_id = self.initial_data.get("comedor")
+            if not comedor_id and self.instance:
+                comedor_id = self.instance.comedor.id
+
+            if comedor_id:
+                from comedores.models import Comedor
+
+                try:
+                    comedor = Comedor.objects.get(id=comedor_id)
+                    prestacion_instance = RelevamientoService.create_or_update_prestaciones_from_relevamiento(
+                        self.initial_data["prestacion"], comedor
+                    )
+                    # Para compatibilidad, asignar el ID de la primera prestación
+                    self.initial_data["prestacion"] = prestacion_instance.id
+                except Comedor.DoesNotExist:
+                    # Si no se encuentra el comedor, mantener el valor original
+                    pass
 
         if "excepcion" in self.initial_data:
             excepcion_instance = (

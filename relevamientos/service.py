@@ -1042,16 +1042,91 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def create_or_update_prestacion(prestacion_data, prestacion_instance=None):
-        prestacion_data = RelevamientoService.populate_prestacion_data(prestacion_data)
+        """
+        DEPRECATED: Esta función ya no se usa con el nuevo modelo Prestacion unificado.
+        El nuevo modelo maneja prestaciones por día, no como un objeto único.
+        """
+        # Para mantener compatibilidad, retornamos None o manejamos de otra forma
+        # TODO: Actualizar el código que usa esta función para usar el nuevo modelo
+        return None
 
-        if prestacion_instance is None:
-            prestacion_instance = Prestacion.objects.create(**prestacion_data)
-        else:
-            for field, value in prestacion_data.items():
-                setattr(prestacion_instance, field, value)
-            prestacion_instance.save()
+    @staticmethod
+    def create_or_update_prestaciones_from_relevamiento(prestacion_data, comedor):
+        """
+        Nueva función para crear/actualizar prestaciones usando el modelo unificado.
+        Convierte los datos del modelo viejo al nuevo formato por días.
+        """
+        dias = [
+            "lunes",
+            "martes",
+            "miercoles",
+            "jueves",
+            "viernes",
+            "sabado",
+            "domingo",
+        ]
+        tipos_comida = ["desayuno", "almuerzo", "merienda", "cena"]
 
-        return prestacion_instance
+        # Eliminar prestaciones existentes para este comedor
+        Prestacion.objects.filter(comedor=comedor).delete()
+
+        # Crear un objeto dummy para compatibilidad si no hay datos
+        primera_prestacion = None
+
+        # Crear nuevas prestaciones por día
+        for dia in dias:
+            prestacion_dia = Prestacion(comedor=comedor, dia=dia)
+
+            # Para cada tipo de comida, verificar si hay datos
+            has_prestacion = False
+            for tipo in tipos_comida:
+                campo_actual = f"{dia}_{tipo}_actual"
+                campo_espera = f"{dia}_{tipo}_espera"
+
+                cantidad_actual = prestacion_data.get(campo_actual)
+                cantidad_espera = prestacion_data.get(campo_espera)
+
+                # Si hay cantidad, marcar como True y guardar las cantidades
+                if (
+                    cantidad_actual
+                    and cantidad_actual != ""
+                    and int(cantidad_actual) > 0
+                ):
+                    setattr(prestacion_dia, tipo, True)
+                    setattr(
+                        prestacion_dia, f"{tipo}_cantidad_actual", int(cantidad_actual)
+                    )
+                    has_prestacion = True
+
+                if (
+                    cantidad_espera
+                    and cantidad_espera != ""
+                    and int(cantidad_espera) > 0
+                ):
+                    setattr(prestacion_dia, tipo, True)
+                    setattr(
+                        prestacion_dia, f"{tipo}_cantidad_espera", int(cantidad_espera)
+                    )
+                    has_prestacion = True
+
+            # Solo guardar si hay al menos una prestación
+            if has_prestacion:
+                prestacion_dia.save()
+                if primera_prestacion is None:
+                    primera_prestacion = prestacion_dia
+
+        # Si no hay prestaciones, crear una vacía para compatibilidad
+        if primera_prestacion is None:
+            primera_prestacion = Prestacion.objects.create(
+                comedor=comedor,
+                dia="lunes",
+                desayuno=False,
+                almuerzo=False,
+                merienda=False,
+                cena=False,
+            )
+
+        return primera_prestacion
 
     @staticmethod
     def populate_prestacion_data(
