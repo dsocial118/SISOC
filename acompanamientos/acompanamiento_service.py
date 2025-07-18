@@ -1,4 +1,4 @@
-from django.db.models import Q
+from django.db.models import Q, Exists, OuterRef
 from admisiones.models.admisiones import (
     Admision,
     InformeTecnico,
@@ -7,6 +7,7 @@ from admisiones.models.admisiones import (
 )
 from acompanamientos.models.hitos import Hitos, HitosIntervenciones
 from acompanamientos.models.acompanamiento import InformacionRelevante, Prestacion
+from duplas.models import Dupla
 from intervenciones.models.intervenciones import Intervencion, SubIntervencion
 from comedores.models import Comedor
 
@@ -227,31 +228,29 @@ class AcompanamientoService:
         Returns:
             QuerySet: QuerySet de objetos Comedor filtrados según los criterios especificados.
         """
-        # Optimización: Cache de grupos del usuario para evitar queries repetidas
         user_groups = list(user.groups.values_list("name", flat=True))
         is_area_legales = "Area Legales" in user_groups
         is_dupla = "Tecnico Comedor" in user_groups or "Abogado Dupla" in user_groups
 
-        # Optimización: Query más eficiente usando JOIN en lugar de subquery
-        queryset = Comedor.objects.select_related(
+        # Subqueries para evitar JOINs 1:N y uso de distinct()
+        admision_subq = Admision.objects.filter(
+            comedor=OuterRef("pk"), enviado_acompaniamiento=True
+        )
+        dupla_abogado_subq = Dupla.objects.filter(comedor=OuterRef("pk"), abogado=user)
+        dupla_tecnico_subq = Dupla.objects.filter(comedor=OuterRef("pk"), tecnico=user)
+
+        qs = Comedor.objects.select_related(
             "referente", "tipocomedor", "provincia", "dupla__abogado"
-        ).prefetch_related("dupla__tecnico")
+        )
 
         if not user.is_superuser:
-            # Si es tecnico o abogado, filtramos por dupla asignada
             if is_dupla:
-                queryset = queryset.select_related("dupla__abogado").filter(
-                    Q(dupla__abogado=user) | Q(dupla__tecnico=user)
-                )
-            # Si es de legales, le traemos los acompañamientos
-            if not user.is_superuser and is_area_legales:
-                queryset = queryset.filter(
-                    admision__enviado_acompaniamiento=True
-                ).distinct()
+                qs = qs.filter(Exists(dupla_abogado_subq) | Exists(dupla_tecnico_subq))
+            if is_area_legales:
+                qs = qs.filter(Exists(admision_subq))
 
-        # Aplicamos búsqueda global
         if busqueda:
-            queryset = queryset.filter(
+            qs = qs.filter(
                 Q(nombre__icontains=busqueda)
                 | Q(provincia__nombre__icontains=busqueda)
                 | Q(tipocomedor__nombre__icontains=busqueda)
@@ -262,7 +261,7 @@ class AcompanamientoService:
                 | Q(referente__celular__icontains=busqueda)
             )
 
-        return queryset
+        return qs
 
     @staticmethod
     def verificar_permisos_tecnico_comedor(user):
