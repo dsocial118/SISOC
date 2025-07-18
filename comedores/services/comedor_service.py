@@ -1,20 +1,16 @@
 import re
 from typing import Union
 
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Prefetch
 from django.core.paginator import Paginator
 from django.core.cache import cache
 from django.conf import settings
 
-from relevamientos.models import Relevamiento
+from relevamientos.models import Relevamiento, ClasificacionComedor
 from comedores.forms.comedor_form import ImagenComedorForm
-from comedores.models import (
-    Comedor,
-    Referente,
-    ValorComida,
-    Nomina,
-)
-
+from comedores.models import Comedor, Referente, ValorComida, Nomina, Observacion
+from admisiones.models.admisiones import Admision
+from rendicioncuentasmensual.models import RendicionCuentaMensual
 from intervenciones.models.intervenciones import Intervencion
 from core.models import Municipio, Provincia
 from core.models import Localidad
@@ -101,12 +97,6 @@ class ComedorService:
 
     @staticmethod
     def get_comedor_detail_object(comedor_id: int):
-        from django.db.models import Prefetch
-        from comedores.models import Observacion
-        from relevamientos.models import ClasificacionComedor
-        from admisiones.models.admisiones import Admision
-        from rendicioncuentasmensual.models import RendicionCuentaMensual
-
         # Precargar cache de valores de comida para evitar query adicional
         ComedorService._preload_valores_comida_cache()
 
