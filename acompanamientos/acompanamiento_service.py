@@ -230,6 +230,7 @@ class AcompanamientoService:
         # Optimización: Cache de grupos del usuario para evitar queries repetidas
         user_groups = list(user.groups.values_list("name", flat=True))
         is_area_legales = "Area Legales" in user_groups
+        is_dupla = "Tecnico Comedor" in user_groups or "Abogado Dupla" in user_groups
 
         # Optimización: Query más eficiente usando JOIN en lugar de subquery
         queryset = Comedor.objects.select_related(
@@ -237,10 +238,15 @@ class AcompanamientoService:
         ).prefetch_related("dupla__tecnico")
 
         # Si no es superusuario, filtramos por dupla asignada
-        if not user.is_superuser and not is_area_legales:
+        if not user.is_superuser and not is_dupla:
             queryset = queryset.select_related("dupla__abogado").filter(
                 Q(dupla__abogado=user) | Q(dupla__tecnico=user)
             )
+
+        if not user.is_superuser and not is_area_legales:
+            queryset = queryset.filter(
+                admision__enviado_acompaniamiento=True
+            ).distinct()
 
         # Aplicamos búsqueda global
         if busqueda:
