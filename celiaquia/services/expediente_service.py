@@ -10,6 +10,7 @@ from celiaquia.models import (
     InformePago,
     EstadoExpediente
 )
+from celiaquia.services.importacion_service import ImportacionService
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -43,17 +44,30 @@ class ExpedienteService:
     @transaction.atomic
     def confirmar_envio(expediente):
         """
-        Verifica que todos los legajos tengan archivo y cambia estado a 'ENVIADO'.
+        Importa automáticamente los legajos desde el Excel masivo y luego
+        cambia el estado a 'ENVIADO'.
+        Devuelve un dict con conteo de válidos y errores.
         """
-        pendiente = expediente.expediente_ciudadanos.filter(archivo__isnull=True).exists()
-        if pendiente:
-            raise ValidationError('Todos los legajos deben tener archivo cargado antes de confirmar.')
+        if not expediente.excel_masivo:
+            raise ValidationError('No hay archivo Excel cargado para importar legajos.')
 
+        # Ejecutar importación masiva
+        result = ImportacionService.importar_legajos_desde_excel(
+            expediente,
+            expediente.excel_masivo
+        )
+        logger.info("ImportService returned: %r", result)
+        # Cambiar estado del expediente
         estado, _ = EstadoExpediente.objects.get_or_create(nombre='ENVIADO')
         expediente.estado = estado
         expediente.save(update_fields=['estado'])
-        logger.info("Expediente %s confirmado para envío", expediente.codigo)
-        return expediente
+
+        logger.info(
+            "Expediente %s confirmado y legajos importados: %s válidos, %s errores",
+            expediente.codigo, result['validos'], result['errores']
+        )
+        return result
+
 
     @staticmethod
     @transaction.atomic

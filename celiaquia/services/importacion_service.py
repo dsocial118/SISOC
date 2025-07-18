@@ -11,14 +11,14 @@ class ImportacionService:
     @staticmethod
     def preview_excel(archivo_excel, max_rows=5):
         """
-        Lee un Excel desde un FileField usando pandas y devuelve:
-          - headers: lista de nombres normalizados
-          - rows: hasta max_rows filas como dicts
+        Lee un Excel completo con pandas y devuelve:
+         - headers: lista de nombres normalizados
+         - rows: hasta max_rows filas como dicts (clave=columna)
         """
-        # Leer bytes del archivo y cargar en pandas
         archivo_excel.open()
         archivo_excel.seek(0)
         data = archivo_excel.read()
+
         try:
             df = pd.read_excel(BytesIO(data), engine='openpyxl')
         except Exception as e:
@@ -27,15 +27,15 @@ class ImportacionService:
         # Normalizar encabezados
         df.columns = [str(col).strip().lower().replace(' ', '_') for col in df.columns]
 
-        # Convertir NaN a cadenas vacías
+        # Evitar NaN y convertir timestamps
         df = df.fillna('')
-        # Convertir Timestamp a date en caso de fecha_nacimiento
         if 'fecha_nacimiento' in df.columns:
             df['fecha_nacimiento'] = df['fecha_nacimiento'].apply(
                 lambda x: x.date() if hasattr(x, 'date') else x
             )
 
-        sample = df.head(max_rows).fillna('').values.tolist()
+        # Aquí volvemos a dicts
+        sample = df.head(max_rows).to_dict(orient='records')
         return {
             'headers': list(df.columns),
             'rows': sample
