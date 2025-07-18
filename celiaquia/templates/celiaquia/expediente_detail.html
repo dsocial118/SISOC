@@ -1,6 +1,6 @@
-<!-- templates/celiaquia/expediente_detail.html -->
+{# templates/celiaquia/expediente_detail.html #}
 {% extends "includes/main.html" %}
-{% load static %}
+{% load static dict_extras %}
 
 {% block title %}Expediente {{ expediente.codigo }}{% endblock %}
 
@@ -15,7 +15,9 @@
 <div class="mb-3">
   <a href="{% url 'expediente_list' %}" class="btn btn-outline-secondary btn-sm">← Volver</a>
   {% if expediente.estado.nombre == 'CREADO' %}
-    <a href="{% url 'expediente_update' expediente.pk %}" class="btn btn-outline-primary btn-sm ms-2">Editar Metadatos</a>
+    <a href="{% url 'expediente_update' expediente.pk %}" class="btn btn-outline-primary btn-sm ms-2">
+      Editar Metadatos
+    </a>
   {% endif %}
 </div>
 
@@ -39,8 +41,8 @@
           <tbody>
             {% for row in preview.rows %}
               <tr>
-                {% for cell in row %}
-                  <td>{{ cell }}</td>
+                {% for h in preview.headers %}
+                  <td>{{ row|get_item:h }}</td>
                 {% endfor %}
               </tr>
             {% endfor %}
@@ -54,7 +56,7 @@
   <div class="alert alert-danger">{{ preview_error }}</div>
 {% endif %}
 
-{# Tabla de legajos #}
+{# Tabla de legajos cargados #}
 <div class="card mb-4">
   <div class="card-header bg-light">
     <h5 class="mb-0">Legajos del Expediente</h5>
@@ -84,7 +86,8 @@
                 {% if leg.archivo %}
                   <a href="{{ leg.archivo.url }}" class="btn btn-sm btn-outline-info">Ver</a>
                 {% else %}
-                  <a href="{% url 'legajo_archivo_upload' expediente.pk leg.pk %}" class="btn btn-sm btn-primary">Subir Archivo</a>
+                  <a href="{% url 'legajo_archivo_upload' expediente.pk leg.pk %}"
+                     class="btn btn-sm btn-primary">Subir Archivo</a>
                 {% endif %}
               </td>
             </tr>

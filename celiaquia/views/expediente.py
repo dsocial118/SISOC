@@ -170,13 +170,22 @@ class ExpedienteUpdateView(UpdateView):
 
 class ExpedienteConfirmView(View):
     def post(self, request, pk):
-        expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=request.user)
-        if not LegajoService.all_legajos_loaded(expediente):
-            messages.error(request, "Debe cargar un archivo para cada registro antes de confirmar.")
-            return redirect('expediente_detail', pk=pk)
-        ExpedienteService.confirmar_envio(expediente)
-        messages.success(request, "Expediente enviado a revisión correctamente.")
+        expediente = get_object_or_404(
+            Expediente, pk=pk, usuario_provincia=request.user
+        )
+        try:
+            result = ExpedienteService.confirmar_envio(expediente)
+            messages.success(
+                request,
+                f"Expediente confirmado y legajos importados: "
+                f"{result['validos']} creados, {result['errores']} con error."
+            )
+        except ValidationError as ve:
+            messages.error(request, f"Error al confirmar: {ve.message}")
+        except Exception as e:
+            messages.error(request, f"Error inesperado al confirmar: {e}")
         return redirect('expediente_detail', pk=pk)
+
 
 class AsignarTecnicoView(View):
     def post(self, request, pk):

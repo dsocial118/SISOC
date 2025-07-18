@@ -13,27 +13,27 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     const btnPreview = document.getElementById('btn-preview');
-    const errorEl = document.getElementById('preview-error');
-    const headerRow = document.getElementById('preview-headers');
-    const bodyRows = document.getElementById('preview-rows');
-    const container = document.getElementById('preview-container');
+    const errorEl    = document.getElementById('preview-error');
+    const headerRow  = document.getElementById('preview-headers');
+    const bodyRows   = document.getElementById('preview-rows');
+    const container  = document.getElementById('preview-container');
 
     if (!btnPreview) return;
     if (errorEl) errorEl.textContent = '';
 
     btnPreview.addEventListener('click', async () => {
-      // Limpiar errores y tabla previa
+      // Limpiar estado
       if (errorEl) errorEl.textContent = '';
       headerRow.innerHTML = '';
-      bodyRows.innerHTML = '';
+      bodyRows.innerHTML  = '';
 
-      // Validar PREVIEW_URL
+      // Validar URL
       if (!window.PREVIEW_URL) {
         if (errorEl) errorEl.textContent = 'URL de previsualización no configurada.';
         return;
       }
 
-      // Validar archivo
+      // Validar selección de archivo
       const fileInput = document.querySelector('input[name="excel_masivo"]');
       if (!fileInput || !fileInput.files.length) {
         if (errorEl) errorEl.textContent = 'Primero seleccioná un archivo Excel.';
@@ -51,7 +51,7 @@
       try {
         const response = await fetch(window.PREVIEW_URL, {
           method: 'POST',
-          credentials: 'same-origin', // Enviar cookies
+          credentials: 'same-origin',
           headers: {
             'X-CSRFToken': getCookie('csrftoken'),
             'Accept': 'application/json'
@@ -59,7 +59,6 @@
           body: formData
         });
 
-        // Manejar errores HTTP
         if (!response.ok) {
           let msg = `HTTP ${response.status}`;
           try {
@@ -69,7 +68,6 @@
           throw new Error(msg);
         }
 
-        // Verificar tipo de contenido
         const contentType = response.headers.get('Content-Type') || '';
         if (!contentType.includes('application/json')) {
           const text = await response.text();
@@ -80,23 +78,20 @@
         const data = await response.json();
         if (data.error) throw new Error(data.error);
 
-        // Renderizar tabla de preview
+        // Renderizar tabla de preview con dicts
         const headers = data.headers;
-        const rows = data.rows;
+        const rows    = data.rows;
         headerRow.innerHTML = headers.map(h => `<th>${h}</th>`).join('');
-        bodyRows.innerHTML = rows
-          .map(row => {
-            const cells = headers.map(h => `<td>${row[h] || ''}</td>`).join('');
-            return `<tr>${cells}</tr>`;
-          })
-          .join('');
+        bodyRows.innerHTML  = rows.map(row => {
+          const cells = headers.map(h => `<td>${row[h] || ''}</td>`).join('');
+          return `<tr>${cells}</tr>`;
+        }).join('');
         container.classList.remove('d-none');
 
       } catch (err) {
         console.error(err);
         if (errorEl) errorEl.textContent = 'Error al previsualizar: ' + err.message;
       } finally {
-        // Restaurar botón
         btnPreview.disabled = false;
         btnPreview.innerHTML = originalText;
       }
