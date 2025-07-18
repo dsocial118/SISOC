@@ -34,14 +34,18 @@
                 {% endif %}
                 <div class="row mt-2">
                     {% for field in form %}
-                        {% if field.name == "nombre_organizacion" or field.name == "representante_nombre" or field.name == "tipo_espacio" or field.name == "responsable_tarjeta_nombre" or field.name == "prestaciones_desayuno_numero" or field.name == "prestaciones_desayuno_letras" %}
+                        {% if field.name == "nombre_organizacion" or field.name == "representante_nombre" or field.name == "tipo_espacio" or field.name == "responsable_tarjeta_nombre" or field.name == "prestaciones_desayuno_numero" or field.name == "prestaciones_desayuno_letras" or field.name == "conclusiones" %}
                         </div>
                         <div class="row">
                         {% endif %}
                         {% if field.label in campos_a_subsanar %}
                             <div class="col-md-6 mb-2 border border-2 rounded border-danger">{{ field|as_crispy_field }}</div>
                         {% else %}
-                            <div class="col-md-6 mb-2">{{ field|as_crispy_field }}</div>
+                            {% if field.name == "conclusiones" %}
+                                <div class="col-md-12 mb-2">{{ field|as_crispy_field }}</div>
+                            {% else %}
+                                <div class="col-md-6 mb-2">{{ field|as_crispy_field }}</div>
+                            {% endif %}
                         {% endif %}
                     {% endfor %}
                 </div>

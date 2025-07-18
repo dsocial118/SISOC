@@ -60,12 +60,14 @@ class RendicionCuentasFinalService:
     def filter_documentos_por_area(user, query):
         filtros_validador = Q()
         if user.is_superuser:
-            filtros_validador = Q(tipo__validador__in=["Contable", "Legales"])
+            filtros_validador = Q(tipo__validador__in=["Contable", "Legales", "Dupla"])
         else:
             if user.groups.filter(name="Area Contable").exists():
                 filtros_validador |= Q(tipo__validador="Contable")
             if user.groups.filter(name="Area Legales").exists():
                 filtros_validador |= Q(tipo__validador="Legales")
+            if user.groups.filter(name="Tecnico Comedor").exists():
+                filtros_validador |= Q(tipo__validador="Dupla")
 
         qs = DocumentoRendicionFinal.objects.filter(filtros_validador)
 

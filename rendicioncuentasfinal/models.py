@@ -123,7 +123,8 @@ class DocumentoRendicionFinal(models.Model):
 
     @property
     def eliminable(self):
-        return self.tipo.personalizado and self.estado.nombre == "En análisis"
+        return self.estado.nombre == "En análisis"
+        # return self.tipo.personalizado and self.estado.nombre == "En análisis"
 
     class Meta:
         indexes = [
