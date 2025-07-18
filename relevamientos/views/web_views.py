@@ -149,8 +149,88 @@ class RelevamientoDetailView(DetailView):
             else None
         )
 
-        # Optimización: Usar select_related, prestacion ya está cargada
-        context["prestacion"] = relevamiento.prestacion
+        # Crear objeto de prestación compatible con el template
+        from core.models import Prestacion
+
+        prestaciones = Prestacion.objects.filter(comedor=relevamiento.comedor)
+
+        # Crear un objeto dinámico compatible con el formato anterior
+        class PrestacionCompat:
+            def __init__(self):
+                # Inicializar todos los campos en 0
+                dias = [
+                    "lunes",
+                    "martes",
+                    "miercoles",
+                    "jueves",
+                    "viernes",
+                    "sabado",
+                    "domingo",
+                ]
+                comidas = ["desayuno", "almuerzo", "merienda", "cena"]
+                tipos = ["actual", "espera"]
+
+                for dia in dias:
+                    for comida in comidas:
+                        for tipo in tipos:
+                            setattr(self, f"{dia}_{comida}_{tipo}", 0)
+
+        prestacion_compat = PrestacionCompat()
+
+        # Mapear los datos de las nuevas prestaciones al formato anterior
+        for prestacion in prestaciones:
+            dia = prestacion.dia.lower()
+
+            # Mapear basándose en los flags booleanos
+            if prestacion.desayuno:
+                setattr(
+                    prestacion_compat,
+                    f"{dia}_desayuno_actual",
+                    prestacion.desayuno_cantidad_actual or 0,
+                )
+                setattr(
+                    prestacion_compat,
+                    f"{dia}_desayuno_espera",
+                    prestacion.desayuno_cantidad_espera or 0,
+                )
+
+            if prestacion.almuerzo:
+                setattr(
+                    prestacion_compat,
+                    f"{dia}_almuerzo_actual",
+                    prestacion.almuerzo_cantidad_actual or 0,
+                )
+                setattr(
+                    prestacion_compat,
+                    f"{dia}_almuerzo_espera",
+                    prestacion.almuerzo_cantidad_espera or 0,
+                )
+
+            if prestacion.merienda:
+                setattr(
+                    prestacion_compat,
+                    f"{dia}_merienda_actual",
+                    prestacion.merienda_cantidad_actual or 0,
+                )
+                setattr(
+                    prestacion_compat,
+                    f"{dia}_merienda_espera",
+                    prestacion.merienda_cantidad_espera or 0,
+                )
+
+            if prestacion.cena:
+                setattr(
+                    prestacion_compat,
+                    f"{dia}_cena_actual",
+                    prestacion.cena_cantidad_actual or 0,
+                )
+                setattr(
+                    prestacion_compat,
+                    f"{dia}_cena_espera",
+                    prestacion.cena_cantidad_espera or 0,
+                )
+
+        context["prestacion"] = prestacion_compat
 
         # Optimización: Todas las relaciones ya están prefetched
         relevamiento_data["donaciones"] = (
