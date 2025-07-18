@@ -2,12 +2,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
 from django.views.generic import ListView, DetailView
 from django.views.decorators.http import require_POST
-from django.db.models import Q
-from admisiones.models.admisiones import (
-    Admision,
-    InformeTecnico,
-    DocumentosExpediente,
-)
+
 from acompanamientos.acompanamiento_service import AcompanamientoService
 from acompanamientos.models.hitos import Hitos
 from comedores.models import Comedor
@@ -32,7 +27,6 @@ def restaurar_hito(request, comedor_id):
     return redirect(request.META.get("HTTP_REFERER", "/"))
 
 
-# TODO: Sincronizar con la tarea de Pablo
 class AcompanamientoDetailView(DetailView):
     model = Comedor
     template_name = "acompañamiento_detail.html"
@@ -43,7 +37,6 @@ class AcompanamientoDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         comedor = self.object
 
-        # Optimización: Cache de grupos del usuario
         user_groups = list(self.request.user.groups.values_list("name", flat=True))
         context["es_tecnico_comedor"] = (
             self.request.user.is_superuser or "Tecnico Comedor" in user_groups
@@ -51,51 +44,26 @@ class AcompanamientoDetailView(DetailView):
 
         context["hitos"] = AcompanamientoService.obtener_hitos(comedor)
 
-        # Optimización: Query única con select_related para evitar múltiples queries
-        admision = (
-            Admision.objects.select_related("comedor")
-            .filter(comedor=comedor)
-            .exclude(num_if__isnull=True)
-            .exclude(num_if="")
-            .order_by("-id")
-            .first()
-        )
+        datos_admision = AcompanamientoService.obtener_datos_admision(comedor)
+
+        admision = datos_admision.get("admision")
+        info_relevante = datos_admision.get("info_relevante")
+        anexo = datos_admision.get("anexo")
+
         context["admision"] = admision
-
-        info_relevante = None
-        resolucion = None
-        doc_resolucion = None
-
-        if admision:
-            # Optimización: Usar la admision ya obtenida en lugar de filtrar por comedor
-            info_relevante = (
-                InformeTecnico.objects.filter(admision=admision).order_by("-id").first()
-            )
-            doc_resolucion = (
-                DocumentosExpediente.objects.filter(
-                    admision=admision, tipo="Resolución"
-                )
-                .order_by("-creado")
-                .first()
-            )
-        if doc_resolucion:
-            resolucion = doc_resolucion.value or doc_resolucion.nombre
-
-        # Asignar valores al contexto
         context["info_relevante"] = info_relevante
-        context["numero_if"] = admision.num_if if admision else None
-        context["numero_resolucion"] = resolucion
+        context["numero_if"] = datos_admision.get("numero_if")
+        context["numero_disposicion"] = datos_admision.get("numero_disposicion")
 
-        # Prestaciones
-        if info_relevante:
-            context["prestaciones_dias"] = [
-                {"tipo": "Desayuno", "cantidad": info_relevante.prestaciones_desayuno},
-                {"tipo": "Almuerzo", "cantidad": info_relevante.prestaciones_almuerzo},
-                {"tipo": "Merienda", "cantidad": info_relevante.prestaciones_merienda},
-                {"tipo": "Cena", "cantidad": info_relevante.prestaciones_cena},
-            ]
-        else:
-            context["prestaciones_dias"] = []
+        prestaciones_detalle = AcompanamientoService.obtener_prestaciones_detalladas(
+            anexo
+        )
+
+        context["prestaciones_por_dia"] = prestaciones_detalle.get(
+            "prestaciones_por_dia", []
+        )
+        context["prestaciones_dias"] = prestaciones_detalle.get("prestaciones_dias", [])
+        context["dias_semana"] = prestaciones_detalle.get("dias_semana", [])
 
         return context
 
@@ -110,37 +78,7 @@ class ComedoresAcompanamientoListView(ListView):
         user = self.request.user
         busqueda = self.request.GET.get("busqueda", "").strip().lower()
 
-        # Optimización: Cache de grupos del usuario para evitar queries repetidas
-        user_groups = list(user.groups.values_list("name", flat=True))
-        is_area_legales = "Area Legales" in user_groups
-
-        # Optimización: Query más eficiente usando JOIN en lugar de subquery
-        queryset = (
-            Comedor.objects.select_related("referente", "tipocomedor", "provincia")
-            .filter(admision__estado=2, admision__enviado_acompaniamiento=True)
-            .distinct()
-        )
-
-        # Si no es superusuario, filtramos por dupla asignada
-        if not user.is_superuser and not is_area_legales:
-            queryset = queryset.select_related(
-                "dupla__abogado", "dupla__tecnico"
-            ).filter(Q(dupla__abogado=user) | Q(dupla__tecnico=user))
-
-        # Aplicamos búsqueda global
-        if busqueda:
-            queryset = queryset.filter(
-                Q(nombre__icontains=busqueda)
-                | Q(provincia__nombre__icontains=busqueda)
-                | Q(tipocomedor__nombre__icontains=busqueda)
-                | Q(calle__icontains=busqueda)
-                | Q(numero__icontains=busqueda)
-                | Q(referente__nombre__icontains=busqueda)
-                | Q(referente__apellido__icontains=busqueda)
-                | Q(referente__celular__icontains=busqueda)
-            )
-
-        return queryset
+        return AcompanamientoService.obtener_comedores_acompanamiento(user, busqueda)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
