@@ -59,7 +59,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def convert_to_boolean(value):
-        return value == "Y" if value in ["Y", "N"] else None
+        return value == "Y" if value in ["Y", "N"] else False
     
     @staticmethod
     def get_object_or_none(model, field_name, value):
@@ -704,7 +704,6 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             "actividades_huerta": RelevamientoService.convert_to_boolean,
             "espacio_huerta": RelevamientoService.convert_to_boolean,
             "otras_actividades": RelevamientoService.convert_to_boolean,
-            'veces_recibio_insumos_2024': lambda x: x if x else None,
         }
         anexo_data = RelevamientoService.populate_data(anexo_data, transformations)
 
