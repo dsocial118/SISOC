@@ -1,18 +1,19 @@
 import logging
 import os
 from typing import Any
-
-from django.contrib import messages
 from django.contrib.auth.models import User
+from django.contrib import messages
+from django.core.cache import cache
+from django.conf import settings
 from django.db.models.base import Model
 from django.forms import BaseModelForm
 from django.http import HttpResponse
-from django.shortcuts import redirect
-from django.urls import reverse, reverse_lazy
-from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+from django.shortcuts import redirect
+from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -21,6 +22,7 @@ from django.views.generic import (
     UpdateView,
     TemplateView,
 )
+
 
 from ciudadanos.models import CiudadanoPrograma, HistorialCiudadanoProgramas
 from comedores.forms.comedor_form import (
@@ -35,9 +37,11 @@ from comedores.models import (
     Observacion,
     Nomina,
 )
+
 from comedores.services.comedor_service import ComedorService
-from duplas.dupla_service import DuplaService
 from relevamientos.service import RelevamientoService
+
+from duplas.dupla_service import DuplaService
 from rendicioncuentasmensual.services import RendicionCuentaMensualService
 
 
@@ -226,47 +230,166 @@ class ComedorDetailView(DetailView):
     def get_object(self, queryset=None):
         return ComedorService.get_comedor_detail_object(self.kwargs["pk"])
 
-    def get_context_data(self, **kwargs) -> dict[str, Any]:
-        context = super().get_context_data(**kwargs)
+    def _get_presupuestos_data(self):
+        """Obtiene datos de presupuestos usando cache y datos prefetched cuando sea posible."""
+        if (
+            hasattr(self.object, "relevamientos_optimized")
+            and self.object.relevamientos_optimized
+        ):
+            cache_key = f"presupuestos_comedor_{self.object.id}"
+            cached_presupuestos = cache.get(cache_key)
 
+            if cached_presupuestos:
+                presupuestos_tuple = cached_presupuestos
+            else:
+                presupuestos_tuple = ComedorService.get_presupuestos(
+                    self.object.id,
+                    relevamientos_prefetched=self.object.relevamientos_optimized,
+                )
+                cache.set(
+                    cache_key,
+                    presupuestos_tuple,
+                    getattr(settings, "COMEDOR_CACHE_TIMEOUT", 300),
+                )
+        else:
+            presupuestos_tuple = ComedorService.get_presupuestos(self.object.id)
+
+        # Desempaquetar la tupla y crear diccionario
         (
             count_beneficiarios,
             valor_cena,
             valor_desayuno,
             valor_almuerzo,
             valor_merienda,
-        ) = ComedorService.get_presupuestos(self.object.id)
+        ) = presupuestos_tuple
 
+        return {
+            "count_beneficiarios": count_beneficiarios,
+            "presupuesto_desayuno": valor_desayuno,
+            "presupuesto_almuerzo": valor_almuerzo,
+            "presupuesto_merienda": valor_merienda,
+            "presupuesto_cena": valor_cena,
+        }
+
+    def _get_relaciones_optimizadas(self):
+        """Obtiene datos de relaciones usando prefetch cuando sea posible."""
+        # Optimización: Usar rendiciones prefetched en lugar de query adicional
         rendiciones_mensuales = (
-            RendicionCuentaMensualService.cantidad_rendiciones_cuentas_mensuales(
+            len(self.object.rendiciones_optimized)
+            if hasattr(self.object, "rendiciones_optimized")
+            else RendicionCuentaMensualService.cantidad_rendiciones_cuentas_mensuales(
                 self.object
             )
         )
-        relevamientos = self.object.relevamiento_set.order_by("-estado", "-id")[:1]
-        observaciones = self.object.observacion_set.order_by("-fecha_visita")[:3]
 
-        context.update(
-            {
-                "relevamientos": relevamientos,
-                "observaciones": observaciones,
-                "count_relevamientos": self.object.relevamiento_set.count(),
-                "count_beneficiarios": count_beneficiarios,
-                "presupuesto_desayuno": valor_desayuno,
-                "presupuesto_almuerzo": valor_almuerzo,
-                "presupuesto_merienda": valor_merienda,
-                "presupuesto_cena": valor_cena,
-                "imagenes": self.object.imagenes.values("imagen"),
-                "comedor_categoria": self.object.clasificacioncomedor_set.order_by(
-                    "-fecha"
-                ).first(),
-                "rendicion_cuentas_final_activo": rendiciones_mensuales >= 5,
-                "GESTIONAR_API_KEY": os.getenv("GESTIONAR_API_KEY"),
-                "GESTIONAR_API_CREAR_COMEDOR": os.getenv("GESTIONAR_API_CREAR_COMEDOR"),
-                "admision": self.object.admision_set.first(),
-            }
+        # Optimización: Usar relaciones prefetched en lugar de queries adicionales
+        relevamientos = (
+            self.object.relevamientos_optimized[:1]
+            if hasattr(self.object, "relevamientos_optimized")
+            else []
+        )
+        observaciones = (
+            self.object.observaciones_optimized
+            if hasattr(self.object, "observaciones_optimized")
+            else []
         )
 
+        # Optimización: Contar relevamientos usando los prefetched o query única si es necesario
+        count_relevamientos = (
+            len(self.object.relevamientos_optimized)
+            if hasattr(self.object, "relevamientos_optimized")
+            else self.object.relevamiento_set.count()
+        )
+
+        # Optimización: Usar clasificación prefetched
+        comedor_categoria = (
+            self.object.clasificaciones_optimized[0]
+            if hasattr(self.object, "clasificaciones_optimized")
+            and self.object.clasificaciones_optimized
+            else None
+        )
+
+        # Optimización: Usar admisión prefetched
+        admision = (
+            self.object.admisiones_optimized[0]
+            if hasattr(self.object, "admisiones_optimized")
+            and self.object.admisiones_optimized
+            else None
+        )
+
+        # Optimización: Usar imágenes prefetched en lugar de .values()
+        imagenes = (
+            [{"imagen": img.imagen} for img in self.object.imagenes_optimized]
+            if hasattr(self.object, "imagenes_optimized")
+            else list(self.object.imagenes.values("imagen"))
+        )
+
+        return {
+            "relevamientos": relevamientos,
+            "observaciones": observaciones,
+            "count_relevamientos": count_relevamientos,
+            "imagenes": imagenes,
+            "comedor_categoria": comedor_categoria,
+            "rendicion_cuentas_final_activo": rendiciones_mensuales >= 5,
+            "admision": admision,
+        }
+
+    def _get_environment_config(self):
+        """Obtiene configuración del entorno."""
+        return {
+            "GESTIONAR_API_KEY": os.getenv("GESTIONAR_API_KEY"),
+            "GESTIONAR_API_CREAR_COMEDOR": os.getenv("GESTIONAR_API_CREAR_COMEDOR"),
+        }
+
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+
+        # Obtener datos de presupuestos
+        presupuestos_data = self._get_presupuestos_data()
+
+        # Obtener datos optimizados de relaciones
+        relaciones_data = self._get_relaciones_optimizadas()
+
+        # Obtener configuración del entorno
+        env_config = self._get_environment_config()
+
+        # Combinar todos los datos en el contexto
+        context.update({**presupuestos_data, **relaciones_data, **env_config})
+
         return context
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+
+        is_new_relevamiento = "territorial" in request.POST
+        is_edit_relevamiento = "territorial_editar" in request.POST
+
+        if is_new_relevamiento or is_edit_relevamiento:
+            try:
+                relevamiento = None
+                if is_new_relevamiento:
+                    relevamiento = RelevamientoService.create_pendiente(
+                        request, self.object.id
+                    )
+
+                elif is_edit_relevamiento:
+                    relevamiento = RelevamientoService.update_territorial(request)
+
+                return redirect(
+                    reverse(
+                        "relevamiento_detalle",
+                        kwargs={
+                            "pk": relevamiento.pk,
+                            "comedor_pk": relevamiento.comedor.pk,
+                        },
+                    )
+                )
+            except Exception as e:
+                messages.error(request, f"Error al crear el relevamiento: {e}")
+                return redirect("comedor_detalle", pk=self.object.id)
+
+        else:
+            return redirect("comedor_detalle", pk=self.object.id)
 
 
 class AsignarDuplaListView(ListView):
@@ -322,9 +445,11 @@ class ComedorUpdateView(UpdateView):
         context = self.get_context_data()
         referente_form = context["referente_form"]
         imagenes = self.request.FILES.getlist("imagenes")
+        dupla_original = self.object.dupla
 
         if referente_form.is_valid():
-            self.object = form.save()
+            self.object = form.save(commit=False)
+            self.object.dupla = dupla_original
             self.object.referente = referente_form.save()
             self.object.save()
 
