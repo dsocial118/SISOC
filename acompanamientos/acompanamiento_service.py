@@ -237,13 +237,14 @@ class AcompanamientoService:
             "referente", "tipocomedor", "provincia", "dupla__abogado"
         ).prefetch_related("dupla__tecnico")
 
-        # Si no es superusuario, filtramos por dupla asignada
-        if not user.is_superuser and not is_dupla:
+        # Si es tecnico o abogado, filtramos por dupla asignada
+        if not user.is_superuser and is_dupla:
             queryset = queryset.select_related("dupla__abogado").filter(
                 Q(dupla__abogado=user) | Q(dupla__tecnico=user)
             )
 
-        if not user.is_superuser and not is_area_legales:
+        # Si es de legales, le traemos los acompañamientos
+        if not user.is_superuser and is_area_legales:
             queryset = queryset.filter(
                 admision__enviado_acompaniamiento=True
             ).distinct()
