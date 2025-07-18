@@ -165,7 +165,12 @@ class ComedorService:
         valor_map = cache.get("valores_comida_map")
         if not valor_map:
             valores_comida = ValorComida.objects.filter(
-                tipo__in=["desayuno", "almuerzo", "merienda", "cena"]
+                tipo__in=[
+                    "desayuno",
+                    "almuerzo",
+                    "merienda",
+                    "cena",
+                ]
             ).values("tipo", "valor")
             valor_map = {item["tipo"].lower(): item["valor"] for item in valores_comida}
             cache.set(
@@ -259,6 +264,7 @@ class ComedorService:
             "almuerzo": 0,
             "merienda": 0,
             "cena": 0,
+            "merienda_reforzada": 0,
         }
 
         if beneficiarios and beneficiarios.prestacion:

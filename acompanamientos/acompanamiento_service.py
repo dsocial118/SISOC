@@ -108,6 +108,7 @@ class AcompanamientoService:
                 almuerzo=prestacion.almuerzo,
                 merienda=prestacion.merienda,
                 cena=prestacion.cena,
+                merienda_reforzada=prestacion.merienda_reforzada,
             )
 
     @staticmethod
@@ -184,7 +185,13 @@ class AcompanamientoService:
             "sabado",
             "domingo",
         ]
-        tipos_comida = ["desayuno", "almuerzo", "merienda", "cena"]
+        tipos_comida = [
+            "desayuno",
+            "almuerzo",
+            "merienda",
+            "cena",
+            "merienda_reforzada",
+        ]
 
         prestaciones_por_dia = []
         prestaciones_totales = []

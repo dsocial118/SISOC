@@ -117,7 +117,6 @@ class Prestacion(models.Model):
     Modelo unificado para prestaciones de comedores.
     Reemplaza el modelo complejo de relevamientos con un diseño más limpio.
     """
-
     from comedores.models import Comedor
 
     comedor = models.ForeignKey(
@@ -140,6 +139,9 @@ class Prestacion(models.Model):
     almuerzo = models.BooleanField(default=False, verbose_name="Almuerzo")
     merienda = models.BooleanField(default=False, verbose_name="Merienda")
     cena = models.BooleanField(default=False, verbose_name="Cena")
+    merienda_reforzada = models.BooleanField(
+        default=False, verbose_name="Merienda reforzada"
+    )
 
     # Campos adicionales para cantidad (opcional - para migración desde relevamientos)
     desayuno_cantidad_actual = models.PositiveIntegerField(
@@ -165,6 +167,12 @@ class Prestacion(models.Model):
     )
     cena_cantidad_espera = models.PositiveIntegerField(
         null=True, blank=True, verbose_name="Cantidad esperada cena"
+    )
+    merienda_reforzada_cantidad_actual = models.PositiveIntegerField(
+        null=True, blank=True, verbose_name="Cantidad actual merienda reforzada"
+    )
+    merienda_reforzada_cantidad_espera = models.PositiveIntegerField(
+        null=True, blank=True, verbose_name="Cantidad esperada merienda reforzada"
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
