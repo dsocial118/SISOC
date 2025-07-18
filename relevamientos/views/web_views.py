@@ -167,7 +167,13 @@ class RelevamientoDetailView(DetailView):
                     "sabado",
                     "domingo",
                 ]
-                comidas = ["desayuno", "almuerzo", "merienda", "cena"]
+                comidas = [
+                    "desayuno",
+                    "almuerzo",
+                    "merienda",
+                    "cena",
+                    "merienda_reforzada",
+                ]
                 tipos = ["actual", "espera"]
 
                 for dia in dias:
@@ -228,6 +234,18 @@ class RelevamientoDetailView(DetailView):
                     prestacion_compat,
                     f"{dia}_cena_espera",
                     prestacion.cena_cantidad_espera or 0,
+                )
+
+            if prestacion.merienda_reforzada:
+                setattr(
+                    prestacion_compat,
+                    f"{dia}_merienda_reforzada_actual",
+                    prestacion.merienda_reforzada_cantidad_actual or 0,
+                )
+                setattr(
+                    prestacion_compat,
+                    f"{dia}_merienda_reforzada_espera",
+                    prestacion.merienda_reforzada_cantidad_espera or 0,
                 )
 
         context["prestacion"] = prestacion_compat
