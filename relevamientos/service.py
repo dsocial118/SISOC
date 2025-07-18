@@ -48,6 +48,9 @@ from core.utils import convert_string_to_int
 class RelevamientoService:  # pylint: disable=too-many-public-methods
 
     # TODO: Mover metodos no genericos al utils.py
+
+    #Este metodo recive el nombre del campo de la base, el array de datos y el modelo
+    #y devuelve un queryset de los recursos que existen en la base de datos
     @staticmethod
     def get_recursos(nombre,recursos_data,model):
         recursos_str = recursos_data.pop(nombre, "")
@@ -57,10 +60,14 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             return model.objects.filter(nombre__in=valid_recursos)
         return model.objects.none()
 
+    #Convierte un valor de string a booleano
+    #Si el valor es "Y" devuelve True, si es "N" devuelve False
     @staticmethod
     def convert_to_boolean(value):
         return value == "Y" if value in ["Y", "N"] else False
     
+    #Obtiene un objeto del modelo dado, filtrando por el nombre del campo y el valor
+    #Si el valor es None o una cadena vacía, devuelve None
     @staticmethod
     def get_object_or_none(model, field_name, value):
         if not value:
@@ -70,6 +77,8 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         except model.DoesNotExist:
             return None
     
+    #Asigna los valores del diccionario data a los campos del instance
+    #y guarda el instance en la base de datos
     @staticmethod
     def assign_values_to_instance(instance, data):
         for field, value in data.items():
