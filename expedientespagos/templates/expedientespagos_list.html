@@ -16,12 +16,14 @@
 {% block content %}
     <div class="container mt-4">
         <h1>Listado de Expedientes de Pagos</h1>
-        <div class="mb-3">
-            <a href="{% url 'expedientespagos_create' comedorid %}"
-               class="btn btn-primary">
-                <i class="fas fa-plus"></i> Nuevo Expediente de Pago
-            </a>
-        </div>
+        {% if request.user|has_group:"Area Legales" %}
+            <div class="mb-3">
+                <a href="{% url 'expedientespagos_create' comedorid %}"
+                   class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Nuevo Expediente de Pago
+                </a>
+            </div>
+        {% endif %}
         {% if expedientes_pagos %}
             <table class="table table-bordered table-striped">
                 <thead>
