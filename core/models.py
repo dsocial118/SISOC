@@ -117,7 +117,8 @@ class Prestacion(models.Model):
     Modelo unificado para prestaciones de comedores.
     Reemplaza el modelo complejo de relevamientos con un diseño más limpio.
     """
-    from comedores.models import Comedor
+
+    from comedores.models import Comedor  # pylint: disable=import-outside-toplevel
 
     comedor = models.ForeignKey(
         Comedor, on_delete=models.CASCADE, related_name="prestaciones"

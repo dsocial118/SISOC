@@ -1,15 +1,18 @@
 from rest_framework import serializers
 
 from relevamientos.models import Relevamiento
-
 from relevamientos.service import RelevamientoService
+
+from comedores.models import Comedor
 from core.utils import format_fecha_django
 
 
 class RelevamientoSerializer(serializers.ModelSerializer):
 
     # TODO: Refactorizar
-    def clean(self):  # pylint: disable=too-many-statements,too-many-branches
+    def clean(
+        self,
+    ):  # pylint: disable=too-many-statements,too-many-branches,too-many-locals
         if "fecha_visita" in self.initial_data:
             self.initial_data["fecha_visita"] = format_fecha_django(
                 self.initial_data["fecha_visita"]
@@ -102,8 +105,6 @@ class RelevamientoSerializer(serializers.ModelSerializer):
                 comedor_id = self.instance.comedor.id
 
             if comedor_id:
-                from comedores.models import Comedor
-
                 try:
                     comedor = Comedor.objects.get(id=comedor_id)
                     prestacion_instance = RelevamientoService.create_or_update_prestaciones_from_relevamiento(
