@@ -10,11 +10,16 @@ from django.contrib import messages
 from django.urls import reverse_lazy, reverse
 from django.db.models import Q, Count, F, ExpressionWrapper, IntegerField
 from django.core.exceptions import PermissionDenied
-from django.core.cache import cache
-from django.conf import settings
-from centrodefamilia.models import Centro, ActividadCentro, ParticipanteActividad
+from django.core.paginator import Paginator
+
+from centrodefamilia.models import (
+    Categoria,
+    Centro,
+    ActividadCentro,
+    Expediente,
+    ParticipanteActividad,
+)
 from centrodefamilia.forms import CentroForm
-from django.utils.decorators import method_decorator
 
 
 class CentroListView(LoginRequiredMixin, ListView):
@@ -24,50 +29,27 @@ class CentroListView(LoginRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        # Cache la verificación del grupo para evitar queries repetidas
+        qs = Centro.objects.select_related("faro_asociado", "referente")
         user = self.request.user
-        cache_key = f"user_is_referente_{user.id}"
-        is_referente = cache.get(cache_key)
 
-        if is_referente is None:
-            is_referente = (
-                user.groups.filter(name="ReferenteCentro").exists()
-                and not user.is_superuser
-            )
-            cache.set(
-                cache_key, is_referente, settings.DEFAULT_CACHE_TIMEOUT
-            )  # Cache por 5 minutos
+        if not user.is_superuser or not user.groups.filter(name="CDF SSE").exists():
+            if user.groups.filter(name="ReferenteCentro").exists():
+                qs = qs.filter(Q(referente=user) | Q(faro_asociado__referente=user))
+            else:
+                return Centro.objects.none()
 
-        queryset = Centro.objects.select_related("faro_asociado", "referente")
-
-        # Un referente ve solo sus centros y los adheridos asociados a sus centros FARO
-        if is_referente:
-            queryset = queryset.filter(
-                Q(referente=user) | Q(faro_asociado__referente=user)
-            )
-
-        busqueda = self.request.GET.get("busqueda")
-        if busqueda:
-            queryset = queryset.filter(
-                Q(nombre__icontains=busqueda) | Q(tipo__icontains=busqueda)
-            )
-
-        return queryset.order_by("nombre")
+        busq = self.request.GET.get("busqueda", "").strip()
+        if busq:
+            qs = qs.filter(Q(nombre__icontains=busq) | Q(tipo__icontains=busq))
+        return qs.order_by("nombre")
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        # Pasar información cacheada al contexto para evitar re-query en templates
+        ctx = super().get_context_data(**kwargs)
         user = self.request.user
-
-        cache_key = f"user_is_referente_{user.id}"
-        context["user_is_referente"] = cache.get(cache_key, False)
-
-        # Control de botones “Agregar”
-        context["can_add"] = (
+        ctx["can_add"] = (
             user.is_superuser or user.groups.filter(name="CDF SSE").exists()
         )
-
-        return context
+        return ctx
 
 
 class CentroDetailView(LoginRequiredMixin, DetailView):
@@ -76,93 +58,86 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
     context_object_name = "centro"
 
     def get_object(self, queryset=None):
-        if queryset is None:
-            queryset = self.get_queryset()
-
-        # Optimización: Prefetch centros adheridos para evitar queries adicionales
-        queryset = queryset.prefetch_related("centro_set")
-
         obj = super().get_object(queryset)
         user = self.request.user
-
-        # Optimización: Reutilizar cache ya creado en ListView o crearlo aquí
-        cache_key = f"user_is_referente_{user.id}"
-        is_referente_grupo = cache.get(cache_key)
-
-        if is_referente_grupo is None:
-            is_referente_grupo = (
-                user.groups.filter(name="ReferenteCentro").exists()
-                and not user.is_superuser
-            )
-            cache.set(cache_key, is_referente_grupo, settings.DEFAULT_CACHE_TIMEOUT)
-
-        es_referente = obj.referente_id == user.id
-        es_adherido_de_faro = (
+        es_ref = obj.referente_id == user.id
+        es_adherido = (
             obj.tipo == "adherido"
             and obj.faro_asociado
             and obj.faro_asociado.referente_id == user.id
         )
-
-        if not (es_referente or es_adherido_de_faro or user.is_superuser):
+        if not (es_ref or es_adherido or user.is_superuser):
             raise PermissionDenied
-
         return obj
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+        ctx = super().get_context_data(**kwargs)
         centro = self.object
 
-        actividades = ActividadCentro.objects.filter(centro=centro).select_related(
-            "actividad", "actividad__categoria"
+        # 1) Expedientes paginados
+        qs_exp = Expediente.objects.filter(centro=centro).order_by("-fecha_subida")
+        ctx["expedientes_cabal"] = Paginator(qs_exp, 3).get_page(
+            self.request.GET.get("page_exp")
         )
 
-        participantes = (
-            ParticipanteActividad.objects.filter(actividad_centro__in=actividades)
-            .values("actividad_centro")
-            .annotate(total=Count("id"))
+        # 2) Actividades con inscritos y ganancia en DB
+        qs_acts = (
+            ActividadCentro.objects.filter(centro=centro)
+            .select_related("actividad", "actividad__categoria")
+            .annotate(
+                inscritos=Count("participanteactividad", distinct=True),
+                ganancia=ExpressionWrapper(
+                    F("precio") * F("inscritos"), output_field=IntegerField()
+                ),
+            )
+        )
+        ctx["actividades"] = list(qs_acts)
+        ctx["total_actividades"] = qs_acts.count()
+
+        # 3) Otras actividades (paginadas)
+        otras = (
+            ActividadCentro.objects.exclude(centro=centro)
+            .select_related("actividad", "actividad__categoria", "centro")
+            .order_by("centro__nombre", "actividad__nombre")
+        )
+        ctx["actividades_paginados"] = Paginator(otras, 5).get_page(
+            self.request.GET.get("page_act")
         )
 
-        participantes_map = {p["actividad_centro"]: p["total"] for p in participantes}
-
-        actividades_con_ganancia = []
-        for actividad in actividades:
-            cantidad = participantes_map.get(actividad.id, 0)
-            ganancia = (actividad.precio or 0) * cantidad
-            actividades_con_ganancia.append({"obj": actividad, "ganancia": ganancia})
-
-        context["actividades"] = actividades_con_ganancia
-        context["total_actividades"] = actividades.count()
-        context["total_participantes"] = sum(participantes_map.values())
-
-        # Optimización: Usar relación prefetched en lugar de queries adicionales
-        centros_adheridos = (
-            centro.centro_set.all()
-            if hasattr(centro, "centro_set")
-            else Centro.objects.filter(faro_asociado=centro)
-        )
-        context["centros_adheridos_total"] = (
-            len(centros_adheridos)
-            if hasattr(centro, "centro_set")
-            else Centro.objects.filter(faro_asociado=centro).count()
-        )
-
+        # 4) Centros adheridos FARO
         if centro.tipo == "faro":
-            context["centros_adheridos"] = centros_adheridos
+            adheridos = Centro.objects.filter(
+                faro_asociado=centro, activo=True
+            ).order_by("nombre")
+        else:
+            adheridos = Centro.objects.none()
+        ctx["centros_adheridos_paginados"] = Paginator(adheridos, 5).get_page(
+            self.request.GET.get("page")
+        )
+        ctx["centros_adheridos_total"] = adheridos.count()
 
-        # Add metricas and asistentes to the context
-        context["metricas"] = {
-            "total_ganancia": sum(
-                item["ganancia"] for item in actividades_con_ganancia
-            ),
-            "promedio_ganancia": (
-                sum(item["ganancia"] for item in actividades_con_ganancia)
-                / len(actividades_con_ganancia)
-                if actividades_con_ganancia
-                else 0
-            ),
+        # 5) Métricas avanzadas
+        total_part = sum(a.inscritos for a in qs_acts)
+        qs_part = ParticipanteActividad.objects.filter(actividad_centro__centro=centro)
+        hombres = qs_part.filter(ciudadano__sexo__sexo__iexact="Masculino").count()
+        mujeres = qs_part.filter(ciudadano__sexo__sexo__iexact="Femenino").count()
+        mixtas = total_part - hombres - mujeres
+
+        ctx["metricas"] = {
+            "centros_faro": ctx["centros_adheridos_total"],
+            "categorias": Categoria.objects.count(),
+            "actividades": ctx["total_actividades"],
+            "interacciones": total_part,
+            "hombres": hombres,
+            "mujeres": mujeres,
+            "mixtas": mixtas,
         }
-        context["asistentes"] = sum(participantes_map.values())
-        return context
+        ctx["asistentes"] = {
+            "total": total_part,
+            "hombres": hombres,
+            "mujeres": mujeres,
+        }
+        return ctx
 
 
 class CentroCreateView(LoginRequiredMixin, CreateView):
@@ -171,29 +146,28 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
     template_name = "centros/centro_form.html"
     success_url = reverse_lazy("centro_list")
 
+    def get_initial(self):
+        initial = super().get_initial()
+        faro_id = self.request.GET.get("faro")
+        if faro_id:
+            initial["tipo"] = "adherido"
+            initial["faro_asociado"] = faro_id
+        return initial
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["from_faro"] = bool(self.request.GET.get("faro"))
+        return kwargs
+
     def form_valid(self, form):
         user = self.request.user
-
-        # Cache la verificación del grupo para evitar queries repetidas
-        cache_key = f"user_is_referente_{user.id}"
-        is_referente = cache.get(cache_key)
-
-        if is_referente is None:
-            is_referente = (
-                user.groups.filter(name="ReferenteCentro").exists()
-                and not user.is_superuser
-            )
-            cache.set(
-                cache_key, is_referente, settings.DEFAULT_CACHE_TIMEOUT
-            )  # Cache por 5 minutos
-
-        # Si es referente, siempre se asigna como referente y solo puede crear adheridos
-        if is_referente:
+        if form.cleaned_data.get("tipo") == "adherido":
+            form.instance.faro_asociado_id = self.request.GET.get("faro")
+        if (
+            user.groups.filter(name="ReferenteCentro").exists()
+            and not user.is_superuser
+        ):
             form.instance.referente = user
-            if form.cleaned_data.get("tipo") != "adherido":
-                messages.error(self.request, "Solo puedes crear centros ADHERIDOS.")
-                return self.form_invalid(form)
-
         messages.success(self.request, "Centro creado exitosamente.")
         return super().form_valid(form)
 
@@ -206,8 +180,6 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
     def dispatch(self, request, *args, **kwargs):
         centro = self.get_object()
         user = request.user
-
-        # Solo el referente del centro o el superadmin puede editar
         if not (centro.referente_id == user.id or user.is_superuser):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
@@ -228,7 +200,6 @@ class CentroDeleteView(LoginRequiredMixin, DeleteView):
     def dispatch(self, request, *args, **kwargs):
         centro = self.get_object()
         user = request.user
-
         if not (centro.referente_id == user.id or user.is_superuser):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
