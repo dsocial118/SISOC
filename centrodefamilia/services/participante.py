@@ -1,4 +1,3 @@
-from django.forms import CharField
 from centrodefamilia.models import Centro, ActividadCentro, ParticipanteActividad
 from ciudadanos.models import (
     Ciudadano,
@@ -11,7 +10,6 @@ from ciudadanos.models import (
     CiudadanoPrograma,
     HistorialCiudadanoProgramas,
 )
-from django.db.models.functions import Cast
 
 
 class AlreadyRegistered(Exception):
