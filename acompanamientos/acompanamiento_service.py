@@ -242,13 +242,13 @@ class AcompanamientoService:
         qs = Comedor.objects.select_related(
             "referente", "tipocomedor", "provincia", "dupla__abogado"
         )
-        
+
         if not user.is_superuser:
             if is_dupla:
                 qs = qs.filter(Exists(dupla_abogado_subq) | Exists(dupla_tecnico_subq))
             if is_area_legales:
                 qs = qs.filter(Exists(admision_subq))
-                
+
         if busqueda:
             qs = qs.filter(
                 Q(nombre__icontains=busqueda)
