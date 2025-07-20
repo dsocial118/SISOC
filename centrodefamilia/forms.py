@@ -3,7 +3,6 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 
 from ciudadanos.models import Sexo, TipoDocumento
-from organizaciones.models import Organizacion
 from core.models import Dia
 from centrodefamilia.models import (
     Centro,
@@ -65,10 +64,6 @@ class CentroForm(forms.ModelForm):
         self.fields["faro_asociado"].queryset = Centro.objects.filter(
             tipo="faro", activo=True
         ).only("id", "nombre")
-
-        self.fields["organizacion_asociada"].queryset = Organizacion.objects.only(
-            "id", "nombre", "cuit"
-        )[:100]
         self.fields["organizacion_asociada"].empty_label = "Seleccionar organización..."
 
     def clean(self):

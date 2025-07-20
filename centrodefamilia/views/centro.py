@@ -32,20 +32,34 @@ class CentroListView(LoginRequiredMixin, ListView):
         qs = Centro.objects.select_related("faro_asociado", "referente")
         user = self.request.user
 
-        if not user.is_superuser or not user.groups.filter(name="CDF SSE").exists():
-            if user.groups.filter(name="ReferenteCentro").exists():
-                qs = qs.filter(Q(referente=user) | Q(faro_asociado__referente=user))
-            else:
-                return Centro.objects.none()
+        # 1) Superuser ve todo
+        if user.is_superuser:
+            pass
 
+        # 2) CDF SSE ve todo
+        elif user.groups.filter(name="CDF SSE").exists():
+            pass
+
+        # 3) ReferenteCentro ve SOLO los centros donde es referente
+        elif user.groups.filter(name="ReferenteCentro").exists():
+            qs = qs.filter(referente=user)
+
+        # 4) Resto de usuarios no ven nada
+        else:
+            return Centro.objects.none()
+
+        # Filtro de texto
         busq = self.request.GET.get("busqueda", "").strip()
         if busq:
             qs = qs.filter(Q(nombre__icontains=busq) | Q(tipo__icontains=busq))
+
         return qs.order_by("nombre")
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         user = self.request.user
+
+        # Control de botones “Agregar”
         ctx["can_add"] = (
             user.is_superuser or user.groups.filter(name="CDF SSE").exists()
         )
