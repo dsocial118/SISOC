@@ -81,8 +81,7 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
             and obj.faro_asociado.referente_id == user.id
         )
         es_cdf_sse = user.groups.filter(name="CDF SSE").exists()
-        if not (es_ref or es_adherido or user.is_superuser
-                or es_cdf_sse):
+        if not (es_ref or es_adherido or user.is_superuser or es_cdf_sse):
             raise PermissionDenied
         return obj
 
