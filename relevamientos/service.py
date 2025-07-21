@@ -1043,6 +1043,59 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         return compras_data
 
     @staticmethod
+    def _process_prestacion_tipo(tipo, dia, prestacion_data, defaults_data):
+        """
+        Procesa un tipo específico de prestación (desayuno, almuerzo, etc.) para un día.
+        Retorna True si hay datos de prestación para este tipo.
+        """
+        campo_actual = f"{dia}_{tipo}_actual"
+        campo_espera = f"{dia}_{tipo}_espera"
+
+        cantidad_actual = prestacion_data.get(campo_actual)
+        cantidad_espera = prestacion_data.get(campo_espera)
+
+        # Si hay cantidad, marcar como True y guardar las cantidades
+        tipo_activo = False
+        has_data = False
+
+        if cantidad_actual and cantidad_actual != "" and int(cantidad_actual) > 0:
+            tipo_activo = True
+            defaults_data[f"{tipo}_cantidad_actual"] = int(cantidad_actual)
+            has_data = True
+
+        if cantidad_espera and cantidad_espera != "" and int(cantidad_espera) > 0:
+            tipo_activo = True
+            defaults_data[f"{tipo}_cantidad_espera"] = int(cantidad_espera)
+            has_data = True
+
+        # Setear el flag booleano
+        defaults_data[tipo] = tipo_activo
+        return has_data
+
+    @staticmethod
+    def _clear_prestacion_data(comedor, dia):
+        """
+        Limpia los datos de prestación para un comedor y día específicos.
+        """
+        Prestacion.objects.filter(comedor=comedor, dia=dia).update(
+            desayuno=False,
+            almuerzo=False,
+            merienda=False,
+            cena=False,
+            merienda_reforzada=False,
+            desayuno_cantidad_actual=None,
+            desayuno_cantidad_espera=None,
+            almuerzo_cantidad_actual=None,
+            almuerzo_cantidad_espera=None,
+            merienda_cantidad_actual=None,
+            merienda_cantidad_espera=None,
+            cena_cantidad_actual=None,
+            cena_cantidad_espera=None,
+            merienda_reforzada_cantidad_actual=None,
+            merienda_reforzada_cantidad_espera=None,
+        )
+
+    @staticmethod
     @transaction.atomic
     def create_or_update_prestaciones_from_relevamiento(prestacion_data, comedor):
         """
@@ -1067,82 +1120,33 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             "merienda_reforzada",
         ]
 
-        # Eliminar prestaciones existentes para este comedor
-        # MEJORADO: En lugar de borrar, usamos update_or_create para mejor performance
-        # Prestacion.objects.filter(comedor=comedor).delete()
-
-        # Crear un objeto dummy para compatibilidad si no hay datos
         primera_prestacion = None
 
         # Crear/actualizar prestaciones por día usando update_or_create
         for dia in dias:
-            # Preparar datos por defecto para este día
             defaults_data = {}
+            has_prestacion = False
 
             # Para cada tipo de comida, verificar si hay datos
-            has_prestacion = False
             for tipo in tipos_comida:
-                campo_actual = f"{dia}_{tipo}_actual"
-                campo_espera = f"{dia}_{tipo}_espera"
-
-                cantidad_actual = prestacion_data.get(campo_actual)
-                cantidad_espera = prestacion_data.get(campo_espera)
-
-                # Si hay cantidad, marcar como True y guardar las cantidades
-                tipo_activo = False
-                if (
-                    cantidad_actual
-                    and cantidad_actual != ""
-                    and int(cantidad_actual) > 0
+                if RelevamientoService._process_prestacion_tipo(
+                    tipo, dia, prestacion_data, defaults_data
                 ):
-                    tipo_activo = True
-                    defaults_data[f"{tipo}_cantidad_actual"] = int(cantidad_actual)
                     has_prestacion = True
-
-                if (
-                    cantidad_espera
-                    and cantidad_espera != ""
-                    and int(cantidad_espera) > 0
-                ):
-                    tipo_activo = True
-                    defaults_data[f"{tipo}_cantidad_espera"] = int(cantidad_espera)
-                    has_prestacion = True
-
-                # Setear el flag booleano
-                defaults_data[tipo] = tipo_activo
 
             # Solo crear/actualizar si hay al menos una prestación
             if has_prestacion:
-                prestacion_dia, created = Prestacion.objects.update_or_create(
+                prestacion_dia, _ = Prestacion.objects.update_or_create(
                     comedor=comedor, dia=dia, defaults=defaults_data
                 )
-
-                # Guardar referencia a la primera prestación creada/actualizada
                 if primera_prestacion is None:
                     primera_prestacion = prestacion_dia
             else:
-                # Si no hay prestación para este día, limpiar datos existentes si es un update
-                Prestacion.objects.filter(comedor=comedor, dia=dia).update(
-                    desayuno=False,
-                    almuerzo=False,
-                    merienda=False,
-                    cena=False,
-                    merienda_reforzada=False,
-                    desayuno_cantidad_actual=None,
-                    desayuno_cantidad_espera=None,
-                    almuerzo_cantidad_actual=None,
-                    almuerzo_cantidad_espera=None,
-                    merienda_cantidad_actual=None,
-                    merienda_cantidad_espera=None,
-                    cena_cantidad_actual=None,
-                    cena_cantidad_espera=None,
-                    merienda_reforzada_cantidad_actual=None,
-                    merienda_reforzada_cantidad_espera=None,
-                )
+                RelevamientoService._clear_prestacion_data(comedor, dia)
 
         # Si no hay prestaciones, crear una vacía para compatibilidad
         if primera_prestacion is None:
-            primera_prestacion, created = Prestacion.objects.update_or_create(
+            primera_prestacion, _ = Prestacion.objects.update_or_create(
                 comedor=comedor,
                 dia="lunes",
                 defaults={
