@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 
 from ciudadanos.models import Sexo, TipoDocumento
-from organizaciones.models import Organizacion
+from core.models import Dia
 from centrodefamilia.models import (
     Centro,
     ActividadCentro,
@@ -26,6 +26,11 @@ class CentroForm(forms.ModelForm):
             "nombre",
             "codigo",
             "organizacion_asociada",
+            "provincia",
+            "municipio",
+            "localidad",
+            "calle",
+            "numero",
             "domicilio_actividad",
             "telefono",
             "celular",
@@ -43,25 +48,22 @@ class CentroForm(forms.ModelForm):
         ]
 
     def __init__(self, *args, **kwargs):
+        from_faro = kwargs.pop("from_faro", False)
         super().__init__(*args, **kwargs)
 
-        # Optimización: Cargar solo usuarios ReferenteCentro con select_related
+        if from_faro:
+            self.fields["tipo"].initial = "adherido"
+            self.fields["tipo"].disabled = True
+            self.fields["tipo"].widget = forms.HiddenInput()
+            self.fields["faro_asociado"].disabled = True
+
         self.fields["referente"].queryset = User.objects.filter(
             groups__name="ReferenteCentro"
         ).only("id", "username", "first_name", "last_name")
 
-        # Optimización: Cargar solo centros faro activos
         self.fields["faro_asociado"].queryset = Centro.objects.filter(
             tipo="faro", activo=True
         ).only("id", "nombre")
-
-        # Optimización: Usar empty_label y limitar queryset para organizaciones
-        # Solo cargar las primeras 100 organizaciones para evitar query lenta
-        self.fields["organizacion_asociada"].queryset = Organizacion.objects.only(
-            "id", "nombre", "cuit"
-        )[
-            :100
-        ]  # Limitar a las primeras 100
         self.fields["organizacion_asociada"].empty_label = "Seleccionar organización..."
 
     def clean(self):
@@ -79,14 +81,30 @@ class CentroForm(forms.ModelForm):
 
 
 class ActividadCentroForm(forms.ModelForm):
-    dias = forms.SelectMultiple(
-        attrs={
-            "class": "form-select select2 w-100",
-            "style": "width: 100%;",
-        }
+    sexoact = forms.ModelMultipleChoiceField(
+        queryset=Sexo.objects.all(),
+        required=False,
+        label="Actividad dirigida a...",
+        widget=forms.SelectMultiple(attrs={"class": "select2 w-100", "multiple": True}),
     )
-    horarios = forms.TimeField(
-        label="Hora",
+    dias = forms.ModelMultipleChoiceField(
+        queryset=Dia.objects.all(),
+        required=False,
+        label="Días",
+        widget=forms.SelectMultiple(attrs={"class": "select2 w-100", "multiple": True}),
+    )
+    horariosdesde = forms.TimeField(
+        label="Hora Desde",
+        widget=forms.TimeInput(
+            attrs={
+                "class": "form-control timepicker",
+                "placeholder": "Seleccione una hora",
+            }
+        ),
+        required=True,
+    )
+    horarioshasta = forms.TimeField(
+        label="Hora Hasta",
         widget=forms.TimeInput(
             attrs={
                 "class": "form-control timepicker",
@@ -100,6 +118,7 @@ class ActividadCentroForm(forms.ModelForm):
         required=False,
         label="Categoría",
         empty_label="Seleccione una categoría",
+        widget=forms.Select(attrs={"class": "form-control"}),
     )
 
     class Meta:
@@ -108,14 +127,15 @@ class ActividadCentroForm(forms.ModelForm):
             "categoria",
             "actividad",
             "cantidad_personas",
+            "sexoact",
             "dias",
-            "horarios",
+            "horariosdesde",
+            "horarioshasta",
             "precio",
             "estado",
         ]
         exclude = ["centro"]
         widgets = {
-            "horarios": forms.TextInput(attrs={"class": "form-control"}),
             "cantidad_personas": forms.NumberInput(attrs={"class": "form-control"}),
             "precio": forms.NumberInput(attrs={"class": "form-control"}),
             "estado": forms.Select(attrs={"class": "form-control"}),
@@ -125,19 +145,31 @@ class ActividadCentroForm(forms.ModelForm):
         self.centro = kwargs.pop("centro", None)
         super().__init__(*args, **kwargs)
 
-        # Si se pasó un dato de categoría, filtramos las actividades
-        if "data" in kwargs:
-            categoria_id = kwargs["data"].get("categoria")
-            if categoria_id:
-                self.fields["actividad"].queryset = Actividad.objects.filter(
-                    categoria_id=categoria_id
-                )
-            else:
-                self.fields["actividad"].queryset = Actividad.objects.none()
+        if self.data:
+            cat_id = self.data.get("categoria")
+            self.fields["actividad"].queryset = (
+                Actividad.objects.filter(categoria_id=cat_id)
+                if cat_id
+                else Actividad.objects.none()
+            )
+        elif self.instance and self.instance.pk:
+            actividad = self.instance.actividad
+            cat_id = actividad.categoria_id if actividad else None
+            self.initial.update(
+                {
+                    "categoria": cat_id,
+                    "actividad": self.instance.actividad_id,
+                    "dias": [d.pk for d in self.instance.dias.all()],
+                }
+            )
+            self.fields["actividad"].queryset = (
+                Actividad.objects.filter(categoria_id=cat_id)
+                if cat_id
+                else Actividad.objects.none()
+            )
         else:
             self.fields["actividad"].queryset = Actividad.objects.none()
 
-        # Si es FARO, ocultar el campo precio
         if self.centro and self.centro.tipo == "faro":
             self.fields["precio"].widget = forms.HiddenInput()
             self.fields["precio"].required = False
@@ -145,7 +177,6 @@ class ActividadCentroForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         precio = cleaned_data.get("precio")
-
         if self.centro and self.centro.tipo == "faro" and precio:
             raise ValidationError(
                 "Un centro de tipo FARO no debe tener un precio asignado."
@@ -167,32 +198,45 @@ class ParticipanteActividadForm(forms.ModelForm):
 
     class Meta:
         model = ParticipanteActividad
-        fields = (
-            []
-        )  # no usamos directamente los campos del modelo porque todos se construyen en la vista
+        # no usamos directamente los campos del modelo porque todos se construyen en la vista
+        fields = []
 
 
 class ExpedienteCabalForm(forms.ModelForm):
+    periodo = forms.DateField(
+        label="Periodo",
+        widget=forms.DateInput(
+            attrs={"type": "date", "class": "form-control form-control-sm"}
+        ),
+    )
+    archivo = forms.FileField(
+        label="Archivo",
+        widget=forms.ClearableFileInput(
+            attrs={"class": "form-control form-control-sm", "accept": ".pdf,.xlsx,.csv"}
+        ),
+    )
+
     class Meta:
         model = Expediente
-        fields = [
-            "archivo",
-            "periodo",
-        ]
-        widgets = {
-            "archivo": forms.FileInput(attrs={"class": "form-control"}),
-            "periodo": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
-        }
+        fields = ["periodo", "archivo"]
 
 
 class ActividadForm(forms.ModelForm):
+    nombre = forms.CharField(
+        label="Nombre de la Actividad",
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control form-control-sm",
+                "placeholder": "Ej. Taller de oficio",
+            }
+        ),
+    )
+    categoria = forms.ModelChoiceField(
+        label="Categoría",
+        queryset=Categoria.objects.all(),
+        widget=forms.Select(attrs={"class": "form-control form-control-sm"}),
+    )
+
     class Meta:
         model = Actividad
-        fields = [
-            "nombre",
-            "categoria",
-        ]
-        widgets = {
-            "nombre": forms.TextInput(attrs={"class": "form-control"}),
-            "categoria": forms.Select(attrs={"class": "form-control"}),
-        }
+        fields = ["categoria", "nombre"]
