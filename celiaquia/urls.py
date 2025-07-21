@@ -13,12 +13,7 @@ from celiaquia.views.expediente import (
     CrearLegajosView,
 )
 from celiaquia.views.legajo import LegajoArchivoUploadView
-from celiaquia.views.cruce import (
-    CruceUploadView,
-    CruceProcesarView,
-    CruceFinalizarView,
-)
-from celiaquia.views.pago import OpenPaymentView, ClosePaymentView
+
 
 urlpatterns = [
     # Provincia
@@ -73,34 +68,5 @@ urlpatterns = [
         'expedientes/<int:pk>/asignar/',
         group_required(['CoordinadorCeliaquia'])(AsignarTecnicoView.as_view()),
         name='expediente_asignar'
-    ),
-
-    # Técnico
-    path(
-        'expedientes/<int:pk>/cruce/subir/',
-        group_required(['Tecnico'])(CruceUploadView.as_view()),
-        name='cruce_upload'
-    ),
-    path(
-        'expedientes/<int:pk>/cruce/procesar/',
-        group_required(['Tecnico'])(CruceProcesarView.as_view()),
-        name='cruce_procesar'
-    ),
-    path(
-        'expedientes/<int:pk>/cruce/finalizar/',
-        group_required(['Tecnico'])(CruceFinalizarView.as_view()),
-        name='cruce_finalizar'
-    ),
-
-    # Finanzas
-    path(
-        'expedientes/<int:pk>/pago/abrir/',
-        group_required(['Finanzas'])(OpenPaymentView.as_view()),
-        name='pago_open'
-    ),
-    path(
-        'expedientes/<int:pk>/pago/cerrar/',
-        group_required(['Finanzas'])(ClosePaymentView.as_view()),
-        name='pago_close'
     ),
 ]

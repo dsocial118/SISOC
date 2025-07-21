@@ -1,4 +1,3 @@
-
 # views/expediente.py
 import json
 import logging
@@ -26,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 class CrearLegajosView(View):
     """
-    Recibe JSON con 'rows' (lista de dicts) desde la preview y crea/enlaza legajos.
+    Recibe JSON con 'rows' (lista de dicts) y crea/enlaza legajos.
     Devuelve {'creados': X, 'existentes': Y}.
     """
     def post(self, request, pk):
@@ -39,9 +38,8 @@ class CrearLegajosView(View):
 
         estado_inicial = EstadoLegajo.objects.get(nombre='DOCUMENTO_PENDIENTE')
         creados = existentes = 0
-
         for datos in rows:
-            ciudadano, created = CiudadanoService.get_or_create_ciudadano(datos)
+            ciudadano = CiudadanoService.get_or_create_ciudadano(datos)
             obj, was_created = ExpedienteCiudadano.objects.get_or_create(
                 expediente=expediente,
                 ciudadano=ciudadano,
@@ -51,34 +49,27 @@ class CrearLegajosView(View):
                 creados += 1
             else:
                 existentes += 1
-
         return JsonResponse({'creados': creados, 'existentes': existentes})
 
 @method_decorator(csrf_exempt, name='dispatch')
 class ExpedientePreviewExcelView(View):
     """
-    Recibe por POST un archivo excel_masivo y devuelve JSON con:
-      - headers: lista de encabezados normalizados
-      - rows: todas las filas procesadas
-    Temporalmente exento de CSRF para depuración.
+    Exento de CSRF: recibe POST con Excel y devuelve JSON con preview.
     """
     def post(self, request, *args, **kwargs):
-        logger.debug("PREVIEW: path=%s, headers=%s, cookies=%s", request.path, dict(request.headers), request.COOKIES)
+        logger.debug("PREVIEW: path=%s headers=%s cookies=%s", request.path, dict(request.headers), request.COOKIES)
         archivo = request.FILES.get('excel_masivo')
         if not archivo:
-            logger.warning("PREVIEW: no file received")
             return JsonResponse({'error': 'No se recibió ningún archivo.'}, status=400)
-
         try:
             preview = ImportacionService.preview_excel(archivo)
             return JsonResponse(preview)
         except ValidationError as e:
-            logger.warning("PREVIEW: validation error: %s", e, exc_info=True)
             return JsonResponse({'error': str(e)}, status=400)
         except Exception:
             tb = traceback.format_exc()
-            logger.error("PREVIEW: unexpected error:\n%s", tb)
-            return JsonResponse({'error': 'Error inesperado al procesar el Excel.', 'debug': tb}, status=500)
+            logger.error("PREVIEW error:\n%s", tb)
+            return JsonResponse({'error': 'Error inesperado al procesar el Excel.'}, status=500)
 
 class ExpedienteListView(ListView):
     model = Expediente
@@ -105,7 +96,7 @@ class ExpedienteCreateView(CreateView):
             datos_metadatos=form.cleaned_data,
             excel_masivo=form.cleaned_data['excel_masivo']
         )
-        messages.success(self.request, "Expediente creado. Ahora podés previsualizar tu Excel antes de importar.")
+        messages.success(self.request, "Expediente creado correctamente.")
         return redirect('expediente_detail', pk=expediente.pk)
 
 class ExpedienteDetailView(DetailView):
@@ -124,7 +115,7 @@ class ExpedienteDetailView(DetailView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         expediente = self.object
-        preview, preview_error = None, None
+        preview = preview_error = None
         if expediente.estado.nombre == 'CREADO' and expediente.excel_masivo:
             try:
                 preview = ImportacionService.preview_excel(expediente.excel_masivo)
@@ -139,25 +130,48 @@ class ExpedienteDetailView(DetailView):
         return ctx
 
 class ExpedienteImportView(View):
-    """
-    Procesa la importación masiva desde `expediente.excel_masivo`.
-    """
     def post(self, request, pk):
         expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=request.user)
         start = time.time()
         try:
             result = ImportacionService.importar_legajos_desde_excel(expediente, expediente.excel_masivo)
             elapsed = time.time() - start
-            messages.success(request, f"Importación en {elapsed:.2f}s: {result['validos']} validos, {result['errores']} errores.")
-            for err in result.get('detalles_errores', [])[:5]:
-                messages.error(request, f"Fila {err['fila']}: {err['error']}")
-            if len(result.get('detalles_errores', [])) > 5:
-                extras = len(result['detalles_errores']) - 5
-                messages.info(request, f"...y {extras} errores más.")
+            messages.success(request, f"Import: {result['validos']} creados, {result['errores']} errores en {elapsed:.2f}s.")
         except ValidationError as ve:
-            messages.error(request, f"Error de validación: {ve.message}")
+            messages.error(request, f"Error validación import: {ve.message}")
         except Exception as e:
-            messages.error(request, f"Error inesperado al importar legajos: {e}")
+            messages.error(request, f"Error inesperado import: {e}")
+        return redirect('expediente_detail', pk=pk)
+
+class ExpedienteProcessView(View):
+    """
+    AJAX: procesa expediente, crea legajos y cambia estado a PROCESADO.
+    """
+    def post(self, request, pk):
+        expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=request.user)
+        try:
+            result = ExpedienteService.procesar_expediente(expediente)
+            return JsonResponse({'success': True, 'creados': result['creados'], 'errores': result['errores']})
+        except ValidationError as ve:
+            return JsonResponse({'success': False, 'error': ve.message}, status=400)
+        except Exception as e:
+            tb = traceback.format_exc()
+            logger.error("PROCESS error %s:\n%s", pk, tb)
+            return JsonResponse({'success': False, 'error': 'Error inesperado'}, status=500)
+
+class ExpedienteConfirmView(View):
+    def post(self, request, pk):
+        expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=request.user)
+        try:
+            result = ExpedienteService.confirmar_envio(expediente)
+            messages.success(
+                request,
+                f"Expediente confirmado y legajos importados: {result['validos']} creados, {result['errores']} errores."
+            )
+        except ValidationError as ve:
+            messages.error(request, f"Error al confirmar: {ve.message}")
+        except Exception as e:
+            messages.error(request, f"Error inesperado al confirmar: {e}")
         return redirect('expediente_detail', pk=pk)
 
 class ExpedienteUpdateView(UpdateView):
@@ -168,29 +182,16 @@ class ExpedienteUpdateView(UpdateView):
     def get_success_url(self):
         return reverse_lazy('expediente_detail', args=[self.object.pk])
 
-class ExpedienteConfirmView(View):
-    def post(self, request, pk):
-        expediente = get_object_or_404(
-            Expediente, pk=pk, usuario_provincia=request.user
-        )
-        try:
-            result = ExpedienteService.confirmar_envio(expediente)
-            messages.success(
-                request,
-                f"Expediente confirmado y legajos importados: "
-                f"{result['validos']} creados, {result['errores']} con error."
-            )
-        except ValidationError as ve:
-            messages.error(request, f"Error al confirmar: {ve.message}")
-        except Exception as e:
-            messages.error(request, f"Error inesperado al confirmar: {e}")
-        return redirect('expediente_detail', pk=pk)
-
-
 class AsignarTecnicoView(View):
     def post(self, request, pk):
         expediente = get_object_or_404(Expediente, pk=pk)
         tecnico_id = request.POST.get('tecnico')
         ExpedienteService.asignar_tecnico(expediente, tecnico_id)
         messages.success(request, "Técnico asignado correctamente.")
+        return redirect('expediente_detail', pk=pk)
+
+class ClosePaymentView(View):
+    def post(self, request, pk):
+        expediente = get_object_or_404(Expediente, pk=pk)
+        # lógic ade pago…
         return redirect('expediente_detail', pk=pk)
