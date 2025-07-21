@@ -1,4 +1,4 @@
-from django.db.models import Q
+from django.db.models import Q, Exists, OuterRef
 from admisiones.models.admisiones import (
     Admision,
     InformeTecnico,
@@ -7,6 +7,7 @@ from admisiones.models.admisiones import (
 )
 from acompanamientos.models.hitos import Hitos, HitosIntervenciones
 from acompanamientos.models.acompanamiento import InformacionRelevante, Prestacion
+from duplas.models import Dupla
 from intervenciones.models.intervenciones import Intervencion, SubIntervencion
 from comedores.models import Comedor
 
@@ -22,10 +23,17 @@ class AcompanamientoService:
         Returns:
             None
         """
-        hitos_existente = Hitos.objects.filter(comedor=intervenciones.comedor).first()
+        # Optimización: select_related para evitar query adicional al comedor
+        hitos_existente = (
+            Hitos.objects.select_related("comedor")
+            .filter(comedor=intervenciones.comedor)
+            .first()
+        )
+
         if intervenciones.subintervencion is None:
             intervenciones.subintervencion = SubIntervencion()
             intervenciones.subintervencion.nombre = ""
+
         hitos_a_actualizar = HitosIntervenciones.objects.filter(
             intervencion=intervenciones.tipo_intervencion.nombre,
             subintervencion=intervenciones.subintervencion.nombre,
@@ -64,7 +72,7 @@ class AcompanamientoService:
         Returns:
             Hitos | None
         """
-        return Hitos.objects.filter(comedor=comedor).first()
+        return Hitos.objects.select_related("comedor").filter(comedor=comedor).first()
 
     @staticmethod
     def importar_datos_desde_admision(comedor):
@@ -128,10 +136,11 @@ class AcompanamientoService:
                 InformeTecnico.objects.filter(admision=admision).order_by("-id").first()
             )
             anexo = Anexo.objects.filter(admision=admision).first()
+            comedor = Comedor.objects.filter(id=admision.comedor_id).first()
 
             doc_resolucion = (
                 DocumentosExpediente.objects.filter(
-                    admision__comedor=comedor, tipo="Resolución"
+                    admision=admision, tipo="Disposición"
                 )
                 .order_by("-creado")
                 .first()
@@ -141,11 +150,11 @@ class AcompanamientoService:
 
         return {
             "admision": admision,
+            "comedor": comedor,
             "info_relevante": info_relevante,
             "anexo": anexo,
             "numero_if": admision.legales_num_if if admision else None,
-            "numero_resolucion": resolucion,
-            "vencimiento_mandato": "Pendiente de implementación",
+            "numero_disposicion": resolucion,
         }
 
     @staticmethod
@@ -202,35 +211,46 @@ class AcompanamientoService:
 
     @staticmethod
     def obtener_comedores_acompanamiento(user, busqueda=None):
-        """Obtener comedores que tienen admisiones finalizadas y están en acompañamiento.
+        """
+        Obtiene un queryset de objetos Comedor que cumplen con los criterios de acompañamiento,
+        filtrando según el usuario y una búsqueda opcional.
+
+        - Si el usuario es superusuario o pertenece al grupo "Area Legales", obtiene todos los comedores
+          con admisión en estado 2 y enviados a acompañamiento.
+        - Si no, filtra los comedores donde el usuario es abogado o técnico asignado en la dupla.
+        - Permite aplicar un filtro de búsqueda global sobre varios campos relacionados (nombre, provincia,
+          tipo de comedor, dirección, referente, etc.).
 
         Args:
-            user: Usuario actual para aplicar filtros de permisos.
-            busqueda: Término de búsqueda opcional.
+            user (User): Usuario autenticado que realiza la consulta.
+            busqueda (str, optional): Texto de búsqueda global para filtrar los resultados. Por defecto es None.
 
         Returns:
-            QuerySet: Comedores filtrados.
+            QuerySet: QuerySet de objetos Comedor filtrados según los criterios especificados.
         """
-        # Filtramos las admisiones con estado=2 (Finalizada)
-        admisiones = Admision.objects.filter(estado=2, enviado_acompaniamiento=True)
+        user_groups = list(user.groups.values_list("name", flat=True))
+        is_area_legales = "Area Legales" in user_groups
+        is_dupla = "Tecnico Comedor" in user_groups or "Abogado Dupla" in user_groups
 
-        if (
-            not user.is_superuser
-            and not user.groups.filter(name="Area Legales").exists()
-        ):
-            admisiones = admisiones.filter(
-                Q(comedor__dupla__abogado=user) | Q(comedor__dupla__tecnico=user)
-            )
+        # Subqueries para evitar JOINs 1:N y uso de distinct()
+        admision_subq = Admision.objects.filter(
+            comedor=OuterRef("pk"), enviado_acompaniamiento=True
+        )
+        dupla_abogado_subq = Dupla.objects.filter(comedor=OuterRef("pk"), abogado=user)
+        dupla_tecnico_subq = Dupla.objects.filter(comedor=OuterRef("pk"), tecnico=user)
 
-        comedor_ids = admisiones.values_list("comedor_id", flat=True).distinct()
-
-        queryset = Comedor.objects.filter(id__in=comedor_ids).select_related(
-            "referente", "tipocomedor", "provincia"
+        qs = Comedor.objects.select_related(
+            "referente", "tipocomedor", "provincia", "dupla__abogado"
         )
 
+        if not user.is_superuser:
+            if is_dupla:
+                qs = qs.filter(Exists(dupla_abogado_subq) | Exists(dupla_tecnico_subq))
+            if is_area_legales:
+                qs = qs.filter(Exists(admision_subq))
+
         if busqueda:
-            busqueda = busqueda.strip().lower()
-            queryset = queryset.filter(
+            qs = qs.filter(
                 Q(nombre__icontains=busqueda)
                 | Q(provincia__nombre__icontains=busqueda)
                 | Q(tipocomedor__nombre__icontains=busqueda)
@@ -241,7 +261,7 @@ class AcompanamientoService:
                 | Q(referente__celular__icontains=busqueda)
             )
 
-        return queryset
+        return qs
 
     @staticmethod
     def verificar_permisos_tecnico_comedor(user):

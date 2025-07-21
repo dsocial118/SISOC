@@ -3,15 +3,15 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 
 from ciudadanos.models import Sexo, TipoDocumento
+from core.models import Dia
 from centrodefamilia.models import (
     Centro,
     ActividadCentro,
-    Expediente,
     ParticipanteActividad,
     Categoria,
     Actividad,
+    Expediente,
 )
-from core.models import Dia
 
 HORAS_DEL_DIA = [(f"{h:02d}:00", f"{h:02d}:00") for h in range(0, 24)] + [
     (f"{h:02d}:30", f"{h:02d}:30") for h in range(0, 24)
@@ -48,27 +48,23 @@ class CentroForm(forms.ModelForm):
         ]
 
     def __init__(self, *args, **kwargs):
-        # capturamos el flag
         from_faro = kwargs.pop("from_faro", False)
         super().__init__(*args, **kwargs)
 
-        # Si vengo desde ?faro=, fijo y deshabilito el campo 'tipo'
         if from_faro:
             self.fields["tipo"].initial = "adherido"
             self.fields["tipo"].disabled = True
-            # opcional: esconder el select y usar hidden
             self.fields["tipo"].widget = forms.HiddenInput()
-
-            # también deshabilitamos el selector de faro_asociado
             self.fields["faro_asociado"].disabled = True
 
-        # tu lógica existente de queryset…
         self.fields["referente"].queryset = User.objects.filter(
             groups__name="ReferenteCentro"
-        )
+        ).only("id", "username", "first_name", "last_name")
+
         self.fields["faro_asociado"].queryset = Centro.objects.filter(
             tipo="faro", activo=True
-        )
+        ).only("id", "nombre")
+        self.fields["organizacion_asociada"].empty_label = "Seleccionar organización..."
 
     def clean(self):
         cleaned_data = super().clean()
@@ -140,10 +136,6 @@ class ActividadCentroForm(forms.ModelForm):
         ]
         exclude = ["centro"]
         widgets = {
-            "categoria": forms.Select(attrs={"class": "form-select  w-100"}),
-            "actividad": forms.Select(attrs={"class": "form-select  w-100"}),
-            "horariosdesde": forms.TextInput(attrs={"class": "form-control"}),
-            "horarioshasta": forms.TextInput(attrs={"class": "form-control"}),
             "cantidad_personas": forms.NumberInput(attrs={"class": "form-control"}),
             "precio": forms.NumberInput(attrs={"class": "form-control"}),
             "estado": forms.Select(attrs={"class": "form-control"}),
@@ -155,29 +147,26 @@ class ActividadCentroForm(forms.ModelForm):
 
         if self.data:
             cat_id = self.data.get("categoria")
-            if cat_id:
-                self.fields["actividad"].queryset = Actividad.objects.filter(
-                    categoria_id=cat_id
-                )
-            else:
-                self.fields["actividad"].queryset = Actividad.objects.none()
-
+            self.fields["actividad"].queryset = (
+                Actividad.objects.filter(categoria_id=cat_id)
+                if cat_id
+                else Actividad.objects.none()
+            )
         elif self.instance and self.instance.pk:
-            # Obtener categoría desde la actividad relacionada
             actividad = self.instance.actividad
             cat_id = actividad.categoria_id if actividad else None
-            self.initial["categoria"] = cat_id
-
-            if cat_id:
-                self.fields["actividad"].queryset = Actividad.objects.filter(
-                    categoria_id=cat_id
-                )
-            else:
-                self.fields["actividad"].queryset = Actividad.objects.none()
-
-            self.initial["actividad"] = self.instance.actividad_id
-            self.initial["dias"] = [d.pk for d in self.instance.dias.all()]
-
+            self.initial.update(
+                {
+                    "categoria": cat_id,
+                    "actividad": self.instance.actividad_id,
+                    "dias": [d.pk for d in self.instance.dias.all()],
+                }
+            )
+            self.fields["actividad"].queryset = (
+                Actividad.objects.filter(categoria_id=cat_id)
+                if cat_id
+                else Actividad.objects.none()
+            )
         else:
             self.fields["actividad"].queryset = Actividad.objects.none()
 
@@ -209,6 +198,7 @@ class ParticipanteActividadForm(forms.ModelForm):
 
     class Meta:
         model = ParticipanteActividad
+        # no usamos directamente los campos del modelo porque todos se construyen en la vista
         fields = []
 
 
@@ -216,19 +206,13 @@ class ExpedienteCabalForm(forms.ModelForm):
     periodo = forms.DateField(
         label="Periodo",
         widget=forms.DateInput(
-            attrs={
-                "type": "date",
-                "class": "form-control form-control-sm",
-            }
+            attrs={"type": "date", "class": "form-control form-control-sm"}
         ),
     )
     archivo = forms.FileField(
         label="Archivo",
         widget=forms.ClearableFileInput(
-            attrs={
-                "class": "form-control form-control-sm",
-                "accept": ".pdf,.xlsx,.csv",
-            }
+            attrs={"class": "form-control form-control-sm", "accept": ".pdf,.xlsx,.csv"}
         ),
     )
 
@@ -249,18 +233,9 @@ class ActividadForm(forms.ModelForm):
     )
     categoria = forms.ModelChoiceField(
         label="Categoría",
-        queryset=None,
-        widget=forms.Select(
-            attrs={
-                "class": "form-control form-control-sm",
-            }
-        ),
+        queryset=Categoria.objects.all(),
+        widget=forms.Select(attrs={"class": "form-control form-control-sm"}),
     )
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Podés cargar dinámicamente las categorías
-        self.fields["categoria"].queryset = Categoria.objects.all()
 
     class Meta:
         model = Actividad

@@ -278,6 +278,9 @@ class InformeTecnico(models.Model):
         max_length=255,
     )
     if_relevamiento = models.CharField("IF de relevamiento territorial", max_length=255)
+    fecha_vencimiento_mandatos = models.DateField(
+        "Fecha de vencimiento de mandatos", null=True, blank=True
+    )
 
     # Exclusivos de organizacion de Base
     declaracion_jurada_recepcion_subsidios = models.CharField(
@@ -304,7 +307,7 @@ class InformeTecnico(models.Model):
     IF_relevamiento_territorial = models.CharField(
         "IF de relevamiento territorial", max_length=255
     )
-
+    conclusiones = models.TextField("Conclusion informe técnico", null=True, blank=True)
     estado = models.CharField(
         max_length=20,
         choices=ESTADOS,
