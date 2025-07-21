@@ -49,25 +49,27 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
     # TODO: Mover metodos no genericos al utils.py
 
-    #Este metodo recive el nombre del campo de la base, el array de datos y el modelo
-    #y devuelve un queryset de los recursos que existen en la base de datos
+    # Este metodo recive el nombre del campo de la base, el array de datos y el modelo
+    # y devuelve un queryset de los recursos que existen en la base de datos
     @staticmethod
-    def get_recursos(nombre,recursos_data,model):
+    def get_recursos(nombre, recursos_data, model):
         recursos_str = recursos_data.pop(nombre, "")
         if recursos_str:
             recursos_arr = [nombre.strip() for nombre in recursos_str.split(",")]
-            valid_recursos = model.objects.filter(nombre__in=recursos_arr).values_list('nombre', flat=True)
+            valid_recursos = model.objects.filter(nombre__in=recursos_arr).values_list(
+                "nombre", flat=True
+            )
             return model.objects.filter(nombre__in=valid_recursos)
         return model.objects.none()
 
-    #Convierte un valor de string a booleano
-    #Si el valor es "Y" devuelve True, si es "N" devuelve False
+    # Convierte un valor de string a booleano
+    # Si el valor es "Y" devuelve True, si es "N" devuelve False
     @staticmethod
     def convert_to_boolean(value):
         return value == "Y" if value in ["Y", "N"] else False
-    
-    #Obtiene un objeto del modelo dado, filtrando por el nombre del campo y el valor
-    #Si el valor es None o una cadena vacía, devuelve None
+
+    # Obtiene un objeto del modelo dado, filtrando por el nombre del campo y el valor
+    # Si el valor es None o una cadena vacía, devuelve None
     @staticmethod
     def get_object_or_none(model, field_name, value):
         if not value:
@@ -76,23 +78,23 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             return model.objects.get(**{field_name: value})
         except model.DoesNotExist:
             return None
-    
-    #Asigna los valores del diccionario data a los campos del instance
-    #y guarda el instance en la base de datos
+
+    # Asigna los valores del diccionario data a los campos del instance
+    # y guarda el instance en la base de datos
     @staticmethod
     def assign_values_to_instance(instance, data):
         for field, value in data.items():
             setattr(instance, field, value)
         instance.save()
         return instance
-    
+
     @staticmethod
     def populate_data(data, transformations):
         for key, func in transformations.items():
             if key in data:
                 data[key] = func(data[key])
         return data
-    
+
     @staticmethod
     def create_or_update_instance(model, data, instance=None):
         if instance is None:
@@ -100,7 +102,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         else:
             instance = RelevamientoService.assign_values_to_instance(instance, data)
         return instance
-    
+
     @staticmethod
     def create_pendiente(request, comedor_id):
         comedor = get_object_or_404(Comedor, id=comedor_id)
@@ -378,7 +380,11 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             )
 
         if "servicio_por_turnos" in funcionamiento_data:
-            funcionamiento_data["servicio_por_turnos"] = RelevamientoService.convert_to_boolean(funcionamiento_data["servicio_por_turnos"])
+            funcionamiento_data["servicio_por_turnos"] = (
+                RelevamientoService.convert_to_boolean(
+                    funcionamiento_data["servicio_por_turnos"]
+                )
+            )
 
         if "cantidad_turnos" in funcionamiento_data:
             funcionamiento_data["cantidad_turnos"] = (
@@ -393,7 +399,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             )
         else:
             funcionamiento_instance = RelevamientoService.assign_values_to_instance(
-            funcionamiento_instance, funcionamiento_data
+                funcionamiento_instance, funcionamiento_data
             )
 
         return funcionamiento_instance
@@ -420,7 +426,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
     def populate_espacio_prestacion_data(
         prestacion_data,
     ):  # pylint: disable=too-many-statements,too-many-branches
-        #Esto es una lista de metodos a ejecutar para cada item de la prestacion_data
+        # Esto es una lista de metodos a ejecutar para cada item de la prestacion_data
         transformations = {
             "espacio_equipado": RelevamientoService.convert_to_boolean,
             "tiene_ventilacion": RelevamientoService.convert_to_boolean,
@@ -442,8 +448,10 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 FrecuenciaLimpieza, "nombre__iexact", x
             ),
         }
-        #Se ejecuta el metodo populate_data que recorre la prestacion_data y aplica las transformaciones
-        prestacion_data = RelevamientoService.populate_data(prestacion_data, transformations)
+        # Se ejecuta el metodo populate_data que recorre la prestacion_data y aplica las transformaciones
+        prestacion_data = RelevamientoService.populate_data(
+            prestacion_data, transformations
+        )
 
         return prestacion_data
 
@@ -647,7 +655,6 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             "recursos_otros": lambda x: RelevamientoService.get_recursos(
                 "recursos_otros", recursos_data, TipoRecurso
             ),
-            
         }
         # Se ejecuta el metodo populate_data que recorre la recursos_data y aplica las transformaciones
         recursos_data = RelevamientoService.populate_data(
@@ -861,8 +868,10 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 for estado in aoe:
                     key = f"{dia}_{comida}_{estado}"
                     if key in prestacion_data:
-                        prestacion_data[key] = convert_string_to_int(prestacion_data[key])
-        
+                        prestacion_data[key] = convert_string_to_int(
+                            prestacion_data[key]
+                        )
+
         return prestacion_data
 
     @staticmethod
