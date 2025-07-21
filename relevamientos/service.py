@@ -420,7 +420,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
     def populate_espacio_prestacion_data(
         prestacion_data,
     ):  # pylint: disable=too-many-statements,too-many-branches
-        
+        #Esto es una lista de metodos a ejecutar para cada item de la prestacion_data
         transformations = {
             "espacio_equipado": RelevamientoService.convert_to_boolean,
             "tiene_ventilacion": RelevamientoService.convert_to_boolean,
@@ -442,6 +442,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 FrecuenciaLimpieza, "nombre__iexact", x
             ),
         }
+        #Se ejecuta el metodo populate_data que recorre la prestacion_data y aplica las transformaciones
         prestacion_data = RelevamientoService.populate_data(prestacion_data, transformations)
 
         return prestacion_data
@@ -473,6 +474,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def populate_cocina_data(cocina_data):
+        # Esto es una lista de metodos a ejecutar para cada item de la cocina_data
         transformations = {
             "espacio_elaboracion_alimentos": RelevamientoService.convert_to_boolean,
             "almacenamiento_alimentos_secos": RelevamientoService.convert_to_boolean,
@@ -487,6 +489,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             ),
             "instalacion_electrica": RelevamientoService.convert_to_boolean,
         }
+        # Se ejecuta el metodo populate_data que recorre la cocina_data y aplica las transformaciones
         cocina_data = RelevamientoService.populate_data(cocina_data, transformations)
         return cocina_data
 
@@ -542,6 +545,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def populate_colaboradores_data(colaboradores_data):
+        # Esto es una lista de metodos a ejecutar para cada item de la colaboradores_data
         transformations = {
             "colaboradores_capacitados_alimentos": RelevamientoService.convert_to_boolean,
             "colaboradores_recibieron_capacitacion_alimentos": RelevamientoService.convert_to_boolean,
@@ -552,6 +556,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 CantidadColaboradores, "nombre__iexact", x
             ),
         }
+        # Se ejecuta el metodo populate_data que recorre la colaboradores_data y aplica las transformaciones
         colaboradores_data = RelevamientoService.populate_data(
             colaboradores_data, transformations
         )
@@ -605,6 +610,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
     def populate_recursos_data(
         recursos_data,
     ):  # pylint: disable=too-many-statements,too-many-branches
+        # Esto es una lista de metodos a ejecutar para cada item de la recursos_data
         transformations = {
             "recibe_donaciones_particulares": RelevamientoService.convert_to_boolean,
             "frecuencia_donaciones_particulares": lambda x: RelevamientoService.get_object_or_none(
@@ -643,6 +649,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             ),
             
         }
+        # Se ejecuta el metodo populate_data que recorre la recursos_data y aplica las transformaciones
         recursos_data = RelevamientoService.populate_data(
             recursos_data, transformations
         )
@@ -676,6 +683,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
     def populate_anexo_data(  # pylint: disable=too-many-statements,too-many-branches
         anexo_data,
     ):
+        # Esto es una lista de metodos a ejecutar para cada item de la anexo_data
         transformations = {
             "tipo_insumo": lambda x: RelevamientoService.get_object_or_none(
                 TipoInsumos, "nombre__iexact", x
@@ -714,6 +722,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             "espacio_huerta": RelevamientoService.convert_to_boolean,
             "otras_actividades": RelevamientoService.convert_to_boolean,
         }
+        # Se ejecuta el metodo populate_data que recorre la anexo_data y aplica las transformaciones
         anexo_data = RelevamientoService.populate_data(anexo_data, transformations)
 
         if "veces_recibio_insumos_2024" in anexo_data:
@@ -765,7 +774,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def populate_punto_entregas_data(punto_entregas_data):
-
+        # Esto es una lista de metodos a ejecutar para cada item de la punto_entregas_data
         transformations = {
             "tipo_comedor": lambda x: RelevamientoService.get_object_or_none(
                 TipoDeComedor, "nombre__iexact", x
@@ -784,6 +793,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             "reciben_dinero": RelevamientoService.convert_to_boolean,
             "registran_entrega_bolsones": RelevamientoService.convert_to_boolean,
         }
+        # Se ejecuta el metodo populate_data que recorre la punto_entregas_data y aplica las transformaciones
         punto_entregas_data = RelevamientoService.populate_data(
             punto_entregas_data, transformations
         )
@@ -792,6 +802,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def populate_compras_data(compras_data):
+        # Esto es una lista de metodos a ejecutar para cada item de la compras_data
         transformations = {
             "almacen_cercano": RelevamientoService.convert_to_boolean,
             "verduleria": RelevamientoService.convert_to_boolean,
@@ -804,6 +815,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             "mayoristas": RelevamientoService.convert_to_boolean,
             "otro": RelevamientoService.convert_to_boolean,
         }
+        # Se ejecuta el metodo populate_data que recorre la compras_data y aplica las transformaciones
         compras_data = RelevamientoService.populate_data(compras_data, transformations)
 
         return compras_data
