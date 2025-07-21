@@ -32,11 +32,21 @@ class CentroListView(LoginRequiredMixin, ListView):
         qs = Centro.objects.select_related("faro_asociado", "referente")
         user = self.request.user
 
-        if not user.is_superuser or not user.groups.filter(name="CDF SSE").exists():
-            if user.groups.filter(name="ReferenteCentro").exists():
-                qs = qs.filter(referente=user)
-            else:
-                return Centro.objects.none()
+        # 1) Superuser ve tod
+        if user.is_superuser:
+            pass
+
+        # 2) CDF SSE ve todo
+        elif user.groups.filter(name="CDF SSE").exists():
+            pass
+
+        # 3) ReferenteCentro ve SOLO los centros donde es referente
+        elif user.groups.filter(name="ReferenteCentro").exists():
+            qs = qs.filter(referente=user)
+
+        # 4) Resto de usuarios no ven nada
+        else:
+            return Centro.objects.none()
 
         # Filtro de texto
         busq = self.request.GET.get("busqueda", "").strip()
