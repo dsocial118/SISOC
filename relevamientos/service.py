@@ -177,7 +177,6 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                     "responsable_relevamiento__mail",
                     "responsable_relevamiento__celular",
                     "responsable_relevamiento__documento",
-                    "responsable_relevamiento__funcion",
                     "comedor__comienzo",
                     "comedor__id",
                     "comedor__calle",

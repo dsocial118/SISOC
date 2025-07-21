@@ -32,17 +32,38 @@ class CentroListView(LoginRequiredMixin, ListView):
         qs = Centro.objects.select_related("faro_asociado", "referente")
         user = self.request.user
 
-        if (
-            user.groups.filter(name="ReferenteCentro").exists()
-            and not user.is_superuser
-        ):
-            qs = qs.filter(Q(referente=user) | Q(faro_asociado__referente=user))
+        # 1) Superuser ve tod
+        if user.is_superuser:
+            pass
 
-        busq = self.request.GET.get("busqueda")
+        # 2) CDF SSE ve todo
+        elif user.groups.filter(name="CDF SSE").exists():
+            pass
+
+        # 3) ReferenteCentro ve SOLO los centros donde es referente
+        elif user.groups.filter(name="ReferenteCentro").exists():
+            qs = qs.filter(referente=user)
+
+        # 4) Resto de usuarios no ven nada
+        else:
+            return Centro.objects.none()
+
+        # Filtro de texto
+        busq = self.request.GET.get("busqueda", "").strip()
         if busq:
             qs = qs.filter(Q(nombre__icontains=busq) | Q(tipo__icontains=busq))
 
         return qs.order_by("nombre")
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        user = self.request.user
+
+        # Control de botones “Agregar”
+        ctx["can_add"] = (
+            user.is_superuser or user.groups.filter(name="CDF SSE").exists()
+        )
+        return ctx
 
 
 class CentroDetailView(LoginRequiredMixin, DetailView):
@@ -53,88 +74,85 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
     def get_object(self, queryset=None):
         obj = super().get_object(queryset)
         user = self.request.user
-        es_referente = obj.referente_id == user.id
+        es_ref = obj.referente_id == user.id
         es_adherido = (
             obj.tipo == "adherido"
             and obj.faro_asociado
             and obj.faro_asociado.referente_id == user.id
         )
-        if not (es_referente or es_adherido or user.is_superuser):
+        es_cdf_sse = user.groups.filter(name="CDF SSE").exists()
+        if not (es_ref or es_adherido or user.is_superuser or es_cdf_sse):
             raise PermissionDenied
         return obj
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+        ctx = super().get_context_data(**kwargs)
         centro = self.object
 
-        # 1) Expedientes del centro (con paginación)
+        # 1) Expedientes paginados
         qs_exp = Expediente.objects.filter(centro=centro).order_by("-fecha_subida")
-        context["expedientes_cabal"] = Paginator(qs_exp, 3).get_page(
+        ctx["expedientes_cabal"] = Paginator(qs_exp, 3).get_page(
             self.request.GET.get("page_exp")
         )
 
-        # 2) Actividades del centro con ganancia calculada en la base
+        # 2) Actividades con inscritos y ganancia en DB
         qs_acts = (
             ActividadCentro.objects.filter(centro=centro)
             .select_related("actividad", "actividad__categoria")
             .annotate(
                 inscritos=Count("participanteactividad", distinct=True),
                 ganancia=ExpressionWrapper(
-                    F("precio") * F("inscritos"),
-                    output_field=IntegerField(),
+                    F("precio") * F("inscritos"), output_field=IntegerField()
                 ),
             )
         )
-        context["actividades"] = list(qs_acts)
-        context["total_actividades"] = qs_acts.count()
+        ctx["actividades"] = list(qs_acts)
+        ctx["total_actividades"] = qs_acts.count()
 
-        # 3) Paginación de todas las actividades de otros centros
+        # 3) Otras actividades (paginadas)
         otras = (
             ActividadCentro.objects.exclude(centro=centro)
             .select_related("actividad", "actividad__categoria", "centro")
             .order_by("centro__nombre", "actividad__nombre")
         )
-        context["actividades_paginados"] = Paginator(otras, 5).get_page(
+        ctx["actividades_paginados"] = Paginator(otras, 5).get_page(
             self.request.GET.get("page_act")
         )
 
-        # 4) Centros adheridos (si este es FARO)
+        # 4) Centros adheridos FARO
         if centro.tipo == "faro":
             adheridos = Centro.objects.filter(
                 faro_asociado=centro, activo=True
             ).order_by("nombre")
         else:
             adheridos = Centro.objects.none()
-        context["centros_adheridos_paginados"] = Paginator(adheridos, 5).get_page(
+        ctx["centros_adheridos_paginados"] = Paginator(adheridos, 5).get_page(
             self.request.GET.get("page")
         )
-        context["centros_adheridos_total"] = adheridos.count()
+        ctx["centros_adheridos_total"] = adheridos.count()
 
-        # 5) Métricas y asistentes
+        # 5) Métricas avanzadas
         total_part = sum(a.inscritos for a in qs_acts)
-        qs_part = ParticipanteActividad.objects.filter(
-            actividad_centro__centro=centro
-        ).select_related("ciudadano__sexo")
+        qs_part = ParticipanteActividad.objects.filter(actividad_centro__centro=centro)
         hombres = qs_part.filter(ciudadano__sexo__sexo__iexact="Masculino").count()
         mujeres = qs_part.filter(ciudadano__sexo__sexo__iexact="Femenino").count()
         mixtas = total_part - hombres - mujeres
 
-        context["metricas"] = {
-            "centros_faro": context["centros_adheridos_total"],
+        ctx["metricas"] = {
+            "centros_faro": ctx["centros_adheridos_total"],
             "categorias": Categoria.objects.count(),
-            "actividades": context["total_actividades"],
-            "interacciones": 0,
+            "actividades": ctx["total_actividades"],
+            "interacciones": total_part,
             "hombres": hombres,
             "mujeres": mujeres,
             "mixtas": mixtas,
         }
-        context["asistentes"] = {
+        ctx["asistentes"] = {
             "total": total_part,
             "hombres": hombres,
             "mujeres": mujeres,
         }
-
-        return context
+        return ctx
 
 
 class CentroCreateView(LoginRequiredMixin, CreateView):
