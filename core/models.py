@@ -1,4 +1,9 @@
+from typing import TYPE_CHECKING
+
 from django.db import models
+
+if TYPE_CHECKING:
+    from comedores.models import Comedor
 
 
 class Provincia(models.Model):
@@ -118,10 +123,8 @@ class Prestacion(models.Model):
     Reemplaza el modelo complejo de relevamientos con un diseño más limpio.
     """
 
-    from comedores.models import Comedor  # pylint: disable=import-outside-toplevel
-
     comedor = models.ForeignKey(
-        Comedor, on_delete=models.CASCADE, related_name="prestaciones"
+        "comedores.Comedor", on_delete=models.CASCADE, related_name="prestaciones"
     )
     dia = models.CharField(
         max_length=20,
