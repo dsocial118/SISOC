@@ -2,6 +2,7 @@
 import json
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.db import transaction
 
 from comedores.models import (
     Comedor,
@@ -88,6 +89,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         return relevamiento
 
     @staticmethod
+    @transaction.atomic
     def populate_relevamiento(relevamiento_form, extra_forms):
         relevamiento = relevamiento_form.save(commit=False)
 
@@ -1041,20 +1043,12 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         return compras_data
 
     @staticmethod
-    def create_or_update_prestacion(prestacion_data, prestacion_instance=None):
-        """
-        DEPRECATED: Esta función ya no se usa con el nuevo modelo Prestacion unificado.
-        El nuevo modelo maneja prestaciones por día, no como un objeto único.
-        """
-        # Para mantener compatibilidad, retornamos None o manejamos de otra forma
-        # TODO: Actualizar el código que usa esta función para usar el nuevo modelo
-        return None
-
-    @staticmethod
+    @transaction.atomic
     def create_or_update_prestaciones_from_relevamiento(prestacion_data, comedor):
         """
         Nueva función para crear/actualizar prestaciones usando el modelo unificado.
         Convierte los datos del modelo viejo al nuevo formato por días.
+        Usa transaction.atomic para garantizar consistencia de datos.
         """
         dias = [
             "lunes",
@@ -1074,14 +1068,16 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         ]
 
         # Eliminar prestaciones existentes para este comedor
-        Prestacion.objects.filter(comedor=comedor).delete()
+        # MEJORADO: En lugar de borrar, usamos update_or_create para mejor performance
+        # Prestacion.objects.filter(comedor=comedor).delete()
 
         # Crear un objeto dummy para compatibilidad si no hay datos
         primera_prestacion = None
 
-        # Crear nuevas prestaciones por día
+        # Crear/actualizar prestaciones por día usando update_or_create
         for dia in dias:
-            prestacion_dia = Prestacion(comedor=comedor, dia=dia)
+            # Preparar datos por defecto para este día
+            defaults_data = {}
 
             # Para cada tipo de comida, verificar si hay datos
             has_prestacion = False
@@ -1093,15 +1089,14 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 cantidad_espera = prestacion_data.get(campo_espera)
 
                 # Si hay cantidad, marcar como True y guardar las cantidades
+                tipo_activo = False
                 if (
                     cantidad_actual
                     and cantidad_actual != ""
                     and int(cantidad_actual) > 0
                 ):
-                    setattr(prestacion_dia, tipo, True)
-                    setattr(
-                        prestacion_dia, f"{tipo}_cantidad_actual", int(cantidad_actual)
-                    )
+                    tipo_activo = True
+                    defaults_data[f"{tipo}_cantidad_actual"] = int(cantidad_actual)
                     has_prestacion = True
 
                 if (
@@ -1109,28 +1104,54 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                     and cantidad_espera != ""
                     and int(cantidad_espera) > 0
                 ):
-                    setattr(prestacion_dia, tipo, True)
-                    setattr(
-                        prestacion_dia, f"{tipo}_cantidad_espera", int(cantidad_espera)
-                    )
+                    tipo_activo = True
+                    defaults_data[f"{tipo}_cantidad_espera"] = int(cantidad_espera)
                     has_prestacion = True
 
-            # Solo guardar si hay al menos una prestación
+                # Setear el flag booleano
+                defaults_data[tipo] = tipo_activo
+
+            # Solo crear/actualizar si hay al menos una prestación
             if has_prestacion:
-                prestacion_dia.save()
+                prestacion_dia, created = Prestacion.objects.update_or_create(
+                    comedor=comedor, dia=dia, defaults=defaults_data
+                )
+
+                # Guardar referencia a la primera prestación creada/actualizada
                 if primera_prestacion is None:
                     primera_prestacion = prestacion_dia
+            else:
+                # Si no hay prestación para este día, limpiar datos existentes si es un update
+                Prestacion.objects.filter(comedor=comedor, dia=dia).update(
+                    desayuno=False,
+                    almuerzo=False,
+                    merienda=False,
+                    cena=False,
+                    merienda_reforzada=False,
+                    desayuno_cantidad_actual=None,
+                    desayuno_cantidad_espera=None,
+                    almuerzo_cantidad_actual=None,
+                    almuerzo_cantidad_espera=None,
+                    merienda_cantidad_actual=None,
+                    merienda_cantidad_espera=None,
+                    cena_cantidad_actual=None,
+                    cena_cantidad_espera=None,
+                    merienda_reforzada_cantidad_actual=None,
+                    merienda_reforzada_cantidad_espera=None,
+                )
 
         # Si no hay prestaciones, crear una vacía para compatibilidad
         if primera_prestacion is None:
-            primera_prestacion = Prestacion.objects.create(
+            primera_prestacion, created = Prestacion.objects.update_or_create(
                 comedor=comedor,
                 dia="lunes",
-                desayuno=False,
-                almuerzo=False,
-                merienda=False,
-                cena=False,
-                merienda_reforzada=False,
+                defaults={
+                    "desayuno": False,
+                    "almuerzo": False,
+                    "merienda": False,
+                    "cena": False,
+                    "merienda_reforzada": False,
+                },
             )
 
         return primera_prestacion
