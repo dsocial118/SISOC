@@ -12,7 +12,7 @@ from comedores.models import Comedor, Referente, ValorComida, Nomina, Observacio
 from admisiones.models.admisiones import Admision
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 from intervenciones.models.intervenciones import Intervencion
-from core.models import Municipio, Provincia
+from core.models import Municipio, Prestacion, Provincia
 from core.models import Localidad
 from comedores.models import ImagenComedor
 
@@ -122,8 +122,16 @@ class ComedorService:
                 # Prefetch para relevamientos ordenados por estado e id descendente
                 Prefetch(
                     "relevamiento_set",
-                    queryset=Relevamiento.objects.select_related("prestacion").order_by(
-                        "-estado", "-id"
+                    queryset=(
+                        Relevamiento.objects.order_by(
+                            "-estado", "-id"
+                        ).prefetch_related(
+                            Prefetch(
+                                "prestaciones",
+                                queryset=Prestacion.objects.only("id"),
+                                to_attr="prestaciones_opt",
+                            )
+                        )
                     ),
                     to_attr="relevamientos_optimized",
                 ),
@@ -253,9 +261,9 @@ class ComedorService:
         else:
             # Fallback: consulta directa solo si no hay datos prefetched
             beneficiarios = (
-                Relevamiento.objects.select_related("prestacion")
+                Relevamiento.objects.prefetch_related("prestaciones")
                 .filter(comedor=comedor_id)
-                .only("prestacion")
+                .only("prestaciones")
                 .first()
             )
 
@@ -267,23 +275,24 @@ class ComedorService:
             "merienda_reforzada": 0,
         }
 
-        if beneficiarios and beneficiarios.prestacion:
-            dias = [
-                "lunes",
-                "martes",
-                "miercoles",
-                "jueves",
-                "viernes",
-                "sabado",
-                "domingo",
-            ]
-            tipos = ["desayuno", "almuerzo", "merienda", "cena"]
+        if beneficiarios and beneficiarios.prestaciones:
+            for prestacion in beneficiarios.prestaciones.all():
+                dias = [
+                    "lunes",
+                    "martes",
+                    "miercoles",
+                    "jueves",
+                    "viernes",
+                    "sabado",
+                    "domingo",
+                ]
+                tipos = ["desayuno", "almuerzo", "merienda", "cena"]
 
-            for tipo in tipos:
-                count[tipo] = sum(
-                    getattr(beneficiarios.prestacion, f"{dia}_{tipo}_actual", 0) or 0
-                    for dia in dias
-                )
+                for tipo in tipos:
+                    count[tipo] = sum(
+                        getattr(prestacion, f"{dia}_{tipo}_actual", 0) or 0
+                        for dia in dias
+                    )
 
         count_beneficiarios = sum(count.values())
 

@@ -844,8 +844,11 @@ class Relevamiento(models.Model):
     compras = models.OneToOneField(
         to=FuenteCompras, on_delete=models.PROTECT, blank=True, null=True
     )
-    prestacion = models.OneToOneField(
-        to=Prestacion, on_delete=models.SET_NULL, blank=True, null=True
+    prestaciones = models.ManyToManyField(
+        to=Prestacion,
+        related_name="relevamientos",
+        blank=True,
+        verbose_name="Prestaciones",
     )
     observacion = models.TextField(blank=True, null=True)
     docPDF = models.URLField(blank=True, null=True)
