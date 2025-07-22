@@ -236,85 +236,50 @@ CENTROFAMILIA_CACHE_TIMEOUT = 300  # 5 minutos para centro de familia
 
 
 # Configuracion de logging
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "filters": {
-        "info_only": {
-            "()": "django.utils.log.CallbackFilter",
-            "callback": lambda r: r.levelno == logging.INFO,
-        },
-        "error_only": {
-            "()": "django.utils.log.CallbackFilter",
-            "callback": lambda r: r.levelno == logging.ERROR,
-        },
-        "warning_only": {
-            "()": "django.utils.log.CallbackFilter",
-            "callback": lambda r: r.levelno == logging.WARNING,
-        },
-        "critical_only": {
-            "()": "django.utils.log.CallbackFilter",
-            "callback": lambda r: r.levelno == logging.CRITICAL,
-        },
-    },
-    "formatters": {
-        "verbose": {
-            "format": "[{asctime}] {module} {levelname} {name}: {message}",
-            "style": "{",
-        },
-        "simple": {
-            "format": "[{asctime}] {levelname} {message}",
-            "style": "{",
-        },
-    },
-    "handlers": {
-        "info_file": {
-            "level": "INFO",
-            "filters": ["info_only"],
-            "class": "core.utils.DailyFileHandler",
-            "filename": str(BASE_DIR / "logs/info.log"),
-            "formatter": "verbose",
-        },
-        "error_file": {
-            "level": "ERROR",
-            "filters": ["error_only"],
-            "class": "core.utils.DailyFileHandler",
-            "filename": str(BASE_DIR / "logs/error.log"),
-            "formatter": "verbose",
-        },
-        "warning_file": {
-            "level": "WARNING",
-            "filters": ["warning_only"],
-            "class": "core.utils.DailyFileHandler",
-            "filename": str(BASE_DIR / "logs/warning.log"),
-            "formatter": "verbose",
-        },
-        "critical_file": {
-            "level": "CRITICAL",
-            "filters": ["critical_only"],
-            "class": "core.utils.DailyFileHandler",
-            "filename": str(BASE_DIR / "logs/critical.log"),
-            "formatter": "verbose",
-        },
-    },
-    "loggers": {
-        "django": {
-            "handlers": [
-                "info_file",
-                "error_file",
-                "warning_file",
-                "critical_file",
-            ],
-            "level": "DEBUG",
-            "propagate": True,
-        },
-        "django.request": {
-            "handlers": ["error_file"],
-            "level": "ERROR",
-            "propagate": False,
-        },
-    },
-}
+# LOGGING = {
+#     "version": 1,
+#     "disable_existing_loggers": False,
+#     "formatters": {
+#         "verbose": {
+#             "format": "[{asctime}] {module} {levelname} {name}: {message}",
+#             "style": "{",
+#         },
+#         "simple": {
+#             "format": "[{asctime}] {levelname} {message}",
+#             "style": "{",
+#         },
+#     },
+#     "handlers": {
+#         "file_info": {
+#             "class": "core.utils.DailyFileHandler",
+#             "level": "INFO",
+#             "formatter": "verbose",
+#             "filename": str(BASE_DIR / "logs/info.log"),
+#         },
+#         "console": {
+#             "class": "logging.StreamHandler",
+#             "level": "WARNING",
+#             "formatter": "simple",
+#         },
+#     },
+#     "loggers": {
+#         "django": {
+#             "handlers": ["file_info", "console"],
+#             "level": "INFO",
+#             "propagate": False,
+#         },
+#         "django.request": {
+#             "handlers": ["console"],
+#             "level": "WARNING",
+#             "propagate": False,
+#         },
+#     },
+#     "root": {
+#         "handlers": ["console"],
+#         "level": "WARNING",
+#     },
+# }
+
 
 # Configuración de validadores de contraseñas
 AUTH_PASSWORD_VALIDATORS = [
