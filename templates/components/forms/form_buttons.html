@@ -1,0 +1,25 @@
+{% comment %}
+Componente reutilizable de botones para formularios
+Parámetros:
+- submit_label: Texto botón submit (default: "Confirmar")
+- cancel_url: URL name de cancelación
+- cancel_id: ID para URL de cancelación (opcional)
+- cancel_label: Texto botón cancelar (default: "Cancelar")
+- submit_class: Clases CSS adicionales para botón submit (optional)
+- cancel_class: Clases CSS adicionales para botón cancelar (optional)
+{% endcomment %}
+
+<div class="mt-4 mx-2">
+    <button type="submit" class="btn btn-primary mr-1 {{ submit_class }}">
+        {{ submit_label|default:"Confirmar" }}
+    </button>
+    {% if cancel_url %}
+        {% if cancel_id %}
+            <a href="{% url cancel_url cancel_id %}" 
+               class="btn btn-secondary {{ cancel_class }}">{{ cancel_label|default:"Cancelar" }}</a>
+        {% else %}
+            <a href="{% url cancel_url %}" 
+               class="btn btn-secondary {{ cancel_class }}">{{ cancel_label|default:"Cancelar" }}</a>
+        {% endif %}
+    {% endif %}
+</div>
