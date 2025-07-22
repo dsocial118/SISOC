@@ -9,7 +9,12 @@
 {% block menu-adicional %}{% endblock %}
 
 {% block content %}
-    {% include 'components/ui/action_buttons.html' with create_url='usuario_crear' back_url='dashboard' %}
+    <div class="row mb-3">
+        <div class="col-12">
+            <a class="btn btn-outline-secondary" href="{% url 'dashboard' %}">Volver al Dashboard</a>
+        </div>
+    </div>
+    {% include 'components/ui/action_buttons.html' with create_url='usuario_crear' %}
     <div class="row">
         <div class="col-12">
             <div class="card">
