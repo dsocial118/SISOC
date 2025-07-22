@@ -7,7 +7,7 @@
   {
     "model": "celiaquia.estadoexpediente",
     "pk": 2,
-    "fields": { "nombre": "CONFIRMACION_DE_ENVIO" }
+    "fields": { "nombre": "PROCESADO" }
   },
   {
     "model": "celiaquia.estadoexpediente",
@@ -38,6 +38,11 @@
     "model": "celiaquia.estadoexpediente",
     "pk": 8,
     "fields": { "nombre": "PAGO_CERRADO" }
+  },
+  {
+    "model": "celiaquia.estadoexpediente",
+    "pk": 9,
+    "fields": { "nombre": "CONFIRMACION_DE_ENVIO" }
   },
   {
     "model": "celiaquia.estadolegajo",
