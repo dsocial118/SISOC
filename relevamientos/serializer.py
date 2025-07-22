@@ -108,7 +108,9 @@ class RelevamientoSerializer(serializers.ModelSerializer):
                 try:
                     comedor = Comedor.objects.get(id=comedor_id)
                     prestacion_instance = RelevamientoService.create_or_update_prestaciones_from_relevamiento(
-                        self.initial_data["prestacion"], comedor
+                        self.initial_data["prestacion"],
+                        comedor,
+                        self.initial_data["sisoc_id"],
                     )
                     # Para compatibilidad, asignar el ID de la primera prestación
                     self.initial_data["prestacion"] = prestacion_instance.id

@@ -117,7 +117,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         relevamiento.compras = compras
 
         prestacion = extra_forms["prestacion_form"].save()
-        relevamiento.prestacion = prestacion
+        relevamiento.prestaciones = prestacion
 
         referente = extra_forms["referente_form"].save()
         relevamiento.responsable = referente
@@ -1097,12 +1097,15 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     @transaction.atomic
-    def create_or_update_prestaciones_from_relevamiento(prestacion_data, comedor):
+    def create_or_update_prestaciones_from_relevamiento(
+        prestacion_data, comedor, relevamiento_id
+    ):
         """
         Nueva función para crear/actualizar prestaciones usando el modelo unificado.
         Convierte los datos del modelo viejo al nuevo formato por días.
         Usa transaction.atomic para garantizar consistencia de datos.
         """
+        relevamiento = Relevamiento.objects.get(pk=relevamiento_id)
         dias = [
             "lunes",
             "martes",
@@ -1139,6 +1142,9 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 prestacion_dia, _ = Prestacion.objects.update_or_create(
                     comedor=comedor, dia=dia, defaults=defaults_data
                 )
+                relevamiento.prestaciones.add(prestacion_dia)
+                relevamiento.save()
+
                 if primera_prestacion is None:
                     primera_prestacion = prestacion_dia
             else:
@@ -1157,6 +1163,8 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                     "merienda_reforzada": False,
                 },
             )
+            relevamiento.prestaciones.add(prestacion_dia)
+            relevamiento.save()
 
         return primera_prestacion
 

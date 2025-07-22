@@ -136,7 +136,6 @@ class RelevamientoDetailView(DetailView):
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
 
-        # Optimización: Usar self.object en lugar de nueva query
         relevamiento = self.object
 
         # Crear un diccionario para los datos adicionales del relevamiento
@@ -149,15 +148,12 @@ class RelevamientoDetailView(DetailView):
             else None
         )
 
-        # Crear objeto de prestación compatible con el template
-        from core.models import Prestacion
-
-        prestaciones = Prestacion.objects.filter(comedor=relevamiento.comedor)
+        prestaciones = Prestacion.objects.filter(id__in=relevamiento.prestaciones.all())
 
         # Crear un objeto dinámico compatible con el formato anterior
         class PrestacionCompat:
+
             def __init__(self):
-                # Inicializar todos los campos en 0
                 dias = [
                     "lunes",
                     "martes",
@@ -250,7 +246,6 @@ class RelevamientoDetailView(DetailView):
 
         context["prestacion"] = prestacion_compat
 
-        # Optimización: Todas las relaciones ya están prefetched
         relevamiento_data["donaciones"] = (
             RelevamientoService.separate_string(
                 relevamiento.recursos.recursos_donaciones_particulares.all()
@@ -305,7 +300,6 @@ class RelevamientoDetailView(DetailView):
         return context
 
     def get_object(self, queryset=None):
-        # Optimización: Retornar objeto completo con todas las relaciones optimizadas
         return (
             Relevamiento.objects.select_related(
                 "comedor",
@@ -313,7 +307,6 @@ class RelevamientoDetailView(DetailView):
                 "comedor__provincia",
                 "comedor__municipio",
                 "comedor__localidad",
-                "prestacion",
                 "espacio",
                 "espacio__cocina",
                 "espacio__cocina__abastecimiento_agua",
@@ -344,6 +337,7 @@ class RelevamientoDetailView(DetailView):
                 "excepcion",
             )
             .prefetch_related(
+                "prestaciones",
                 "espacio__cocina__abastecimiento_combustible",
                 "recursos__recursos_donaciones_particulares",
                 "recursos__recursos_estado_nacional",
