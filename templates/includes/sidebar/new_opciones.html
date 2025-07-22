@@ -1,6 +1,5 @@
 {% load static custom_filters %}
 {% with pagina_actual=request.resolver_match.route %}
-
     <li class="nav-item">
         <a href="{% url 'dashboard' %}"
            class="nav-link {% if 'dashboard' in pagina_actual %}active{% endif %}">

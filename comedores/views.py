@@ -737,4 +737,3 @@ class NewComedorDetailView(DetailView):
 
         else:
             return redirect("comedor_detalle", pk=self.object.id)
-
