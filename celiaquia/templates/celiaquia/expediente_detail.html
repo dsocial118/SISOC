@@ -1,6 +1,6 @@
 {# templates/celiaquia/expediente_detail.html #}
 {% extends "includes/main.html" %}
-{% load static dict_extras %}
+{% load static custom_filters %}
 
 {% block title %}Expediente {{ expediente.codigo }}{% endblock %}
 
@@ -49,7 +49,9 @@
           </tbody>
         </table>
       </div>
-      <button id="btn-create-legajos" class="btn btn-primary mt-3">Crear legajos</button>
+      <button id="btn-process-expediente" class="btn btn-primary mt-3">
+        Procesar Expediente
+      </button>
     </div>
   </div>
 {% elif preview_error %}
@@ -114,8 +116,8 @@
 
 {% block customJS %}
   <script>
-    const CREATE_LEGAJOS_URL = "{% url 'crear_legajos' expediente.pk %}";
-    const CONFIRM_URL        = "{% url 'expediente_confirm' expediente.pk %}";
+    const PROCESS_URL = "{% url 'expediente_procesar' expediente.pk %}";
+    const CONFIRM_URL = "{% url 'expediente_confirm' expediente.pk %}";
   </script>
   <script src="{% static 'custom/js/expediente_detail.js' %}"></script>
 {% endblock %}
