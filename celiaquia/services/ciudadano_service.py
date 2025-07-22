@@ -16,6 +16,7 @@ from ciudadanos.models import (
 
 logger = logging.getLogger(__name__)
 
+
 class CiudadanoService:
     @staticmethod
     def get_or_create_ciudadano(datos: dict) -> Ciudadano:
@@ -25,14 +26,14 @@ class CiudadanoService:
         Inicializa dimensiones si es nuevo.
         """
         # 1) Resolver la FK de TipoDocumento
-        raw_td = datos.get('tipo_documento')
+        raw_td = datos.get("tipo_documento")
         try:
             td = TipoDocumento.objects.get(pk=int(raw_td))
         except Exception:
             raise ValidationError(f"Tipo de documento inválido: {raw_td}")
 
         # 2) Resolver la FK de Sexo
-        raw_sex = datos.get('sexo')
+        raw_sex = datos.get("sexo")
         try:
             sx = Sexo.objects.get(pk=int(raw_sex))
         except Exception:
@@ -40,16 +41,15 @@ class CiudadanoService:
 
         # 3) Filtro único basado en los campos clave
         filtro = {
-            'tipo_documento': td,
-            'documento': datos.get('documento'),
-            'nombre': datos.get('nombre'),
-            'apellido': datos.get('apellido'),
-            'fecha_nacimiento': datos.get('fecha_nacimiento'),
+            "tipo_documento": td,
+            "documento": datos.get("documento"),
+            "nombre": datos.get("nombre"),
+            "apellido": datos.get("apellido"),
+            "fecha_nacimiento": datos.get("fecha_nacimiento"),
         }
         # 4) get_or_create con default para sexo
         ciudadano, created = Ciudadano.objects.get_or_create(
-            **filtro,
-            defaults={'sexo': sx}
+            **filtro, defaults={"sexo": sx}
         )
         if created:
             logger.info(f"Ciudadano creado: {ciudadano.pk}")
