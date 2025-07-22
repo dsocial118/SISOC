@@ -1,176 +1,220 @@
 {% extends "includes/main.html" %}
 {% load static crispy_forms_tags %}
-;
+
 {% block title %}Comedores{% endblock %}
 {% block titulo-pagina %}Comedores{% endblock %}
 {% block breadcrumb %}
-    <ol class="breadcrumb float-sm-right px-3">
-        <li class="breadcrumb-item">
-            <a href="{% url 'comedores' %}">Comedores</a>
-        </li>
-        {% if request.resolver_match.url_name == "comedor_editar" %}
-            <li class="breadcrumb-item">
-                <a href="{% url 'comedor_detalle' comedor.id %}">{{ comedor.nombre }}</a>
-            </li>
-            <li class="breadcrumb-item active">Editar</li>
+<ol class="breadcrumb float-sm-right px-3">
+  <li class="breadcrumb-item">
+    <a href="{% url 'comedores' %}">Comedores</a>
+  </li>
+  {% if request.resolver_match.url_name == "comedor_editar" %}
+  <li class="breadcrumb-item">
+    <a href="{% url 'comedor_detalle' comedor.id %}">{{ comedor.nombre }}</a>
+  </li>
+  <li class="breadcrumb-item active">Editar</li>
+  {% else %}
+  <li class="breadcrumb-item active">Agregar</li>
+  {% endif %}
+</ol>
+{% endblock %} {% block content %}
+<link
+  rel="stylesheet"
+  href="{% static 'custom/css/comedorRelevamiento.css' %}"
+/>
+<div class="d-flex justify-content-between mb-3">
+  <div>
+    {% if comedor.id %}
+    <a href="{% url 'comedor_detalle' comedor.id %}" class="btn btn-secondary"
+      >Volver</a
+    >
+    {% else %}
+    <a href="{% url 'comedores' %}" class="btn btn-secondary">Volver</a>
+    {% endif %}
+  </div>
+  <div>
+    <a class="btn btn-secondary print mr-1 d-none d-sm-inline">Imprimir</a>
+    <a href="#" onclick="window.history.back();" class="btn btn-secondary"
+      >Cancelar</a
+    >
+  </div>
+</div>
+<div class="row comedor-form">
+  <div class="col-12">
+    <form
+      method="post"
+      id="comedorForm"
+      class="w-100"
+      enctype="multipart/form-data"
+      onsubmit="return confirmSubmit()"
+    >
+      <div class="card card-primary card-outline">
+        <div class="bs-stepper">
+          <div class="card-header mb-3">
+            <h3 class="card-title">Agregar Comedor/Merendero</h3>
+          </div>
+          <div class="card-body">
+            <div class="form-row justify-content-center">
+              {% csrf_token %}
+              <div class="form-group row">
+                <div class="col-2">{{ form.nombre|as_crispy_field }}</div>
+                <div class="col-2">{{ form.id_externo|as_crispy_field }}</div>
+                <div class="col-2">{{ form.tipocomedor|as_crispy_field }}</div>
+                <div class="col-3">{{ form.organizacion|as_crispy_field }}</div>
+                <div class="col-3">{{ form.programa|as_crispy_field }}</div>
+              </div>
+              <div class="form-group row">
+                <div class="col-2">
+                  {{ form.codigo_de_proyecto|as_crispy_field }}
+                </div>
+                <div class="col-1">{{ form.comienzo|as_crispy_field }}</div>
+                <div class="col-3">{{ form.provincia|as_crispy_field }}</div>
+                <div class="col-3">{{ form.municipio|as_crispy_field }}</div>
+                <div class="col-3">{{ form.localidad|as_crispy_field }}</div>
+              </div>
+              <div class="form-group row">
+                <div class="col-4">{{ form.partido|as_crispy_field }}</div>
+                <div class="col-4">{{ form.barrio|as_crispy_field }}</div>
+                <div class="col-4">
+                  {{ form.codigo_postal|as_crispy_field }}
+                </div>
+              </div>
+              <div class="form-group row">
+                <div class="col-2">{{ form.calle|as_crispy_field }}</div>
+                <div class="col-2">{{ form.numero|as_crispy_field }}</div>
+                <div class="col-2">{{ form.piso|as_crispy_field }}</div>
+                <div class="col-2">{{ form.departamento|as_crispy_field }}</div>
+                <div class="col-2">{{ form.manzana|as_crispy_field }}</div>
+                <div class="col-2">{{ form.lote|as_crispy_field }}</div>
+              </div>
+              <div class="form-group row">
+                <div class="col-3">
+                  {{ form.entre_calle_1|as_crispy_field }}
+                </div>
+                <div class="col-3">
+                  {{ form.entre_calle_2|as_crispy_field }}
+                </div>
+                <div class="col-3">{{ form.latitud|as_crispy_field }}</div>
+                <div class="col-3">{{ form.longitud|as_crispy_field }}</div>
+              </div>
+              <div class="form-group row">
+                <div>{{ form.foto_legajo|as_crispy_field }}</div>
+                <div id="fotoLegajoPreviewContainer" class="mt-3 col-12"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card card-primary card-outline">
+        <div class="bs-stepper">
+          <div class="card-header mb-3">
+            <h3 class="card-title">
+              Datos del referente del comedor/merendero
+            </h3>
+          </div>
+          <div class="card-body">
+            <div class="form-group row">
+              <div class="col-4">
+                {{ referente_form.nombre|as_crispy_field }}
+              </div>
+              <div class="col-4">
+                {{ referente_form.apellido|as_crispy_field }}
+              </div>
+              <div class="col-4">{{ referente_form.mail|as_crispy_field }}</div>
+            </div>
+            <div class="form-group row">
+              <div class="col-4">
+                {{ referente_form.celular|as_crispy_field }}
+              </div>
+              <div class="col-4">
+                {{ referente_form.documento|as_crispy_field }}
+              </div>
+              <div class="col-4">
+                {{ referente_form.funcion|as_crispy_field }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card card-primary card-outline">
+        <div class="bs-stepper">
+          <div class="card-header mb-3">
+            <h3 class="card-title">Imágenes</h3>
+          </div>
+          <div class="card-body">
+            {% for imagen in imagenes_borrar %}
+            <div class="input-group mb-2">
+              <span class="input-group-text">Actualmente</span>
+              <div class="form-control d-flex h-auto">
+                <span class="text-break flex-grow-1">
+                  <a href="" target="__blank">{{ imagen.imagen }}</a>
+                </span>
+                <span class="align-self-center ml-2">
+                  <span class="form-check">
+                    <input
+                      type="checkbox"
+                      name="imagen_ciudadano-borrar-{{ imagen.id }}"
+                      id="imagen_ciudadano-id-borrar"
+                      class="form-check-input"
+                    />
+                    <label
+                      class="form-check-label mb-0"
+                      for="imagen_ciudadano-clear_id"
+                      >Eliminar</label
+                    >
+                  </span>
+                </span>
+              </div>
+            </div>
+            {% endfor %}
+            <input
+              type="file"
+              name="imagenes"
+              id="imagenesInput"
+              class="d-none"
+              multiple
+              accept="image/*"
+            />
+            <button
+              type="button"
+              id="addImagesBtn"
+              class="btn btn-primary mb-3"
+            >
+              <i class="fas fa-plus"></i> Agregar Imágenes
+            </button>
+            <!-- Contenedor para mostrar las imágenes seleccionadas -->
+            <div id="selectedImagesInfo" class="mb-2 d-none">
+              <small class="text-muted">
+                <span id="imageCount">0</span> imagen(es) seleccionada(s)
+              </small>
+            </div>
+            <div id="imagePreviewContainer" class="mt-3 row"></div>
+            <div class="d-flex justify-content-end">
+              <div class="card-tools d-flex align-items-start my-3">
+                <button
+                  type="button"
+                  class="btn btn-tool"
+                  data-card-widget="collapse"
+                ></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="d-flex justify-content-end">
+        {% if comedor.id %}
+          {% include 'components/forms/form_buttons.html' with submit_label="Guardar comedor" cancel_url='comedor_detalle' cancel_id=comedor.id submit_class="btn-success mx-1" %}
         {% else %}
-            <li class="breadcrumb-item active">Agregar</li>
+          {% include 'components/forms/form_buttons.html' with submit_label="Guardar comedor" cancel_url='comedores' submit_class="btn-success mx-1" %}
         {% endif %}
-    </ol>
-{% endblock %}
-;
-{% block content %}
-    <link rel="stylesheet"
-          href="{% static 'custom/css/comedorRelevamiento.css' %}" />
-    <div class="d-flex justify-content-between mb-3">
-        <div>
-            {% if comedor.id %}
-                <a href="{% url 'comedor_detalle' comedor.id %}"
-                   class='btn btn-secondary'>Volver</a>
-            {% else %}
-                <a href="{% url 'comedores' %}" class='btn btn-secondary'>Volver</a>
-            {% endif %}
-        </div>
-        <div>
-            <a class='btn btn-secondary print mr-1 d-none d-sm-inline'>Imprimir</a>
-            <a href='#' onclick='window.history.back();' class='btn btn-secondary'>Cancelar</a>
-        </div>
-    </div>
-    <div class="row comedor-form">
-        <div class="col-12">
-            <form method="post"
-                  id="comedorForm"
-                  class="w-100"
-                  enctype="multipart/form-data"
-                  onsubmit="return confirmSubmit()">
-                <div class="card card-primary card-outline">
-                    <div class="bs-stepper">
-                        <div class="card-header mb-3">
-                            <h3 class="card-title">Agregar Comedor/Merendero</h3>
-                        </div>
-                        <div class="card-body">
-                            <div class="form-row justify-content-center">
-                                {% csrf_token %}
-                                <div class="form-group row">
-                                    <div class="col-2">{{ form.nombre|as_crispy_field }}</div>
-                                    <div class="col-2">{{ form.id_externo|as_crispy_field }}</div>
-                                    <div class="col-2">{{ form.tipocomedor|as_crispy_field }}</div>
-                                    <div class="col-3">{{ form.organizacion|as_crispy_field }}</div>
-                                    <div class="col-3">{{ form.programa|as_crispy_field }}</div>
-                                </div>
-                                <div class="form-group row">
-                                    <div class="col-2">{{ form.codigo_de_proyecto|as_crispy_field }}</div>
-                                    <div class="col-1">{{ form.comienzo|as_crispy_field }}</div>
-                                    <div class="col-3">{{ form.provincia|as_crispy_field }}</div>
-                                    <div class="col-3">{{ form.municipio|as_crispy_field }}</div>
-                                    <div class="col-3">{{ form.localidad|as_crispy_field }}</div>
-                                </div>
-                                <div class="form-group row">
-                                    <div class="col-4">{{ form.partido|as_crispy_field }}</div>
-                                    <div class="col-4">{{ form.barrio|as_crispy_field }}</div>
-                                    <div class="col-4">{{ form.codigo_postal|as_crispy_field }}</div>
-                                </div>
-                                <div class="form-group row">
-                                    <div class="col-2">{{ form.calle|as_crispy_field }}</div>
-                                    <div class="col-2">{{ form.numero|as_crispy_field }}</div>
-                                    <div class="col-2">{{ form.piso|as_crispy_field }}</div>
-                                    <div class="col-2">{{ form.departamento|as_crispy_field }}</div>
-                                    <div class="col-2">{{ form.manzana|as_crispy_field }}</div>
-                                    <div class="col-2">{{ form.lote|as_crispy_field }}</div>
-                                </div>
-                                <div class="form-group row">
-                                    <div class="col-3">{{ form.entre_calle_1|as_crispy_field }}</div>
-                                    <div class="col-3">{{ form.entre_calle_2|as_crispy_field }}</div>
-                                    <div class="col-3">{{ form.latitud|as_crispy_field }}</div>
-                                    <div class="col-3">{{ form.longitud|as_crispy_field }}</div>
-                                </div>
-                                <div class="form-group row">
-                                    <div>{{ form.foto_legajo|as_crispy_field }}</div>
-                                    <div id="fotoLegajoPreviewContainer" class="mt-3 col-12"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="card card-primary card-outline">
-                    <div class="bs-stepper">
-                        <div class="card-header mb-3">
-                            <h3 class="card-title">Datos del referente del comedor/merendero</h3>
-                        </div>
-                        <div class="card-body">
-                            <div class="form-group row">
-                                <div class="col-4">{{ referente_form.nombre|as_crispy_field }}</div>
-                                <div class="col-4">{{ referente_form.apellido|as_crispy_field }}</div>
-                                <div class="col-4">{{ referente_form.mail|as_crispy_field }}</div>
-                            </div>
-                            <div class="form-group row">
-                                <div class="col-4">{{ referente_form.celular|as_crispy_field }}</div>
-                                <div class="col-4">{{ referente_form.documento|as_crispy_field }}</div>
-                                <div class="col-4">{{ referente_form.funcion|as_crispy_field }}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="card card-primary card-outline">
-                    <div class="bs-stepper">
-                        <div class="card-header mb-3">
-                            <h3 class="card-title">Imágenes</h3>
-                        </div>
-                        <div class="card-body">
-                            {% for imagen in imagenes_borrar %}
-                                <div class="input-group mb-2">
-                                    <span class="input-group-text">Actualmente</span>
-                                    <div class="form-control d-flex h-auto">
-                                        <span class="text-break flex-grow-1">
-                                            <a href="" target=__blank>{{ imagen.imagen }}</a>
-                                        </span>
-                                        <span class="align-self-center ml-2">
-                                            <span class="form-check">
-                                                <input type="checkbox"
-                                                       name="imagen_ciudadano-borrar-{{ imagen.id }}"
-                                                       id="imagen_ciudadano-id-borrar"
-                                                       class="form-check-input" />
-                                                <label class="form-check-label mb-0" for="imagen_ciudadano-clear_id">Eliminar</label>
-                                            </span>
-                                        </span>
-                                    </div>
-                                </div>
-                            {% endfor %}
-                            <input type="file"
-                                   name="imagenes"
-                                   id="imagenesInput"
-                                   class="d-none"
-                                   multiple
-                                   accept="image/*" />
-                            <button type="button" id="addImagesBtn" class="btn btn-primary mb-3">
-                                <i class="fas fa-plus"></i> Agregar Imágenes
-                            </button>
-                            <!-- Contenedor para mostrar las imágenes seleccionadas -->
-                            <div id="selectedImagesInfo" class="mb-2 d-none">
-                                <small class="text-muted">
-                                    <span id="imageCount">0</span> imagen(es) seleccionada(s)
-                                </small>
-                            </div>
-                            <div id="imagePreviewContainer" class="mt-3 row"></div>
-                            <div class="d-flex justify-content-end">
-                                <div class="card-tools d-flex align-items-start my-3">
-                                    <button type="button" class="btn btn-tool" data-card-widget="collapse"></button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="d-flex justify-content-end">
-                    <button class="btn btn-success mx-1" type="submit">Guardar comedor</button>
-                </div>
-            </form>
-        </div>
-    </div>
-{% endblock %}
-{% block customJS %}
-    <script>
-        var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
-        var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
-    </script>
-    <script src="{% static 'custom/js/comedorform.js' %}"></script>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %} {% block customJS %}
+<script>
+  var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
+  var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
+</script>
+<script src="{% static 'custom/js/comedorform.js' %}"></script>
 {% endblock %}
