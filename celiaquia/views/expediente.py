@@ -18,15 +18,32 @@ from celiaquia.forms import ExpedienteForm, ConfirmarEnvioForm
 from celiaquia.models import EstadoLegajo, Expediente, ExpedienteCiudadano
 from celiaquia.services.ciudadano_service import CiudadanoService
 from celiaquia.services.expediente_service import ExpedienteService
-from celiaquia.services.legajo_service import LegajoService
 from celiaquia.services.importacion_service import ImportacionService
 
 logger = logging.getLogger(__name__)
 
+@method_decorator(csrf_exempt, name='dispatch')
+class ProcesarExpedienteView(View):
+    """
+    POST AJAX: crea/enlaza legajos desde el Excel y cambia estado a 'PROCESADO'.
+    Devuelve JSON {'success', 'creados', 'errores'}.
+    """
+    def post(self, request, pk):
+        expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=request.user)
+        try:
+            result = ExpedienteService.procesar_expediente(expediente)
+            return JsonResponse({'success': True, 'creados': result['creados'], 'errores': result['errores']})
+        except ValidationError as ve:
+            return JsonResponse({'success': False, 'error': ve.message}, status=400)
+        except Exception:
+            tb = traceback.format_exc()
+            logger.error("Error al procesar expediente %s:\n%s", pk, tb)
+            return JsonResponse({'success': False, 'error': 'Error inesperado al procesar.'}, status=500)
+
 class CrearLegajosView(View):
     """
-    Recibe JSON con 'rows' (lista de dicts) y crea/enlaza legajos.
-    Devuelve {'creados': X, 'existentes': Y}.
+    POST AJAX: crea/enlaza legajos a partir de JSON 'rows'.
+    Devuelve JSON {'creados', 'existentes'}.
     """
     def post(self, request, pk):
         expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=request.user)
@@ -54,10 +71,10 @@ class CrearLegajosView(View):
 @method_decorator(csrf_exempt, name='dispatch')
 class ExpedientePreviewExcelView(View):
     """
-    Exento de CSRF: recibe POST con Excel y devuelve JSON con preview.
+    POST AJAX exento CSRF: recibe Excel y devuelve JSON con preview {headers, rows}.
     """
     def post(self, request, *args, **kwargs):
-        logger.debug("PREVIEW: path=%s headers=%s cookies=%s", request.path, dict(request.headers), request.COOKIES)
+        logger.debug("PREVIEW: %s %s", request.method, request.path)
         archivo = request.FILES.get('excel_masivo')
         if not archivo:
             return JsonResponse({'error': 'No se recibió ningún archivo.'}, status=400)
@@ -69,7 +86,7 @@ class ExpedientePreviewExcelView(View):
         except Exception:
             tb = traceback.format_exc()
             logger.error("PREVIEW error:\n%s", tb)
-            return JsonResponse({'error': 'Error inesperado al procesar el Excel.'}, status=500)
+            return JsonResponse({'error': 'Error inesperado al procesar.'}, status=500)
 
 class ExpedienteListView(ListView):
     model = Expediente
@@ -130,34 +147,19 @@ class ExpedienteDetailView(DetailView):
         return ctx
 
 class ExpedienteImportView(View):
+    """Procesa la importación masiva de legajos desde el Excel guardado."""
     def post(self, request, pk):
         expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=request.user)
         start = time.time()
         try:
             result = ImportacionService.importar_legajos_desde_excel(expediente, expediente.excel_masivo)
             elapsed = time.time() - start
-            messages.success(request, f"Import: {result['validos']} creados, {result['errores']} errores en {elapsed:.2f}s.")
+            messages.success(request, f"Importación: {result['validos']} válidos, {result['errores']} errores en {elapsed:.2f}s.")
         except ValidationError as ve:
-            messages.error(request, f"Error validación import: {ve.message}")
+            messages.error(request, f"Error de validación: {ve.message}")
         except Exception as e:
-            messages.error(request, f"Error inesperado import: {e}")
+            messages.error(request, f"Error inesperado: {e}")
         return redirect('expediente_detail', pk=pk)
-
-class ExpedienteProcessView(View):
-    """
-    AJAX: procesa expediente, crea legajos y cambia estado a PROCESADO.
-    """
-    def post(self, request, pk):
-        expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=request.user)
-        try:
-            result = ExpedienteService.procesar_expediente(expediente)
-            return JsonResponse({'success': True, 'creados': result['creados'], 'errores': result['errores']})
-        except ValidationError as ve:
-            return JsonResponse({'success': False, 'error': ve.message}, status=400)
-        except Exception as e:
-            tb = traceback.format_exc()
-            logger.error("PROCESS error %s:\n%s", pk, tb)
-            return JsonResponse({'success': False, 'error': 'Error inesperado'}, status=500)
 
 class ExpedienteConfirmView(View):
     def post(self, request, pk):
@@ -166,12 +168,12 @@ class ExpedienteConfirmView(View):
             result = ExpedienteService.confirmar_envio(expediente)
             messages.success(
                 request,
-                f"Expediente confirmado y legajos importados: {result['validos']} creados, {result['errores']} errores."
+                f"Expediente enviado: {result['validos']} legajos creados, {result['errores']} errores."
             )
         except ValidationError as ve:
             messages.error(request, f"Error al confirmar: {ve.message}")
         except Exception as e:
-            messages.error(request, f"Error inesperado al confirmar: {e}")
+            messages.error(request, f"Error inesperado: {e}")
         return redirect('expediente_detail', pk=pk)
 
 class ExpedienteUpdateView(UpdateView):
