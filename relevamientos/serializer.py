@@ -1,3 +1,4 @@
+import logging
 from rest_framework import serializers
 
 from relevamientos.models import Relevamiento
@@ -6,6 +7,7 @@ from relevamientos.service import RelevamientoService
 from comedores.models import Comedor
 from core.utils import format_fecha_django
 
+logger = logging.getLogger(__name__)
 
 class RelevamientoSerializer(serializers.ModelSerializer):
 
@@ -116,7 +118,9 @@ class RelevamientoSerializer(serializers.ModelSerializer):
                     self.initial_data["prestacion"] = prestacion_instance.id
                 except Comedor.DoesNotExist:
                     # Si no se encuentra el comedor, mantener el valor original
-                    logger.warning(f"Comedor with ID {comedor_id} does not exist. Keeping the original 'prestacion' value.")
+                    logger.warning(
+                        f"No se encontro el comedor con ID {comedor_id} para el relevamiento."
+                    )
 
         if "excepcion" in self.initial_data:
             excepcion_instance = (
