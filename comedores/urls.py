@@ -16,6 +16,8 @@ from comedores.views import (
     NominaUpdateView,
     AsignarDuplaListView,
     relevamiento_crear_editar_ajax,
+    #prueba nuevo front comedor
+    NewComedorDetailView,
 )
 
 from intervenciones.views import (
@@ -165,5 +167,14 @@ urlpatterns = [
         "comedores/ajax/<int:pk>/relevamiento/",
         relevamiento_crear_editar_ajax,
         name="relevamiento_create_edit_ajax",
+    ),
+
+    #esto es prueba de nuevo front para el comedor
+    path(
+        "comedores_nuevo/<int:pk>",
+        group_required(["Comedores Ver", "Tecnico Comedor", "Abogado Dupla"])(
+            NewComedorDetailView.as_view()
+        ),
+        name="nuevo_comedor_detalle",
     ),
 ]
