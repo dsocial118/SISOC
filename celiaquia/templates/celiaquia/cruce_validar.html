@@ -1,38 +1,40 @@
 {% extends "includes/main.html" %}
 {% load static %}
-
 {% block title %}Validar Resultado de Cruce{% endblock %}
-
 {% block breadcrumb %}
-<ol class="breadcrumb float-sm-right px-3">
-    <li class="breadcrumb-item">
-        <a href="{% url 'celiaquia_expedientes_listar' %}">Expedientes</a>
-    </li>
-    <li class="breadcrumb-item">
-        <a href="{% url 'celiaquia_expedientes_detalle' expediente.id %}">Detalle Expediente</a>
-    </li>
-    <li class="breadcrumb-item active">Validar Cruce</li>
-</ol>
+    <ol class="breadcrumb float-sm-right px-3">
+        <li class="breadcrumb-item">
+            <a href="{% url 'celiaquia_expedientes_listar' %}">Expedientes</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'celiaquia_expedientes_detalle' expediente.id %}">Detalle Expediente</a>
+        </li>
+        <li class="breadcrumb-item active">Validar Cruce</li>
+    </ol>
 {% endblock %}
-
 {% block content %}
-<div class="d-flex justify-content-between mb-3">
-    <a href="{% url 'celiaquia_expedientes_detalle' expediente.id %}" class="btn btn-secondary">Volver</a>
-</div>
-
-<div class="card card-primary card-outline">
-    <div class="card-header">
-        <h3 class="card-title">Resumen de Cruce</h3>
+    <div class="d-flex justify-content-between mb-3">
+        <a href="{% url 'celiaquia_expedientes_detalle' expediente.id %}"
+           class="btn btn-secondary">Volver</a>
     </div>
-    <div class="card-body">
-        <p><strong>Expediente:</strong> {{ expediente }}</p>
-        <p><strong>Total aceptados:</strong> {{ total_aceptados }}</p>
-        <p><strong>Total rechazados:</strong> {{ total_rechazados }}</p>
-
-        <form method="post">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-success mt-3">Confirmar Resultado del Cruce</button>
-        </form>
+    <div class="card card-primary card-outline">
+        <div class="card-header">
+            <h3 class="card-title">Resumen de Cruce</h3>
+        </div>
+        <div class="card-body">
+            <p>
+                <strong>Expediente:</strong> {{ expediente }}
+            </p>
+            <p>
+                <strong>Total aceptados:</strong> {{ total_aceptados }}
+            </p>
+            <p>
+                <strong>Total rechazados:</strong> {{ total_rechazados }}
+            </p>
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success mt-3">Confirmar Resultado del Cruce</button>
+            </form>
+        </div>
     </div>
-</div>
 {% endblock %}

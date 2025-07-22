@@ -1,59 +1,58 @@
 {# templates/celiaquia/expediente_form.html #}
 {% extends "includes/main.html" %}
 {% load static crispy_forms_tags %}
-
 {% block title %}
-  {% if view.object %}Editar Expediente{% else %}Crear Expediente{% endif %}
+    {% if view.object %}
+        Editar Expediente
+    {% else %}
+        Crear Expediente
+    {% endif %}
 {% endblock %}
-
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-md-8">
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <h3 class="card-title mb-4 text-center">
-          {% if view.object %}Editar Expediente{% else %}Crear Expediente{% endif %}
-        </h3>
-        <form id="expediente-form" method="post" enctype="multipart/form-data">
-          {% csrf_token %}
-          {{ form|crispy }}
-
-          {# Contenedor de error para la previsualización #}
-          <div id="preview-error" class="text-danger mt-2"></div>
-
-          <div class="d-flex justify-content-between mt-3">
-            <button type="button" id="btn-preview" class="btn btn-outline-secondary">
-              Previsualizar Excel
-            </button>
-            <div>
-              <button type="submit" class="btn btn-success me-2">Guardar</button>
-              <a href="{% url 'expediente_list' %}" class="btn btn-secondary">Cancelar</a>
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title mb-4 text-center">
+                        {% if view.object %}
+                            Editar Expediente
+                        {% else %}
+                            Crear Expediente
+                        {% endif %}
+                    </h3>
+                    <form id="expediente-form" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        {# Contenedor de error para la previsualización #}
+                        <div id="preview-error" class="text-danger mt-2"></div>
+                        <div class="d-flex justify-content-between mt-3">
+                            <button type="button" id="btn-preview" class="btn btn-outline-secondary">Previsualizar Excel</button>
+                            <div>
+                                <button type="submit" class="btn btn-success me-2">Guardar</button>
+                                <a href="{% url 'expediente_list' %}" class="btn btn-secondary">Cancelar</a>
+                            </div>
+                        </div>
+                    </form>
+                    {# Contenedor para la tabla de preview, oculto por defecto #}
+                    <div id="preview-container" class="mt-4 d-none">
+                        <h5>Vista previa del Excel</h5>
+                        <div class="table-responsive">
+                            <table id="preview-table" class="table table-bordered mb-0">
+                                <thead>
+                                    <tr id="preview-headers"></tr>
+                                </thead>
+                                <tbody id="preview-rows">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
-        </form>
-
-        {# Contenedor para la tabla de preview, oculto por defecto #}
-        <div id="preview-container" class="mt-4 d-none">
-          <h5>Vista previa del Excel</h5>
-          <div class="table-responsive">
-            <table id="preview-table" class="table table-bordered mb-0">
-              <thead>
-                <tr id="preview-headers"></tr>
-              </thead>
-              <tbody id="preview-rows"></tbody>
-            </table>
-          </div>
         </div>
-      </div>
     </div>
-  </div>
-</div>
 {% endblock %}
-
 {% block customJS %}
-  {# Inyectamos la URL de preview antes del script #}
-  <script type="text/javascript">
-    window.PREVIEW_URL = "{% url 'expediente_preview_excel' %}";
-  </script>
-  <script src="{% static 'custom/js/celiaquia.js' %}"></script>
+    {# Inyectamos la URL de preview antes del script #}
+    <script type="text/javascript">window.PREVIEW_URL = "{% url 'expediente_preview_excel' %}";</script>
+    <script src="{% static 'custom/js/celiaquia.js' %}"></script>
 {% endblock %}

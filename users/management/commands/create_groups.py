@@ -55,8 +55,7 @@ class Command(BaseCommand):
             "Admin Asignar Técnico",
             "Técnico Subir Cruces",
             "Técnico Validar Resultado Cruce",
-            "Técnico Registrar Informe Pago"
-            "ReferenteCentro",
+            "Técnico Registrar Informe Pago" "ReferenteCentro",
             "CDF SSE",
         ]
         self.stdout.write(self.style.SUCCESS(f"Creando grupos de usuario..."))

@@ -1,67 +1,69 @@
 {% extends "includes/main.html" %}
 {% load static %}
-
 {% block title %}Detalle de Pago{% endblock %}
-
 {% block breadcrumb %}
-<ol class="breadcrumb float-sm-right px-3">
-    <li class="breadcrumb-item">
-        <a href="{% url 'celiaquia_expedientes_listar' %}">Expedientes</a>
-    </li>
-    <li class="breadcrumb-item">
-        <a href="{% url 'celiaquia_expedientes_detalle' expediente.id %}">Detalle Expediente</a>
-    </li>
-    <li class="breadcrumb-item active">Detalle de Pago</li>
-</ol>
+    <ol class="breadcrumb float-sm-right px-3">
+        <li class="breadcrumb-item">
+            <a href="{% url 'celiaquia_expedientes_listar' %}">Expedientes</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'celiaquia_expedientes_detalle' expediente.id %}">Detalle Expediente</a>
+        </li>
+        <li class="breadcrumb-item active">Detalle de Pago</li>
+    </ol>
 {% endblock %}
-
 {% block content %}
-<div class="d-flex justify-content-between mb-3">
-    <a href="{% url 'celiaquia_expedientes_detalle' expediente.id %}" class="btn btn-secondary">Volver</a>
-</div>
-
-<div class="card card-primary card-outline">
-    <div class="card-header">
-        <h3 class="card-title">Información de Pago</h3>
+    <div class="d-flex justify-content-between mb-3">
+        <a href="{% url 'celiaquia_expedientes_detalle' expediente.id %}"
+           class="btn btn-secondary">Volver</a>
     </div>
-    <div class="card-body">
-        {% if expediente.informepago %}
-            <p><strong>Fecha de Pago:</strong> {{ expediente.informepago.fecha_pago }}</p>
-            <p><strong>Monto:</strong> ${{ expediente.informepago.monto }}</p>
-            <p><strong>Observaciones:</strong> {{ expediente.informepago.observaciones }}</p>
-        {% else %}
-            <p>No se ha registrado un informe de pago.</p>
-        {% endif %}
+    <div class="card card-primary card-outline">
+        <div class="card-header">
+            <h3 class="card-title">Información de Pago</h3>
+        </div>
+        <div class="card-body">
+            {% if expediente.informepago %}
+                <p>
+                    <strong>Fecha de Pago:</strong> {{ expediente.informepago.fecha_pago }}
+                </p>
+                <p>
+                    <strong>Monto:</strong> ${{ expediente.informepago.monto }}
+                </p>
+                <p>
+                    <strong>Observaciones:</strong> {{ expediente.informepago.observaciones }}
+                </p>
+            {% else %}
+                <p>No se ha registrado un informe de pago.</p>
+            {% endif %}
+        </div>
     </div>
-</div>
-
-<div class="card card-primary card-outline mt-4">
-    <div class="card-header">
-        <h3 class="card-title">Lista de Aprobados</h3>
-    </div>
-    <div class="card-body">
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>DNI</th>
-                    <th>Nombre</th>
-                    <th>Apellido</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for persona in expediente.personas.all %}
-                    {% for resultado in persona.resultados.all %}
-                        {% if resultado.estado == 'aceptado' %}
-                            <tr>
-                                <td>{{ persona.dni }}</td>
-                                <td>{{ persona.nombre }}</td>
-                                <td>{{ persona.apellido }}</td>
-                            </tr>
-                        {% endif %}
+    <div class="card card-primary card-outline mt-4">
+        <div class="card-header">
+            <h3 class="card-title">Lista de Aprobados</h3>
+        </div>
+        <div class="card-body">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>DNI</th>
+                        <th>Nombre</th>
+                        <th>Apellido</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for persona in expediente.personas.all %}
+                        {% for resultado in persona.resultados.all %}
+                            {% if resultado.estado == 'aceptado' %}
+                                <tr>
+                                    <td>{{ persona.dni }}</td>
+                                    <td>{{ persona.nombre }}</td>
+                                    <td>{{ persona.apellido }}</td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
                     {% endfor %}
-                {% endfor %}
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
     </div>
-</div>
 {% endblock %}
