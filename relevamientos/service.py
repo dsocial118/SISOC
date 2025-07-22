@@ -267,6 +267,166 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             return None
 
     @staticmethod
+    def build_prestacion_compat(prestaciones):
+        """Devuelve un objeto con el formato de prestaciones anterior."""
+
+        class PrestacionCompat:  # pylint: disable=too-few-public-methods
+            def __init__(self):
+                dias = [
+                    "lunes",
+                    "martes",
+                    "miercoles",
+                    "jueves",
+                    "viernes",
+                    "sabado",
+                    "domingo",
+                ]
+                comidas = [
+                    "desayuno",
+                    "almuerzo",
+                    "merienda",
+                    "cena",
+                    "merienda_reforzada",
+                ]
+                tipos = ["actual", "espera"]
+
+                for dia in dias:
+                    for comida in comidas:
+                        for tipo in tipos:
+                            setattr(self, f"{dia}_{comida}_{tipo}", 0)
+
+        compat = PrestacionCompat()
+
+        for prestacion in prestaciones:
+            dia = prestacion.dia.lower()
+
+            if prestacion.desayuno:
+                setattr(
+                    compat,
+                    f"{dia}_desayuno_actual",
+                    prestacion.desayuno_cantidad_actual or 0,
+                )
+                setattr(
+                    compat,
+                    f"{dia}_desayuno_espera",
+                    prestacion.desayuno_cantidad_espera or 0,
+                )
+
+            if prestacion.almuerzo:
+                setattr(
+                    compat,
+                    f"{dia}_almuerzo_actual",
+                    prestacion.almuerzo_cantidad_actual or 0,
+                )
+                setattr(
+                    compat,
+                    f"{dia}_almuerzo_espera",
+                    prestacion.almuerzo_cantidad_espera or 0,
+                )
+
+            if prestacion.merienda:
+                setattr(
+                    compat,
+                    f"{dia}_merienda_actual",
+                    prestacion.merienda_cantidad_actual or 0,
+                )
+                setattr(
+                    compat,
+                    f"{dia}_merienda_espera",
+                    prestacion.merienda_cantidad_espera or 0,
+                )
+
+            if prestacion.cena:
+                setattr(
+                    compat,
+                    f"{dia}_cena_actual",
+                    prestacion.cena_cantidad_actual or 0,
+                )
+                setattr(
+                    compat,
+                    f"{dia}_cena_espera",
+                    prestacion.cena_cantidad_espera or 0,
+                )
+
+            if prestacion.merienda_reforzada:
+                setattr(
+                    compat,
+                    f"{dia}_merienda_reforzada_actual",
+                    prestacion.merienda_reforzada_cantidad_actual or 0,
+                )
+                setattr(
+                    compat,
+                    f"{dia}_merienda_reforzada_espera",
+                    prestacion.merienda_reforzada_cantidad_espera or 0,
+                )
+
+        return compat
+
+    @staticmethod
+    def build_detail_extra_data(relevamiento):
+        """Genera un diccionario de datos adicionales para la vista detalle."""
+
+        data = {}
+
+        data["gas"] = (
+            RelevamientoService.separate_string(
+                relevamiento.espacio.cocina.abastecimiento_combustible.all()
+            )
+            if relevamiento.espacio
+            else None
+        )
+
+        data["donaciones"] = (
+            RelevamientoService.separate_string(
+                relevamiento.recursos.recursos_donaciones_particulares.all()
+            )
+            if relevamiento.recursos
+            else None
+        )
+
+        data["nacional"] = (
+            RelevamientoService.separate_string(
+                relevamiento.recursos.recursos_estado_nacional.all()
+            )
+            if relevamiento.recursos
+            else None
+        )
+
+        data["provincial"] = (
+            RelevamientoService.separate_string(
+                relevamiento.recursos.recursos_estado_provincial.all()
+            )
+            if relevamiento.recursos
+            else None
+        )
+
+        data["municipal"] = (
+            RelevamientoService.separate_string(
+                relevamiento.recursos.recursos_estado_municipal.all()
+            )
+            if relevamiento.recursos
+            else None
+        )
+
+        data["otras"] = (
+            RelevamientoService.separate_string(
+                relevamiento.recursos.recursos_otros.all()
+            )
+            if relevamiento.recursos
+            else None
+        )
+
+        data["Entregas"] = (
+            RelevamientoService.separate_string(
+                relevamiento.punto_entregas.frecuencia_recepcion_mercaderias.all()
+            )
+            if relevamiento.punto_entregas
+            else None
+        )
+
+        return data
+
+    @staticmethod
     def create_or_update_funcionamiento(
         funcionamiento_data, funcionamiento_instance=None
     ):
