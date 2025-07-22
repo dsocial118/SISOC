@@ -26,6 +26,7 @@ def sh(cmd: list[str], check: bool = True) -> None:
 
 # ---------- DB wait ----------
 
+
 def wait_for_mysql():
     if not env_bool("WAIT_FOR_DB", "true"):
         print("⏭️  Skip wait for DB")

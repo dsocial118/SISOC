@@ -277,6 +277,7 @@ class RelevamientoDetailView(DetailView):
             .get(pk=self.kwargs["pk"])
         )
 
+
 class RelevamientoDeleteView(DeleteView):
     model = Relevamiento
     template_name = "relevamiento_confirm_delete.html"
