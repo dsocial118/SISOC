@@ -1,0 +1,36 @@
+{% comment %} Componente reutilizable de confirmación de eliminación Parámetros:
+- object: Objeto a eliminar - object_name: Nombre descriptivo del objeto -
+object_url: URL name de detalle del objeto (opcional) - object_id: ID del objeto
+para construir URLs (opcional) - cancel_url: URL name para cancelar - cancel_id:
+ID para URL de cancelación (opcional, usa object_id si no se especifica) -
+message: Mensaje personalizado (opcional) {% endcomment %}
+
+<div class="error-page mt-5 px-3">
+  <div class="error-content">
+    <h3>
+      <i class="fas fa-exclamation-triangle text-danger px-2"></i> Atención!
+    </h3>
+    <p>
+      {% if message %} {{ message }} {% else %} ¿Estás seguro que deseas
+      eliminar de manera permanente el {{ object_name|lower }}:
+      <span class="font-weight-bold">
+        {% if object_url and object_id %}
+        <a href="{% url object_url object_id %}">{{ object }}</a>
+        {% else %} {{ object }} {% endif %} </span
+      >? {% endif %}
+    </p>
+    <div class="text-left">
+      <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+        {% if cancel_url %}
+        <a
+          href="{% url cancel_url cancel_id|default:object_id %}"
+          class="btn btn-secondary btn-sm"
+          >Cancelar</a
+        >
+        {% endif %}
+      </form>
+    </div>
+  </div>
+</div>

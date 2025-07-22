@@ -1,0 +1,29 @@
+{% comment %} Componente reutilizable de búsqueda Parámetros: - title: Título
+del formulario (ej: "Buscar Comedor/Merendero") - placeholder: Placeholder del
+input (ej: "Buscar por nombre, provincia...") - search_value: Valor actual de
+búsqueda (opcional) {% endcomment %}
+
+<h2 class="text-center display-4 mb-4">{{ title }}</h2>
+<form method="GET">
+  <div class="row">
+    <div class="col-md-10 offset-md-1">
+      <div class="form-group">
+        <div class="input-group input-group-lg">
+          <input
+            type="search"
+            class="form-control form-control-lg"
+            placeholder="{{ placeholder }}"
+            title="{{ placeholder }}"
+            name="busqueda"
+            value="{{ search_value|default:'' }}"
+          />
+          <div class="input-group-append">
+            <button type="submit" class="btn btn-lg btn-primary">
+              <i class="fa fa-search"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
