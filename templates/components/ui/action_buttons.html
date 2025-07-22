@@ -1,21 +1,31 @@
 {% comment %} Componente reutilizable de botones de acción para listados
-Parámetros: - reset_url: URL name para resetear búsqueda - create_url: URL name
-para crear nuevo registro - create_label: Texto del botón crear (default:
-"Agregar") - show_create: Mostrar botón crear (default: True) {% endcomment %}
+Parámetros: 
+- reset_url: URL name para resetear búsqueda (opcional)
+- create_url: URL name para crear nuevo registro
+- create_label: Texto del botón crear (default: "Agregar") 
+- show_create: Mostrar botón crear (default: True) 
+- show_reset: Mostrar botón resetear (default: False si no se pasa reset_url)
+- back_url: URL name para volver (opcional)
+- back_label: Texto del botón volver (default: "Volver al Dashboard")
+{% endcomment %}
 
-<div class="row mt-3">
-  <div class="col-12 text-center">
-    <a
-      href="{% url reset_url %}"
-      class="btn btn-secondary btn-lg d-block d-sm-inline mt-2"
-      >Resetear</a
-    >
-    {% if show_create|default:True %}
-    <a
-      href="{% url create_url %}"
-      class="btn btn-primary btn-lg d-block d-sm-inline mt-2 mr-2"
-      >{{ create_label|default:"Agregar" }}</a
-    >
-    {% endif %}
-  </div>
+<div class="row d-flex justify-content-between my-3 mx-sm-2">
+    <div class="col-12 col-sm-3">
+        {% if show_create|default:True %}
+        <a class="btn btn-primary mb-2 mb-sm-0 d-block d-sm-inline"
+           href="{% url create_url %}">{{ create_label|default:"Agregar" }}</a>
+        {% endif %}
+    </div>
+    <div class="col-12 col-sm-6 text-center">
+        {% if back_url %}
+        <a class="btn btn-outline-secondary mb-2 mb-sm-0 d-block d-sm-inline"
+           href="{% url back_url %}">{{ back_label|default:"Volver al Dashboard" }}</a>
+        {% endif %}
+    </div>
+    <div class="col-12 col-sm-3 text-right">
+        {% if reset_url and show_reset|default:True %}
+        <a class="btn btn-secondary mb-2 mb-sm-0 d-block d-sm-inline"
+           href="{% url reset_url %}">Resetear</a>
+        {% endif %}
+    </div>
 </div>
