@@ -1,137 +1,64 @@
-{% extends "includes/main.html" %};
-{% load static %}
-;
-{% block title %}Organizaciones{% endblock %}
-;
-{% block breadcrumb %}
-    <ol class="breadcrumb float-sm-right">
-        <li class="breadcrumb-item">
-            <a href="{% url 'organizaciones' %}">Organizaciones</a>
-        </li>
-        <li class="breadcrumb-item active">Listar</li>
-    </ol>
-{% endblock %}
-;
-{% block content %}
-    <h2 class="text-center display-4 mb-4">Buscar Organizacion</h2>
-    <form method="GET">
-        <div class="row">
-            <div class="col-md-10 offset-md-1">
-                <div class="form-group">
-                    <div class="input-group input-group-lg">
-                        <input type="search"
-                               class="form-control form-control-lg"
-                               placeholder="Buscar por nombre, CUIT, telefono o email"
-                               title="Ingresar nombre, CUIT, telefono o email."
-                               name="busqueda" />
-                        <div class="input-group-append">
-                            <button type="submit" class="btn btn-lg btn-primary">
-                                <i class="fa fa-search"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </form>
-    <div class="row mt-3">
-        <div class="col-12 text-center">
-            <a href="{% url 'organizaciones' %}"
-               class="btn btn-secondary btn-lg d-block d-sm-inline mt-2 ">Resetear</a>
-            <a href="{% url 'organizacion_crear' %}"
-               class="btn btn-primary btn-lg d-block d-sm-inline mt-2 mr-2 ">Agregar</a>
-        </div>
-    </div>
-    <div class="row mt-5">
+{% extends "includes/main.html" %}; {% load static %} ; {% block title
+%}Organizaciones{% endblock %} ; {% block breadcrumb %}
+<ol class="breadcrumb float-sm-right">
+  <li class="breadcrumb-item">
+    <a href="{% url 'organizaciones' %}">Organizaciones</a>
+  </li>
+  <li class="breadcrumb-item active">Listar</li>
+</ol>
+{% endblock %} 
+
+{% block content %} 
+    <div class="row mb-3">
         <div class="col-12">
-            <div class="card">
-                <div class="card-body">
-                    <table class="table table-bordered table-striped projects">
-                        <thead>
-                            <tr>
-                                <th>Nombre</th>
-                                <th>CUIT</th>
-                                <th>Telefono</th>
-                                <th>Email</th>
-                                <th style="width: 15%" class="notexport">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for organizacion in organizaciones %}
-                                <tr>
-                                    <td>
-                                        <a href="{% url 'organizacion_detalle' organizacion.id %}"
-                                           class="font-weight-bold link-handler"
-                                           title="Ver detalles">{{ organizacion.nombre }}</a>
-                                    </td>
-                                    <td>{{ organizacion.cuit |default_if_none:"-" }}</td>
-                                    <td>{{ organizacion.telefono | default_if_none:"-" }}</td>
-                                    <td>{{ organizacion.email | default_if_none:"-" }}</td>
-                                    <td>
-                                        <div class="btn-group" role="group">
-                                            <a href="{% url 'organizacion_detalle' organizacion.id %}"
-                                               class="btn btn-primary btn-sm ver link-handler">Ver</a>
-                                            <a href="{% url 'organizacion_editar' organizacion.id %}"
-                                               class="btn btn-primary btn-sm editar link-handler">Editar</a>
-                                            <a href="{% url 'organizacion_eliminar' organizacion.id %}"
-                                               class="btn btn-danger btn-sm eliminar link-handler">Eliminar</a>
-                                        </div>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                    {% if is_paginated %}
-                        <div class="mt-2">
-                            <ul class="pagination">
-                                {% if page_obj.has_previous %}
-                                    <li class="page-item">
-                                        <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ page_obj.previous_page_number }}"
-                                           class="page-link">Volver</a>
-                                    </li>
-                                {% else %}
-                                    <li class="page-item disabled">
-                                        <a href="#" class="page-link">Volver</a>
-                                    </li>
-                                {% endif %}
-                                {% for i in page_obj.paginator.page_range %}
-                                    {% if page_obj.number == i %}
-                                        <li class="page-item active">
-                                            <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ i }}"
-                                               class="page-link">{{ i }}</a>
-                                        </li>
-                                    {% elif i > page_obj.number|add:'-5' and i < page_obj.number|add:'5' %}
-                                        <li class="page-item">
-                                            <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ i }}"
-                                               class="page-link">{{ i }}</a>
-                                        </li>
-                                    {% elif i == 1 or i == page_obj.paginator.num_pages %}
-                                        <li class="page-item">
-                                            <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ i }}"
-                                               class="page-link">{{ i }}</a>
-                                        </li>
-                                    {% elif i == page_obj.number|add:'-6' or i == page_obj.number|add:'6' %}
-                                        <li class="page-item disabled">
-                                            <a href="#" class="page-link">...</a>
-                                        </li>
-                                    {% endif %}
-                                {% endfor %}
-                                {% if page_obj.has_next %}
-                                    <li class="page-item">
-                                        <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ page_obj.next_page_number }}"
-                                           class="page-link">Continuar</a>
-                                    </li>
-                                {% else %}
-                                    <li class="page-item disabled">
-                                        <a href="#" class="page-link">Continuar</a>
-                                    </li>
-                                {% endif %}
-                            </ul>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
+            <a class="btn btn-outline-secondary" href="{% url 'dashboard' %}">Volver al Dashboard</a>
         </div>
     </div>
-{% endblock %}
-{% block customJS %}{% endblock %}
+    {% include 'components/forms/search_form.html' with title='Buscar Organizacion' placeholder='Buscar por nombre, CUIT, telefono o email' search_value=query %} 
+    {% include 'components/ui/action_buttons.html' with create_url='organizacion_crear' reset_url='organizaciones' %}
+<div class="row mt-5">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-body">
+        <table class="table table-bordered table-striped projects">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>CUIT</th>
+              <th>Telefono</th>
+              <th>Email</th>
+              <th style="width: 15%" class="notexport">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for organizacion in organizaciones %}
+            <tr>
+              <td>
+                <a
+                  href="{% url 'organizacion_detalle' organizacion.id %}"
+                  class="font-weight-bold link-handler"
+                  title="Ver detalles"
+                  >{{ organizacion.nombre }}</a
+                >
+              </td>
+              <td>{{ organizacion.cuit |default_if_none:"-" }}</td>
+              <td>{{ organizacion.telefono | default_if_none:"-" }}</td>
+              <td>{{ organizacion.email | default_if_none:"-" }}</td>
+              <td>
+                {% include 'components/tables/row_actions.html' with
+                object=organizacion view_url_name='organizacion_detalle'
+                edit_url_name='organizacion_editar'
+                delete_url_name='organizacion_eliminar' %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% if is_paginated %} {% include 'components/tables/pagination.html'
+        with page_obj=page_obj query_param='busqueda' query_value=query %} {%
+        endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block customJS %}{% endblock %}
