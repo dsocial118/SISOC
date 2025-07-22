@@ -1,0 +1,23 @@
+{% extends "includes/new_base.html" %}
+{% load static %}
+{% block main-content %}
+    <main class="app-main">
+        <!--begin::App Content Header-->
+        <div class="app-content-header">
+            <!--begin::Container-->
+            <div class="container-fluid">
+                {% block app-header %}<div class="row"></div>{% endblock %}
+            </div>
+            <!--end::Container-->
+        </div>
+        <div class="app-content">
+            <!--begin::Container-->
+            <div class="container-fluid">
+                <!-- Info boxes -->
+                {% block content %}<div class="row"></div>{% endblock %}
+            </div>
+            <!--end::Container-->
+        </div>
+        <!--end::App Content-->
+    </main>
+{% endblock main-content %}
