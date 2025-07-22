@@ -16,7 +16,6 @@ from relevamientos.models import (
     TipoRecurso,
     Excepcion,
     MotivoExcepcion,
-    Prestacion,
     Relevamiento,
 )
 
@@ -32,7 +31,6 @@ admin.site.register(TipoGestionQuejas)
 admin.site.register(TipoRecurso)
 admin.site.register(FuenteRecursos)
 admin.site.register(FuenteCompras)
-admin.site.register(Prestacion)
 admin.site.register(Relevamiento)
 admin.site.register(MotivoExcepcion)
 admin.site.register(Excepcion)
