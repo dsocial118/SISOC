@@ -1,0 +1,13 @@
+{% comment %} Componente reutilizable de breadcrumb Parámetros: -
+breadcrumb_items: Lista de diccionarios con 'url' y 'text' - current_item: Texto
+del item actual (no tiene link) {% endcomment %}
+
+<ol class="breadcrumb float-sm-right">
+  {% for item in breadcrumb_items %}
+  <li class="breadcrumb-item">
+    <a href="{{ item.url }}">{{ item.text }}</a>
+  </li>
+  {% endfor %} {% if current_item %}
+  <li class="breadcrumb-item active">{{ current_item }}</li>
+  {% endif %}
+</ol>

@@ -1,0 +1,30 @@
+{% comment %} Componente reutilizable de acciones para filas de tabla
+Parámetros: - object: Objeto actual de la fila - detail_url: URL name de detalle
+(opcional) - edit_url: URL name de edición (opcional) - delete_url: URL name de
+eliminación (opcional) - detail_label: Texto botón ver (default: "Ver") -
+edit_label: Texto botón editar (default: "Editar") - delete_label: Texto botón
+eliminar (default: "Eliminar") - show_detail: Mostrar botón ver (default: True)
+- show_edit: Mostrar botón editar (default: True) - show_delete: Mostrar botón
+eliminar (default: True) {% endcomment %}
+
+<div class="btn-group" role="group">
+  {% if show_detail|default:True and detail_url %}
+  <a
+    href="{% url detail_url object.id %}"
+    class="btn btn-primary btn-sm ver link-handler"
+    >{{ detail_label|default:"Ver" }}</a
+  >
+  {% endif %} {% if show_edit|default:True and edit_url %}
+  <a
+    href="{% url edit_url object.id %}"
+    class="btn btn-primary btn-sm editar link-handler"
+    >{{ edit_label|default:"Editar" }}</a
+  >
+  {% endif %} {% if show_delete|default:True and delete_url %}
+  <a
+    href="{% url delete_url object.id %}"
+    class="btn btn-danger btn-sm eliminar link-handler"
+    >{{ delete_label|default:"Eliminar" }}</a
+  >
+  {% endif %}
+</div>

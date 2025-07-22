@@ -1,0 +1,21 @@
+{% comment %} Componente reutilizable de botones de acción para listados
+Parámetros: - reset_url: URL name para resetear búsqueda - create_url: URL name
+para crear nuevo registro - create_label: Texto del botón crear (default:
+"Agregar") - show_create: Mostrar botón crear (default: True) {% endcomment %}
+
+<div class="row mt-3">
+  <div class="col-12 text-center">
+    <a
+      href="{% url reset_url %}"
+      class="btn btn-secondary btn-lg d-block d-sm-inline mt-2"
+      >Resetear</a
+    >
+    {% if show_create|default:True %}
+    <a
+      href="{% url create_url %}"
+      class="btn btn-primary btn-lg d-block d-sm-inline mt-2 mr-2"
+      >{{ create_label|default:"Agregar" }}</a
+    >
+    {% endif %}
+  </div>
+</div>
