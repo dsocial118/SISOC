@@ -116,7 +116,7 @@ class RelevamientoSerializer(serializers.ModelSerializer):
                     self.initial_data["prestacion"] = prestacion_instance.id
                 except Comedor.DoesNotExist:
                     # Si no se encuentra el comedor, mantener el valor original
-                    pass
+                    logger.warning(f"Comedor with ID {comedor_id} does not exist. Keeping the original 'prestacion' value.")
 
         if "excepcion" in self.initial_data:
             excepcion_instance = (
