@@ -66,164 +66,14 @@ class RelevamientoDetailView(DetailView):
 
         relevamiento = self.object
 
-        # Crear un diccionario para los datos adicionales del relevamiento
-        relevamiento_data = {}
-        relevamiento_data["gas"] = (
-            RelevamientoService.separate_string(
-                relevamiento.espacio.cocina.abastecimiento_combustible.all()
-            )
-            if relevamiento.espacio
-            else None
-        )
-
         prestaciones = Prestacion.objects.filter(id__in=relevamiento.prestaciones.all())
-
-        # Crear un objeto dinámico compatible con el formato anterior
-        class PrestacionCompat:
-
-            def __init__(self):
-                dias = [
-                    "lunes",
-                    "martes",
-                    "miercoles",
-                    "jueves",
-                    "viernes",
-                    "sabado",
-                    "domingo",
-                ]
-                comidas = [
-                    "desayuno",
-                    "almuerzo",
-                    "merienda",
-                    "cena",
-                    "merienda_reforzada",
-                ]
-                tipos = ["actual", "espera"]
-
-                for dia in dias:
-                    for comida in comidas:
-                        for tipo in tipos:
-                            setattr(self, f"{dia}_{comida}_{tipo}", 0)
-
-        prestacion_compat = PrestacionCompat()
-
-        # Mapear los datos de las nuevas prestaciones al formato anterior
-        for prestacion in prestaciones:
-            dia = prestacion.dia.lower()
-
-            # Mapear basándose en los flags booleanos
-            if prestacion.desayuno:
-                setattr(
-                    prestacion_compat,
-                    f"{dia}_desayuno_actual",
-                    prestacion.desayuno_cantidad_actual or 0,
-                )
-                setattr(
-                    prestacion_compat,
-                    f"{dia}_desayuno_espera",
-                    prestacion.desayuno_cantidad_espera or 0,
-                )
-
-            if prestacion.almuerzo:
-                setattr(
-                    prestacion_compat,
-                    f"{dia}_almuerzo_actual",
-                    prestacion.almuerzo_cantidad_actual or 0,
-                )
-                setattr(
-                    prestacion_compat,
-                    f"{dia}_almuerzo_espera",
-                    prestacion.almuerzo_cantidad_espera or 0,
-                )
-
-            if prestacion.merienda:
-                setattr(
-                    prestacion_compat,
-                    f"{dia}_merienda_actual",
-                    prestacion.merienda_cantidad_actual or 0,
-                )
-                setattr(
-                    prestacion_compat,
-                    f"{dia}_merienda_espera",
-                    prestacion.merienda_cantidad_espera or 0,
-                )
-
-            if prestacion.cena:
-                setattr(
-                    prestacion_compat,
-                    f"{dia}_cena_actual",
-                    prestacion.cena_cantidad_actual or 0,
-                )
-                setattr(
-                    prestacion_compat,
-                    f"{dia}_cena_espera",
-                    prestacion.cena_cantidad_espera or 0,
-                )
-
-            if prestacion.merienda_reforzada:
-                setattr(
-                    prestacion_compat,
-                    f"{dia}_merienda_reforzada_actual",
-                    prestacion.merienda_reforzada_cantidad_actual or 0,
-                )
-                setattr(
-                    prestacion_compat,
-                    f"{dia}_merienda_reforzada_espera",
-                    prestacion.merienda_reforzada_cantidad_espera or 0,
-                )
-
-        context["prestacion"] = prestacion_compat
-
-        relevamiento_data["donaciones"] = (
-            RelevamientoService.separate_string(
-                relevamiento.recursos.recursos_donaciones_particulares.all()
-            )
-            if relevamiento.recursos
-            else None
+        context["prestacion"] = RelevamientoService.build_prestacion_compat(
+            prestaciones
         )
 
-        relevamiento_data["nacional"] = (
-            RelevamientoService.separate_string(
-                relevamiento.recursos.recursos_estado_nacional.all()
-            )
-            if relevamiento.recursos
-            else None
+        context["relevamiento_data"] = RelevamientoService.build_detail_extra_data(
+            relevamiento
         )
-
-        relevamiento_data["provincial"] = (
-            RelevamientoService.separate_string(
-                relevamiento.recursos.recursos_estado_provincial.all()
-            )
-            if relevamiento.recursos
-            else None
-        )
-
-        relevamiento_data["municipal"] = (
-            RelevamientoService.separate_string(
-                relevamiento.recursos.recursos_estado_municipal.all()
-            )
-            if relevamiento.recursos
-            else None
-        )
-
-        relevamiento_data["otras"] = (
-            RelevamientoService.separate_string(
-                relevamiento.recursos.recursos_otros.all()
-            )
-            if relevamiento.recursos
-            else None
-        )
-
-        relevamiento_data["Entregas"] = (
-            RelevamientoService.separate_string(
-                relevamiento.punto_entregas.frecuencia_recepcion_mercaderias.all()
-            )
-            if relevamiento.punto_entregas
-            else None
-        )
-
-        # Agregar los datos adicionales al contexto
-        context["relevamiento_data"] = relevamiento_data
 
         return context
 
@@ -276,6 +126,7 @@ class RelevamientoDetailView(DetailView):
             )
             .get(pk=self.kwargs["pk"])
         )
+
 
 class RelevamientoDeleteView(DeleteView):
     model = Relevamiento
