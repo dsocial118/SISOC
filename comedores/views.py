@@ -1,15 +1,19 @@
+import logging
+import os
 from typing import Any
 
 from django.contrib import messages
-from django.contrib.auth.models import User
+from django.core.cache import cache
+from django.conf import settings
 from django.db.models.base import Model
 from django.forms import BaseModelForm
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -34,6 +38,58 @@ from comedores.models import (
 )
 from comedores.services.comedor_service import ComedorService
 from duplas.dupla_service import DuplaService
+from rendicioncuentasmensual.services import RendicionCuentaMensualService
+from relevamientos.service import RelevamientoService
+
+
+logger = logging.getLogger("django")
+
+
+@require_POST
+def relevamiento_crear_editar_ajax(request, pk):
+    is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
+    try:
+        if "territorial" in request.POST:
+            relevamiento = RelevamientoService.create_pendiente(request, pk)
+            if is_ajax:
+                return JsonResponse({
+                    "url": f"/comedores/{relevamiento.comedor.pk}/relevamiento/{relevamiento.pk}"
+                }, status=200)
+            messages.success(request, "Relevamiento territorial creado correctamente.")
+        elif "territorial_editar" in request.POST:
+            relevamiento = RelevamientoService.update_territorial(request)
+            if is_ajax:
+                return JsonResponse({
+                    "url": f"/comedores/{relevamiento.comedor.pk}/relevamiento/{relevamiento.pk}"
+                }, status=200)
+            messages.success(
+                request, "Relevamiento territorial actualizado correctamente."
+            )
+        else:
+            if is_ajax:
+                return JsonResponse({"error": "Acción no reconocida"}, status=400)
+            messages.error(request, "Acción no reconocida.")
+            return redirect("comedor_detalle", pk=pk)
+
+        if not is_ajax:
+            return redirect(
+                "relevamiento_detalle",
+                pk=relevamiento.pk,
+                comedor_pk=relevamiento.comedor.pk,
+            )
+    except Exception as e:
+        logger.error(
+            "Error al procesar relevamiento para comedor %s: %s",
+            pk,
+            e,
+            exc_info=True,
+        )
+        if is_ajax:
+            return JsonResponse({"error": str(e)}, status=500)
+        messages.error(
+            request, "Hubo un error al guardar el relevamiento. Intenta de nuevo."
+        )
+        return redirect("comedor_detalle", pk=pk)
 
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -185,9 +241,116 @@ class ComedorDetailView(DetailView):
     def get_object(self, queryset=None):
         return ComedorService.get_comedor_detail_object(self.kwargs["pk"])
 
+    def _get_presupuestos_data(self):
+        """Obtiene datos de presupuestos usando cache y datos prefetched cuando sea posible."""
+        if (
+            hasattr(self.object, "relevamientos_optimized")
+            and self.object.relevamientos_optimized
+        ):
+            cache_key = f"presupuestos_comedor_{self.object.id}"
+            cached_presupuestos = cache.get(cache_key)
+
+            if cached_presupuestos:
+                presupuestos_tuple = cached_presupuestos
+            else:
+                presupuestos_tuple = ComedorService.get_presupuestos(
+                    self.object.id,
+                    relevamientos_prefetched=self.object.relevamientos_optimized,
+                )
+                cache.set(
+                    cache_key,
+                    presupuestos_tuple,
+                    getattr(settings, "COMEDOR_CACHE_TIMEOUT", 300),
+                )
+        else:
+            presupuestos_tuple = ComedorService.get_presupuestos(self.object.id)
+
+        (
+            count_beneficiarios,
+            valor_cena,
+            valor_desayuno,
+            valor_almuerzo,
+            valor_merienda,
+        ) = presupuestos_tuple
+
+        return {
+            "count_beneficiarios": count_beneficiarios,
+            "presupuesto_desayuno": valor_desayuno,
+            "presupuesto_almuerzo": valor_almuerzo,
+            "presupuesto_merienda": valor_merienda,
+            "presupuesto_cena": valor_cena,
+        }
+
+    def _get_relaciones_optimizadas(self):
+        """Obtiene datos de relaciones usando prefetch cuando sea posible."""
+        rendiciones_mensuales = (
+            len(self.object.rendiciones_optimized)
+            if hasattr(self.object, "rendiciones_optimized")
+            else RendicionCuentaMensualService.cantidad_rendiciones_cuentas_mensuales(
+                self.object
+            )
+        )
+
+        relevamientos = (
+            self.object.relevamientos_optimized[:1]
+            if hasattr(self.object, "relevamientos_optimized")
+            else []
+        )
+        observaciones = (
+            self.object.observaciones_optimized
+            if hasattr(self.object, "observaciones_optimized")
+            else []
+        )
+
+        count_relevamientos = (
+            len(self.object.relevamientos_optimized)
+            if hasattr(self.object, "relevamientos_optimized")
+            else self.object.relevamiento_set.count()
+        )
+
+        comedor_categoria = (
+            self.object.clasificaciones_optimized[0]
+            if hasattr(self.object, "clasificaciones_optimized")
+            and self.object.clasificaciones_optimized
+            else None
+        )
+
+        admision = (
+            self.object.admisiones_optimized[0]
+            if hasattr(self.object, "admisiones_optimized")
+            and self.object.admisiones_optimized
+            else None
+        )
+
+        imagenes = (
+            [{"imagen": img.imagen} for img in self.object.imagenes_optimized]
+            if hasattr(self.object, "imagenes_optimized")
+            else list(self.object.imagenes.values("imagen"))
+        )
+
+        return {
+            "relevamientos": relevamientos,
+            "observaciones": observaciones,
+            "count_relevamientos": count_relevamientos,
+            "imagenes": imagenes,
+            "comedor_categoria": comedor_categoria,
+            "rendicion_cuentas_final_activo": rendiciones_mensuales >= 5,
+            "admision": admision,
+        }
+
+    def _get_environment_config(self):
+        """Obtiene configuración del entorno."""
+        return {
+            "GESTIONAR_API_KEY": os.getenv("GESTIONAR_API_KEY"),
+            "GESTIONAR_API_CREAR_COMEDOR": os.getenv("GESTIONAR_API_CREAR_COMEDOR"),
+        }
+
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
-        context.update(ComedorService.detalle_de_comedor_ctx(self.object))
+        presupuestos_data = self._get_presupuestos_data()
+        relaciones_data = self._get_relaciones_optimizadas()
+        env_config = self._get_environment_config()
+        context.update({**presupuestos_data, **relaciones_data, **env_config})
         return context
 
     def post(self, request, *args, **kwargs):
@@ -248,9 +411,11 @@ class ComedorUpdateView(UpdateView):
         context = self.get_context_data()
         referente_form = context["referente_form"]
         imagenes = self.request.FILES.getlist("imagenes")
+        dupla_original = self.object.dupla
 
         if referente_form.is_valid():
-            self.object = form.save()
+            self.object = form.save(commit=False)
+            self.object.dupla = dupla_original
             self.object.referente = referente_form.save()
             self.object.save()
 

@@ -2,6 +2,10 @@
 {% load crispy_forms_tags %}
 {% load static %}
 {% block title %}Nueva Actividad{% endblock %}
+{% block head %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/duplasSelect2.min.css' %}" />
+{% endblock %}
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
         <li class="breadcrumb-item">
@@ -25,7 +29,7 @@
     </div>
 {% endblock %}
 {% block customJS %}
-    <script src="{% static 'admin/js/centro_familia_categoria.js' %}"></script>
+    <script src="{% static 'custom/js/centro_familia_categoria.js' %}"></script>
     <!-- CSS -->
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />

@@ -278,6 +278,9 @@ class InformeTecnico(models.Model):
         max_length=255,
     )
     if_relevamiento = models.CharField("IF de relevamiento territorial", max_length=255)
+    fecha_vencimiento_mandatos = models.DateField(
+        "Fecha de vencimiento de mandatos", null=True, blank=True
+    )
 
     # Exclusivos de organizacion de Base
     declaracion_jurada_recepcion_subsidios = models.CharField(
@@ -304,7 +307,7 @@ class InformeTecnico(models.Model):
     IF_relevamiento_territorial = models.CharField(
         "IF de relevamiento territorial", max_length=255
     )
-
+    conclusiones = models.TextField("Conclusion informe técnico", null=True, blank=True)
     estado = models.CharField(
         max_length=20,
         choices=ESTADOS,
@@ -494,3 +497,21 @@ class DocumentosExpediente(models.Model):
 
     def __str__(self):
         return f"{self.admision.id}"
+
+
+class InformeComplementario(models.Model):
+    admision = models.ForeignKey(Admision, on_delete=models.CASCADE)
+    informe_tecnico = models.ForeignKey(InformeTecnico, on_delete=models.CASCADE)
+    pdf = models.FileField(upload_to="admisiones/informes_complementarios/", null=True)
+    creado = models.DateField(auto_now_add=True, null=True, blank=True)
+    creado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True
+    )
+
+
+class InformeComplementarioCampos(models.Model):
+    campo = models.CharField(max_length=255, blank=False, null=False)
+    value = models.CharField(max_length=255, blank=False, null=False)
+    informe_complementario = models.ForeignKey(
+        InformeComplementario, on_delete=models.CASCADE
+    )
