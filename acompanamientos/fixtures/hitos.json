@@ -5,7 +5,7 @@
         "fields": {
             "intervencion": "Aviso para retiro de tarjeta",
             "subintervencion": "Confirmación de retiro",
-            "hito": "Retiro de tarjeta"
+            "hito": "Retiro de Tarjeta"
         }
     },
     {

@@ -2,12 +2,13 @@ import os
 import threading
 import logging
 import requests
+from django.utils import timezone
 
 from relevamientos.models import Relevamiento
 
 
 logger = logging.getLogger(__name__)
-TIMEOUT = 360  # Segundos máximos de espera por respuesta
+TIMEOUT = 600  # Segundos máximos de espera por respuesta
 
 
 # FIXME: Evitar que se ejecute el hilo al correr los tests
@@ -37,7 +38,7 @@ class AsyncSendRelevamientoToGestionar(threading.Thread):
                     "Fecha de visita": (
                         relevamiento.fecha_visita.strftime("%Y-%m-%d")
                         if relevamiento.fecha_visita
-                        else ""
+                        else timezone.now().strftime("%Y-%m-%d")
                     ),
                     "Id_Comedor": f"{relevamiento.comedor.id}",
                 }
@@ -49,8 +50,9 @@ class AsyncSendRelevamientoToGestionar(threading.Thread):
         }
 
         try:
+            url = os.getenv("GESTIONAR_API_CREAR_RELEVAMIENTO")
             response = requests.post(
-                os.getenv("GESTIONAR_API_CREAR_RELEVAMIENTO"),
+                url,
                 json=data,
                 headers=headers,
                 timeout=TIMEOUT,

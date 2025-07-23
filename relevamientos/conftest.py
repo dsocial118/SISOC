@@ -5,9 +5,9 @@ import pytest
 from django.contrib.auth.models import Group
 from django.utils import timezone
 from faker import Faker
+import django.urls
 
 from comedores.models import Comedor
-from configuraciones.templatetags import custom_filters
 from relevamientos.models import Relevamiento
 
 # Configurar Faker para obtener resultados consistentes
@@ -100,16 +100,14 @@ def mock_async_tasks(monkeypatch):
         "comedores.tasks.AsyncSendObservacionToGestionar.start", lambda self: None
     )
 
-    def safe_has_group(user_obj, group):
-        if user_obj is None:
-            return False
-        if not hasattr(user_obj, "groups"):
-            return False
-        try:
-            return user_obj.groups.filter(name=group).exists() or getattr(
-                user_obj, "is_superuser", False
-            )
-        except Exception:
-            return False
 
-    monkeypatch.setattr(custom_filters, "has_group", safe_has_group)
+@pytest.fixture(autouse=True)
+def mock_djdt_reverse(monkeypatch):
+    original_reverse = django.urls.reverse
+
+    def fake_reverse(viewname, *args, **kwargs):
+        if isinstance(viewname, str) and viewname.startswith("djdt:"):
+            return "/djdt-mock-url/"
+        return original_reverse(viewname, *args, **kwargs)
+
+    monkeypatch.setattr(django.urls, "reverse", fake_reverse)

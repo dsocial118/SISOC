@@ -29,6 +29,18 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
             "organizacion_avalista_2",
             "material_difusion_vinculado",
         ]
+        labels = {
+            "IF_relevamiento_territorial": "IF Relevamiento Territorial",
+            "if_relevamiento": "IF Relevamiento",
+        }
+        widgets = {
+            "fecha_vencimiento_mandatos": forms.DateInput(
+                attrs={
+                    "type": "date",
+                    "class": "form-control",
+                }
+            )
+        }
 
     def __init__(self, *args, **kwargs):
         admision = kwargs.pop("admision", None)
@@ -50,13 +62,19 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
 
         if admision:
             try:
-                anexo = Anexo.objects.get(admision=admision)
+                anexo = Anexo.objects.filter(admision=admision).last()
                 nombre = anexo.responsable_nombre or ""
                 apellido = anexo.responsable_apellido or ""
+                comedor = admision.comedor
+                organizacion = comedor.organizacion
 
                 self.fields["expediente_nro"].initial = anexo.expediente
                 self.fields["nombre_espacio"].initial = anexo.efector
                 self.fields["tipo_espacio"].initial = anexo.tipo_espacio
+                self.fields["barrio_espacio"].initial = comedor.barrio
+                self.fields["localidad_espacio"].initial = comedor.localidad
+                self.fields["partido_espacio"].initial = comedor.partido
+                self.fields["provincia_espacio"].initial = comedor.provincia
                 self.fields["domicilio_espacio"].initial = anexo.domicilio
                 self.fields["responsable_tarjeta_nombre"].initial = (
                     f"{nombre} {apellido}".strip()
@@ -65,6 +83,12 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
                     anexo.responsable_domicilio
                 )
                 self.fields["responsable_tarjeta_mail"].initial = anexo.responsable_mail
+
+                if organizacion:
+                    self.fields["nombre_organizacion"].initial = organizacion.nombre
+                    self.fields["cuit_organizacion"].initial = organizacion.cuit
+                    self.fields["mail_organizacion"].initial = organizacion.email
+                    self.fields["telefono_organizacion"].initial = organizacion.telefono
 
             except Anexo.DoesNotExist:
                 pass
@@ -80,6 +104,14 @@ class InformeTecnicoBaseForm(forms.ModelForm):
             "validacion_registro_nacional",
             "IF_relevamiento_territorial",
         ]
+        widgets = {
+            "fecha_vencimiento_mandatos": forms.DateInput(
+                attrs={
+                    "type": "date",
+                    "class": "form-control",
+                }
+            ),
+        }
 
     def __init__(self, *args, **kwargs):
         admision = kwargs.pop("admision", None)
@@ -101,13 +133,19 @@ class InformeTecnicoBaseForm(forms.ModelForm):
 
         if admision:
             try:
-                anexo = Anexo.objects.get(admision=admision)
+                anexo = Anexo.objects.filter(admision=admision).last()
                 nombre = anexo.responsable_nombre or ""
                 apellido = anexo.responsable_apellido or ""
+                comedor = admision.comedor
+                organizacion = comedor.organizacion
 
                 self.fields["expediente_nro"].initial = anexo.expediente
                 self.fields["nombre_espacio"].initial = anexo.efector
                 self.fields["tipo_espacio"].initial = anexo.tipo_espacio
+                self.fields["barrio_espacio"].initial = comedor.barrio
+                self.fields["localidad_espacio"].initial = comedor.localidad
+                self.fields["partido_espacio"].initial = comedor.partido
+                self.fields["provincia_espacio"].initial = comedor.provincia
                 self.fields["domicilio_espacio"].initial = anexo.domicilio
                 self.fields["responsable_tarjeta_nombre"].initial = (
                     f"{nombre} {apellido}".strip()
@@ -116,6 +154,11 @@ class InformeTecnicoBaseForm(forms.ModelForm):
                     anexo.responsable_domicilio
                 )
                 self.fields["responsable_tarjeta_mail"].initial = anexo.responsable_mail
+                if organizacion:
+                    self.fields["nombre_organizacion"].initial = organizacion.nombre
+                    self.fields["cuit_organizacion"].initial = organizacion.cuit
+                    self.fields["mail_organizacion"].initial = organizacion.email
+                    self.fields["telefono_organizacion"].initial = organizacion.telefono
 
             except Anexo.DoesNotExist:
                 pass
@@ -340,3 +383,4 @@ class AnexoForm(forms.ModelForm):
 
             self.fields["efector"].initial = comedor.nombre
             self.fields["domicilio"].initial = f"{calle} {numero}".strip()
+            self.fields["expediente"].initial = admision.num_expediente
