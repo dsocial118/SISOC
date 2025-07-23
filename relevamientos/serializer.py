@@ -1,15 +1,22 @@
+import logging
 from rest_framework import serializers
 
 from relevamientos.models import Relevamiento
-
 from relevamientos.service import RelevamientoService
+
+from comedores.models import Comedor
 from core.utils import format_fecha_django
+
+logger = logging.getLogger(__name__)
 
 
 class RelevamientoSerializer(serializers.ModelSerializer):
 
     # TODO: Refactorizar
-    def clean(self):  # pylint: disable=too-many-statements,too-many-branches
+    def clean(
+        self,
+    ):  # pylint: disable=too-many-statements,too-many-branches,too-many-locals
+
         if "fecha_visita" in self.initial_data:
             self.initial_data["fecha_visita"] = format_fecha_django(
                 self.initial_data["fecha_visita"]
@@ -19,6 +26,16 @@ class RelevamientoSerializer(serializers.ModelSerializer):
             territorial_data = self.initial_data["territorial"]
             self.initial_data["territorial_nombre"] = territorial_data["nombre"]
             self.initial_data["territorial_uid"] = territorial_data["gestionar_uid"]
+
+        if "comedor" in self.initial_data:
+            comedor_instance = (
+                self.instance.comedor
+                if self.instance and self.instance.comedor
+                else None
+            )
+            self.initial_data["comedor"] = RelevamientoService.update_comedor(
+                self.initial_data["comedor"], comedor_instance
+            ).id
 
         if "funcionamiento" in self.initial_data:
             funcionamiento_instance = (
@@ -96,16 +113,26 @@ class RelevamientoSerializer(serializers.ModelSerializer):
             )
 
         if "prestacion" in self.initial_data:
-            prestacion_instance = (
-                self.instance.prestacion
-                if self.instance and self.instance.prestacion
-                else None
-            )
-            self.initial_data["prestacion"] = (
-                RelevamientoService.create_or_update_prestacion(
-                    self.initial_data["prestacion"], prestacion_instance
-                ).id
-            )
+            # Usar la nueva función que maneja el modelo unificado
+            comedor_id = self.initial_data.get("comedor")
+            if not comedor_id and self.instance:
+                comedor_id = self.instance.comedor.id
+
+            if comedor_id:
+                try:
+                    comedor = Comedor.objects.get(id=comedor_id)
+                    prestacion_instance = RelevamientoService.create_or_update_prestaciones_from_relevamiento(
+                        self.initial_data["prestacion"],
+                        comedor,
+                        self.initial_data["sisoc_id"],
+                    )
+                    # Para compatibilidad, asignar el ID de la primera prestación
+                    self.initial_data["prestacion"] = prestacion_instance.id
+                except Comedor.DoesNotExist:
+                    # Si no se encuentra el comedor, mantener el valor original
+                    logger.warning(
+                        f"No se encontro el comedor con ID {comedor_id} para el relevamiento."
+                    )
 
         if "excepcion" in self.initial_data:
             excepcion_instance = (
