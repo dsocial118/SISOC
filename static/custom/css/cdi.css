@@ -4,6 +4,22 @@
     margin-bottom:1rem;
 }
 
+/* Evitar scrollbar horizontal en formularios CDI */
+.card-primary.card-outline {
+    overflow-x: hidden;
+    max-width: 100%;
+}
+
+.form-group.row {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.form-group.row > [class*="col-"] {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+}
+
 /* Custom para comedores_detail */
 
 .card-informacion .nav-item
