@@ -49,12 +49,16 @@ class RelevamientoCreateView(CreateView):
         data["comedor"] = RelevamientoFormManager.get_comedor_context(
             self.kwargs["comedor_pk"]
         )
+        self._context_data = data
         return data
 
     def form_valid(self, form):
-        context = self.get_context_data()
+        context = getattr(self, '_context_data', None)
+        if context is None:
+            context = self.get_context_data()
         forms = {k: context[k] for k in RelevamientoFormManager.FORM_CLASSES.keys()}
-        if RelevamientoFormManager.all_valid(forms):
+        validation_results = RelevamientoFormManager.validate_forms(forms)
+        if RelevamientoFormManager.all_valid(forms, validation_results):
             self.object = RelevamientoService.populate_relevamiento(form, forms)
             return redirect(
                 "relevamiento_detalle",
@@ -62,7 +66,7 @@ class RelevamientoCreateView(CreateView):
                 pk=int(self.object.id),
             )
         else:
-            self.error_message(forms)
+            RelevamientoFormManager.show_form_errors(self.request, forms, validation_results)
             return self.form_invalid(form)
 
     def error_message(self, forms):
@@ -208,12 +212,16 @@ class RelevamientoUpdateView(UpdateView):
             self.kwargs["comedor_pk"]
         )
         data["responsable"] = getattr(self.object, "responsable", None)
+        self._context_data = data
         return data
 
     def form_valid(self, form):
-        context = self.get_context_data()
+        context = getattr(self, '_context_data', None)
+        if context is None:
+            context = self.get_context_data()
         forms = {k: context[k] for k in RelevamientoFormManager.FORM_CLASSES.keys()}
-        if RelevamientoFormManager.all_valid(forms):
+        validation_results = RelevamientoFormManager.validate_forms(forms)
+        if RelevamientoFormManager.all_valid(forms, validation_results):
             self.object = RelevamientoService.populate_relevamiento(form, forms)
             return redirect(
                 "relevamiento_detalle",
@@ -221,7 +229,7 @@ class RelevamientoUpdateView(UpdateView):
                 pk=int(self.object.id),
             )
         else:
-            self.error_message(forms)
+            RelevamientoFormManager.show_form_errors(self.request, forms, validation_results)
             return self.form_invalid(form)
 
     def error_message(self, forms):
