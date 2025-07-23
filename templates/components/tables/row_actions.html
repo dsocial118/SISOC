@@ -11,13 +11,13 @@ eliminar (default: True) {% endcomment %}
   {% if show_detail|default:True and detail_url %}
   <a
     href="{% url detail_url object.id %}"
-    class="btn btn-primary btn-sm ver link-handler"
+    class="btn btn-primary btn-sm ver link-handler mr-1"
     >{{ detail_label|default:"Ver" }}</a
   >
   {% endif %} {% if show_edit|default:True and edit_url %}
   <a
     href="{% url edit_url object.id %}"
-    class="btn btn-primary btn-sm editar link-handler"
+    class="btn btn-primary btn-sm editar link-handler mr-1"
     >{{ edit_label|default:"Editar" }}</a
   >
   {% endif %} {% if show_delete|default:True and delete_url %}

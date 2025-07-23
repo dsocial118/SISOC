@@ -25,7 +25,7 @@ message: Mensaje personalizado (opcional) {% endcomment %}
         <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
         {% if cancel_url %}
         <a
-          href="{% url cancel_url cancel_id|default:object.id %}"
+          href="{% if cancel_id %}{% url cancel_url cancel_id %}{% else %}{% url cancel_url %}{% endif %}"
           class="btn btn-secondary btn-sm"
           >Cancelar</a
         >
