@@ -35,7 +35,7 @@ class ProcesarExpedienteView(View):
             Expediente, pk=pk, usuario_provincia=request.user
         )
         try:
-            result = ExpedienteService.procesar_expediente(expediente)
+            result = ExpedienteService.procesar_expediente(expediente, request.user)
             return JsonResponse(
                 {
                     "success": True,
@@ -72,7 +72,7 @@ class CrearLegajosView(View):
         estado_inicial = EstadoLegajo.objects.get(nombre="DOCUMENTO_PENDIENTE")
         creados = existentes = 0
         for datos in rows:
-            ciudadano = CiudadanoService.get_or_create_ciudadano(datos)
+            ciudadano = CiudadanoService.get_or_create_ciudadano(datos, request.user)
             obj, was_created = ExpedienteCiudadano.objects.get_or_create(
                 expediente=expediente,
                 ciudadano=ciudadano,
@@ -180,7 +180,7 @@ class ExpedienteImportView(View):
         start = time.time()
         try:
             result = ImportacionService.importar_legajos_desde_excel(
-                expediente, expediente.excel_masivo
+                expediente, expediente.excel_masivo, request.user
             )
             elapsed = time.time() - start
             messages.success(

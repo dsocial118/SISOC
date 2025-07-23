@@ -26,18 +26,15 @@ class BaseStyledForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for field in self.fields.items():
+        # Recorremos directamente los campos sin desempaquetar name
+        for field in self.fields.values():
             widget = field.widget
-            # decide CSS class
-            if getattr(widget, "input_type", "") == "file":
-                css = "form-control-file"
-            else:
-                css = "form-control"
-
-            # apply classes
-            widget.attrs.setdefault("class", css)
-            # apply placeholder for text inputs only
-            if getattr(widget, "input_type", "") in ("text", "number", "email", "date"):
+            input_type = getattr(widget, "input_type", "")
+            # Decidir clase CSS
+            css_class = "form-control-file" if input_type == "file" else "form-control"
+            widget.attrs.setdefault("class", css_class)
+            # Placeholder sólo para tipos textuales
+            if input_type in ("text", "number", "email", "date"):
                 widget.attrs.setdefault("placeholder", field.label)
 
 
