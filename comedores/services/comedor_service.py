@@ -183,13 +183,12 @@ class ComedorService:
                 ]
             ).values("tipo", "valor")
             valor_map = {item["tipo"].lower(): item["valor"] for item in valores_comida}
-            cache.set(
-                "valores_comida_map", valor_map, settings.DEFAULT_CACHE_TIMEOUT
-            )
+            cache.set("valores_comida_map", valor_map, settings.DEFAULT_CACHE_TIMEOUT)
 
     @staticmethod
     def get_ubicaciones_ids(data):
         from configuraciones.models import Provincia, Municipio, Localidad
+
         if "provincia" in data:
             data["provincia"] = ComedorService._get_id_by_nombre(
                 Provincia, data["provincia"]
@@ -240,9 +239,7 @@ class ComedorService:
                 tipo__in=["desayuno", "almuerzo", "merienda", "cena"]
             ).values("tipo", "valor")
             valor_map = {item["tipo"].lower(): item["valor"] for item in valores_comida}
-            cache.set(
-                "valores_comida_map", valor_map, settings.DEFAULT_CACHE_TIMEOUT
-            )
+            cache.set("valores_comida_map", valor_map, settings.DEFAULT_CACHE_TIMEOUT)
         if relevamientos_prefetched:
             beneficiarios = (
                 relevamientos_prefetched[0] if relevamientos_prefetched else None
@@ -326,6 +323,7 @@ class ComedorService:
     def detalle_de_comedor_ctx(comedor):
         from rendicioncuentasmensual.services import RendicionCuentaMensualService
         import os
+
         (
             count_beneficiarios,
             valor_cena,
@@ -365,6 +363,7 @@ class ComedorService:
         from django.contrib import messages
         from django.shortcuts import redirect
         from django.urls import reverse
+
         is_new_relevamiento = "territorial" in request.POST
         is_edit_relevamiento = "territorial_editar" in request.POST
         if is_new_relevamiento or is_edit_relevamiento:
