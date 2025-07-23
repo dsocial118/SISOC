@@ -273,4 +273,148 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
         console.error('foto_legajo input element not found');
     }
+    
+    // Funcionalidad para manejar eliminación de imágenes existentes
+    setupExistingImagesHandling();
 });
+
+function setupExistingImagesHandling() {
+    // Encontrar todos los checkboxes de eliminación de imágenes existentes
+    const deleteCheckboxes = document.querySelectorAll('input[name^="imagen_ciudadano-borrar-"]');
+    
+    deleteCheckboxes.forEach(checkbox => {
+        // Agregar evento para manejar el cambio del checkbox
+        checkbox.addEventListener('change', function() {
+            const imageCard = this.closest('.card');
+            const deleteButton = imageCard.querySelector('.btn-outline-danger');
+            
+            if (this.checked) {
+                // Marcar como eliminado
+                imageCard.style.opacity = '0.5';
+                imageCard.style.filter = 'grayscale(100%)';
+                deleteButton.classList.remove('btn-outline-danger');
+                deleteButton.classList.add('btn-danger');
+                deleteButton.innerHTML = '<i class="fas fa-undo"></i>';
+                deleteButton.title = 'Desmarcar eliminación';
+                
+                // Agregar overlay de eliminación
+                if (!imageCard.querySelector('.delete-overlay')) {
+                    const overlay = document.createElement('div');
+                    overlay.className = 'delete-overlay position-absolute d-flex align-items-center justify-content-center';
+                    overlay.style.cssText = 'top: 0; left: 0; right: 0; bottom: 0; background: rgba(220, 53, 69, 0.8); color: white; font-weight: bold; z-index: 5;';
+                    overlay.innerHTML = '<span><i class="fas fa-trash"></i> MARCADA PARA ELIMINAR</span>';
+                    imageCard.querySelector('.position-relative').appendChild(overlay);
+                }
+            } else {
+                // Desmarcar eliminación
+                imageCard.style.opacity = '1';
+                imageCard.style.filter = 'none';
+                deleteButton.classList.remove('btn-danger');
+                deleteButton.classList.add('btn-outline-danger');
+                deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
+                deleteButton.title = 'Marcar para eliminar';
+                
+                // Remover overlay de eliminación
+                const overlay = imageCard.querySelector('.delete-overlay');
+                if (overlay) {
+                    overlay.remove();
+                }
+            }
+        });
+    });
+    
+    // Manejar checkbox de foto del legajo
+    const fotoLegajoCheckbox = document.getElementById('foto_legajo_borrar');
+    if (fotoLegajoCheckbox) {
+        fotoLegajoCheckbox.addEventListener('change', function() {
+            const imageCard = this.closest('.card');
+            const deleteButton = imageCard.querySelector('.btn-outline-danger');
+            
+            if (this.checked) {
+                // Marcar como eliminado
+                imageCard.style.opacity = '0.5';
+                imageCard.style.filter = 'grayscale(100%)';
+                deleteButton.classList.remove('btn-outline-danger');
+                deleteButton.classList.add('btn-danger');
+                deleteButton.innerHTML = '<i class="fas fa-undo"></i>';
+                deleteButton.title = 'Desmarcar eliminación';
+                
+                // Agregar overlay de eliminación
+                if (!imageCard.querySelector('.delete-overlay')) {
+                    const overlay = document.createElement('div');
+                    overlay.className = 'delete-overlay position-absolute d-flex align-items-center justify-content-center';
+                    overlay.style.cssText = 'top: 0; left: 0; right: 0; bottom: 0; background: rgba(220, 53, 69, 0.8); color: white; font-weight: bold; z-index: 5;';
+                    overlay.innerHTML = '<span><i class="fas fa-trash"></i> MARCADA PARA ELIMINAR</span>';
+                    imageCard.querySelector('.position-relative').appendChild(overlay);
+                }
+            } else {
+                // Desmarcar eliminación
+                imageCard.style.opacity = '1';
+                imageCard.style.filter = 'none';
+                deleteButton.classList.remove('btn-danger');
+                deleteButton.classList.add('btn-outline-danger');
+                deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
+                deleteButton.title = 'Marcar para eliminar';
+                
+                // Remover overlay de eliminación
+                const overlay = imageCard.querySelector('.delete-overlay');
+                if (overlay) {
+                    overlay.remove();
+                }
+            }
+        });
+    }
+}
+
+// Función global para manejar click en botón de eliminar
+window.toggleImageDeletion = function(imagenId) {
+    const checkbox = document.getElementById('imagen_ciudadano-borrar-' + imagenId);
+    if (checkbox) {
+        checkbox.checked = !checkbox.checked;
+        checkbox.dispatchEvent(new Event('change'));
+    }
+}
+
+// Función global para manejar eliminación de foto del legajo
+window.toggleFotoLegajoDeletion = function() {
+    const checkbox = document.getElementById('foto_legajo_borrar');
+    if (checkbox) {
+        checkbox.checked = !checkbox.checked;
+        
+        const imageCard = checkbox.closest('.card');
+        const deleteButton = imageCard.querySelector('.btn-outline-danger');
+        
+        if (checkbox.checked) {
+            // Marcar como eliminado
+            imageCard.style.opacity = '0.5';
+            imageCard.style.filter = 'grayscale(100%)';
+            deleteButton.classList.remove('btn-outline-danger');
+            deleteButton.classList.add('btn-danger');
+            deleteButton.innerHTML = '<i class="fas fa-undo"></i>';
+            deleteButton.title = 'Desmarcar eliminación';
+            
+            // Agregar overlay de eliminación
+            if (!imageCard.querySelector('.delete-overlay')) {
+                const overlay = document.createElement('div');
+                overlay.className = 'delete-overlay position-absolute d-flex align-items-center justify-content-center';
+                overlay.style.cssText = 'top: 0; left: 0; right: 0; bottom: 0; background: rgba(220, 53, 69, 0.8); color: white; font-weight: bold; z-index: 5;';
+                overlay.innerHTML = '<span><i class="fas fa-trash"></i> MARCADA PARA ELIMINAR</span>';
+                imageCard.querySelector('.position-relative').appendChild(overlay);
+            }
+        } else {
+            // Desmarcar eliminación
+            imageCard.style.opacity = '1';
+            imageCard.style.filter = 'none';
+            deleteButton.classList.remove('btn-danger');
+            deleteButton.classList.add('btn-outline-danger');
+            deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
+            deleteButton.title = 'Marcar para eliminar';
+            
+            // Remover overlay de eliminación
+            const overlay = imageCard.querySelector('.delete-overlay');
+            if (overlay) {
+                overlay.remove();
+            }
+        }
+    }
+}
