@@ -8,13 +8,14 @@ from relevamientos.models import Relevamiento
 def test_create_view_get(client_logged, comedor):
     url = reverse("relevamiento_create_edit_ajax", kwargs={"pk": comedor.pk})
     response = client_logged.post(url, {})
-    assert response.status_code == 200 or response.status_code == 302
+    assert response.status_code in {200, 302}
+
 
 @pytest.mark.django_db
 def test_create_view_post_invalid(client_logged, comedor):
     url = reverse("relevamiento_create_edit_ajax", kwargs={"pk": comedor.pk})
     response = client_logged.post(url, {})
-    assert response.status_code == 200 or response.status_code == 302
+    assert response.status_code in {200, 302}
 
 
 @pytest.mark.django_db
@@ -29,14 +30,14 @@ def test_list_view(client_logged, comedor):
 def test_update_view_get(client_logged, relevamiento):
     url = reverse("relevamiento_create_edit_ajax", kwargs={"pk": relevamiento.pk})
     response = client_logged.post(url, {})  # Usar POST en vez de GET
-    assert response.status_code == 200 or response.status_code == 302
+    assert response.status_code in {200, 302}
 
 
 @pytest.mark.django_db
 def test_update_view_post_invalid(client_logged, relevamiento):
     url = reverse("relevamiento_create_edit_ajax", kwargs={"pk": relevamiento.pk})
     response = client_logged.post(url, {})
-    assert response.status_code == 200 or response.status_code == 302
+    assert response.status_code in {200, 302}
 
 
 @pytest.mark.django_db
