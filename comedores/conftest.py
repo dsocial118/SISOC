@@ -1,3 +1,4 @@
+import django.urls
 import factory
 import pytest
 from django.contrib.auth import get_user_model
@@ -6,6 +7,7 @@ from django.test import Client
 from faker import Faker
 
 from comedores.models import Comedor
+from comedores.tasks import AsyncSendComedorToGestionar
 
 fake = Faker()
 
@@ -63,20 +65,45 @@ def comedor_fixture(monkeypatch, db):
     )
     monkeypatch.setattr(comedor.admision_set, "first", lambda: None)
     monkeypatch.setattr(
-        "configuraciones.templatetags.custom_filters.has_group",
-        lambda user, group: (
-            False
-            if user is None
-            else (
-                hasattr(user, "groups")
-                and (
-                    user.groups.filter(name=group).exists()
-                    or getattr(user, "is_superuser", False)
-                )
-            )
-        ),
-    )
-    monkeypatch.setattr(
         "comedores.tasks.AsyncSendComedorToGestionar.start", lambda self: None
     )
     return comedor
+
+
+@pytest.fixture
+def mock_async_tasks(monkeypatch):
+    """
+    Mockea la tarea AsyncSendComedorToGestionar para evitar errores en hilos.
+    """
+    # Reemplazar el método __init__ para evitar que se guarde el ID del comedor
+    original_init = AsyncSendComedorToGestionar.__init__
+
+    def mock_init(self, comedor_id, *args, **kwargs):
+        # Llamar al __init__ original pero ignorar los errores relacionados con el ID del comedor
+        original_init(self, comedor_id, *args, **kwargs)
+
+    monkeypatch.setattr(AsyncSendComedorToGestionar, "__init__", mock_init)
+
+    # Reemplazar el método run para que no haga nada
+    def mock_run(self):
+        pass
+
+    monkeypatch.setattr(AsyncSendComedorToGestionar, "run", mock_run)
+
+    # También podemos mockear el método start para asegurarnos de que no se inicie ningún hilo
+    def mock_start(self):
+        pass
+
+    monkeypatch.setattr(AsyncSendComedorToGestionar, "start", mock_start)
+
+
+@pytest.fixture(autouse=True)
+def mock_djdt_reverse(monkeypatch):
+    original_reverse = django.urls.reverse
+
+    def fake_reverse(viewname, *args, **kwargs):
+        if isinstance(viewname, str) and viewname.startswith("djdt:"):
+            return "/djdt-mock-url/"
+        return original_reverse(viewname, *args, **kwargs)
+
+    monkeypatch.setattr(django.urls, "reverse", fake_reverse)

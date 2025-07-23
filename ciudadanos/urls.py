@@ -79,28 +79,28 @@ urlpatterns = [
         name="ciudadanos_crear",
     ),
     path(
-        "ciudadanos/ver/<pk>",
+        "ciudadanos/ver/<int:pk>",
         login_required(CiudadanosDetailView.as_view()),
         name="ciudadanos_ver",
     ),
     path(
-        "ciudadanos/editar/<pk>",
+        "ciudadanos/editar/<int:pk>",
         login_required(CiudadanosUpdateView.as_view()),
         name="ciudadanos_editar",
     ),
     path(
-        "ciudadanos/eliminar/<pk>",
+        "ciudadanos/eliminar/<int:pk>",
         login_required(CiudadanosDeleteView.as_view()),
         name="ciudadanos_eliminar",
     ),
     # Grupo Familiar
     path(
-        "ciudadanos/grupofamiliar/listar/<pk>",
+        "ciudadanos/grupofamiliar/listar/<int:pk>",
         login_required(GrupoFamiliarList.as_view()),
         name="grupofamiliar_listar",
     ),
     path(
-        "ciudadanos/grupofamiliar/crear/<pk>",
+        "ciudadanos/grupofamiliar/crear/<int:pk>",
         login_required(CiudadanosGrupoFamiliarCreateView.as_view()),
         name="grupofamiliar_crear",
     ),
@@ -126,23 +126,23 @@ urlpatterns = [
     ),
     # Dimensiones
     path(
-        "ciudadanos/dimensiones/ver/<pk>",
+        "ciudadanos/dimensiones/ver/<int:pk>",
         login_required(DimensionesDetailView.as_view()),
         name="ciudadanosdimensiones_ver",
     ),
     path(
-        "ciudadanos/dimensiones/editar/<pk>",
+        "ciudadanos/dimensiones/editar/<int:pk>",
         login_required(DimensionesUpdateView.as_view()),
         name="ciudadanosdimensiones_editar",
     ),
     # Alertas
     path(
-        "ciudadanos/alertas/listar/<pk>",
+        "ciudadanos/alertas/listar/<int:pk>",
         login_required(AlertaListView.as_view()),
         name="alertas_listar",
     ),
     path(
-        "ciudadanos/alertas/crear/<pk>",
+        "ciudadanos/alertas/crear/<int:pk>",
         login_required(AlertaCreateView.as_view()),
         name="alertas_crear",
     ),
@@ -158,12 +158,12 @@ urlpatterns = [
     ),
     # Archivos
     path(
-        "ciudadanos/archivos/listar/<pk>",
+        "ciudadanos/archivos/listar/<int:pk>",
         login_required(ArchivosListView.as_view()),
         name="ciudadanosarchivos_listar",
     ),
     path(
-        "ciudadanos/archivos/crear/<pk>",
+        "ciudadanos/archivos/crear/<int:pk>",
         login_required(ArchivosCreateView.as_view()),
         name="ciudadanosarchivos_crear",
     ),
@@ -184,7 +184,7 @@ urlpatterns = [
         name="ciudadanosderivaciones_buscar",
     ),
     path(
-        "ciudadanos/derivaciones/derivar/<pk>",
+        "ciudadanos/derivaciones/derivar/<int:pk>",
         login_required(DerivacionCreateView.as_view()),
         name="ciudadanosderivaciones_crear",
     ),
@@ -199,61 +199,63 @@ urlpatterns = [
         name="ciudadanosderivaciones_listar",
     ),
     path(
-        "ciudadanos/derivaciones/ver/<pk>",
+        "ciudadanos/derivaciones/ver/<int:pk>",
         login_required(DerivacionDetailView.as_view()),
         name="ciudadanosderivaciones_ver",
     ),
     path(
-        "ciudadanos/derivaciones/editar/<pk>",
+        "ciudadanos/derivaciones/editar/<int:pk>",
         login_required(DerivacionUpdateView.as_view()),
         name="ciudadanosderivaciones_editar",
     ),
     path(
-        "ciudadanos/derivaciones/eliminar/<pk>",
+        "ciudadanos/derivaciones/eliminar/<int:pk>",
         login_required(DerivacionDeleteView.as_view()),
         name="ciudadanosderivaciones_eliminar",
     ),
     path(
-        "ciudadanos/derivaciones/historial/<pk>",
+        "ciudadanos/derivaciones/historial/<int:pk>",
         login_required(DerivacionHistorial.as_view()),
         name="ciudadanosderivaciones_historial",
     ),
     # Programas de asistencia
     path(
-        "ciudadanos/programas_intervencion/<pk>",
+        "ciudadanos/programas_intervencion/<int:pk>",
         login_required(ProgramaIntervencionesView.as_view()),
         name="programas_intervencion",
     ),
     # Acciones Sociales
     path(
-        "ciudadanos/acciones_sociales/<pk>",
+        "ciudadanos/acciones_sociales/<int:pk>",
         login_required(AccionesSocialesView.as_view()),
         name="acciones_sociales",
     ),
     # Interveciones de salud
     path(
-        "ciudadanos/intervenciones_salud/<pk>",
+        "ciudadanos/intervenciones_salud/<int:pk>",
         login_required(IntervencionesSaludView.as_view()),
         name="intervenciones_salud",
     ),
     # Indices
     path(
-        "ciudadanos/indices/<pk>", login_required(IndicesView.as_view()), name="indices"
+        "ciudadanos/indices/<int:pk>",
+        login_required(IndicesView.as_view()),
+        name="indices",
     ),
     # Indice detalle
     path(
-        "ciudadanos/indices_detalle/<pk>",
+        "ciudadanos/indices_detalle/<int:pk>",
         login_required(IndicesDetalleView.as_view()),
         name="indices_detalle",
     ),
     # Hogar
     path(
-        "ciudadanos/grupoHogar/listar/<pk>",
+        "ciudadanos/grupoHogar/listar/<int:pk>",
         login_required(GrupoHogarList.as_view()),
         name="grupohogar_listar",
     ),
     path(
-        "ciudadanos/grupoHogar/crear/<pk>",
+        "ciudadanos/grupoHogar/crear/<int:pk>",
         login_required(CiudadanosGrupoHogarCreateView.as_view()),
         name="grupohogar_crear",
     ),
@@ -278,7 +280,7 @@ urlpatterns = [
         name="nuevoCiudadanoFamiliar_ajax",
     ),
     path(
-        "ciudadanos/hogar/crear/<pk>",
+        "ciudadanos/hogar/crear/<int:pk>",
         login_required(CiudadanosGrupoHogarCreateView.as_view()),
         name="ciudadanosgrupohogar_crear",
     ),
@@ -298,42 +300,42 @@ urlpatterns = [
         name="ajax_load_tiposllamados",
     ),
     path(
-        "ciudadanos/intervencion/ver/<pk>",
+        "ciudadanos/intervencion/ver/<int:pk>",
         login_required(IntervencionDetail.as_view()),
         name="ciudadano_intervencion_ver",
     ),
     path(
-        "ciudadanos/intervencion/crear/<pk>",
+        "ciudadanos/intervencion/crear/<int:pk>",
         login_required(IntervencionCreateView.as_view()),
         name="intervencion_crear",
     ),
     path(
-        "ciudadanos/intervencion/editar/<pk>/<pk2>",
+        "ciudadanos/intervencion/editar/<int:pk>/<pk2>",
         login_required(IntervencionUpdateView.as_view()),
         name="intervencion_editar",
     ),
     path(
-        "ciudadanos/intervencion/borrar/<pk>/<pk2>",
+        "ciudadanos/intervencion/borrar/<int:pk>/<pk2>",
         login_required(IntervencionDeleteView.as_view()),
         name="intervencion_borrar",
     ),
     path(
-        "ciudadanos/llamados/ver/<pk>",
+        "ciudadanos/llamados/ver/<int:pk>",
         login_required(LlamadoDetail.as_view()),
         name="llamados_ver",
     ),
     path(
-        "ciudadanos/llamados/editar/<pk>/<pk2>",
+        "ciudadanos/llamados/editar/<int:pk>/<pk2>",
         login_required(LlamadoUpdateView.as_view()),
         name="llamados_editar",
     ),
     path(
-        "ciudadanos/llamados/crear/<pk>",
+        "ciudadanos/llamados/crear/<int:pk>",
         login_required(LlamadoCreateView.as_view()),
         name="llamados_crear",
     ),
     path(
-        "ciudadanos/llamados/borrar/<pk>/<pk2>",
+        "ciudadanos/llamados/borrar/<int:pk>/<pk2>",
         login_required(LlamadoDeleteView.as_view()),
         name="llamados_borrar",
     ),

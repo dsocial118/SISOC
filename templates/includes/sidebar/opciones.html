@@ -7,7 +7,7 @@
             <p>Dashboard</p>
         </a>
     </li>
-    {% if user|has_group:"Administrador" %}
+    {% if request.user|has_group:"Administrador" %}
         <li class="nav-item">
             <a href="#" class="nav-link">
                 <i class="nav-icon fas fa-users"></i>
@@ -46,7 +46,7 @@
             </p>
         </a>
         <ul class="nav nav-treeview">
-            {% if user|has_group:"Comedor Ver" or user|has_group:"Tecnico Comedor" or user|has_group:"Abogado Dupla" or user|has_group:"Area Legales" or user|has_group:"Comedores Listar" %}
+            {% if request.user|has_group:"Comedor Ver" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Abogado Dupla" or request.user|has_group:"Area Legales" or request.user|has_group:"Comedores Listar" %}
                 <li class="nav-item">
                     <a href="{% url 'comedores' %}"
                        class="nav-link {% if 'comedores/listar' in pagina_actual %}active{% endif %}">
@@ -78,7 +78,7 @@
                     </ul>
                 </li>
             {% endif %}
-            {% if user|has_group:"Area Legales" or user|has_group:"Tecnico Comedor" or user|has_group:"Abogado Dupla" %}
+            {% if request.user|has_group:"Area Legales" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Abogado Dupla" %}
                 <li class="nav-item">
                     <a href="{% url 'lista_comedores_acompanamiento' %}"
                        class="nav-link {% if 'acompanamiento' in pagina_actual %}active{% endif %}">
@@ -87,7 +87,7 @@
                     </a>
                 </li>
             {% endif %}
-            {% if user|has_group:"Area Legales" or user|has_group:"Area Contable" %}
+            {% if request.user|has_group:"Area Legales" or request.user|has_group:"Area Contable" or request.user|has_group:"Tecnico Comedor" %}
                 <li class="nav-item">
                     <a href="{% url 'rendicion_cuentas_final_listar' %}"
                        class="nav-link {% if 'rendicion_cuentas_final/listar' in pagina_actual %}active{% endif %}">
@@ -96,7 +96,7 @@
                     </a>
                 </li>
             {% endif %}
-            {% if user|has_group:"Organizaciones" %}
+            {% if request.user|has_group:"Organizaciones" %}
                 <li class="nav-item">
                     <a href="{% url 'organizaciones' %}"
                        class="nav-link {% if 'organizaciones/listar' in pagina_actual %}active{% endif %}">
@@ -105,7 +105,7 @@
                     </a>
                 </li>
             {% endif %}
-            {% if user|has_group:"CDI" %}
+            {% if request.user|has_group:"CDI" %}
                 <li class="nav-item">
                     <a href="{% url 'cdi' %}"
                        class="nav-link {% if 'cdi/listar' in pagina_actual %}active{% endif %}">
@@ -114,7 +114,7 @@
                     </a>
                 </li>
             {% endif %}
-            {% if user|has_group:"Ciudadanos" %}
+            {% if request.user|has_group:"Ciudadanos" %}
                 <li class="nav-item">
                     <a href="{% url 'ciudadanos' %}"
                        class="nav-link {% if 'ciudadanos/listar' in pagina_actual %}active{% endif %}">
@@ -123,7 +123,7 @@
                     </a>
                 </li>
             {% endif %}
-            {% if user|has_group:"superadmin" or user|has_group:"ReferenteCentro" or user %}
+            {% if request.user|has_group:"superadmin" or request.user|has_group:"ReferenteCentro" or user %}
                 <li class="nav-item">
                     <a href="{% url 'centro_list' %}"
                        class="nav-link {% if 'centros/' in pagina_actual %}active{% endif %}">

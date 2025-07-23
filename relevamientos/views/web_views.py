@@ -18,7 +18,8 @@ from relevamientos.form import (
     PuntosEntregaForm,
     RelevamientoForm,
 )
-from relevamientos.models import Prestacion, Relevamiento
+from relevamientos.models import Relevamiento
+from core.models import Prestacion
 from relevamientos.service import RelevamientoService
 from django.views.generic import (
     CreateView,
@@ -27,78 +28,6 @@ from django.views.generic import (
     ListView,
     UpdateView,
 )
-
-
-class RelevamientoCreateView(CreateView):
-    model = Relevamiento
-    form_class = RelevamientoForm
-    template_name = "relevamiento_form.html"
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs["comedor_pk"] = self.kwargs["comedor_pk"]
-        return kwargs
-
-    def get_context_data(self, **kwargs):
-        data = super().get_context_data(**kwargs)
-        forms = {
-            "funcionamiento_form": FuncionamientoPrestacionForm,
-            "espacio_form": EspacioForm,
-            "espacio_cocina_form": EspacioCocinaForm,
-            "espacio_prestacion_form": EspacioPrestacionForm,
-            "colaboradores_form": ColaboradoresForm,
-            "recursos_form": FuenteRecursosForm,
-            "compras_form": FuenteComprasForm,
-            "prestacion_form": PrestacionForm,
-            "referente_form": ReferenteForm,
-            "anexo_form": AnexoForm,
-            "punto_entregas_form": PuntosEntregaForm,
-        }
-
-        for form_name, form_class in forms.items():
-            data[form_name] = form_class(
-                self.request.POST if self.request.POST else None
-            )
-
-        data["comedor"] = Comedor.objects.values("id", "nombre").get(
-            pk=self.kwargs["comedor_pk"]
-        )
-
-        return data
-
-    def form_valid(self, form):
-        context = self.get_context_data()
-        forms = {
-            "funcionamiento_form": context["funcionamiento_form"],
-            "espacio_form": context["espacio_form"],
-            "espacio_cocina_form": context["espacio_cocina_form"],
-            "espacio_prestacion_form": context["espacio_prestacion_form"],
-            "colaboradores_form": context["colaboradores_form"],
-            "recursos_form": context["recursos_form"],
-            "compras_form": context["compras_form"],
-            "prestacion_form": context["prestacion_form"],
-            "referente_form": context["referente_form"],
-            "anexo_form": context["anexo_form"],
-        }
-
-        if all(form.is_valid() for form in forms.values()):
-            self.object = RelevamientoService.populate_relevamiento(form, forms)
-
-            return redirect(
-                "relevamiento_detalle",
-                comedor_pk=int(self.object.comedor.id),
-                pk=int(self.object.id),
-            )
-        else:
-            self.error_message(forms)
-            return self.form_invalid(form)
-
-    def error_message(self, forms):
-        for form_name, form_instance in forms.items():
-            if not form_instance.is_valid():
-                messages.error(
-                    self.request, f"Errores en {form_name}: {form_instance.errors}"
-                )
 
 
 class RelevamientoListView(ListView):
@@ -135,161 +64,68 @@ class RelevamientoDetailView(DetailView):
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
 
-        relevamiento = Relevamiento.objects.get(pk=self.get_object()["id"])
-        context["relevamiento"]["gas"] = (
-            RelevamientoService.separate_string(
-                relevamiento.espacio.cocina.abastecimiento_combustible.all()
-            )
-            if relevamiento.espacio
-            else None
-        )
-        context["prestacion"] = (
-            Prestacion.objects.get(pk=relevamiento.prestacion.id)
-            if relevamiento.prestacion
-            else None
-        )
-        context["relevamiento"]["donaciones"] = (
-            RelevamientoService.separate_string(
-                relevamiento.recursos.recursos_donaciones_particulares.all()
-            )
-            if relevamiento.recursos
-            else None
+        relevamiento = self.object
+
+        prestaciones = Prestacion.objects.filter(id__in=relevamiento.prestaciones.all())
+        context["prestacion"] = RelevamientoService.build_prestacion_compat(
+            prestaciones
         )
 
-        context["relevamiento"]["nacional"] = (
-            RelevamientoService.separate_string(
-                relevamiento.recursos.recursos_estado_nacional.all()
-            )
-            if relevamiento.recursos
-            else None
-        )
-
-        context["relevamiento"]["provincial"] = (
-            RelevamientoService.separate_string(
-                relevamiento.recursos.recursos_estado_provincial.all()
-            )
-            if relevamiento.recursos
-            else None
-        )
-
-        context["relevamiento"]["municipal"] = (
-            RelevamientoService.separate_string(
-                relevamiento.recursos.recursos_estado_municipal.all()
-            )
-            if relevamiento.recursos
-            else None
-        )
-
-        context["relevamiento"]["otras"] = (
-            RelevamientoService.separate_string(
-                relevamiento.recursos.recursos_otros.all()
-            )
-            if relevamiento.recursos
-            else None
-        )
-
-        context["relevamiento"]["Entregas"] = (
-            RelevamientoService.separate_string(
-                relevamiento.punto_entregas.frecuencia_recepcion_mercaderias.all()
-            )
-            if relevamiento.punto_entregas
-            else None
+        context["relevamiento_data"] = RelevamientoService.build_detail_extra_data(
+            relevamiento
         )
 
         return context
 
     def get_object(self, queryset=None):
-        return RelevamientoService.get_relevamiento_detail_object(self.kwargs["pk"])
-
-
-class RelevamientoUpdateView(UpdateView):
-    model = Relevamiento
-    form_class = RelevamientoForm
-    template_name = "relevamiento_form.html"
-    success_url = reverse_lazy("relevamiento_lista")
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs["comedor_pk"] = self.kwargs["comedor_pk"]
-        return kwargs
-
-    def get_context_data(self, **kwargs):
-        data = super().get_context_data(**kwargs)
-        forms = {
-            "funcionamiento_form": FuncionamientoPrestacionForm,
-            "espacio_form": EspacioForm,
-            "espacio_cocina_form": EspacioCocinaForm,
-            "espacio_prestacion_form": EspacioPrestacionForm,
-            "colaboradores_form": ColaboradoresForm,
-            "recursos_form": FuenteRecursosForm,
-            "compras_form": FuenteComprasForm,
-            "prestacion_form": PrestacionForm,
-            "referente_form": ReferenteForm,
-            "anexo_form": AnexoForm,
-        }
-
-        for form_name, form_class in forms.items():
-            data[form_name] = form_class(
-                self.request.POST if self.request.POST else None,
-                instance=getattr(
-                    self.object, form_name.split("_form", maxsplit=1)[0], None
-                ),
+        return (
+            Relevamiento.objects.select_related(
+                "comedor",
+                "comedor__referente",
+                "comedor__provincia",
+                "comedor__municipio",
+                "comedor__localidad",
+                "espacio",
+                "espacio__cocina",
+                "espacio__cocina__abastecimiento_agua",
+                "espacio__tipo_espacio_fisico",
+                "espacio__prestacion",
+                "espacio__prestacion__desague_hinodoro",
+                "espacio__prestacion__gestion_quejas",
+                "espacio__prestacion__frecuencia_limpieza",
+                "recursos",
+                "recursos__frecuencia_donaciones_particulares",
+                "recursos__frecuencia_estado_nacional",
+                "recursos__frecuencia_estado_provincial",
+                "recursos__frecuencia_estado_municipal",
+                "recursos__frecuencia_otros",
+                "colaboradores",
+                "colaboradores__cantidad_colaboradores",
+                "compras",
+                "anexo",
+                "anexo__tipo_insumo",
+                "anexo__frecuencia_insumo",
+                "anexo__tecnologia",
+                "anexo__acceso_comedor",
+                "anexo__distancia_transporte",
+                "punto_entregas",
+                "funcionamiento",
+                "funcionamiento__modalidad_prestacion",
+                "responsable_relevamiento",
+                "excepcion",
             )
-
-        data["comedor"] = Comedor.objects.values(
-            "id",
-            "nombre",
-            "referente__nombre",
-            "referente__apellido",
-            "referente__mail",
-            "referente__celular",
-            "referente__documento",
-        ).get(pk=self.kwargs["comedor_pk"])
-        data["espacio_cocina_form"] = EspacioCocinaForm(
-            self.request.POST if self.request.POST else None,
-            instance=getattr(self.object.espacio, "cocina", None),
-        )
-        data["espacio_prestacion_form"] = EspacioPrestacionForm(
-            self.request.POST if self.request.POST else None,
-            instance=getattr(self.object.espacio, "prestacion", None),
-        )
-        data["responsable"] = self.object.responsable
-
-        return data
-
-    def form_valid(self, form):
-        context = self.get_context_data()
-        forms = {
-            "funcionamiento_form": context["funcionamiento_form"],
-            "espacio_form": context["espacio_form"],
-            "espacio_cocina_form": context["espacio_cocina_form"],
-            "espacio_prestacion_form": context["espacio_prestacion_form"],
-            "colaboradores_form": context["colaboradores_form"],
-            "recursos_form": context["recursos_form"],
-            "compras_form": context["compras_form"],
-            "prestacion_form": context["prestacion_form"],
-            "referente_form": context["referente_form"],
-            "anexo_form": context["anexo_form"],
-        }
-
-        if all(form.is_valid() for form in forms.values()):
-            self.object = RelevamientoService.populate_relevamiento(form, forms)
-
-            return redirect(
-                "relevamiento_detalle",
-                comedor_pk=int(self.object.comedor.id),
-                pk=int(self.object.id),
+            .prefetch_related(
+                "prestaciones",
+                "espacio__cocina__abastecimiento_combustible",
+                "recursos__recursos_donaciones_particulares",
+                "recursos__recursos_estado_nacional",
+                "recursos__recursos_estado_provincial",
+                "recursos__recursos_estado_municipal",
+                "recursos__recursos_otros",
+                "punto_entregas__frecuencia_recepcion_mercaderias",
             )
-        else:
-            self.error_message(forms)
-            return self.form_invalid(form)
-
-    def error_message(self, forms):
-        for form_name, form_instance in forms.items():
-            if not form_instance.is_valid():
-                messages.error(
-                    self.request, f"Errores en {form_name}: {form_instance.errors}"
-                )
+            .get(pk=self.kwargs["pk"])
+        )
 
 
 class RelevamientoDeleteView(DeleteView):

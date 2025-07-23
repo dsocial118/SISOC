@@ -1,8 +1,9 @@
 from django.views.generic import ListView, CreateView, DetailView, UpdateView
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.contrib import messages
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
+from django.http import JsonResponse
 
 from centrodefamilia.models import (
     ActividadCentro,
@@ -10,9 +11,8 @@ from centrodefamilia.models import (
     ParticipanteActividad,
     Actividad,
 )
-from centrodefamilia.forms import ActividadCentroForm
+from centrodefamilia.forms import ActividadCentroForm, ActividadForm
 from configuraciones.decorators import group_required
-from django.http import JsonResponse
 
 
 class ActividadCentroListView(ListView):
@@ -69,9 +69,15 @@ class ActividadCentroDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         actividad = self.get_object()
-        participantes = ParticipanteActividad.objects.filter(actividad_centro=actividad)
+
+        # Traigo participantes con select_related para evitar N+1
+        participantes = ParticipanteActividad.objects.filter(
+            actividad_centro=actividad
+        ).select_related("ciudadano")
+
         cantidad = participantes.count()
         precio = actividad.precio or 0
+
         context.update(
             {
                 "participantes": participantes,
@@ -110,3 +116,13 @@ def cargar_actividades_por_categoria(request):
         "id", "nombre"
     )
     return JsonResponse(list(actividades), safe=False)
+
+
+class ActividadCreateView(CreateView):
+    model = Actividad
+    form_class = ActividadForm
+    template_name = "centros/actividad_form.html"
+    success_url = reverse_lazy("centro_list")
+
+    def test_func(self):
+        return self.request.user.is_superuser
