@@ -15,11 +15,10 @@
 {% endblock %}
 {% block content %}
     <link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
-    <div class="row justify-content-between d-print-none mx-1 mb-3">
-        <div class="col-auto">
-            <a href="{% url 'cdi' %}" class="btn btn-secondary backbutton-handler">Volver</a>
-        </div>
-    </div>
+    
+    <!-- Botones de cabecera -->
+    {% include 'components/ui/detail_header_buttons.html' with back_url='cdi' edit_url='cdi_editar' delete_url='cdi_eliminar' object_id=centrodesarrolloinfantiles.id show_print=True %}
+    
     <div class="row text-center mb-3">
         <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12 pt-3">
             <div class="info-card bg-card">

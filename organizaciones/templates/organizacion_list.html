@@ -45,10 +45,7 @@
               <td>{{ organizacion.telefono | default_if_none:"-" }}</td>
               <td>{{ organizacion.email | default_if_none:"-" }}</td>
               <td>
-                {% include 'components/tables/row_actions.html' with
-                object=organizacion view_url_name='organizacion_detalle'
-                edit_url_name='organizacion_editar'
-                delete_url_name='organizacion_eliminar' %}
+                {% include 'components/tables/row_actions.html' with object=organizacion detail_url='organizacion_detalle' edit_url='organizacion_editar' delete_url='organizacion_eliminar' %}
               </td>
             </tr>
             {% endfor %}

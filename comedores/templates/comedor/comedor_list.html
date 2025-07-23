@@ -56,9 +56,7 @@ create_url='comedor_crear' %}
               </td>
               <td>{{ comedor.referente__celular | default_if_none:"-" }}</td>
               <td>
-                {% include 'components/tables/row_actions.html' with
-                detail_url='comedor_detalle' edit_url='comedor_editar'
-                delete_url='comedor_eliminar' object=comedor %}
+                {% include 'components/tables/row_actions.html' with object=comedor detail_url='comedor_detalle' edit_url='comedor_editar' delete_url='comedor_eliminar' %}
               </td>
             </tr>
             {% endfor %}
