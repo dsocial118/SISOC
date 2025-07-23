@@ -2,103 +2,73 @@ import os
 import threading
 import requests
 from comedores.models import Comedor, Observacion, Referente
+import os
 
 TIMEOUT = 360  # Segundos máximos de espera por respuesta
 
 
-class AsyncSendComedorToGestionar(threading.Thread):
-    """Hilo para enviar comedor a GESTIONAR asincronamente"""
+def build_comedor_payload(comedor):
+    fk = (
+        lambda obj, attr, sub="nombre": getattr(getattr(obj, attr, None), sub, "") or ""
+    )
+    return {
+        "Action": "Add",
+        "Properties": {"Locale": "es-ES"},
+        "Rows": [
+            {
+                "ComedorID": comedor.id,
+                "ID_Sisoc": comedor.id,
+                "nombre": comedor.nombre or "",
+                "comienzo": (
+                    f"01/01/{comedor.comienzo}" if comedor.comienzo else "01/01/1900"
+                ),
+                "TipoComedor": fk(comedor, "tipocomedor"),
+                "calle": comedor.calle or "",
+                "numero": comedor.numero or "",
+                "entre_calle_1": comedor.entre_calle_1 or "",
+                "entre_calle_2": comedor.entre_calle_2 or "",
+                "provincia": fk(comedor, "provincia"),
+                "municipio": fk(comedor, "municipio"),
+                "localidad": fk(comedor, "localidad"),
+                "partido": comedor.partido or "",
+                "barrio": comedor.barrio or "",
+                "lote": comedor.lote or "",
+                "manzana": comedor.manzana or "",
+                "piso": comedor.piso or "",
+                "longitud": comedor.longitud or "",
+                "latitud": comedor.latitud or "",
+                "programa": fk(comedor, "programa"),
+                "Organizacion": fk(comedor, "organizacion"),
+                "departamento": comedor.departamento or "",
+                "codigo_postal": comedor.codigo_postal or "",
+                "Referente": getattr(
+                    getattr(comedor, "referente", None), "documento", ""
+                )
+                or "",
+                "Imagen": (
+                    f"{os.getenv('DOMINIO')}/media/{comedor.foto_legajo}"
+                    if comedor.foto_legajo
+                    else ""
+                ),
+            }
+        ],
+    }
 
-    def __init__(self, comedor_id):
-        super().__init__()
-        self.comedor_id = comedor_id
+
+class AsyncSendComedorToGestionar(threading.Thread):
+    def __init__(self, payload):
+        super().__init__(daemon=True)
+        self.payload = payload
 
     def run(self):
-        comedor = Comedor.objects.get(id=self.comedor_id)
-
-        data = {
-            "Action": "Add",
-            "Properties": {"Locale": "es-ES"},
-            "Rows": [
-                {
-                    "ComedorID": comedor.id,
-                    "ID_Sisoc": comedor.id,
-                    "nombre": comedor.nombre,
-                    "comienzo": (
-                        f"01/01/{comedor.comienzo}"
-                        if comedor.comienzo
-                        else "01/01/1900"
-                    ),
-                    "TipoComedor": (
-                        comedor.tipocomedor.nombre if comedor.tipocomedor else ""
-                    ),
-                    "calle": comedor.calle if comedor.calle else "",
-                    "numero": comedor.numero if comedor.numero else "",
-                    "entre_calle_1": (
-                        comedor.entre_calle_1 if comedor.entre_calle_1 else ""
-                    ),
-                    "entre_calle_2": (
-                        comedor.entre_calle_2 if comedor.entre_calle_2 else ""
-                    ),
-                    "provincia": (
-                        comedor.provincia.nombre if comedor.provincia else ""
-                    ),
-                    "municipio": (
-                        comedor.municipio.nombre if comedor.municipio else ""
-                    ),
-                    "localidad": (
-                        comedor.localidad.nombre if comedor.localidad else ""
-                    ),
-                    "partido": comedor.partido if comedor.partido else "",
-                    "barrio": comedor.barrio if comedor.barrio else "",
-                    "lote": comedor.lote if comedor.lote else "",
-                    "manzana": comedor.manzana if comedor.manzana else "",
-                    "piso": comedor.piso if comedor.piso else "",
-                    "longitud": comedor.longitud if comedor.longitud else "",
-                    "latitud": comedor.latitud if comedor.latitud else "",
-                    "programa": comedor.programa.nombre if comedor.programa else "",
-                    "Organizacion": (
-                        comedor.organizacion.nombre if comedor.organizacion else ""
-                    ),
-                    "departamento": (
-                        comedor.departamento if comedor.departamento else ""
-                    ),
-                    "codigo_postal": (
-                        comedor.codigo_postal if comedor.codigo_postal else ""
-                    ),
-                    "Referente": (
-                        comedor.referente.documento
-                        if comedor.referente and comedor.referente.documento
-                        else ""
-                    ),
-                    "Imagen": (
-                        f"{os.getenv('DOMINIO')}/media/{comedor.foto_legajo}"
-                        if comedor.foto_legajo
-                        else ""
-                    ),
-                }
-            ],
-        }
-
-        headers = {
-            "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
-        }
-
+        headers = {"applicationAccessKey": os.getenv("GESTIONAR_API_KEY")}
+        url = os.getenv("GESTIONAR_API_CREAR_COMEDOR")
         try:
-            response = requests.post(
-                os.getenv("GESTIONAR_API_CREAR_COMEDOR"),
-                json=data,
-                headers=headers,
-                timeout=TIMEOUT,
-            )
-            response.raise_for_status()
-            response = response.json()
-            print(f"COMEDOR {comedor.id} sincronizado con GESTIONAR con exito")
+            r = requests.post(url, json=self.payload, headers=headers, timeout=TIMEOUT)
+            r.raise_for_status()
+            print("COMEDOR sync OK")
         except Exception as e:
-            print("!!! Error al sincronizar creacion de COMEDOR con GESTIONAR:")
-            print(e)
-            print("!!! Con el body:")
-            print(data)
+            print("!!! Error sync COMEDOR:", e, "\nBody:", self.payload)
 
 
 class AsyncRemoveComedorToGestionar(threading.Thread):
