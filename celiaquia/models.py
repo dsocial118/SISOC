@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
-from ciudadanos.models import  Ciudadano
+from ciudadanos.models import Ciudadano
 
 User = get_user_model()
 
