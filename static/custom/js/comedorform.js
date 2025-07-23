@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Agregar nuevos archivos al array existente
             newFiles.forEach(file => {
                 // Verificar que no esté duplicado (por nombre y tamaño)
-                const isDuplicate = selectedFiles.some(existingFile => 
+                const isDuplicate = selectedFiles.some(existingFile =>
                     existingFile.name === file.name && existingFile.size === file.size
                 );
                 
@@ -79,8 +79,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // Actualizar la previsualización
             updateImagePreview();
             
-            // Limpiar el input para permitir seleccionar los mismos archivos otra vez
-            imageInput.value = '';
+            // NO limpiar el input para mantener los archivos
+            // imageInput.value = '';
         });
     }
     
@@ -122,16 +122,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     previewDiv.innerHTML = `
                         <div class="card position-relative">
                             <!-- Botón para eliminar -->
-                            <button type="button" class="btn btn-danger btn-sm position-absolute" 
+                            <button type="button" class="btn btn-danger btn-sm position-absolute"
                                     style="top: 5px; right: 5px; z-index: 10; width: 30px; height: 30px; padding: 0;"
                                     onclick="removeImage(${index})"
                                     title="Eliminar imagen">
                                 <i class="fas fa-times"></i>
                             </button>
                             
-                            <img src="${e.target.result}" 
+                            <img src="${e.target.result}"
                                  class="card-img-top" 
-                                 style="height: 150px; object-fit: cover;" 
+                                 style="height: 150px; object-fit: cover;"
                                  alt="Preview">
                             
                             <div class="card-body p-2">
@@ -159,14 +159,57 @@ document.addEventListener('DOMContentLoaded', function() {
     };
     
     function updateFileInput() {
-        // Crear un nuevo DataTransfer para actualizar el input file
-        const dt = new DataTransfer();
-        
-        selectedFiles.forEach(file => {
-            dt.items.add(file);
+        try {
+            // Crear un nuevo DataTransfer para actualizar el input file
+            const dt = new DataTransfer();
+            
+            selectedFiles.forEach(file => {
+                dt.items.add(file);
+            });
+            
+            imageInput.files = dt.files;
+        } catch (error) {
+            console.error('Error updating file input:', error);
+            // Fallback: usar un FormData personalizado en el submit
+        }
+    }
+    
+    // Manejar envío del formulario con fallback para navegadores que no soportan DataTransfer
+    const comedorForm = document.getElementById('comedorForm');
+    if (comedorForm) {
+        comedorForm.addEventListener('submit', function(e) {
+            // Si DataTransfer no funciona, usar FormData personalizado
+            if (imageInput.files.length === 0 && selectedFiles.length > 0) {
+                e.preventDefault();
+                
+                const formData = new FormData(comedorForm);
+                
+                // Eliminar archivos de imagen existentes del FormData
+                formData.delete('imagenes');
+                
+                // Agregar archivos seleccionados
+                selectedFiles.forEach(file => {
+                    formData.append('imagenes', file);
+                });
+                
+                // Enviar con fetch
+                fetch(comedorForm.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                }).then(response => {
+                    if (response.ok) {
+                        window.location.href = response.url;
+                    } else {
+                        console.error('Error submitting form:', response);
+                    }
+                });
+                
+                return false;
+            }
         });
-        
-        imageInput.files = dt.files;
     }
     
     // ...existing code for foto_legajo...
