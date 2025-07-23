@@ -66,9 +66,6 @@ PROG_PDV = 26
 PROG_MA = 30
 PROG_SL = 21
 
-# Configuración del perfilador de rendimiento de Silk
-SILKY_PYTHON_PROFILER = True
-
 # Definición de IPs internas para depuración
 INTERNAL_IPS = [
     "127.0.0.1",
@@ -332,3 +329,10 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 # Dominio
 DOMINIO = os.environ.get("DOMINIO", default="localhost:8001")
+
+
+# Configuración de Silk fuera de DEBUG
+if DEBUG:
+    SILKY_PYTHON_PROFILER = True
+    INSTALLED_APPS += ["silk"]
+    MIDDLEWARE.insert(0, "silk.middleware.SilkyMiddleware")
