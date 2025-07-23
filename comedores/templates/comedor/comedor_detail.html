@@ -621,15 +621,22 @@
                             </button>
                         </div>
                     </div>
-                    <div class="card-body row card-comments p-0 pb-1">
-                        <div class="nav nav-pills row col-10 my-3 mx-auto">
-                            {% for imagen in imagenes %}
-                                <div class="col-2 d-flex">
-                                    <img src="/media/{{ imagen.imagen }}"
-                                         alt="Imagen del comedor"
-                                         class="img-fluid my-1 rounded object-fit-contain" />
+                    <div class="card-body row card-comments p-0 pb-1">                        
+                        <div class="nav nav-pills row col-12 my-3 mx-auto">
+                            {% if imagenes %}
+                                {% for imagen in imagenes %}
+                                    <div class="col-lg-3 col-md-4 col-sm-6 d-flex mb-3">
+                                        <img src="{{ imagen.imagen.url }}"
+                                             alt="Imagen del comedor"
+                                             class="img-fluid my-1 rounded object-fit-contain"
+                                             style="max-height: 200px; width: 100%;" />
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="col-12 text-center text-muted">
+                                    <p>No hay imágenes disponibles para este comedor.</p>
                                 </div>
-                            {% endfor %}
+                            {% endif %}
                         </div>
                     </div>
                 </div>
