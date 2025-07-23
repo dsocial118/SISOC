@@ -113,10 +113,10 @@ class ComedorService:
             )
             .prefetch_related(
                 "expedientes_pagos",
-                # Prefetch para imágenes optimizado - solo el campo imagen
+                # Prefetch para imágenes optimizado - cargar campos necesarios
                 Prefetch(
                     "imagenes",
-                    queryset=ImagenComedor.objects.only("imagen"),
+                    queryset=ImagenComedor.objects.all(),
                     to_attr="imagenes_optimized",
                 ),
                 # Prefetch para relevamientos ordenados por estado e id descendente
@@ -233,6 +233,7 @@ class ComedorService:
             {"comedor": comedor_pk},
             {"imagen": imagen},
         )
+        
         if imagen_comedor.is_valid():
             return imagen_comedor.save()
         else:
