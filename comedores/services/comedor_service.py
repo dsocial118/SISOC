@@ -51,13 +51,41 @@ class ComedorService:
     def borrar_imagenes(post):
         pattern = re.compile(r"^imagen_ciudadano-borrar-(\d+)$")
         imagenes_ids = []
+        print(f"DEBUG - POST data: {list(post.keys())}")
         for key in post:
             match = pattern.match(key)
             if match:
                 imagen_id = match.group(1)
                 imagenes_ids.append(imagen_id)
+                print(f"DEBUG - Found image to delete: {imagen_id}")
 
-        ImagenComedor.objects.filter(id__in=imagenes_ids).delete()
+        print(f"DEBUG - Images to delete: {imagenes_ids}")
+        if imagenes_ids:
+            deleted_count = ImagenComedor.objects.filter(id__in=imagenes_ids).delete()[0]
+            print(f"DEBUG - Deleted {deleted_count} images")
+        else:
+            print("DEBUG - No images marked for deletion")
+
+    @staticmethod
+    def borrar_foto_legajo(post, comedor_instance):
+        """Eliminar la foto del legajo si está marcada para borrar"""
+        if 'foto_legajo_borrar' in post and comedor_instance.foto_legajo:
+            print(f"DEBUG - Deleting foto legajo: {comedor_instance.foto_legajo}")
+            # Eliminar el archivo físico
+            if comedor_instance.foto_legajo:
+                try:
+                    import os
+                    file_path = comedor_instance.foto_legajo.path
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+                        print(f"DEBUG - Physical file deleted: {file_path}")
+                except Exception as e:
+                    print(f"DEBUG - Error deleting physical file: {e}")
+            
+            # Limpiar el campo en la base de datos
+            comedor_instance.foto_legajo = None
+            comedor_instance.save(update_fields=['foto_legajo'])
+            print("DEBUG - Foto legajo field cleared in database")
 
     @staticmethod
     def get_comedores_filtrados(query: Union[str, None] = None):

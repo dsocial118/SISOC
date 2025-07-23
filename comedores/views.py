@@ -454,6 +454,7 @@ class ComedorUpdateView(UpdateView):
             self.object.save()
 
             ComedorService.borrar_imagenes(self.request.POST)
+            ComedorService.borrar_foto_legajo(self.request.POST, self.object)
 
             for imagen in imagenes:
                 try:
