@@ -438,8 +438,6 @@ class ComedorUpdateView(UpdateView):
         ).values("id", "imagen")
         return data
 
-    def post(self, request, *args, **kwargs):
-        return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
         context = self.get_context_data()
@@ -466,8 +464,6 @@ class ComedorUpdateView(UpdateView):
         else:
             return self.form_invalid(form)
 
-    def form_invalid(self, form):
-        return super().form_invalid(form)
 
 
 class ComedorDeleteView(DeleteView):
