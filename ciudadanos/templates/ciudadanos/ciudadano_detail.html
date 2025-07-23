@@ -163,10 +163,14 @@
                     <div class="card-header">
                         <h5 class="mb-0">Ubicación</h5>
                     </div>
-                    <div class="ratio ratio-16x9">
-                        <iframe src="https://www.google.com/maps/embed?pb=…"
-                                allowfullscreen
-                                loading="lazy"></iframe>
+                    <div class="card-body p-0">
+                        <iframe width="100%"
+                                height="450"
+                                frameborder="0"
+                                style="border:0"
+                                src="https://maps.google.com/maps?q={{ object.calle|urlencode }}+{{ object.altura }},+{{ object.localidad|urlencode }},+{{ object.municipio|urlencode }},+{{ object.provincia|urlencode }}&output=embed"
+                                allowfullscreen>
+                        </iframe>
                     </div>
                 </div>
             </div>
@@ -235,6 +239,47 @@
                                 <tr>
                                     <th>Discapacidad</th>
                                     <td>{{ dimensionfamilia.hay_fam_discapacidad|yesno:"Sí,No" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Observaciones</th>
+                                    <td>{{ dimensionfamilia.obs_familia|default:"–" }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- Vivienda -->
+                <div class="tab-pane fade" id="vivienda">
+                    <div class="table-responsive rounded border">
+                        <table class="table table-striped table-hover mb-0">
+                            <tbody>
+                                <tr>
+                                    <th>Posesión</th>
+                                    <td>{{ dimensionvivienda.posesion|default:"–" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Tipo</th>
+                                    <td>{{ dimensionvivienda.tipo|default:"–" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Material</th>
+                                    <td>{{ dimensionvivienda.material|default:"–" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Ambientes</th>
+                                    <td>{{ dimensionvivienda.cant_ambientes|default:"–" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Baño</th>
+                                    <td>{{ dimensionvivienda.hay_banio|yesno:"Sí,No" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Agua caliente</th>
+                                    <td>{{ dimensionvivienda.hay_agua_caliente|yesno:"Sí,No" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Desmoronamiento</th>
+                                    <td>{{ dimensionvivienda.hay_desmoronamiento|yesno:"Sí,No" }}</td>
                                 </tr>
                                 <tr>
                                     <th>Observaciones</th>
