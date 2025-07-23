@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from celiaquia.models import EstadoExpediente, Expediente
 from celiaquia.services.importacion_service import ImportacionService
 
+
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
@@ -39,7 +40,7 @@ class ExpedienteService:
 
     @staticmethod
     @transaction.atomic
-    def procesar_expediente(expediente):
+    def procesar_expediente(expediente, usuario):
         """
         Crea o enlaza todos los legajos desde el Excel y cambia el estado a 'PROCESADO'.
         Devuelve dict con conteo: {'creados', 'errores'}.
@@ -49,7 +50,8 @@ class ExpedienteService:
 
         # Importar legajos y capturar conteo
         result = ImportacionService.importar_legajos_desde_excel(
-            expediente, expediente.excel_masivo
+            expediente, expediente.excel_masivo,
+            usuario,
         )
 
         # Cambiar estado a PROCESADO
