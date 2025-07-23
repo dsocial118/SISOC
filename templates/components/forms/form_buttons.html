@@ -7,9 +7,17 @@ Parámetros:
 - cancel_label: Texto botón cancelar (default: "Cancelar")
 - submit_class: Clases CSS adicionales para botón submit (optional)
 - cancel_class: Clases CSS adicionales para botón cancelar (optional)
+- container_class: Clases CSS para el contenedor (default: "mt-4 mx-2")
+- button_layout: Layout de botones - "left", "center", "right" (default: "left")
 {% endcomment %}
 
-<div class="mt-4 mx-2">
+{% if button_layout == "right" %}
+<div class="d-flex justify-content-end {{ container_class|default:'' }}">
+{% elif button_layout == "center" %}
+<div class="d-flex justify-content-center {{ container_class|default:'' }}">
+{% else %}
+<div class="{{ container_class|default:'mt-4 mx-2' }}">
+{% endif %}
     <button type="submit" class="btn btn-primary mr-1 {{ submit_class }}">
         {{ submit_label|default:"Confirmar" }}
     </button>

@@ -1,0 +1,26 @@
+{% comment %} Componente reutilizable para botones de header de formularios
+Parámetros:
+- back_url: URL name para volver (requerido)
+- back_id: ID del objeto para volver al detalle (opcional)
+- show_print: Mostrar botón imprimir (default: True)
+- show_cancel: Mostrar botón cancelar (default: True) 
+- print_class: Clases adicionales para botón imprimir (default: "d-none d-sm-inline")
+{% endcomment %}
+
+<div class="d-flex justify-content-between mb-3">
+    <div>
+        {% if back_id %}
+            <a href="{% url back_url back_id %}" class='btn btn-secondary'>Volver</a>
+        {% else %}
+            <a href="{% url back_url %}" class='btn btn-secondary'>Volver</a>
+        {% endif %}
+    </div>
+    <div>
+        {% if show_print|default:True %}
+        <a class='btn btn-secondary print mr-1 {{ print_class|default:"d-none d-sm-inline" }}'>Imprimir</a>
+        {% endif %}
+        {% if show_cancel|default:True %}
+        <button type="button" onclick='window.history.back();' class='btn btn-secondary'>Cancelar</button>
+        {% endif %}
+    </div>
+</div>

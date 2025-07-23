@@ -1,0 +1,30 @@
+{% comment %} Componente reutilizable para botones de header de páginas de detalle
+Parámetros:
+- back_url: URL name para volver (requerido)
+- edit_url: URL name para editar (opcional)
+- delete_url: URL name para eliminar (opcional)
+- object_id: ID del objeto para URLs que lo requieren (requerido si hay edit/delete)
+- show_print: Mostrar botón imprimir (default: False)
+- show_edit: Mostrar botón editar (default: True si edit_url está definido)
+- show_delete: Mostrar botón eliminar (default: True si delete_url está definido)
+- back_class: Clases adicionales para botón volver (default: "backbutton-handler")
+{% endcomment %}
+
+<div class="row justify-content-between d-print-none mx-1 mb-3">
+    <div class="col-auto">
+        <a href="{% url back_url %}" class="btn btn-secondary {{ back_class|default:'backbutton-handler' }}">Volver</a>
+    </div>
+    {% if edit_url or delete_url or show_print %}
+    <div class="col-auto">
+        {% if edit_url and show_edit|default:True %}
+        <a href="{% url edit_url object_id %}" class="btn btn-primary mr-1">Editar</a>
+        {% endif %}
+        {% if show_print %}
+        <a href="#" class="btn btn-secondary print mr-1 d-none d-sm-inline">Imprimir</a>
+        {% endif %}
+        {% if delete_url and show_delete|default:True %}
+        <a href="{% url delete_url object_id %}" class="btn btn-danger">Eliminar</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
