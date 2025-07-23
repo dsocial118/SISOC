@@ -84,7 +84,7 @@ def mock_async_tasks(monkeypatch):
 
     monkeypatch.setattr(AsyncSendComedorToGestionar, "__init__", mock_init)
 
-    # Reemplazar el método run para que no haga nada
+    # Reemplazar el método run para que no haga nadaGrac
     def mock_run(self):
         pass
 

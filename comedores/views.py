@@ -22,6 +22,7 @@ from django.views.generic import (
     UpdateView,
     TemplateView,
 )
+from django.contrib.auth import get_user_model
 
 from ciudadanos.models import CiudadanoPrograma, HistorialCiudadanoProgramas
 from comedores.forms.comedor_form import (
@@ -48,35 +49,50 @@ logger = logging.getLogger("django")
 @require_POST
 def relevamiento_crear_editar_ajax(request, pk):
     is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
+    response = None
     try:
         if "territorial" in request.POST:
             relevamiento = RelevamientoService.create_pendiente(request, pk)
             if is_ajax:
-                return JsonResponse({
-                    "url": f"/comedores/{relevamiento.comedor.pk}/relevamiento/{relevamiento.pk}"
-                }, status=200)
-            messages.success(request, "Relevamiento territorial creado correctamente.")
+                response = JsonResponse(
+                    {
+                        "url": f"/comedores/{relevamiento.comedor.pk}/relevamiento/{relevamiento.pk}"
+                    },
+                    status=200,
+                )
+            else:
+                messages.success(
+                    request, "Relevamiento territorial creado correctamente."
+                )
+                response = redirect(
+                    "relevamiento_detalle",
+                    pk=relevamiento.pk,
+                    comedor_pk=relevamiento.comedor.pk,
+                )
         elif "territorial_editar" in request.POST:
             relevamiento = RelevamientoService.update_territorial(request)
             if is_ajax:
-                return JsonResponse({
-                    "url": f"/comedores/{relevamiento.comedor.pk}/relevamiento/{relevamiento.pk}"
-                }, status=200)
-            messages.success(
-                request, "Relevamiento territorial actualizado correctamente."
-            )
+                response = JsonResponse(
+                    {
+                        "url": f"/comedores/{relevamiento.comedor.pk}/relevamiento/{relevamiento.pk}"
+                    },
+                    status=200,
+                )
+            else:
+                messages.success(
+                    request, "Relevamiento territorial actualizado correctamente."
+                )
+                response = redirect(
+                    "relevamiento_detalle",
+                    pk=relevamiento.pk,
+                    comedor_pk=relevamiento.comedor.pk,
+                )
         else:
             if is_ajax:
-                return JsonResponse({"error": "Acción no reconocida"}, status=400)
-            messages.error(request, "Acción no reconocida.")
-            return redirect("comedor_detalle", pk=pk)
-
-        if not is_ajax:
-            return redirect(
-                "relevamiento_detalle",
-                pk=relevamiento.pk,
-                comedor_pk=relevamiento.comedor.pk,
-            )
+                response = JsonResponse({"error": "Acción no reconocida"}, status=400)
+            else:
+                messages.error(request, "Acción no reconocida.")
+                response = redirect("comedor_detalle", pk=pk)
     except Exception as e:
         logger.error(
             "Error al procesar relevamiento para comedor %s: %s",
@@ -85,11 +101,13 @@ def relevamiento_crear_editar_ajax(request, pk):
             exc_info=True,
         )
         if is_ajax:
-            return JsonResponse({"error": str(e)}, status=500)
-        messages.error(
-            request, "Hubo un error al guardar el relevamiento. Intenta de nuevo."
-        )
-        return redirect("comedor_detalle", pk=pk)
+            response = JsonResponse({"error": str(e)}, status=500)
+        else:
+            messages.error(
+                request, "Hubo un error al guardar el relevamiento. Intenta de nuevo."
+            )
+            response = redirect("comedor_detalle", pk=pk)
+    return response
 
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -460,12 +478,11 @@ class ObservacionCreateView(CreateView):
 
     def form_valid(self, form: BaseModelForm) -> HttpResponse:
         form.instance.comedor_id = Comedor.objects.get(pk=self.kwargs["comedor_pk"]).id
-        usuario = User.objects.get(pk=self.request.user.id)
+        user_model = get_user_model()
+        usuario = user_model.objects.get(pk=self.request.user.id)
         form.instance.observador = f"{usuario.first_name} {usuario.last_name}"
         form.instance.fecha_visita = timezone.now()
-
         self.object = form.save()
-
         return redirect(
             "observacion_detalle",
             comedor_pk=int(self.kwargs["comedor_pk"]),
@@ -511,10 +528,10 @@ class ObservacionUpdateView(UpdateView):
 
     def form_valid(self, form: BaseModelForm) -> HttpResponse:
         form.instance.comedor_id = Comedor.objects.get(pk=self.kwargs["comedor_pk"]).id
-        usuario = User.objects.get(pk=self.request.user.id)
+        user_model = get_user_model()
+        usuario = user_model.objects.get(pk=self.request.user.id)
         form.instance.observador = f"{usuario.first_name} {usuario.last_name}"
         form.instance.fecha_visita = timezone.now()
-
         self.object = form.save()
 
         return redirect(
