@@ -32,7 +32,7 @@ class ImportacionService:
 
     @staticmethod
     @transaction.atomic
-    def importar_legajos_desde_excel(expediente, archivo_excel, batch_size=500):
+    def importar_legajos_desde_excel(expediente, archivo_excel, usuario, batch_size=500):
         # Importar localmente para evitar circularidad
         from celiaquia.services.ciudadano_service import CiudadanoService
 
@@ -71,7 +71,7 @@ class ImportacionService:
         for offset, row in enumerate(df.to_dict(orient="records"), start=2):
             logger.debug(f"Fila {offset}: {row}")
             try:
-                ciudadano = CiudadanoService.get_or_create_ciudadano(row)
+                ciudadano = CiudadanoService.get_or_create_ciudadano(row, usuario)
                 batch.append(
                     ExpedienteCiudadano(
                         expediente=expediente,
