@@ -2,15 +2,15 @@ import os
 import threading
 import requests
 from comedores.models import Comedor, Observacion, Referente
-import os
 
 TIMEOUT = 360  # Segundos máximos de espera por respuesta
 
 
 def build_comedor_payload(comedor):
-    fk = (
-        lambda obj, attr, sub="nombre": getattr(getattr(obj, attr, None), sub, "") or ""
-    )
+
+    def fk(obj, attr, sub="nombre"):
+        return getattr(getattr(obj, attr, None), sub, "") or ""
+
     return {
         "Action": "Add",
         "Properties": {"Locale": "es-ES"},
