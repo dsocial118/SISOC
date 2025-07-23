@@ -42,42 +42,81 @@ class Command(BaseCommand):
     help = "Sincroniza TODOS los campos del Comedor (payload completo)."
 
     def add_arguments(self, parser):
-        parser.add_argument("--dry-run", action="store_true", help="No envía nada, solo muestra IDs.")
-        parser.add_argument("--comedor-id", type=int, dest="comedor_id",
-                            help="ID específico de Comedor a sincronizar. Si se especifica, ignora --limit.")
-        parser.add_argument("--limit", type=int, default=None, help="Limitar cantidad de comedores.")
-        parser.add_argument("--workers", type=int, default=MAX_WORKERS, help="Threads para requests.")
-        parser.add_argument("--batch-size", type=int, default=BATCH_SIZE, help="Tamaño de lote.")
-        parser.add_argument("--verbose", action="store_true", help="Loguea cada resultado y genera JSON.")
-        parser.add_argument("--out-file", type=str, default=None,
-                            help="Ruta del JSON de resultados (solo con --verbose).")
-        parser.add_argument("--action", type=str, default="Add", choices=("Add", "Update"),
-                            help='Valor para payload["Action"].')
+        parser.add_argument(
+            "--dry-run", action="store_true", help="No envía nada, solo muestra IDs."
+        )
+        parser.add_argument(
+            "--comedor-id",
+            type=int,
+            dest="comedor_id",
+            help="ID específico de Comedor a sincronizar. Si se especifica, ignora --limit.",
+        )
+        parser.add_argument(
+            "--limit", type=int, default=None, help="Limitar cantidad de comedores."
+        )
+        parser.add_argument(
+            "--workers", type=int, default=MAX_WORKERS, help="Threads para requests."
+        )
+        parser.add_argument(
+            "--batch-size", type=int, default=BATCH_SIZE, help="Tamaño de lote."
+        )
+        parser.add_argument(
+            "--verbose",
+            action="store_true",
+            help="Loguea cada resultado y genera JSON.",
+        )
+        parser.add_argument(
+            "--out-file",
+            type=str,
+            default=None,
+            help="Ruta del JSON de resultados (solo con --verbose).",
+        )
+        parser.add_argument(
+            "--action",
+            type=str,
+            default="Add",
+            choices=("Add", "Update"),
+            help='Valor para payload["Action"].',
+        )
 
     def handle(self, *args, **opts):
-        dry        = opts["dry_run"]
+        dry = opts["dry_run"]
         comedor_id = opts.get("comedor_id")
-        limit      = opts["limit"]
-        workers    = opts["workers"]
+        limit = opts["limit"]
+        workers = opts["workers"]
         batch_size = opts["batch_size"]
-        verbose    = opts["verbose"]
-        out_file   = opts["out_file"]
-        action     = opts["action"]
+        verbose = opts["verbose"]
+        out_file = opts["out_file"]
+        action = opts["action"]
 
         # Traemos TODOS los comedores (o filtramos por id/limit). Sin .only.
-        qs = Comedor.objects.all().select_related(
-            "tipocomedor", "provincia", "municipio", "localidad",
-            "programa", "organizacion", "referente", "dupla"
-        ).order_by("id")
+        qs = (
+            Comedor.objects.all()
+            .select_related(
+                "tipocomedor",
+                "provincia",
+                "municipio",
+                "localidad",
+                "programa",
+                "organizacion",
+                "referente",
+                "dupla",
+            )
+            .order_by("id")
+        )
 
         if comedor_id:
             qs = qs.filter(pk=comedor_id)
-            self.stdout.write(self.style.NOTICE(f"Filtrando solo Comedor ID={comedor_id}"))
+            self.stdout.write(
+                self.style.NOTICE(f"Filtrando solo Comedor ID={comedor_id}")
+            )
         elif limit:
             qs = qs[:limit]
 
         total = qs.count()
-        self.stdout.write(self.style.NOTICE(f"Encontrados {total} comedores para sync."))
+        self.stdout.write(
+            self.style.NOTICE(f"Encontrados {total} comedores para sync.")
+        )
         if dry:
             self.stdout.write(", ".join(map(str, qs.values_list("id", flat=True))))
             return
@@ -119,7 +158,11 @@ class Command(BaseCommand):
                             failures.append({"id": cid, "error": err_str})
 
             reset_queries()
-            self.stdout.write(self.style.SUCCESS(f"Lote OK. Acumulado: {success} éxitos, {fail} fallos"))
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Lote OK. Acumulado: {success} éxitos, {fail} fallos"
+                )
+            )
 
         self.stdout.write(self.style.SUCCESS(f"FIN. Éxitos: {success}  Fallos: {fail}"))
 

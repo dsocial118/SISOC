@@ -21,6 +21,7 @@ BATCH_SIZE = 100
 RETRIES = 3
 SLEEP_BETWEEN_RETRIES = 3  # seconds
 
+
 def send(payload):
     url = os.getenv("GESTIONAR_API_CREAR_COMEDOR")
     headers = {"applicationAccessKey": os.getenv("GESTIONAR_API_KEY")}
@@ -35,47 +36,69 @@ def send(payload):
             else:
                 return False, e
 
+
 class Command(BaseCommand):
     help = "Sincroniza PROGRAMAS e Imagen (foto_legajo) de Comedores con datos."
 
     def add_arguments(self, parser):
-        parser.add_argument("--dry-run", action="store_true", help="No envía nada, solo muestra IDs.")
         parser.add_argument(
-            "--comedor-id", type=int, dest="comedor_id",
-            help="ID de Comedor a sincronizar. Si se especifica, ignora --limit."
+            "--dry-run", action="store_true", help="No envía nada, solo muestra IDs."
         )
-        parser.add_argument("--limit", type=int, default=None, help="Limitar cantidad de comedores.")
-        parser.add_argument("--workers", type=int, default=MAX_WORKERS, help="Threads para requests.")
-        parser.add_argument("--batch-size", type=int, default=BATCH_SIZE, help="Tamaño de lote.")
-        parser.add_argument("--verbose", action="store_true", help="Loguea cada resultado y genera JSON.")
         parser.add_argument(
-            "--out-file", type=str, default=None,
-            help="Ruta del JSON de resultados (solo con --verbose)."
+            "--comedor-id",
+            type=int,
+            dest="comedor_id",
+            help="ID de Comedor a sincronizar. Si se especifica, ignora --limit.",
+        )
+        parser.add_argument(
+            "--limit", type=int, default=None, help="Limitar cantidad de comedores."
+        )
+        parser.add_argument(
+            "--workers", type=int, default=MAX_WORKERS, help="Threads para requests."
+        )
+        parser.add_argument(
+            "--batch-size", type=int, default=BATCH_SIZE, help="Tamaño de lote."
+        )
+        parser.add_argument(
+            "--verbose",
+            action="store_true",
+            help="Loguea cada resultado y genera JSON.",
+        )
+        parser.add_argument(
+            "--out-file",
+            type=str,
+            default=None,
+            help="Ruta del JSON de resultados (solo con --verbose).",
         )
 
     def handle(self, *args, **opts):
-        dry        = opts["dry_run"]
+        dry = opts["dry_run"]
         comedor_id = opts.get("comedor_id")
-        limit      = opts["limit"]
-        workers    = opts["workers"]
+        limit = opts["limit"]
+        workers = opts["workers"]
         batch_size = opts["batch_size"]
-        verbose    = opts["verbose"]
-        out_file   = opts["out_file"]
+        verbose = opts["verbose"]
+        out_file = opts["out_file"]
 
         qs = (
-            Comedor.objects
-            .filter(Q(programa__isnull=False) | Q(foto_legajo__isnull=False))
-            .only("id","programa","foto_legajo")
+            Comedor.objects.filter(
+                Q(programa__isnull=False) | Q(foto_legajo__isnull=False)
+            )
+            .only("id", "programa", "foto_legajo")
             .order_by("id")
         )
         if comedor_id:
             qs = qs.filter(pk=comedor_id)
-            self.stdout.write(self.style.NOTICE(f"Filtrando solo Comedor ID={comedor_id}"))
+            self.stdout.write(
+                self.style.NOTICE(f"Filtrando solo Comedor ID={comedor_id}")
+            )
         elif limit:
             qs = qs[:limit]
 
         total = qs.count()
-        self.stdout.write(self.style.NOTICE(f"Encontrados {total} comedores para sync."))
+        self.stdout.write(
+            self.style.NOTICE(f"Encontrados {total} comedores para sync.")
+        )
         if dry:
             self.stdout.write(", ".join(map(str, qs.values_list("id", flat=True))))
             return
@@ -111,7 +134,11 @@ class Command(BaseCommand):
                             failures.append({"id": cid, "error": err_str})
 
             reset_queries()
-            self.stdout.write(self.style.SUCCESS(f"Lote OK. Acumulado: {success} éxitos, {fail} fallos"))
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Lote OK. Acumulado: {success} éxitos, {fail} fallos"
+                )
+            )
 
         self.stdout.write(self.style.SUCCESS(f"FIN. Éxitos: {success}  Fallos: {fail}"))
 
