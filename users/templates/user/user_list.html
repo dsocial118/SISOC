@@ -30,7 +30,7 @@
                                 <td>{{ user.username }}</td>
                                 <td>{{ user.email }}</td>
                                 <td class="project-actions text-right">
-                                    {% include 'components/tables/row_actions.html' with object=user edit_url_name='usuario_editar' delete_url_name='usuario_borrar' %}
+                                    {% include 'components/tables/row_actions.html' with object=user edit_url='usuario_editar' delete_url='usuario_borrar' show_detail=False %}
                                 </td>
                             </tr>
                         {% endfor %}
