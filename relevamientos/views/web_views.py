@@ -53,7 +53,7 @@ class RelevamientoCreateView(CreateView):
         return data
 
     def form_valid(self, form):
-        context = getattr(self, '_context_data', None)
+        context = getattr(self, "_context_data", None)
         if context is None:
             context = self.get_context_data()
         forms = {k: context[k] for k in RelevamientoFormManager.FORM_CLASSES.keys()}
@@ -66,7 +66,9 @@ class RelevamientoCreateView(CreateView):
                 pk=int(self.object.id),
             )
         else:
-            RelevamientoFormManager.show_form_errors(self.request, forms, validation_results)
+            RelevamientoFormManager.show_form_errors(
+                self.request, forms, validation_results
+            )
             return self.form_invalid(form)
 
     def error_message(self, forms):
@@ -216,7 +218,7 @@ class RelevamientoUpdateView(UpdateView):
         return data
 
     def form_valid(self, form):
-        context = getattr(self, '_context_data', None)
+        context = getattr(self, "_context_data", None)
         if context is None:
             context = self.get_context_data()
         forms = {k: context[k] for k in RelevamientoFormManager.FORM_CLASSES.keys()}
@@ -229,7 +231,9 @@ class RelevamientoUpdateView(UpdateView):
                 pk=int(self.object.id),
             )
         else:
-            RelevamientoFormManager.show_form_errors(self.request, forms, validation_results)
+            RelevamientoFormManager.show_form_errors(
+                self.request, forms, validation_results
+            )
             return self.form_invalid(form)
 
     def error_message(self, forms):

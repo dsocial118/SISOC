@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.shortcuts import get_object_or_404
 
 from comedores.forms.comedor_form import ReferenteForm
@@ -84,7 +85,8 @@ class RelevamientoFormManager:
         if validation_results is not None:
             return {
                 name: forms[name].errors
-                for name, valid in validation_results.items() if not valid
+                for name, valid in validation_results.items()
+                if not valid
             }
         return {
             name: form.errors for name, form in forms.items() if not form.is_valid()
@@ -95,7 +97,6 @@ class RelevamientoFormManager:
         """
         Muestra los errores de los formularios inválidos usando messages.
         """
-        from django.contrib import messages
         errors = RelevamientoFormManager.get_errors(forms, validation_results)
         for form_name, error in errors.items():
             messages.error(request, f"Errores en {form_name}: {error}")
