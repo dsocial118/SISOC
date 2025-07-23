@@ -621,7 +621,7 @@
                             </button>
                         </div>
                     </div>
-                    <div class="card-body row card-comments p-0 pb-1">                        
+                    <div class="card-body row card-comments p-0 pb-1">
                         <div class="nav nav-pills row col-12 my-3 mx-auto">
                             {% if imagenes %}
                                 {% for imagen in imagenes %}
@@ -629,7 +629,8 @@
                                         <img src="{{ imagen.imagen.url }}"
                                              alt="Imagen del comedor"
                                              class="img-fluid my-1 rounded object-fit-contain"
-                                             style="max-height: 200px; width: 100%;" />
+                                             style="max-height: 200px;
+                                                    width: 100%" />
                                     </div>
                                 {% endfor %}
                             {% else %}

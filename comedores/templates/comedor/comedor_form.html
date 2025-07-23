@@ -91,17 +91,20 @@
                                             <div class="col-md-3 col-sm-4 col-6">
                                                 <div class="card position-relative">
                                                     <!-- Checkbox para eliminar foto del legajo -->
-                                                    <div class="position-absolute" style="top: 5px; right: 5px; z-index: 10; background: rgba(255,255,255,0.8); border-radius: 3px; padding: 2px;">
+                                                    <div class="position-absolute"
+                                                         style="top: 5px;
+                                                                right: 5px;
+                                                                z-index: 10;
+                                                                background: rgba(255,255,255,0.8);
+                                                                border-radius: 3px;
+                                                                padding: 2px">
                                                         <div class="form-check">
                                                             <input type="checkbox"
                                                                    name="foto_legajo_borrar"
                                                                    id="foto_legajo_borrar"
                                                                    class="form-check-input"
-                                                                   style="transform: scale(1.2);" />
-                                                            <label class="form-check-label visually-hidden" 
-                                                                   for="foto_legajo_borrar">
-                                                                Eliminar foto legajo
-                                                            </label>
+                                                                   style="transform: scale(1.2)" />
+                                                            <label class="form-check-label visually-hidden" for="foto_legajo_borrar">Eliminar foto legajo</label>
                                                         </div>
                                                     </div>
                                                     <div class="card-header">
@@ -111,24 +114,23 @@
                                                     <div class="position-relative overflow-hidden" style="height: 120px;">
                                                         <img src="/media/{{ comedor.foto_legajo }}"
                                                              alt="Foto Legajo"
-                                                             class="card-img-top w-100 h-100" 
-                                                             style="object-fit: cover; height: 120px;" />
+                                                             class="card-img-top w-100 h-100"
+                                                             style="object-fit: cover;
+                                                                    height: 120px" />
                                                     </div>
                                                     <!-- Información del archivo -->
                                                     <div class="card-body p-2">
-                                                        <small class="text-muted text-truncate d-block" 
+                                                        <small class="text-muted text-truncate d-block"
                                                                title="{{ comedor.foto_legajo }}">
-                                                            {% with comedor.foto_legajo as img_path %}
-                                                                {{ img_path|slice:"comedor/"|default:img_path }}
-                                                            {% endwith %}
+                                                            {% with comedor.foto_legajo as img_path %}{{ img_path|slice:"comedor/"|default:img_path }}{% endwith %}
                                                         </small>
                                                         <div class="d-flex justify-content-between align-items-center mt-1">
                                                             <small class="text-success"><i class="fas fa-check-circle"></i> Guardada</small>
-                                                            <button type="button" 
-                                                                    class="btn btn-sm btn-outline-danger p-1" 
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-outline-danger p-1"
                                                                     onclick="toggleFotoLegajoDeletion()"
                                                                     title="Marcar para eliminar"
-                                                                    style="font-size: 12px;">
+                                                                    style="font-size: 12px">
                                                                 <i class="fas fa-trash"></i>
                                                             </button>
                                                         </div>
@@ -175,43 +177,45 @@
                                             <div class="col-md-3 col-sm-4 col-6 mb-3">
                                                 <div class="card position-relative">
                                                     <!-- Checkbox para eliminar en la esquina superior derecha -->
-                                                    <div class="position-absolute" style="top: 5px; right: 5px; z-index: 10; background: rgba(255,255,255,0.8); border-radius: 3px; padding: 2px;">
+                                                    <div class="position-absolute"
+                                                         style="top: 5px;
+                                                                right: 5px;
+                                                                z-index: 10;
+                                                                background: rgba(255,255,255,0.8);
+                                                                border-radius: 3px;
+                                                                padding: 2px">
                                                         <div class="form-check">
                                                             <input type="checkbox"
                                                                    name="imagen_ciudadano-borrar-{{ imagen.id }}"
                                                                    id="imagen_ciudadano-borrar-{{ imagen.id }}"
                                                                    class="form-check-input"
-                                                                   style="transform: scale(1.2);" />
-                                                            <label class="form-check-label visually-hidden" 
+                                                                   style="transform: scale(1.2)" />
+                                                            <label class="form-check-label visually-hidden"
                                                                    for="imagen_ciudadano-borrar-{{ imagen.id }}">
                                                                 Eliminar
                                                             </label>
                                                         </div>
                                                     </div>
-                                                    
                                                     <!-- Imagen -->
                                                     <div class="position-relative overflow-hidden" style="height: 120px;">
                                                         <img src="/media/{{ imagen.imagen }}"
                                                              alt="Comedor"
                                                              class="card-img-top w-100 h-100"
-                                                             style="object-fit: cover; height: 120px;" />
+                                                             style="object-fit: cover;
+                                                                    height: 120px" />
                                                     </div>
-                                                    
                                                     <!-- Información del archivo -->
                                                     <div class="card-body p-2">
-                                                        <small class="text-muted text-truncate d-block" 
-                                                               title="{{ imagen.imagen }}">
-                                                            {% with imagen.imagen as img_path %}
-                                                                {{ img_path|slice:"comedor/"|default:img_path }}
-                                                            {% endwith %}
+                                                        <small class="text-muted text-truncate d-block" title="{{ imagen.imagen }}">
+                                                            {% with imagen.imagen as img_path %}{{ img_path|slice:"comedor/"|default:img_path }}{% endwith %}
                                                         </small>
                                                         <div class="d-flex justify-content-between align-items-center mt-1">
                                                             <small class="text-success"><i class="fas fa-check-circle"></i> Guardada</small>
-                                                            <button type="button" 
-                                                                    class="btn btn-sm btn-outline-danger p-1" 
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-outline-danger p-1"
                                                                     onclick="toggleImageDeletion('{{ imagen.id }}')"
                                                                     title="Marcar para eliminar"
-                                                                    style="font-size: 12px;">
+                                                                    style="font-size: 12px">
                                                                 <i class="fas fa-trash"></i>
                                                             </button>
                                                         </div>
@@ -220,7 +224,7 @@
                                             </div>
                                         {% endfor %}
                                     </div>
-                                    <hr class="my-4">
+                                    <hr class="my-4" />
                                 </div>
                             {% endif %}
                             <div class="form-group">
@@ -231,11 +235,9 @@
                                        class="d-none"
                                        multiple
                                        accept="image/*" />
-                                
                                 <button type="button" id="addImagesBtn" class="btn btn-primary mb-3">
                                     <i class="fas fa-plus"></i> Seleccionar Imágenes
                                 </button>
-                                
                                 <!-- Contenedor para mostrar las imágenes seleccionadas -->
                                 <div id="selectedImagesInfo" class="mb-2 d-none">
                                     <small class="text-muted">
