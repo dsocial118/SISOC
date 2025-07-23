@@ -101,7 +101,7 @@ def relevamiento_crear_editar_ajax(request, pk):
             exc_info=True,
         )
         if is_ajax:
-            response = JsonResponse({"error": str(e)}, status=500)
+            response = JsonResponse({"error": "An internal error occurred"}, status=500)
         else:
             messages.error(
                 request, "Hubo un error al guardar el relevamiento. Intenta de nuevo."
