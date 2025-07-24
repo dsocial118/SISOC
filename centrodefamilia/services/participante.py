@@ -1,4 +1,3 @@
-from django.forms import CharField
 from centrodefamilia.models import Centro, ActividadCentro, ParticipanteActividad
 from ciudadanos.models import (
     Ciudadano,
@@ -11,7 +10,6 @@ from ciudadanos.models import (
     CiudadanoPrograma,
     HistorialCiudadanoProgramas,
 )
-from django.db.models.functions import Cast
 
 
 class AlreadyRegistered(Exception):
@@ -42,7 +40,7 @@ def validar_cuit(cuit):
 
 
 def validar_ciudadano_en_rango_para_actividad(ciudadano, actividad_centro):
-    if actividad_centro.centro.tipo == "adherido" and not 1 <= ciudadano.id <= 1000:
+    if actividad_centro.centro.tipo == "adherido" and not 1 <= ciudadano.id <= 975:
         raise ValueError(
             f"El ciudadano ID {ciudadano.id} no está habilitado para inscribirse en este centro adherido."
         )
