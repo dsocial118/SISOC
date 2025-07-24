@@ -20,7 +20,7 @@ services:
       retries: 5
 
   django:
-    build: 
+    build:
       context: .
       dockerfile: ./docker/django/Dockerfile
     env_file:
@@ -30,6 +30,7 @@ services:
       - ${DOCKER_DEBUGGER_PORT_FORWARD}:${DOCKER_DEBUGGER_PORT}
     volumes:
       - .:/sisoc/
+    restart: always
 
 volumes:
   mysql_data:
