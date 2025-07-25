@@ -1,21 +1,16 @@
-{% extends "includes/main.html" %}
-{% load static crispy_forms_tags %}
-{% block head %}
-    <link rel="stylesheet"
-          href="{% static 'custom/css/duplasSelect2.min.css' %}" />
-{% endblock %}
-{% block title %}Editar Dupla{% endblock %}
-{% block content %}
-    <div class="container mt-4">
-        <h2>Editar Dupla</h2>
-        <form method="post">
-            {% csrf_token %}
-            {{ form.nombre | as_crispy_field }}
-            {{ form.estado | as_crispy_field }}
-            {{ form.tecnico | as_crispy_field }}
-            {{ form.abogado | as_crispy_field }}
-            <button type="submit" class="btn btn-success">Guardar</button>
-            <a href="{% url 'dupla_list' %}" class="btn btn-secondary">Cancelar</a>
-        </form>
-    </div>
+{% extends "includes/main.html" %} {% load static crispy_forms_tags %} {% block
+head %}
+<link rel="stylesheet" href="{% static 'custom/css/duplasSelect2.min.css' %}" />
+{% endblock %} {% block title %}Editar Dupla{% endblock %} {% block content %}
+{% include 'components/forms/form_header_buttons.html' with
+back_url='dupla_list' show_cancel=True cancel_url='dupla_list' %}
+<div class="container mt-4">
+  <h2>Editar Dupla</h2>
+  <form method="post">
+    {% csrf_token %} {{ form.nombre | as_crispy_field }} {{ form.estado |
+    as_crispy_field }} {{ form.tecnico | as_crispy_field }} {{ form.abogado |
+    as_crispy_field }} {% include 'components/forms/form_buttons.html' with
+    submit_label="Guardar" cancel_url='dupla_list' button_layout='left' %}
+  </form>
+</div>
 {% endblock %}
