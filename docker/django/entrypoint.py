@@ -2,20 +2,24 @@ import os
 import sys
 import time
 import shutil
-from pathlib import Path
-from subprocess import run, CalledProcessError
 import pymysql
-
+from pathlib import Path
+from typing import Optional
+from subprocess import run, CalledProcessError
+from contextlib import closing
 
 # ---------- Utils ----------
-
 
 def env_bool(name: str, default: str = "false") -> bool:
     return os.getenv(name, default).strip().lower() in {"1", "true", "yes", "y"}
 
+def env_int(name: str, default: int) -> int:
+    try:
+        return int(os.getenv(name, str(default)))
+    except (TypeError, ValueError):
+        return default
 
 def sh(cmd: list[str], check: bool = True) -> None:
-    """Run shell cmd, fail fast with clear error."""
     print(f"▶️  {' '.join(cmd)}")
     try:
         run(cmd, check=check)
@@ -23,9 +27,29 @@ def sh(cmd: list[str], check: bool = True) -> None:
         print(f"❌ Comando falló ({e.returncode}): {' '.join(cmd)}")
         sys.exit(e.returncode)
 
+# ---------- DB helpers ----------
+
+def mysql_connect():
+    host = os.getenv("DATABASE_HOST")
+    port = int(os.getenv("DATABASE_PORT", 3306))
+    user = os.getenv("DATABASE_USER")
+    pwd = os.getenv("DATABASE_PASSWORD")
+    return pymysql.connect(host=host, port=port, user=user, password=pwd)
+
+
+def get_mysql_variable(var: str, default: Optional[int] = None) -> Optional[int]:
+    try:
+        with closing(mysql_connect()) as conn, closing(conn.cursor()) as cur:
+            cur.execute("SHOW VARIABLES LIKE %s;", (var,))
+            row = cur.fetchone()
+            if row:
+                return int(row[1])
+    except Exception as e:
+        print(f"⚠️  No pude leer {var} de MySQL: {e}")
+    return default
+
 
 # ---------- DB wait ----------
-
 
 def wait_for_mysql():
     if not env_bool("WAIT_FOR_DB", "true"):
@@ -56,11 +80,9 @@ def wait_for_mysql():
                 print(f"❌ MySQL no respondió en {max_wait}s: {e}")
                 sys.exit(1)
             time.sleep(delay)
-            delay = min(delay * 2, 10)  # backoff exponencial, máx 10s
-
+            delay = min(delay * 2, 10)
 
 # ---------- Django prep ----------
-
 
 def django_prepare(env: str):
     """
@@ -71,7 +93,6 @@ def django_prepare(env: str):
     """
     is_prd = env == "prd"
 
-    # Makemigrations solo si no es PRD ni QA (asumo QA == 'qa')
     if env not in {"prd", "qa"} and env_bool("RUN_MAKEMIGRATIONS", "true"):
         sh(["python", "manage.py", "makemigrations"])
 
@@ -88,7 +109,6 @@ def django_prepare(env: str):
     if is_prd and env_bool("RUN_CHECKS", "true"):
         sh(["python", "manage.py", "check", "--deploy"])
 
-
 def maybe_collectstatic():
     if not env_bool("RUN_COLLECTSTATIC", "false"):
         return
@@ -98,14 +118,52 @@ def maybe_collectstatic():
         shutil.rmtree(static_root)
     sh(["python", "manage.py", "collectstatic", "--noinput"])
 
+# ---------- Gunicorn tuning (Punto 2) ----------
+
+def calc_gunicorn_params():
+    """
+    Calcula workers y threads coherentes con:
+      - CPUs disponibles
+      - max_connections de MySQL
+    Reglas:
+      - threads = 1 con UvicornWorker
+      - workers = min( (2*cpus)+1 , max((max_connections - margen)/2, 1) )
+        donde '2' es factor de seguridad por conexiones por worker
+    Permite overrides por env vars.
+    """
+    # Overrides explícitos
+    forced_workers = os.getenv("GUNICORN_WORKERS")
+    forced_threads = os.getenv("GUNICORN_THREADS")
+
+    if forced_workers and forced_threads:
+        return forced_workers, forced_threads
+
+    cpus = os.cpu_count() or 2
+    default_workers = (2 * cpus) + 1
+
+    # margen para admin/replicas/otros servicios
+    margin = env_int("DB_CONN_MARGIN", 20)
+    factor = env_int("DB_CONN_PER_WORKER_FACTOR", 2)
+
+    max_conns = get_mysql_variable("max_connections", default=151)
+    if max_conns and max_conns > margin:
+        max_by_db = max((max_conns - margin) // factor, 1)
+    else:
+        max_by_db = default_workers  # fallback si no pudimos leer
+
+    workers = min(default_workers, max_by_db)
+    workers = env_int("GUNICORN_WORKERS", workers)  # si solo seteás uno
+
+    threads = env_int("GUNICORN_THREADS", 1)  # fuerza 1 por defecto
+
+    return str(workers), str(threads)
 
 # ---------- Run server ----------
 
-
 def run_server(env: str):
     if env == "prd":
-        # Gunicorn configurable (8)
-        workers = os.getenv("GUNICORN_WORKERS") or str(max(2, os.cpu_count() * 2 + 1))
+        workers, threads = calc_gunicorn_params()
+
         args = [
             "gunicorn",
             "config.asgi:application",
@@ -116,21 +174,22 @@ def run_server(env: str):
             "--workers",
             workers,
             "--threads",
-            os.getenv("GUNICORN_THREADS", "2"),
+            threads,  # debería ser 1 por diseño
             "--timeout",
             os.getenv("GUNICORN_TIMEOUT", "30"),
             "--max-requests",
-            os.getenv("GUNICORN_MAX_REQUESTS", "1000"),
+            os.getenv("GUNICORN_MAX_REQUESTS", "800"),
+            "--max-requests-jitter",
+            os.getenv("GUNICORN_MAX_REQUESTS_JITTER", "80"),
             "--log-level",
             os.getenv("GUNICORN_LOG_LEVEL", "info"),
             "--access-logfile",
             "-",
         ]
-        # Reemplaza el proceso actual (D)
+        print(f"🚀 Lanzando Gunicorn con workers={workers}, threads={threads}")
         os.execvp(args[0], args)
     else:
         os.execvp("python", ["python", "manage.py", "runserver", "0.0.0.0:8000"])
-
 
 # ---------- Main ----------
 
