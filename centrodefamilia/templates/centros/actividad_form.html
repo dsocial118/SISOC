@@ -2,6 +2,7 @@
 {% load static %}
 {% block title %}Nueva Actividad{% endblock %}
 {% block content %}
+    {% include 'components/forms/form_header_buttons.html' with back_url='centro_list' show_cancel=True cancel_url='centro_list' %}
     <div class="container-fluid no-gutters">
         <div class="card bg-dark text-white mb-4">
             <div class="card-header bg-secondary">Nueva Actividad</div>
@@ -19,8 +20,7 @@
                         {{ form.nombre }}
                         {{ form.nombre.errors }}
                     </div>
-                    <button type="submit" class="btn btn-outline-success">Guardar</button>
-                    <a href="{% url 'centro_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+                    {% include 'components/forms/form_buttons.html' with submit_label="Guardar" cancel_url='centro_list' button_layout='left' %}
                 </form>
             </div>
         </div>
