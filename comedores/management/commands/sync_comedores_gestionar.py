@@ -22,6 +22,7 @@ RETRIES = 3
 SLEEP_BETWEEN_RETRIES = 3  # seconds
 
 
+
 def send(payload):
     url = os.getenv("GESTIONAR_API_CREAR_COMEDOR")
     headers = {"applicationAccessKey": os.getenv("GESTIONAR_API_KEY")}
@@ -37,8 +38,9 @@ def send(payload):
                 return False, e
 
 
+
 class Command(BaseCommand):
-    help = "Sincroniza PROGRAMAS e Imagen (foto_legajo) de Comedores con datos."
+    help = "Sincroniza TODOS los campos del Comedor (payload completo)."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -60,11 +62,26 @@ class Command(BaseCommand):
             "--batch-size", type=int, default=BATCH_SIZE, help="Tamaño de lote."
         )
         parser.add_argument(
+            "--comedor-id",
+            type=int,
+            dest="comedor_id",
+            help="ID específico de Comedor a sincronizar. Si se especifica, ignora --limit.",
             "--verbose",
             action="store_true",
             help="Loguea cada resultado y genera JSON.",
         )
         parser.add_argument(
+            "--out-file",
+            type=str,
+            default=None,
+            help="Ruta del JSON de resultados (solo con --verbose).",
+        )
+        parser.add_argument(
+            "--action",
+            type=str,
+            default="Add",
+            choices=("Add", "Update"),
+            help='Valor para payload["Action"].',
             "--out-file",
             type=str,
             default=None,
@@ -77,16 +94,33 @@ class Command(BaseCommand):
         limit = opts["limit"]
         workers = opts["workers"]
         batch_size = opts["batch_size"]
+        verbose    = opts["verbose"]
+        out_file   = opts["out_file"]
+        action = opts["action"]
+
+        # Traemos TODOS los comedores (o filtramos por id/limit). Sin .only.
         verbose = opts["verbose"]
         out_file = opts["out_file"]
 
         qs = (
+            Comedor.objects.all()
+            .select_related(
+                "tipocomedor",
+                "provincia",
+                "municipio",
+                "localidad",
+                "programa",
+                "organizacion",
+                "referente",
+                "dupla",
+            )
             Comedor.objects.filter(
                 Q(programa__isnull=False) | Q(foto_legajo__isnull=False)
             )
             .only("id", "programa", "foto_legajo")
             .order_by("id")
         )
+
         if comedor_id:
             qs = qs.filter(pk=comedor_id)
             self.stdout.write(
@@ -106,8 +140,8 @@ class Command(BaseCommand):
         success, fail = 0, 0
         successes, failures = [], []
 
-        def chunked(it, size):
-            it = iter(it)
+        def chunked(iterable, size):
+            it = iter(iterable)
             while True:
                 batch = list(islice(it, size))
                 if not batch:
@@ -115,7 +149,13 @@ class Command(BaseCommand):
                 yield batch
 
         for batch in chunked(qs.iterator(chunk_size=batch_size), batch_size):
-            payloads = [(c.id, build_comedor_payload(c)) for c in batch]
+            payloads = []
+            for c in batch:
+                pl = build_comedor_payload(c)
+                # Fuerza el Action requerido (por si la función fija "Add")
+                pl["Action"] = action
+                payloads.append((c.id, pl))
+
             with ThreadPoolExecutor(max_workers=workers) as executor:
                 futures = {executor.submit(send, pl): cid for cid, pl in payloads}
                 for fut in as_completed(futures):
@@ -153,6 +193,7 @@ class Command(BaseCommand):
                 "fail": fail,
                 "successes": successes,
                 "failures": failures,
+                "action": action,
             }
             with open(out_file, "w", encoding="utf-8") as f:
                 json.dump(result, f, ensure_ascii=False, indent=2)
