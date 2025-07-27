@@ -211,6 +211,7 @@ class ComedorCreateView(CreateView):
             self.object = form.save(commit=False)
             self.object.referente = referente_form.save()
             self.object.save()
+
             for imagen in imagenes:
                 try:
                     ComedorService.create_imagenes(imagen, self.object.pk)
@@ -317,12 +318,8 @@ class ComedorDetailView(DetailView):
             else None
         )
 
-        # Optimización: Usar imágenes prefetched en lugar de .values()
-        imagenes = (
-            [{"imagen": img.imagen} for img in self.object.imagenes_optimized]
-            if hasattr(self.object, "imagenes_optimized")
-            else list(self.object.imagenes.values("imagen"))
-        )
+        # Usar imágenes directamente - asegurar que se carguen
+        imagenes = self.object.imagenes.all()
 
         return {
             "relevamientos": relevamientos,
@@ -454,6 +451,7 @@ class ComedorUpdateView(UpdateView):
             self.object.save()
 
             ComedorService.borrar_imagenes(self.request.POST)
+            ComedorService.borrar_foto_legajo(self.request.POST, self.object)
 
             for imagen in imagenes:
                 try:

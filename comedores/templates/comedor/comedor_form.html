@@ -86,7 +86,59 @@
                                 </div>
                                 <div class="form-group row">
                                     <div>{{ form.foto_legajo|as_crispy_field }}</div>
-                                    <div id="fotoLegajoPreviewContainer" class="mt-3 col-12"></div>
+                                    <div id="fotoLegajoPreviewContainer" class="mt-3 col-12">
+                                        {% if comedor.foto_legajo %}
+                                            <div class="col-md-3 col-sm-4 col-6">
+                                                <div class="card position-relative">
+                                                    <!-- Checkbox para eliminar foto del legajo -->
+                                                    <div class="position-absolute"
+                                                         style="top: 5px;
+                                                                right: 5px;
+                                                                z-index: 10;
+                                                                background: rgba(255,255,255,0.8);
+                                                                border-radius: 3px;
+                                                                padding: 2px">
+                                                        <div class="form-check">
+                                                            <input type="checkbox"
+                                                                   name="foto_legajo_borrar"
+                                                                   id="foto_legajo_borrar"
+                                                                   class="form-check-input"
+                                                                   style="transform: scale(1.2)" />
+                                                            <label class="form-check-label visually-hidden" for="foto_legajo_borrar">Eliminar foto legajo</label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="card-header">
+                                                        <h5 class="card-title mb-0">Foto Legajo Actual</h5>
+                                                    </div>
+                                                    <!-- Imagen -->
+                                                    <div class="position-relative overflow-hidden" style="height: 120px;">
+                                                        <img src="/media/{{ comedor.foto_legajo }}"
+                                                             alt="Foto Legajo"
+                                                             class="card-img-top w-100 h-100"
+                                                             style="object-fit: cover;
+                                                                    height: 120px" />
+                                                    </div>
+                                                    <!-- Información del archivo -->
+                                                    <div class="card-body p-2">
+                                                        <small class="text-muted text-truncate d-block"
+                                                               title="{{ comedor.foto_legajo }}">
+                                                            {% with comedor.foto_legajo as img_path %}{{ img_path|slice:"comedor/"|default:img_path }}{% endwith %}
+                                                        </small>
+                                                        <div class="d-flex justify-content-between align-items-center mt-1">
+                                                            <small class="text-success"><i class="fas fa-check-circle"></i> Guardada</small>
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-outline-danger p-1"
+                                                                    onclick="toggleFotoLegajoDeletion()"
+                                                                    title="Marcar para eliminar"
+                                                                    style="font-size: 12px">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -117,39 +169,81 @@
                             <h3 class="card-title">Imágenes</h3>
                         </div>
                         <div class="card-body">
-                            {% for imagen in imagenes_borrar %}
-                                <div class="input-group mb-2">
-                                    <span class="input-group-text">Actualmente</span>
-                                    <div class="form-control d-flex h-auto">
-                                        <span class="text-break flex-grow-1">
-                                            <a href="" target=__blank>{{ imagen.imagen }}</a>
-                                        </span>
-                                        <span class="align-self-center ml-2">
-                                            <span class="form-check">
-                                                <input type="checkbox"
-                                                       name="imagen_ciudadano-borrar-{{ imagen.id }}"
-                                                       id="imagen_ciudadano-id-borrar"
-                                                       class="form-check-input" />
-                                                <label class="form-check-label mb-0" for="imagen_ciudadano-clear_id">Eliminar</label>
-                                            </span>
-                                        </span>
+                            {% if imagenes_borrar %}
+                                <div class="mb-4">
+                                    <h6 class="text-muted mb-3">Imágenes Existentes:</h6>
+                                    <div class="row">
+                                        {% for imagen in imagenes_borrar %}
+                                            <div class="col-md-3 col-sm-4 col-6 mb-3">
+                                                <div class="card position-relative">
+                                                    <!-- Checkbox para eliminar en la esquina superior derecha -->
+                                                    <div class="position-absolute"
+                                                         style="top: 5px;
+                                                                right: 5px;
+                                                                z-index: 10;
+                                                                background: rgba(255,255,255,0.8);
+                                                                border-radius: 3px;
+                                                                padding: 2px">
+                                                        <div class="form-check">
+                                                            <input type="checkbox"
+                                                                   name="imagen_ciudadano-borrar-{{ imagen.id }}"
+                                                                   id="imagen_ciudadano-borrar-{{ imagen.id }}"
+                                                                   class="form-check-input"
+                                                                   style="transform: scale(1.2)" />
+                                                            <label class="form-check-label visually-hidden"
+                                                                   for="imagen_ciudadano-borrar-{{ imagen.id }}">
+                                                                Eliminar
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    <!-- Imagen -->
+                                                    <div class="position-relative overflow-hidden" style="height: 120px;">
+                                                        <img src="/media/{{ imagen.imagen }}"
+                                                             alt="Comedor"
+                                                             class="card-img-top w-100 h-100"
+                                                             style="object-fit: cover;
+                                                                    height: 120px" />
+                                                    </div>
+                                                    <!-- Información del archivo -->
+                                                    <div class="card-body p-2">
+                                                        <small class="text-muted text-truncate d-block" title="{{ imagen.imagen }}">
+                                                            {% with imagen.imagen as img_path %}{{ img_path|slice:"comedor/"|default:img_path }}{% endwith %}
+                                                        </small>
+                                                        <div class="d-flex justify-content-between align-items-center mt-1">
+                                                            <small class="text-success"><i class="fas fa-check-circle"></i> Guardada</small>
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-outline-danger p-1"
+                                                                    onclick="toggleImageDeletion('{{ imagen.id }}')"
+                                                                    title="Marcar para eliminar"
+                                                                    style="font-size: 12px">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
                                     </div>
+                                    <hr class="my-4" />
                                 </div>
-                            {% endfor %}
-                            <input type="file"
-                                   name="imagenes"
-                                   id="imagenesInput"
-                                   class="d-none"
-                                   multiple
-                                   accept="image/*" />
-                            <button type="button" id="addImagesBtn" class="btn btn-primary mb-3">
-                                <i class="fas fa-plus"></i> Agregar Imágenes
-                            </button>
-                            <!-- Contenedor para mostrar las imágenes seleccionadas -->
-                            <div id="selectedImagesInfo" class="mb-2 d-none">
-                                <small class="text-muted">
-                                    <span id="imageCount">0</span> imagen(es) seleccionada(s)
-                                </small>
+                            {% endif %}
+                            <div class="form-group">
+                                <h6 class="text-muted mb-3">Agregar Nuevas Imágenes:</h6>
+                                <input type="file"
+                                       name="imagenes"
+                                       id="imagenesInput"
+                                       class="d-none"
+                                       multiple
+                                       accept="image/*" />
+                                <button type="button" id="addImagesBtn" class="btn btn-primary mb-3">
+                                    <i class="fas fa-plus"></i> Seleccionar Imágenes
+                                </button>
+                                <!-- Contenedor para mostrar las imágenes seleccionadas -->
+                                <div id="selectedImagesInfo" class="mb-2 d-none">
+                                    <small class="text-muted">
+                                        <span id="imageCount">0</span> imagen(es) seleccionada(s)
+                                    </small>
+                                </div>
                             </div>
                             <div id="imagePreviewContainer" class="mt-3 row"></div>
                             <div class="d-flex justify-content-end">
