@@ -120,6 +120,7 @@ INSTALLED_APPS = [
     # Librerias
     "django_cotton",
     "crispy_forms",
+    "silk",
     "crispy_bootstrap5",
     "django_extensions",
     "import_export",
@@ -332,5 +333,4 @@ DOMINIO = os.environ.get("DOMINIO", default="localhost:8001")
 # Configuración de Silk fuera de DEBUG
 if DEBUG:
     SILKY_PYTHON_PROFILER = True
-    INSTALLED_APPS += ["silk"]
     MIDDLEWARE.insert(0, "silk.middleware.SilkyMiddleware")
