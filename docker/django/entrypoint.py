@@ -9,14 +9,17 @@ from contextlib import closing
 
 # ---------- Utils ----------
 
+
 def env_bool(name: str, default: str = "false") -> bool:
     return os.getenv(name, default).strip().lower() in {"1", "true", "yes", "y"}
+
 
 def env_int(name: str, default: int) -> int:
     try:
         return int(os.getenv(name, str(default)))
     except (TypeError, ValueError):
         return default
+
 
 def sh(cmd: list[str], check: bool = True) -> None:
     print(f"▶️  {' '.join(cmd)}")
@@ -26,7 +29,9 @@ def sh(cmd: list[str], check: bool = True) -> None:
         print(f"❌ Comando falló ({e.returncode}): {' '.join(cmd)}")
         sys.exit(e.returncode)
 
+
 # ---------- DB helpers ----------
+
 
 def mysql_connect():
     host = os.getenv("DATABASE_HOST")
@@ -34,6 +39,7 @@ def mysql_connect():
     user = os.getenv("DATABASE_USER")
     pwd = os.getenv("DATABASE_PASSWORD")
     return pymysql.connect(host=host, port=port, user=user, password=pwd)
+
 
 def get_mysql_variable(var: str, default: int | None = None) -> int | None:
     try:
@@ -46,7 +52,9 @@ def get_mysql_variable(var: str, default: int | None = None) -> int | None:
         print(f"⚠️  No pude leer {var} de MySQL: {e}")
     return default
 
+
 # ---------- DB wait ----------
+
 
 def wait_for_mysql():
     if not env_bool("WAIT_FOR_DB", "true"):
@@ -79,7 +87,9 @@ def wait_for_mysql():
             time.sleep(delay)
             delay = min(delay * 2, 10)
 
+
 # ---------- Django prep ----------
+
 
 def django_prepare(env: str):
     """
@@ -106,6 +116,7 @@ def django_prepare(env: str):
     if is_prd and env_bool("RUN_CHECKS", "true"):
         sh(["python", "manage.py", "check", "--deploy"])
 
+
 def maybe_collectstatic():
     if not env_bool("RUN_COLLECTSTATIC", "false"):
         return
@@ -115,7 +126,9 @@ def maybe_collectstatic():
         shutil.rmtree(static_root)
     sh(["python", "manage.py", "collectstatic", "--noinput"])
 
+
 # ---------- Gunicorn tuning (Punto 2) ----------
+
 
 def calc_gunicorn_params():
     """
@@ -155,7 +168,9 @@ def calc_gunicorn_params():
 
     return str(workers), str(threads)
 
+
 # ---------- Run server ----------
+
 
 def run_server(env: str):
     if env == "prd":
@@ -187,6 +202,7 @@ def run_server(env: str):
         os.execvp(args[0], args)
     else:
         os.execvp("python", ["python", "manage.py", "runserver", "0.0.0.0:8000"])
+
 
 # ---------- Main ----------
 
