@@ -170,7 +170,7 @@
                                             <div class="nav-item d-flex">
                                                 <div class="comment-text comment-text d-flex flex-column min-width-100">
                                                     {% if comedor.foto_legajo %}
-                                                        <img src="/media/{{ comedor.foto_legajo }}"
+                                                        <img src="{{ comedor.foto_legajo.url }}"
                                                              alt="Imagen del comedor"
                                                              class="img-fluid mw-100 rounded" />
                                                     {% else %}
