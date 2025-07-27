@@ -1,0 +1,137 @@
+{% load static custom_filters %}
+{% with pagina_actual=request.resolver_match.route %}
+    <li class="nav-item">
+        <a href="{% url 'dashboard' %}"
+           class="nav-link {% if 'dashboard' in pagina_actual %}active{% endif %}">
+            <i class="nav-icon fas fa-chart-pie"></i>
+            <p>Dashboard</p>
+        </a>
+    </li>
+    {% if request.user|has_group:"Administrador" %}
+        <li class="nav-item">
+            <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-users"></i>
+                <p>
+                    Administración
+                    <i class="nav-arrow bi bi-chevron-right"></i>
+                </p>
+            </a>
+            <ul class="nav nav-treeview">
+                <li class="nav-item">
+                    <a href="{% url 'usuarios' %}"
+                       class="nav-link {% if 'usuarios' in pagina_actual or 'password' in pagina_actual %}active{% endif %}">
+                        <i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+                        <p>Usuarios</p>
+                    </a>
+                    <a href="{% url 'grupos' %}"
+                       class="nav-link {% if 'grupos' in pagina_actual %}active{% endif %}">
+                        <i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+                        <p>Grupos</p>
+                    </a>
+                    <a href="{% url 'dupla_list' %}"
+                       class="nav-link {% if 'grupos' in pagina_actual %}active{% endif %}">
+                        <i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+                        <p>Duplas</p>
+                    </a>
+                </li>
+            </ul>
+        </li>
+    {% endif %}
+    <li class="nav-item {% if 'comedores_nuevo/' in pagina_actual %}menu-open{% endif %}">
+        <a href="#" class="nav-link">
+            <i class="nav-icon fa fa-address-card"></i>
+            <p>
+                Legajos
+                <i class="nav-arrow bi bi-chevron-right"></i>
+            </p>
+        </a>
+        <ul class="nav nav-treeview">
+            {% if request.user|has_group:"Comedor Ver" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Abogado Dupla" or request.user|has_group:"Area Legales" or request.user|has_group:"Comedores Listar" %}
+                <li class="nav-item">
+                    <a href="{% url 'comedores' %}"
+                       class="nav-link {% if 'comedores_nuevo/' in pagina_actual %}active{% endif %}">
+                        <i class="nav-icon bi bi-house-heart-fill"></i>
+                        <p>Comedores</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="far fa-circle nav-icon"></i>
+                        <p>
+                            Admision - Comedores
+                            <i class="nav-arrow bi bi-chevron-right"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview" style="display: none;">
+                        <li class="nav-item">
+                            <a href="{% url 'admisiones_tecnicos_listar' %}" class="nav-link ms-3">
+                                <i class="far fa-dot-circle nav-icon"></i>
+                                <p>Técnicos</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'admisiones_legales_listar' %}" class="nav-link ms-3">
+                                <i class="far fa-dot-circle nav-icon"></i>
+                                <p>Legales</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            {% endif %}
+            {% if request.user|has_group:"Area Legales" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Abogado Dupla" %}
+                <li class="nav-item">
+                    <a href="{% url 'lista_comedores_acompanamiento' %}"
+                       class="nav-link {% if 'acompanamiento' in pagina_actual %}active{% endif %}">
+                        <i class="nav-icon bi bi-emoji-smile-fill"></i>
+                        <p>Acompañamiento</p>
+                    </a>
+                </li>
+            {% endif %}
+            {% if request.user|has_group:"Area Legales" or request.user|has_group:"Area Contable" or request.user|has_group:"Tecnico Comedor" %}
+                <li class="nav-item">
+                    <a href="{% url 'rendicion_cuentas_final_listar' %}"
+                       class="nav-link {% if 'rendicion_cuentas_final/listar' in pagina_actual %}active{% endif %}">
+                        <i class="nav-icon bi bi-receipt"></i>
+                        <p>Rendicion de Cuentas Final</p>
+                    </a>
+                </li>
+            {% endif %}
+            {% if request.user|has_group:"Organizaciones" %}
+                <li class="nav-item">
+                    <a href="{% url 'organizaciones' %}"
+                       class="nav-link {% if 'organizaciones/listar' in pagina_actual %}active{% endif %}">
+                        <i class="nav-icon bi bi-building-fill"></i>
+                        <p>Organizaciones</p>
+                    </a>
+                </li>
+            {% endif %}
+            {% if request.user|has_group:"CDI" %}
+                <li class="nav-item">
+                    <a href="{% url 'cdi' %}"
+                       class="nav-link {% if 'cdi/listar' in pagina_actual %}active{% endif %}">
+                        <i class="nav-icon bi bi-emoji-smile-fill"></i>
+                        <p>Centro Desarrollo Infantil</p>
+                    </a>
+                </li>
+            {% endif %}
+            {% if request.user|has_group:"Ciudadanos" %}
+                <li class="nav-item">
+                    <a href="{% url 'ciudadanos' %}"
+                       class="nav-link {% if 'ciudadanos/listar' in pagina_actual %}active{% endif %}">
+                        <i class="nav-icon bi bi-people-fill"></i>
+                        <p>Ciudadanos</p>
+                    </a>
+                </li>
+            {% endif %}
+            {% if request.user|has_group:"superadmin" or request.user|has_group:"ReferenteCentro" or user %}
+                <li class="nav-item">
+                    <a href="{% url 'centro_list' %}"
+                       class="nav-link {% if 'centros/' in pagina_actual %}active{% endif %}">
+                        <i class="nav-icon fas fa-sitemap"></i>
+                        <p>Centro de Familia</p>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </li>
+{% endwith %}
