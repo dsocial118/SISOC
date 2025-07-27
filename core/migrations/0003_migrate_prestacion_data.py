@@ -67,7 +67,7 @@ def _migrate_single_relevamiento(rel, new_prestacion, dias, tipos_comida):
 
     # CRÍTICO: Actualizar el Relevamiento para que apunte a la primera prestación nueva
     # Esto mantiene la integridad referencial del OneToOneField
-    if primera_nueva_prestacion:
+    if primera_nueva_prestacion and rel.prestacion_id is None:
         rel.prestacion_id = primera_nueva_prestacion.id
         rel.save()
 
