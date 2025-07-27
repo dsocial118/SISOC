@@ -6,7 +6,8 @@ from admisiones.models.admisiones import (
     Anexo,
 )
 from acompanamientos.models.hitos import Hitos, HitosIntervenciones
-from acompanamientos.models.acompanamiento import InformacionRelevante, Prestacion
+from acompanamientos.models.acompanamiento import InformacionRelevante
+from core.models import Prestacion
 from duplas.models import Dupla
 from intervenciones.models.intervenciones import Intervencion, SubIntervencion
 from comedores.models import Comedor
@@ -107,6 +108,7 @@ class AcompanamientoService:
                 almuerzo=prestacion.almuerzo,
                 merienda=prestacion.merienda,
                 cena=prestacion.cena,
+                merienda_reforzada=prestacion.merienda_reforzada,
             )
 
     @staticmethod
@@ -183,7 +185,12 @@ class AcompanamientoService:
             "sabado",
             "domingo",
         ]
-        tipos_comida = ["desayuno", "almuerzo", "merienda", "cena"]
+        tipos_comida = [
+            "desayuno",
+            "almuerzo",
+            "merienda",
+            "cena",
+        ]
 
         prestaciones_por_dia = []
         prestaciones_totales = []
