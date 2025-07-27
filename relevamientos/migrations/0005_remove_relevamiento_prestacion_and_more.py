@@ -12,6 +12,15 @@ def forwards(apps, schema_editor):
         rows.append(through(relevamiento_id=r.id, prestacion_id=r.prestacion_id))
     if rows:
         through.objects.bulk_create(rows, ignore_conflicts=True)
+    Prestacion = apps.get_model("core", "Prestacion")
+    through = Relevamiento.prestaciones.through
+    rows = []
+    for rel in Relevamiento.objects.all().only("id", "comedor_id"):
+        for pres in Prestacion.objects.filter(comedor_id=rel.comedor_id).only("id"):
+            rows.append(through(relevamiento_id=rel.id, prestacion_id=pres.id))
+    if rows:
+        through.objects.bulk_create(rows, ignore_conflicts=True)
+
 
 
 def backwards(apps, schema_editor):
