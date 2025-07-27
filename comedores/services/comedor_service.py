@@ -57,7 +57,32 @@ class ComedorService:
                 imagen_id = match.group(1)
                 imagenes_ids.append(imagen_id)
 
-        ImagenComedor.objects.filter(id__in=imagenes_ids).delete()
+        if imagenes_ids:
+            ImagenComedor.objects.filter(id__in=imagenes_ids).delete()
+
+        else:
+            # No hay imágenes para borrar
+            pass
+
+    @staticmethod
+    def borrar_foto_legajo(post, comedor_instance):
+        """Eliminar la foto del legajo si está marcada para borrar"""
+        if "foto_legajo_borrar" in post and comedor_instance.foto_legajo:
+            # Eliminar el archivo físico
+            if comedor_instance.foto_legajo:
+                try:
+                    import os
+
+                    file_path = comedor_instance.foto_legajo.path
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+
+                except Exception:
+                    pass
+
+            # Limpiar el campo en la base de datos
+            comedor_instance.foto_legajo = None
+            comedor_instance.save(update_fields=["foto_legajo"])
 
     @staticmethod
     def get_comedores_filtrados(query: Union[str, None] = None):
@@ -113,10 +138,10 @@ class ComedorService:
             )
             .prefetch_related(
                 "expedientes_pagos",
-                # Prefetch para imágenes optimizado - solo el campo imagen
+                # Prefetch para imágenes optimizado - cargar campos necesarios
                 Prefetch(
                     "imagenes",
-                    queryset=ImagenComedor.objects.only("imagen"),
+                    queryset=ImagenComedor.objects.all(),
                     to_attr="imagenes_optimized",
                 ),
                 # Prefetch para relevamientos ordenados por estado e id descendente
@@ -233,6 +258,7 @@ class ComedorService:
             {"comedor": comedor_pk},
             {"imagen": imagen},
         )
+
         if imagen_comedor.is_valid():
             return imagen_comedor.save()
         else:
