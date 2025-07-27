@@ -2,9 +2,10 @@ import os
 import sys
 import time
 import shutil
-from pathlib import Path
-from subprocess import run, CalledProcessError
 import pymysql
+from pathlib import Path
+from typing import Optional
+from subprocess import run, CalledProcessError
 from contextlib import closing
 
 # ---------- Utils ----------
@@ -41,7 +42,7 @@ def mysql_connect():
     return pymysql.connect(host=host, port=port, user=user, password=pwd)
 
 
-def get_mysql_variable(var: str, default: int | None = None) -> int | None:
+def get_mysql_variable(var: str, default: Optional[int] = None) -> Optional[int]:
     try:
         with closing(mysql_connect()) as conn, closing(conn.cursor()) as cur:
             cur.execute("SHOW VARIABLES LIKE %s;", (var,))
