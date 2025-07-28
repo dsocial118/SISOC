@@ -46,12 +46,12 @@
   },
   {
     "model": "celiaquia.estadolegajo",
-    "pk": 1,
+    "pk": 10,
     "fields": { "nombre": "DOCUMENTO_PENDIENTE" }
   },
   {
     "model": "celiaquia.estadolegajo",
-    "pk": 2,
+    "pk": 11,
     "fields": { "nombre": "ARCHIVO_CARGADO" }
   },
   {
@@ -78,15 +78,5 @@
     "model": "celiaquia.tipocruce",
     "pk": 2,
     "fields": { "nombre": "Rechazado" }
-  },
-  {
-    "model": "ciudadanos.programa",
-    "pk": 3,
-    "fields": {
-      "subsecretaria": 1,
-      "nombre": "Celiaquia",
-      "estado": 1,
-      "observaciones": ""
-    }
   }
 ]

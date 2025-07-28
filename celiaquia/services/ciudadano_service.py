@@ -4,6 +4,8 @@ import logging
 from django.core.exceptions import ValidationError
 from ciudadanos.models import (
     Ciudadano,
+    CiudadanoPrograma,
+    HistorialCiudadanoProgramas,
     TipoDocumento,
     Sexo,
     DimensionEconomia,
@@ -13,7 +15,7 @@ from ciudadanos.models import (
     DimensionTrabajo,
     DimensionVivienda,
 )
-from centrodefamilia.services.participante import ParticipanteService
+
 from django.contrib.auth import get_user_model
 
 logger = logging.getLogger(__name__)
@@ -69,7 +71,7 @@ class CiudadanoService:
         User = get_user_model()
         if isinstance(usuario, User):
             try:
-                ParticipanteService.asignar_programa(ciudadano, usuario, programa_id=3)
+                CiudadanoService.asignar_programa(ciudadano, usuario, programa_id=3)
                 logger.debug(f"Programa 3 asignado al ciudadano {ciudadano.pk}")
             except Exception as e:
                 logger.warning(f"No se pudo asignar programa al ciudadano {ciudadano.pk}: {e}")
@@ -93,3 +95,18 @@ class CiudadanoService:
         ):
             Modelo.objects.create(ciudadano=ciudadano)
         logger.info(f"Dimensiones inicializadas para ciudadano {ciudadano.pk}")
+
+    @staticmethod
+    def asignar_programa(ciudadano, usuario, programa_id=1):
+        _, created = CiudadanoPrograma.objects.get_or_create(
+            ciudadano=ciudadano,
+            programas_id=programa_id,
+            defaults={"creado_por": usuario},
+        )
+        if created:
+            HistorialCiudadanoProgramas.objects.create(
+                programa_id=programa_id,
+                ciudadano=ciudadano,
+                accion="agregado",
+                usuario=usuario,
+            )
