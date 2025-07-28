@@ -1,4 +1,3 @@
-# views/expediente.py
 import json
 import logging
 import time
@@ -13,9 +12,10 @@ from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from django.contrib.auth.models import User
 
 from celiaquia.forms import ExpedienteForm, ConfirmarEnvioForm
-from celiaquia.models import EstadoLegajo, Expediente, ExpedienteCiudadano
+from celiaquia.models import AsignacionTecnico, EstadoLegajo, Expediente, ExpedienteCiudadano
 from celiaquia.services.ciudadano_service import CiudadanoService
 from celiaquia.services.expediente_service import ExpedienteService
 from celiaquia.services.importacion_service import ImportacionService
@@ -25,45 +25,22 @@ logger = logging.getLogger(__name__)
 
 @method_decorator(csrf_exempt, name="dispatch")
 class ProcesarExpedienteView(View):
-    """
-    POST AJAX: crea/enlaza legajos desde el Excel y cambia estado a 'PROCESADO'.
-    Devuelve JSON {'success', 'creados', 'errores'}.
-    """
-
     def post(self, request, pk):
-        expediente = get_object_or_404(
-            Expediente, pk=pk, usuario_provincia=request.user
-        )
+        expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=request.user)
         try:
             result = ExpedienteService.procesar_expediente(expediente, request.user)
-            return JsonResponse(
-                {
-                    "success": True,
-                    "creados": result["creados"],
-                    "errores": result["errores"],
-                }
-            )
+            return JsonResponse({"success": True, "creados": result["creados"], "errores": result["errores"]})
         except ValidationError as ve:
             return JsonResponse({"success": False, "error": ve.message}, status=400)
         except Exception:
             tb = traceback.format_exc()
             logger.error("Error al procesar expediente %s:\n%s", pk, tb)
-            return JsonResponse(
-                {"success": False, "error": tb}, status=500
-            )
-
+            return JsonResponse({"success": False, "error": tb}, status=500)
 
 
 class CrearLegajosView(View):
-    """
-    POST AJAX: crea/enlaza legajos a partir de JSON 'rows'.
-    Devuelve JSON {'creados', 'existentes'}.
-    """
-
     def post(self, request, pk):
-        expediente = get_object_or_404(
-            Expediente, pk=pk, usuario_provincia=request.user
-        )
+        expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=request.user)
         try:
             payload = json.loads(request.body)
             rows = payload.get("rows", [])
@@ -88,10 +65,6 @@ class CrearLegajosView(View):
 
 @method_decorator(csrf_exempt, name="dispatch")
 class ExpedientePreviewExcelView(View):
-    """
-    POST AJAX exento CSRF: recibe Excel y devuelve JSON con preview {headers, rows}.
-    """
-
     def post(self, request, *args, **kwargs):
         logger.debug("PREVIEW: %s %s", request.method, request.path)
         archivo = request.FILES.get("excel_masivo")
@@ -145,10 +118,8 @@ class ExpedienteDetailView(DetailView):
     def get_queryset(self):
         return (
             Expediente.objects.filter(usuario_provincia=self.request.user)
-            .select_related("estado", "usuario_modificador")
-            .prefetch_related(
-                "expediente_ciudadanos__ciudadano", "expediente_ciudadanos__estado"
-            )
+            .select_related("estado", "usuario_modificador", "asignacion_tecnico")
+            .prefetch_related("expediente_ciudadanos__ciudadano", "expediente_ciudadanos__estado")
         )
 
     def get_context_data(self, **kwargs):
@@ -160,34 +131,29 @@ class ExpedienteDetailView(DetailView):
                 preview = ImportacionService.preview_excel(expediente.excel_masivo)
             except Exception as e:
                 preview_error = str(e)
-        ctx.update(
-            {
-                "legajos": expediente.expediente_ciudadanos.all(),
-                "confirm_form": ConfirmarEnvioForm(),
-                "preview": preview,
-                "preview_error": preview_error,
-            }
-        )
+
+        tecnicos = User.objects.filter(groups__name="TecnicoCeliaquia").order_by("last_name", "first_name")
+
+        ctx.update({
+            "legajos": expediente.expediente_ciudadanos.all(),
+            "confirm_form": ConfirmarEnvioForm(),
+            "preview": preview,
+            "preview_error": preview_error,
+            "tecnicos": tecnicos,
+        })
         return ctx
 
 
 class ExpedienteImportView(View):
-    """Procesa la importación masiva de legajos desde el Excel guardado."""
-
     def post(self, request, pk):
-        expediente = get_object_or_404(
-            Expediente, pk=pk, usuario_provincia=request.user
-        )
+        expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=request.user)
         start = time.time()
         try:
             result = ImportacionService.importar_legajos_desde_excel(
                 expediente, expediente.excel_masivo, request.user
             )
             elapsed = time.time() - start
-            messages.success(
-                request,
-                f"Importación: {result['validos']} válidos, {result['errores']} errores en {elapsed:.2f}s.",
-            )
+            messages.success(request, f"Importación: {result['validos']} válidos, {result['errores']} errores en {elapsed:.2f}s.")
         except ValidationError as ve:
             messages.error(request, f"Error de validación: {ve.message}")
         except Exception as e:
@@ -197,15 +163,10 @@ class ExpedienteImportView(View):
 
 class ExpedienteConfirmView(View):
     def post(self, request, pk):
-        expediente = get_object_or_404(
-            Expediente, pk=pk, usuario_provincia=request.user
-        )
+        expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=request.user)
         try:
             result = ExpedienteService.confirmar_envio(expediente)
-            messages.success(
-                request,
-                f"Expediente enviado: {result['validos']} legajos creados, {result['errores']} errores.",
-            )
+            messages.success(request, f"Expediente enviado: {result['validos']} legajos creados, {result['errores']} errores.")
         except ValidationError as ve:
             messages.error(request, f"Error al confirmar: {ve.message}")
         except Exception as e:
@@ -221,18 +182,35 @@ class ExpedienteUpdateView(UpdateView):
     def get_success_url(self):
         return reverse_lazy("expediente_detail", args=[self.object.pk])
 
-
 class AsignarTecnicoView(View):
     def post(self, request, pk):
         expediente = get_object_or_404(Expediente, pk=pk)
-        tecnico_id = request.POST.get("tecnico")
-        ExpedienteService.asignar_tecnico(expediente, tecnico_id)
-        messages.success(request, "Técnico asignado correctamente.")
+
+        tecnico_id = request.POST.get("tecnico_id")
+        if not tecnico_id:
+            messages.error(request, "No se seleccionó ningún técnico.")
+            return redirect("expediente_detail", pk=pk)
+
+        try:
+            tecnico = get_object_or_404(User.objects.filter(groups__name="TecnicoCeliaquia"), pk=tecnico_id)
+        except Exception:
+            messages.error(request, "Técnico inválido.")
+            return redirect("expediente_detail", pk=pk)
+
+        AsignacionTecnico.objects.update_or_create(
+            expediente=expediente,
+            defaults={"tecnico": tecnico}
+        )
+        expediente.estado_id = 4
+        expediente.save()
+
+        messages.success(request, f"Técnico {tecnico.get_full_name()} asignado correctamente.")
         return redirect("expediente_detail", pk=pk)
+
 
 
 class ClosePaymentView(View):
     def post(self, request, pk):
         expediente = get_object_or_404(Expediente, pk=pk)
-        # lógic ade pago…
+        # Lógica de cierre de pago
         return redirect("expediente_detail", pk=pk)
