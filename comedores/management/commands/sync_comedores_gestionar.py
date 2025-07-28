@@ -21,6 +21,7 @@ BATCH_SIZE = 100
 RETRIES = 3
 SLEEP_BETWEEN_RETRIES = 3  # seconds
 
+
 def send(payload):
     url = os.getenv("GESTIONAR_API_CREAR_COMEDOR")
     headers = {"applicationAccessKey": os.getenv("GESTIONAR_API_KEY")}
@@ -35,47 +36,86 @@ def send(payload):
             else:
                 return False, e
 
+
 class Command(BaseCommand):
-    help = "Sincroniza PROGRAMAS e Imagen (foto_legajo) de Comedores con datos."
+    help = "Sincroniza TODOS los campos del Comedor (payload completo)."
 
     def add_arguments(self, parser):
-        parser.add_argument("--dry-run", action="store_true", help="No envía nada, solo muestra IDs.")
         parser.add_argument(
-            "--comedor-id", type=int, dest="comedor_id",
-            help="ID de Comedor a sincronizar. Si se especifica, ignora --limit."
+            "--dry-run", action="store_true", help="No envía nada, solo muestra IDs."
         )
-        parser.add_argument("--limit", type=int, default=None, help="Limitar cantidad de comedores.")
-        parser.add_argument("--workers", type=int, default=MAX_WORKERS, help="Threads para requests.")
-        parser.add_argument("--batch-size", type=int, default=BATCH_SIZE, help="Tamaño de lote.")
-        parser.add_argument("--verbose", action="store_true", help="Loguea cada resultado y genera JSON.")
         parser.add_argument(
-            "--out-file", type=str, default=None,
-            help="Ruta del JSON de resultados (solo con --verbose)."
+            "--comedor-id",
+            type=int,
+            dest="comedor_id",
+            help="ID específico de Comedor a sincronizar. Si se especifica, ignora --limit.",
+        )
+        parser.add_argument(
+            "--limit", type=int, default=None, help="Limitar cantidad de comedores."
+        )
+        parser.add_argument(
+            "--workers", type=int, default=MAX_WORKERS, help="Threads para requests."
+        )
+        parser.add_argument(
+            "--batch-size", type=int, default=BATCH_SIZE, help="Tamaño de lote."
+        )
+        parser.add_argument(
+            "--verbose",
+            action="store_true",
+            help="Loguea cada resultado y genera JSON.",
+        )
+        parser.add_argument(
+            "--out-file",
+            type=str,
+            default=None,
+            help="Ruta del JSON de resultados (solo con --verbose).",
+        )
+        parser.add_argument(
+            "--action",
+            type=str,
+            default="Add",
+            choices=("Add", "Update"),
+            help='Valor para payload["Action"].',
         )
 
     def handle(self, *args, **opts):
-        dry        = opts["dry_run"]
+        dry = opts["dry_run"]
         comedor_id = opts.get("comedor_id")
-        limit      = opts["limit"]
-        workers    = opts["workers"]
+        limit = opts["limit"]
+        workers = opts["workers"]
         batch_size = opts["batch_size"]
-        verbose    = opts["verbose"]
-        out_file   = opts["out_file"]
+        verbose = opts["verbose"]
+        out_file = opts["out_file"]
+        action = opts["action"]
 
+        # Traemos TODOS los comedores (o filtramos por id/limit). Sin .only.
         qs = (
-            Comedor.objects
-            .filter(Q(programa__isnull=False) | Q(foto_legajo__isnull=False))
-            .only("id","programa","foto_legajo")
+            Comedor.objects.all()
+            .select_related(
+                "tipocomedor",
+                "provincia",
+                "municipio",
+                "localidad",
+                "programa",
+                "organizacion",
+                "referente",
+                "dupla",
+            )
             .order_by("id")
         )
+
         if comedor_id:
             qs = qs.filter(pk=comedor_id)
-            self.stdout.write(self.style.NOTICE(f"Filtrando solo Comedor ID={comedor_id}"))
+            self.stdout.write(
+                self.style.NOTICE(f"Filtrando solo Comedor ID={comedor_id}")
+            )
         elif limit:
             qs = qs[:limit]
 
         total = qs.count()
-        self.stdout.write(self.style.NOTICE(f"Encontrados {total} comedores para sync."))
+        self.stdout.write(
+            self.style.NOTICE(f"Encontrados {total} comedores para sync.")
+        )
         if dry:
             self.stdout.write(", ".join(map(str, qs.values_list("id", flat=True))))
             return
@@ -83,8 +123,8 @@ class Command(BaseCommand):
         success, fail = 0, 0
         successes, failures = [], []
 
-        def chunked(it, size):
-            it = iter(it)
+        def chunked(iterable, size):
+            it = iter(iterable)
             while True:
                 batch = list(islice(it, size))
                 if not batch:
@@ -92,7 +132,13 @@ class Command(BaseCommand):
                 yield batch
 
         for batch in chunked(qs.iterator(chunk_size=batch_size), batch_size):
-            payloads = [(c.id, build_comedor_payload(c)) for c in batch]
+            payloads = []
+            for c in batch:
+                pl = build_comedor_payload(c)
+                # Fuerza el Action requerido (por si la función fija "Add")
+                pl["Action"] = action
+                payloads.append((c.id, pl))
+
             with ThreadPoolExecutor(max_workers=workers) as executor:
                 futures = {executor.submit(send, pl): cid for cid, pl in payloads}
                 for fut in as_completed(futures):
@@ -111,7 +157,11 @@ class Command(BaseCommand):
                             failures.append({"id": cid, "error": err_str})
 
             reset_queries()
-            self.stdout.write(self.style.SUCCESS(f"Lote OK. Acumulado: {success} éxitos, {fail} fallos"))
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Lote OK. Acumulado: {success} éxitos, {fail} fallos"
+                )
+            )
 
         self.stdout.write(self.style.SUCCESS(f"FIN. Éxitos: {success}  Fallos: {fail}"))
 
@@ -126,6 +176,7 @@ class Command(BaseCommand):
                 "fail": fail,
                 "successes": successes,
                 "failures": failures,
+                "action": action,
             }
             with open(out_file, "w", encoding="utf-8") as f:
                 json.dump(result, f, ensure_ascii=False, indent=2)
