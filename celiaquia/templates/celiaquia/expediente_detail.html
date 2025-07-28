@@ -1,111 +1,147 @@
-{# templates/celiaquia/expediente_detail.html #}
 {% extends "includes/main.html" %}
 {% load static custom_filters %}
+
 {% block title %}Expediente {{ expediente.codigo }}{% endblock %}
+
 {% block breadcrumb %}
-    <ol class="breadcrumb float-sm-right">
-        <li class="breadcrumb-item">
-            <a href="{% url 'expediente_list' %}">Expedientes</a>
-        </li>
-        <li class="breadcrumb-item active">{{ expediente.codigo }}</li>
-    </ol>
+<ol class="breadcrumb float-sm-right">
+    <li class="breadcrumb-item"><a href="{% url 'expediente_list' %}">Expedientes</a></li>
+    <li class="breadcrumb-item active">{{ expediente.codigo }}</li>
+</ol>
 {% endblock %}
+
 {% block content %}
-    <div class="mb-3">
-        <a href="{% url 'expediente_list' %}"
-           class="btn btn-outline-secondary btn-sm">← Volver</a>
+<div class="mb-3 d-flex justify-content-between align-items-center">
+    <div>
+        <a href="{% url 'expediente_list' %}" class="btn btn-outline-secondary btn-sm">← Volver</a>
         {% if expediente.estado.nombre == 'CREADO' %}
-            <a href="{% url 'expediente_update' expediente.pk %}"
-               class="btn btn-outline-primary btn-sm ms-2">Editar Metadatos</a>
+            <a href="{% url 'expediente_update' expediente.pk %}" class="btn btn-outline-primary btn-sm ms-2">Editar Metadatos</a>
         {% endif %}
     </div>
-    {# Vista previa del Excel #}
-    {% if preview %}
-        <div class="card mb-4">
-            <div class="card-header bg-light">
-                <h5 class="mb-0">Vista previa del Excel</h5>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">Detalle del Expediente</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Código:</strong> {{ expediente.codigo }}</p>
+                <p><strong>Estado:</strong> {{ expediente.estado.display_name }}</p>
+                <p><strong>Fecha de creación:</strong> {{ expediente.fecha_creacion|date:"d/m/Y" }}</p>
             </div>
-            <div class="card-body">
-                <div id="preview-error-detail" class="text-danger mb-2"></div>
-                <div class="table-responsive">
-                    <table class="table table-sm">
-                        <thead>
-                            <tr>
-                                {% for h in preview.headers %}<th>{{ h|capfirst }}</th>{% endfor %}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for row in preview.rows %}
-                                <tr>
-                                    {% for h in preview.headers %}<td>{{ row|get_item:h }}</td>{% endfor %}
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                <button id="btn-process-expediente" class="btn btn-primary mt-3">Procesar Expediente</button>
+            <div class="col-md-6">
+                <p><strong>Provincia:</strong> {{ expediente.provincia }}</p>
+                <p><strong>Técnico asignado:</strong> 
+                    {% if expediente.asignacion_tecnico %}
+                        {{ expediente.asignacion_tecnico.tecnico.get_full_name|default:expediente.asignacion_tecnico.tecnico.username }}
+                    {% else %}
+                        <span class="text-muted">No asignado</span>
+                    {% endif %}
+                </p>
+                {% if expediente.estado.id == 4 and request.user|has_group:"CoordinadorCeliaquia" %}
+                    <a href="{% url 'expediente_asignar_tecnico' expediente.pk %}" class="btn btn-outline-warning btn-sm">Cambiar Técnico</a>
+                {% endif %}
             </div>
         </div>
-    {% elif preview_error %}
-        <div class="alert alert-danger">{{ preview_error }}</div>
-    {% endif %}
-    {# Tabla de legajos cargados #}
-    <div class="card mb-4">
-        <div class="card-header bg-light">
-            <h5 class="mb-0">Legajos del Expediente</h5>
+    </div>
+</div>
+
+{% if preview %}
+<div class="card mb-4">
+    <div class="card-header bg-light"><h5 class="mb-0">Vista previa del Excel</h5></div>
+    <div class="card-body">
+        <div id="preview-error-detail" class="text-danger mb-2"></div>
+        <div class="table-responsive">
+            <table class="table table-bordered table-sm">
+                <thead class="table-light">
+                    <tr>{% for h in preview.headers %}<th>{{ h|capfirst }}</th>{% endfor %}</tr>
+                </thead>
+                <tbody>
+                    {% for row in preview.rows %}
+                        <tr>{% for h in preview.headers %}<td>{{ row|get_item:h }}</td>{% endfor %}</tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
+        <button id="btn-process-expediente" class="btn btn-primary mt-3">Procesar Expediente</button>
+    </div>
+</div>
+{% elif preview_error %}
+<div class="alert alert-danger">{{ preview_error }}</div>
+{% endif %}
+
+<div class="card mb-4">
+    <div class="card-header bg-light"><h5 class="mb-0">Legajos del Expediente</h5></div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>DNI</th>
+                        <th>Nombre</th>
+                        <th>Estado</th>
+                        <th class="text-end">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for leg in legajos %}
                         <tr>
-                            <th>DNI</th>
-                            <th>Nombre</th>
-                            <th>Estado</th>
-                            <th class="text-end">Acción</th>
+                            <td>{{ leg.ciudadano.documento }}</td>
+                            <td>{{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}</td>
+                            <td>
+                                <span class="badge {% if leg.estado.nombre == 'DOCUMENTO_PENDIENTE' %}bg-warning{% else %}bg-success{% endif %}">
+                                    {{ leg.estado.display_name }}
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                {% if leg.archivo %}
+                                    <a href="{{ leg.archivo.url }}" class="btn btn-sm btn-outline-info">Ver</a>
+                                {% elif expediente.estado.id != 2 %}
+                                    <a href="{% url 'legajo_archivo_upload' expediente.pk leg.pk %}" class="btn btn-sm btn-primary">Subir Archivo</a>
+                                {% endif %}
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        {% for leg in legajos %}
-                            <tr>
-                                <td>{{ leg.ciudadano.documento }}</td>
-                                <td>{{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}</td>
-                                <td>
-                                    <span class="badge {% if leg.estado.nombre == 'DOCUMENTO_PENDIENTE' %}bg-warning{% else %}bg-success{% endif %}">
-                                        {{ leg.estado.display_name }}
-                                    </span>
-                                </td>
-                                <td class="text-end">
-                                    {% if leg.archivo %}
-                                        <a href="{{ leg.archivo.url }}" class="btn btn-sm btn-outline-info">Ver</a>
-                                    {% else %}
-                                        <a href="{% url 'legajo_archivo_upload' expediente.pk leg.pk %}"
-                                           class="btn btn-sm btn-primary">Subir Archivo</a>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="4" class="text-center py-3 text-muted">No hay legajos cargados.</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+                    {% empty %}
+                        <tr><td colspan="4" class="text-center py-3 text-muted">No hay legajos cargados.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
-        {% if legajos and expediente.estado.nombre == 'CREADO' %}
-            <div class="card-footer text-end">
-                <button id="btn-confirm"
-                        class="btn btn-success"
-                        {% if legajos|length < preview.rows|length %}disabled{% endif %}>Confirmar Envío</button>
-            </div>
-        {% endif %}
     </div>
+    {% if legajos and expediente.estado.nombre == 'CREADO' %}
+        <div class="card-footer text-end">
+            <button id="btn-confirm" class="btn btn-success" {% if legajos|length < preview.rows|length %}disabled{% endif %}>Confirmar Envío</button>
+        </div>
+    {% endif %}
+</div>
+
+{% if expediente.estado.id == 2 and request.user|has_group:"CoordinadorCeliaquia" %}
+<div class="card mb-4">
+    <div class="card-header bg-light"><h5 class="mb-0">Asignar Técnico</h5></div>
+    <div class="card-body">
+        <form method="post" action="{% url 'expediente_asignar_tecnico' expediente.pk %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="tecnico">Seleccionar Técnico:</label>
+                <select name="tecnico_id" id="tecnico" class="form-control">
+                    {% for tecnico in tecnicos %}
+                        <option value="{{ tecnico.id }}">{{ tecnico.get_full_name|default:tecnico.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary mt-2">Asignar</button>
+        </form>
+    </div>
+</div>
+{% endif %}
 {% endblock %}
+
 {% block customJS %}
-    <script>
+<script>
     const PROCESS_URL = "{% url 'expediente_procesar' expediente.pk %}";
     const CONFIRM_URL = "{% url 'expediente_confirm' expediente.pk %}";
-    </script>
-    <script src="{% static 'custom/js/expediente_detail.js' %}"></script>
+</script>
+<script src="{% static 'custom/js/expediente_detail.js' %}"></script>
 {% endblock %}

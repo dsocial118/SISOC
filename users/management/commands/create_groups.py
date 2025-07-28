@@ -57,6 +57,8 @@ class Command(BaseCommand):
             "Técnico Validar Resultado Cruce",
             "Técnico Registrar Informe Pago", "ReferenteCentro",
             "CDF SSE",
+            "TecnicoCeliaquia",
+            "CoordinadorCeliaquia",
         ]
         self.stdout.write(self.style.SUCCESS(f"Creando grupos de usuario..."))
         for group_name in groups:

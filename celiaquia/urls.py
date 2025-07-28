@@ -21,7 +21,7 @@ urlpatterns = [
     # Provincia: gestión básica de expedientes
     path(
         "expedientes/",
-        group_required(["Provincia"])(ExpedienteListView.as_view()),
+        group_required(["Provincia","CoordinadorCeliaquia"])(ExpedienteListView.as_view()),
         name="expediente_list",
     ),
     path(
@@ -36,7 +36,7 @@ urlpatterns = [
     ),
     path(
         "expedientes/<int:pk>/",
-        group_required(["Provincia"])(ExpedienteDetailView.as_view()),
+        group_required(["Provincia","CoordinadorCeliaquia"])(ExpedienteDetailView.as_view()),
         name="expediente_detail",
     ),
     path(
@@ -70,9 +70,6 @@ urlpatterns = [
         name="legajo_archivo_upload",
     ),
     # Coordinador Celiaquia: asignación de técnicos
-    path(
-        "expedientes/<int:pk>/asignar/",
-        group_required(["CoordinadorCeliaquia"])(AsignarTecnicoView.as_view()),
-        name="expediente_asignar",
-    ),
+    path('expedientes/<int:pk>/asignar-tecnico/', 
+        group_required(["CoordinadorCeliaquia"])(AsignarTecnicoView.as_view()), name='expediente_asignar_tecnico'),
 ]
