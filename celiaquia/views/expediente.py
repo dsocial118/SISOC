@@ -49,8 +49,9 @@ class ProcesarExpedienteView(View):
             tb = traceback.format_exc()
             logger.error("Error al procesar expediente %s:\n%s", pk, tb)
             return JsonResponse(
-                {"success": False, "error": "Error inesperado al procesar."}, status=500
+                {"success": False, "error": tb}, status=500
             )
+
 
 
 class CrearLegajosView(View):
