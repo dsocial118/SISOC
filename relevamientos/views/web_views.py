@@ -121,11 +121,7 @@ class RelevamientoDetailView(DetailView):
             if relevamiento.espacio
             else None
         )
-        context["prestacion"] = (
-            Prestacion.objects.get(pk=relevamiento.prestacion.id)
-            if relevamiento.prestacion
-            else None
-        )
+        context["prestaciones"] = relevamiento.prestaciones.all()
         context["relevamiento"]["donaciones"] = (
             RelevamientoService.separate_string(
                 relevamiento.recursos.recursos_donaciones_particulares.all()
