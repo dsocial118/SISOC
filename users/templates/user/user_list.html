@@ -1,43 +1,41 @@
-{% extends "includes/main.html" %}
-{% load static %}
-
-{% block head %}{% endblock %}
-{% block title %}Usuarios{% endblock %}
-
-{% block titulo-pagina %}Usuarios{% endblock %}
-
-{% block menu-adicional %}{% endblock %}
-
-{% block content %}
-    <div class="row mb-3">
-        <div class="col-12">
-            <a class="btn btn-outline-secondary" href="{% url 'dashboard' %}">Volver al Dashboard</a>
-        </div>
+{% extends "includes/main.html" %} {% load static %} {% block head %}{% endblock
+%} {% block title %}Usuarios{% endblock %} {% block titulo-pagina %}Usuarios{%
+endblock %} {% block menu-adicional %}{% endblock %} {% block content %} {%
+include 'components/navigation/breadcrumb.html' with items=breadcrumb_items %}
+<div class="row mb-3">
+  <div class="col-12">
+    <a class="btn btn-outline-secondary" href="{% url 'dashboard' %}"
+      >Volver al Dashboard</a
+    >
+  </div>
+</div>
+{% include 'components/forms/search_form.html' with search_url=request.path
+placeholder="Buscar usuario..." search_value=request.GET.busqueda %} {% include
+'components/ui/action_buttons.html' with create_url='usuario_crear' %}
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-body">
+        <table class="table table-bordered table-striped projects">
+          <tr>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Acciones</th>
+          </tr>
+          {% for user in users %}
+          <tr>
+            <td>{{ user.username }}</td>
+            <td>{{ user.email }}</td>
+            <td class="project-actions text-right">
+              {% include 'components/tables/row_actions.html' with object=user
+              edit_url='usuario_editar' delete_url='usuario_borrar'
+              show_detail=False %}
+            </td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
     </div>
-    {% include 'components/ui/action_buttons.html' with create_url='usuario_crear' %}
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body">
-                    <table class="table table-bordered table-striped projects">
-                        <tr>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>Acciones</th>
-                        </tr>
-                        {% for user in users %}
-                            <tr>
-                                <td>{{ user.username }}</td>
-                                <td>{{ user.email }}</td>
-                                <td class="project-actions text-right">
-                                    {% include 'components/tables/row_actions.html' with object=user edit_url='usuario_editar' delete_url='usuario_borrar' show_detail=False %}
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-{% endblock content %}
-{% block customJS %}{% endblock %}
+  </div>
+</div>
+{% endblock content %} {% block customJS %}{% endblock %}
