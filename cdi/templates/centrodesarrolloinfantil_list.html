@@ -1,23 +1,23 @@
-{% extends "includes/main.html" %};
+{% extends "includes/main.html" %}
 {% load static %}
-;
+
 {% block title %}Organizaciones{% endblock %}
-;
+
 {% block breadcrumb %}
-    <ol class="breadcrumb float-sm-right">
-        <li class="breadcrumb-item">
-            <a href="{% url 'cdi' %}">Centro Desarrollo Infantil</a>
-        </li>
-        <li class="breadcrumb-item active">Listar</li>
-    </ol>
+  {% include "components/navigation/breadcrumb.html" with 
+     breadcrumb_items=breadcrumb_items 
+     current_item="Listar" 
+  %}
 {% endblock %}
-;
+
 {% block content %}
-    <div class="row mb-3">
-        <div class="col-12">
-            <a class="btn btn-outline-secondary" href="{% url 'dashboard' %}">Volver al Dashboard</a>
-        </div>
-    </div>
+<div class="row mb-3">
+  <div class="col-12">
+    <a class="btn btn-outline-secondary" href="{% url 'dashboard' %}">
+      Volver al Dashboard
+    </a>
+  </div>
+</div>
     {% include 'components/forms/search_form.html' with title='Buscar Centro Desarrollo Infantil' placeholder='Buscar por nombre, numero expediente, numero repi, organizacion, provincia, telefono o email' search_value=query %}
     {% include 'components/ui/action_buttons.html' with create_url='cdi_crear' reset_url='cdi' %}
     <div class="row mt-5">
@@ -62,4 +62,5 @@
         </div>
     </div>
 {% endblock %}
+
 {% block customJS %}{% endblock %}
