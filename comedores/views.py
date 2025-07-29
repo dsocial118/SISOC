@@ -177,14 +177,17 @@ class NominaDeleteView(DeleteView):
 
 
 class ComedorListView(ListView):
-    model = Comedor
-    template_name = "comedor/comedor_list.html"
-    context_object_name = "comedores"
-    paginate_by = 10
-
-    def get_queryset(self):
-        query = self.request.GET.get("busqueda")
-        return ComedorService.get_comedores_filtrados(query)
+        model = Comedor
+        template_name = "comedor/comedor_list.html"
+        context_object_name = "comedores"
+        paginate_by = 10
+       
+        def get_queryset(self):
+            try: 
+                query = self.request.GET.get("busqueda")
+                return ComedorService.get_comedores_filtrados(query)
+            except Exception as e:
+                logger.error("Ocurrió un error inesperado", exc_info=True)
 
 
 class ComedorCreateView(CreateView):
