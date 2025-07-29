@@ -3,13 +3,13 @@ from pathlib import Path
 import sys
 from django.contrib.messages import constants as messages
 from dotenv import load_dotenv
-
+import logging
 
 # Cargar variables de entorno desde el archivo .env
 load_dotenv()
 
 # Definición de entorno
-DEBUG = os.environ.get("DJANGO_DEBUG", default=False) == "True"
+DEBUG = os.environ.get("DJANGO_DEBUG", default=False) == "False"
 
 # Definición del directorio base del proyecto
 BASE_DIR = Path(__file__).resolve().parent.parent
