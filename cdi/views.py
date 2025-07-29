@@ -17,11 +17,13 @@ class CDIListView(ListView):
     model = CentroDesarrolloInfantil
     template_name = "centrodesarrolloinfantil_list.html"
     context_object_name = "centrodesarrolloinfantiles"
-    paginate_by = 10
+    paginate_by = 20  # Aumentado para mejor UX
 
     def get_queryset(self):
         query = self.request.GET.get("busqueda")
-        queryset = CentroDesarrolloInfantil.objects.all()
+        queryset = CentroDesarrolloInfantil.objects.select_related(
+            'organizacion', 'provincia'
+        ).all()
 
         if query:
             queryset = queryset.filter(
@@ -34,7 +36,21 @@ class CDIListView(ListView):
                 | Q(email__icontains=query)
             )
 
-        return queryset
+        return queryset.order_by('nombre')  # Orden consistente
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Breadcrumb
+        context['breadcrumb_items'] = [
+            {'url': reverse_lazy('dashboard'), 'text': 'Dashboard'},
+            {'url': reverse_lazy('cdi'), 'text': 'Centro Desarrollo Infantil'},
+        ]
+        
+        # Parámetros de búsqueda para mantener en paginación
+        context['query'] = self.request.GET.get("busqueda", "")
+        
+        return context
 
 
 class CDICreateView(CreateView):
