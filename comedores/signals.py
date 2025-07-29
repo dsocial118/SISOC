@@ -24,7 +24,8 @@ from rendicioncuentasfinal.models import (
 @receiver(post_save, sender=Comedor)
 def send_comedor_to_gestionar(sender, instance, created, **kwargs):
     if created:
-        AsyncSendComedorToGestionar(instance.id).start()
+        payload = build_comedor_payload(instance)  # usa los NEW values de la instancia
+        AsyncSendComedorToGestionar(payload).start()
 
 
 @receiver(pre_save, sender=Comedor)
