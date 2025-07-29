@@ -1,31 +1,44 @@
-{% extends "includes/main.html" %}
-{% block title %}Proyectos{% endblock %}
-{% block titulo-pagina %}Proyectos{% endblock %}
-{% block content %}
-    <h1>Mis Proyectos</h1>
-    <a href="{% url 'proyecto_create' %}" class="btn btn-primary mb-3">Agregar Proyecto</a>
-    <ul>
+{% extends "includes/main.html" %} {% block title %}Proyectos{% endblock %} {%
+block titulo-pagina %}Proyectos{% endblock %} {% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">Mis Proyectos</h2>
+    <a href="{% url 'proyecto_create' %}" class="btn btn-primary mb-3"
+      >Agregar Proyecto</a
+    >
+  </div>
+  <div class="table-responsive shadow-sm rounded">
+    <table class="table table-hover table-borderless align-middle mb-0">
+      <thead class="thead-light">
+        <tr class="border-bottom">
+          <th class="py-3">Nombre</th>
+          <th class="py-3">Estado</th>
+          <th class="py-3" style="width: 180px">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
         {% for proyecto in proyectos %}
-            <li>
-                {{ proyecto.nombre }} - {{ proyecto.estado }}
-                <a href="{% url 'proyecto_update' proyecto.pk %}"
-                   class="btn btn-sm btn-warning">Editar</a>
-                <a href="{% url 'proyecto_delete' proyecto.pk %}"
-                   class="btn btn-sm btn-danger">Eliminar</a>
-            </li>
+        <tr class="border-bottom">
+          <td class="py-3">{{ proyecto.nombre }}</td>
+          <td class="py-3">{{ proyecto.estado }}</td>
+          <td class="py-3">
+            {% include 'components/tables/row_actions.html' with object=proyecto
+            detail_url='proyecto_detail' edit_url='proyecto_update'
+            delete_url='proyecto_delete' %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="3" class="text-center py-4">
+            No hay proyectos disponibles.
+          </td>
+        </tr>
         {% endfor %}
-    </ul>
-    <div class="pagination">
-        <span class="step-links">
-            {% if proyectos.has_previous %}
-                <a href="?page=1">&laquo; primera</a>
-                <a href="?page={{ proyectos.previous_page_number }}">anterior</a>
-            {% endif %}
-            <span class="current">Página {{ proyectos.number }} de {{ proyectos.paginator.num_pages }}.</span>
-            {% if proyectos.has_next %}
-                <a href="?page={{ proyectos.next_page_number }}">siguiente</a>
-                <a href="?page={{ proyectos.paginator.num_pages }}">última &raquo;</a>
-            {% endif %}
-        </span>
-    </div>
+      </tbody>
+    </table>
+  </div>
+  <div class="mt-4 d-flex justify-content-center">
+    {% include 'components/tables/pagination.html' with page_obj=proyectos %}
+  </div>
+</div>
 {% endblock %}
