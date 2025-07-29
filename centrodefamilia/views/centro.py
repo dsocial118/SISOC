@@ -26,13 +26,13 @@ class CentroListView(LoginRequiredMixin, ListView):
     model = Centro
     template_name = "centros/centro_list.html"
     context_object_name = "centros"
-    paginate_by = 10
+    paginate_by = 20  # Aumentado para mejor UX
 
     def get_queryset(self):
         qs = Centro.objects.select_related("faro_asociado", "referente")
         user = self.request.user
 
-        # 1) Superuser ve tod
+        # 1) Superuser ve todo
         if user.is_superuser:
             pass
 
@@ -48,10 +48,16 @@ class CentroListView(LoginRequiredMixin, ListView):
         else:
             return Centro.objects.none()
 
-        # Filtro de texto
+        # Filtro de texto mejorado
         busq = self.request.GET.get("busqueda", "").strip()
         if busq:
-            qs = qs.filter(Q(nombre__icontains=busq) | Q(tipo__icontains=busq))
+            qs = qs.filter(
+                Q(nombre__icontains=busq) | 
+                Q(tipo__icontains=busq) |
+                Q(calle__icontains=busq) |
+                Q(telefono__icontains=busq) |
+                Q(celular__icontains=busq)
+            )
 
         return qs.order_by("nombre")
 
@@ -59,10 +65,20 @@ class CentroListView(LoginRequiredMixin, ListView):
         ctx = super().get_context_data(**kwargs)
         user = self.request.user
 
-        # Control de botones “Agregar”
+        # Control de botones "Agregar"
         ctx["can_add"] = (
             user.is_superuser or user.groups.filter(name="CDF SSE").exists()
         )
+        
+        # Breadcrumb
+        ctx['breadcrumb_items'] = [
+            {'url': reverse_lazy('dashboard'), 'text': 'Dashboard'},
+            {'url': reverse_lazy('centro_list'), 'text': 'Centros de Familia'},
+        ]
+        
+        # Parámetros de búsqueda para mantener en paginación
+        ctx['query'] = self.request.GET.get("busqueda", "")
+        
         return ctx
 
 
