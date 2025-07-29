@@ -19,13 +19,33 @@ class UserListView(AdminRequiredMixin, ListView):
     model = User
     template_name = "user/user_list.html"
     context_object_name = "users"
-
+    paginate_by = 20  # Agregado para paginación
+    
     def get_queryset(self):
         queryset = super().get_queryset()
         busqueda = self.request.GET.get("busqueda", "").strip()
         if busqueda:
-            queryset = queryset.filter(username__icontains=busqueda)
-        return queryset
+            queryset = queryset.filter(
+                Q(username__icontains=busqueda) | 
+                Q(email__icontains=busqueda) |
+                Q(first_name__icontains=busqueda) |
+                Q(last_name__icontains=busqueda)
+            )
+        return queryset.order_by('username')  # Orden consistente
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Breadcrumb
+        context['breadcrumb_items'] = [
+            {'url': reverse_lazy('dashboard'), 'text': 'Dashboard'},
+            {'url': reverse_lazy('usuarios'), 'text': 'Usuarios'},
+        ]
+        
+        # Parámetros de búsqueda para mantener en paginación
+        context['query'] = self.request.GET.get("busqueda", "")
+        
+        return context
 
 
 class UserCreateView(AdminRequiredMixin, CreateView):
