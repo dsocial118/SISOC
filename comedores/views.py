@@ -61,7 +61,7 @@ def relevamiento_crear_editar_ajax(request, pk):
             )
         else:
             messages.error(request, "Acción no reconocida.")
-            return redirect("detalle", pk=pk)
+            return redirect("comedor_detalle", pk=pk)
 
         return redirect(
             "relevamiento_detalle",
@@ -78,7 +78,7 @@ def relevamiento_crear_editar_ajax(request, pk):
         messages.error(
             request, "Hubo un error al guardar el relevamiento. Intenta de nuevo."
         )
-        return redirect("detalle", pk=pk)
+        return redirect("comedor_detalle", pk=pk)
 
 
 @method_decorator(csrf_exempt, name="dispatch")
