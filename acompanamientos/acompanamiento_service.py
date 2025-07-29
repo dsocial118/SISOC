@@ -190,7 +190,6 @@ class AcompanamientoService:
             "almuerzo",
             "merienda",
             "cena",
-            "merienda_reforzada",
         ]
 
         prestaciones_por_dia = []
