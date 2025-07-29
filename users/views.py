@@ -20,6 +20,13 @@ class UserListView(AdminRequiredMixin, ListView):
     template_name = "user/user_list.html"
     context_object_name = "users"
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        busqueda = self.request.GET.get("busqueda", "").strip()
+        if busqueda:
+            queryset = queryset.filter(username__icontains=busqueda)
+        return queryset
+
 
 class UserCreateView(AdminRequiredMixin, CreateView):
     model = User
