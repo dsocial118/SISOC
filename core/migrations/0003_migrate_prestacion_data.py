@@ -68,8 +68,13 @@ def _migrate_single_relevamiento(rel, new_prestacion, dias, tipos_comida):
     # CRÍTICO: Actualizar el Relevamiento para que apunte a la primera prestación nueva
     # Esto mantiene la integridad referencial del OneToOneField
     if primera_nueva_prestacion:
-        rel.prestacion = primera_nueva_prestacion
-        rel.save()
+        # Usamos rel.__class__ para obtener el modelo sin importarlo
+        ModelRelev = rel.__class__
+        if not ModelRelev.objects.filter(
+            prestacion_id=primera_nueva_prestacion.id
+        ).exists():
+            rel.prestacion_id = primera_nueva_prestacion.id
+            rel.save(update_fields=["prestacion_id"])
 
 
 def reverse_migrate_prestacion_data(apps, schema_editor):
@@ -100,7 +105,6 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("core", "0002_add_prestacion_model"),
-        ("relevamientos", "0001_initial"),  # Asegurar que relevamientos existe
     ]
 
     operations = [
