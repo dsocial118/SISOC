@@ -22,17 +22,18 @@ class DuplaListView(ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        """Retorna las duplas ordenadas para evitar warning de paginación"""
-        return (
+        queryset = (
             Dupla.objects.select_related("abogado")
             .prefetch_related("tecnico")
             .order_by("-fecha", "nombre")
         )
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        # No necesitamos duplicar las duplas en el context ya que ListView las maneja automáticamente
-        return context
+        
+        # Agregar búsqueda
+        search = self.request.GET.get('search')
+        if search:
+            queryset = queryset.filter(nombre__icontains=search)
+            
+        return queryset
 
 
 class DuplaCreateView(CreateView):
@@ -94,7 +95,12 @@ class DuplaDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # El objeto ya está disponible como 'dupla' gracias a context_object_name
+        
+        # Agregar breadcrumb_items
+        context['breadcrumb_items'] = [
+            {'url': reverse('dupla_list'), 'text': 'Duplas'}
+        ]
+        
         return context
 
 
