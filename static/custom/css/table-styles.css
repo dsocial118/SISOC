@@ -1,0 +1,117 @@
+/* Estilos estandarizados para tablas del sistema */
+
+body {
+  background-color: #1a2332 !important;
+  color: #ffffff;
+}
+
+.table-wrapper {
+  margin-top: 2rem;
+}
+
+.table-container {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.table-responsive-custom {
+  border-radius: 0.5rem;
+}
+
+.standard-table {
+  margin-bottom: 0;
+  background: transparent;
+  border: none;
+}
+
+.standard-table thead th {
+  background-color: #2c3e50;
+  color: #ffffff;
+  border: none;
+  border-bottom: 1px solid #34495e;
+  padding: 1rem 0.75rem;
+  font-weight: 600;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05rem;
+}
+
+.standard-table tbody tr {
+  background-color: #34495e;
+  border-bottom: 1px solid #4a5f7a;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.standard-table tbody tr:hover {
+  background-color: #3a5068;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+}
+
+.standard-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.standard-table tbody td {
+  padding: 1rem 0.75rem;
+  vertical-align: middle;
+  color: #ffffff;
+  border: none;
+}
+
+.standard-table .empty-state {
+  padding: 2rem 0.75rem;
+  text-align: center;
+  color: #bdc3c7;
+  font-style: italic;
+  background-color: #34495e;
+}
+
+.standard-table tbody td a {
+  color: #3498db;
+  text-decoration: none;
+}
+
+.standard-table tbody td a:hover {
+  color: #5dade2;
+  text-decoration: underline;
+}
+
+.table-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.create-button {
+  margin-left: auto;
+}
+
+.btn-group a.btn i {
+  margin: 0;
+}
+
+input.form-control {
+  background-color: #1a2332;
+  color: #ffffff;
+  border: 1px solid #4a5f7a;
+}
+input.form-control::placeholder {
+  color: #bdc3c7;
+}
+
+@media (max-width: 768px) {
+  .table-wrapper {
+    margin-top: 1rem;
+  }
+
+  .standard-table thead th,
+  .standard-table tbody td {
+    padding: 0.75rem 0.5rem;
+  }
+}

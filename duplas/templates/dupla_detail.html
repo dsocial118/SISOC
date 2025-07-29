@@ -1,13 +1,27 @@
-{% extends "includes/main.html" %} {% block title %}Detalle de Dupla{% endblock
-%} {% block breadcrumb %} {% include "components/navigation/breadcrumb.html"
-with breadcrumb_items=breadcrumb_items current_item="Detalle de Dupla" %} {%
-endblock %} {% block titulo-pagina %}Detalle de Dupla{% endblock %} {% block
-content %}
+{% extends "includes/main.html" %} 
+
+{% block title %}Detalle de Dupla{% endblock %} 
+
+{% block breadcrumb %} 
+{% include "components/navigation/breadcrumb.html" with 
+   breadcrumb_items=breadcrumb_items 
+   current_item="Detalle de Dupla" 
+%} 
+{% endblock %} 
+
+{% block titulo-pagina %}Detalle de Dupla{% endblock %} 
+
+{% block content %}
 <div class="container mt-4">
-  {# Botones de cabecera reutilizables #} {% include
-  "components/ui/detail_header_buttons.html" with back_url='dupla_list'
-  edit_url='dupla_editar' delete_url='dupla_eliminar' object_id=dupla.id %} {#
-  Aquí iría la visualización de los campos de la dupla #}
+  {# Botones de cabecera reutilizables #} 
+  {% include "components/ui/detail_header_buttons.html" with 
+     back_url='dupla_list'
+     edit_url='dupla_editar' 
+     delete_url='dupla_eliminar' 
+     object_id=dupla.id 
+  %} 
+  
+  {# Contenido del detalle #}
   <div class="card mt-3">
     <div class="card-body">
       <h5 class="card-title">{{ dupla.nombre }}</h5>

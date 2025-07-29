@@ -1,7 +1,14 @@
-{% extends "includes/main.html" %} {% block title %}Borrar Dupla{% endblock %}
+{% extends "includes/main.html" %} 
+{% block title %}Borrar Dupla{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
-  {% include "components/forms/delete_confirm.html" with object=dupla
-  object_name="Dupla" cancel_url='dupla_list' %}
+  {% include "components/forms/delete_confirm.html" with 
+     object=dupla
+     object_name="Dupla" 
+     object_url='dupla_detalle'
+     object_id=dupla.id
+     cancel_url='dupla_list' 
+  %}
 </div>
 {% endblock %}
