@@ -3,6 +3,7 @@ from django.db.models import Q
 from django.forms import ValidationError
 from django.http import HttpResponseRedirect, JsonResponse
 from django.urls import reverse, reverse_lazy
+from django.template.loader import render_to_string
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -70,7 +71,41 @@ class OrganizacionListView(ListView):
                 .order_by("-id")
             )
         return queryset
-
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Obtener la query de búsqueda
+        query = self.request.GET.get("busqueda", "")
+        
+        # Preparar breadcrumb_items
+        breadcrumb_items = [
+            {
+                'url': reverse('organizaciones'),  # ✅ Correcto según tus URLs
+                'text': 'Organizaciones'
+            }
+        ]
+        
+        # Obtener datos de paginación
+        page_obj = context.get('page_obj')
+        is_paginated = context.get('is_paginated', False)
+        organizaciones = context.get('organizaciones', [])
+        
+        # Renderizar el contenido de la tabla
+        table_content = render_to_string('components/tables/organizacion_table.html', {
+            'organizaciones': page_obj if is_paginated else organizaciones,
+            'page_obj': page_obj if is_paginated else None,
+            'query': query,
+            'is_paginated': is_paginated
+        }, request=self.request)
+        
+        # Agregar al contexto
+        context.update({
+            'breadcrumb_items': breadcrumb_items,
+            'table_content': table_content,
+            'query': query,
+        })
+        
+        return context
 
 class OrganizacionCreateView(CreateView):
     model = Organizacion
@@ -79,6 +114,8 @@ class OrganizacionCreateView(CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        
+        # Formsets existentes
         if self.request.POST:
             context["firmante_formset"] = FirmanteFormset(self.request.POST)
             context["aval1_formset"] = Aval1Formset(self.request.POST)
@@ -87,6 +124,17 @@ class OrganizacionCreateView(CreateView):
             context["firmante_formset"] = FirmanteFormset()
             context["aval1_formset"] = Aval1Formset()
             context["aval2_formset"] = Aval2Formset()
+        
+        # Breadcrumb para crear
+        breadcrumb_items = [
+            {
+                'url': reverse('organizaciones'),
+                'text': 'Organizaciones'
+            }
+        ]
+        context['breadcrumb_items'] = breadcrumb_items
+        context['current_item'] = 'Agregar'
+        
         return context
 
     def form_valid(self, form):
@@ -121,6 +169,8 @@ class OrganizacionUpdateView(UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        
+        # Formsets existentes
         if self.request.POST:
             context["firmante_formset"] = FirmanteFormset(
                 self.request.POST, instance=self.object
@@ -135,6 +185,21 @@ class OrganizacionUpdateView(UpdateView):
             context["firmante_formset"] = FirmanteFormset(instance=self.object)
             context["aval1_formset"] = Aval1Formset(instance=self.object)
             context["aval2_formset"] = Aval2Formset(instance=self.object)
+        
+        # Breadcrumb para editar
+        breadcrumb_items = [
+            {
+                'url': reverse('organizaciones'),
+                'text': 'Organizaciones'
+            },
+            {
+                'url': reverse('organizacion_detalle', kwargs={'pk': self.object.pk}),
+                'text': self.object.nombre
+            }
+        ]
+        context['breadcrumb_items'] = breadcrumb_items
+        context['current_item'] = 'Editar'
+        
         return context
 
     def form_valid(self, form):
@@ -169,9 +234,22 @@ class OrganizacionDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        
+        # Datos existentes
         context["firmantes"] = self.object.firmantes.select_related("rol")
         context["avales1"] = self.object.avales1.all()
         context["avales2"] = self.object.avales2.all()
+        
+        # Preparar breadcrumb_items
+        breadcrumb_items = [
+            {
+                'url': reverse('organizaciones'),
+                'text': 'Organizaciones'
+            }
+        ]
+        
+        context['breadcrumb_items'] = breadcrumb_items
+        
         return context
 
 
