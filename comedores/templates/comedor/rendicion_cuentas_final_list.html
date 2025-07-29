@@ -1,19 +1,41 @@
-{% extends "includes/main.html" %};
+{% extends "includes/main.html" %}
 {% load static %}
-;
-{% block title %}Comedores{% endblock %}
-;
-{% block breadcrumb %}
-    <ol class="breadcrumb float-sm-right">
-        <li class="breadcrumb-item">
-            <a href="{% url 'comedores' %}">Rendicion de Cuentas Final</a>
-        </li>
-        <li class="breadcrumb-item active">Documentos</li>
-        <li class="breadcrumb-item active">Listar</li>
-    </ol>
+
+{% block head %}
+<link rel="stylesheet" href="{% static 'custom/css/table-styles.css' %}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 {% endblock %}
-;
+
+{% block title %}Rendición de Cuentas Final{% endblock %}
+{% block titulo-pagina %}Rendición de Cuentas Final{% endblock %}
+
+{% block breadcrumb %}
+    {% include "components/navigation/breadcrumb.html" with 
+       breadcrumb_items=breadcrumb_items 
+       current_item="Documentos" 
+    %}
+{% endblock %}
+
 {% block content %}
+<div class="container mt-4">
+
+    {# Botón volver al dashboard #}
+    <div class="row mb-3">
+        <div class="col-12">
+            <a class="btn btn-outline-secondary" href="{% url 'dashboard' %}">
+                Volver al Dashboard
+            </a>
+        </div>
+    </div>
+
+    {# Título con ícono #}
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="table-title">
+            <i class="bi bi-file-earmark-text"></i> Documentos de Rendición Final
+        </h2>
+    </div>
+
+    {# Formulario de búsqueda personalizado para este caso #}
     <h2 class="text-center display-4 mb-4">Buscar Documento</h2>
     <form method="GET">
         <div class="row">
@@ -24,113 +46,179 @@
                                class="form-control form-control-lg"
                                placeholder="Buscar por comedor o tipo de documento"
                                title="Ingresar comedor o tipo de documento."
-                               name="busqueda" />
+                               name="busqueda"
+                               value="{{ request.GET.busqueda|default:'' }}" />
                         <div class="input-group-append">
                             <button type="submit" class="btn btn-lg btn-primary">
                                 <i class="fa fa-search"></i>
                             </button>
                             <button type="button"
                                     id="toggle-validados"
-                                    class="btn btn-outline-secondary btn-sm">Ocultar analizados</button>
+                                    class="btn btn-outline-secondary btn-sm">
+                                Ocultar analizados
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </form>
-    <div class="row mt-5">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body">
-                    <table class="table table-bordered table-striped projects">
-                        <thead>
-                            <tr>
-                                <th>Nombre</th>
-                                <th>Comedor</th>
-                                <th>Fecha de modificacion</th>
-                                <th>Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for documento in documentos %}
-                                <tr class="documento-row estado-{{ documento.estado.nombre|lower|slugify }}">
-                                    <td>{{ documento.tipo.nombre }}</td>
-                                    <td>{{ documento.rendicion_final.comedor.nombre }}</td>
-                                    <td>{{ documento.fecha_modificacion|date:"d/m/Y H:i"|default:"-" }}</td>
-                                    <td>{{ documento.estado.nombre }}</td>
-                                    <td>
-                                        {% if documento.documento %}
-                                            <a href="{{ documento.documento.url }}"
-                                               target="_blank"
-                                               class="btn btn-primary btn-sm">Visualizar</a>
-                                        {% else %}
-                                            <button class="btn btn-sm btn-secondary" disabled>Visualizar</button>
-                                        {% endif %}
-                                    </td>
-                                    {% if documento.estado.nombre == "En análisis" %}
-                                        <td>
-                                            <form method="post"
-                                                  action="{% url 'validar_documento_rendicion_cuentas_final' documento.id %}"
-                                                  onsubmit="return confirm('¿Estás seguro de que querés validar este documento?');">
-                                                {% csrf_token %}
-                                                <button type="submit" class="btn btn-warning btn-sm">Validar</button>
-                                            </form>
-                                        </td>
-                                        <td>
-                                            <button type="button"
-                                                    class="btn btn-danger btn-sm"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#modalSubsanar"
-                                                    data-documento-id="{{ documento.id }}">Subsanar</button>
-                                        </td>
-                                    {% else %}
-                                        <td>
-                                            <button class="btn btn-sm btn-secondary" disabled>Validar</button>
-                                        </td>
-                                        <td>
-                                            <button class="btn btn-sm btn-secondary" disabled>Subsanar</button>
-                                        </td>
-                                    {% endif %}
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+
+    {# Botón para limpiar búsqueda si existe #}
+    {% if request.GET.busqueda %}
+    <div class="mb-3">
+        <a href="{% url 'rendicion_cuentas_final_list' %}" class="btn btn-outline-info btn-sm">
+            <i class="bi bi-arrow-clockwise"></i> Limpiar Búsqueda
+        </a>
+    </div>
+    {% endif %}
+
+    {# Tabla con wrapper estandarizado #}
+    {% include "components/tables/table_wrapper.html" %}
+    
+    <table class="table standard-table">
+        <thead>
+            <tr>
+                <th>Tipo de Documento</th>
+                <th>Comedor</th>
+                <th>Fecha de Modificación</th>
+                <th>Estado</th>
+                <th style="width: 120px">Documento</th>
+                <th style="width: 100px">Validar</th>
+                <th style="width: 100px">Subsanar</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for documento in documentos %}
+            <tr class="documento-row estado-{{ documento.estado.nombre|lower|slugify }}">
+                <td>{{ documento.tipo.nombre }}</td>
+                <td>{{ documento.rendicion_final.comedor.nombre }}</td>
+                <td>{{ documento.fecha_modificacion|date:"d/m/Y H:i"|default:"-" }}</td>
+                <td>
+                    {% if documento.estado.nombre == "En análisis" %}
+                        <span class="badge bg-warning text-dark">{{ documento.estado.nombre }}</span>
+                    {% elif documento.estado.nombre == "Validado" %}
+                        <span class="badge bg-success">{{ documento.estado.nombre }}</span>
+                    {% elif documento.estado.nombre == "Subsanar" %}
+                        <span class="badge bg-danger">{{ documento.estado.nombre }}</span>
+                    {% else %}
+                        <span class="badge bg-secondary">{{ documento.estado.nombre }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if documento.documento %}
+                        <a href="{{ documento.documento.url }}"
+                           target="_blank"
+                           class="btn btn-primary btn-sm">
+                            <i class="bi bi-eye"></i> Ver
+                        </a>
+                    {% else %}
+                        <button class="btn btn-sm btn-secondary" disabled>
+                            <i class="bi bi-eye-slash"></i> N/A
+                        </button>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if documento.estado.nombre == "En análisis" %}
+                        <form method="post"
+                              action="{% url 'validar_documento_rendicion_cuentas_final' documento.id %}"
+                              onsubmit="return confirm('¿Estás seguro de que querés validar este documento?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success btn-sm">
+                                <i class="bi bi-check-circle"></i> Validar
+                            </button>
+                        </form>
+                    {% else %}
+                        <button class="btn btn-sm btn-secondary" disabled>
+                            <i class="bi bi-check-circle"></i> Validar
+                        </button>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if documento.estado.nombre == "En análisis" %}
+                        <button type="button"
+                                class="btn btn-danger btn-sm"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalSubsanar"
+                                data-documento-id="{{ documento.id }}">
+                            <i class="bi bi-exclamation-triangle"></i> Subsanar
+                        </button>
+                    {% else %}
+                        <button class="btn btn-sm btn-secondary" disabled>
+                            <i class="bi bi-exclamation-triangle"></i> Subsanar
+                        </button>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="empty-state">
+                    {% if request.GET.busqueda %}
+                        No se encontraron documentos que coincidan con "{{ request.GET.busqueda }}"
+                    {% else %}
+                        No hay documentos disponibles.
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    {% include "components/tables/table_wrapper_end.html" %}
+
+    {# Paginación si la necesitas #}
+    {% if is_paginated and page_obj %}
+    <div class="mt-4 d-flex justify-content-center">
+        {% include 'components/tables/pagination.html' with 
+           page_obj=page_obj
+           query=request.GET.busqueda
+        %}
+    </div>
+    {% endif %}
+
+</div>
+
+{# Modal para subsanar #}
+<div class="modal fade" id="modalSubsanar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="post" id="formSubsanar">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}" />
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-exclamation-triangle text-warning"></i> 
+                        Subsanar Documento
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="observacion" class="form-label">Observación</label>
+                        <textarea maxlength="150"
+                                  name="observacion"
+                                  id="observacion"
+                                  class="form-control"
+                                  placeholder="Describe el motivo por el cual el documento debe subsanarse..."
+                                  required></textarea>
+                        <div class="form-text">Máximo 150 caracteres</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-exclamation-triangle"></i> Enviar a Subsanar
+                    </button>
                 </div>
             </div>
-        </div>
+        </form>
     </div>
-    <div class="modal fade"
-         id="modalSubsanar"
-         tabindex="-1"
-         aria-hidden="true">
-        <div class="modal-dialog">
-            <form method="post" id="formSubsanar">
-                {% csrf_token %}
-                <input type="hidden" name="next" value="{{ request.get_full_path }}" />
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Subsanar Documento</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label for="observacion" class="form-label">Observación</label>
-                            <textarea maxlength="150"
-                                      name="observacion"
-                                      id="observacion"
-                                      class="form-control"
-                                      required></textarea>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-danger">Enviar a Subsanar</button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
+</div>
+
 {% endblock %}
+
 {% block customJS %}
     <script>SUBSANAR_URL = "{% url 'subsanar_documento_rendicion_cuentas_final' 0 %}";</script>
     <script src="{% static 'custom/js/rendicioncuentasfinallist.js' %}"></script>

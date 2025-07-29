@@ -1,71 +1,135 @@
-{% extends "includes/main.html" %}; {% load static %} ; {% block title
-%}Comedores{% endblock %} ; {% block breadcrumb %}
-<ol class="breadcrumb float-sm-right">
-  <li class="breadcrumb-item">
-    <a href="{% url 'comedores' %}">Comedores</a>
-  </li>
-  <li class="breadcrumb-item active">Listar</li>
-</ol>
-{% endblock %} ; {% block content %} {% include
-'components/forms/search_form.html' with title="Buscar Comedor/Merendero"
-placeholder="Buscar por nombre, provincia, municipio, localidad, barrio o calle"
-search_value=request.GET.busqueda %} {% include
-'components/ui/action_buttons.html' with reset_url='comedores'
-create_url='comedor_crear' %}
-<div class="row mt-5">
-  <div class="col-12">
-    <div class="card">
-      <div class="card-body">
-        <table class="table table-bordered table-striped projects">
-          <thead>
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block head %}
+<link rel="stylesheet" href="{% static 'custom/css/table-styles.css' %}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+{% endblock %}
+
+{% block title %}Comedores{% endblock %}
+{% block titulo-pagina %}Comedores{% endblock %}
+
+{% block breadcrumb %}
+    {% include "components/navigation/breadcrumb.html" with 
+       breadcrumb_items=breadcrumb_items 
+       current_item="Listado" 
+    %}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+    {# Botón volver al dashboard #}
+    <div class="row mb-3">
+        <div class="col-12">
+            <a class="btn btn-outline-secondary" href="{% url 'dashboard' %}">
+                Volver al Dashboard
+            </a>
+        </div>
+    </div>
+
+    {# Título con ícono y botón de crear #}
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="table-title">
+            <i class="bi bi-house"></i> Listado de Comedores/Merenderos
+        </h2>
+        <a href="{% url 'comedor_crear' %}" class="btn btn-primary create-button">
+            <i class="bi bi-plus-circle"></i> Crear Nuevo Comedor
+        </a>
+    </div>
+
+    {# Formulario de búsqueda #}
+    {% include 'components/forms/search_form.html' with 
+       title="Buscar Comedor/Merendero" 
+       placeholder="Buscar por nombre, provincia, municipio, localidad, barrio o calle" 
+       search_value=request.GET.busqueda 
+    %}
+    
+    {# Botón para limpiar búsqueda si existe #}
+    {% if request.GET.busqueda %}
+    <div class="mb-3">
+        <a href="{% url 'comedores' %}" class="btn btn-outline-info btn-sm">
+            <i class="bi bi-arrow-clockwise"></i> Limpiar Búsqueda
+        </a>
+    </div>
+    {% endif %}
+    
+    {# Tabla con wrapper estandarizado #}
+    {% include "components/tables/table_wrapper.html" %}
+    
+    <table class="table standard-table">
+        <thead>
             <tr>
-              <th>Nombre</th>
-              <th>Tipo Comedor</th>
-              <th>Ubicacion</th>
-              <th>Direccion</th>
-              <th>Referente</th>
-              <th>Numero de contacto</th>
-              <th style="width: 15%" class="notexport">Acciones</th>
+                <th>Nombre</th>
+                <th>Tipo Comedor</th>
+                <th>Ubicación</th>
+                <th>Dirección</th>
+                <th>Referente</th>
+                <th>Contacto</th>
+                <th style="width: 180px">Acciones</th>
             </tr>
-          </thead>
-          <tbody>
+        </thead>
+        <tbody>
             {% for comedor in comedores %}
             <tr>
-              <td>
-                <a
-                  href="{% url 'comedor_detalle' comedor.id %}"
-                  class="font-weight-bold link-handler"
-                  title="Ver detalles"
-                  >{{ comedor.nombre }}</a
-                >
-              </td>
-              <td>{{ comedor.tipocomedor__nombre }}</td>
-              <td>
-                {{ comedor.provincia__nombre | default_if_none:"-" }}, {{
-                comedor.municipio__nombre | default_if_none:"-" }}, {{
-                comedor.localidad__nombre | default_if_none:"-" }}, {{
-                comedor.barrio | default_if_none:"-" }}
-              </td>
-              <td>
-                {{ comedor.calle | default_if_none:"-" }} {{ comedor.numero |
-                default_if_none:"-" }}
-              </td>
-              <td>
-                {{ comedor.referente__nombre | default_if_none:"-" }}, {{
-                comedor.referente__apellido | default_if_none:"-" }}
-              </td>
-              <td>{{ comedor.referente__celular | default_if_none:"-" }}</td>
-              <td>
-                {% include 'components/tables/row_actions.html' with object=comedor detail_url='comedor_detalle' edit_url='comedor_editar' delete_url='comedor_eliminar' %}
-              </td>
+                <td>
+                    <a href="{% url 'comedor_detalle' comedor.id %}" 
+                       class="font-weight-bold link-handler text-decoration-none"
+                       title="Ver detalles">
+                        {{ comedor.nombre }}
+                    </a>
+                </td>
+                <td>{{ comedor.tipocomedor__nombre|default:"-" }}</td>
+                <td>
+                    {{ comedor.provincia__nombre|default_if_none:"-" }}{% if comedor.municipio__nombre %}, {{ comedor.municipio__nombre }}{% endif %}{% if comedor.localidad__nombre %}, {{ comedor.localidad__nombre }}{% endif %}{% if comedor.barrio %}, {{ comedor.barrio }}{% endif %}
+                </td>
+                <td>
+                    {% if comedor.calle %}{{ comedor.calle }}{% endif %}{% if comedor.numero %} {{ comedor.numero }}{% endif %}{% if not comedor.calle and not comedor.numero %}-{% endif %}
+                </td>
+                <td>
+                    {% if comedor.referente__nombre or comedor.referente__apellido %}
+                        {{ comedor.referente__nombre|default:"" }} {{ comedor.referente__apellido|default:"" }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>{{ comedor.referente__celular|default:"-" }}</td>
+                <td>
+                    {% include 'components/tables/row_actions.html' with 
+                       object=comedor 
+                       detail_url='comedor_detalle' 
+                       edit_url='comedor_editar' 
+                       delete_url='comedor_eliminar' 
+                    %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="empty-state">
+                    {% if request.GET.busqueda %}
+                        No se encontraron comedores que coincidan con "{{ request.GET.busqueda }}"
+                    {% else %}
+                        No hay comedores disponibles.
+                    {% endif %}
+                </td>
             </tr>
             {% endfor %}
-          </tbody>
-        </table>
-        {% include 'components/tables/pagination.html' with page_obj=page_obj
-        query=request.GET.busqueda %}
-      </div>
+        </tbody>
+    </table>
+    
+    {% include "components/tables/table_wrapper_end.html" %}
+
+    {# Paginación #}
+    {% if is_paginated and page_obj %}
+    <div class="mt-4 d-flex justify-content-center">
+        {% include 'components/tables/pagination.html' with 
+           page_obj=page_obj
+           query=request.GET.busqueda
+        %}
     </div>
-  </div>
+    {% endif %}
+
 </div>
-{% endblock %} {% block customJS %}{% endblock %}
+{% endblock %}
+
+{% block customJS %}{% endblock %}

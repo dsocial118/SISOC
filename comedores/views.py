@@ -180,11 +180,25 @@ class ComedorListView(ListView):
     model = Comedor
     template_name = "comedor/comedor_list.html"
     context_object_name = "comedores"
-    paginate_by = 10
+    paginate_by = 20  # Aumentado para mejor UX
 
     def get_queryset(self):
         query = self.request.GET.get("busqueda")
         return ComedorService.get_comedores_filtrados(query)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Breadcrumb
+        context['breadcrumb_items'] = [
+            {'url': reverse_lazy('dashboard'), 'text': 'Dashboard'},
+            {'url': reverse_lazy('comedores'), 'text': 'Comedores'},
+        ]
+        
+        # Parámetros de búsqueda para mantener en paginación
+        context['query'] = self.request.GET.get("busqueda", "")
+        
+        return context
 
 
 class ComedorCreateView(CreateView):
