@@ -46,8 +46,9 @@ class CrearLegajosView(View):
             rows = payload.get("rows", [])
         except json.JSONDecodeError:
             return HttpResponseBadRequest("JSON inválido.")
-
-        estado_inicial = EstadoLegajo.objects.get(nombre="DOCUMENTO_PENDIENTE")
+        estado_inicial, _ = EstadoLegajo.objects.get_or_create(
+            nombre='DOCUMENTO_PENDIENTE'
+        )
         creados = existentes = 0
         for datos in rows:
             ciudadano = CiudadanoService.get_or_create_ciudadano(datos, request.user)

@@ -8,6 +8,7 @@ from celiaquia.forms import LegajoArchivoForm
 from celiaquia.services.legajo_service import LegajoService
 
 
+
 class LegajoArchivoUploadView(FormView):
     form_class = LegajoArchivoForm
     template_name = "celiaquia/legajo_upload.html"

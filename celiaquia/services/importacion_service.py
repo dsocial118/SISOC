@@ -43,6 +43,7 @@ class ImportacionService:
             df = pd.read_excel(BytesIO(data), engine="openpyxl")
         except Exception as e:
             raise ValidationError(f"No se pudo leer Excel: {e}")
+
         # Normalizar encabezados
         df.columns = [str(col).strip().lower().replace(" ", "_") for col in df.columns]
         expected = [
@@ -57,6 +58,7 @@ class ImportacionService:
             raise ValidationError(
                 f"Encabezados inválidos: {list(df.columns)} — esperados: {expected}"
             )
+
         # Reordenar y limpiar
         df = df[expected]
         df = df.fillna("")
@@ -64,10 +66,12 @@ class ImportacionService:
             df["fecha_nacimiento"] = df["fecha_nacimiento"].apply(
                 lambda x: x.date() if hasattr(x, "date") else x
             )
+
         estado_inicial = EstadoLegajo.objects.get(nombre="DOCUMENTO_PENDIENTE")
         validos = errores = 0
         detalles_errores = []
         batch = []
+
         for offset, row in enumerate(df.to_dict(orient="records"), start=2):
             logger.debug(f"Fila {offset}: {row}")
             try:
@@ -84,12 +88,25 @@ class ImportacionService:
                 errores += 1
                 detalles_errores.append({"fila": offset, "error": str(e)})
                 logger.error(f"Error fila {offset}: {e}")
+
             if len(batch) >= batch_size:
                 ExpedienteCiudadano.objects.bulk_create(batch)
                 batch.clear()
+
         if batch:
             ExpedienteCiudadano.objects.bulk_create(batch)
+
         logger.info(f"Import completo: {validos} válidos, {errores} errores")
+
+        # Verificar que todos los legajos tengan archivo antes de pasar de estado
+        faltantes = ExpedienteCiudadano.objects.filter(
+            expediente=expediente, archivo__isnull=True
+        ).exists()
+        if faltantes:
+            raise ValidationError(
+                "Debe subir un archivo para cada legajo antes de continuar."
+            )
+
         return {
             "validos": validos,
             "errores": errores,
