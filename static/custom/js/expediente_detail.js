@@ -50,6 +50,16 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+  //Actualizar archivo modal
+  const modal = document.getElementById('modalSubirArchivo');
+  modal.addEventListener('show.bs.modal', function (event) {
+    const button = event.relatedTarget;
+    const legajoId = button.getAttribute('data-legajo-id');
+    const expedienteId = button.getAttribute('data-expediente-id');
+
+    const form = modal.querySelector('#form-subir-archivo');
+    form.action = `/expedientes/${expedienteId}/legajo/${legajoId}/archivo/`;
+  });
 
   // Modal de subida de archivo
   const modalArchivo = document.getElementById('modalSubirArchivo');
