@@ -1,120 +1,170 @@
-{% extends "includes/main.html" %};
+{% extends "includes/main.html" %}
 {% load static %}
-;
-{% block title %}Comedores - Expedientes{% endblock %}
-;
-{% block breadcrumb %}
-    <ol class="breadcrumb float-sm-right">
-        <li class="breadcrumb-item">
-            <a href="{% url 'admisiones_legales_listar' %}">Expedientes</a>
-        </li>
-        <li class="breadcrumb-item active">Listar</li>
-    </ol>
+
+{% block head %}
+<link rel="stylesheet" href="{% static 'custom/css/table-styles.css' %}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 {% endblock %}
-;
+
+{% block title %}Comedores - Expedientes{% endblock %}
+{% block titulo-pagina %}Expedientes Legales{% endblock %}
+
+{% block breadcrumb %}
+    {% include "components/navigation/breadcrumb.html" with 
+       breadcrumb_items=breadcrumb_items 
+       current_item="Listado" 
+    %}
+{% endblock %}
+
 {% block content %}
+<div class="container mt-4">
+
+    {# Botón volver al dashboard #}
+    <div class="row mb-3">
+        <div class="col-12">
+            <a class="btn btn-outline-secondary" href="{% url 'dashboard' %}">
+                Volver al Dashboard
+            </a>
+        </div>
+    </div>
+
+    {# Título con ícono #}
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="table-title">
+            <i class="bi bi-folder2-open"></i> Listado de Expedientes
+        </h2>
+    </div>
+
+    {# Formulario de búsqueda simplificado para este caso #}
     <h2 class="text-center display-4 mb-4">Expedientes</h2>
-    <div>
-        <div class="mb-3">
-            <form method="get" class="mb-3">
+    <div class="mb-3">
+        <form method="get" class="mb-3">
+            <div class="input-group input-group-lg">
                 <input type="text"
                        name="busqueda"
                        value="{{ query }}"
-                       class="form-control"
+                       class="form-control form-control-lg"
                        placeholder="Buscar por nombre, ubicación, referente, etc." />
-            </form>
-        </div>
-    </div>
-    <div class="row mt-5">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body">
-                    <table class="table table-bordered table-striped projects">
-                        <thead>
-                            <tr>
-                                <th>Comedor</th>
-                                <th>Tipo convenio</th>
-                                <th>Num Expediente</th>
-                                <th>Modificado</th>
-                                <th>Estado</th>
-                                <th style="width: 10%" class="notexport">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for admision in admisiones %}
-                                <tr>
-                                    <td>
-                                        <a href="{% url 'comedor_detalle' admision.comedor.id %}"
-                                           class="font-weight-bold link-handler"
-                                           title="Ver detalles">{{ admision.comedor.nombre }}</a>
-                                    </td>
-                                    <td>{{ admision.tipo_convenio.nombre }}</td>
-                                    <td>{{ admision.num_expediente }}</td>
-                                    <td>{{ admision.modificado|date:'d/m/Y' }}</td>
-                                    <td>{{ admision.estado_legales| default_if_none:"-" }}</td>
-                                    <td>
-                                        <div class="btn-group" role="group">
-                                            <a href="{% url 'admisiones_legales_ver' admision.id %}"
-                                               class="btn btn-primary btn-sm">Ver</a>
-                                        </div>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                    {% if is_paginated %}
-                        <div class="mt-2">
-                            <ul class="pagination">
-                                {% if page_obj.has_previous %}
-                                    <li class="page-item">
-                                        <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ page_obj.previous_page_number }}"
-                                           class="page-link">Volver</a>
-                                    </li>
-                                {% else %}
-                                    <li class="page-item disabled">
-                                        <a href="#" class="page-link">Volver</a>
-                                    </li>
-                                {% endif %}
-                                {% for i in page_obj.paginator.page_range %}
-                                    {% if page_obj.number == i %}
-                                        <li class="page-item active">
-                                            <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ i }}"
-                                               class="page-link">{{ i }}</a>
-                                        </li>
-                                    {% elif i > page_obj.number|add:'-5' and i < page_obj.number|add:'5' %}
-                                        <li class="page-item">
-                                            <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ i }}"
-                                               class="page-link">{{ i }}</a>
-                                        </li>
-                                    {% elif i == 1 or i == page_obj.paginator.num_pages %}
-                                        <li class="page-item">
-                                            <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ i }}"
-                                               class="page-link">{{ i }}</a>
-                                        </li>
-                                    {% elif i == page_obj.number|add:'-6' or i == page_obj.number|add:'6' %}
-                                        <li class="page-item disabled">
-                                            <a href="#" class="page-link">...</a>
-                                        </li>
-                                    {% endif %}
-                                {% endfor %}
-                                {% if page_obj.has_next %}
-                                    <li class="page-item">
-                                        <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ page_obj.next_page_number }}"
-                                           class="page-link">Continuar</a>
-                                    </li>
-                                {% else %}
-                                    <li class="page-item disabled">
-                                        <a href="#" class="page-link">Continuar</a>
-                                    </li>
-                                {% endif %}
-                            </ul>
-                        </div>
-                    {% endif %}
+                <div class="input-group-append">
+                    <button type="submit" class="btn btn-lg btn-primary">
+                        <i class="bi bi-search"></i>
+                    </button>
                 </div>
             </div>
-        </div>
+        </form>
     </div>
+
+    {# Botón para limpiar búsqueda si existe #}
+    {% if query %}
+    <div class="mb-3">
+        <a href="{% url 'admisiones_legales_listar' %}" class="btn btn-outline-info btn-sm">
+            <i class="bi bi-arrow-clockwise"></i> Limpiar Búsqueda
+        </a>
+    </div>
+    {% endif %}
+
+    {# Tabla con wrapper estandarizado #}
+    {% include "components/tables/table_wrapper.html" %}
+    
+    <table class="table standard-table">
+        <thead>
+            <tr>
+                <th>Comedor</th>
+                <th>Tipo Convenio</th>
+                <th>Nº Expediente</th>
+                <th>Modificado</th>
+                <th>Estado</th>
+                <th style="width: 120px">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for admision in admisiones %}
+            <tr>
+                <td>
+                    <a href="{% url 'comedor_detalle' admision.comedor.id %}"
+                       class="font-weight-bold link-handler text-decoration-none"
+                       title="Ver detalles del comedor">
+                        {{ admision.comedor.nombre }}
+                    </a>
+                </td>
+                <td>
+                    <span class="badge bg-primary">
+                        {{ admision.tipo_convenio.nombre }}
+                    </span>
+                </td>
+                <td>
+                    <code class="bg-light text-dark px-2 py-1">
+                        {{ admision.num_expediente|default:"-" }}
+                    </code>
+                </td>
+                <td>
+                    <small class="text-muted">
+                        <i class="bi bi-calendar3"></i>
+                        {{ admision.modificado|date:'d/m/Y' }}
+                    </small>
+                </td>
+                <td>
+                    {% if admision.estado_legales == "Aprobado" %}
+                        <span class="badge bg-success">
+                            <i class="bi bi-check-circle"></i> {{ admision.estado_legales }}
+                        </span>
+                    {% elif admision.estado_legales == "A Rectificar" %}
+                        <span class="badge bg-warning text-dark">
+                            <i class="bi bi-exclamation-triangle"></i> {{ admision.estado_legales }}
+                        </span>
+                    {% elif admision.estado_legales == "Rechazado" %}
+                        <span class="badge bg-danger">
+                            <i class="bi bi-x-circle"></i> {{ admision.estado_legales }}
+                        </span>
+                    {% elif admision.estado_legales == "En Revisión" %}
+                        <span class="badge bg-info">
+                            <i class="bi bi-clock"></i> {{ admision.estado_legales }}
+                        </span>
+                    {% else %}
+                        <span class="badge bg-secondary">
+                            <i class="bi bi-dash-circle"></i> {{ admision.estado_legales|default:"Sin Estado" }}
+                        </span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <a href="{% url 'admisiones_legales_ver' admision.id %}"
+                           class="btn btn-primary btn-sm"
+                           title="Ver expediente">
+                            <i class="bi bi-eye"></i> Ver
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="empty-state">
+                    {% if query %}
+                        No se encontraron expedientes que coincidan con "{{ query }}"
+                    {% else %}
+                        No hay expedientes disponibles.
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    {% include "components/tables/table_wrapper_end.html" %}
+
+    {# Paginación usando el componente estándar #}
+    {% if is_paginated and page_obj %}
+    <div class="mt-4 d-flex justify-content-center">
+        {% include 'components/tables/pagination.html' with 
+           page_obj=page_obj
+           query=query
+        %}
+    </div>
+    {% endif %}
+
+</div>
 {% endblock %}
+
 {% block customJS %}
     <script src="{% static 'custom/js/filtroadmisiones.js' %}"></script>
 {% endblock %}

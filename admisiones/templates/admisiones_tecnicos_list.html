@@ -1,134 +1,174 @@
 {% extends "includes/main.html" %}
 {% load static %}
 {% load static custom_filters %}
-;
-{% block title %}Comedores - Admisiones{% endblock %}
-{% block breadcrumb %}
-    <ol class="breadcrumb float-sm-right">
-        <li class="breadcrumb-item">
-            <a href="{% url 'admisiones_tecnicos_listar' %}">Admisiones</a>
-        </li>
-        <li class="breadcrumb-item active">Listar</li>
-    </ol>
+
+{% block head %}
+<link rel="stylesheet" href="{% static 'custom/css/table-styles.css' %}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 {% endblock %}
+
+{% block title %}Comedores - Admisiones{% endblock %}
+{% block titulo-pagina %}Admisiones de Comedores{% endblock %}
+
+{% block breadcrumb %}
+    {% include "components/navigation/breadcrumb.html" with 
+       breadcrumb_items=breadcrumb_items 
+       current_item="Listado" 
+    %}
+{% endblock %}
+
 {% block content %}
+<div class="container mt-4">
+
+    {# Botón volver al dashboard #}
+    <div class="row mb-3">
+        <div class="col-12">
+            <a class="btn btn-outline-secondary" href="{% url 'dashboard' %}">
+                Volver al Dashboard
+            </a>
+        </div>
+    </div>
+
+    {# Título con ícono #}
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="table-title">
+            <i class="bi bi-file-earmark-check"></i> Listado de Admisiones
+        </h2>
+    </div>
+
+    {# Formulario de búsqueda simplificado para este caso #}
     <h2 class="text-center display-4 mb-4">Admisiones</h2>
-    <div>
-        <div class="mb-3">
-            <form method="get" class="mb-3">
+    <div class="mb-3">
+        <form method="get" class="mb-3">
+            <div class="input-group input-group-lg">
                 <input type="text"
                        name="busqueda"
                        value="{{ query }}"
-                       class="form-control"
+                       class="form-control form-control-lg"
                        placeholder="Buscar por nombre, ubicación, referente, etc." />
-            </form>
-        </div>
-    </div>
-    <div class="row mt-5">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body">
-                    <table class="table table-bordered table-striped projects">
-                        <thead>
-                            <tr>
-                                <th>Nombre</th>
-                                <th>Tipo Comedor</th>
-                                <th>Ubicacion</th>
-                                <th>Direccion</th>
-                                <th>Referente</th>
-                                <th>Numero de contacto</th>
-                                <th style="width: 10%" class="notexport">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for comedor in comedores %}
-                                <tr>
-                                    <td>
-                                        <a href="{% url 'comedor_detalle' comedor.id %}"
-                                           class="font-weight-bold link-handler"
-                                           title="Ver detalles">{{ comedor.nombre }}</a>
-                                    </td>
-                                    <td>{{ comedor.tipocomedor }}</td>
-                                    <td>{{ comedor.provincia | default_if_none:"-" }}</td>
-                                    <td>{{ comedor.calle | default_if_none:"-" }} {{ comedor.numero | default_if_none:"-" }}</td>
-                                    <td>{{ comedor.referente.nombre| default_if_none:"-" }}, {{ comedor.referente.apellido | default_if_none:"-" }}</td>
-                                    <td>{{ comedor.referente.celular | default_if_none:"-" }}</td>
-                                    <td>
-                                        <div class="btn-group" role="group">
-                                            {% if comedor.admision_id %}
-                                                <a href="{% url 'admisiones_tecnicos_editar' comedor.admision_id %}"
-                                                   class="btn btn-warning btn-sm">
-                                                    {% if request.user|has_group:"Tecnico Comedor" %}Editar{% endif %}
-                                                    {% if request.user|has_group:"Abogado Dupla" %}Ver{% endif %}
-                                                    {% if comedor.estado_legales == "A Rectificar" %}
-                                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">Rectificar</span>
-                                                    {% endif %}
-                                                </a>
-                                            {% else %}
-                                                {% if request.user|has_group:"Tecnico Comedor" %}
-                                                    <a href="{% url 'admisiones_tecnicos_crear' comedor.id %}"
-                                                       class="btn btn-primary btn-sm">Crear</a>
-                                                {% endif %}
-                                            {% endif %}
-                                        </div>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                    {% if is_paginated %}
-                        <div class="mt-2">
-                            <ul class="pagination">
-                                {% if page_obj.has_previous %}
-                                    <li class="page-item">
-                                        <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ page_obj.previous_page_number }}"
-                                           class="page-link">Volver</a>
-                                    </li>
-                                {% else %}
-                                    <li class="page-item disabled">
-                                        <a href="#" class="page-link">Volver</a>
-                                    </li>
-                                {% endif %}
-                                {% for i in page_obj.paginator.page_range %}
-                                    {% if page_obj.number == i %}
-                                        <li class="page-item active">
-                                            <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ i }}"
-                                               class="page-link">{{ i }}</a>
-                                        </li>
-                                    {% elif i > page_obj.number|add:'-5' and i < page_obj.number|add:'5' %}
-                                        <li class="page-item">
-                                            <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ i }}"
-                                               class="page-link">{{ i }}</a>
-                                        </li>
-                                    {% elif i == 1 or i == page_obj.paginator.num_pages %}
-                                        <li class="page-item">
-                                            <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ i }}"
-                                               class="page-link">{{ i }}</a>
-                                        </li>
-                                    {% elif i == page_obj.number|add:'-6' or i == page_obj.number|add:'6' %}
-                                        <li class="page-item disabled">
-                                            <a href="#" class="page-link">...</a>
-                                        </li>
-                                    {% endif %}
-                                {% endfor %}
-                                {% if page_obj.has_next %}
-                                    <li class="page-item">
-                                        <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ page_obj.next_page_number }}"
-                                           class="page-link">Continuar</a>
-                                    </li>
-                                {% else %}
-                                    <li class="page-item disabled">
-                                        <a href="#" class="page-link">Continuar</a>
-                                    </li>
-                                {% endif %}
-                            </ul>
-                        </div>
-                    {% endif %}
+                <div class="input-group-append">
+                    <button type="submit" class="btn btn-lg btn-primary">
+                        <i class="bi bi-search"></i>
+                    </button>
                 </div>
             </div>
-        </div>
+        </form>
     </div>
+
+    {# Botón para limpiar búsqueda si existe #}
+    {% if query %}
+    <div class="mb-3">
+        <a href="{% url 'admisiones_tecnicos_listar' %}" class="btn btn-outline-info btn-sm">
+            <i class="bi bi-arrow-clockwise"></i> Limpiar Búsqueda
+        </a>
+    </div>
+    {% endif %}
+
+    {# Tabla con wrapper estandarizado #}
+    {% include "components/tables/table_wrapper.html" %}
+    
+    <table class="table standard-table">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Tipo Comedor</th>
+                <th>Ubicación</th>
+                <th>Dirección</th>
+                <th>Referente</th>
+                <th>Contacto</th>
+                <th style="width: 150px">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for comedor in comedores %}
+            <tr>
+                <td>
+                    <a href="{% url 'comedor_detalle' comedor.id %}"
+                       class="font-weight-bold link-handler text-decoration-none"
+                       title="Ver detalles">
+                        {{ comedor.nombre }}
+                    </a>
+                </td>
+                <td>{{ comedor.tipocomedor|default:"-" }}</td>
+                <td>{{ comedor.provincia|default_if_none:"-" }}</td>
+                <td>
+                    {% if comedor.calle or comedor.numero %}
+                        {{ comedor.calle|default_if_none:"" }} {{ comedor.numero|default_if_none:"" }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if comedor.referente.nombre or comedor.referente.apellido %}
+                        {{ comedor.referente.nombre|default_if_none:"" }}, {{ comedor.referente.apellido|default_if_none:"" }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>{{ comedor.referente.celular|default_if_none:"-" }}</td>
+                <td>
+                    <div class="btn-group btn-group-sm" role="group">
+                        {% if comedor.admision_id %}
+                            <a href="{% url 'admisiones_tecnicos_editar' comedor.admision_id %}"
+                               class="btn {% if request.user|has_group:'Tecnico Comedor' %}btn-warning{% else %}btn-info{% endif %} btn-sm position-relative"
+                               title="{% if request.user|has_group:'Tecnico Comedor' %}Editar Admisión{% else %}Ver Admisión{% endif %}">
+                                {% if request.user|has_group:"Tecnico Comedor" %}
+                                    <i class="bi bi-pencil"></i> Editar
+                                {% endif %}
+                                {% if request.user|has_group:"Abogado Dupla" %}
+                                    <i class="bi bi-eye"></i> Ver
+                                {% endif %}
+                                {% if comedor.estado_legales == "A Rectificar" %}
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                    </span>
+                                {% endif %}
+                            </a>
+                        {% else %}
+                            {% if request.user|has_group:"Tecnico Comedor" %}
+                                <a href="{% url 'admisiones_tecnicos_crear' comedor.id %}"
+                                   class="btn btn-primary btn-sm"
+                                   title="Crear Admisión">
+                                    <i class="bi bi-plus-circle"></i> Crear
+                                </a>
+                            {% else %}
+                                <span class="btn btn-sm btn-secondary disabled">
+                                    <i class="bi bi-dash-circle"></i> N/A
+                                </span>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="empty-state">
+                    {% if query %}
+                        No se encontraron comedores que coincidan con "{{ query }}"
+                    {% else %}
+                        No hay comedores disponibles para admisiones.
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    {% include "components/tables/table_wrapper_end.html" %}
+
+    {# Paginación usando el componente estándar #}
+    {% if is_paginated and page_obj %}
+    <div class="mt-4 d-flex justify-content-center">
+        {% include 'components/tables/pagination.html' with 
+           page_obj=page_obj
+           query=query
+        %}
+    </div>
+    {% endif %}
+
+</div>
 {% endblock %}
+
 {% block customJS %}
     <script src="{% static 'custom/js/filtroadmisiones.js' %}"></script>
 {% endblock %}
