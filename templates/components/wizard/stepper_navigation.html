@@ -1,0 +1,148 @@
+{% comment %}
+Componente reutilizable de navegación stepper para wizards de ciudadanos
+Parámetros:
+- ciudadano_id: ID del ciudadano (requerido)
+- current_step: Paso actual (1-6) (requerido)
+- show_mobile: Mostrar en móvil los pasos (default: False)
+- ciudadano_name: Nombre del ciudadano para mostrar (opcional)
+- dimension_family_id: ID de dimensión familia (opcional, para paso 3)
+
+Pasos:
+1. Datos Personales
+2. Dimensiones  
+3. Grupo Familiar
+4. Grupo Hogar
+5. Alertas
+6. Archivos
+{% endcomment %}
+
+<div class="bs-stepper">
+    <div class="bs-stepper-header{% if not show_mobile %} d-none d-sm-flex{% endif %}" role="tablist">
+        
+        {# PASO 1: Datos Personales #}
+        <div class="step{% if current_step == 1 %} active{% endif %}">
+            {% if current_step == 1 %}
+                <button type="button" class="step-trigger text-primary" role="tab">
+                    <span class="bs-stepper-circle">1</span>
+                    <span class="bs-stepper-label">Datos Personales</span>
+                </button>
+            {% else %}
+                <a href="{% url 'ciudadanos_editar' ciudadano_id %}" class="step-trigger" role="tab">
+                    <span class="bs-stepper-circle">1</span>
+                    <span class="bs-stepper-label">Datos Personales</span>
+                </a>
+            {% endif %}
+        </div>
+        
+        <div class="line{% if not show_mobile %} d-none d-sm-inline{% endif %}"></div>
+        
+        {# PASO 2: Dimensiones #}
+        <div class="step{% if current_step == 2 %} active{% endif %}">
+            {% if current_step == 2 %}
+                <button type="button" class="step-trigger text-primary" role="tab">
+                    <span class="bs-stepper-circle">2</span>
+                    <span class="bs-stepper-label">Dimensiones</span>
+                </button>
+            {% elif current_step == 1 %}
+                <button type="button" class="step-trigger disabled" role="tab">
+                    <span class="bs-stepper-circle">2</span>
+                    <span class="bs-stepper-label">Dimensiones</span>
+                </button>
+            {% else %}
+                <a href="{% url 'ciudadanosdimensiones_editar' ciudadano_id %}" class="step-trigger" role="tab">
+                    <span class="bs-stepper-circle">2</span>
+                    <span class="bs-stepper-label">Dimensiones</span>
+                </a>
+            {% endif %}
+        </div>
+        
+        <div class="line{% if not show_mobile %} d-none d-sm-inline{% endif %}"></div>
+        
+        {# PASO 3: Grupo Familiar #}
+        <div class="step{% if current_step == 3 %} active{% endif %}">
+            {% if current_step == 3 %}
+                <button type="button" class="step-trigger text-primary" role="tab">
+                    <span class="bs-stepper-circle">3</span>
+                    <span class="bs-stepper-label">Grupo Familiar</span>
+                </button>
+            {% elif current_step <= 2 %}
+                <button type="button" class="step-trigger disabled" role="tab">
+                    <span class="bs-stepper-circle">3</span>
+                    <span class="bs-stepper-label">Grupo Familiar</span>
+                </button>
+            {% else %}
+                <a href="{% url 'grupofamiliar_crear' ciudadano_id %}" class="step-trigger" role="tab">
+                    <span class="bs-stepper-circle">3</span>
+                    <span class="bs-stepper-label">Grupo Familiar</span>
+                </a>
+            {% endif %}
+        </div>
+        
+        <div class="line{% if not show_mobile %} d-none d-sm-inline{% endif %}"></div>
+        
+        {# PASO 4: Grupo Hogar #}
+        <div class="step{% if current_step == 4 %} active{% endif %}">
+            {% if current_step == 4 %}
+                <button type="button" class="step-trigger text-primary" role="tab">
+                    <span class="bs-stepper-circle">4</span>
+                    <span class="bs-stepper-label">Grupo Hogar</span>
+                </button>
+            {% elif current_step <= 3 %}
+                <button type="button" class="step-trigger disabled" role="tab">
+                    <span class="bs-stepper-circle">4</span>
+                    <span class="bs-stepper-label">Grupo Hogar</span>
+                </button>
+            {% else %}
+                <a href="{% url 'ciudadanosgrupohogar_crear' ciudadano_id %}" class="step-trigger" role="tab">
+                    <span class="bs-stepper-circle">4</span>
+                    <span class="bs-stepper-label">Grupo Hogar</span>
+                </a>
+            {% endif %}
+        </div>
+        
+        <div class="line{% if not show_mobile %} d-none d-sm-inline{% endif %}"></div>
+        
+        {# PASO 5: Alertas #}
+        <div class="step{% if current_step == 5 %} active{% endif %}">
+            {% if current_step == 5 %}
+                <button type="button" class="step-trigger text-primary" role="tab">
+                    <span class="bs-stepper-circle">5</span>
+                    <span class="bs-stepper-label">Alertas</span>
+                </button>
+            {% elif current_step <= 4 %}
+                <button type="button" class="step-trigger disabled" role="tab">
+                    <span class="bs-stepper-circle">5</span>
+                    <span class="bs-stepper-label">Alertas</span>
+                </button>
+            {% else %}
+                <a href="{% url 'alertas_crear' ciudadano_id %}" class="step-trigger" role="tab">
+                    <span class="bs-stepper-circle">5</span>
+                    <span class="bs-stepper-label">Alertas</span>
+                </a>
+            {% endif %}
+        </div>
+        
+        <div class="line{% if not show_mobile %} d-none d-sm-inline{% endif %}"></div>
+        
+        {# PASO 6: Archivos #}
+        <div class="step{% if current_step == 6 %} active{% endif %}">
+            {% if current_step == 6 %}
+                <button type="button" class="step-trigger text-primary" role="tab">
+                    <span class="bs-stepper-circle">6</span>
+                    <span class="bs-stepper-label">Archivos</span>
+                </a>
+            {% elif current_step <= 5 %}
+                <button type="button" class="step-trigger disabled" role="tab">
+                    <span class="bs-stepper-circle">6</span>
+                    <span class="bs-stepper-label">Archivos</span>
+                </button>
+            {% else %}
+                <a href="{% url 'ciudadanosarchivos_crear' ciudadano_id %}" class="step-trigger" role="tab">
+                    <span class="bs-stepper-circle">6</span>
+                    <span class="bs-stepper-label">Archivos</span>
+                </a>
+            {% endif %}
+        </div>
+        
+    </div>
+</div>
