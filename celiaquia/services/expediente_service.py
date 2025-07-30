@@ -39,7 +39,8 @@ class ExpedienteService:
     @transaction.atomic
     def procesar_expediente(expediente, usuario):
         """
-        Crea o enlaza todos los legajos desde el Excel y cambia el estado a 'PROCESADO'.
+        Crea o enlaza todos los legajos desde el Excel.
+        Cambia el estado a 'PROCESADO' y luego automáticamente a 'EN_ESPERA'.
         """
         if not expediente.excel_masivo:
             raise ValidationError("No hay archivo Excel cargado para procesar.")
@@ -49,13 +50,20 @@ class ExpedienteService:
         )
 
         # Estado PROCESADO
-        estado, _ = EstadoExpediente.objects.get_or_create(nombre="PROCESADO")
-        expediente.estado = estado
+        estado_procesado, _ = EstadoExpediente.objects.get_or_create(nombre="PROCESADO")
+        expediente.estado = estado_procesado
         expediente.save(update_fields=["estado"])
         logger.info(
             "Expediente %s procesado: %s legajos creados, %s errores",
             expediente.codigo, result["validos"], result["errores"]
         )
+
+        # Estado EN_ESPERA
+        estado_espera, _ = EstadoExpediente.objects.get_or_create(nombre="EN_ESPERA")
+        expediente.estado = estado_espera
+        expediente.save(update_fields=["estado"])
+        logger.info("Expediente %s pasó a estado EN_ESPERA", expediente.codigo)
+
         return {"creados": result["validos"], "errores": result["errores"]}
 
     @staticmethod
@@ -65,11 +73,9 @@ class ExpedienteService:
         Verifica que todos los legajos tengan archivo (EN_ESPERA),
         y luego cambia el estado a 'CONFIRMACION_DE_ENVIO'.
         """
-        # Asegurar que todos los legajos tienen archivo
         if not LegajoService.all_legajos_loaded(expediente):
             raise ValidationError("Debes subir un archivo para cada legajo antes de confirmar.")
 
-        # Cambiar estado a CONFIRMACION_DE_ENVIO
         estado, _ = EstadoExpediente.objects.get_or_create(nombre="CONFIRMACION_DE_ENVIO")
         expediente.estado = estado
         expediente.save(update_fields=["estado"])

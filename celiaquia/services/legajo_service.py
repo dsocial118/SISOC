@@ -2,7 +2,7 @@ import logging
 from django.db import transaction
 from django.core.exceptions import ValidationError
 
-from celiaquia.models import EstadoLegajo, ExpedienteCiudadano, EstadoExpediente
+from celiaquia.models import EstadoLegajo, ExpedienteCiudadano
 
 logger = logging.getLogger(__name__)
 
@@ -24,9 +24,7 @@ class LegajoService:
     def subir_archivo_individual(exp_ciudadano: ExpedienteCiudadano, archivo):
         """
         Asigna un archivo a un legajo y cambia su estado a 'ARCHIVO_CARGADO'.
-        Si es el primer archivo de este expediente, actualiza el estado del
-        expediente a 'EN_ESPERA'.
-        Valida que se proporcione un archivo y que los estados existan.
+        Valida que se proporcione un archivo y que el estado exista.
         """
         if not archivo:
             raise ValidationError("Debe proporcionar un archivo válido.")
@@ -41,17 +39,6 @@ class LegajoService:
         exp_ciudadano.estado = estado_cargado
         exp_ciudadano.save(update_fields=["archivo", "estado", "modificado_en"])
         logger.info("Legajo %s: archivo subido y estado actualizado a ARCHIVO_CARGADO.", exp_ciudadano.pk)
-
-        # Si es el primer legajo con archivo, pasamos expediente a 'EN_ESPERA'
-        expediente = exp_ciudadano.expediente
-        if expediente.expediente_ciudadanos.filter(archivo__isnull=False).count() == 1:
-            try:
-                estado_espera, _ = EstadoExpediente.objects.get_or_create(nombre="EN_ESPERA")
-                expediente.estado = estado_espera
-                expediente.save(update_fields=["estado"])
-                logger.info("Expediente %s: estado actualizado a EN_ESPERA.", expediente.pk)
-            except Exception as e:
-                logger.warning("No se pudo actualizar estado del expediente %s: %s", expediente.pk, e)
 
         return exp_ciudadano
 

@@ -69,6 +69,7 @@ urlpatterns = [
         name="legajo_archivo_upload",
     ),
 
+
     # Coordinador Celiaquia: asignación de técnicos
     path(
         'expedientes/<int:pk>/asignar-tecnico/', 
