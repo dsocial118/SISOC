@@ -108,6 +108,8 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         )
         ctx["actividades"] = list(qs_acts)
         ctx["total_actividades"] = qs_acts.count()
+        # Suma en Python de la ganancia de cada actividad
+        ctx["total_recaudado"] = sum((act.ganancia or 0) for act in ctx["actividades"])
 
         # 3) Otras actividades (paginadas)
         otras = (
@@ -143,6 +145,7 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
             "categorias": Categoria.objects.count(),
             "actividades": ctx["total_actividades"],
             "interacciones": total_part,
+            "inscriptos": qs_part.count(),
             "hombres": hombres,
             "mujeres": mujeres,
             "mixtas": mixtas,
@@ -178,11 +181,6 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
         user = self.request.user
         if form.cleaned_data.get("tipo") == "adherido":
             form.instance.faro_asociado_id = self.request.GET.get("faro")
-        if (
-            user.groups.filter(name="ReferenteCentro").exists()
-            and not user.is_superuser
-        ):
-            form.instance.referente = user
         messages.success(self.request, "Centro creado exitosamente.")
         return super().form_valid(form)
 
