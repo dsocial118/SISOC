@@ -305,7 +305,7 @@ class CiudadanosListView(ListView):
     model = Ciudadano
     template_name = "ciudadanos/ciudadanos_list.html"
     context_object_name = "ciudadanos"
-    paginate_by = 10  # Número de objetos por página
+    paginate_by = 20  # Aumentado para mejor UX
 
     def get_queryset(self):
         if not hasattr(self, "_cached_queryset"):
@@ -333,18 +333,14 @@ class CiudadanosListView(ListView):
                     queryset = queryset.annotate(doc_str=Cast("documento", TextField()))
                     filter_condition |= Q(doc_str__startswith=query)
                 queryset = queryset.filter(filter_condition)
-            self._cached_queryset = (
-                queryset  # pylint: disable=attribute-defined-outside-init
-            )
+            self._cached_queryset = queryset
 
         return self._cached_queryset
 
     def get(self, request, *args, **kwargs):
         query = self.request.GET.get("busqueda")
         if query:
-            self.object_list = (
-                self.get_queryset()
-            )  # pylint: disable=attribute-defined-outside-init
+            self.object_list = self.get_queryset()
 
             # Optimización: Evitar count() costoso y usar exists() + slice para verificar resultados
             # Solo verificar si hay 0, 1 o más resultados
@@ -366,7 +362,6 @@ class CiudadanosListView(ListView):
 
         if page_obj:
             # Optimización: Usar get_elided_page_range solo si es necesario
-            # y limitar el rango para evitar procesamiento excesivo
             try:
                 context["page_range"] = page_obj.paginator.get_elided_page_range(
                     number=page_obj.number, on_each_side=2, on_ends=1
@@ -374,6 +369,12 @@ class CiudadanosListView(ListView):
             except AttributeError:
                 # Fallback para versiones anteriores de Django
                 context["page_range"] = page_obj.paginator.page_range
+
+        # Breadcrumb
+        context['breadcrumb_items'] = [
+            {'url': reverse_lazy('dashboard'), 'text': 'Dashboard'},
+            {'url': reverse_lazy('ciudadanos'), 'text': 'Ciudadanos'},
+        ]
 
         context.update(
             {
