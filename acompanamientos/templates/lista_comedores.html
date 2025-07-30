@@ -1,78 +1,130 @@
 {% extends "includes/main.html" %}
 {% load static %}
+
+{% block head %}
+<link rel="stylesheet" href="{% static 'custom/css/table-styles.css' %}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+{% endblock %}
+
 {% block title %}Comedores en Acompañamiento{% endblock %}
 {% block titulo-pagina %}Comedores en Acompañamiento{% endblock %}
-{% block content %}
-    <div>
-        <h2 class="text-center display-4 mb-4">Buscar Comedor</h2>
-        <div class="mb-3">
-            <form method="get" class="mb-3">
-                <input type="text"
-                       name="busqueda"
-                       value="{{ query }}"
-                       class="form-control"
-                       placeholder="Buscar por nombre, ubicación, referente, etc." />
-            </form>
-        </div>
-    </div>
-    <div class="row mt-3">
-        <div class="col-12">
-            <div class="card card-primary card-outline">
-                <div class="card-header">
-                    <h3 class="card-title">Listado de Comedores</h3>
-                </div>
-                <div class="card-body table-responsive">
-                    <table class="table table-bordered">
-                        <thead>
-                            <tr>
-                                <th>Nombre</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for comedor in comedores %}
-                                <tr>
-                                    <td>{{ comedor.nombre }}</td>
-                                    <td>
-                                        <a href="{% url 'detalle_acompanamiento' comedor.id %}"
-                                           class="btn btn-primary">Ver Acompañamiento</a>
-                                    </td>
-                                </tr>
-                            {% empty %}
-                                <tr>
-                                    <td colspan="2" class="text-center">No se encontraron resultados.</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                    {% if is_paginated %}
-                        <div class="mt-2">
-                            <ul class="pagination">
-                                {% if page_obj.has_previous %}
-                                    <li class="page-item">
-                                        <a href="?busqueda={{ query }}&page={{ page_obj.previous_page_number }}"
-                                           class="page-link">Anterior</a>
-                                    </li>
-                                {% endif %}
-                                {% for num in page_obj.paginator.page_range %}
-                                    <li class="page-item {% if page_obj.number == num %}active{% endif %}">
-                                        <a href="?busqueda={{ query }}&page={{ num }}" class="page-link">{{ num }}</a>
-                                    </li>
-                                {% endfor %}
-                                {% if page_obj.has_next %}
-                                    <li class="page-item">
-                                        <a href="?busqueda={{ query }}&page={{ page_obj.next_page_number }}"
-                                           class="page-link">Siguiente</a>
-                                    </li>
-                                {% endif %}
-                            </ul>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
+
+{% block breadcrumb %}
+    {% include "components/navigation/breadcrumb.html" with 
+       breadcrumb_items=breadcrumb_items 
+       current_item="Listado" 
+    %}
 {% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+    {# Botón volver al dashboard #}
+    <div class="row mb-3">
+        <div class="col-12">
+            <a class="btn btn-outline-secondary" href="{% url 'dashboard' %}">
+                Volver al Dashboard
+            </a>
+        </div>
+    </div>
+
+    {# Título con ícono #}
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="table-title">
+            <i class="bi bi-heart-pulse"></i> Comedores en Acompañamiento
+        </h2>
+    </div>
+
+    {# Formulario de búsqueda #}
+    {% include 'components/forms/search_form.html' with 
+       title="Buscar Comedor" 
+       placeholder="Buscar por nombre, ubicación, referente, etc." 
+       search_value=query 
+    %}
+
+    {# Botón para limpiar búsqueda si existe #}
+    {% if query %}
+    <div class="mb-3">
+        <a href="{% url 'lista_comedores_acompanamiento' %}" class="btn btn-outline-info btn-sm">
+            <i class="bi bi-arrow-clockwise"></i> Limpiar Búsqueda
+        </a>
+    </div>
+    {% endif %}
+
+    {# Tabla con wrapper estandarizado #}
+    {% include "components/tables/table_wrapper.html" %}
+    
+    <table class="table standard-table">
+        <thead>
+            <tr>
+                <th>Nombre del Comedor</th>
+                <th>Estado de Acompañamiento</th>
+                <th style="width: 200px">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for comedor in comedores %}
+            <tr>
+                <td>
+                    <strong>{{ comedor.nombre }}</strong>
+                    {% if comedor.referente %}
+                        <br>
+                        <small class="text-muted">
+                            <i class="bi bi-person"></i> 
+                            {{ comedor.referente.nombre }} {{ comedor.referente.apellido }}
+                        </small>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if comedor.en_acompanamiento %}
+                        <span class="badge bg-success">
+                            <i class="bi bi-check-circle"></i> En Acompañamiento
+                        </span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark">
+                            <i class="bi bi-clock"></i> Pendiente
+                        </span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <a href="{% url 'detalle_acompanamiento' comedor.id %}"
+                           class="btn btn-primary btn-sm"
+                           title="Ver detalles del acompañamiento">
+                            <i class="bi bi-eye"></i> Ver Acompañamiento
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3" class="empty-state">
+                    {% if query %}
+                        No se encontraron comedores en acompañamiento que coincidan con "{{ query }}"
+                    {% else %}
+                        No hay comedores en acompañamiento disponibles.
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    {% include "components/tables/table_wrapper_end.html" %}
+
+    {# Paginación usando el componente estándar #}
+    {% if is_paginated and page_obj %}
+    <div class="mt-4 d-flex justify-content-center">
+        {% include 'components/tables/pagination.html' with 
+           page_obj=page_obj
+           query=query
+        %}
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
 {% block customJS %}
     <script src="{% static 'custom/js/filtroadmisiones.js' %}"></script>
 {% endblock %}

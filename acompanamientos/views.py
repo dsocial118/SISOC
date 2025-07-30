@@ -1,11 +1,14 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
 from django.views.generic import ListView, DetailView
+
 from django.views.decorators.http import require_POST
+from django.urls import reverse_lazy
 
 from acompanamientos.acompanamiento_service import AcompanamientoService
 from acompanamientos.models.hitos import Hitos
 from comedores.models import Comedor
+
 
 
 @require_POST
@@ -72,15 +75,23 @@ class ComedoresAcompanamientoListView(ListView):
     model = Comedor
     template_name = "lista_comedores.html"
     context_object_name = "comedores"
-    paginate_by = 10  # Cantidad de resultados por página
+    paginate_by = 20  # Aumentado para mejor UX
 
     def get_queryset(self):
         user = self.request.user
         busqueda = self.request.GET.get("busqueda", "").strip().lower()
-
         return AcompanamientoService.obtener_comedores_acompanamiento(user, busqueda)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        
+        # Breadcrumb
+        context['breadcrumb_items'] = [
+            {'url': reverse_lazy('dashboard'), 'text': 'Dashboard'},
+            {'url': reverse_lazy('lista_comedores_acompanamiento'), 'text': 'Acompañamientos'},
+        ]
+        
+        # Parámetros de búsqueda para mantener en paginación
         context["query"] = self.request.GET.get("busqueda", "")
+        
         return context
