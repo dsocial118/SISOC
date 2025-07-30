@@ -134,6 +134,7 @@ class ExpedienteDetailView(DetailView):
                 preview_error = str(e)
 
         tecnicos = User.objects.filter(groups__name="TecnicoCeliaquia").order_by("last_name", "first_name")
+        faltan_archivos = expediente.expediente_ciudadanos.filter(archivo__isnull=True).exists()
 
         ctx.update({
             "legajos": expediente.expediente_ciudadanos.all(),
@@ -141,6 +142,7 @@ class ExpedienteDetailView(DetailView):
             "preview": preview,
             "preview_error": preview_error,
             "tecnicos": tecnicos,
+            "faltan_archivos": faltan_archivos,
         })
         return ctx
 
@@ -183,6 +185,7 @@ class ExpedienteUpdateView(UpdateView):
     def get_success_url(self):
         return reverse_lazy("expediente_detail", args=[self.object.pk])
 
+
 class AsignarTecnicoView(View):
     def post(self, request, pk):
         expediente = get_object_or_404(Expediente, pk=pk)
@@ -207,7 +210,6 @@ class AsignarTecnicoView(View):
 
         messages.success(request, f"Técnico {tecnico.get_full_name()} asignado correctamente.")
         return redirect("expediente_detail", pk=pk)
-
 
 
 class ClosePaymentView(View):

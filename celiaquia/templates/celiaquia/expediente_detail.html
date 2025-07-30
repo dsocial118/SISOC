@@ -108,8 +108,15 @@
               <td class="text-end">
                 {% if leg.archivo %}
                   <a href="{{ leg.archivo.url }}" class="btn btn-sm btn-outline-info">Ver</a>
-                {% elif expediente.estado.nombre != 'PROCESADO' %}
-                  <a href="{% url 'legajo_archivo_upload' expediente.pk leg.pk %}" class="btn btn-sm btn-primary">Subir Archivo</a>
+                {% elif expediente.estado.nombre == 'EN_ESPERA' %}
+                  <button type="button"
+                          class="btn btn-sm btn-primary"
+                          data-bs-toggle="modal"
+                          data-bs-target="#modalSubirArchivo"
+                          data-legajo-id="{{ leg.pk }}"
+                          data-expediente-id="{{ expediente.pk }}">
+                    Subir Archivo
+                  </button>
                 {% endif %}
               </td>
             </tr>
@@ -122,10 +129,11 @@
       </table>
     </div>
   </div>
-  {% if legajos and expediente.estado.nombre == 'CREADO' %}
+
+  {% if legajos and expediente.estado.nombre == 'EN_ESPERA' %}
     <div class="card-footer text-end">
       <button id="btn-confirm" class="btn btn-success"
-              {% if legajos|length < preview.rows|length %}disabled{% endif %}>
+              {% if faltan_archivos %}disabled{% endif %}>
         Confirmar Envío
       </button>
     </div>
@@ -152,6 +160,32 @@
   </div>
 {% endif %}
 
+<!-- Modal único para subir archivo -->
+<div class="modal fade" id="modalSubirArchivo" tabindex="-1" aria-labelledby="modalSubirArchivoLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form id="form-subir-archivo" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalSubirArchivoLabel">Subir archivo al legajo</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+<div class="modal-body">
+  <div id="modal-alertas" class="mb-2"></div>
+  <div class="form-group">
+    <label for="id_archivo">Archivo PDF o imagen</label>
+    <input type="file" name="archivo" class="form-control" required accept=".pdf,.jpg,.jpeg,.png">
+  </div>
+</div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Subir</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block customJS %}

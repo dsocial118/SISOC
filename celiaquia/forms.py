@@ -17,7 +17,7 @@ from celiaquia.models import (
 
 def validate_file_size(value):
     max_mb = 5
-    if value.size > max_mb * 1024 * 1024:
+    if value.size > max_mb * 4024 * 4024:
         raise ValidationError(_(f"El archivo supera el tamaño máximo de {max_mb} MB."))
 
 
