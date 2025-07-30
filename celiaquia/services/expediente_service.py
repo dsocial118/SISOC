@@ -3,13 +3,13 @@ import logging
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
+
 from celiaquia.models import EstadoExpediente, Expediente
 from celiaquia.services.importacion_service import ImportacionService
-
+from celiaquia.services.legajo_service import LegajoService
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
-
 
 class ExpedienteService:
     @staticmethod
@@ -17,7 +17,6 @@ class ExpedienteService:
     def create_expediente(usuario_provincia, datos_metadatos, excel_masivo):
         """
         Crea un nuevo Expediente en estado 'CREADO' con metadatos y archivo.
-        Valida que el código sea obligatorio y único.
         """
         codigo = datos_metadatos.get("codigo")
         if not codigo:
@@ -33,9 +32,7 @@ class ExpedienteService:
             observaciones=datos_metadatos.get("observaciones", ""),
             excel_masivo=excel_masivo,
         )
-        logger.info(
-            "Expediente %s creado por %s", expediente.codigo, usuario_provincia.username
-        )
+        logger.info("Expediente %s creado por %s", expediente.codigo, usuario_provincia.username)
         return expediente
 
     @staticmethod
@@ -43,26 +40,21 @@ class ExpedienteService:
     def procesar_expediente(expediente, usuario):
         """
         Crea o enlaza todos los legajos desde el Excel y cambia el estado a 'PROCESADO'.
-        Devuelve dict con conteo: {'creados', 'errores'}.
         """
         if not expediente.excel_masivo:
             raise ValidationError("No hay archivo Excel cargado para procesar.")
 
-        # Importar legajos y capturar conteo
         result = ImportacionService.importar_legajos_desde_excel(
-            expediente, expediente.excel_masivo,
-            usuario,
+            expediente, expediente.excel_masivo, usuario
         )
 
-        # Cambiar estado a PROCESADO
+        # Estado PROCESADO
         estado, _ = EstadoExpediente.objects.get_or_create(nombre="PROCESADO")
         expediente.estado = estado
         expediente.save(update_fields=["estado"])
         logger.info(
             "Expediente %s procesado: %s legajos creados, %s errores",
-            expediente.codigo,
-            result["validos"],
-            result["errores"],
+            expediente.codigo, result["validos"], result["errores"]
         )
         return {"creados": result["validos"], "errores": result["errores"]}
 
@@ -70,26 +62,32 @@ class ExpedienteService:
     @transaction.atomic
     def confirmar_envio(expediente):
         """
-        Importa legajos si no se procesaron y cambia estado a 'ENVIADO'.
-        Devuelve dict con conteo de legajos.
+        Verifica que todos los legajos tengan archivo (EN_ESPERA),
+        y luego cambia el estado a 'CONFIRMACION_DE_ENVIO'.
         """
-        if not expediente.excel_masivo:
-            raise ValidationError("No hay archivo Excel cargado para confirmar.")
+        # Asegurar que todos los legajos tienen archivo
+        if not LegajoService.all_legajos_loaded(expediente):
+            raise ValidationError("Debes subir un archivo para cada legajo antes de confirmar.")
 
-        # Reutilizar importación masiva
-        result = ImportacionService.importar_legajos_desde_excel(
-            expediente, expediente.excel_masivo
-        )
-        logger.info("ImportService returned: %r", result)
-
-        # Actualizar estado
-        estado, _ = EstadoExpediente.objects.get_or_create(nombre="ENVIADO")
+        # Cambiar estado a CONFIRMACION_DE_ENVIO
+        estado, _ = EstadoExpediente.objects.get_or_create(nombre="CONFIRMACION_DE_ENVIO")
         expediente.estado = estado
         expediente.save(update_fields=["estado"])
-        logger.info(
-            "Expediente %s enviado: %s legajos creados, %s errores",
-            expediente.codigo,
-            result["validos"],
-            result["errores"],
-        )
-        return result
+        logger.info("Expediente %s confirmado (ENVÍO) con %d legajos.", expediente.codigo, expediente.expediente_ciudadanos.count())
+        return {"validos": expediente.expediente_ciudadanos.count(), "errores": 0}
+
+    @staticmethod
+    @transaction.atomic
+    def asignar_tecnico(expediente, tecnico):
+        """
+        Asigna un técnico y cambia el estado a 'ASIGNADO'.
+        """
+        if isinstance(tecnico, int):
+            tecnico = User.objects.get(pk=tecnico)
+        expediente.asignacion_tecnico.tecnico = tecnico
+        expediente.asignacion_tecnico.save(update_fields=["tecnico"])
+        estado, _ = EstadoExpediente.objects.get_or_create(nombre="ASIGNADO")
+        expediente.estado = estado
+        expediente.save(update_fields=["estado"])
+        logger.info("Técnico %s asignado al expediente %s", tecnico.username, expediente.codigo)
+        return expediente

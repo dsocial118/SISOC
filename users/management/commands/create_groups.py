@@ -59,6 +59,7 @@ class Command(BaseCommand):
             "CDF SSE",
             "TecnicoCeliaquia",
             "CoordinadorCeliaquia",
+            "ProvinciaCeliaquia",
         ]
         self.stdout.write(self.style.SUCCESS(f"Creando grupos de usuario..."))
         for group_name in groups:
