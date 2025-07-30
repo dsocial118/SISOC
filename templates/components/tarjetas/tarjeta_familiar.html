@@ -1,0 +1,136 @@
+{% comment %}
+Componente de tarjeta para mostrar información de familiares
+Parámetros:
+- familiar: Objeto de relación familiar (requerido)
+- is_primary: Si es el ciudadano principal en la relación (default: True)
+- show_actions: Mostrar botón de acción (default: True)
+- card_class: Clases adicionales para la tarjeta (opcional)
+- action_url_name: Nombre de URL para acción (default: ciudadanos_ver)
+- action_button_text: Texto del botón de acción (default: Ver ciudadano)
+{% endcomment %}
+
+{% load static %}
+
+{% if is_primary|default:True %}
+    {# Ciudadano principal -> mostrar ciudadano_2 #}
+    {% with ciudadano=familiar.ciudadano_2 vinculo=familiar.vinculo direccion=familiar.ciudadano_2.calle telefono=familiar.ciudadano_2.telefono foto=familiar.ciudadano_2.foto ciudadano_id=familiar.ciudadano_2_id %}
+        {% include 'components/tarjetas/_tarjeta_familiar_content.html' %}
+    {% endwith %}
+{% else %}
+    {# Ciudadano secundario -> mostrar ciudadano_1 #}
+    {% with ciudadano=familiar.ciudadano_1 vinculo=familiar.vinculo_inverso direccion=familiar.ciudadano_1.calle telefono=familiar.ciudadano_1.telefono foto=familiar.ciudadano_1.foto ciudadano_id=familiar.ciudadano_1_id %}
+        {% include 'components/tarjetas/_tarjeta_familiar_content.html' %}
+    {% endwith %}
+{% endif %}
+
+{# Contenido interno de la tarjeta #}
+{% comment %} 
+Este template interno se usa para evitar duplicación de código
+Se incluye tanto para ciudadano_1 como ciudadano_2
+{% endcomment %}
+<!-- _tarjeta_familiar_content.html -->
+<div class="col-12 col-sm-6 col-md-4 d-flex align-items-stretch flex-column">
+    <div class="card bg-light d-flex flex-fill {{ card_class }}">
+        <!-- Header con nombre y vínculo -->
+        <div class="card-header border-bottom-0 bg-primary text-white">
+            <h5 class="card-title mb-0">
+                <strong>{{ ciudadano.nombre }} {{ ciudadano.apellido }}</strong>
+                <br>
+                <small class="opacity-75">
+                    <i class="fas fa-users me-1"></i>{{ vinculo }}
+                </small>
+            </h5>
+        </div>
+        
+        <!-- Cuerpo con información -->
+        <div class="card-body">
+            <div class="row">
+                <div class="col-sm-7">
+                    <dl class="row mb-0">
+                        <dt class="col-lg-5 font-weight-normal text-muted">
+                            <i class="fas fa-map-marker-alt me-1"></i>Dirección
+                        </dt>
+                        <dd class="col-lg-7 font-weight-bold">
+                            {{ direccion|default_if_none:"-" }}
+                            {% if familiar.ciudadano_2.altura %} {{ familiar.ciudadano_2.altura }}{% endif %}
+                        </dd>
+                        
+                        <dt class="col-lg-5 font-weight-normal text-muted">
+                            <i class="fas fa-phone me-1"></i>Teléfono
+                        </dt>
+                        <dd class="col-lg-7 font-weight-bold">
+                            {{ telefono|default_if_none:"-" }}
+                        </dd>
+                        
+                        <dt class="col-lg-5 font-weight-normal text-muted">
+                            <i class="fas fa-heart me-1"></i>Relación
+                        </dt>
+                        <dd class="col-lg-7 font-weight-bold">
+                            {% if familiar.estado_relacion == "Buena" %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-smile me-1"></i>{{ familiar.estado_relacion }}
+                                </span>
+                            {% elif familiar.estado_relacion == "Mala" %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-frown me-1"></i>{{ familiar.estado_relacion }}
+                                </span>
+                            {% elif familiar.estado_relacion == "Indiferente" %}
+                                <span class="badge bg-warning">
+                                    <i class="fas fa-meh me-1"></i>{{ familiar.estado_relacion }}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ familiar.estado_relacion }}</span>
+                            {% endif %}
+                        </dd>
+                        
+                        <dt class="col-lg-5 font-weight-normal text-muted">
+                            <i class="fas fa-home me-1"></i>Conviven
+                        </dt>
+                        <dd class="col-lg-7 font-weight-bold">
+                            {% if familiar.conviven %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i>Sí
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary">
+                                    <i class="fas fa-times me-1"></i>No
+                                </span>
+                            {% endif %}
+                        </dd>
+                        
+                        {% if familiar.cuidador_principal %}
+                        <dt class="col-lg-5 font-weight-normal text-muted">
+                            <i class="fas fa-shield-alt me-1"></i>Cuidador Principal
+                        </dt>
+                        <dd class="col-lg-7 font-weight-bold">
+                            <span class="badge bg-info">
+                                <i class="fas fa-star me-1"></i>Sí
+                            </span>
+                        </dd>
+                        {% endif %}
+                    </dl>
+                </div>
+                
+                <!-- Foto del familiar -->
+                <div class="col-5 text-center">
+                    {% if foto %}
+                        <img src="{{ foto.url }}"
+                             alt="Foto familiar"
+                             class="img-fluid rounded-circle border"
+                             style="width: 80px; height: 80px; object-fit: cover;" />
+                    {% else %}
+                        <img src="{% static 'custom/img/default.png' %}"
+                             alt="Foto por defecto"
+                             class="img-fluid rounded-circle border"
+                             style="width: 80px; height: 80px; object-fit: cover;" />
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer con acciones -->
+        {% if show_actions|default:True %}
+        <div class="card-footer text-center bg-light">
+            <a href="{% url action_url_name|default:'ciudadanos_ver' ciudadano_id %}"
+               class="btn btn-sm btn-primary d-print-none">
+                <i class="fas fa

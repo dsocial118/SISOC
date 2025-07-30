@@ -1,0 +1,126 @@
+{% comment %}
+Componente de tarjeta de perfil para ciudadanos
+Parámetros:
+- ciudadano: Objeto ciudadano (requerido)
+- show_programs: Mostrar sección de programas (default: True)
+- show_status: Mostrar estado activo/inactivo (default: True)
+- card_class: Clases adicionales para la tarjeta (opcional)
+- image_size: Tamaño de imagen (default: 200px)
+- show_nationality_emoji: Mostrar emoji de nacionalidad (default: False)
+- nationality_emoji: Emoji de nacionalidad (opcional)
+{% endcomment %}
+
+{% load static %}
+
+<div class="card shadow-sm rounded-lg overflow-hidden {{ card_class }}">
+    <!-- Foto de perfil -->
+    <div class="card-header text-center py-4">
+        {% if ciudadano.foto %}
+            <img src="{{ ciudadano.foto.url }}"
+                 class="rounded-circle shadow"
+                 style="width:{{ image_size|default:'200px' }};
+                        height:{{ image_size|default:'200px' }};
+                        object-fit:cover"
+                 alt="Foto del ciudadano" />
+        {% else %}
+            <img src="{% static 'custom/img/default.png' %}"
+                 class="rounded-circle shadow"
+                 style="width:{{ image_size|default:'140px' }};
+                        height:{{ image_size|default:'140px' }};
+                        object-fit:cover"
+                 alt="Foto por defecto" />
+        {% endif %}
+    </div>
+    
+    <!-- Información personal -->
+    <ul class="list-group list-group-flush">
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-user me-2 text-primary"></i>Nombre</span>
+            <span class="fw-bold">
+                {{ ciudadano.apellido }}, {{ ciudadano.nombre }}
+                {% if show_nationality_emoji and nationality_emoji %}
+                    {{ nationality_emoji }}
+                {% endif %}
+            </span>
+        </li>
+        
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-id-card me-2 text-info"></i>Documento</span>
+            <span class="fw-bold">{{ ciudadano.tipo_documento }} {{ ciudadano.documento }}</span>
+        </li>
+        
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-venus-mars me-2 text-secondary"></i>Sexo</span>
+            <span class="fw-bold">{{ ciudadano.sexo|default:"No especificado" }}</span>
+        </li>
+        
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-birthday-cake me-2 text-warning"></i>Fecha nacimiento</span>
+            <span class="fw-bold">{{ ciudadano.fecha_nacimiento|date:"d/m/Y" }}</span>
+        </li>
+        
+        {% if ciudadano.estado_civil %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-heart me-2 text-danger"></i>Estado civil</span>
+            <span class="fw-bold">{{ ciudadano.estado_civil }}</span>
+        </li>
+        {% endif %}
+        
+        {% if ciudadano.telefono %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-phone me-2 text-success"></i>Teléfono</span>
+            <span class="fw-bold">{{ ciudadano.telefono }}</span>
+        </li>
+        {% endif %}
+        
+        {% if ciudadano.email %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-envelope me-2 text-info"></i>Email</span>
+            <span class="fw-bold">{{ ciudadano.email }}</span>
+        </li>
+        {% endif %}
+        
+        {% if ciudadano.provincia %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-map-marker-alt me-2 text-primary"></i>Provincia</span>
+            <span class="fw-bold">{{ ciudadano.provincia }}</span>
+        </li>
+        {% endif %}
+    </ul>
+    
+    <!-- Sección de programas -->
+    {% if show_programs|default:True %}
+    <div class="card-body">
+        <h6 class="text-muted mb-3">
+            <i class="fas fa-tags me-2"></i>Programas
+        </h6>
+        {% if ciudadano.ciudadano_programa.all %}
+            {% for cp in ciudadano.ciudadano_programa.all %}
+                <span class="badge bg-primary me-1 mb-1 px-3 py-2">
+                    <i class="fas fa-tag me-1"></i>{{ cp.programas.nombre }}
+                </span>
+            {% endfor %}
+        {% else %}
+            <div class="text-center text-muted py-2">
+                <i class="fas fa-info-circle me-1"></i>
+                No participa en programas
+            </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <!-- Estado del ciudadano -->
+    {% if show_status|default:True %}
+    <div class="card-body text-center border-top">
+        {% if ciudadano.estado %}
+            <span class="badge bg-success px-4 py-2 fs-6">
+                <i class="fas fa-check-circle me-2"></i>Activo
+            </span>
+        {% else %}
+            <span class="badge bg-danger px-4 py-2 fs-6">
+                <i class="fas fa-times-circle me-2"></i>Inactivo
+            </span>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>

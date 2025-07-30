@@ -1,0 +1,57 @@
+{% comment %}
+Componente para botones de formularios multi-step
+Parámetros:
+- back_url: URL name para volver (requerido)
+- back_id: ID para URL de volver (opcional)
+- save_url: URL name para guardar (opcional)
+- save_id: ID para URL de guardar (opcional)
+- continue_url: URL name para continuar (opcional)  
+- continue_id: ID para URL de continuar (opcional)
+- back_label: Texto botón volver (default: "Volver")
+- save_label: Texto botón guardar (default: "Guardar")
+- continue_label: Texto botón continuar (default: "Continuar")
+- show_save: Mostrar botón guardar (default: True)
+- show_continue: Mostrar botón continuar (default: True)
+- form_step_back: Nombre del campo para paso anterior (opcional)
+- form_step_save: Nombre del campo para guardar (opcional)
+- form_step_continue: Nombre del campo para continuar (opcional)
+{% endcomment %}
+
+<div class="row mt-3">
+    <div class="col-md-12">
+        <div class="form-group mb-0 mt-3 d-flex justify-content-between">
+            {% if back_url %}
+                {% if form_step_back %}
+                    <button type="submit" name="{{ form_step_back }}" class="btn btn-secondary mb-3">
+                        {{ back_label|default:"Volver" }}
+                    </button>
+                {% else %}
+                    <a href="{% if back_id %}{% url back_url back_id %}{% else %}{% url back_url %}{% endif %}" 
+                       class="btn btn-secondary mb-3">{{ back_label|default:"Volver" }}</a>
+                {% endif %}
+            {% endif %}
+
+            {% if show_save|default:True and save_url %}
+                {% if form_step_save %}
+                    <button type="submit" name="{{ form_step_save }}" class="btn btn-primary mb-3">
+                        {{ save_label|default:"Guardar" }}
+                    </button>
+                {% else %}
+                    <a href="{% if save_id %}{% url save_url save_id %}{% else %}{% url save_url %}{% endif %}" 
+                       class="btn btn-primary mb-3">{{ save_label|default:"Guardar" }}</a>
+                {% endif %}
+            {% endif %}
+
+            {% if show_continue|default:True and continue_url %}
+                {% if form_step_continue %}
+                    <button type="submit" name="{{ form_step_continue }}" class="btn btn-secondary mb-3 float-right">
+                        {{ continue_label|default:"Continuar" }}
+                    </button>
+                {% else %}
+                    <a href="{% if continue_id %}{% url continue_url continue_id %}{% else %}{% url continue_url %}{% endif %}" 
+                       class="btn btn-secondary mb-3 float-right">{{ continue_label|default:"Continuar" }}</a>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>
