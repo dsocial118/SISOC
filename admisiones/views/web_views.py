@@ -3,6 +3,7 @@ from django.http import JsonResponse
 from django.shortcuts import redirect, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, ListView, UpdateView, DetailView
+from django.urls import reverse, reverse_lazy 
 from admisiones.forms.admisiones_forms import (
     AdmisionForm,
     LegalesRectificarForm,
@@ -71,7 +72,7 @@ class AdmisionesTecnicosListView(ListView):
     model = Admision
     template_name = "admisiones_tecnicos_list.html"
     context_object_name = "comedores"
-    paginate_by = 10
+    paginate_by = 20  # Aumentado para mejor UX
 
     def get_queryset(self):
         query = self.request.GET.get("busqueda", "")
@@ -79,7 +80,16 @@ class AdmisionesTecnicosListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        
+        # Breadcrumb
+        context['breadcrumb_items'] = [
+            {'url': reverse_lazy('dashboard'), 'text': 'Dashboard'},
+            {'url': reverse_lazy('admisiones_tecnicos_listar'), 'text': 'Admisiones'},
+        ]
+        
+        # Parámetros de búsqueda para mantener en paginación
         context["query"] = self.request.GET.get("busqueda", "")
+        
         return context
 
 
@@ -221,7 +231,7 @@ class AdmisionesLegalesListView(ListView):
     model = Admision
     template_name = "admisiones_legales_list.html"
     context_object_name = "admisiones"
-    paginate_by = 10
+    paginate_by = 20  # Aumentado para mejor UX
 
     def get_queryset(self):
         query = self.request.GET.get("busqueda", "")
@@ -229,7 +239,16 @@ class AdmisionesLegalesListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        
+        # Breadcrumb
+        context['breadcrumb_items'] = [
+            {'url': reverse_lazy('dashboard'), 'text': 'Dashboard'},
+            {'url': reverse_lazy('admisiones_legales_listar'), 'text': 'Expedientes'},
+        ]
+        
+        # Parámetros de búsqueda para mantener en paginación
         context["query"] = self.request.GET.get("busqueda", "")
+        
         return context
 
 
