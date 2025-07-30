@@ -82,56 +82,65 @@
   <div class="alert alert-danger">{{ preview_error }}</div>
 {% endif %}
 
-<div class="card mb-4">
-  <div class="card-header bg-light"><h5 class="mb-0">Legajos del Expediente</h5></div>
-  <div class="card-body p-0">
-    <div class="table-responsive">
-      <table class="table table-hover mb-0">
-        <thead class="table-light">
-          <tr>
-            <th>DNI</th>
-            <th>Nombre</th>
-            <th>Estado</th>
-            <th class="text-end">Acción</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for leg in legajos %}
-            <tr>
-              <td>{{ leg.ciudadano.documento }}</td>
-              <td>{{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}</td>
-              <td>
-                <span class="badge {% if leg.estado.nombre == 'DOCUMENTO_PENDIENTE' %}bg-warning{% else %}bg-success{% endif %}">
-                  {{ leg.estado.display_name }}
-                </span>
-              </td>
-              <td class="text-end">
-                {% if leg.archivo %}
-                  <a href="{{ leg.archivo.url }}" class="btn btn-sm btn-outline-info">Ver</a>
-                {% elif expediente.estado.nombre == 'EN_ESPERA' %}
-                  <button type="button"
-                          class="btn btn-sm btn-primary"
-                          data-bs-toggle="modal"
-                          data-bs-target="#modalSubirArchivo"
-                          data-legajo-id="{{ leg.pk }}"
-                          data-expediente-id="{{ expediente.pk }}">
-                    Subir Archivo
-                  </button>
-                {% endif %}
-              </td>
-            </tr>
-          {% empty %}
-            <tr>
-              <td colspan="4" class="text-center py-3 text-muted">No hay legajos cargados.</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+<div class="p-3 rounded shadow mb-4" style="background-color: #1c2a3a; color: #e0e0e0;">
+  <h5 class="mb-3">Legajos</h5>
+  {% if legajos %}
+  <div class="list-group">
+    {% for leg in legajos %}
+      <div class="list-group-item border-0 mb-2 rounded shadow-sm" style="background-color: #1f2d3d; color: #fff;">
+        <div class="row align-items-center">
+          <!-- Nombre y Documento -->
+          <div class="col-md-3">
+            <strong>{{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}</strong><br>
+            <small class="text-muted">DNI: {{ leg.ciudadano.documento }}</small>
+          </div>
+
+          <!-- Estado -->
+          <div class="col-md-2">
+            <strong>Estado:</strong><br>
+            <span class="badge rounded-pill 
+              {% if leg.estado.nombre == 'DOCUMENTO_PENDIENTE' %}bg-warning text-dark
+              {% elif leg.estado.nombre == 'VALIDADO' %}bg-success
+              {% else %}bg-secondary{% endif %}">
+              {{ leg.estado.display_name }}
+            </span>
+          </div>
+
+          <!-- Archivo -->
+          <div class="col-md-4">
+            {% if leg.archivo %}
+              <span class="text-success">📎 {{ leg.archivo.name }}</span>
+            {% else %}
+              <span class="text-warning">⚠ Archivo pendiente</span>
+            {% endif %}
+          </div>
+
+          <!-- Acción -->
+          <div class="col-md-3 text-end">
+            {% if leg.archivo %}
+              <a href="{{ leg.archivo.url }}" class="btn btn-outline-info btn-sm">Ver</a>
+            {% elif expediente.estado.nombre == 'EN_ESPERA' %}
+              <button type="button"
+                      class="btn btn-primary btn-sm"
+                      data-bs-toggle="modal"
+                      data-bs-target="#modalSubirArchivo"
+                      data-legajo-id="{{ leg.pk }}"
+                      data-expediente-id="{{ expediente.pk }}">
+                Subir Archivo
+              </button>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% endfor %}
   </div>
+{% else %}
+  <p class="text-muted">No hay legajos cargados.</p>
+{% endif %}
+
 
   {% if legajos and expediente.estado.nombre == 'EN_ESPERA' %}
-    <div class="card-footer text-end">
+    <div class="text-end mt-3">
       <button id="btn-confirm" class="btn btn-success"
               {% if faltan_archivos %}disabled{% endif %}>
         Confirmar Envío
@@ -170,14 +179,13 @@
           <h5 class="modal-title" id="modalSubirArchivoLabel">Subir archivo al legajo</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
         </div>
-<div class="modal-body">
-  <div id="modal-alertas" class="mb-2"></div>
-  <div class="form-group">
-    <label for="id_archivo">Archivo PDF o imagen</label>
-    <input type="file" name="archivo" class="form-control" required accept=".pdf,.jpg,.jpeg,.png">
-  </div>
-</div>
-
+        <div class="modal-body">
+          <div id="modal-alertas" class="mb-2"></div>
+          <div class="form-group">
+            <label for="id_archivo">Archivo PDF o imagen</label>
+            <input type="file" name="archivo" class="form-control" required accept=".pdf,.jpg,.jpeg,.png">
+          </div>
+        </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
           <button type="submit" class="btn btn-primary">Subir</button>
