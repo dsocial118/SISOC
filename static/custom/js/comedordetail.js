@@ -47,7 +47,6 @@
         });
         document.querySelectorAll('#new_territorial_select, #update_territorial_select')
             .forEach(select => {
-                select.innerHTML = '';
                 select.appendChild(frag.cloneNode(true));
             });
     }
