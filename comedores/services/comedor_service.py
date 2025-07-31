@@ -1,6 +1,9 @@
+import os
 import re
+import logging
 from typing import Union
 
+from django.db import transaction
 from django.db.models import Q, Count, Prefetch
 from django.core.paginator import Paginator
 from django.core.cache import cache
@@ -15,6 +18,9 @@ from intervenciones.models.intervenciones import Intervencion
 from core.models import Municipio, Provincia
 from core.models import Localidad
 from comedores.models import ImagenComedor
+
+
+logger = logging.getLogger(__name__)
 
 
 class ComedorService:
@@ -49,15 +55,39 @@ class ComedorService:
 
     @staticmethod
     def borrar_imagenes(post):
+        """Remove images flagged for deletion in POST data."""
         pattern = re.compile(r"^imagen_ciudadano-borrar-(\d+)$")
         imagenes_ids = []
         for key in post:
             match = pattern.match(key)
             if match:
-                imagen_id = match.group(1)
-                imagenes_ids.append(imagen_id)
+                imagenes_ids.append(match.group(1))
 
-        ImagenComedor.objects.filter(id__in=imagenes_ids).delete()
+        if imagenes_ids:
+            deleted_count, _ = ImagenComedor.objects.filter(
+                id__in=imagenes_ids
+            ).delete()
+            logger.info("Deleted %s images", deleted_count)
+        else:
+            logger.debug("No images marked for deletion")
+
+    @staticmethod
+    def borrar_foto_legajo(post, comedor_instance):
+        """Eliminar la foto del legajo si está marcada para borrar"""
+        if "foto_legajo_borrar" in post and comedor_instance.foto_legajo:
+            file_path = comedor_instance.foto_legajo.path
+            with transaction.atomic():
+                try:
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+                except OSError as exc:
+                    logger.warning(
+                        "Could not delete legajo file %s: %s", file_path, exc
+                    )
+
+                comedor_instance.foto_legajo = None
+                comedor_instance.save(update_fields=["foto_legajo"])
+                logger.info("Legajo photo removed for comedor %s", comedor_instance.id)
 
     @staticmethod
     def get_comedores_filtrados(query: Union[str, None] = None):
@@ -113,10 +143,10 @@ class ComedorService:
             )
             .prefetch_related(
                 "expedientes_pagos",
-                # Prefetch para imágenes optimizado - solo el campo imagen
+                # Prefetch para imágenes optimizado - cargar campos necesarios
                 Prefetch(
                     "imagenes",
-                    queryset=ImagenComedor.objects.only("imagen"),
+                    queryset=ImagenComedor.objects.only("id", "imagen"),
                     to_attr="imagenes_optimized",
                 ),
                 # Prefetch para relevamientos ordenados por estado e id descendente
@@ -220,6 +250,7 @@ class ComedorService:
             {"comedor": comedor_pk},
             {"imagen": imagen},
         )
+
         if imagen_comedor.is_valid():
             return imagen_comedor.save()
         else:

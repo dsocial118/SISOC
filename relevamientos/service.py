@@ -42,6 +42,7 @@ from relevamientos.models import (
 )
 from relevamientos.tasks import AsyncSendRelevamientoToGestionar
 from core.utils import convert_string_to_int
+from core.models import Prestacion, Provincia, Municipio, Localidad
 
 
 # TODO: Refactorizar todo esto, pylint esta muriendo aca
