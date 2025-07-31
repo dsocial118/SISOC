@@ -1311,7 +1311,30 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 )
 
         if responsable_es_referente:
-            referente = responsable  # Referente y Responsable son el mismo
+            if not responsable_data or not any(responsable_data.values()):
+                responsable_data = referente_data
+
+            if responsable_data and any(responsable_data.values()):
+                responsable = Referente.objects.filter(
+                    documento=responsable_data.get("documento")
+                ).last()
+
+                if responsable:
+                    for key, value in responsable_data.items():
+                        setattr(responsable, key, value)
+                    responsable.save()
+                else:
+                    responsable = Referente.objects.create(
+                        nombre=responsable_data.get("nombre", None),
+                        apellido=responsable_data.get("apellido", None),
+                        mail=responsable_data.get("mail", None),
+                        celular=responsable_data.get("celular", None),
+                        documento=responsable_data.get("documento", None),
+                        funcion=responsable_data.get("funcion", None),
+                    )
+
+            referente = responsable  # En todos los casos, el mismo objeto
+
         elif referente_data and any(referente_data.values()):
             referente = Referente.objects.filter(
                 documento=referente_data.get("documento")
@@ -1339,6 +1362,10 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             comedor = com_rel.comedor
             comedor.referente = referente
             comedor.save()
+
+        print(
+            "referente", referente
+        )
 
         return responsable.id if responsable else None, (
             referente.id if referente else None
