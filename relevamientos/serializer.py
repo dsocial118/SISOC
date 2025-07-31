@@ -1,3 +1,4 @@
+import logging
 from rest_framework import serializers
 
 from relevamientos.models import Relevamiento
