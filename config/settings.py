@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 import sys
+import logging
 from django.contrib.messages import constants as messages
 from dotenv import load_dotenv
 
