@@ -81,11 +81,13 @@
             {% for admision in admisiones %}
             <tr>
                 <td>
-                    <a href="{% url 'comedor_detalle' admision.comedor.id %}"
-                       class="font-weight-bold link-handler text-decoration-none"
-                       title="Ver detalles del comedor">
-                        {{ admision.comedor.nombre }}
-                    </a>
+                    {% if admision.comedor and admision.comedor.id %}
+                        <a href="{% url 'comedor_detalle' admision.comedor.id %}"
+                            class="font-weight-bold link-handler"
+                            title="Ver detalles">{{ admision.comedor.nombre }}</a>
+                    {% else %}
+                        <span class="text-muted">Sin comedor asignado</span>
+                    {% endif %}
                 </td>
                 <td>
                     <span class="badge bg-primary">
