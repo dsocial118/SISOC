@@ -1,15 +1,9 @@
-from django.forms.models import model_to_dict
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_api_key.permissions import HasAPIKey
-from core.utils import format_fecha_django
 from relevamientos.models import Relevamiento
-from comedores.models import Comedor, Observacion
-from comedores.serializers.comedor_serializer import ComedorSerializer
 from relevamientos.serializer import RelevamientoSerializer
-from comedores.serializers.observacion_serializer import ObservacionSerializer
-from comedores.services.comedor_service import ComedorService
 from core.utils import format_serializer_errors
 
 
