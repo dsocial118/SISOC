@@ -1,15 +1,7 @@
 from django.urls import path
 
+from centrodefamilia.views.informe_cabal import InformeCabalPreviewView, InformeCabalProcessView, InformeCabalUploadView
 from configuraciones.decorators import group_required
-
-
-from centrodefamilia.views.informecabal import (
-    ExpedienteCreateView,
-    ExpedienteDetailView,
-    ExpedienteListView,
-    ExpedienteUpdateView,
-)
-
 
 from centrodefamilia.views.centro import (
     CentroCreateView,
@@ -36,6 +28,25 @@ from centrodefamilia.views.participante import (
 
 
 urlpatterns = [
+
+     # Informe Cabal: Upload
+    path(
+        "centros/<int:pk>/informe_cabal/",
+        group_required(["CDF SSE"])(InformeCabalUploadView.as_view()),
+        name="centro_informe_cabal",
+    ),
+    # Informe Cabal: Preview
+    path(
+        "centros/<int:pk>/informe_cabal/preview/",
+        group_required(["CDF SSE"])(InformeCabalPreviewView.as_view()),
+        name="centro_informe_cabal_preview",
+    ),
+    # Informe Cabal: Process
+    path(
+        "centros/<int:pk>/informe_cabal/process/",
+        group_required(["CDF SSE"])(InformeCabalProcessView.as_view()),
+        name="centro_informe_cabal_process",
+    ),
     path(
         "centros/",
         group_required(["ReferenteCentro", "CDF SSE"])(CentroListView.as_view()),

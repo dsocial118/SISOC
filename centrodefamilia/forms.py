@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+import os
 
 from ciudadanos.models import Sexo, TipoDocumento
 from core.models import Dia
@@ -22,29 +23,12 @@ class CentroForm(forms.ModelForm):
     class Meta:
         model = Centro
         fields = [
-            "tipo",
-            "nombre",
-            "codigo",
-            "organizacion_asociada",
-            "provincia",
-            "municipio",
-            "localidad",
-            "calle",
-            "numero",
-            "domicilio_actividad",
-            "telefono",
-            "celular",
-            "correo",
-            "sitio_web",
-            "link_redes",
-            "nombre_referente",
-            "apellido_referente",
-            "telefono_referente",
-            "correo_referente",
-            "referente",
-            "faro_asociado",
-            "foto",
-            "activo",
+            "tipo", "nombre", "codigo", "organizacion_asociada",
+            "provincia", "municipio", "localidad", "calle", "numero",
+            "domicilio_actividad", "telefono", "celular", "correo",
+            "sitio_web", "link_redes", "nombre_referente", "apellido_referente",
+            "telefono_referente", "correo_referente", "referente",
+            "faro_asociado", "foto", "activo",
         ]
 
     def __init__(self, *args, **kwargs):
@@ -96,20 +80,14 @@ class ActividadCentroForm(forms.ModelForm):
     horariosdesde = forms.TimeField(
         label="Hora Desde",
         widget=forms.TimeInput(
-            attrs={
-                "class": "form-control timepicker",
-                "placeholder": "Seleccione una hora",
-            }
+            attrs={"class": "form-control timepicker", "placeholder": "Seleccione una hora"}
         ),
         required=True,
     )
     horarioshasta = forms.TimeField(
         label="Hora Hasta",
         widget=forms.TimeInput(
-            attrs={
-                "class": "form-control timepicker",
-                "placeholder": "Seleccione una hora",
-            }
+            attrs={"class": "form-control timepicker", "placeholder": "Seleccione una hora"}
         ),
         required=True,
     )
@@ -124,15 +102,8 @@ class ActividadCentroForm(forms.ModelForm):
     class Meta:
         model = ActividadCentro
         fields = [
-            "categoria",
-            "actividad",
-            "cantidad_personas",
-            "sexoact",
-            "dias",
-            "horariosdesde",
-            "horarioshasta",
-            "precio",
-            "estado",
+            "categoria", "actividad", "cantidad_personas", "sexoact",
+            "dias", "horariosdesde", "horarioshasta", "precio", "estado",
         ]
         exclude = ["centro"]
         widgets = {
@@ -155,13 +126,11 @@ class ActividadCentroForm(forms.ModelForm):
         elif self.instance and self.instance.pk:
             actividad = self.instance.actividad
             cat_id = actividad.categoria_id if actividad else None
-            self.initial.update(
-                {
-                    "categoria": cat_id,
-                    "actividad": self.instance.actividad_id,
-                    "dias": [d.pk for d in self.instance.dias.all()],
-                }
-            )
+            self.initial.update({
+                "categoria": cat_id,
+                "actividad": self.instance.actividad_id,
+                "dias": [d.pk for d in self.instance.dias.all()],
+            })
             self.fields["actividad"].queryset = (
                 Actividad.objects.filter(categoria_id=cat_id)
                 if cat_id
@@ -188,37 +157,45 @@ class ParticipanteActividadForm(forms.ModelForm):
     nombre = forms.CharField(max_length=255, label="Nombre")
     apellido = forms.CharField(max_length=255, label="Apellido")
     fecha_nacimiento = forms.DateField(
-        label="Fecha de Nacimiento", widget=forms.DateInput(attrs={"type": "date"})
+        label="Fecha de Nacimiento",
+        widget=forms.DateInput(attrs={"type": "date"})
     )
     tipo_documento = forms.ModelChoiceField(
-        queryset=TipoDocumento.objects.all(), label="Tipo de Documento"
+        queryset=TipoDocumento.objects.all(),
+        label="Tipo de Documento"
     )
     dni = forms.IntegerField(label="Documento")
     genero = forms.ModelChoiceField(queryset=Sexo.objects.all(), label="Sexo")
 
     class Meta:
         model = ParticipanteActividad
-        # no usamos directamente los campos del modelo porque todos se construyen en la vista
-        fields = []
+        fields = []  # Se construyen dinámicamente en la vista
 
 
-class ExpedienteCabalForm(forms.ModelForm):
+class InformeCabalForm(forms.ModelForm):
     periodo = forms.DateField(
-        label="Periodo",
+        label="Periodo Informe",
         widget=forms.DateInput(
             attrs={"type": "date", "class": "form-control form-control-sm"}
         ),
     )
     archivo = forms.FileField(
-        label="Archivo",
+        label="Archivo Excel",
         widget=forms.ClearableFileInput(
-            attrs={"class": "form-control form-control-sm", "accept": ".pdf,.xlsx,.csv"}
+            attrs={"class": "form-control form-control-sm", "accept": ".xlsx,.xls"}
         ),
     )
 
     class Meta:
         model = Expediente
         fields = ["periodo", "archivo"]
+
+    def clean_archivo(self):
+        archivo = self.cleaned_data.get('archivo')
+        ext = os.path.splitext(archivo.name)[1].lower()
+        if ext not in ['.xlsx', '.xls']:
+            raise ValidationError('Solo se permiten archivos .xlsx o .xls para Informe Cabal.')
+        return archivo
 
 
 class ActividadForm(forms.ModelForm):

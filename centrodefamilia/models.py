@@ -167,11 +167,72 @@ class ParticipanteActividad(models.Model):
 
 class Expediente(models.Model):
     centro = models.ForeignKey(
-        Centro, on_delete=models.CASCADE, related_name="expedientes_cabal"
+        'centrodefamilia.Centro',
+        on_delete=models.CASCADE,
+        related_name="expedientes_cabal",
+        db_index=True
     )
     archivo = models.FileField(upload_to="informes_cabal/")
-    periodo = models.DateField(help_text="Fecha del informe")
+    periodo = models.DateField(help_text="Fecha del informe Cabal", db_index=True)
     fecha_subida = models.DateTimeField(auto_now_add=True)
-    usuario = models.ForeignKey(User, on_delete=models.PROTECT)
-    procesado = models.BooleanField(default=False)
+    usuario = models.ForeignKey(User, on_delete=models.PROTECT, db_index=True)
+    procesado = models.BooleanField(default=False, db_index=True)
     errores = models.TextField(blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['centro']),
+            models.Index(fields=['periodo']),
+            models.Index(fields=['procesado']),
+        ]
+        ordering = ['-fecha_subida']
+        verbose_name = "Expediente Cabal"
+        verbose_name_plural = "Expedientes Cabal"
+
+    def __str__(self):
+        return f"Informe Cabal {self.centro.codigo} - {self.periodo}"
+
+
+class MovimientoCabal(models.Model):
+    expediente = models.ForeignKey(
+        Expediente,
+        on_delete=models.CASCADE,
+        related_name="movimientos",
+        db_index=True
+    )
+    centro = models.ForeignKey(
+        'centrodefamilia.Centro',
+        on_delete=models.PROTECT,
+        db_index=True
+    )
+    ciudadano = models.ForeignKey(
+        'ciudadanos.Ciudadano',
+        on_delete=models.PROTECT,
+        db_index=True
+    )
+    monto = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        help_text="Monto registrado en el movimiento Cabal"
+    )
+    fecha = models.DateField(help_text="Fecha del movimiento registrado en el Excel", db_index=True)
+    fila_origen = models.PositiveIntegerField(
+        help_text="Número de fila en el Excel de origen",
+        db_index=True
+    )
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['expediente']),
+            models.Index(fields=['centro']),
+            models.Index(fields=['ciudadano']),
+            models.Index(fields=['fecha']),
+            models.Index(fields=['fila_origen']),
+        ]
+        ordering = ['expediente', 'fila_origen']
+        verbose_name = "Movimiento Cabal"
+        verbose_name_plural = "Movimientos Cabal"
+
+    def __str__(self):
+        return f"Movimiento {self.centro.codigo} - {self.ciudadano.documento} - {self.monto}"
+
