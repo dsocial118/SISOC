@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 import sys
-import logging
 from django.contrib.messages import constants as messages
 from dotenv import load_dotenv
 
@@ -67,9 +66,6 @@ PROG_PDV = 26
 PROG_MA = 30
 PROG_SL = 21
 
-# Configuración del perfilador de rendimiento de Silk
-SILKY_PYTHON_PROFILER = True
-
 # Definición de IPs internas para depuración
 INTERNAL_IPS = [
     "127.0.0.1",
@@ -124,12 +120,12 @@ INSTALLED_APPS = [
     # Librerias
     "django_cotton",
     "crispy_forms",
+    "silk",
     "crispy_bootstrap5",
     "django_extensions",
     "import_export",
     "multiselectfield",
     "debug_toolbar",
-    "silk",
     "rest_framework",
     "rest_framework_api_key",
     "corsheaders",
@@ -165,7 +161,6 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.contrib.admindocs.middleware.XViewMiddleware",
-    "silk.middleware.SilkyMiddleware",
     "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "config.middlewares.xss_protection.XSSProtectionMiddleware",
@@ -333,3 +328,9 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 # Dominio
 DOMINIO = os.environ.get("DOMINIO", default="localhost:8001")
+
+
+# Configuración de Silk fuera de DEBUG
+if DEBUG:
+    SILKY_PYTHON_PROFILER = True
+    MIDDLEWARE.insert(0, "silk.middleware.SilkyMiddleware")

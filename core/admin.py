@@ -8,6 +8,7 @@ from core.models import (
     Mes,
     Dia,
     Turno,
+    Prestacion,
 )
 
 admin.site.register(Provincia)
@@ -16,6 +17,7 @@ admin.site.register(Sexo)
 admin.site.register(Mes)
 admin.site.register(Dia)
 admin.site.register(Turno)
+admin.site.register(Prestacion)
 
 
 @admin.register(Localidad)
