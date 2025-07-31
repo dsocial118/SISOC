@@ -1,0 +1,183 @@
+{% comment %}
+Componente para subida de foto de ciudadano
+Parámetros:
+- form: Formulario que contiene el campo foto (requerido)
+- object: Objeto ciudadano para mostrar foto existente (opcional)
+- image_size: Tamaño de la imagen (default: 150px)
+- upload_text_new: Texto para agregar foto (default: "Agregar foto")
+- upload_text_edit: Texto para cambiar foto (default: "Cambiar foto")
+{% endcomment %}
+
+{% load static %}
+
+<div class="foto-upload-section text-center">
+    <div class="card border-0" style="background: transparent;">
+        <div class="card-body p-3">
+            
+            <!-- Preview de la foto -->
+            <div class="mb-3">
+                {% if object.foto %}
+                    <img src="{{ object.foto.url }}"
+                         data-holder-rendered="true"
+                         alt="Foto del ciudadano"
+                         class="avatar"
+                         height="{{ image_size|default:'150' }}"
+                         width="{{ image_size|default:'150' }}"
+                         id="foto-preview" />
+                {% else %}
+                    <img src="{% static 'custom/img/default.png' %}"
+                         data-holder-rendered="true"
+                         alt="Foto por defecto"
+                         class="avatar"
+                         height="{{ image_size|default:'150' }}"
+                         width="{{ image_size|default:'150' }}"
+                         id="foto-preview" />
+                {% endif %}
+            </div>
+            
+            <!-- Indicador de carga -->
+            <div class="upload-indicator d-none mb-3">
+                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                    <span class="sr-only">Cargando...</span>
+                </div>
+                <small class="d-block mt-2 text-muted">Procesando imagen...</small>
+            </div>
+            
+            <!-- Errores del campo foto -->
+            {% if form.foto.errors %}
+                <div class="alert alert-danger py-2 mb-3" style="font-size: 0.875rem;">
+                    {% for error in form.foto.errors %}
+                        <i class="fas fa-exclamation-triangle me-1"></i>{{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <!-- Botón de subida -->
+            <label for="id_foto" class="btn btn-foto-upload btn-block font-weight-normal mb-2" role="button">
+                <i class="fas fa-camera me-2"></i>
+                <span class="upload-text">
+                    {% if object.foto %}
+                        {{ upload_text_edit|default:"Cambiar foto" }}
+                    {% else %}
+                        {{ upload_text_new|default:"Agregar foto" }}
+                    {% endif %}
+                </span>
+            </label>
+            
+            <!-- Input file oculto -->
+            <input type="file"
+                   name="foto"
+                   id="id_foto"
+                   class="input-file"
+                   accept="image/*"
+                   hidden />
+            
+            <!-- Información adicional -->
+            <div class="mt-3">
+                <small class="text-muted d-block">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Formatos: JPG, PNG, GIF
+                </small>
+                <small class="text-muted d-block">
+                    <i class="fas fa-weight me-1"></i>
+                    Tamaño máximo: 5MB
+                </small>
+            </div>
+            
+            <!-- Botón para remover foto (solo si existe) -->
+            {% if object.foto %}
+                <button type="button" 
+                        class="btn btn-outline-danger btn-sm mt-2" 
+                        id="remove-foto"
+                        title="Remover foto actual">
+                    <i class="fas fa-trash-alt me-1"></i>
+                    Remover
+                </button>
+            {% endif %}
+            
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fotoInput = document.getElementById('id_foto');
+    const fotoPreview = document.getElementById('foto-preview');
+    const uploadIndicator = document.querySelector('.upload-indicator');
+    const uploadText = document.querySelector('.upload-text');
+    const removeBtn = document.getElementById('remove-foto');
+    
+    // Preview de imagen al seleccionar
+    fotoInput.addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        
+        if (file) {
+            // Validar tipo de archivo
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+            if (!validTypes.includes(file.type)) {
+                alert('Por favor seleccione un archivo de imagen válido (JPG, PNG, GIF)');
+                fotoInput.value = '';
+                return;
+            }
+            
+            // Validar tamaño (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('La imagen es demasiado grande. El tamaño máximo es 5MB.');
+                fotoInput.value = '';
+                return;
+            }
+            
+            // Mostrar indicador de carga
+            uploadIndicator.classList.remove('d-none');
+            
+            // Crear preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                fotoPreview.src = e.target.result;
+                uploadText.textContent = 'Cambiar foto';
+                
+                // Ocultar indicador después de un delay para simular procesamiento
+                setTimeout(() => {
+                    uploadIndicator.classList.add('d-none');
+                }, 800);
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    // Funcionalidad de remover foto
+    if (removeBtn) {
+        removeBtn.addEventListener('click', function() {
+            if (confirm('¿Está seguro de que desea remover la foto actual?')) {
+                fotoPreview.src = "{% static 'custom/img/default.png' %}";
+                fotoInput.value = '';
+                uploadText.textContent = 'Agregar foto';
+                
+                // Crear input hidden para indicar que se debe borrar la foto
+                let deleteInput = document.querySelector('input[name="delete_foto"]');
+                if (!deleteInput) {
+                    deleteInput = document.createElement('input');
+                    deleteInput.type = 'hidden';
+                    deleteInput.name = 'delete_foto';
+                    deleteInput.value = 'true';
+                    fotoInput.parentNode.appendChild(deleteInput);
+                } else {
+                    deleteInput.value = 'true';
+                }
+                
+                // Ocultar botón de remover
+                removeBtn.style.display = 'none';
+            }
+        });
+    }
+    
+    // Efecto hover en la imagen
+    fotoPreview.addEventListener('mouseenter', function() {
+        this.style.transform = 'scale(1.05)';
+    });
+    
+    fotoPreview.addEventListener('mouseleave', function() {
+        this.style.transform = 'scale(1)';
+    });
+});
+</script>

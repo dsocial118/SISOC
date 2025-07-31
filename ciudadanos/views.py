@@ -793,11 +793,30 @@ class CiudadanosDeleteView(DeleteView):
 
 
 class CiudadanosCreateView(CreateView):
+    """
+    View refactorizada para crear ciudadanos usando componentes
+    """
+
     model = Ciudadano
     form_class = CiudadanoForm
     template_name = "ciudadanos/ciudadano_form.html"
+    success_message = "Ciudadano creado exitosamente"
+
+    def get_context_data(self, **kwargs):
+        """Contexto para el template con breadcrumbs"""
+        context = super().get_context_data(**kwargs)
+
+        # Breadcrumbs para crear
+        context["breadcrumb_items"] = [
+            {"url": reverse_lazy("dashboard"), "text": "Dashboard"},
+            {"url": reverse_lazy("ciudadanos"), "text": "Ciudadanos"},
+        ]
+        context["current_breadcrumb"] = "Agregar"
+
+        return context
 
     def form_invalid(self, form):
+        """Manejo de errores en el formulario"""
         messages.error(
             self.request,
             "Se produjo un error al crear el ciudadano. Por favor, verifique los datos ingresados.",
@@ -805,88 +824,149 @@ class CiudadanosCreateView(CreateView):
         return super().form_invalid(form)
 
     def form_valid(self, form):
+        """Procesamiento cuando el formulario es válido"""
         ciudadano = form.save(commit=False)
 
+        # Procesar la foto si se subió una
         if ciudadano.foto:
-            buffer = recortar_imagen(ciudadano.foto)
-            ciudadano.foto.save(ciudadano.foto.name, ContentFile(buffer.getvalue()))
+            try:
+                buffer = recortar_imagen(ciudadano.foto)
+                ciudadano.foto.save(ciudadano.foto.name, ContentFile(buffer.getvalue()))
+            except Exception as e:
+                messages.warning(
+                    self.request,
+                    f"La foto se subió pero hubo un problema al procesarla: {e}",
+                )
 
         try:
             with transaction.atomic():
+                # Guardar el ciudadano
                 ciudadano.save()
 
-                # Crear las dimensiones
-                dimensionfamilia = DimensionFamilia.objects.create(
-                    ciudadano_id=ciudadano.id
-                )
+                # Crear automáticamente todas las dimensiones
+                self._crear_dimensiones(ciudadano)
 
-                logger.info(f"dimensionfamilia {dimensionfamilia}")
-                dimensionvivienda = DimensionVivienda.objects.create(
-                    ciudadano_id=ciudadano.id
-                )
+                messages.success(self.request, self.success_message)
 
-                logger.info(f"dimensionvivienda {dimensionvivienda}")
-                dimensiosalud = DimensionSalud.objects.create(ciudadano_id=ciudadano.id)
-
-                logger.info(f"dimensiosalud {dimensiosalud}")
-
-                dimensioneconomia = DimensionEconomia.objects.create(
-                    ciudadano_id=ciudadano.id
-                )
-                logger.info(f"dimensioneconomia {dimensioneconomia}")
-
-                dimensioneducacion = DimensionEducacion.objects.create(
-                    ciudadano_id=ciudadano.id
-                )
-                logger.info(f"dimensioneducacion {dimensioneducacion}")
-
-                dimensiontrabajo = DimensionTrabajo.objects.create(
-                    ciudadano_id=ciudadano.id
-                )
-                logger.info(f"dimensiontrabajo {dimensiontrabajo}")
-
-            # Redireccionar según el botón presionado
-            if "form_ciudadanos" in self.request.POST:
-                return redirect("ciudadanos_ver", pk=int(ciudadano.id))
-            elif "form_step2" in self.request.POST:
-                return redirect("ciudadanosdimensiones_editar", pk=int(ciudadano.id))
-            return None
+                # Redireccionar según el botón presionado
+                return self._handle_form_navigation(ciudadano.id)
 
         except Exception as e:
             messages.error(
                 self.request,
-                f"Se produjo un error al crear las dimensiones. Por favor, inténtalo de nuevo. Error: {e}",
+                f"Se produjo un error al crear el ciudadano y sus dimensiones: {e}",
             )
             return redirect("ciudadanos_crear")
 
+    def _crear_dimensiones(self, ciudadano):
+        """Crea automáticamente todas las dimensiones para el ciudadano"""
+        try:
+            DimensionFamilia.objects.create(ciudadano=ciudadano)
+            DimensionVivienda.objects.create(ciudadano=ciudadano)
+            DimensionSalud.objects.create(ciudadano=ciudadano)
+            DimensionEconomia.objects.create(ciudadano=ciudadano)
+            DimensionEducacion.objects.create(ciudadano=ciudadano)
+            DimensionTrabajo.objects.create(ciudadano=ciudadano)
+        except Exception as e:
+            raise Exception(f"Error al crear dimensiones: {e}")
+
+    def _handle_form_navigation(self, ciudadano_id):
+        """Maneja la navegación según el botón presionado"""
+        if "form_step2" in self.request.POST:
+            # Continuar al paso 2 (dimensiones)
+            return redirect("ciudadanosdimensiones_editar", pk=ciudadano_id)
+        else:
+            # Por defecto, ir al detalle
+            return redirect("ciudadanos_ver", pk=ciudadano_id)
+
 
 class CiudadanosUpdateView(UpdateView):
+    """
+    View refactorizada para editar ciudadanos usando componentes
+    """
+
     model = Ciudadano
     form_class = CiudadanoUpdateForm
+    template_name = "ciudadanos/ciudadano_form.html"
+    success_message = "Ciudadano actualizado exitosamente"
+
+    def get_context_data(self, **kwargs):
+        """Contexto para el template con breadcrumbs"""
+        context = super().get_context_data(**kwargs)
+
+        # Breadcrumbs para editar
+        context["breadcrumb_items"] = [
+            {"url": reverse_lazy("dashboard"), "text": "Dashboard"},
+            {"url": reverse_lazy("ciudadanos"), "text": "Ciudadanos"},
+            {
+                "url": reverse_lazy("ciudadanos_ver", kwargs={"pk": self.object.id}),
+                "text": str(self.object),
+            },
+        ]
+        context["current_breadcrumb"] = "Editar"
+
+        return context
 
     def form_valid(self, form):
-        ciudadano = form.save(
-            commit=False
-        )  # Guardamos sin persistir en la base de datos
+        """Procesamiento cuando el formulario es válido"""
+        ciudadano = form.save(commit=False)
         current_ciudadano = self.get_object()
 
-        with transaction.atomic():
-            # Comprobamos si se ha cargado una nueva foto y si es diferente de la foto actual
-            if ciudadano.foto and ciudadano.foto != current_ciudadano.foto:
-                buffer = recortar_imagen(ciudadano.foto)
-                ciudadano.foto.save(ciudadano.foto.name, ContentFile(buffer.getvalue()))
+        try:
+            with transaction.atomic():
+                # Manejar eliminación de foto si se solicitó
+                if self.request.POST.get("delete_foto") == "true":
+                    if current_ciudadano.foto:
+                        current_ciudadano.foto.delete(save=False)
+                    ciudadano.foto = None
 
-            self.object = (
-                form.save()
-            )  # Guardamos el objeto Ciudadano con la imagen recortada (si corresponde)
+                # Procesar nueva foto si se subió
+                elif ciudadano.foto and ciudadano.foto != current_ciudadano.foto:
+                    try:
+                        buffer = recortar_imagen(ciudadano.foto)
+                        ciudadano.foto.save(
+                            ciudadano.foto.name, ContentFile(buffer.getvalue())
+                        )
+                    except Exception as e:
+                        messages.warning(
+                            self.request,
+                            f"La foto se subió pero hubo un problema al procesarla: {e}",
+                        )
 
+                # Guardar el ciudadano actualizado
+                self.object = ciudadano
+                self.object.save()
+
+                messages.success(self.request, self.success_message)
+
+                # Redireccionar según el botón presionado
+                return self._handle_form_navigation()
+
+        except Exception as e:
+            messages.error(
+                self.request, f"Se produjo un error al actualizar el ciudadano: {e}"
+            )
+            return self.form_invalid(form)
+
+    def _handle_form_navigation(self):
+        """Maneja la navegación según el botón presionado"""
         if "form_ciudadanos" in self.request.POST:
+            # Guardar y ir al detalle
+            return redirect("ciudadanos_ver", pk=self.object.id)
+        elif "form_step2" in self.request.POST:
+            # Continuar al paso 2 (dimensiones)
+            return redirect("ciudadanosdimensiones_editar", pk=self.object.id)
+        else:
+            # Por defecto, ir al detalle
             return redirect("ciudadanos_ver", pk=self.object.id)
 
-        if "form_step2" in self.request.POST:
-            return redirect("ciudadanosdimensiones_editar", pk=ciudadano.id)
-
-        return super().form_valid(form)
+    def form_invalid(self, form):
+        """Manejo de errores en el formulario"""
+        messages.error(
+            self.request,
+            "Se produjo un error al actualizar el ciudadano. Por favor, verifique los datos ingresados.",
+        )
+        return super().form_invalid(form)
 
 
 class CiudadanosGrupoFamiliarCreateView(CreateView):
@@ -1578,303 +1658,226 @@ class AlertaSelectView(View):
 
 
 class DimensionesUpdateView(SuccessMessageMixin, UpdateView):
-    # FIXME: Crear updateView por cada formulario
+    """
+    View refactorizada para actualizar dimensiones usando componentes
+    Maneja múltiples formularios de dimensiones en una sola vista
+    """
+
     template_name = "ciudadanos/dimension_form.html"
     model = DimensionFamilia
     form_class = DimensionFamiliaForm
-    form_vivienda = DimensionViviendaForm
-    form_salud = DimensionSaludForm
-    form_educacion = DimensionEducacionForm
-    form_economia = DimensionEconomiaForm
-    form_trabajo = DimensionTrabajoForm
-    success_message = "Editado correctamente"
+    success_message = "Dimensiones actualizadas correctamente"
 
     def get_object(self, queryset=None):
+        """Obtiene el objeto DimensionFamilia del ciudadano"""
         pk = self.kwargs["pk"]
-        ciudadano = Ciudadano.objects.only("id").get(id=pk)
-        return DimensionFamilia.objects.get(ciudadano=ciudadano.id)
+        ciudadano = get_object_or_404(Ciudadano, id=pk)
+        dimension_familia, created = DimensionFamilia.objects.get_or_create(
+            ciudadano=ciudadano, defaults={"ciudadano": ciudadano}
+        )
+        return dimension_familia
 
     def get_context_data(self, **kwargs):
+        """Contexto optimizado para usar con componentes"""
         context = super().get_context_data(**kwargs)
 
         pk = self.kwargs["pk"]
-        ciudadano = (
-            Ciudadano.objects.select_related(
-                "dimensionvivienda",
-                "dimensionsalud",
-                "dimensioneducacion",
-                "dimensioneconomia",
-                "dimensiontrabajo",
-            )
-            .only(
-                "id",
-                "apellido",
-                "nombre",
-                "dimensionvivienda__ciudadano",
-                "dimensionvivienda__obs_vivienda",
-                "dimensionsalud__ciudadano",
-                "dimensionsalud__obs_salud",
-                "dimensionsalud__hay_obra_social",
-                "dimensionsalud__hay_enfermedad",
-                "dimensionsalud__hay_discapacidad",
-                "dimensionsalud__hay_cud",
-                "dimensioneducacion__ciudadano",
-                "dimensioneducacion__observaciones",
-                "dimensioneducacion__area_curso",
-                "dimensioneducacion__area_oficio",
-                "dimensioneconomia__ciudadano",
-                "dimensioneconomia__obs_economia",
-                "dimensioneconomia__planes",
-                "dimensiontrabajo__ciudadano",
-                "dimensiontrabajo__obs_trabajo",
-            )
-            .get(id=pk)
-        )
 
-        # TODO: Modificar logica para no utilizar los siguientes "None' y crear la dimension segun haga falta
+        # Cargar ciudadano con todas las dimensiones de una vez
+        ciudadano = Ciudadano.objects.select_related(
+            "tipo_documento", "sexo", "nacionalidad"
+        ).get(id=pk)
+
+        # Crear o recuperar todas las dimensiones
+        dimensiones_data = self._get_or_create_dimensions(ciudadano)
+
+        # Preparar formularios para cada dimensión (SIN prefijos)
         context.update(
             {
                 "ciudadano": ciudadano,
-                "form_vivienda": self.form_vivienda(
-                    instance=getattr(ciudadano, "dimensionvivienda", None)
+                "form_vivienda": DimensionViviendaForm(
+                    instance=dimensiones_data["vivienda"]
                 ),
-                "form_salud": self.form_salud(
-                    instance=getattr(ciudadano, "dimensionsalud", None)
+                "form_salud": DimensionSaludForm(instance=dimensiones_data["salud"]),
+                "form_educacion": DimensionEducacionForm(
+                    instance=dimensiones_data["educacion"]
                 ),
-                "form_educacion": self.form_educacion(
-                    instance=getattr(ciudadano, "dimensioneducacion", None)
+                "form_economia": DimensionEconomiaForm(
+                    instance=dimensiones_data["economia"]
                 ),
-                "form_economia": self.form_economia(
-                    instance=getattr(ciudadano, "dimensioneconomia", None)
-                ),
-                "form_trabajo": self.form_trabajo(
-                    instance=getattr(ciudadano, "dimensiontrabajo", None)
+                "form_trabajo": DimensionTrabajoForm(
+                    instance=dimensiones_data["trabajo"]
                 ),
             }
         )
 
         return context
 
-    def form_valid(
-        self, form
-    ):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
-        # TODO: Esto sera refactorizado
-        self.object = form.save(commit=False)
+    def _get_or_create_dimensions(self, ciudadano):
+        """Método auxiliar para obtener o crear todas las dimensiones"""
+        dimensiones = {}
 
+        # Dimensión Vivienda
+        dimensiones["vivienda"], _ = DimensionVivienda.objects.get_or_create(
+            ciudadano=ciudadano, defaults={"ciudadano": ciudadano}
+        )
+
+        # Dimensión Salud
+        dimensiones["salud"], _ = DimensionSalud.objects.get_or_create(
+            ciudadano=ciudadano, defaults={"ciudadano": ciudadano}
+        )
+
+        # Dimensión Educación
+        dimensiones["educacion"], _ = DimensionEducacion.objects.get_or_create(
+            ciudadano=ciudadano, defaults={"ciudadano": ciudadano}
+        )
+
+        # Dimensión Economía
+        dimensiones["economia"], _ = DimensionEconomia.objects.get_or_create(
+            ciudadano=ciudadano, defaults={"ciudadano": ciudadano}
+        )
+
+        # Dimensión Trabajo
+        dimensiones["trabajo"], _ = DimensionTrabajo.objects.get_or_create(
+            ciudadano=ciudadano, defaults={"ciudadano": ciudadano}
+        )
+
+        return dimensiones
+
+    def post(self, request, *args, **kwargs):
+        """Maneja el POST para múltiples formularios"""
+        self.object = self.get_object()
         pk = self.kwargs["pk"]
+        ciudadano = get_object_or_404(Ciudadano, id=pk)
 
-        ciudadano_dim_vivienda = DimensionVivienda.objects.get(ciudadano__id=pk)
-        ciudadano_dim_salud = DimensionSalud.objects.get(ciudadano__id=pk)
-        ciudadano_dim_educacion = DimensionEducacion.objects.get(ciudadano__id=pk)
-        ciudadano_dim_economia = DimensionEconomia.objects.get(ciudadano__id=pk)
-        ciudadano_dim_trabajo = DimensionTrabajo.objects.get(ciudadano__id=pk)
-        form_multiple = self.form_class(self.request.POST).data.copy()
+        # Obtener todas las dimensiones
+        dimensiones_data = self._get_or_create_dimensions(ciudadano)
 
-        # cambio el valor 'on' y 'off' por True/False
-        for clave, valor in form_multiple.items():
-            if valor == "on":
-                form_multiple[clave] = True
+        # Crear formularios con datos POST (SIN prefijos para mantener compatibilidad)
+        form = self.get_form()
+        form_vivienda = DimensionViviendaForm(
+            request.POST, instance=dimensiones_data["vivienda"]
+        )
+        form_salud = DimensionSaludForm(
+            request.POST, instance=dimensiones_data["salud"]
+        )
+        form_educacion = DimensionEducacionForm(
+            request.POST, instance=dimensiones_data["educacion"]
+        )
+        form_economia = DimensionEconomiaForm(
+            request.POST, instance=dimensiones_data["economia"]
+        )
+        form_trabajo = DimensionTrabajoForm(
+            request.POST, instance=dimensiones_data["trabajo"]
+        )
 
-            elif valor == "off":
-                form_multiple[clave] = False
+        # Validar todos los formularios
+        forms_valid = all(
+            [
+                form.is_valid(),
+                form_vivienda.is_valid(),
+                form_salud.is_valid(),
+                form_educacion.is_valid(),
+                form_economia.is_valid(),
+                form_trabajo.is_valid(),
+            ]
+        )
 
-        # dimension vivienda
+        if forms_valid:
+            return self._handle_valid_forms(
+                request,
+                pk,
+                form,
+                form_vivienda,
+                form_salud,
+                form_educacion,
+                form_economia,
+                form_trabajo,
+            )
+        else:
+            # Si hay errores, mostrar mensajes
+            messages.error(request, "Por favor corrige los errores en el formulario.")
+            return self.form_invalid(form)
 
-        fields_mapping_vivienda = {
-            "tipo": TipoVivienda,
-            "material": TipoConstruccionVivienda,
-            "pisos": TipoPisosVivienda,
-            "posesion": TipoPosesionVivienda,
-            "cant_ambientes": CantidadAmbientes,
-            "cant_convivientes": "cant_convivientes",
-            "cant_menores": "cant_menores",
-            "cant_camas": "cant_camas",
-            "cant_hogares": "cant_hogares",
-            "hay_agua_caliente": "hay_agua_caliente",
-            "hay_desmoronamiento": "hay_desmoronamiento",
-            "hay_banio": Inodoro,
-            "PoseenCelular": "PoseenCelular",
-            "PoseenPC": "PoseenPC",
-            "Poseeninternet": "Poseeninternet",
-            "ubicacion_vivienda": UbicacionVivienda,
-            "Condicion": Condicion,
-            "CantidadAmbientes": "CantidadAmbientes",
-            "gas": Gas,
-            "techos": TipoTechoVivienda,
-            "agua": Agua,
-            "desague": Desague,
-            "obs_vivienda": "obs_vivienda",
-        }
+    def _handle_valid_forms(
+        self,
+        request,
+        pk,
+        form,
+        form_vivienda,
+        form_salud,
+        form_educacion,
+        form_economia,
+        form_trabajo,
+    ):
+        """Maneja el guardado cuando todos los formularios son válidos"""
 
-        for field, model in fields_mapping_vivienda.items():
-            value = form_multiple.get(field)
+        with transaction.atomic():
+            # Guardar todas las dimensiones
+            form.save()
+            form_vivienda.save()
+            form_salud.save()
+            form_educacion.save()
+            form_economia.save()
+            form_trabajo.save()
 
-            if value:
-                # Verifica si el valor del campo es una instancia de un modelo o una ForeignKey
-                if isinstance(model, type) and issubclass(model, models.Model):
-                    instance = model.objects.get(pk=value)
-                    setattr(ciudadano_dim_vivienda, field, instance)
-                else:
-                    setattr(ciudadano_dim_vivienda, field, value)
-            else:
-                setattr(ciudadano_dim_vivienda, field, None)
+            # Invalidar cache de dimensiones para este ciudadano
+            cache_key = f"ciudadano_dimensions_{pk}"
+            cache.delete(cache_key)
 
-        ciudadano_dim_vivienda.save()
+            messages.success(request, self.success_message)
 
-        # dimension salud
+            # Redireccionar según el botón presionado
+            return self._handle_form_navigation(request, pk)
 
-        fields_mapping_salud = {
-            "lugares_atencion": CentrosSalud,
-            "frecuencia_controles_medicos": Frecuencia,
-            "hay_obra_social": "hay_obra_social",
-            "hay_enfermedad": "hay_enfermedad",
-            "hay_discapacidad": "hay_discapacidad",
-            "hay_cud": "hay_cud",
-            "obs_salud": "obs_salud",
-        }
-
-        for field in fields_mapping_salud:
-            value = form_multiple.get(field)
-
-            if value:
-                # Verifica si el valor del campo es una instancia de un modelo o una ForeignKey
-                if isinstance(fields_mapping_salud.get(field), type) and issubclass(
-                    fields_mapping_salud.get(field), models.Model
-                ):
-                    instance = fields_mapping_salud.get(field).objects.get(pk=value)
-                    setattr(ciudadano_dim_salud, field, instance)
-                else:
-                    setattr(ciudadano_dim_salud, field, value)
-
-            else:
-                setattr(ciudadano_dim_salud, field, None)
-
-        ciudadano_dim_salud.save()
-
-        # dimension educacion
-
-        fields_mapping_educacion = {
-            "max_nivel": NivelEducativo,
-            "estado_nivel": EstadoNivelEducativo,
-            "asiste_escuela": AsisteEscuela,
-            "institucion": InstitucionEducativas,
-            "gestion": TipoGestion,
-            "ciclo": NivelEducativo,
-            "grado": Grado,
-            "turno": Turno,
-            "observaciones": "observaciones",
-            "provinciaInstitucion": Provincia,
-            "localidadInstitucion": Localidad,
-            "municipioInstitucion": Municipio,
-            "barrio_institucion": "barrio_institucion",
-            "calle_institucion": "calle_institucion",
-            "numero_institucion": "numero_institucion",
-            "interes_estudio": "interes_estudio",
-            "interes_curso": "interes_curso",
-            "nivel_incompleto": MotivoNivelIncompleto,
-            "sin_educacion_formal": MotivoNivelIncompleto,
-            "realizando_curso": "realizando_curso",
-            "area_curso": AreaCurso,
-            "interes_capacitacion_laboral": "interes_capacitacion_laboral",
-            "area_oficio": AreaCurso,
-            "oficio": "oficio",
-        }
-
-        for field, model in fields_mapping_educacion.items():
-            value = form_multiple.get(field)
-
-            if value:
-                # Verifica si el valor del campo es una instancia de un modelo o una ForeignKey
-                if isinstance(model, type) and issubclass(model, models.Model):
-                    instance = model.objects.get(pk=value)
-                    setattr(ciudadano_dim_educacion, field, instance)
-                else:
-                    setattr(ciudadano_dim_educacion, field, value)
-            else:
-                setattr(ciudadano_dim_educacion, field, None)
-
-        ciudadano_dim_educacion.save()
-
-        # dimension economia
-
-        fields_mapping_economia = {
-            "ingresos": "ingresos",
-            "recibe_plan": "recibe_plan",
-            "planes": "planes",
-            "cant_aportantes": "cant_aportantes",
-            "obs_economia": "obs_economia",
-        }
-
-        for field in fields_mapping_economia:
-            value = form_multiple.get(field)
-
-            if field == "planes":
-                lista = form_multiple.getlist("planes")
-
-                ciudadano_dim_economia.planes.set(lista)
-
-            else:
-                if value:
-                    setattr(
-                        ciudadano_dim_economia,
-                        fields_mapping_economia.get(field, field),
-                        value,
-                    )
-
-                else:
-                    setattr(ciudadano_dim_economia, field, None)
-
-        ciudadano_dim_economia.save()
-
-        # dimension trabajo
-
-        fields_mapping_trabajo = {
-            "tiene_trabajo": "tiene_trabajo",
-            "modo_contratacion": ModoContratacion,
-            "ocupacion": "ocupacion",
-            "conviviente_trabaja": "conviviente_trabaja",
-            "obs_trabajo": "obs_trabajo",
-            "horasSemanales": "horasSemanales",
-            "actividadRealizadaComo": ActividadRealizada,
-            "duracionTrabajo": DuracionTrabajo,
-            "aportesJubilacion": AportesJubilacion,
-            "Tiempobusqueda_laboral": TiempoBusquedaLaboral,
-            "busqueda_laboral": "busqueda_laboral",
-            "nobusqueda_laboral": NobusquedaLaboral,
-        }
-
-        for field, model in fields_mapping_trabajo.items():
-            value = form_multiple.get(field)
-
-            if value:
-                if isinstance(model, type) and issubclass(model, models.Model):
-                    instance = model.objects.get(pk=value)
-                    setattr(ciudadano_dim_trabajo, field, instance)
-                else:
-                    setattr(ciudadano_dim_trabajo, field, value)
-            else:
-                setattr(ciudadano_dim_trabajo, field, None)
-
-        ciudadano_dim_trabajo.save()
-
-        if "form_step1" in self.request.POST:
-            self.object.save()
-
+    def _handle_form_navigation(self, request, pk):
+        """Maneja la navegación entre pasos del formulario"""
+        if "form_step1" in request.POST:
+            # Volver al paso 1 (datos personales)
             return redirect("ciudadanos_editar", pk=pk)
-
-        if "form_step2" in self.request.POST:
-            self.object.save()
-
+        elif "form_step2" in request.POST:
+            # Guardar y ir al detalle del ciudadano
+            return redirect("ciudadanos_ver", pk=pk)
+        elif "form_step3" in request.POST:
+            # Continuar al paso 3 (grupo familiar)
+            return redirect("grupofamiliar_crear", pk=pk)
+        else:
+            # Por defecto, volver al detalle
             return redirect("ciudadanos_ver", pk=pk)
 
-        if "form_step3" in self.request.POST:
-            self.object.save()
+    def form_invalid(self, form):
+        """Maneja errores en los formularios"""
+        pk = self.kwargs["pk"]
+        ciudadano = get_object_or_404(Ciudadano, id=pk)
+        dimensiones_data = self._get_or_create_dimensions(ciudadano)
 
-            return redirect("grupofamiliar_crear", pk=pk)
+        # Re-crear formularios para mostrar errores (SIN prefijos)
+        context = self.get_context_data()
+        context.update(
+            {
+                "form_vivienda": DimensionViviendaForm(
+                    self.request.POST, instance=dimensiones_data["vivienda"]
+                ),
+                "form_salud": DimensionSaludForm(
+                    self.request.POST, instance=dimensiones_data["salud"]
+                ),
+                "form_educacion": DimensionEducacionForm(
+                    self.request.POST, instance=dimensiones_data["educacion"]
+                ),
+                "form_economia": DimensionEconomiaForm(
+                    self.request.POST, instance=dimensiones_data["economia"]
+                ),
+                "form_trabajo": DimensionTrabajoForm(
+                    self.request.POST, instance=dimensiones_data["trabajo"]
+                ),
+            }
+        )
 
-        self.object = form.save()
+        return self.render_to_response(context)
 
-        return super().form_valid(form)
+    def get_success_url(self):
+        """URL de éxito por defecto"""
+        return reverse_lazy("ciudadanos_ver", kwargs={"pk": self.kwargs["pk"]})
 
 
 class DimensionesDetailView(DetailView):
@@ -2097,7 +2100,7 @@ class CiudadanosGrupoHogarCreateView(CreateView):
             for familiar in page_obj
             if familiar["ciudadano_2Hogar__id"] == int(pk)
         ]
-        
+
         context["hogares"] = page_obj
         context["count_hogar"] = hogares.count()
         context["ciudadano_principal"] = ciudadano_principal
@@ -2105,45 +2108,51 @@ class CiudadanosGrupoHogarCreateView(CreateView):
 
         # Preparar datos para familiares_grid.html (adaptado para hogar)
         hogar_display = []
-        
+
         # Convertir hogar_1 para el componente
-        for hogar in context.get('hogar_1', []):
+        for hogar in context.get("hogar_1", []):
             documento_completo = f"{hogar.get('ciudadano_2Hogar__tipo_documento', 'DNI')} {hogar.get('ciudadano_2Hogar__documento', 'N/A')}"
-            hogar_display.append({
-                'id': hogar['id'],
-                'nombre': hogar['ciudadano_2Hogar__nombre'], 
-                'apellido': hogar['ciudadano_2Hogar__apellido'],
-                'documento': documento_completo,
-                'foto': hogar['ciudadano_2Hogar__foto'],
-                'vinculo': 'Conviviente',  # Para hogar no hay vínculo específico familiar
-                'telefono': '',  # Los hogares no tienen teléfono directo
-                'fecha_nacimiento': '',  # Puedes agregar si necesitas
-                'convive': True,  # En hogar siempre conviven
-                'estado_relacion': hogar.get('estado_relacion', ''),
-            })
-        
+            hogar_display.append(
+                {
+                    "id": hogar["id"],
+                    "nombre": hogar["ciudadano_2Hogar__nombre"],
+                    "apellido": hogar["ciudadano_2Hogar__apellido"],
+                    "documento": documento_completo,
+                    "foto": hogar["ciudadano_2Hogar__foto"],
+                    "vinculo": "Conviviente",  # Para hogar no hay vínculo específico familiar
+                    "telefono": "",  # Los hogares no tienen teléfono directo
+                    "fecha_nacimiento": "",  # Puedes agregar si necesitas
+                    "convive": True,  # En hogar siempre conviven
+                    "estado_relacion": hogar.get("estado_relacion", ""),
+                }
+            )
+
         # Convertir hogar_2 para el componente
-        for hogar in context.get('hogar_2', []):
+        for hogar in context.get("hogar_2", []):
             documento_completo = f"{hogar.get('ciudadano_1Hogar__tipo_documento', 'DNI')} {hogar.get('ciudadano_1Hogar__documento', 'N/A')}"
-            hogar_display.append({
-                'id': hogar['id'],
-                'nombre': hogar['ciudadano_1Hogar__nombre'],
-                'apellido': hogar['ciudadano_1Hogar__apellido'], 
-                'documento': documento_completo,
-                'foto': hogar['ciudadano_1Hogar__foto'],
-                'vinculo': 'Conviviente',
-                'telefono': '',
-                'fecha_nacimiento': '',
-                'convive': True,
-                'estado_relacion': hogar.get('estado_relacion', ''),
-            })
-        
+            hogar_display.append(
+                {
+                    "id": hogar["id"],
+                    "nombre": hogar["ciudadano_1Hogar__nombre"],
+                    "apellido": hogar["ciudadano_1Hogar__apellido"],
+                    "documento": documento_completo,
+                    "foto": hogar["ciudadano_1Hogar__foto"],
+                    "vinculo": "Conviviente",
+                    "telefono": "",
+                    "fecha_nacimiento": "",
+                    "convive": True,
+                    "estado_relacion": hogar.get("estado_relacion", ""),
+                }
+            )
+
         # Agregar al context
-        context.update({
-            'hogar_display': hogar_display,
-            'hogar_count_familia': len(hogar_display),  # Contador para el template
-        })
-        
+        context.update(
+            {
+                "hogar_display": hogar_display,
+                "hogar_count_familia": len(hogar_display),  # Contador para el template
+            }
+        )
+
         return context
 
     def form_valid(self, form):
@@ -2170,7 +2179,7 @@ class CiudadanosGrupoHogarCreateView(CreateView):
         try:
             estado_relacion_instance = EstadoRelacion.objects.get(pk=estado_relacion)
             ciudadano_principal = Ciudadano.objects.get(id=pk)
-            
+
             GrupoHogar.objects.create(
                 ciudadano_1Hogar=ciudadano_principal,
                 ciudadano_2Hogar=nuevo_ciudadano,
