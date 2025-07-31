@@ -290,6 +290,7 @@ class ComedorService:
             "almuerzo": 0,
             "merienda": 0,
             "cena": 0,
+            "merienda_reforzada": 0,
         }
 
         if beneficiarios and beneficiarios.prestacion:
@@ -302,7 +303,7 @@ class ComedorService:
                 "sabado",
                 "domingo",
             ]
-            tipos = ["desayuno", "almuerzo", "merienda", "cena"]
+            tipos = ["desayuno", "almuerzo", "merienda", "cena", "merienda_reforzada"]
 
             for tipo in tipos:
                 count[tipo] = sum(
