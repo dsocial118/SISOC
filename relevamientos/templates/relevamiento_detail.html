@@ -824,25 +824,6 @@
                                 <td>{{ prestacion.domingo_cena_actual | default_if_none:"-" }}</td>
                                 <td>{{ prestacion.domingo_cena_espera | default_if_none:"-" }}</td>
                             </tr>
-                            {% if relevamiento.comedor.programa.nombre == "Abordaje comunitario - Línea Tradicional" %}
-                                <tr>
-                                    <td>MERIENDA REFORZADA</td>
-                                    <td>{{ prestacion.lunes_merienda_reforzada_actual | default_if_none:"-" }}</td>
-                                    <td>{{ prestacion.lunes_merienda_reforzada_espera | default_if_none:"-" }}</td>
-                                    <td>{{ prestacion.martes_merienda_reforzada_actual | default_if_none:"-" }}</td>
-                                    <td>{{ prestacion.martes_merienda_reforzada_espera | default_if_none:"-" }}</td>
-                                    <td>{{ prestacion.miercoles_merienda_reforzada_actual | default_if_none:"-" }}</td>
-                                    <td>{{ prestacion.miercoles_merienda_reforzada_espera | default_if_none:"-" }}</td>
-                                    <td>{{ prestacion.jueves_merienda_reforzada_actual | default_if_none:"-" }}</td>
-                                    <td>{{ prestacion.jueves_merienda_reforzada_espera | default_if_none:"-" }}</td>
-                                    <td>{{ prestacion.viernes_merienda_reforzada_actual | default_if_none:"-" }}</td>
-                                    <td>{{ prestacion.viernes_merienda_reforzada_espera | default_if_none:"-" }}</td>
-                                    <td>{{ prestacion.sabado_merienda_reforzada_actual | default_if_none:"-" }}</td>
-                                    <td>{{ prestacion.sabado_merienda_reforzada_espera | default_if_none:"-" }}</td>
-                                    <td>{{ prestacion.domingo_merienda_reforzada_actual | default_if_none:"-" }}</td>
-                                    <td>{{ prestacion.domingo_merienda_reforzada_espera | default_if_none:"-" }}</td>
-                                </tr>
-                            {% endif %}
                         </tbody>
                     </table>
                 </div>
