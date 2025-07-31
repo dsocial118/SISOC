@@ -1,0 +1,97 @@
+{% comment %}
+Componente para navegación por pestañas de dimensiones
+Parámetros:
+- dimensiones: Lista de dimensiones (requerido)
+- active_dimension: Dimensión activa (opcional)
+- ciudadano_id: ID del ciudadano (requerido)
+- detail_url: URL name para detalle de dimensión (default: 'dimension_ver')
+- form_url: URL name para formulario de dimensión (default: 'dimension_editar')
+- show_form_link: Mostrar enlaces a formularios (default: False)
+- tab_style: Estilo de pestañas - 'pills' o 'tabs' (default: 'tabs')
+{% endcomment %}
+
+<div class="card">
+    <div class="card-header p-0">
+        <ul class="nav nav-{{ tab_style|default:'tabs' }} nav-fill" id="dimensionTabs" role="tablist">
+            {% for dimension in dimensiones %}
+            <li class="nav-item" role="presentation">
+                <a class="nav-link {% if active_dimension and active_dimension.id == dimension.id %}active{% endif %}" 
+                   id="dimension-{{ dimension.id }}-tab" 
+                   data-toggle="tab" 
+                   href="#dimension-{{ dimension.id }}" 
+                   role="tab" 
+                   aria-controls="dimension-{{ dimension.id }}"
+                   aria-selected="{% if active_dimension and active_dimension.id == dimension.id %}true{% else %}false{% endif %}">
+                    {{ dimension.nombre }}
+                    {% if dimension.tiene_datos %}
+                        <i class="fas fa-check-circle text-success ml-1" title="Completado"></i>
+                    {% else %}
+                        <i class="fas fa-exclamation-circle text-warning ml-1" title="Pendiente"></i>
+                    {% endif %}
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div class="card-body">
+        <div class="tab-content" id="dimensionTabContent">
+            {% for dimension in dimensiones %}
+            <div class="tab-pane fade {% if active_dimension and active_dimension.id == dimension.id %}show active{% endif %}" 
+                 id="dimension-{{ dimension.id }}" 
+                 role="tabpanel" 
+                 aria-labelledby="dimension-{{ dimension.id }}-tab">
+                
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">{{ dimension.nombre }}</h5>
+                    {% if show_form_link %}
+                    <a href="{% url form_url|default:'dimension_editar' ciudadano_id dimension.id %}" 
+                       class="btn btn-primary btn-sm">
+                        <i class="fas fa-edit"></i> Editar
+                    </a>
+                    {% endif %}
+                </div>
+                
+                {% if dimension.descripcion %}
+                <p class="text-muted">{{ dimension.descripcion }}</p>
+                {% endif %}
+                
+                <div class="dimension-content">
+                    {% if dimension.tiene_datos %}
+                        <!-- Contenido específico de cada dimensión se incluirá aquí -->
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i>
+                            Esta dimensión ha sido completada.
+                            <a href="{% url detail_url|default:'dimension_ver' ciudadano_id dimension.id %}" 
+                               class="alert-link">Ver detalles →</a>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Esta dimensión aún no ha sido evaluada.
+                            {% if show_form_link %}
+                            <a href="{% url form_url|default:'dimension_editar' ciudadano_id dimension.id %}" 
+                               class="alert-link">Completar ahora →</a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar Bootstrap tabs si no están inicializados
+    var triggerTabList = [].slice.call(document.querySelectorAll('#dimensionTabs a'))
+    triggerTabList.forEach(function (triggerEl) {
+        var tabTrigger = new bootstrap.Tab(triggerEl)
+        
+        triggerEl.addEventListener('click', function (event) {
+            event.preventDefault()
+            tabTrigger.show()
+        })
+    })
+});
+</script>

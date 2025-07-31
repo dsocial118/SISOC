@@ -1,0 +1,140 @@
+{% comment %}
+Componente para mostrar cards de información de derivación
+Parámetros:
+- derivacion: Objeto derivación (requerido)
+- show_estado: Mostrar card de estado (default: True)
+- show_fechas: Mostrar card de fechas (default: True)
+- show_responsable: Mostrar card de responsable (default: True)
+- card_class: Clases adicionales para las cards (opcional)
+{% endcomment %}
+
+<div class="row">
+    {% if show_estado|default:True %}
+    <div class="col-md-4 mb-3">
+        <div class="card {{ card_class }}">
+            <div class="card-body text-center">
+                <h5 class="card-title">Estado</h5>
+                <div class="mb-2">
+                    {% if derivacion.estado == 'PENDIENTE' %}
+                        <span class="badge badge-warning badge-lg">
+                            <i class="fas fa-clock"></i> {{ derivacion.estado }}
+                        </span>
+                    {% elif derivacion.estado == 'EN_PROCESO' %}
+                        <span class="badge badge-info badge-lg">
+                            <i class="fas fa-spinner"></i> {{ derivacion.estado }}
+                        </span>
+                    {% elif derivacion.estado == 'COMPLETADA' %}
+                        <span class="badge badge-success badge-lg">
+                            <i class="fas fa-check"></i> {{ derivacion.estado }}
+                        </span>
+                    {% elif derivacion.estado == 'CANCELADA' %}
+                        <span class="badge badge-danger badge-lg">
+                            <i class="fas fa-times"></i> {{ derivacion.estado }}
+                        </span>
+                    {% else %}
+                        <span class="badge badge-secondary badge-lg">
+                            {{ derivacion.estado }}
+                        </span>
+                    {% endif %}
+                </div>
+                {% if derivacion.prioridad %}
+                <div>
+                    <small class="text-muted">Prioridad:</small>
+                    <span class="badge badge-{% if derivacion.prioridad == 'ALTA' %}danger{% elif derivacion.prioridad == 'MEDIA' %}warning{% else %}secondary{% endif %}">
+                        {{ derivacion.prioridad }}
+                    </span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if show_fechas|default:True %}
+    <div class="col-md-4 mb-3">
+        <div class="card {{ card_class }}">
+            <div class="card-body text-center">
+                <h5 class="card-title">Fechas</h5>
+                <div class="mb-2">
+                    <i class="fas fa-calendar-plus text-primary"></i>
+                    <div>
+                        <small class="text-muted">Creada:</small><br>
+                        <strong>{{ derivacion.fecha_creacion|date:"d/m/Y H:i" }}</strong>
+                    </div>
+                </div>
+                {% if derivacion.fecha_vencimiento %}
+                <div class="mb-2">
+                    <i class="fas fa-calendar-times text-warning"></i>
+                    <div>
+                        <small class="text-muted">Vence:</small><br>
+                        <strong>{{ derivacion.fecha_vencimiento|date:"d/m/Y" }}</strong>
+                    </div>
+                </div>
+                {% endif %}
+                {% if derivacion.fecha_completada %}
+                <div>
+                    <i class="fas fa-calendar-check text-success"></i>
+                    <div>
+                        <small class="text-muted">Completada:</small><br>
+                        <strong>{{ derivacion.fecha_completada|date:"d/m/Y H:i" }}</strong>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if show_responsable|default:True %}
+    <div class="col-md-4 mb-3">
+        <div class="card {{ card_class }}">
+            <div class="card-body text-center">
+                <h5 class="card-title">Responsable</h5>
+                <div class="mb-2">
+                    <i class="fas fa-user-tie fa-2x text-primary mb-2"></i>
+                    <div>
+                        {% if derivacion.asignado_a %}
+                            <strong>{{ derivacion.asignado_a.get_full_name|default:derivacion.asignado_a.username }}</strong>
+                            {% if derivacion.asignado_a.email %}
+                            <br><small class="text-muted">{{ derivacion.asignado_a.email }}</small>
+                            {% endif %}
+                        {% else %}
+                            <span class="text-muted">Sin asignar</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if derivacion.area %}
+                <div>
+                    <span class="badge badge-outline-primary">
+                        {{ derivacion.area }}
+                    </span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% if derivacion.motivo or derivacion.observaciones %}
+<div class="row">
+    <div class="col-12">
+        <div class="card {{ card_class }}">
+            <div class="card-body">
+                {% if derivacion.motivo %}
+                <div class="mb-3">
+                    <h6 class="font-weight-bold">Motivo:</h6>
+                    <p class="mb-0">{{ derivacion.motivo }}</p>
+                </div>
+                {% endif %}
+                {% if derivacion.observaciones %}
+                <div>
+                    <h6 class="font-weight-bold">Observaciones:</h6>
+                    <p class="mb-0">{{ derivacion.observaciones }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}

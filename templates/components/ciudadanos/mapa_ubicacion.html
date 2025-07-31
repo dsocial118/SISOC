@@ -1,0 +1,22 @@
+{% comment %}
+Componente para mostrar mapa de ubicación
+Parámetros:
+- ciudadano: Objeto ciudadano (requerido)
+- map_height: Altura del mapa (default: 450)
+- card_title: Título de la card (default: "Ubicación")
+{% endcomment %}
+
+<div class="card shadow-sm">
+    <div class="card-header">
+        <h5 class="mb-0">{{ card_title|default:"Ubicación" }}</h5>
+    </div>
+    <div class="card-body p-0">
+        <iframe width="100%"
+                height="{{ map_height|default:'450' }}"
+                frameborder="0"
+                style="border:0"
+                src="https://maps.google.com/maps?q={{ ciudadano.calle|urlencode }}+{{ ciudadano.altura }},+{{ ciudadano.localidad|urlencode }},+{{ ciudadano.municipio|urlencode }},+{{ ciudadano.provincia|urlencode }}&output=embed"
+                allowfullscreen>
+        </iframe>
+    </div>
+</div>

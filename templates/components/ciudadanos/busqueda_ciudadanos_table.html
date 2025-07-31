@@ -1,0 +1,85 @@
+{% comment %}
+Componente para tabla de búsqueda de ciudadanos con AJAX
+Parámetros:
+- search_placeholder: Placeholder para búsqueda (default: "Buscar")
+- show_vinculo: Mostrar columna vínculo (default: False)
+- show_estado_relacion: Mostrar columna estado relación (default: True)
+- show_convive: Mostrar columna convive (default: False)
+- show_cuidador: Mostrar columna cuidador principal (default: False)
+- extra_columns: Columnas adicionales (opcional)
+- table_id: ID de la tabla (default: "tabla")
+- search_form_id: ID del formulario (default: "search-form")
+- results_box_id: ID del contenedor de resultados (default: "results-box")
+{% endcomment %}
+
+<div class="card">
+    <div class="card-header">
+        <div class="row align-items-between">
+            <div class="col mb-3 mb-sm-none">
+                <h3 class="card-title font-weight-bold pt-1 mr-3">Agregar familiar</h3>
+            </div>
+            <div class="col-sm-8">
+                <form id="{{ search_form_id|default:'search-form' }}" autocomplete="off">
+                    {% csrf_token %}
+                    <div class="form-row justify-content-sm-end">
+                        <div class="form-group col-sm-3 mb-0 pb-0">
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="search-input"
+                                   placeholder="{{ search_placeholder|default:'Buscar' }}" />
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive text-nowrap">
+            <table id="{{ table_id|default:'tabla' }}" class="table">
+                <thead>
+                    <tr>
+                        <th>Apellido</th>
+                        <th>Nombre</th>
+                        <th>Documento</th>
+                        {% if show_vinculo %}
+                        <th>Vínculo</th>
+                        {% endif %}
+                        {% if show_estado_relacion %}
+                        <th>Estado Relación</th>
+                        {% endif %}
+                        {% if show_convive %}
+                        <th class="text-center">Convive</th>
+                        {% endif %}
+                        {% if show_cuidador %}
+                        <th class="text-center">Cuidador Principal</th>
+                        {% endif %}
+                        {% for column in extra_columns %}
+                        <th>{{ column }}</th>
+                        {% endfor %}
+                        <th class="text-right"></th>
+                    </tr>
+                </thead>
+                <tbody id="{{ results_box_id|default:'results-box' }}">
+                </tbody>
+            </table>
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item">
+                        <a class="page-link" href="#" id="prevPage">Anterior</a>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link" id="currentPage"></span>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="#" id="nextPage">Siguiente</a>
+                    </li>
+                </ul>
+            </nav>
+            <div class="text-center" id="loadingIndicator" style="display: none;">
+                <div class="spinner-border" role="status">
+                    <span class="sr-only">Cargando...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

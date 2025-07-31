@@ -1,0 +1,89 @@
+{% comment %}
+Componente para mostrar grid de familiares existentes
+Parámetros:
+- familiares: Lista de familiares (requerido)
+- show_actions: Mostrar botones de acción (default: True)
+- edit_url: URL name para editar relación (default: 'familiar_editar')
+- delete_url: URL name para eliminar relación (default: 'familiar_eliminar')
+- ciudadano_id: ID del ciudadano principal (requerido)
+- grid_title: Título del grid (default: "Familiares")
+- show_vinculo: Mostrar información de vínculo (default: True)
+- show_convive: Mostrar información de convivencia (default: True)
+{% endcomment %}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title font-weight-bold">{{ grid_title|default:"Familiares" }}</h3>
+    </div>
+    <div class="card-body">
+        {% if familiares %}
+        <div class="row">
+            {% for familiar in familiares %}
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card border">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="avatar-sm bg-primary rounded-circle d-flex align-items-center justify-content-center me-3">
+                                <i class="fas fa-user text-white"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-0 font-weight-bold">
+                                    {{ familiar.apellido }}, {{ familiar.nombre }}
+                                </h6>
+                                <small class="text-muted">
+                                    {{ familiar.tipo_documento }} {{ familiar.documento }}
+                                </small>
+                            </div>
+                        </div>
+                        
+                        {% if show_vinculo and familiar.vinculo %}
+                        <div class="mb-2">
+                            <span class="badge badge-info">{{ familiar.vinculo }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="text-muted small">
+                            {% if familiar.fecha_nacimiento %}
+                            <div><i class="fas fa-calendar"></i> {{ familiar.fecha_nacimiento|date:"d/m/Y" }}</div>
+                            {% endif %}
+                            {% if familiar.telefono %}
+                            <div><i class="fas fa-phone"></i> {{ familiar.telefono }}</div>
+                            {% endif %}
+                            {% if show_convive and familiar.convive is not None %}
+                            <div>
+                                <i class="fas fa-home"></i> 
+                                {% if familiar.convive %}Convive{% else %}No convive{% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        {% if show_actions %}
+                        <div class="mt-3 d-flex justify-content-end">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url edit_url|default:'familiar_editar' ciudadano_id familiar.id %}" 
+                                   class="btn btn-outline-primary btn-sm" 
+                                   title="Editar relación">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url delete_url|default:'familiar_eliminar' ciudadano_id familiar.id %}" 
+                                   class="btn btn-outline-danger btn-sm" 
+                                   title="Eliminar relación"
+                                   onclick="return confirm('¿Está seguro de eliminar esta relación familiar?')">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+            <p class="text-muted">No hay familiares registrados.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>

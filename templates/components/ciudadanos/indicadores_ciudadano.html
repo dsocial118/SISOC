@@ -1,0 +1,56 @@
+{% comment %}
+Componente para mostrar indicadores/cards de ciudadano
+Parámetros:
+- count_alertas: Número de alertas (requerido)
+- count_media: Alertas media gravedad (requerido) 
+- count_baja: Alertas baja gravedad (requerido)
+- count_programas: Número de programas (requerido)
+- alertas_url: URL name para ver alertas (requerido)
+- programas_url: URL name para ver programas (requerido)
+- ciudadano_id: ID del ciudadano (requerido)
+{% endcomment %}
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex align-items-center">
+                <i class="fas fa-bell fa-2x text-primary me-3"></i>
+                <div>
+                    <h5 class="mb-1">{{ count_alertas }}</h5>
+                    <a href="{% url alertas_url ciudadano_id %}" class="text-decoration-none">
+                        Alertas →
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex align-items-center">
+                <i class="fas fa-exclamation-triangle fa-2x text-warning me-3"></i>
+                <div>
+                    <h5 class="mb-1">
+                        <span class="badge bg-warning">{{ count_media }}</span>
+                        <span class="badge bg-danger">{{ count_baja }}</span>
+                    </h5>
+                    <a href="{% url alertas_url ciudadano_id %}" class="text-decoration-none">
+                        Indicadores →
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex align-items-center">
+                <i class="fas fa-book fa-2x text-success me-3"></i>
+                <div>
+                    <h5 class="mb-1">{{ count_programas }}</h5>
+                    <a href="{% url programas_url ciudadano_id %}" class="text-decoration-none">
+                        Programas →
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

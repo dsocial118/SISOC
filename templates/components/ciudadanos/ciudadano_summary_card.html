@@ -1,0 +1,58 @@
+{% comment %}
+Componente para mostrar resumen de datos del ciudadano
+Parámetros:
+- ciudadano: Objeto ciudadano (requerido)
+- show_link: Mostrar link al detalle (default: False)
+- detail_url: URL name para detalle (default: ciudadanos_ver)
+- card_class: Clases adicionales para la card (opcional)
+{% endcomment %}
+
+<div class="card card-outline card-primary {{ card_class }}">
+    <div class="card-header">
+        <h3 class="card-title">Datos personales</h3>
+    </div>
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3 font-weight-normal">Nombre</dt>
+            <dd class="col-sm-9 font-weight-bold">
+                {% if show_link %}
+                    <a href="{% url detail_url|default:'ciudadanos_ver' ciudadano.id %}" title="Ver ciudadano">
+                        {{ ciudadano.apellido }}, {{ ciudadano.nombre }}
+                    </a>
+                {% else %}
+                    {{ ciudadano.apellido }}, {{ ciudadano.nombre }}
+                {% endif %}
+            </dd>
+            <dt class="col-sm-3 font-weight-normal">Documento</dt>
+            <dd class="col-sm-9 font-weight-bold">
+                {{ ciudadano.tipo_documento }} {{ ciudadano.documento }}
+            </dd>
+            <dt class="col-sm-3 font-weight-normal">Fecha de nacimiento</dt>
+            <dd class="col-sm-9 font-weight-bold">
+                {{ ciudadano.fecha_nacimiento|date:"d/m/Y" }}
+            </dd>
+            <dt class="col-sm-3 font-weight-normal">Sexo</dt>
+            <dd class="col-sm-9 font-weight-bold">
+                {{ ciudadano.sexo }}
+            </dd>
+            {% if ciudadano.telefono %}
+            <dt class="col-sm-3 font-weight-normal">Teléfono</dt>
+            <dd class="col-sm-9 font-weight-bold">
+                {{ ciudadano.telefono }}
+            </dd>
+            {% endif %}
+            {% if ciudadano.email %}
+            <dt class="col-sm-3 font-weight-normal">Email</dt>
+            <dd class="col-sm-9 font-weight-bold">
+                {{ ciudadano.email }}
+            </dd>
+            {% endif %}
+            {% if ciudadano.observaciones %}
+            <dt class="col-sm-3 font-weight-normal">Observaciones</dt>
+            <dd class="col-sm-9 font-weight-bold">
+                {{ ciudadano.observaciones }}
+            </dd>
+            {% endif %}
+        </dl>
+    </div>
+</div>
