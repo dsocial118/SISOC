@@ -1,6 +1,7 @@
 import os
-import sys
+import subprocess
 import time
+import pymysql
 import shutil
 import pymysql
 from pathlib import Path
@@ -58,24 +59,31 @@ def get_mysql_variable(var: str, default: Optional[int] = None) -> Optional[int]
 
 
 def wait_for_mysql():
-    if not env_bool("WAIT_FOR_DB", "true"):
-        print("⏭️  Skip wait for DB")
+    """
+    Espera a que MySQL esté disponible antes de continuar.
+    Usa las variables de entorno DATABASE_HOST, DATABASE_PORT, DATABASE_USER y DATABASE_PASSWORD.
+    Se puede omitir con la variable WAIT_FOR_DB=false.
+    """
+    host = os.getenv("DATABASE_HOST")
+    port = int(os.getenv("DATABASE_PORT"))
+    user = os.getenv("DATABASE_USER")
+    password = os.getenv("DATABASE_PASSWORD")
+    wait_for_db = os.getenv("WAIT_FOR_DB", "true").lower() == "true"
+
+    if not wait_for_db:
+        print("⏭️  Se omite la espera por MySQL (WAIT_FOR_DB=false)")
         return
 
-    host = os.getenv("DATABASE_HOST")
-    port = int(os.getenv("DATABASE_PORT", 3306))
-    user = os.getenv("DATABASE_USER")
-    pwd = os.getenv("DATABASE_PASSWORD")
+    if not all([host, user, password]):
+        print(
+            "❌ Error: Faltan variables de entorno para la conexión a la base de datos"
+        )
+        print(
+            "   Asegúrese de definir DATABASE_HOST, DATABASE_USER y DATABASE_PASSWORD"
+        )
+        return
 
-    if not all([host, user, pwd]):
-        print("❌ Faltan vars de DB (DATABASE_HOST/USER/PASSWORD).")
-        sys.exit(1)
-
-    max_wait = int(os.getenv("MAX_DB_WAIT_SECONDS", "120"))
-    delay = 1
-    start = time.time()
-
-    print("⏳ Esperando MySQL...")
+    print("⏳ Esperando que MySQL esté disponible...")
     while True:
         try:
             pymysql.connect(host=host, port=port, user=user, password=pwd).close()
@@ -107,8 +115,8 @@ def django_prepare(env: str):
     if env_bool("RUN_MIGRATIONS", "true"):
         sh(["python", "manage.py", "migrate", "--noinput"])
 
-    if env_bool("RUN_FIXTURES", "false"):
-        sh(["python", "manage.py", "load_fixtures"])
+    # Cargar los fixtures condicionalmente, si se quiere forzar añadir `--force`
+    subprocess.run(["python", "manage.py", "load_fixtures"])
 
     if not is_prd and env_bool("RUN_SETUP_TASKS", "true"):
         sh(["python", "manage.py", "create_test_users"])
@@ -202,15 +210,21 @@ def run_server(env: str):
         print(f"🚀 Lanzando Gunicorn con workers={workers}, threads={threads}")
         os.execvp(args[0], args)
     else:
-        os.execvp("python", ["python", "manage.py", "runserver", "0.0.0.0:8000"])
+        print("🧪 Iniciando Django en modo desarrollo...")
+        subprocess.run(["python", "manage.py", "runserver", "0.0.0.0:8000"])
 
 
-# ---------- Main ----------
+def cache_busting():
+    static_root = (
+        Path(__file__).resolve().parent.parent / "static_root"
+    )  # Raíz del proyecto
+    if static_root.exists() and static_root.is_dir():
+        print(f"🧹 Eliminando carpeta de estáticos: {static_root}")
+        shutil.rmtree(static_root)
+    print("📦 Ejecutando collectstatic para cache busting...")
+    subprocess.run(["python", "manage.py", "collectstatic", "--noinput"])
+
 
 if __name__ == "__main__":
-    ENV = os.getenv("ENVIRONMENT", "dev").strip().lower()
-
     wait_for_mysql()
-    django_prepare(ENV)
-    maybe_collectstatic()
-    run_server(ENV)
+    run_django_commands()
