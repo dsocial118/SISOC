@@ -371,9 +371,9 @@ class CiudadanosListView(ListView):
                 context["page_range"] = page_obj.paginator.page_range
 
         # Breadcrumb
-        context['breadcrumb_items'] = [
-            {'url': reverse_lazy('dashboard'), 'text': 'Dashboard'},
-            {'url': reverse_lazy('ciudadanos'), 'text': 'Ciudadanos'},
+        context["breadcrumb_items"] = [
+            {"url": reverse_lazy("dashboard"), "text": "Dashboard"},
+            {"url": reverse_lazy("ciudadanos"), "text": "Ciudadanos"},
         ]
 
         context.update(
@@ -946,12 +946,51 @@ class CiudadanosGrupoFamiliarCreateView(CreateView):
         context["familiares"] = page_obj
         context["count_familia"] = familiares.count()
         context["ciudadano_principal"] = ciudadano_principal
+
+        # Preparar datos para familiares_grid.html
+        familiares_display = []
+
+        # Convertir familiares_fk1 para el componente
+        for familiar in context.get("familiares_fk1", []):
+            familiares_display.append(
+                {
+                    "id": familiar["id"],
+                    "nombre": familiar["ciudadano_2__nombre"],
+                    "apellido": familiar["ciudadano_2__apellido"],
+                    "documento": f"DNI {familiar.get('documento', 'N/A')}",  # Si tienes documento
+                    "foto": familiar["ciudadano_2__foto"],
+                    "vinculo": familiar["vinculo"],
+                    "telefono": familiar.get("telefono", ""),
+                    "fecha_nacimiento": familiar.get("fecha_nacimiento", ""),
+                    "convive": familiar.get("conviven", None),
+                    "cuidador_principal": familiar.get("cuidador_principal", False),
+                }
+            )
+
+        # Convertir familiares_fk2 para el componente
+        for familiar in context.get("familiares_fk2", []):
+            familiares_display.append(
+                {
+                    "id": familiar["id"],
+                    "nombre": familiar["ciudadano_1__nombre"],
+                    "apellido": familiar["ciudadano_1__apellido"],
+                    "documento": f"DNI {familiar.get('documento', 'N/A')}",  # Si tienes documento
+                    "foto": familiar["ciudadano_1__foto"],
+                    "vinculo": familiar["vinculo_inverso"],
+                    "telefono": familiar.get("telefono", ""),
+                    "fecha_nacimiento": familiar.get("fecha_nacimiento", ""),
+                    "convive": familiar.get("conviven", None),
+                    "cuidador_principal": familiar.get("cuidador_principal", False),
+                }
+            )
+
         context.update(
             {
                 "es_menor_de_18": es_menor_de_18,
                 "tiene_cuidador_ppal": tiene_cuidador_ppal,
                 "pk": pk,
                 "id_dimensionfamiliar": DimensionFamilia.objects.get(ciudadano=pk).id,
+                "familiares_display": familiares_display,  # Para el componente familiares_grid
             }
         )
         return context
@@ -2023,6 +2062,7 @@ class CiudadanosGrupoHogarCreateView(CreateView):
 
         context = super().get_context_data(**kwargs)
 
+        # Obtener hogares asociados al ciudadano principal
         hogares = GrupoHogar.objects.filter(
             Q(ciudadano_1Hogar=pk) | Q(ciudadano_2Hogar=pk)
         ).values(
@@ -2035,10 +2075,14 @@ class CiudadanosGrupoHogarCreateView(CreateView):
             "ciudadano_2Hogar__foto",
             "ciudadano_1Hogar__id",
             "ciudadano_2Hogar__id",
+            "ciudadano_1Hogar__documento",  # Acceso correcto al documento
+            "ciudadano_2Hogar__documento",  # Acceso correcto al documento
+            "ciudadano_1Hogar__tipo_documento",  # Para mostrar tipo
+            "ciudadano_2Hogar__tipo_documento",  # Para mostrar tipo
+            "estado_relacion",
         )
 
-        # Paginacion
-
+        # Paginación
         paginator = Paginator(hogares, self.paginate_by)
         page_number = self.request.GET.get("page")
         page_obj = paginator.get_page(page_number)
@@ -2053,12 +2097,53 @@ class CiudadanosGrupoHogarCreateView(CreateView):
             for familiar in page_obj
             if familiar["ciudadano_2Hogar__id"] == int(pk)
         ]
-        logger.debug(f"hogar_1: {context['hogar_1']}, hogar_2: {context['hogar_2']}")
+        
         context["hogares"] = page_obj
         context["count_hogar"] = hogares.count()
         context["ciudadano_principal"] = ciudadano_principal
         context["pk"] = pk
 
+        # Preparar datos para familiares_grid.html (adaptado para hogar)
+        hogar_display = []
+        
+        # Convertir hogar_1 para el componente
+        for hogar in context.get('hogar_1', []):
+            documento_completo = f"{hogar.get('ciudadano_2Hogar__tipo_documento', 'DNI')} {hogar.get('ciudadano_2Hogar__documento', 'N/A')}"
+            hogar_display.append({
+                'id': hogar['id'],
+                'nombre': hogar['ciudadano_2Hogar__nombre'], 
+                'apellido': hogar['ciudadano_2Hogar__apellido'],
+                'documento': documento_completo,
+                'foto': hogar['ciudadano_2Hogar__foto'],
+                'vinculo': 'Conviviente',  # Para hogar no hay vínculo específico familiar
+                'telefono': '',  # Los hogares no tienen teléfono directo
+                'fecha_nacimiento': '',  # Puedes agregar si necesitas
+                'convive': True,  # En hogar siempre conviven
+                'estado_relacion': hogar.get('estado_relacion', ''),
+            })
+        
+        # Convertir hogar_2 para el componente
+        for hogar in context.get('hogar_2', []):
+            documento_completo = f"{hogar.get('ciudadano_1Hogar__tipo_documento', 'DNI')} {hogar.get('ciudadano_1Hogar__documento', 'N/A')}"
+            hogar_display.append({
+                'id': hogar['id'],
+                'nombre': hogar['ciudadano_1Hogar__nombre'],
+                'apellido': hogar['ciudadano_1Hogar__apellido'], 
+                'documento': documento_completo,
+                'foto': hogar['ciudadano_1Hogar__foto'],
+                'vinculo': 'Conviviente',
+                'telefono': '',
+                'fecha_nacimiento': '',
+                'convive': True,
+                'estado_relacion': hogar.get('estado_relacion', ''),
+            })
+        
+        # Agregar al context
+        context.update({
+            'hogar_display': hogar_display,
+            'hogar_count_familia': len(hogar_display),  # Contador para el template
+        })
+        
         return context
 
     def form_valid(self, form):
@@ -2074,33 +2159,31 @@ class CiudadanosGrupoHogarCreateView(CreateView):
             DimensionEconomia.objects.create(ciudadano=nuevo_ciudadano)
             DimensionEducacion.objects.create(ciudadano=nuevo_ciudadano)
             DimensionTrabajo.objects.create(ciudadano=nuevo_ciudadano)
-            GrupoHogar.objects.create(ciudadano=nuevo_ciudadano)
         except Exception as e:
-            return messages.error(
+            messages.error(
                 self.request,
                 f"Verifique que no exista un ciudadano con ese DNI y NÚMERO. Error: {e}",
             )
+            return HttpResponseRedirect(self.request.path_info)
 
-        # crea la relacion de grupo familiar
-        estado_relacion_instance = EstadoRelacion.objects.get(pk=estado_relacion)
-
-        ciudadano_principal = Ciudadano.objects.get(id=pk)
+        # Crea la relación de grupo hogar
         try:
-            GrupoFamiliar.objects.create(
-                ciudadano_1=ciudadano_principal,
-                ciudadano_2=nuevo_ciudadano,
-                #  vinculo=vinculo_data["vinculo"],
-                # vinculo_inverso=vinculo_data["vinculo_inverso"],
+            estado_relacion_instance = EstadoRelacion.objects.get(pk=estado_relacion)
+            ciudadano_principal = Ciudadano.objects.get(id=pk)
+            
+            GrupoHogar.objects.create(
+                ciudadano_1Hogar=ciudadano_principal,
+                ciudadano_2Hogar=nuevo_ciudadano,
                 estado_relacion=estado_relacion_instance,
             )
         except Exception as e:
-            return messages.error(
+            messages.error(
                 self.request,
-                f"Verifique que no exista un ciudadano con ese DNI y NÚMERO. {e}",
+                f"Error al crear la relación de hogar. Error: {e}",
             )
+            return HttpResponseRedirect(self.request.path_info)
 
-        messages.success(self.request, "Familair agregado correctamente.")
-        # Redireccionar a la misma página después de realizar la acción con éxito
+        messages.success(self.request, "Conviviente agregado correctamente.")
         return HttpResponseRedirect(self.request.path_info)
 
 

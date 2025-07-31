@@ -1,0 +1,374 @@
+/* ========================================
+   MEJORAS PARA CIUDADANO_DETAIL.HTML
+   Tema Gubernamental Azul Mejorado
+   ======================================== */
+
+/* Variables CSS para consistencia */
+:root {
+    --gov-primary: #14376b;
+    --gov-secondary: #1e3a5f;
+    --gov-accent: #17a2b8;
+    --gov-dark: #1a2332;
+    --gov-medium: #2c3e50;
+    --gov-light: #34495e;
+    --gov-border: #4a5f7a;
+    --gov-text: #ffffff;
+    --gov-muted: #bdc3c7;
+    --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.15);
+    --shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.25);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ==========================================
+   GLASSMORPHISM PARA CARDS
+   ========================================== */
+.card {
+    background: rgba(255, 255, 255, 0.06) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 16px !important;
+    box-shadow: var(--shadow-soft) !important;
+    color: var(--gov-text) !important;
+    transition: var(--transition-smooth) !important;
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-hover) !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+/* ==========================================
+   HEADERS CON GRADIENTES GUBERNAMENTALES
+   ========================================== */
+.card-header {
+    background: linear-gradient(135deg, var(--gov-primary) 0%, var(--gov-secondary) 100%) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: var(--gov-text) !important;
+    padding: 1.25rem !important;
+    position: relative;
+    border-radius: 16px 16px 0 0 !important;
+}
+
+.card-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--gov-accent), #3498db, var(--gov-accent));
+    border-radius: 16px 16px 0 0;
+}
+
+.card-header h5 {
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* ==========================================
+   INDICADORES CON EFECTOS ESPECIALES
+   ========================================== */
+.card-body.d-flex.align-items-center {
+    padding: 2rem 1.5rem !important;
+    position: relative;
+}
+
+.card-body.d-flex.align-items-center::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, var(--gov-accent), #3498db);
+    border-radius: 0 0 0 16px;
+}
+
+.card-body i.fa-2x {
+    padding: 1rem;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transition: var(--transition-smooth);
+}
+
+.card-body:hover i.fa-2x {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* ==========================================
+   TABLAS MEJORADAS
+   ========================================== */
+.table {
+    color: var(--gov-text) !important;
+    border-radius: 12px !important;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.table th {
+    background: linear-gradient(135deg, var(--gov-medium) 0%, var(--gov-light) 100%) !important;
+    border: none !important;
+    color: var(--gov-text) !important;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.875rem;
+    padding: 1.25rem 1rem !important;
+    position: relative;
+}
+
+.table th::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gov-accent), transparent);
+}
+
+.table td {
+    background-color: var(--gov-light) !important;
+    border-color: var(--gov-border) !important;
+    color: var(--gov-text) !important;
+    padding: 1rem !important;
+    transition: var(--transition-smooth);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.table-hover tbody tr:hover td {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    transform: translateX(4px);
+}
+
+/* ==========================================
+   NAVEGACIÓN DE PESTAÑAS MODERNA
+   ========================================== */
+.nav-pills {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.5rem;
+    border-radius: 12px;
+    gap: 0.25rem;
+}
+
+.nav-pills .nav-link {
+    background: transparent !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    border: 1px solid transparent !important;
+    border-radius: 8px !important;
+    padding: 0.75rem 1.25rem !important;
+    font-weight: 500;
+    transition: var(--transition-smooth);
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-pills .nav-link::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, var(--gov-primary), var(--gov-accent));
+    transition: var(--transition-smooth);
+    z-index: -1;
+}
+
+.nav-pills .nav-link:hover::before {
+    left: 0;
+}
+
+.nav-pills .nav-link:hover {
+    color: var(--gov-text) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.nav-pills .nav-link.active {
+    background: linear-gradient(135deg, var(--gov-primary), var(--gov-accent)) !important;
+    color: var(--gov-text) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 4px 12px rgba(20, 55, 107, 0.4);
+}
+
+/* ==========================================
+   BOTONES MEJORADOS
+   ========================================== */
+.btn {
+    border-radius: 10px !important;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    transition: var(--transition-smooth);
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0.2));
+    transition: var(--transition-smooth);
+    z-index: -1;
+}
+
+.btn:hover::before {
+    left: 0;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--gov-primary), var(--gov-secondary)) !important;
+    border: none !important;
+    box-shadow: 0 4px 12px rgba(20, 55, 107, 0.3);
+}
+
+.btn-outline-light {
+    color: var(--gov-text) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.btn-outline-light:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    color: var(--gov-text) !important;
+}
+
+/* ==========================================
+   PERFIL DE CIUDADANO MEJORADO
+   ========================================== */
+.list-group-item {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: var(--gov-text) !important;
+    transition: var(--transition-smooth);
+    padding: 1rem 1.25rem !important;
+}
+
+.list-group-item:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    transform: translateX(4px);
+}
+
+.list-group-item:first-child {
+    border-radius: 0 !important;
+}
+
+.list-group-item:last-child {
+    border-radius: 0 0 16px 16px !important;
+}
+
+/* ==========================================
+   BADGES Y ELEMENTOS ESPECIALES
+   ========================================== */
+.badge-custom, .badge {
+    background: linear-gradient(135deg, var(--gov-accent), #3498db) !important;
+    color: var(--gov-text) !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 20px !important;
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(23, 162, 184, 0.3);
+    transition: var(--transition-smooth);
+}
+
+.badge:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(23, 162, 184, 0.4);
+}
+
+/* ==========================================
+   FOTO DE PERFIL MEJORADA
+   ========================================== */
+.card-header.text-center img {
+    border: 4px solid rgba(255, 255, 255, 0.2) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+    transition: var(--transition-smooth);
+}
+
+.card-header.text-center img:hover {
+    transform: scale(1.05);
+    border-color: var(--gov-accent) !important;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* ==========================================
+   FOOTER DE CARDS
+   ========================================== */
+.card-footer {
+    background: linear-gradient(135deg, var(--gov-medium), var(--gov-light)) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 0 0 16px 16px !important;
+    padding: 1.25rem !important;
+}
+
+/* ==========================================
+   TEXTO Y UTILIDADES
+   ========================================== */
+.text-muted {
+    color: var(--gov-muted) !important;
+}
+
+/* ==========================================
+   ANIMACIONES SUAVES
+   ========================================== */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card {
+    animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.card:nth-child(2) { animation-delay: 0.1s; }
+.card:nth-child(3) { animation-delay: 0.2s; }
+.card:nth-child(4) { animation-delay: 0.3s; }
+
+/* ==========================================
+   RESPONSIVE MEJORADO
+   ========================================== */
+@media (max-width: 768px) {
+    .card {
+        border-radius: 12px !important;
+        margin-bottom: 1rem;
+    }
+    
+    .card-header {
+        padding: 1rem !important;
+    }
+    
+    .nav-pills {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .btn-group {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
