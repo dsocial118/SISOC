@@ -15,8 +15,8 @@ from relevamientos.models import (
     FuenteCompras,
     FuenteRecursos,
     FuncionamientoPrestacion,
+    Prestacion,
 )
-from core.models import Prestacion
 
 BOOLEAN_CHOICE = [
     (False, "No"),

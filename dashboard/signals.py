@@ -2,7 +2,7 @@ from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
 from relevamientos.models import Relevamiento
-from core.models import Prestacion
+from relevamientos.models import Prestacion
 from comedores.models import Comedor, ValorComida
 from dashboard.models import Dashboard
 from dashboard.utils import (
