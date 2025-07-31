@@ -122,26 +122,6 @@ urlpatterns = [
         name="participanteactividad_delete",
     ),
     path(
-        "centro/<int:centro_id>/expedientes/",
-        group_required(["ReferenteCentro", "CDF SSE"])(ExpedienteListView.as_view()),
-        name="expediente_list",
-    ),
-    path(
-        "centro/<int:centro_id>/expedientes/nuevo/",
-        group_required(["ReferenteCentro", "CDF SSE"])(ExpedienteCreateView.as_view()),
-        name="expediente_create",
-    ),
-    path(
-        "centro/<int:centro_id>/expedientes/<int:pk>/",
-        group_required(["ReferenteCentro", "CDF SSE"])(ExpedienteDetailView.as_view()),
-        name="expediente_detail",
-    ),
-    path(
-        "centro/<int:centro_id>/expedientes/<int:pk>/editar/",
-        group_required(["ReferenteCentro", "CDF SSE"])(ExpedienteUpdateView.as_view()),
-        name="expediente_update",
-    ),
-    path(
         "actividades/nueva/",
         group_required(["CDF SSE"])(ActividadCreateView.as_view()),
         name="actividad_create_sola",
