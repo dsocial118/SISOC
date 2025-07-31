@@ -53,14 +53,14 @@ def relevamiento_crear_editar_ajax(request, pk):
     try:
         if "territorial" in request.POST:
             relevamiento = RelevamientoService.create_pendiente(request, pk)
-            messages.success(request, "Relevamiento territorial creado correctamente.")
+            logger.info(request, "Relevamiento territorial creado correctamente.")
         elif "territorial_editar" in request.POST:
             relevamiento = RelevamientoService.update_territorial(request)
-            messages.success(
+            logger.info(
                 request, "Relevamiento territorial actualizado correctamente."
             )
         else:
-            messages.error(request, "Acción no reconocida.")
+            logger.info(request, "Acción no reconocida.")
             return redirect("comedor_detalle", pk=pk)
 
         return redirect(
@@ -69,13 +69,13 @@ def relevamiento_crear_editar_ajax(request, pk):
             comedor_pk=relevamiento.comedor.pk,
         )
     except Exception as e:
-        logger.error(
+        logger.info(
             "Error al procesar relevamiento para comedor %s: %s",
             pk,
             e,
             exc_info=True,
         )
-        messages.error(
+        logger.info(
             request, "Hubo un error al guardar el relevamiento. Intenta de nuevo."
         )
         return redirect("comedor_detalle", pk=pk)
@@ -200,9 +200,12 @@ class ComedorCreateView(CreateView):
 
     def get_context_data(self, **kwargs):
         data = super().get_context_data(**kwargs)
-        data["referente_form"] = ReferenteForm(
-            self.request.POST or None, prefix="referente"
-        )
+        try:
+            data["referente_form"] = ReferenteForm(
+                self.request.POST or None, prefix="referente"
+            )
+        except Exception as e:
+                logger.error("Ocurrió un error inesperado", exc_info=True)
         return data
 
     def form_valid(self, form):
@@ -232,7 +235,10 @@ class ComedorDetailView(DetailView):
     context_object_name = "comedor"
 
     def get_object(self, queryset=None):
-        return ComedorService.get_comedor_detail_object(self.kwargs["pk"])
+        try
+            return ComedorService.get_comedor_detail_object(self.kwargs["pk"])
+        except Exception as e:
+                logger.error("Ocurrió un error inesperado", exc_info=True)
 
     def _get_presupuestos_data(self):
         """Obtiene datos de presupuestos usando cache y datos prefetched cuando sea posible."""
@@ -246,15 +252,18 @@ class ComedorDetailView(DetailView):
             if cached_presupuestos:
                 presupuestos_tuple = cached_presupuestos
             else:
-                presupuestos_tuple = ComedorService.get_presupuestos(
-                    self.object.id,
-                    relevamientos_prefetched=self.object.relevamientos_optimized,
-                )
-                cache.set(
-                    cache_key,
-                    presupuestos_tuple,
-                    getattr(settings, "COMEDOR_CACHE_TIMEOUT", 300),
-                )
+                try:
+                    presupuestos_tuple = ComedorService.get_presupuestos(
+                        self.object.id,
+                        relevamientos_prefetched=self.object.relevamientos_optimized,
+                    )
+                    cache.set(
+                        cache_key,
+                        presupuestos_tuple,
+                        getattr(settings, "COMEDOR_CACHE_TIMEOUT", 300),
+                    )
+                except Exception as e:
+                    logger.error("Ocurrió un error inesperado", exc_info=True)
         else:
             presupuestos_tuple = ComedorService.get_presupuestos(self.object.id)
 
@@ -278,49 +287,50 @@ class ComedorDetailView(DetailView):
     def _get_relaciones_optimizadas(self):
         """Obtiene datos de relaciones usando prefetch cuando sea posible."""
         # Optimización: Usar rendiciones prefetched en lugar de query adicional
-        rendiciones_mensuales = (
-            len(self.object.rendiciones_optimized)
-            if hasattr(self.object, "rendiciones_optimized")
-            else RendicionCuentaMensualService.cantidad_rendiciones_cuentas_mensuales(
-                self.object
+        try:
+            rendiciones_mensuales = (
+                len(self.object.rendiciones_optimized)
+                if hasattr(self.object, "rendiciones_optimized")
+                else RendicionCuentaMensualService.cantidad_rendiciones_cuentas_mensuales(
+                    self.object
+                )
             )
-        )
+            # Optimización: Usar relaciones prefetched en lugar de queries adicionales
+            relevamientos = (
+                self.object.relevamientos_optimized[:1]
+                if hasattr(self.object, "relevamientos_optimized")
+                else []
+            )
+            observaciones = (
+                self.object.observaciones_optimized
+                if hasattr(self.object, "observaciones_optimized")
+                else []
+            )
 
-        # Optimización: Usar relaciones prefetched en lugar de queries adicionales
-        relevamientos = (
-            self.object.relevamientos_optimized[:1]
-            if hasattr(self.object, "relevamientos_optimized")
-            else []
-        )
-        observaciones = (
-            self.object.observaciones_optimized
-            if hasattr(self.object, "observaciones_optimized")
-            else []
-        )
+            # Optimización: Contar relevamientos usando los prefetched o query única si es necesario
+            count_relevamientos = (
+                len(self.object.relevamientos_optimized)
+                if hasattr(self.object, "relevamientos_optimized")
+                else self.object.relevamiento_set.count()
+            )
 
-        # Optimización: Contar relevamientos usando los prefetched o query única si es necesario
-        count_relevamientos = (
-            len(self.object.relevamientos_optimized)
-            if hasattr(self.object, "relevamientos_optimized")
-            else self.object.relevamiento_set.count()
-        )
+            # Optimización: Usar clasificación prefetched
+            comedor_categoria = (
+                self.object.clasificaciones_optimized[0]
+                if hasattr(self.object, "clasificaciones_optimized")
+                and self.object.clasificaciones_optimized
+                else None
+            )
 
-        # Optimización: Usar clasificación prefetched
-        comedor_categoria = (
-            self.object.clasificaciones_optimized[0]
-            if hasattr(self.object, "clasificaciones_optimized")
-            and self.object.clasificaciones_optimized
-            else None
-        )
-
-        # Optimización: Usar admisión prefetched
-        admision = (
-            self.object.admisiones_optimized[0]
-            if hasattr(self.object, "admisiones_optimized")
-            and self.object.admisiones_optimized
-            else None
-        )
-
+            # Optimización: Usar admisión prefetched
+            admision = (
+                self.object.admisiones_optimized[0]
+                if hasattr(self.object, "admisiones_optimized")
+                and self.object.admisiones_optimized
+                else None
+            )
+        except Exception as e:
+                logger.error("Ocurrió un error inesperado", exc_info=True)
         # Usar imágenes directamente - asegurar que se carguen
         imagenes = self.object.imagenes.all()
 
@@ -343,21 +353,22 @@ class ComedorDetailView(DetailView):
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
+        try:
+            # Obtener datos de presupuestos
+            presupuestos_data = self._get_presupuestos_data()
 
-        # Obtener datos de presupuestos
-        presupuestos_data = self._get_presupuestos_data()
+            # Obtener datos optimizados de relaciones
+            relaciones_data = self._get_relaciones_optimizadas()
 
-        # Obtener datos optimizados de relaciones
-        relaciones_data = self._get_relaciones_optimizadas()
+            # Obtener configuración del entorno
+            env_config = self._get_environment_config()
 
-        # Obtener configuración del entorno
-        env_config = self._get_environment_config()
-
-        # Combinar todos los datos en el contexto
-        context.update({**presupuestos_data, **relaciones_data, **env_config})
-
-        return context
-
+            # Combinar todos los datos en el contexto
+            context.update({**presupuestos_data, **relaciones_data, **env_config})
+            return context
+        except Exception as e:
+                logger.error("Ocurrió un error inesperado", exc_info=True)
+        
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
 
@@ -385,7 +396,8 @@ class ComedorDetailView(DetailView):
                     )
                 )
             except Exception as e:
-                messages.error(request, f"Error al crear el relevamiento: {e}")
+                logger.error("Ocurrió un error inesperado", exc_info=True)
+                logger.info(request, f"Error al crear el relevamiento: {e}")
                 return redirect("comedor_detalle", pk=self.object.id)
 
         else:
@@ -397,12 +409,15 @@ class AsignarDuplaListView(ListView):
     template_name = "comedor/asignar_dupla_form.html"
 
     def get_context_data(self, **kwargs):
-        data = super().get_context_data(**kwargs)
-        comedor = ComedorService.get_comedor(self.kwargs["pk"])
-        duplas = DuplaService.get_duplas_by_estado_activo()
-        data["comedor"] = comedor
-        data["duplas"] = duplas
-        return data
+        try:
+            data = super().get_context_data(**kwargs)
+            comedor = ComedorService.get_comedor(self.kwargs["pk"])
+            duplas = DuplaService.get_duplas_by_estado_activo()
+            data["comedor"] = comedor
+            data["duplas"] = duplas
+            return data
+        except Exception as e:
+                logger.error("Ocurrió un error inesperado", exc_info=True)
 
     def post(self, request, *args, **kwargs):
         dupla_id = request.POST.get("dupla_id")
@@ -413,9 +428,10 @@ class AsignarDuplaListView(ListView):
                 ComedorService.asignar_dupla_a_comedor(dupla_id, comedor_id)
                 messages.success(request, "Dupla asignada correctamente.")
             except Exception as e:
-                messages.error(request, f"Error al asignar la dupla: {e}")
+                logger.error("Ocurrió un error inesperado", exc_info=True)
+                logger.info(request, f"Error al asignar la dupla: {e}")
         else:
-            messages.error(request, "No se seleccionó ninguna dupla.")
+            logger.info(request, "No se seleccionó ninguna dupla.")
 
         return redirect("comedor_detalle", pk=comedor_id)
 
@@ -431,15 +447,18 @@ class ComedorUpdateView(UpdateView):
     def get_context_data(self, **kwargs):
         data = super().get_context_data(**kwargs)
         self.object = self.get_object()
-        data["referente_form"] = ReferenteForm(
-            self.request.POST if self.request.POST else None,
-            instance=self.object.referente,
-            prefix="referente",
-        )
-        data["imagenes_borrar"] = ImagenComedor.objects.filter(
-            comedor=self.object.pk
-        ).values("id", "imagen")
-        return data
+        try:
+            data["referente_form"] = ReferenteForm(
+                self.request.POST if self.request.POST else None,
+                instance=self.object.referente,
+                prefix="referente",
+            )
+            data["imagenes_borrar"] = ImagenComedor.objects.filter(
+                comedor=self.object.pk
+            ).values("id", "imagen")
+            return data
+        except Exception as e:
+                logger.error("Ocurrió un error inesperado", exc_info=True)
 
     def form_valid(self, form):
         context = self.get_context_data()
@@ -576,7 +595,10 @@ class NewComedorDetailView(DetailView):
     context_object_name = "comedor"
 
     def get_object(self, queryset=None):
-        return ComedorService.get_comedor_detail_object(self.kwargs["pk"])
+        try:
+            return ComedorService.get_comedor_detail_object(self.kwargs["pk"])
+        except Exception as e:
+                logger.error("Ocurrió un error inesperado", exc_info=True)
 
     def _get_presupuestos_data(self):
         """Obtiene datos de presupuestos usando cache y datos prefetched cuando sea posible."""
@@ -590,15 +612,18 @@ class NewComedorDetailView(DetailView):
             if cached_presupuestos:
                 presupuestos_tuple = cached_presupuestos
             else:
-                presupuestos_tuple = ComedorService.get_presupuestos(
-                    self.object.id,
-                    relevamientos_prefetched=self.object.relevamientos_optimized,
-                )
-                cache.set(
-                    cache_key,
-                    presupuestos_tuple,
-                    getattr(settings, "COMEDOR_CACHE_TIMEOUT", 300),
-                )
+                try:
+                    presupuestos_tuple = ComedorService.get_presupuestos(
+                        self.object.id,
+                        relevamientos_prefetched=self.object.relevamientos_optimized,
+                    )
+                    cache.set(
+                        cache_key,
+                        presupuestos_tuple,
+                        getattr(settings, "COMEDOR_CACHE_TIMEOUT", 300),
+                    )
+                except Exception as e:
+                    logger.error("Ocurrió un error inesperado", exc_info=True)
         else:
             presupuestos_tuple = ComedorService.get_presupuestos(self.object.id)
 
@@ -622,49 +647,51 @@ class NewComedorDetailView(DetailView):
     def _get_relaciones_optimizadas(self):
         """Obtiene datos de relaciones usando prefetch cuando sea posible."""
         # Optimización: Usar rendiciones prefetched en lugar de query adicional
-        rendiciones_mensuales = (
-            len(self.object.rendiciones_optimized)
-            if hasattr(self.object, "rendiciones_optimized")
-            else RendicionCuentaMensualService.cantidad_rendiciones_cuentas_mensuales(
-                self.object
+        try
+            rendiciones_mensuales = (
+                len(self.object.rendiciones_optimized)
+                if hasattr(self.object, "rendiciones_optimized")
+                else RendicionCuentaMensualService.cantidad_rendiciones_cuentas_mensuales(
+                    self.object
+                )
             )
-        )
 
-        # Optimización: Usar relaciones prefetched en lugar de queries adicionales
-        relevamientos = (
-            self.object.relevamientos_optimized[:1]
-            if hasattr(self.object, "relevamientos_optimized")
-            else []
-        )
-        observaciones = (
-            self.object.observaciones_optimized
-            if hasattr(self.object, "observaciones_optimized")
-            else []
-        )
+            # Optimización: Usar relaciones prefetched en lugar de queries adicionales
+            relevamientos = (
+                self.object.relevamientos_optimized[:1]
+                if hasattr(self.object, "relevamientos_optimized")
+                else []
+            )
+            observaciones = (
+                self.object.observaciones_optimized
+                if hasattr(self.object, "observaciones_optimized")
+                else []
+            )
 
-        # Optimización: Contar relevamientos usando los prefetched o query única si es necesario
-        count_relevamientos = (
-            len(self.object.relevamientos_optimized)
-            if hasattr(self.object, "relevamientos_optimized")
-            else self.object.relevamiento_set.count()
-        )
+            # Optimización: Contar relevamientos usando los prefetched o query única si es necesario
+            count_relevamientos = (
+                len(self.object.relevamientos_optimized)
+                if hasattr(self.object, "relevamientos_optimized")
+                else self.object.relevamiento_set.count()
+            )
 
-        # Optimización: Usar clasificación prefetched
-        comedor_categoria = (
-            self.object.clasificaciones_optimized[0]
-            if hasattr(self.object, "clasificaciones_optimized")
-            and self.object.clasificaciones_optimized
-            else None
-        )
+            # Optimización: Usar clasificación prefetched
+            comedor_categoria = (
+                self.object.clasificaciones_optimized[0]
+                if hasattr(self.object, "clasificaciones_optimized")
+                and self.object.clasificaciones_optimized
+                else None
+            )
 
-        # Optimización: Usar admisión prefetched
-        admision = (
-            self.object.admisiones_optimized[0]
-            if hasattr(self.object, "admisiones_optimized")
-            and self.object.admisiones_optimized
-            else None
-        )
-
+            # Optimización: Usar admisión prefetched
+            admision = (
+                self.object.admisiones_optimized[0]
+                if hasattr(self.object, "admisiones_optimized")
+                and self.object.admisiones_optimized
+                else None
+            )
+        except Exception as e:
+                logger.error("Ocurrió un error inesperado", exc_info=True)
         # Optimización: Usar imágenes prefetched en lugar de .values()
         imagenes = (
             [{"imagen": img.imagen} for img in self.object.imagenes_optimized]
@@ -733,7 +760,8 @@ class NewComedorDetailView(DetailView):
                     )
                 )
             except Exception as e:
-                messages.error(request, f"Error al crear el relevamiento: {e}")
+                logger.error("Ocurrió un error inesperado", exc_info=True)
+                logger.info(request, f"Error al crear el relevamiento: {e}")
                 return redirect("comedor_detalle", pk=self.object.id)
 
         else:
