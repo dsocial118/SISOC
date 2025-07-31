@@ -44,13 +44,9 @@
                             {% for admision in admisiones %}
                                 <tr>
                                     <td>
-                                        {% if admision.comedor and admision.comedor.id %}
-                                            <a href="{% url 'comedor_detalle' admision.comedor.id %}"
-                                               class="font-weight-bold link-handler"
-                                               title="Ver detalles">{{ admision.comedor.nombre }}</a>
-                                        {% else %}
-                                            <span class="text-muted">Sin comedor asignado</span>
-                                        {% endif %}
+                                        <a href="{% url 'comedor_detalle' admision.comedor.id %}"
+                                           class="font-weight-bold link-handler"
+                                           title="Ver detalles">{{ admision.comedor.nombre }}</a>
                                     </td>
                                     <td>{{ admision.tipo_convenio.nombre }}</td>
                                     <td>{{ admision.num_expediente }}</td>
