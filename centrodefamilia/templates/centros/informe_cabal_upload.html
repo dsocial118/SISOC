@@ -1,0 +1,49 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Informe Cabal - {{ centro.nombre }}{% endblock %}
+
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right">
+  <li class="breadcrumb-item"><a href="{% url 'centro_list' %}">Centros de Familia</a></li>
+  <li class="breadcrumb-item active">Informe Cabal</li>
+</ol>
+{% endblock %}
+
+{% block content %}
+<div class="mb-3 d-flex justify-content-between align-items-center">
+  <div>
+    <a href="{% url 'centro_list' %}" class="btn btn-outline-secondary btn-sm">← Volver</a>
+  </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-light">
+    <h5 class="mb-0">Cargar Informe Cabal para {{ centro.nombre }}</h5>
+  </div>
+  <div class="card-body">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="mb-3">
+        {{ form.periodo.label_tag }}
+        {{ form.periodo }}
+        {% if form.periodo.errors %}
+          <div class="text-danger small">{{ form.periodo.errors.0 }}</div>
+        {% endif %}
+      </div>
+      <div class="mb-3">
+        {{ form.archivo.label_tag }}
+        {{ form.archivo }}
+        {% if form.archivo.errors %}
+          <div class="text-danger small">{{ form.archivo.errors.0 }}</div>
+        {% endif %}
+      </div>
+      <button type="submit" class="btn btn-primary">Previsualizar</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block customJS %}
+{# Scripts específicos si los necesitas #}
+{% endblock %}
