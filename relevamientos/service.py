@@ -50,7 +50,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
     # TODO: Mover metodos no genericos al utils.py
 
-    # Este metodo recive el nombre del campo de la base, el array de datos y el modelo
+    # Este metodo recibe el nombre del campo de la base, el array de datos y el modelo
     # y devuelve un queryset de los recursos que existen en la base de datos
     @staticmethod
     def get_recursos(nombre, recursos_data, model):
@@ -531,7 +531,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             "otros_residuos": RelevamientoService.convert_to_boolean,
             "recipiente_otros_residuos": RelevamientoService.convert_to_boolean,
             "abastecimiento_agua": lambda x: (
-                TipoAgua.objects.get(nombre__iexact=x) if x else None
+                RelevamientoService.get_object_or_none(TipoAgua, "nombre__iexact", x) if x else None
             ),
             "instalacion_electrica": RelevamientoService.convert_to_boolean,
         }
@@ -747,9 +747,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             ),
             "comedor_merendero": RelevamientoService.convert_to_boolean,
             "insumos_organizacion": RelevamientoService.convert_to_boolean,
-            "servicio_internet": lambda x: (
-                True if x == "Y" else False if x == "N" else None
-            ),
+            "servicio_internet": RelevamientoService.convert_to_boolean,
             "zona_inundable": RelevamientoService.convert_to_boolean,
             "actividades_jardin_maternal": RelevamientoService.convert_to_boolean,
             "actividades_jardin_infantes": RelevamientoService.convert_to_boolean,
