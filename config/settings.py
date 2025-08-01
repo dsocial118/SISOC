@@ -334,3 +334,8 @@ DOMINIO = os.environ.get("DOMINIO", default="localhost:8001")
 if DEBUG:
     SILKY_PYTHON_PROFILER = True
     MIDDLEWARE.insert(0, "silk.middleware.SilkyMiddleware")
+
+# API RENAPER
+RENAPER_API_USERNAME = os.getenv("RENAPER_API_USERNAME")
+RENAPER_API_PASSWORD = os.getenv("RENAPER_API_PASSWORD")
+RENAPER_API_URL = os.getenv("RENAPER_API_URL")

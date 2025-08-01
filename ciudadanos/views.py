@@ -37,6 +37,7 @@ from django.views.generic import (
     TemplateView,
     UpdateView,
     View,
+    FormView,
 )
 
 from core.models import (
@@ -61,6 +62,7 @@ from ciudadanos.forms import (
     LlamadoForm,
     FamiliarForm,
     ProgramaForm,
+    ConsultaForm,
 )
 from ciudadanos.models import (
     ActividadRealizada,
@@ -123,6 +125,7 @@ from ciudadanos.models import (
     Dimension,
 )
 from ciudadanos.utils import recortar_imagen
+from .services.consulta_renaper import consultar_datos_renaper
 
 locale.setlocale(locale.LC_ALL, "es_AR.UTF-8")
 
@@ -795,6 +798,23 @@ class CiudadanosCreateView(CreateView):
     model = Ciudadano
     form_class = CiudadanoForm
     template_name = "ciudadanos/ciudadano_form.html"
+
+    def get_initial(self):
+        initial = super().get_initial()
+        precargado = self.request.session.pop("ciudadano_precargado", None)
+        if precargado:
+            initial.update(precargado)
+            # Guardamos en un atributo para usarlo luego en el contexto
+            self.precargado = precargado
+        else:
+            self.precargado = None
+        return initial
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Pasamos 'precargado' al contexto para usar en el template
+        context["datos_api"] = getattr(self, "precargado", None)
+        return context
 
     def form_invalid(self, form):
         messages.error(
@@ -2452,3 +2472,29 @@ class TipoEstadosLlamadosAjax(View):
             for sub_estado in sub_estados
         ]
         return JsonResponse(data, safe=False)
+
+
+class ConsultaRenaperView(FormView):
+    template_name = "ciudadanos/consulta_renaper.html"
+    form_class = ConsultaForm
+    success_url = reverse_lazy("renaper_consulta")
+
+    def form_valid(self, form):
+        dni = form.cleaned_data["dni"]
+        sexo = form.cleaned_data["sexo"]
+
+        resultado = consultar_datos_renaper(dni, sexo)
+
+        if not resultado["success"]:
+            if resultado.get("fallecido"):
+                return self.render_to_response({"form": form, "fallecido": True})
+            return self.render_to_response(
+                {
+                    "form": form,
+                    "error": resultado.get("error", "Error desconocido"),
+                    "raw_response": resultado.get("raw_response"),
+                }
+            )
+
+        self.request.session["ciudadano_precargado"] = resultado["data"]
+        return redirect("ciudadanos_crear")

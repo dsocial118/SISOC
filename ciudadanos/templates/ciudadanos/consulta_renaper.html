@@ -1,0 +1,68 @@
+{% extends "includes/main.html" %};
+{% load static %}
+;
+{% load crispy_forms_tags %}
+;
+{% block head %}{% endblock %}
+{% block title %}Ciudadano{% endblock %}
+;
+{% block titulo-pagina %}{% endblock %}
+;
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanos' %}">Ciudadano</a>
+        </li>
+        <li class="breadcrumb-item active">Agregar</li>
+    </ol>
+{% endblock %}
+;
+{% block menu-adicional %}{% endblock %}
+;
+{% block content %}
+    <h2 class="text-center display-4 mb-4">Agregar Ciudadano</h2>
+    <div class="container mt-5">
+        <div class="card mx-auto" style="max-width: 550px;">
+            <div class="card-body">
+                <form method="post" class="mb-4">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="id_dni" class="form-label">DNI:</label>
+                        <input type="text"
+                               class="form-control"
+                               id="id_dni"
+                               name="dni"
+                               maxlength="10"
+                               required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_sexo" class="form-label">Sexo:</label>
+                        <select class="form-select" name="sexo" id="id_sexo" required>
+                            <option value="" disabled selected>Seleccione el sexo</option>
+                            <option value="F">Femenino</option>
+                            <option value="M">Masculino</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Agregar</button>
+                </form>
+                {% if error %}
+                    <div class="alert bg-danger text-white text-center">
+                        <i class="bi bi-exclamation-triangle-fill"></i> No se encontraron coincidencias con su busqueda.
+                    </div>
+                {% endif %}
+                {% if fallecido %}
+                    <div class="alert bg-danger text-white text-center">
+                        <i class="bi bi-exclamation-triangle-fill"></i> La persona que ingresó se encuentra fallecida. {{ txt_fallecido }}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="card-footer text-center">
+                <p class="text-muted fs-6">
+                    <small>Para agregar un ciudadano de manera manual o sin documento presione
+                        <a href="{% url 'ciudadanos_crear' %}" class="text-primary">aquí</a>.</small>
+                </p>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block customJS %}{% endblock %}
