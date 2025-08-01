@@ -164,13 +164,14 @@ class ParticipanteActividad(models.Model):
             models.Index(fields=["actividad_centro"]),
         ]
 
-
 class Expediente(models.Model):
     centro = models.ForeignKey(
         'centrodefamilia.Centro',
         on_delete=models.CASCADE,
         related_name="expedientes_cabal",
-        db_index=True
+        db_index=True,
+        null=True,
+        blank=True,
     )
     archivo = models.FileField(upload_to="informes_cabal/")
     periodo = models.DateField(help_text="Fecha del informe Cabal", db_index=True)
@@ -190,7 +191,8 @@ class Expediente(models.Model):
         verbose_name_plural = "Expedientes Cabal"
 
     def __str__(self):
-        return f"Informe Cabal {self.centro.codigo} - {self.periodo}"
+        centro_codigo = self.centro.codigo if self.centro else 'Global'
+        return f"Informe Cabal {centro_codigo} - {self.periodo}"
 
 
 class MovimientoCabal(models.Model):
@@ -215,7 +217,10 @@ class MovimientoCabal(models.Model):
         decimal_places=2,
         help_text="Monto registrado en el movimiento Cabal"
     )
-    fecha = models.DateField(help_text="Fecha del movimiento registrado en el Excel", db_index=True)
+    fecha = models.DateField(
+        help_text="Fecha del movimiento registrado en el Excel",
+        db_index=True
+    )
     fila_origen = models.PositiveIntegerField(
         help_text="Número de fila en el Excel de origen",
         db_index=True
@@ -235,4 +240,3 @@ class MovimientoCabal(models.Model):
 
     def __str__(self):
         return f"Movimiento {self.centro.codigo} - {self.ciudadano.documento} - {self.monto}"
-

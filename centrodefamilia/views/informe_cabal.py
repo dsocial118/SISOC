@@ -1,5 +1,5 @@
 """
-Vistas para el flujo de Informe Cabal en el módulo Centro de Familia.
+Vistas para el flujo de Informe Cabal global en el módulo Centro de Familia.
 
 - InformeCabalUploadView: formulario de carga de expediente.
 - InformeCabalPreviewView: previsualización de datos antes de procesar.
@@ -11,7 +11,7 @@ from django.contrib import messages
 from django import forms
 from django.urls import reverse
 
-from centrodefamilia.models import Expediente, Centro
+from centrodefamilia.models import Expediente
 from centrodefamilia.services.cabal_service import CabalService
 
 
@@ -25,58 +25,41 @@ class InformeCabalForm(forms.Form):
 
 class InformeCabalUploadView(FormView):
     form_class = InformeCabalForm
-    template_name = 'centrodefamilia/informe_cabal_upload.html'
-
-    def dispatch(self, request, *args, **kwargs):
-        self.centro = get_object_or_404(Centro, pk=self.kwargs['pk'])
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['centro'] = self.centro
-        return context
+    template_name = 'centros/informe_cabal_upload.html'
 
     def form_valid(self, form):
-        # Crear Expediente sin procesar aún
+        # Crear Expediente sin centro (global)
         expediente = Expediente.objects.create(
-            centro=self.centro,
             periodo=form.cleaned_data['periodo'],
             archivo=form.cleaned_data['archivo'],
             usuario=self.request.user
         )
-        # Redirigir a preview con parámetro de expediente
-        url = (f"{reverse('centro_informe_cabal_preview', args=[self.centro.pk])}"
-               f"?expediente={expediente.pk}")
+        # Redireccionar a previsualización con query param
+        url = f"{reverse('centro_informe_cabal_preview')}?expediente={expediente.pk}"
         return redirect(url)
 
 
 class InformeCabalPreviewView(View):
-    template_name = 'centrodefamilia/informe_cabal_preview.html'
+    template_name = 'centros/informe_cabal_preview.html'
 
     def get(self, request, *args, **kwargs):
-        centro = get_object_or_404(Centro, pk=self.kwargs['pk'])
         expediente_pk = request.GET.get('expediente')
-        expediente = get_object_or_404(Expediente, pk=expediente_pk, centro=centro)
+        expediente = get_object_or_404(Expediente, pk=expediente_pk)
 
-        # Recalcular previsualización
         validos, errores = CabalService.previsualizar_informe(expediente, expediente.archivo)
-
         context = {
-            'centro': centro,
             'expediente': expediente,
             'validos': validos,
-            'errores': errores
+            'errores': errores,
         }
         return render(request, self.template_name, context)
 
 
 class InformeCabalProcessView(View):
     def post(self, request, *args, **kwargs):
-        centro = get_object_or_404(Centro, pk=self.kwargs['pk'])
         expediente_pk = request.POST.get('expediente')
-        expediente = get_object_or_404(Expediente, pk=expediente_pk, centro=centro)
+        expediente = get_object_or_404(Expediente, pk=expediente_pk)
 
-        # Volver a validar y procesar
         validos, errores = CabalService.previsualizar_informe(expediente, expediente.archivo)
         CabalService.procesar_informe(expediente, validos, errores)
 
@@ -84,5 +67,4 @@ class InformeCabalProcessView(View):
             request,
             f"Informe Cabal procesado: {len(validos)} movimientos, {len(errores)} errores."
         )
-        # Redirigir a la lista de centros o detalle
         return redirect('centro_list')

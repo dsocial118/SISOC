@@ -1,0 +1,75 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Previsualizar Informe Cabal - {{ centro.nombre }}{% endblock %}
+
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right">
+  <li class="breadcrumb-item"><a href="{% url 'centro_list' %}">Centros de Familia</a></li>
+  <li class="breadcrumb-item"><a href="{% url 'centro_informe_cabal' centro.pk %}">Informe Cabal</a></li>
+  <li class="breadcrumb-item active">Previsualizar</li>
+</ol>
+{% endblock %}
+
+{% block content %}
+<div class="mb-3 d-flex justify-content-between align-items-center">
+  <div>
+    <a href="{% url 'centro_informe_cabal' centro.pk %}" class="btn btn-outline-secondary btn-sm">← Volver</a>
+  </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-light">
+    <h5 class="mb-0">Previsualización de Informe Cabal</h5>
+  </div>
+  <div class="card-body">
+    {% if errores %}
+      <div class="alert alert-warning">
+        <h6>Registros con errores ({{ errores|length }})</h6>
+        <ul class="mb-0">
+          {% for fila, msg in errores %}
+            <li>Fila {{ fila }}: {{ msg }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    {% if validos %}
+      <div class="table-responsive">
+        <table class="table table-bordered table-sm">
+          <thead class="table-light">
+            <tr>
+              <th>Fila origen</th>
+              <th>Código Centro</th>
+              <th>Documento Ciudadano</th>
+              <th>Monto</th>
+              <th>Fecha</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in validos %}
+              <tr>
+                <td>{{ item.fila_origen }}</td>
+                <td>{{ item.centro.codigo }}</td>
+                <td>{{ item.ciudadano.documento }}</td>
+                <td>{{ item.monto }}</td>
+                <td>{{ item.fecha|date:"d/m/Y" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="alert alert-info">No hay registros válidos para procesar.</div>
+    {% endif %}
+
+    <form method="post" action="{% url 'centro_informe_cabal_process' centro.pk %}">
+      {% csrf_token %}
+      <input type="hidden" name="expediente" value="{{ expediente.pk }}">
+      <button type="submit" class="btn btn-success" {% if not validos %}disabled{% endif %}>
+        Confirmar y procesar ({{ validos|length }})
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}
