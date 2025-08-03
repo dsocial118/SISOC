@@ -41,7 +41,7 @@
                     {% if actividad.sexoact.exists %}
                         {% for s in actividad.sexoact.all %}
                             {{ s.sexo }}
-                            {% if not forloop.last %}{% endif %}
+                            {% if not forloop.last %},{% endif %}
                         {% endfor %}
                     {% else %}
                         Todos los sexos
@@ -49,32 +49,33 @@
                 </p>
                 <p>
                     <strong>Días:</strong>
-                    {% for dia in actividad.dias.all %}
-                        {{ dia.nombre }}
-                        {% if not forloop.last %},{% endif %}
-                    {% empty %}
+                    {% if actividad.dias.exists %}
+                        {% for dia in actividad.dias.all %}
+                            {{ dia.nombre }}
+                            {% if not forloop.last %},{% endif %}
+                        {% endfor %}
+                    {% else %}
                         No asignado
-                    {% endfor %}
+                    {% endif %}
                 </p>
                 <p>
-                    <strong>Horarios desde:</strong> {{ actividad.horariosdesde }}
-                </p>
-                <p>
-                    <strong>Horarios hasta:</strong> {{ actividad.horarioshasta }}
+                    <strong>Horarios:</strong> {{ actividad.horariosdesde }} - {{ actividad.horarioshasta }}
                 </p>
                 <p>
                     <strong>Costo total de la actividad:</strong> ${{ precio_total }}
                 </p>
             </div>
         </div>
-        <div class="card">
+        <!-- Inscritos -->
+        <div class="card mb-4">
             <div class="card-header">
                 <h3 class="card-title font-weight-bold">Nómina de Participantes</h3>
             </div>
             <div class="card-body table-responsive">
-                {% if participantes %}
-                    <table class="table table-bordered table-hover table-striped">
-                        <thead>
+                {% comment %} Filtrar participantes inscritos {% endcomment %}
+                {% with inscritos=participantes %}
+                    {% if inscritos %}
+                        <table class="table table-bordered table-hover table-striped">
                             <thead>
                                 <tr>
                                     <th>Participante</th>
@@ -84,9 +85,50 @@
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
+                            <tbody>
+                                {% for p in inscritos %}
+                                    {% if p.estado == 'inscrito' %}
+                                        <tr>
+                                            <td>
+                                                <a href="{% url 'ciudadanos_ver' p.ciudadano.id %}">{{ p.ciudadano.apellido }}, {{ p.ciudadano.nombre }}</a>
+                                            </td>
+                                            <td>{{ p.ciudadano.documento }}</td>
+                                            <td>{{ p.ciudadano.sexo.sexo }}</td>
+                                            <td>{{ p.fecha_registro|date:"d/m/Y" }}</td>
+                                            <td>
+                                                <a href="{% url 'participanteactividad_delete' centro_id=actividad.centro.id actividad_id=actividad.id pk=p.id %}"
+                                                   class="btn btn-danger btn-sm">Dar de baja</a>
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p class="text-center">No hay participantes inscritos aún.</p>
+                    {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+        <!-- Lista de Espera -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="card-title font-weight-bold">Lista de Espera</h3>
+            </div>
+            <div class="card-body table-responsive">
+                {% if lista_espera %}
+                    <table class="table table-bordered table-hover table-striped">
+                        <thead>
+                            <tr>
+                                <th>Participante</th>
+                                <th>DNI</th>
+                                <th>Género</th>
+                                <th>Fecha de Registro</th>
+                                <th>Acciones</th>
+                            </tr>
                         </thead>
                         <tbody>
-                            {% for p in participantes %}
+                            {% for p in lista_espera %}
                                 <tr>
                                     <td>
                                         <a href="{% url 'ciudadanos_ver' p.ciudadano.id %}">{{ p.ciudadano.apellido }}, {{ p.ciudadano.nombre }}</a>
@@ -95,20 +137,56 @@
                                     <td>{{ p.ciudadano.sexo.sexo }}</td>
                                     <td>{{ p.fecha_registro|date:"d/m/Y" }}</td>
                                     <td>
-                                        <a href="{% url 'participanteactividad_delete' centro_id=actividad.centro.id actividad_id=actividad.id pk=p.id %}"
-                                           class="btn btn-danger btn-sm"
-                                           onclick="return confirm('¿Estás seguro que querés eliminar este participante?');">
-                                            Eliminar
-                                        </a>
+                                        <form method="post"
+                                              action="{% url 'participanteactividad_promover' centro_id=actividad.centro.id actividad_id=actividad.id pk=p.id %}"
+                                              style="display:inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-primary">Promover</button>
+                                        </form>
                                     </td>
                                 </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 {% else %}
-                    <p class="text-center">No hay participantes cargados aún.</p>
+                    <p class="text-center">No hay participantes en lista de espera.</p>
                 {% endif %}
             </div>
         </div>
     </div>
+</div>
+</div>
+{# Modal de error al promover sin cupo #}
+{% if promo_error %}
+    <div class="modal fade"
+         id="promoErrorModal"
+         tabindex="-1"
+         aria-labelledby="promoErrorLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-white">
+                    <h5 class="modal-title" id="promoErrorLabel">Cupo Máximo Alcanzado</h5>
+                    <button type="button"
+                            class="btn-close btn-close-white"
+                            data-bs-dismiss="modal"
+                            aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">No hay cupo disponible para promover a un participante de la lista de espera.</div>
+                <div class="modal-footer">
+                    <button type="button"
+                            class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        var modalEl = document.getElementById('promoErrorModal');
+        var modal = new bootstrap.Modal(modalEl);
+        modal.show();
+      });
+    </script>
+{% endif %}
 {% endblock %}
