@@ -23,81 +23,95 @@
             </div>
         </div>
         <!-- ====== 3) UBICACIÓN con barras laterales ====== -->
-        <div class="location-card mb-4">
-            <!-- pestaña izquierda -->
-            <div class="left-tab" id="tab-ubicacion">
-                <span class="tab-text">Ubicación</span>
-            </div>
-            <!-- contenedor del mapa -->
-            <div class="map-container" id="mapa-iframe">
-                {% if centro.calle and centro.numero and centro.localidad and centro.municipio and centro.provincia %}
-                    <iframe src="https://maps.google.com/maps?q={{ centro.calle|urlencode }}+{{ centro.numero }},+{{ centro.localidad.nombre|urlencode }},+{{ centro.municipio.nombre|urlencode }},+{{ centro.provincia.nombre|urlencode }}&output=embed"
-                            width="100%"
-                            height="100%"
-                            frameborder="0"
-                            style="border:0;
-                                   border-radius:8px"
-                            allowfullscreen>
-                    </iframe>
-                {% else %}
-                    <div class="h-100 d-flex align-items-center justify-content-center text-muted">Sin mapa disponible</div>
-                {% endif %}
-            </div>
-            <!-- contenedor de detalles -->
-            <div class="details-container" id="detalles-ubicacion">
-                <h5>Ubicación</h5>
-                <hr />
-                <ul>
-                    <li>
-                        <i class="fas fa-road me-2 text-info"></i>Calle: {{ centro.calle }} {{ centro.numero }}
-                    </li>
-                    <li>
-                        <i class="fas fa-arrows-alt-h me-2 text-info"></i>Entre Calle1: {{ centro.entre_calle_1 }}
-                    </li>
-                    <li>
-                        <i class="fas fa-arrows-alt-h me-2 text-info"></i>Entre Calle2: {{ centro.entre_calle_2 }}
-                    </li>
-                    <li>
-                        <i class="fas fa-globe-americas me-2 text-info"></i>{{ centro.localidad }}, {{ centro.provincia }}
-                    </li>
-                    <li>
-                        <i class="fas fa-map-pin me-2 text-info"></i>C.P.: {{ centro.codigo_postal }}
-                    </li>
-                    <li>
-                        <i class="fas fa-crosshairs me-2 text-info"></i>
-                        <a href="https://maps.google.com/?q={{ centro.lat }},{{ centro.lng }}"
-                           class="text-info">{{ centro.lat }}, {{ centro.lng }}</a>
-                    </li>
-                </ul>
-                <div class="mt-4">
-                    <a href="{% url 'centro_update' centro.id %}"
-                       class="btn btn-outline-primary btn-sm">Editar</a>
-                    <a href="{% url 'centro_list' %}"
-                       class="btn btn-outline-secondary btn-sm">Volver</a>
-                    <a href="{% url 'actividadcentro_create' centro_id=centro.id %}"
-                       class="btn btn-outline-success btn-sm">Agregar Actividad</a>
-                    {% if centro.tipo == 'faro' %}
-                        <a href="{% url 'centro_create' %}?faro={{ centro.id }}"
-                           class="btn btn-outline-info btn-sm">Agregar Centro Adherido</a>
-                    {% endif %}
-                </div>
-            </div>
-            <!-- pestañas verticales derecha -->
-            <div class="right-tabs">
-                <div class="tab-item">
-                    <span class="tab-text">Información Básica</span>
-                </div>
-                <div class="tab-item">
-                    <span class="tab-text">Datos</span>
-                </div>
-                <div class="tab-item">
-                    <span class="tab-text">Relevamientos</span>
-                </div>
-                <div class="tab-item">
-                    <span class="tab-text">Interacciones</span>
-                </div>
-            </div>
-        </div>
+<div class="location-card mb-4">
+  <!-- 1) pestaña izquierda “Ubicación” -->
+  <div class="left-tab" id="tab-ubicacion">
+    <span class="tab-text">Ubicación</span>
+  </div>
+
+  <!-- 2) contenedor del mapa -->
+  <div class="map-container" id="mapa-iframe">
+    {% if centro.calle and centro.numero and centro.localidad and centro.municipio and centro.provincia %}
+      <iframe
+        src="https://maps.google.com/maps?q={{ centro.calle|urlencode }}+{{ centro.numero }},+{{ centro.localidad.nombre|urlencode }},+{{ centro.municipio.nombre|urlencode }},+{{ centro.provincia.nombre|urlencode }}&output=embed"
+        width="100%" height="100%" frameborder="0"
+        style="border:0; border-radius:8px"
+        allowfullscreen>
+      </iframe>
+    {% else %}
+      <div class="h-100 d-flex align-items-center justify-content-center text-muted">
+        Sin mapa disponible
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- 3) contenedor de detalles -->
+  <div class="details-container" id="detalles-ubicacion">
+    <h5>Ubicación</h5>
+    <hr />
+    <ul>
+      <li><i class="fas fa-road me-2 text-info"></i>Calle: {{ centro.calle }} {{ centro.numero }}</li>
+      <li><i class="fas fa-globe-americas me-2 text-info"></i>{{ centro.localidad }}, {{ centro.provincia }}</li>
+      <li><i class="fas fa-map-pin me-2 text-info"></i>Domicilio de Actividades: {{ centro.domicilio_actividad }}</li>
+      <li><i class="fas fa-phone me-2 text-info"></i>Teléfono: {{ centro.telefono }}</li>
+      <li><i class="fas fa-mobile-alt me-2 text-info"></i>Celular: {{ centro.celular }}</li>
+    </ul>
+  </div>
+
+  <!-- 4) pestañas verticales DERECHA -->
+  <div class="right-tabs">
+    <div class="tab-item"><span class="tab-text">Información Básica</span></div>
+    <div class="tab-item"><span class="tab-text">Datos</span></div>
+    <div class="tab-item"><span class="tab-text">Relevamientos</span></div>
+    <div class="tab-item"><span class="tab-text">Interacciones</span></div>
+  </div>
+
+  <!-- 5) secciones de contenido ocultas -->
+  <div class="content-seccion" id="seccion-informacion-basica">
+    <h5>Información Básica</h5>
+    <ul>
+      <li><strong>Nombre:</strong> {{ centro.nombre }}</li>
+      <li><strong>Tipo:</strong> {{ centro.get_tipo_display }}</li>
+      <li><strong>Código:</strong> {{ centro.codigo }}</li>
+      <li><strong>Provincia:</strong> {{ centro.provincia }}</li>
+      <li><strong>Municipio:</strong> {{ centro.municipio }}</li>
+      <li><strong>Localidad:</strong> {{ centro.localidad }}</li>
+    </ul>
+  </div>
+
+  <div class="content-seccion" id="seccion-datos">
+    <h5>Datos</h5>
+    <ul>
+      <li><strong>Correo electrónico:</strong> {{ centro.correo }}</li>
+      <li><strong>Sitio web:</strong> {{ centro.sitio_web }}</li>
+      <li><strong>Redes sociales:</strong> {{ centro.link_redes }}</li>
+      <li><strong>Organización:</strong> {{ centro.organizacion_asociada }}</li>
+    </ul>
+  </div>
+
+  <div class="content-seccion" id="seccion-relevamientos">
+    <h5>Relevamientos</h5>
+    {% if centro.expedientes_cabal.exists %}
+      <p><strong>Último expediente:</strong> {{ centro.expedientes_cabal.last.periodo|date:"d/m/Y" }}</p>
+      <p><strong>Subido por:</strong> {{ centro.expedientes_cabal.last.usuario.get_full_name }}</p>
+    {% else %}
+      <p>No hay relevamientos cargados aún.</p>
+    {% endif %}
+  </div>
+
+  <div class="content-seccion" id="seccion-interacciones">
+    <h5>Interacciones</h5>
+    <ul>
+      <li><strong>Responsable:</strong> {{ centro.nombre_referente }} {{ centro.apellido_referente }}</li>
+      <li><strong>Teléfono:</strong> {{ centro.telefono_referente }}</li>
+      <li><strong>Correo:</strong> {{ centro.correo_referente }}</li>
+      <li><strong>Usuario asignado:</strong> {{ centro.referente.get_full_name }}</li>
+    </ul>
+  </div>
+</div>
+
+
+
         <!-- ====== 4) MÉTRICAS RÁPIDAS ====== -->
         <div class="d-flex gap-3 mb-4">
             {% if centro.tipo == 'faro' %}
@@ -206,7 +220,7 @@
                     <ul class="list-group list-group-flush">
                         <li class="list-group-item d-flex justify-content-between align-items-center bg-navy text-white">
                             <div>
-                                <i class="fas fa-users fa-lg me-2"></i>Asistentes Totales
+                                <i class="fas fa-users fa-lg me-2"></i>Asistentes
                             </div>
                             <span class="badge rounded-pill bg-warning">{{ asistentes.total }}</span>
                         </li>
@@ -496,5 +510,6 @@
             {% endfor %}
         </div>
         <script src="{% static 'custom/js/centrodefamilia.js' %}"></script>
+        <script src="{% static 'custom/js/detailcentrofamilia.js' %}"></script>
     </div>
 {% endblock %}
