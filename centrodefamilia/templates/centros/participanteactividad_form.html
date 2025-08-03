@@ -1,4 +1,3 @@
-{# templates/centros/participanteactividad_form.html #}
 {% extends "includes/main.html" %}
 {% load static %}
 {% load crispy_forms_tags %}
@@ -18,73 +17,129 @@
     <div class="container">
         <h2 class="text-center display-4 mb-4">Nuevo Participante</h2>
         {% if messages %}
-            <div>
-                {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show"
-                         role="alert">
-                        {{ message }}
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show"
+                     role="alert">
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            {% endfor %}
+        {% endif %}
+        <!-- Buscar Participante -->
+        <div class="card mb-3">
+            <div class="card-header font-weight-bold">Buscar Participante</div>
+            <div class="card-body">
+                <form method="get" class="form-inline">
+                    <div class="form-group mr-2">
+                        <label for="busqueda-dni" class="sr-only">DNI</label>
+                        <input type="text"
+                               class="form-control"
+                               name="query"
+                               id="busqueda-dni"
+                               placeholder="Ingrese DNI (mín 4 dígitos)"
+                               value="{{ request.GET.query }}" />
+                    </div>
+                    <button class="btn btn-secondary" type="submit">Buscar</button>
+                </form>
+            </div>
+        </div>
+        <!-- Resultados de Búsqueda -->
+        {% if ciudadanos %}
+            <div class="card mb-3">
+                <div class="card-header font-weight-bold">Resultados de Búsqueda</div>
+                <div class="card-body table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead>
+                            <tr>
+                                <th>Apellido</th>
+                                <th>Nombre</th>
+                                <th>DNI</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in ciudadanos %}
+                                <tr>
+                                    <td>{{ c.apellido }}</td>
+                                    <td>{{ c.nombre }}</td>
+                                    <td>{{ c.documento }}</td>
+                                    <td>
+                                        <form method="post" style="display:inline;">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="ciudadano_id" value="{{ c.id }}" />
+                                            <button type="submit"
+                                                    class="btn btn-sm btn-success"
+                                                    onclick="this.disabled=true;this.innerHTML='<span class=&quot;spinner-border spinner-border-sm&quot; role=&quot;status&quot; aria-hidden=&quot;true&quot;></span> Agregando…'; this.form.submit();">
+                                                Agregar
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endif %}
+        <!-- Formulario Creación de Ciudadano -->
+        {% if request.GET.query and no_resultados %}
+            <div class="card mb-3">
+                <div class="card-header font-weight-bold">Crear Nuevo Ciudadano</div>
+                <div class="card-body">
+                    {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        <button id="btn-crear"
+                                type="submit"
+                                class="btn btn-primary"
+                                onclick="this.disabled=true;this.innerHTML='<span class=&quot;spinner-border spinner-border-sm&quot; role=&quot;status&quot; aria-hidden=&quot;true&quot;></span> Procesando…'; this.form.submit();">
+                            Crear y Asociar
+                        </button>
+                    </form>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    {% if show_waitlist_modal %}
+        <!-- Modal Lista de Espera -->
+        <div class="modal fade"
+             id="waitlistModal"
+             tabindex="-1"
+             role="dialog"
+             aria-labelledby="waitlistModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="waitlistModalLabel">Cupo Máximo Alcanzado</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
-                {% endfor %}
-            </div>
-        {% endif %}
-        {# Form de búsqueda #}
-        <form method="get">
-            <div class="form-group">
-                <label for="busqueda-dni">Buscar por DNI (mínimo 4 dígitos):</label>
-                <div class="input-group">
-                    <input type="text"
-                           class="form-control"
-                           name="query"
-                           id="busqueda-dni"
-                           placeholder="Ingrese DNI"
-                           value="{{ request.GET.query }}" />
-                    <div class="input-group-append">
-                        <button class="btn btn-secondary" type="submit">Buscar</button>
+                    <div class="modal-body">
+                        {{ cupo_message }}
+                        <br />
+                        ¿Deseas agregar a lista de espera?
+                    </div>
+                    <div class="modal-footer">
+                        <form method="post">
+                            {% csrf_token %}
+                            {% if ciudadano_id %}<input type="hidden" name="ciudadano_id" value="{{ ciudadano_id }}" />{% endif %}
+                            <input type="hidden" name="allow_waitlist" value="1" />
+                            <button type="submit" class="btn btn-primary">Agregar a lista de espera</button>
+                        </form>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
                     </div>
                 </div>
             </div>
-        </form>
-        {# Resultados de la búsqueda #}
-        {% if ciudadanos %}
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>Apellido</th>
-                        <th>Nombre</th>
-                        <th>DNI</th>
-                        <th>Acción</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for c in ciudadanos %}
-                        <tr>
-                            <td>{{ c.apellido }}</td>
-                            <td>{{ c.nombre }}</td>
-                            <td>{{ c.documento }}</td>
-                            <td>
-                                <form method="post" style="display:inline;">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="ciudadano_id" value="{{ c.id }}" />
-                                    <button type="submit" class="btn btn-sm btn-success">Agregar</button>
-                                </form>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% endif %}
-        {# Form de creación solo si busqué (query no vacío) y no hubo resultados #}
-        {% if request.GET.query and no_resultados %}
-            <hr />
-            <h4>No se encontraron resultados. Cargar nuevo ciudadano:</h4>
-            <form method="post">
-                {% csrf_token %}
-                {{ form|crispy }}
-                <button type="submit" class="btn btn-primary">Crear y Asociar</button>
-            </form>
-        {% endif %}
-    </div>
+        </div>
+        <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    $('#waitlistModal').modal('show');
+  });
+        </script>
+    {% endif %}
 {% endblock %}

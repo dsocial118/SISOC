@@ -138,6 +138,7 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         qs_part = ParticipanteActividad.objects.filter(actividad_centro__centro=centro)
         hombres = qs_part.filter(ciudadano__sexo__sexo__iexact="Masculino").count()
         mujeres = qs_part.filter(ciudadano__sexo__sexo__iexact="Femenino").count()
+        espera = qs_part.filter(estado="lista_espera").count()
         mixtas = total_part - hombres - mujeres
 
         ctx["metricas"] = {
@@ -154,6 +155,7 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
             "total": total_part,
             "hombres": hombres,
             "mujeres": mujeres,
+            "espera": espera,
         }
         return ctx
 
