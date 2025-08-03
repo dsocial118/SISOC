@@ -128,6 +128,27 @@ class Command(BaseCommand):
                     "Acompanamiento Listar",
                 ],
             },
+            {
+                "username": "Faro",
+                "email": "contableqa@example.com",
+                "password": "a",
+                "is_superuser": False,
+                "grupos": ["ReferenteCentro"],
+            },
+            {
+                "username": "Adherido",
+                "email": "contableqa@example.com",
+                "password": "a",
+                "is_superuser": False,
+                "grupos": ["ReferenteCentro"],
+            },
+            {
+                "username": "CDF",
+                "email": "contableqa@example.com",
+                "password": "a",
+                "is_superuser": False,
+                "grupos": ["CDF SSE"],
+            },
         ]
 
         for conf in usuarios:
