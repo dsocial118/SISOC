@@ -16,56 +16,73 @@
     {# Bloque SSE: sólo indicadores nuevos #}
     {% if request.user|has_group:"Dashboard Centrodefamilia" %}
         <div class="row mb-4">
-            <div class="col-3">
-                <div class="custom-card card-blue">
-                    <div class="card-icon">
-                        <i class="fas fa-user-friends"></i>
-                    </div>
-                    <div class="card-content">
-                        <div class="card-amount">{{ participantes_total }}</div>
-                        <div class="card-title">Participantes Totales</div>
-                    </div>
-                </div>
+        <!-- Participantes Totales -->
+        <div class="col-3">
+            <div style="display:flex; overflow:hidden; border-radius:0.75rem; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+            <!-- Icono: oscuro -->
+            <div style="flex:0 0 4rem; background:#D3A141; display:flex; align-items:center; justify-content:center;">
+                <i class="fas fa-user-friends" style="font-size:1.5rem; color:#fff;"></i>
             </div>
-            <div class="col-3">
-                <div class="custom-card card-orange">
-                    <div class="card-icon">
-                        <i class="fas fa-building"></i>
-                    </div>
-                    <div class="card-content">
-                        <div class="card-amount">{{ centros_adheridos_totales }}</div>
-                        <div class="card-title">Centros Adheridos</div>
-                    </div>
-                </div>
+            <!-- Contenido: claro -->
+            <div style="flex:1; background:#FCD280; color:#fff; padding:0.75rem 1.5rem;">
+                <div style="font-size:2rem; font-weight:600; line-height:1;">{{ participantes_total }}</div>
+                <div style="font-size:1rem; opacity:0.9;">Participantes Totales</div>
             </div>
-            <div class="col-3">
-                <div class="custom-card card-purple">
-                    <div class="card-icon">
-                        <i class="fas fa-lightbulb"></i>
-                    </div>
-                    <div class="card-content">
-                        <div class="card-amount">{{ centros_faro_totales }}</div>
-                        <div class="card-title">Centros Faro</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-3">
-                <div class="custom-card card-yellow">
-                    <div class="card-icon">
-                        <i class="fas fa-tasks"></i>
-                    </div>
-                    <div class="card-content">
-                        <div class="card-amount">{{ actividades_totales }}</div>
-                        <div class="card-title">Actividades Totales</div>
-                    </div>
-                </div>
             </div>
         </div>
+
+        <!-- Centros Adheridos -->
+        <div class="col-3">
+            <div style="display:flex; overflow:hidden; border-radius:0.75rem; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+            <!-- Icono: oscuro -->
+            <div style="flex:0 0 4rem; background:#5C86AD; display:flex; align-items:center; justify-content:center;">
+                <i class="fas fa-building" style="font-size:1.5rem; color:#fff;"></i>
+            </div>
+            <!-- Contenido: claro -->
+            <div style="flex:1; background:#96C5F1; color:#fff; padding:0.75rem 1.5rem;">
+                <div style="font-size:2rem; font-weight:600; line-height:1;">{{ centros_adheridos_totales }}</div>
+                <div style="font-size:1rem; opacity:0.9;">Centros Adheridos</div>
+            </div>
+            </div>
+        </div>
+
+        <!-- Centros Faro -->
+        <div class="col-3">
+            <div style="display:flex; overflow:hidden; border-radius:0.75rem; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+            <!-- Icono: oscuro -->
+            <div style="flex:0 0 4rem; background:#D17C94; display:flex; align-items:center; justify-content:center;">
+                <i class="fas fa-lightbulb" style="font-size:1.5rem; color:#fff;"></i>
+            </div>
+            <!-- Contenido: claro -->
+            <div style="flex:1; background:#FCC8D7; color:#fff; padding:0.75rem 1.5rem;">
+                <div style="font-size:2rem; font-weight:600; line-height:1;">{{ centros_faro_totales }}</div>
+                <div style="font-size:1rem; opacity:0.9;">Centros Faro</div>
+            </div>
+            </div>
+        </div>
+
+        <!-- Actividades Totales -->
+        <div class="col-3">
+            <div style="display:flex; overflow:hidden; border-radius:0.75rem; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+            <!-- Icono: oscuro -->
+            <div style="flex:0 0 4rem; background:#C84542; display:flex; align-items:center; justify-content:center;">
+                <i class="fas fa-tasks" style="font-size:1.5rem; color:#fff;"></i>
+            </div>
+            <!-- Contenido: claro -->
+            <div style="flex:1; background:#FE807E; color:#fff; padding:0.75rem 1.5rem;">
+                <div style="font-size:2rem; font-weight:600; line-height:1;">{{ actividades_totales }}</div>
+                <div style="font-size:1rem; opacity:0.9;">Actividades Totales</div>
+            </div>
+            </div>
+        </div>
+        </div>
+
+
         <div class="row">
             <div class="container">
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Datos de Comedores</h3>
+                        <h3 class="card-title">Datos de Centro De Familia</h3>
                         <div class="card-tools">
                             <button type="button" class="btn btn-tool" data-card-widget="collapse">
                                 <i class="fas fa-minus"></i>
