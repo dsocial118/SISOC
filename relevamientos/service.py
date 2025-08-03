@@ -1363,9 +1363,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             comedor.referente = referente
             comedor.save()
 
-        print(
-            "referente", referente
-        )
+        print("referente", referente)
 
         return responsable.id if responsable else None, (
             referente.id if referente else None
