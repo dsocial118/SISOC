@@ -267,4 +267,55 @@ hr.border-secondary {
 .card.bg-navy {
   background-color: var(--clr-bg-primary);
   border: none;
+}/* -------------------------------------- */
+/* 4) Pestañas verticales DERECHA          */
+/* -------------------------------------- */
+.location-card .right-tabs {
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  display: flex;
+  width: 240px;             /* 4 × 60px */
+  z-index: 1;
+  overflow: visible;        /* para que la pestaña no se recorte al deslizarse */
 }
+
+/* Cada pestaña ahora animará su propio transform */
+.location-card .right-tabs .tab-item {
+  position: relative;       /* para aplicar transform con respecto a su posición */
+  width: 60px;
+  border-left: 1px solid var(--clr-border-light);
+  box-sizing: border-box;
+  cursor: pointer;
+  transition: transform .4s ease;
+}
+
+.location-card .right-tabs .tab-item:first-child {
+  border-left: none;
+}
+.location-card .right-tabs .tab-item:nth-child(1) { background-color: var(--clr-accent-00); }
+.location-card .right-tabs .tab-item:nth-child(2) { background-color: var(--clr-accent-01); }
+.location-card .right-tabs .tab-item:nth-child(3) { background-color: var(--clr-accent-02); }
+.location-card .right-tabs .tab-item:nth-child(4) { background-color: var(--clr-accent-03); }
+
+.location-card .right-tabs .tab-item .tab-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%) rotate(-90deg);
+  transform-origin: center;
+  white-space: nowrap;
+  font-weight: bold;
+  font-size: 0.875rem;
+  color: #fff;
+}
+
+.content-seccion {
+  display: none;
+  padding: 1rem;
+  transition: padding-left 0.3s ease;
+}
+
+.content-seccion.active {
+  display: block;
+}
+
