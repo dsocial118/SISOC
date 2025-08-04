@@ -13,6 +13,7 @@ from centrodefamilia.models import (
 )
 from centrodefamilia.forms import ActividadCentroForm, ActividadForm
 from configuraciones.decorators import group_required
+from centrodefamilia.services.participante import ParticipanteService
 
 
 class ActividadCentroListView(ListView):
@@ -70,18 +71,20 @@ class ActividadCentroDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         actividad = self.get_object()
 
-        # Traigo participantes con select_related para evitar N+1
-        participantes = ParticipanteActividad.objects.filter(
-            actividad_centro=actividad
-        ).select_related("ciudadano")
+        # Obtener inscritos y lista de espera separados
+        inscritos = ParticipanteService.obtener_inscritos(actividad)
+        lista_espera = ParticipanteService.obtener_lista_espera(actividad)
 
-        cantidad = participantes.count()
+        # Cálculo de precio total según inscritos
         precio = actividad.precio or 0
+        precio_total = inscritos.count() * precio
 
         context.update(
             {
-                "participantes": participantes,
-                "precio_total": cantidad * precio,
+                "participantes": inscritos,
+                "lista_espera": lista_espera,
+                "precio_total": precio_total,
+                "promo_error": self.request.GET.get("promo_error"),
             }
         )
         return context
