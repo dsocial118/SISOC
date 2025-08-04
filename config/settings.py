@@ -213,10 +213,79 @@ if "pytest" in sys.argv:  # DB para testing
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "filters": {
+        "info_only": {
+            "()": "django.utils.log.CallbackFilter",
+            "callback": lambda r: r.levelno == logging.INFO,
+        },
+        "error_only": {
+            "()": "django.utils.log.CallbackFilter",
+            "callback": lambda r: r.levelno == logging.ERROR,
+        },
+        "warning_only": {
+            "()": "django.utils.log.CallbackFilter",
+            "callback": lambda r: r.levelno == logging.WARNING,
+        },
+        "critical_only": {
+            "()": "django.utils.log.CallbackFilter",
+            "callback": lambda r: r.levelno == logging.CRITICAL,
+        },
+    },
+    "formatters": {
+        "verbose": {
+            "format": "[{asctime}] {module} {levelname} {name}: {message}",
+            "style": "{",
+        },
+        "simple": {
+            "format": "[{asctime}] {levelname} {message}",
+            "style": "{",
+        },
+    },
     "handlers": {
-        "console": {
+        "info_file": {
+            "level": "INFO",
+            "filters": ["info_only"],
+            "class": "core.utils.DailyFileHandler",
+            "filename": str(BASE_DIR / "logs/info.log"),
+            "formatter": "verbose",
+        },
+        "error_file": {
+            "level": "ERROR",
+            "filters": ["error_only"],
+            "class": "core.utils.DailyFileHandler",
+            "filename": str(BASE_DIR / "logs/error.log"),
+            "formatter": "verbose",
+        },
+        "warning_file": {
+            "level": "WARNING",
+            "filters": ["warning_only"],
+            "class": "core.utils.DailyFileHandler",
+            "filename": str(BASE_DIR / "logs/warning.log"),
+            "formatter": "verbose",
+        },
+        "critical_file": {
+            "level": "CRITICAL",
+            "filters": ["critical_only"],
+            "class": "core.utils.DailyFileHandler",
+            "filename": str(BASE_DIR / "logs/critical.log"),
+            "formatter": "verbose",
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": [
+                "info_file",
+                "error_file",
+                "warning_file",
+                "critical_file",
+            ],
             "level": "DEBUG",
-            "class": "logging.StreamHandler",
+            "propagate": True,
+        },
+        "django.request": {
+            "handlers": ["error_file"],
+            "level": "ERROR",
+            "propagate": False,
         },
     },
 }
