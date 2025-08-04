@@ -23,9 +23,7 @@ class DashboardView(TemplateView):
             tipo="adherido"
         ).count()
 
-        context["centros_faro_totales"] = Centro.objects.filter(
-            tipo="faro"
-        ).count()
+        context["centros_faro_totales"] = Centro.objects.filter(tipo="faro").count()
 
         context["actividades_totales"] = ActividadCentro.objects.count()
 
