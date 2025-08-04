@@ -1,5 +1,5 @@
 from collections import Counter
-from num2words import num2words  # pip install num2words
+from num2words import num2words
 
 
 def generar_texto_comidas(anexo):
