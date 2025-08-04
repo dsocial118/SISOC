@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.db.models import Q, UniqueConstraint
 from ciudadanos.models import Ciudadano
 from core.models import Dia, Localidad, Municipio, Provincia, Sexo
 from organizaciones.models import Organizacion
@@ -27,7 +28,7 @@ class Centro(models.Model):
         on_delete=models.SET_NULL,
         limit_choices_to={"tipo": "faro", "activo": True},
     )
-    codigo = models.CharField(max_length=10, unique=True)
+    codigo = models.CharField(max_length=20, unique=True)
     foto = models.ImageField(upload_to="centros/", blank=True, null=True)
     activo = models.BooleanField(default=True)
     organizacion_asociada = models.ForeignKey(
@@ -143,26 +144,92 @@ class ActividadCentro(models.Model):
 
 
 class ParticipanteActividad(models.Model):
+
+    ESTADO_INSCRIPCION = [
+        ("inscrito", "Inscrito"),
+        ("lista_espera", "Lista de Espera"),
+        ("dado_baja", "Dado de Baja"),
+    ]
+
     actividad_centro = models.ForeignKey(
-        "ActividadCentro", on_delete=models.CASCADE, verbose_name="Actividad del Centro"
+        ActividadCentro, on_delete=models.CASCADE, verbose_name="Actividad del Centro"
     )
     ciudadano = models.ForeignKey(
         Ciudadano, on_delete=models.CASCADE, verbose_name="Ciudadano"
     )
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADO_INSCRIPCION,
+        default="inscrito",
+        verbose_name="Estado de Inscripción",
+    )
     fecha_registro = models.DateTimeField(
         auto_now_add=True, verbose_name="Fecha de Registro"
     )
+    fecha_modificacion = models.DateTimeField(
+        auto_now=True, verbose_name="Fecha de Última Modificación"
+    )
 
     def __str__(self):
-        return f"{self.ciudadano.apellido}, {self.ciudadano.nombre} - {self.actividad_centro}"
+        return (
+            f"{self.ciudadano.apellido}, {self.ciudadano.nombre} - "
+            f"{self.actividad_centro} [{self.estado}]"
+        )
 
     class Meta:
         verbose_name = "Participante"
         verbose_name_plural = "Participantes"
-        unique_together = ("actividad_centro", "ciudadano")
+        constraints = [
+            UniqueConstraint(
+                fields=["actividad_centro", "ciudadano"],
+                condition=Q(estado__in=["inscrito", "lista_espera"]),
+                name="unique_activo_inscripcion",
+            )
+        ]
         indexes = [
             models.Index(fields=["actividad_centro"]),
+            models.Index(fields=["estado"]),
         ]
+
+
+class ParticipanteActividadHistorial(models.Model):
+    """
+    Historial inmutable de cambios de estado de las inscripciones.
+    Registra quién y cuándo realizó cada transición.
+    """
+
+    participante = models.ForeignKey(
+        ParticipanteActividad, on_delete=models.CASCADE, related_name="historial"
+    )
+    estado_anterior = models.CharField(
+        max_length=20,
+        choices=ParticipanteActividad.ESTADO_INSCRIPCION,
+        verbose_name="Estado Anterior",
+        null=True,
+        blank=True,
+    )
+    estado_nuevo = models.CharField(
+        max_length=20,
+        choices=ParticipanteActividad.ESTADO_INSCRIPCION,
+        verbose_name="Estado Nuevo",
+    )
+    fecha_cambio = models.DateTimeField(
+        auto_now_add=True, verbose_name="Fecha de Cambio"
+    )
+    usuario = models.ForeignKey(
+        User, on_delete=models.PROTECT, verbose_name="Usuario que realizó el cambio"
+    )
+
+    def __str__(self):
+        return (
+            f"{self.participante}: {self.estado_anterior or '—'} -> {self.estado_nuevo} "
+            f"en {self.fecha_cambio.strftime('%Y-%m-%d %H:%M')}"
+        )
+
+    class Meta:
+        verbose_name = "Historial de Inscripción"
+        verbose_name_plural = "Historial de Inscripciones"
+        ordering = ["-fecha_cambio"]
 
 
 class Expediente(models.Model):
