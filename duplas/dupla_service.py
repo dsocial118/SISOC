@@ -1,6 +1,8 @@
 from django.forms import ValidationError
 from duplas.models import Dupla
+import logging
 
+logger = logging.getLogger(__name__)
 
 class DuplaService:
 
@@ -18,6 +20,9 @@ class DuplaService:
             return Dupla.objects.get(pk=dupla_id)
         except Dupla.DoesNotExist:
             return None
+        except Exception as e:
+            logger.error("Ocurrió un error inesperado en get_dupla_by_id", exc_info=True)
+            return None
 
     @staticmethod
     def get_all_duplas():
@@ -26,7 +31,11 @@ class DuplaService:
         Returns:
             QuerySet: Colección completa de duplas.
         """
-        return Dupla.objects.all()
+        try:
+            return Dupla.objects.all()
+        except Exception as e:
+            logger.error("Ocurrió un error inesperado en get_all_duplas", exc_info=True)
+            return Dupla.objects.none()
 
     @staticmethod
     def get_duplas_by_estado_activo():
@@ -35,7 +44,11 @@ class DuplaService:
         Returns:
             QuerySet: Duplas activas.
         """
-        return Dupla.objects.filter(estado="Activo")
+        try:
+            return Dupla.objects.filter(estado="Activo")
+        except Exception as e:
+            logger.error("Ocurrió un error inesperado en get_duplas_by_estado_activo", exc_info=True)
+            return Dupla.objects.none()
 
     @staticmethod
     def create_dupla(data):
@@ -54,6 +67,7 @@ class DuplaService:
             dupla = Dupla.objects.create(**data)
             return dupla
         except Exception as e:
+            logger.error("Ocurrió un error inesperado en create_dupla", exc_info=True)
             raise ValidationError(f"Error al crear la Dupla: {e}") from e
 
     @staticmethod
@@ -77,6 +91,8 @@ class DuplaService:
             dupla.save()
             return dupla
         except Dupla.DoesNotExist as exc:
+            logger.error("Dupla no encontrada en update_dupla", exc_info=True)
             raise ValidationError("Dupla no encontrada") from exc
         except Exception as e:
+            logger.error("Ocurrió un error inesperado en update_dupla", exc_info=True)
             raise ValidationError(f"Error al editar la Dupla: {e}") from e
