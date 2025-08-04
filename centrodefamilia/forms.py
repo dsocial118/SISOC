@@ -1,12 +1,14 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.forms import inlineformset_factory
 
 from ciudadanos.models import Sexo, TipoDocumento
 from core.models import Dia
 from centrodefamilia.models import (
     Centro,
     ActividadCentro,
+    HorarioActividadCentro,
     ParticipanteActividad,
     Categoria,
     Actividad,
@@ -23,6 +25,30 @@ HORAS_DEL_DIA = [(f"{h:02d}:00", f"{h:02d}:00") for h in range(0, 24)] + [
     (f"{h:02d}:30", f"{h:02d}:30") for h in range(0, 24)
 ]
 
+# Form para cada franja de horario de una actividad en un centro
+class HorarioActividadCentroForm(forms.ModelForm):
+    class Meta:
+        model = HorarioActividadCentro
+        fields = ['dia', 'hora_inicio', 'hora_fin']
+        widgets = {
+            'dia': forms.Select(attrs={'class': 'form-control'}),
+            'hora_inicio': forms.TimeInput(attrs={'class': 'form-control timepicker', 'placeholder': 'HH:MM'}),
+            'hora_fin': forms.TimeInput(attrs={'class': 'form-control timepicker', 'placeholder': 'HH:MM'}),
+        }
+        labels = {
+            'dia': 'Día',
+            'hora_inicio': 'Hora Inicio',
+            'hora_fin': 'Hora Fin',
+        }
+
+# InlineFormSet para gestionar múltiples franjas en el mismo formulario
+HorarioActividadCentroFormSet = inlineformset_factory(
+    ActividadCentro,
+    HorarioActividadCentro,
+    form=HorarioActividadCentroForm,
+    extra=1,
+    can_delete=True
+)
 
 class CentroForm(forms.ModelForm):
     class Meta:
@@ -93,32 +119,6 @@ class ActividadCentroForm(forms.ModelForm):
         label="Actividad dirigida a...",
         widget=forms.SelectMultiple(attrs={"class": "select2 w-100", "multiple": True}),
     )
-    dias = forms.ModelMultipleChoiceField(
-        queryset=Dia.objects.all(),
-        required=False,
-        label="Días",
-        widget=forms.SelectMultiple(attrs={"class": "select2 w-100", "multiple": True}),
-    )
-    horariosdesde = forms.TimeField(
-        label="Hora Desde",
-        widget=forms.TimeInput(
-            attrs={
-                "class": "form-control timepicker",
-                "placeholder": "Seleccione una hora",
-            }
-        ),
-        required=True,
-    )
-    horarioshasta = forms.TimeField(
-        label="Hora Hasta",
-        widget=forms.TimeInput(
-            attrs={
-                "class": "form-control timepicker",
-                "placeholder": "Seleccione una hora",
-            }
-        ),
-        required=True,
-    )
     categoria = forms.ModelChoiceField(
         queryset=Categoria.objects.all(),
         required=False,
@@ -126,32 +126,39 @@ class ActividadCentroForm(forms.ModelForm):
         empty_label="Seleccione una categoría",
         widget=forms.Select(attrs={"class": "form-control"}),
     )
+    cantidad_personas = forms.IntegerField(
+        label="Cantidad Estimada de Participantes",
+        widget=forms.NumberInput(attrs={"class": "form-control"}),
+    )
+    precio = forms.IntegerField(
+        required=False,
+        label="Precio",
+        widget=forms.NumberInput(attrs={"class": "form-control"}),
+    )
+    estado = forms.ChoiceField(
+        choices=ActividadCentro.ESTADO_CHOICES,
+        label="Estado",
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
 
     class Meta:
         model = ActividadCentro
+        # Eliminados 'dias', 'horariosdesde', 'horarioshasta' del form principal
         fields = [
             "categoria",
             "actividad",
             "cantidad_personas",
             "sexoact",
-            "dias",
-            "horariosdesde",
-            "horarioshasta",
             "precio",
             "estado",
         ]
-        exclude = ["centro"]
-        widgets = {
-            "cantidad_personas": forms.NumberInput(attrs={"class": "form-control"}),
-            "precio": forms.NumberInput(attrs={"class": "form-control"}),
-            "estado": forms.Select(attrs={"class": "form-control"}),
-        }
+        exclude = ["centro",]
 
     def __init__(self, *args, **kwargs):
         self.centro = kwargs.pop("centro", None)
         super().__init__(*args, **kwargs)
 
-        if self.data:
+        if self.data.get("categoria"):
             cat_id = self.data.get("categoria")
             self.fields["actividad"].queryset = (
                 Actividad.objects.filter(categoria_id=cat_id)
@@ -165,7 +172,6 @@ class ActividadCentroForm(forms.ModelForm):
                 {
                     "categoria": cat_id,
                     "actividad": self.instance.actividad_id,
-                    "dias": [d.pk for d in self.instance.dias.all()],
                 }
             )
             self.fields["actividad"].queryset = (
@@ -218,7 +224,6 @@ class ParticipanteActividadForm(forms.ModelForm):
 
     def clean(self):
         cleaned = super().clean()
-        # Validar existencia previa
         documento = cleaned.get("dni")
         if ParticipanteActividad.objects.filter(
             actividad_centro_id=self.actividad_id,
