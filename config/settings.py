@@ -125,7 +125,7 @@ INSTALLED_APPS = [
     "django_extensions",
     "import_export",
     "multiselectfield",
-    "debug_toolbar",
+    # "debug_toolbar",
     "rest_framework",
     "rest_framework_api_key",
     "corsheaders",
@@ -161,7 +161,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.contrib.admindocs.middleware.XViewMiddleware",
-    "debug_toolbar.middleware.DebugToolbarMiddleware",
+    # "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "config.middlewares.xss_protection.XSSProtectionMiddleware",
     "config.middlewares.threadlocals.ThreadLocalMiddleware",
@@ -334,3 +334,8 @@ DOMINIO = os.environ.get("DOMINIO", default="localhost:8001")
 if DEBUG:
     SILKY_PYTHON_PROFILER = True
     MIDDLEWARE.insert(0, "silk.middleware.SilkyMiddleware")
+
+# API RENAPER
+RENAPER_API_USERNAME = os.getenv("RENAPER_API_USERNAME")
+RENAPER_API_PASSWORD = os.getenv("RENAPER_API_PASSWORD")
+RENAPER_API_URL = os.getenv("RENAPER_API_URL")
