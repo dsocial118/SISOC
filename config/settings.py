@@ -125,7 +125,7 @@ INSTALLED_APPS = [
     "django_extensions",
     "import_export",
     "multiselectfield",
-    # "debug_toolbar",
+    "debug_toolbar",
     "rest_framework",
     "rest_framework_api_key",
     "corsheaders",
@@ -161,7 +161,6 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.contrib.admindocs.middleware.XViewMiddleware",
-    # "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "config.middlewares.xss_protection.XSSProtectionMiddleware",
     "config.middlewares.threadlocals.ThreadLocalMiddleware",
@@ -295,11 +294,10 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # Configuración de Django Debug Toolbar
-DEBUG_TOOLBAR_CONFIG = {
-    "SHOW_TOOLBAR_CALLBACK": lambda request: (
-        True if DEBUG else False  # pylint: disable=simplifiable-if-expression
-    )
-}
+if DEBUG:
+    DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": True}
+    MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
+
 
 if DEBUG:
     # Configuración para desarrollo
