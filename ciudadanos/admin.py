@@ -1,5 +1,4 @@
 from django.contrib import admin
-
 from .models import (
     ActividadRealizada,
     Agua,
@@ -36,41 +35,92 @@ from .models import (
     TipoVivienda,
     Turno,
     VinculoFamiliar,
+    Ciudadano,
+    GrupoFamiliar,
+    DimensionFamilia,
+    DimensionVivienda,
+    DimensionSalud,
+    DimensionEducacion,
+    DimensionEconomia,
+    DimensionTrabajo,
+    PlanSocial,
+    Programa,
+    Subsecretarias,
+    Secretarias,
+    Jurisdiccion,
+    CategoriaAlerta,
+    Alerta,
+    Derivacion,
+    Archivo,
+    GrupoHogar,
+    TipoIntervencion,
+    SubIntervencion,
+    EstadoIntervencion,
+    ProgramasLlamados,
+    EstadoLlamado,
+    TipoLlamado,
+    SubtipoLlamado,
+    Llamado,
 )
 
-
-admin.site.register(NivelEducativo)
-admin.site.register(EstadoNivelEducativo)
-admin.site.register(AsisteEscuela)
-admin.site.register(MotivoNivelIncompleto)
+admin.site.register(ActividadRealizada)
+admin.site.register(Agua)
+admin.site.register(AportesJubilacion)
 admin.site.register(AreaCurso)
-admin.site.register(TipoGestion)
-admin.site.register(Grado)
-admin.site.register(Turno)
+admin.site.register(AsisteEscuela)
 admin.site.register(CantidadAmbientes)
+admin.site.register(CentrosSalud)
 admin.site.register(Condicion)
 admin.site.register(UbicacionVivienda)
-admin.site.register(TipoVivienda)
-admin.site.register(TipoPosesionVivienda)
-admin.site.register(TipoPisosVivienda)
-admin.site.register(TipoTechoVivienda)
-admin.site.register(Agua)
 admin.site.register(Desague)
-admin.site.register(Inodoro)
-admin.site.register(TipoConstruccionVivienda)
-admin.site.register(EstadoCivil)
-admin.site.register(TipoDocumento)
-admin.site.register(Nacionalidad)
-admin.site.register(CentrosSalud)
-admin.site.register(Frecuencia)
-admin.site.register(ModoContratacion)
-admin.site.register(ActividadRealizada)
 admin.site.register(DuracionTrabajo)
-admin.site.register(AportesJubilacion)
-admin.site.register(TiempoBusquedaLaboral)
-admin.site.register(NobusquedaLaboral)
-admin.site.register(EstadoRelacion)
+admin.site.register(EstadoCivil)
 admin.site.register(EstadoDerivacion)
-admin.site.register(VinculoFamiliar)
-admin.site.register(Rechazo)
+admin.site.register(EstadoNivelEducativo)
+admin.site.register(EstadoRelacion)
+admin.site.register(Frecuencia)
+admin.site.register(Grado)
 admin.site.register(Importancia)
+admin.site.register(Inodoro)
+admin.site.register(ModoContratacion)
+admin.site.register(MotivoNivelIncompleto)
+admin.site.register(Nacionalidad)
+admin.site.register(NivelEducativo)
+admin.site.register(NobusquedaLaboral)
+admin.site.register(Rechazo)
+admin.site.register(TiempoBusquedaLaboral)
+admin.site.register(TipoConstruccionVivienda)
+admin.site.register(TipoDocumento)
+admin.site.register(TipoGestion)
+admin.site.register(TipoPisosVivienda)
+admin.site.register(TipoPosesionVivienda)
+admin.site.register(TipoTechoVivienda)
+admin.site.register(TipoVivienda)
+admin.site.register(Turno)
+admin.site.register(VinculoFamiliar)
+admin.site.register(Ciudadano)
+admin.site.register(GrupoFamiliar)
+admin.site.register(DimensionFamilia)
+admin.site.register(DimensionVivienda)
+admin.site.register(DimensionSalud)
+admin.site.register(DimensionEducacion)
+admin.site.register(DimensionEconomia)
+admin.site.register(DimensionTrabajo)
+admin.site.register(PlanSocial)
+admin.site.register(Programa)
+admin.site.register(Subsecretarias)
+admin.site.register(Secretarias)
+admin.site.register(Jurisdiccion)
+admin.site.register(CategoriaAlerta)
+admin.site.register(Alerta)
+admin.site.register(Derivacion)
+admin.site.register(Archivo)
+admin.site.register(GrupoHogar)
+admin.site.register(TipoIntervencion)
+admin.site.register(SubIntervencion)
+admin.site.register(EstadoIntervencion)
+admin.site.register(ProgramasLlamados)
+admin.site.register(EstadoLlamado)
+admin.site.register(TipoLlamado)
+admin.site.register(SubtipoLlamado)
+admin.site.register(Llamado)

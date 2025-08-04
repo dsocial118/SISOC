@@ -1,15 +1,18 @@
+import re
 from django import forms
+from django.core.exceptions import ValidationError
 
 
-from comedores.models.comedor import (
+from ciudadanos.models import Ciudadano
+from comedores.models import (
     Comedor,
     Referente,
     ImagenComedor,
     Nomina,
 )
 
-from configuraciones.models import Municipio, Provincia
-from configuraciones.models import Localidad
+from core.models import Municipio, Provincia
+from core.models import Localidad
 
 
 class ReferenteForm(forms.ModelForm):
@@ -27,58 +30,37 @@ class ReferenteForm(forms.ModelForm):
             self.fields["referente_documento"].initial = comedor.referente.documento
             self.fields["referente_funcion"].initial = comedor.referente.funcion
 
+    def clean_mail(self):
+        mail = self.cleaned_data.get("mail")
+        if not mail:
+            return mail
+
+        email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+        if not isinstance(mail, str):
+            raise ValidationError("El correo electrónico debe ser una cadena válida.")
+        if not re.match(email_regex, mail):
+            raise ValidationError("Por favor, ingresa un correo electrónico válido.")
+        return mail
+
     class Meta:
         model = Referente
         fields = "__all__"
 
 
 class NominaForm(forms.ModelForm):
+    ciudadano = forms.ModelChoiceField(
+        queryset=Ciudadano.objects.all(),
+        label="Ciudadano",
+        widget=forms.Select(attrs={"class": "form-control select2"}),
+        help_text="Selecciona un ciudadano del legajo",
+    )
+
     class Meta:
         model = Nomina
-        fields = "__all__"
+        fields = ["ciudadano", "estado", "observaciones"]
         widgets = {
-            "nombre": forms.TextInput(
-                attrs={
-                    "class": "form-control",  # Clase CSS para estilos de Bootstrap o personalizados
-                    "placeholder": "Nombre",  # Placeholder para el campo
-                }
-            ),
-            "apellido": forms.TextInput(
-                attrs={
-                    "class": "form-control",
-                    "placeholder": "Apellido",
-                }
-            ),
-            "dni": forms.TextInput(
-                attrs={
-                    "class": "form-control",
-                    "placeholder": "Documento de Identidad",
-                }
-            ),
-            "sexo": forms.Select(
-                attrs={
-                    "class": "form-control",
-                }
-            ),
-            "estado": forms.Select(
-                attrs={
-                    "class": "form-control",
-                }
-            ),
-            "detalles": forms.Textarea(
-                attrs={
-                    "class": "form-control",
-                    "rows": 3,
-                    "placeholder": "Observaciones",
-                }
-            ),
-        }
-        labels = {
-            "estado": "Estado",
-            "nombre": "Nombre",
-            "apellido": "Apellido",
-            "dni": "Documento de Identidad",
-            "sexo": "Sexo",
+            "estado": forms.Select(attrs={"class": "form-control"}),
+            "observaciones": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
         }
 
 
@@ -88,6 +70,7 @@ class ComedorForm(forms.ModelForm):
     longitud = forms.FloatField(min_value=-180, max_value=180, required=False)
     latitud = forms.FloatField(min_value=-90, max_value=90, required=False)
     codigo_postal = forms.IntegerField(min_value=1000, max_value=999999, required=False)
+    codigo_de_proyecto = forms.CharField(max_length=7, required=False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -119,12 +102,8 @@ class ComedorForm(forms.ModelForm):
             )
         else:
             self.fields["provincia"].queryset = Provincia.objects.all()
-            self.fields["municipio"].queryset = (
-                Municipio.objects.none()
-            )  # Evitar la carga total de las instancias
-            self.fields["localidad"].queryset = (
-                Localidad.objects.none()
-            )  # Evitar la carga total de las instancias
+            self.fields["municipio"].queryset = Municipio.objects.none()
+            self.fields["localidad"].queryset = Localidad.objects.none()
 
         if municipio:
             self.fields["municipio"].initial = municipio

@@ -16,12 +16,40 @@ class Command(BaseCommand):
             "Abogado Dupla",
             "Area Contable",
             "Area Legales",
+            "Comedores Listar",
+            "Comedores Crear",
+            "Comedores Ver",
+            "Comedores Editar",
+            "Comedores Eliminar",
+            "Comedores Relevamiento Ver",
+            "Comedores Relevamiento Crear",
+            "Comedores Relevamiento Detalle",
+            "Comedores Relevamiento Editar",
+            "Comedores Observaciones Crear",
+            "Comedores Observaciones Detalle",
+            "Comedores Observaciones Editar",
+            "Comedores Observaciones Eliminar",
+            "Comedores Intervencion Ver",
+            "Comedores Intervencion Crear",
+            "Comedores Intervencion Editar",
+            "Comedores Intervenciones Detalle",
+            "Comedores Nomina Ver",
+            "Comedores Nomina Crear",
+            "Comedores Nomina Editar",
+            "Comedores Nomina Borrar",
+            "Comedores Dupla Asignar",
+            "Acompanamiento Detalle",
+            "Acompanamiento Listar",
+            "Usuario Crear",
+            "Usuario Eliminar",
+            "Usuario Editar",
+            "Usuario Listar",
+            "Grupos Ver",
+            "ReferenteCentro",
+            "CDF SSE",
         ]
+        self.stdout.write(self.style.SUCCESS(f"Creando grupos de usuario..."))
         for group_name in groups:
             _group, created = Group.objects.get_or_create(name=group_name)
             if created:
                 self.stdout.write(self.style.SUCCESS(f'Grupo "{group_name}" creado'))
-            else:
-                self.stdout.write(
-                    self.style.WARNING(f'Grupo "{group_name}" ya existía')
-                )

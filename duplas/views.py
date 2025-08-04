@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.forms import ValidationError
 from django.http import HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
+
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -11,7 +12,6 @@ from django.views.generic import (
 )
 from duplas.models import Dupla
 from duplas.forms import DuplaForm
-from duplas.dupla_service import DuplaService
 from comedores.services.comedor_service import ComedorService
 
 
@@ -21,9 +21,17 @@ class DuplaListView(ListView):
     context_object_name = "duplas"
     paginate_by = 10
 
+    def get_queryset(self):
+        """Retorna las duplas ordenadas para evitar warning de paginación"""
+        return (
+            Dupla.objects.select_related("abogado")
+            .prefetch_related("tecnico")
+            .order_by("-fecha", "nombre")
+        )
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["duplas"] = DuplaService.get_all_duplas()
+        # No necesitamos duplicar las duplas en el context ya que ListView las maneja automáticamente
         return context
 
 
@@ -63,7 +71,6 @@ class DuplaUpdateView(UpdateView):
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        # Aplicar la lógica de filtrado del formulario
         form.filtrar_campos_tecnico_abogado()
         return form
 
@@ -81,9 +88,13 @@ class DuplaDetailView(DetailView):
     template_name = "dupla_detail.html"
     context_object_name = "dupla"
 
+    def get_queryset(self):
+        """Optimiza las queries para el detalle de dupla"""
+        return Dupla.objects.select_related("abogado").prefetch_related("tecnico")
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["dupla"] = self.object
+        # El objeto ya está disponible como 'dupla' gracias a context_object_name
         return context
 
 

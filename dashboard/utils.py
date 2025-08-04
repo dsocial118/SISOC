@@ -1,9 +1,11 @@
+# TODO: Esto deberia ir a parar un service/config.utils dependiendo el contexto
 from django.core.cache import cache
 from django.db import connection
 from django.db.models import Sum
+from django.conf import settings
 
-from comedores.models.relevamiento import Relevamiento
-from comedores.models.comedor import Comedor, ValorComida
+from relevamientos.models import Relevamiento
+from comedores.models import Comedor, ValorComida
 
 
 def table_exists(table_name):
@@ -13,7 +15,8 @@ def table_exists(table_name):
         return cursor.fetchone() is not None
 
 
-CACHE_TIMEOUT = 300  # Tiempo en segundos (5 minutos)
+# Usar el timeout de settings en lugar de hardcodeado
+CACHE_TIMEOUT = getattr(settings, "DASHBOARD_CACHE_TIMEOUT", 300)
 
 
 def contar_comedores_activos():

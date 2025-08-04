@@ -14,6 +14,17 @@
 ;
 {% block content %}
     <h2 class="text-center display-4 mb-4">Expedientes</h2>
+    <div>
+        <div class="mb-3">
+            <form method="get" class="mb-3">
+                <input type="text"
+                       name="busqueda"
+                       value="{{ query }}"
+                       class="form-control"
+                       placeholder="Buscar por nombre, ubicación, referente, etc." />
+            </form>
+        </div>
+    </div>
     <div class="row mt-5">
         <div class="col-12">
             <div class="card">
@@ -24,7 +35,6 @@
                                 <th>Comedor</th>
                                 <th>Tipo convenio</th>
                                 <th>Num Expediente</th>
-                                <th>Num IF</th>
                                 <th>Modificado</th>
                                 <th>Estado</th>
                                 <th style="width: 10%" class="notexport">Acciones</th>
@@ -34,13 +44,16 @@
                             {% for admision in admisiones %}
                                 <tr>
                                     <td>
-                                        <a href="{% url 'comedor_detalle' admision.comedor.id %}"
-                                           class="font-weight-bold link-handler"
-                                           title="Ver detalles">{{ admision.comedor.nombre }}</a>
+                                        {% if admision.comedor and admision.comedor.id %}
+                                            <a href="{% url 'comedor_detalle' admision.comedor.id %}"
+                                               class="font-weight-bold link-handler"
+                                               title="Ver detalles">{{ admision.comedor.nombre }}</a>
+                                        {% else %}
+                                            <span class="text-muted">Sin comedor asignado</span>
+                                        {% endif %}
                                     </td>
                                     <td>{{ admision.tipo_convenio.nombre }}</td>
                                     <td>{{ admision.num_expediente }}</td>
-                                    <td>{{ admision.num_if }}</td>
                                     <td>{{ admision.modificado|date:'d/m/Y' }}</td>
                                     <td>{{ admision.estado_legales| default_if_none:"-" }}</td>
                                     <td>
@@ -106,4 +119,6 @@
         </div>
     </div>
 {% endblock %}
-{% block customJS %}{% endblock %}
+{% block customJS %}
+    <script src="{% static 'custom/js/filtroadmisiones.js' %}"></script>
+{% endblock %}

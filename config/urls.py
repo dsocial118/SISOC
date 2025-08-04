@@ -9,6 +9,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("django.contrib.auth.urls")),
     path("", include("users.urls")),
+    path("", include("core.urls")),
     path("", include("configuraciones.urls")),
     path("", include("dashboard.urls")),
     path("", include("comedores.urls")),
@@ -18,12 +19,18 @@ urlpatterns = [
     path("", include("duplas.urls")),
     path("", include("ciudadanos.urls")),
     path("", include("admisiones.urls")),
-    # Django Debug Toolbar
-    path("__debug__/", include("debug_toolbar.urls")),
-    # Healthcheck AWS
+    path("", include("centrodefamilia.urls")),
     path("", include("healthcheck.urls")),
+    path("acompanamientos/", include("acompanamientos.urls")),
+    path("expedientespagos/", include("expedientespagos.urls")),
+    path("", include("rendicioncuentasfinal.urls")),
+    path("", include("relevamientos.urls")),
+    path("rendicioncuentasmensual/", include("rendicioncuentasmensual.urls")),
 ]
+
+if settings.DEBUG:
+    urlpatterns = [path("__debug__/", include("debug_toolbar.urls"))] + urlpatterns
+    urlpatterns += [path("silk/", include("silk.urls", namespace="silk"))]
 
 urlpatterns += staticfiles_urlpatterns()
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-urlpatterns += [path("silk/", include("silk.urls", namespace="silk"))]

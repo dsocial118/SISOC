@@ -1,0 +1,23 @@
+[
+    {
+        "model": "relevamientos.tipofrecuenciainsumos",
+        "pk": 1,
+        "fields": {
+            "nombre": "1 vez por semana"
+        }
+    },
+    {
+        "model": "relevamientos.tipofrecuenciainsumos",
+        "pk": 2,
+        "fields": {
+            "nombre": "1 vez cada 15 días"
+        }
+    },
+    {
+        "model": "relevamientos.tipofrecuenciainsumos",
+        "pk": 3,
+        "fields": {
+            "nombre": "1 vez por mes"
+        }
+    }
+]

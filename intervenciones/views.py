@@ -1,7 +1,8 @@
 from django.http import JsonResponse
+from django.core.cache import cache
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_GET
 from django.contrib import messages
 from django.views.generic import CreateView, UpdateView, DeleteView, TemplateView
 
@@ -15,8 +16,16 @@ from intervenciones.models.intervenciones import (
 from intervenciones.forms import IntervencionForm
 
 
-@csrf_exempt
+@require_GET
 def sub_estados_intervenciones_ajax(request):
+    """Devolver sub estados disponibles para un tipo de intervención.
+
+    Args:
+        request (HttpRequest): Petición con el ``id`` del tipo.
+
+    Returns:
+        JsonResponse: Lista de subestados en formato Select2.
+    """
     tipo_intervencion_id = request.GET.get("id")
     if tipo_intervencion_id:
         sub_estados = SubIntervencion.objects.filter(
@@ -55,8 +64,13 @@ class IntervencionDetailView(TemplateView):
         if destinatario:
             intervenciones = intervenciones.filter(destinatario_id=destinatario)
 
-        context["tipos_intervencion"] = TipoIntervencion.objects.all()
-        context["destinatarios"] = TipoDestinatario.objects.all()
+        # Cache los tipos e intervenciones para evitar consultas repetidas
+        context["tipos_intervencion"] = cache.get_or_set(
+            "tipos_intervencion_all", list(TipoIntervencion.objects.all()), 300
+        )
+        context["destinatarios"] = cache.get_or_set(
+            "destinatarios_all", list(TipoDestinatario.objects.all()), 300
+        )
         context["intervenciones"] = intervenciones
         context["object"] = comedor
         context["cantidad_intervenciones"] = cantidad_intervenciones
@@ -152,6 +166,15 @@ class IntervencionDeleteView(DeleteView):
 
 
 def subir_archivo_intervencion(request, intervencion_id):
+    """Guardar un archivo adjunto a la intervención.
+
+    Args:
+        request (HttpRequest): Petición que contiene el archivo.
+        intervencion_id (int): Identificador de la intervención.
+
+    Returns:
+        JsonResponse: Resultado de la operación.
+    """
     intervencion = get_object_or_404(Intervencion, id=intervencion_id)
 
     if request.method == "POST" and request.FILES.get("documentacion"):
@@ -166,6 +189,15 @@ def subir_archivo_intervencion(request, intervencion_id):
 
 
 def eliminar_archivo_intervencion(request, intervencion_id):
+    """Eliminar el archivo asociado a una intervención.
+
+    Args:
+        request (HttpRequest): Petición recibida.
+        intervencion_id (int): Identificador de la intervención.
+
+    Returns:
+        HttpResponseRedirect: Redirección al detalle de la intervención.
+    """
     intervencion = get_object_or_404(Intervencion, id=intervencion_id)
 
     if intervencion.documentacion:
