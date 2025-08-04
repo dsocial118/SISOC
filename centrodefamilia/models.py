@@ -112,17 +112,7 @@ class ActividadCentro(models.Model):
     cantidad_personas = models.PositiveIntegerField(
         verbose_name="Cantidad Estimada de Participantes"
     )
-    dias = models.ManyToManyField(
-        to=Dia,
-        related_name="DiaActividad",
-        blank=True,
-    )
-    sexoact = models.ManyToManyField(
-        to=Sexo,
-        related_name="sexoactividad",
-        verbose_name="Actividad Dirigida a ",
-        blank=True,
-    )
+    # Campos heredados (temporales):
     horariosdesde = models.TimeField()
     horarioshasta = models.TimeField(null=True, blank=True)
     precio = models.PositiveIntegerField(
@@ -138,9 +128,33 @@ class ActividadCentro(models.Model):
     def __str__(self):
         return f"{self.actividad.nombre} en {self.centro.nombre}"
 
+
+class HorarioActividadCentro(models.Model):
+    """
+    Franjas horarias para cada día de una ActividadCentro.
+    """
+    actividad_centro = models.ForeignKey(
+        ActividadCentro,
+        on_delete=models.CASCADE,
+        related_name="horarios",
+        verbose_name="Actividad Centro"
+    )
+    dia = models.ForeignKey(
+        Dia,
+        on_delete=models.CASCADE,
+        verbose_name="Día"
+    )
+    hora_inicio = models.TimeField(verbose_name="Hora Inicio")
+    hora_fin = models.TimeField(verbose_name="Hora Fin")
+
     class Meta:
-        verbose_name = "Actividad del Centro"
-        verbose_name_plural = "Actividades por Centro"
+        ordering = ["actividad_centro", "dia", "hora_inicio"]
+        unique_together = ("actividad_centro", "dia", "hora_inicio", "hora_fin")
+
+    def __str__(self):
+        return f"{self.actividad_centro} - {self.dia.nombre}: {self.hora_inicio}-{self.hora_fin}"
+
+
 
 
 class ParticipanteActividad(models.Model):
