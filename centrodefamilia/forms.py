@@ -113,22 +113,12 @@ class CentroForm(forms.ModelForm):
 
 
 class ActividadCentroForm(forms.ModelForm):
-    sexoact = forms.ModelMultipleChoiceField(
-        queryset=Sexo.objects.all(),
-        required=False,
-        label="Actividad dirigida a...",
-        widget=forms.SelectMultiple(attrs={"class": "select2 w-100", "multiple": True}),
-    )
     categoria = forms.ModelChoiceField(
         queryset=Categoria.objects.all(),
         required=False,
         label="Categoría",
         empty_label="Seleccione una categoría",
         widget=forms.Select(attrs={"class": "form-control"}),
-    )
-    cantidad_personas = forms.IntegerField(
-        label="Cantidad Estimada de Participantes",
-        widget=forms.NumberInput(attrs={"class": "form-control"}),
     )
     precio = forms.IntegerField(
         required=False,
@@ -140,48 +130,40 @@ class ActividadCentroForm(forms.ModelForm):
         label="Estado",
         widget=forms.Select(attrs={"class": "form-control"}),
     )
+    sexoact = forms.ModelMultipleChoiceField(
+        queryset=Sexo.objects.all(),
+        required=False,
+        label="Actividad dirigida a...",
+        widget=forms.SelectMultiple(attrs={"class": "select2 w-100", "multiple": True})
+    )
 
     class Meta:
         model = ActividadCentro
-        # Eliminados 'dias', 'horariosdesde', 'horarioshasta' del form principal
         fields = [
             "categoria",
             "actividad",
-            "cantidad_personas",
             "sexoact",
             "precio",
             "estado",
         ]
-        exclude = ["centro",]
+        exclude = ["centro"]
 
     def __init__(self, *args, **kwargs):
         self.centro = kwargs.pop("centro", None)
         super().__init__(*args, **kwargs)
 
+        # Ajuste de queryset de 'actividad' según categoría seleccionada
         if self.data.get("categoria"):
             cat_id = self.data.get("categoria")
-            self.fields["actividad"].queryset = (
-                Actividad.objects.filter(categoria_id=cat_id)
-                if cat_id
-                else Actividad.objects.none()
-            )
+            self.fields["actividad"].queryset = Actividad.objects.filter(categoria_id=cat_id)
         elif self.instance and self.instance.pk:
-            actividad = self.instance.actividad
-            cat_id = actividad.categoria_id if actividad else None
-            self.initial.update(
-                {
-                    "categoria": cat_id,
-                    "actividad": self.instance.actividad_id,
-                }
-            )
-            self.fields["actividad"].queryset = (
-                Actividad.objects.filter(categoria_id=cat_id)
-                if cat_id
-                else Actividad.objects.none()
-            )
+            cat_id = self.instance.actividad.categoria_id
+            self.initial["categoria"] = cat_id
+            self.fields["actividad"].queryset = Actividad.objects.filter(categoria_id=cat_id)
         else:
             self.fields["actividad"].queryset = Actividad.objects.none()
 
+        # Ocultar precio si el centro es FARO
         if self.centro and self.centro.tipo == "faro":
             self.fields["precio"].widget = forms.HiddenInput()
             self.fields["precio"].required = False
@@ -190,10 +172,32 @@ class ActividadCentroForm(forms.ModelForm):
         cleaned_data = super().clean()
         precio = cleaned_data.get("precio")
         if self.centro and self.centro.tipo == "faro" and precio:
-            raise ValidationError(
-                "Un centro de tipo FARO no debe tener un precio asignado."
-            )
+            raise ValidationError("Un centro de tipo FARO no debe tener un precio asignado.")
         return cleaned_data
+
+    
+class HorarioModalForm(forms.ModelForm):
+    dia = forms.ModelChoiceField(
+        queryset=Dia.objects.all(),
+        label="Día",
+        widget=forms.Select(attrs={"class": "form-control"})
+    )
+    hora_inicio = forms.TimeField(
+        label="Hora Desde",
+        widget=forms.TimeInput(attrs={"class": "form-control timepicker", "placeholder": "HH:MM"})
+    )
+    hora_fin = forms.TimeField(
+        label="Hora Hasta",
+        widget=forms.TimeInput(attrs={"class": "form-control timepicker", "placeholder": "HH:MM"})
+    )
+    cantidad_personas = forms.IntegerField(
+        label="Cupo",
+        widget=forms.NumberInput(attrs={"class": "form-control", "min": 1})
+    )
+    class Meta:
+        model = HorarioActividadCentro
+        # No toca fields del modelo base salvo dia y horas; 'cantidad_personas' y 'sexoact' serán tratados en la vista
+        fields = ['dia', 'hora_inicio', 'hora_fin']
 
 
 class ParticipanteActividadForm(forms.ModelForm):

@@ -1,8 +1,7 @@
 from django.views.generic import ListView, CreateView, DetailView, UpdateView
 from django.urls import reverse, reverse_lazy
 from django.contrib import messages
-from django.shortcuts import get_object_or_404
-from django.utils.decorators import method_decorator
+from django.shortcuts import get_object_or_404, redirect
 from django.http import JsonResponse
 
 from centrodefamilia.models import (
@@ -11,7 +10,7 @@ from centrodefamilia.models import (
     ParticipanteActividad,
     Actividad,
 )
-from centrodefamilia.forms import ActividadCentroForm, ActividadForm
+from centrodefamilia.forms import ActividadCentroForm, ActividadForm, HorarioActividadCentroFormSet
 from configuraciones.decorators import group_required
 from centrodefamilia.services.participante import ParticipanteService
 
@@ -48,15 +47,27 @@ class ActividadCentroCreateView(CreateView):
         kwargs["centro"] = self.centro
         return kwargs
 
-    def form_valid(self, form):
-        form.instance.centro = self.centro
-        messages.success(self.request, "La actividad fue creada correctamente.")
-        return super().form_valid(form)
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        if self.request.POST:
+            context["horario_formset"] = HorarioActividadCentroFormSet(self.request.POST)
+        else:
+            context["horario_formset"] = HorarioActividadCentroFormSet()
         context["centro_id"] = self.centro.pk
         return context
+
+    def form_valid(self, form):
+        context = self.get_context_data()
+        formset = context["horario_formset"]
+        if form.is_valid() and formset.is_valid():
+            actividad = form.save(commit=False)
+            actividad.centro = self.centro
+            actividad.save()
+            formset.instance = actividad
+            formset.save()
+            messages.success(self.request, "La actividad fue creada correctamente.")
+            return redirect(self.get_success_url())
+        return self.form_invalid(form)
 
     def get_success_url(self):
         return reverse("centro_detail", kwargs={"pk": self.centro.pk})
@@ -79,12 +90,16 @@ class ActividadCentroDetailView(DetailView):
         precio = actividad.precio or 0
         precio_total = inscritos.count() * precio
 
+        # Franjas horarias
+        horarios = actividad.horarios.select_related("dia").all()
+
         context.update(
             {
                 "participantes": inscritos,
                 "lista_espera": lista_espera,
                 "precio_total": precio_total,
                 "promo_error": self.request.GET.get("promo_error"),
+                "horarios": horarios,
             }
         )
         return context
@@ -97,27 +112,35 @@ class ActividadCentroUpdateView(UpdateView):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs["centro"] = self.get_object().centro
+        kwargs["centro"] = self.object.centro
         return kwargs
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.POST:
+            context["horario_formset"] = HorarioActividadCentroFormSet(self.request.POST, instance=self.object)
+        else:
+            context["horario_formset"] = HorarioActividadCentroFormSet(instance=self.object)
+        context["centro_id"] = self.object.centro.pk
+        return context
+
     def form_valid(self, form):
-        messages.success(self.request, "La actividad fue actualizada correctamente.")
-        return super().form_valid(form)
+        context = self.get_context_data()
+        formset = context["horario_formset"]
+        if form.is_valid() and formset.is_valid():
+            actividad = form.save()
+            formset.save()
+            messages.success(self.request, "La actividad fue actualizada correctamente.")
+            return redirect(self.get_success_url())
+        return self.form_invalid(form)
 
     def get_success_url(self):
         return reverse("centro_detail", kwargs={"pk": self.object.centro.pk})
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["centro_id"] = self.object.centro.pk
-        return context
-
 
 def cargar_actividades_por_categoria(request):
     categoria_id = request.GET.get("categoria_id")
-    actividades = Actividad.objects.filter(categoria_id=categoria_id).values(
-        "id", "nombre"
-    )
+    actividades = Actividad.objects.filter(categoria_id=categoria_id).values("id", "nombre")
     return JsonResponse(list(actividades), safe=False)
 
 

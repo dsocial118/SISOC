@@ -2,113 +2,110 @@
 {% load crispy_forms_tags %}
 {% load static %}
 {% block title %}{% if object %}Editar{% else %}Nueva{% endif %} Actividad{% endblock %}
+
 {% block head %}
-    <link rel="stylesheet"
-          href="{% static 'custom/css/duplasSelect2.min.css' %}" />
-    <!-- flatpickr CSS -->
-    <link rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+  <link rel="stylesheet" href="{% static 'custom/css/duplasSelect2.min.css' %}" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
 {% endblock %}
+
 {% block breadcrumb %}
-    <ol class="breadcrumb float-sm-right">
-        <li class="breadcrumb-item">
-            <a href="{% url 'actividadcentro_list' %}">Actividades</a>
-        </li>
-        <li class="breadcrumb-item active">{% if object %}Editar{% else %}Nueva{% endif %}</li>
-    </ol>
+  <ol class="breadcrumb float-sm-right">
+    <li class="breadcrumb-item"><a href="{% url 'actividadcentro_list' %}">Actividades</a></li>
+    <li class="breadcrumb-item active">{% if object %}Editar{% else %}Nueva{% endif %}</li>
+  </ol>
 {% endblock %}
+
 {% block content %}
-    <div class="container">
-        <h2 class="text-center display-4 mb-4">{% if object %}Editar{% else %}Nueva{% endif %} Actividad</h2>
-        <form method="post" novalidate>
-            {% csrf_token %}
-            {{ form|crispy }}
+<div class="container">
+  <h2 class="text-center display-4 mb-4">{% if object %}Editar{% else %}Nueva{% endif %} Actividad</h2>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {{ form|crispy }}
 
-            <h4 class="mt-4">Horarios</h4>
-            <table class="table" id="horario-table">
-                {{ horario_formset.management_form }}
-                <thead>
-                    <tr><th>Día</th><th>Hora Inicio</th><th>Hora Fin</th><th>Acciones</th></tr>
-                </thead>
-                <tbody>
-                    {% for hf in horario_formset %}
-                        <tr>
-                            <td>{{ hf.dia }}</td>
-                            <td>{{ hf.hora_inicio }}</td>
-                            <td>{{ hf.hora_fin }}</td>
-                            <td>
-                                {% if forloop.first %}
-                                    <button type="button" class="btn btn-sm btn-success" id="add-row">+</button>
-                                {% else %}
-                                    <button type="button" class="btn btn-sm btn-danger remove-row">−</button>
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-
-            <div class="text-center mt-4">
-                <button type="submit" class="btn btn-primary">Guardar</button>
-                <a href="{% url 'centro_detail' pk=centro_id %}"
-                   class="btn btn-secondary ml-2">Cancelar</a>
-            </div>
-        </form>
+    <h4 class="mt-4">Horarios</h4>
+    <table class="table" id="horario-table">
+      {{ horario_formset.management_form }}
+      <thead>
+        <tr><th>Día</th><th>Hora Inicio</th><th>Hora Fin</th><th>Acciones</th></tr>
+      </thead>
+      <tbody>
+        {% for hf in horario_formset %}
+        <tr>
+          <td>{{ hf.dia }}</td>
+          <td>{{ hf.hora_inicio }}</td>
+          <td>{{ hf.hora_fin }}</td>
+          <td><button type="button" class="btn btn-sm btn-danger remove-row">&minus;</button></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="mb-3">
+      <button type="button" class="btn btn-sm btn-success" id="add-row">+ Agregar horario</button>
     </div>
+
+    <div class="text-center mt-4">
+      <button type="submit" class="btn btn-primary">Guardar</button>
+      <a href="{% url 'centro_detail' pk=centro_id %}" class="btn btn-secondary ml-2">Cancelar</a>
+    </div>
+  </form>
+</div>
 {% endblock %}
+
 {% block customJS %}
-    <script src="{% static 'custom/js/centro_familia_categoria.js' %}"></script>
-    <!-- flatpickr JS -->
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script>
-      flatpickr(".timepicker", {
-        enableTime: true,
-        noCalendar: true,
-        dateFormat: "H:i",
-        time_24hr: true
+<script src="{% static 'custom/js/centro_familia_categoria.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+  function applyFlatpickr() {
+    flatpickr(".timepicker", {
+      enableTime: true,
+      noCalendar: true,
+      dateFormat: "H:i",
+      time_24hr: true
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    applyFlatpickr();
+
+    const table = document.getElementById('horario-table');
+    const addBtn = document.getElementById('add-row');
+    const tbody = table.querySelector('tbody');
+
+    addBtn.addEventListener('click', function () {
+      const totalForms = document.getElementById('id_horarioactividadcentro_set-TOTAL_FORMS');
+      const currentCount = parseInt(totalForms.value);
+      const emptyRow = tbody.querySelector('tr');
+      const newRow = emptyRow.cloneNode(true);
+
+      newRow.querySelectorAll('input, select').forEach(field => {
+        const name = field.name.replace(/-\d+-/, `-${currentCount}-`);
+        field.name = name;
+        field.id = 'id_' + name;
+        field.value = '';
       });
 
-      // Añadir/quitar filas dinámicamente
-      document.addEventListener('DOMContentLoaded', function() {
-        const table = document.getElementById('horario-table');
-        const addBtn = document.getElementById('add-row');
+      totalForms.value = currentCount + 1;
+      tbody.appendChild(newRow);
+      applyFlatpickr();
+    });
 
-        addBtn.addEventListener('click', function() {
-          const totalForms = document.getElementById('id_horarioactividadcentro_set-TOTAL_FORMS');
-          const currentCount = parseInt(totalForms.value);
-          const newRow = table.querySelector('tbody tr').cloneNode(true);
+    tbody.addEventListener('click', function (e) {
+      if (e.target.classList.contains('remove-row')) {
+        const row = e.target.closest('tr');
+        row.remove();
+        const forms = tbody.querySelectorAll('tr');
+        const totalForms = document.getElementById('id_horarioactividadcentro_set-TOTAL_FORMS');
+        totalForms.value = forms.length;
 
-          newRow.querySelectorAll('input, select').forEach(field => {
-            const name = field.name.replace(/-\d+-/, `-${currentCount}-`);
-            field.name = name;
-            field.id = 'id_' + name;
-            if (!field.type || field.type === 'text' || field.tagName === 'SELECT') {
-              field.value = '';
-            }
+        forms.forEach((tr, index) => {
+          tr.querySelectorAll('input, select').forEach(field => {
+            const newName = field.name.replace(/-\d+-/, `-${index}-`);
+            field.name = newName;
+            field.id = 'id_' + newName;
           });
-
-          newRow.querySelector('.remove-row').style.display = 'inline-block';
-          table.querySelector('tbody').appendChild(newRow);
-          totalForms.value = currentCount + 1;
         });
-
-        table.addEventListener('click', function(e) {
-          if (e.target.classList.contains('remove-row')) {
-            e.target.closest('tr').remove();
-            const forms = table.querySelectorAll('tbody tr');
-            const totalForms = document.getElementById('id_horarioactividadcentro_set-TOTAL_FORMS');
-            totalForms.value = forms.length;
-
-            // Reindexar nombres e ids
-            forms.forEach((row, idx) => {
-              row.querySelectorAll('input, select').forEach(field => {
-                const name = field.name.replace(/-\d+-/, `-${idx}-`);
-                field.name = name;
-                field.id = 'id_' + name;
-              });
-            });
-          }
-        });
-      });
-    </script>
+      }
+    });
+  });
+</script>
 {% endblock %}
