@@ -142,78 +142,74 @@
                                     {% csrf_token %}
                                     <div class="card">
                                         <div class="card-body">
-                                            <div class="row mt-3">
-                                                <div class="col-sm-3">
-                                                    <div class="card">
-                                                        <div class="card-header box-profile">
-                                                            <div class="text-center">
-                                                                {% if object.foto %}
-                                                                    <img src="{{ object.foto.url }}"
-                                                                         data-holder-rendered="true"
-                                                                         alt="avatar"
-                                                                         class="avatar p-1"
-                                                                         height="150"
-                                                                         id="blah" />
+                                            <div class="row justify-content-center mt-3">
+                                                <div class="card mx-auto border-0" style="max-width: 300px;">
+                                                    <div class="card-body">
+                                                        <div class="text-center">
+                                                            {% if object.foto %}
+                                                                <img src="{{ object.foto.url }}"
+                                                                     data-holder-rendered="true"
+                                                                     alt="avatar"
+                                                                     class="avatar p-1"
+                                                                     height="150"
+                                                                     id="blah" />
+                                                            {% else %}
+                                                                <img src="{% static 'custom/img/default.png' %}"
+                                                                     data-holder-rendered="true"
+                                                                     alt="avatar"
+                                                                     class="avatar p-1"
+                                                                     height="150"
+                                                                     id="blah" />
+                                                            {% endif %}
+                                                            {% if form.foto.errors %}
+                                                                <div class="error-message">
+                                                                    {% for error in form.foto.errors %}<span class="text-danger">{{ error }}</span>{% endfor %}
+                                                                </div>
+                                                            {% endif %}
+                                                        </div>
+                                                        <label for="id_foto" class="btn btn-primary w-100">
+                                                            <span>
+                                                                {% if request.resolver_match.url_name == "ciudadanos_editar" %}
+                                                                    Cambiar
+                                                                    foto
                                                                 {% else %}
-                                                                    <img src="{% static 'custom/img/default.png' %}"
-                                                                         data-holder-rendered="true"
-                                                                         alt="avatar"
-                                                                         class="avatar p-1"
-                                                                         height="150"
-                                                                         id="blah" />
+                                                                    Agregar foto
                                                                 {% endif %}
-                                                                {% if form.foto.errors %}
-                                                                    <div class="error-message">
-                                                                        {% for error in form.foto.errors %}<span class="text-danger">{{ error }}</span>{% endfor %}
-                                                                    </div>
-                                                                {% endif %}
-                                                            </div>
-                                                        </div>
-                                                        <div class="card-footer pb-1 mb-0">
-                                                            <label for="id_foto" class="btn btn-primary btn-block font-weight-normal">
-                                                                <span>
-                                                                    {% if request.resolver_match.url_name == "ciudadanos_editar" %}
-                                                                        Cambiar
-                                                                        foto
-                                                                    {% else %}
-                                                                        Agregar foto
-                                                                    {% endif %}
-                                                                </span>
-                                                            </label>
-                                                        </div>
+                                                            </span>
+                                                        </label>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="col-sm-9 px-0 px-sm-2">
-                                                <div class="form-row">
-                                                    {{ form.apellido| as_crispy_field }}
-                                                    {{ form.nombre| as_crispy_field }}
-                                                    {{ form.sexo| as_crispy_field }}
-                                                    {{ form.tipo_documento| as_crispy_field }}
-                                                    {{ form.documento| as_crispy_field }}
-                                                    <!-- FIXME: Esta fecha debe ser dd-mm-yyyy -->
-                                                    {{ form.fecha_nacimiento| as_crispy_field }}
-                                                    {{ form.estado_civil| as_crispy_field }}
-                                                    {{ form.telefono| as_crispy_field }}
-                                                    {{ form.telefono_alternativo| as_crispy_field }}
-                                                    {{ form.email| as_crispy_field }}
-                                                    {{ form.provincia| as_crispy_field }}
-                                                    {{ form.municipio| as_crispy_field }}
-                                                    {{ form.localidad| as_crispy_field }}
-                                                    {{ form.calle| as_crispy_field }}
-                                                    {{ form.altura| as_crispy_field }}
-                                                    {{ form.longitud| as_crispy_field }}
-                                                    {{ form.latitud| as_crispy_field }}
-                                                    {{ form.piso_departamento| as_crispy_field }}
-                                                    {{ form.torre_pasillo| as_crispy_field }}
-                                                    {{ form.escalera_manzana| as_crispy_field }}
-                                                    {{ form.circuito| as_crispy_field }}
-                                                    {{ form.codigo_postal| as_crispy_field }}
-                                                    <div class="form-group col-4 {% if request.resolver_match.url_name != 'ciudadanos_editar' %}d-none{% endif %}">
-                                                        {{ form.estado| as_crispy_field }}
-                                                    </div>
-                                                    <div class="form-group col-12">{{ form.observaciones|as_crispy_field }}</div>
+                                            <div class="row mx-auto px-6 mt-3">
+                                                <div class="form-group col-md-6">{{ form.apellido|as_crispy_field }}</div>
+                                                <div class="form-group col-md-6">{{ form.nombre|as_crispy_field }}</div>
+                                                <div class="form-group col-md-6">{{ form.tipo_documento|as_crispy_field }}</div>
+                                                <div class="form-group col-md-6">{{ form.documento|as_crispy_field }}</div>
+                                                <div class="form-group col-md-6">{{ form.sexo|as_crispy_field }}</div>
+                                                <div class="form-group col-md-6">{{ form.fecha_nacimiento|as_crispy_field }}</div>
+                                                <div class="form-group col-md-6">{{ form.telefono|as_crispy_field }}</div>
+                                                <div class="form-group col-md-6">{{ form.telefono_alternativo|as_crispy_field }}</div>
+                                                <div class="form-group col-md-6">{{ form.email|as_crispy_field }}</div>
+                                                <div class="form-group col-md-6"></div>
+                                                <div class="form-group col-md-6">{{ form.estado_civil|as_crispy_field }}</div>
+                                                <div class="form-group col-md-6"></div>
+                                                <div class="form-group col-md-6">{{ form.calle|as_crispy_field }}</div>
+                                                <div class="form-group col-md-3">{{ form.altura|as_crispy_field }}</div>
+                                                <div class="form-group col-md-3">{{ form.piso_departamento|as_crispy_field }}</div>
+                                                <div class="form-group col-md-6">{{ form.torre_pasillo|as_crispy_field }}</div>
+                                                <div class="form-group col-md-6">{{ form.escalera_manzana|as_crispy_field }}</div>
+                                                <div class="form-group col-md-6">{{ form.provincia|as_crispy_field }}</div>
+                                                <div class="form-group col-md-6">{{ form.municipio|as_crispy_field }}</div>
+                                                <div class="form-group col-md-6">{{ form.localidad|as_crispy_field }}</div>
+                                                <div class="form-group col-md-6">{{ form.circuito|as_crispy_field }}</div>
+                                                <div class="form-group col-md-6">{{ form.codigo_postal|as_crispy_field }}</div>
+                                                <div class="form-group col-md-6"></div>
+                                                <div class="form-group col-md-6">{{ form.longitud|as_crispy_field }}</div>
+                                                <div class="form-group col-md-6">{{ form.latitud|as_crispy_field }}</div>
+                                                <div class="form-group col-md-6 {% if request.resolver_match.url_name != 'ciudadanos_editar' %}d-none{% endif %}">
+                                                    {{ form.estado|as_crispy_field }}
                                                 </div>
+                                                <div class="form-group col-12">{{ form.observaciones|as_crispy_field }}</div>
                                             </div>
                                             <input type="file"
                                                    name="foto"
