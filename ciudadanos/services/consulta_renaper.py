@@ -3,11 +3,11 @@ import requests
 import datetime
 import unicodedata
 from ciudadanos.models import Sexo, TipoDocumento, Provincia
+from requests.exceptions import RequestException, ConnectionError
 
 API_BASE = settings.RENAPER_API_URL
 LOGIN_URL = f"{API_BASE}/auth/login"
 CONSULTA_URL = f"{API_BASE}/consultarenaper"
-
 
 class APIClient:
     def __init__(self):
@@ -17,9 +17,14 @@ class APIClient:
         self.token_expiration = None
 
     def login(self):
-        response = requests.post(
-            LOGIN_URL, json={"username": self.username, "password": self.password}
-        )
+        try:
+            response = requests.post(
+                LOGIN_URL, json={"username": self.username, "password": self.password}, timeout=10
+            )
+        except ConnectionError:
+            raise Exception("Error de conexión con el servicio.")
+        except RequestException as e:
+            raise Exception(f"No se pudo conectar al servicio de login: {str(e)}")
 
         if response.status_code != 200:
             raise Exception(f"Login fallido: {response.status_code} {response.text}")
@@ -30,6 +35,7 @@ class APIClient:
             data["expiration"].replace("Z", "+00:00")
         )
 
+
     def get_token(self):
         if (
             not self.token
@@ -39,11 +45,20 @@ class APIClient:
         return self.token
 
     def consultar_ciudadano(self, dni, sexo):
-        token = self.get_token()
+        try:
+            token = self.get_token()
+        except Exception as e:
+            return {"success": False, "error": f"Error al obtener token: {str(e)}"}
+
         headers = {"Authorization": f"Bearer {token}"}
         params = {"dni": dni, "sexo": sexo.upper()}
 
-        response = requests.get(CONSULTA_URL, headers=headers, params=params)
+        try:
+            response = requests.get(CONSULTA_URL, headers=headers, params=params, timeout=10)
+        except ConnectionError:
+            return {"success": False, "error": "Error de conexión al servicio."}
+        except RequestException as e:
+            return {"success": False, "error": f"No se pudo conectar al servicio: {str(e)}"}
 
         if response.status_code != 200:
             try:
@@ -81,65 +96,70 @@ def normalizar(texto):
 
 
 def consultar_datos_renaper(dni, sexo):
-    client = APIClient()
+    try:
+        client = APIClient()
+        response = client.consultar_ciudadano(dni, sexo)
 
-    response = client.consultar_ciudadano(dni, sexo)
-    if not response["success"]:
-        return {
-            "success": False,
-            "error": response.get("error", "Error desconocido"),
-            "raw_response": response.get("raw_response"),
+        if not response["success"]:
+            return {
+                "success": False,
+                "error": response.get("error", "Error desconocido"),
+                "raw_response": response.get("raw_response"),
+            }
+
+        datos = response["data"]
+
+        if datos.get("mensaf") == "FALLECIDO":
+            return {"success": False, "fallecido": True}
+
+        sexo_map = {"F": "Femenino", "M": "Masculino", "X": "X"}
+        sexo_texto = sexo_map.get(sexo)
+        sexo_pk = None
+        if sexo_texto:
+            sexo_obj = Sexo.objects.filter(sexo=sexo_texto).first()
+            sexo_pk = sexo_obj.pk if sexo_obj else None
+
+        tipo_doc = TipoDocumento.objects.get(tipo="DNI")
+
+        EQUIVALENCIAS_PROVINCIAS = {
+            "ciudad de buenos aires": "ciudad autonoma de buenos aires",
+            "caba": "ciudad autonoma de buenos aires",
+            "ciudad autonoma de buenos aires": "ciudad autonoma de buenos aires",
+            "tierra del fuego": "tierra del fuego, antartida e islas del atlantico sur",
+            "tierra del fuego antartida e islas del atlantico sur": "tierra del fuego, antartida e islas del atlantico sur",
         }
 
-    datos = response["data"]
+        provincia_api = datos.get("provincia", "")
+        provincia_api_norm = normalizar(provincia_api)
+        provincia_api_norm = EQUIVALENCIAS_PROVINCIAS.get(
+            provincia_api_norm, provincia_api_norm
+        )
 
-    if datos.get("mensaf") == "FALLECIDO":
-        return {"success": False, "fallecido": True}
+        provincia = None
+        for prov in Provincia.objects.all():
+            nombre_norm = normalizar(prov.nombre)
+            if provincia_api_norm == nombre_norm:
+                provincia = prov
+                break
 
-    sexo_map = {"F": "Femenino", "M": "Masculino", "X": "X"}
-    sexo_texto = sexo_map.get(sexo)
-    sexo_pk = None
-    if sexo_texto:
-        sexo_obj = Sexo.objects.filter(sexo=sexo_texto).first()
-        sexo_pk = sexo_obj.pk if sexo_obj else None
+        datos_mapeados = {
+            "documento": dni,
+            "tipo_documento": tipo_doc.pk,
+            "sexo": sexo_pk,
+            "apellido": datos.get("apellido"),
+            "nombre": datos.get("nombres"),
+            "fecha_nacimiento": datos.get("fechaNacimiento"),
+            "calle": datos.get("calle"),
+            "altura": datos.get("numero"),
+            "piso_departamento": f"{datos.get('piso', '')} {datos.get('departamento', '')}".strip(),
+            "ciudad": datos.get("ciudad"),
+            "provincia": provincia.pk if provincia else None,
+            "pais": datos.get("pais"),
+            "codigo_postal": datos.get("cpostal"),
+        }
 
-    tipo_doc = TipoDocumento.objects.get(tipo="DNI")
+        return {"success": True, "data": datos_mapeados, "datos_api": datos}
 
-    EQUIVALENCIAS_PROVINCIAS = {
-        "ciudad de buenos aires": "ciudad autonoma de buenos aires",
-        "caba": "ciudad autonoma de buenos aires",
-        "ciudad autonoma de buenos aires": "ciudad autonoma de buenos aires",
-        "tierra del fuego": "tierra del fuego, antartida e islas del atlantico sur",
-        "tierra del fuego antartida e islas del atlantico sur": "tierra del fuego, antartida e islas del atlantico sur",
-    }
+    except Exception as e:
+        return {"success": False, "error": f"Error inesperado: {str(e)}"}
 
-    provincia_api = datos.get("provincia", "")
-    provincia_api_norm = normalizar(provincia_api)
-    provincia_api_norm = EQUIVALENCIAS_PROVINCIAS.get(
-        provincia_api_norm, provincia_api_norm
-    )
-
-    provincia = None
-    for prov in Provincia.objects.all():
-        nombre_norm = normalizar(prov.nombre)
-        if provincia_api_norm == nombre_norm:
-            provincia = prov
-            break
-
-    datos_mapeados = {
-        "documento": dni,
-        "tipo_documento": tipo_doc.pk,
-        "sexo": sexo_pk,
-        "apellido": datos.get("apellido"),
-        "nombre": datos.get("nombres"),
-        "fecha_nacimiento": datos.get("fechaNacimiento"),
-        "calle": datos.get("calle"),
-        "altura": datos.get("numero"),
-        "piso_departamento": f"{datos.get('piso', '')} {datos.get('departamento', '')}".strip(),
-        "ciudad": datos.get("ciudad"),
-        "provincia": provincia.pk if provincia else None,
-        "pais": datos.get("pais"),
-        "codigo_postal": datos.get("cpostal"),
-    }
-
-    return {"success": True, "data": datos_mapeados, "datos_api": datos}
