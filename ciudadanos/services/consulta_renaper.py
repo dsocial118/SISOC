@@ -9,6 +9,7 @@ API_BASE = settings.RENAPER_API_URL
 LOGIN_URL = f"{API_BASE}/auth/login"
 CONSULTA_URL = f"{API_BASE}/consultarenaper"
 
+
 class APIClient:
     def __init__(self):
         self.username = settings.RENAPER_API_USERNAME
@@ -19,7 +20,9 @@ class APIClient:
     def login(self):
         try:
             response = requests.post(
-                LOGIN_URL, json={"username": self.username, "password": self.password}, timeout=10
+                LOGIN_URL,
+                json={"username": self.username, "password": self.password},
+                timeout=10,
             )
         except ConnectionError:
             raise Exception("Error de conexión con el servicio.")
@@ -34,7 +37,6 @@ class APIClient:
         self.token_expiration = datetime.datetime.fromisoformat(
             data["expiration"].replace("Z", "+00:00")
         )
-
 
     def get_token(self):
         if (
@@ -54,11 +56,16 @@ class APIClient:
         params = {"dni": dni, "sexo": sexo.upper()}
 
         try:
-            response = requests.get(CONSULTA_URL, headers=headers, params=params, timeout=10)
+            response = requests.get(
+                CONSULTA_URL, headers=headers, params=params, timeout=10
+            )
         except ConnectionError:
             return {"success": False, "error": "Error de conexión al servicio."}
         except RequestException as e:
-            return {"success": False, "error": f"No se pudo conectar al servicio: {str(e)}"}
+            return {
+                "success": False,
+                "error": f"No se pudo conectar al servicio: {str(e)}",
+            }
 
         if response.status_code != 200:
             try:
@@ -162,4 +169,3 @@ def consultar_datos_renaper(dni, sexo):
 
     except Exception as e:
         return {"success": False, "error": f"Error inesperado: {str(e)}"}
-
