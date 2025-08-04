@@ -42,6 +42,7 @@ from relevamientos.models import (
 )
 from relevamientos.tasks import AsyncSendRelevamientoToGestionar
 from core.utils import convert_string_to_int
+from core.models import Provincia, Municipio, Localidad
 
 
 # TODO: Refactorizar todo esto, pylint esta muriendo aca
@@ -86,6 +87,43 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         AsyncSendRelevamientoToGestionar(relevamiento.id).start()
 
         return relevamiento
+
+    @staticmethod
+    def update_comedor(comedor_data, comedor_instance):
+        comedor_instance.numero = convert_string_to_int(
+            comedor_data.get("numero", comedor_instance.numero)
+        )
+        comedor_instance.calle = comedor_data.get("calle", comedor_instance.calle)
+        comedor_instance.entre_calle_1 = comedor_data.get(
+            "entre_calle_1", comedor_instance.entre_calle_1
+        )
+        comedor_instance.entre_calle_2 = comedor_data.get(
+            "entre_calle_2", comedor_instance.entre_calle_2
+        )
+        comedor_instance.barrio = comedor_data.get("barrio", comedor_instance.barrio)
+        comedor_instance.codigo_postal = convert_string_to_int(
+            comedor_data.get("codigo_postal", comedor_instance.codigo_postal)
+        )
+        comedor_instance.provincia = Provincia.objects.get(
+            nombre=comedor_data.get("provincia", comedor_instance.provincia)
+        )
+        comedor_instance.municipio = Municipio.objects.get(
+            nombre=comedor_data.get("municipio", comedor_instance.municipio)
+        )
+        comedor_instance.localidad = Localidad.objects.get(
+            nombre=comedor_data.get("localidad", comedor_instance.localidad)
+        )
+        comedor_instance.partido = comedor_data.get("partido", comedor_instance.partido)
+        comedor_instance.manzana = comedor_data.get("manzana", comedor_instance.manzana)
+        comedor_instance.lote = comedor_data.get("lote", comedor_instance.lote)
+        comedor_instance.comienzo = (
+            convert_string_to_int(comedor_data.get("comienzo", "").split("/")[-1])
+            if comedor_data.get("comienzo")
+            else comedor_instance.comienzo
+        )
+        comedor_instance.save()
+
+        return comedor_instance.id
 
     @staticmethod
     def populate_relevamiento(relevamiento_form, extra_forms):
@@ -1311,30 +1349,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 )
 
         if responsable_es_referente:
-            if not responsable_data or not any(responsable_data.values()):
-                responsable_data = referente_data
-
-            if responsable_data and any(responsable_data.values()):
-                responsable = Referente.objects.filter(
-                    documento=responsable_data.get("documento")
-                ).last()
-
-                if responsable:
-                    for key, value in responsable_data.items():
-                        setattr(responsable, key, value)
-                    responsable.save()
-                else:
-                    responsable = Referente.objects.create(
-                        nombre=responsable_data.get("nombre", None),
-                        apellido=responsable_data.get("apellido", None),
-                        mail=responsable_data.get("mail", None),
-                        celular=responsable_data.get("celular", None),
-                        documento=responsable_data.get("documento", None),
-                        funcion=responsable_data.get("funcion", None),
-                    )
-
-            referente = responsable  # En todos los casos, el mismo objeto
-
+            referente = responsable  # Referente y Responsable son el mismo
         elif referente_data and any(referente_data.values()):
             referente = Referente.objects.filter(
                 documento=referente_data.get("documento")
@@ -1362,8 +1377,6 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             comedor = com_rel.comedor
             comedor.referente = referente
             comedor.save()
-
-        print("referente", referente)
 
         return responsable.id if responsable else None, (
             referente.id if referente else None
