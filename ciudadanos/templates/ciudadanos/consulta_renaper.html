@@ -47,7 +47,7 @@
                 </form>
                 {% if error %}
                     <div class="alert bg-danger text-white text-center">
-                        <i class="bi bi-exclamation-triangle-fill"></i> No se encontraron coincidencias con su busqueda.
+                        <i class="bi bi-exclamation-triangle-fill"></i> No se encontraron coincidencias con su busqueda. <br/><small>{{ error }}</small>
                     </div>
                 {% endif %}
                 {% if fallecido %}
