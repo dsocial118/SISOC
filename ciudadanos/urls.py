@@ -50,6 +50,7 @@ from ciudadanos.views import (
     SubEstadosIntervencionesAJax,
     SubEstadosLlamadosAjax,
     TipoEstadosLlamadosAjax,
+    ConsultaRenaperView,
     busqueda_familiares,
     busqueda_hogar,
     actualizar_programas,
@@ -345,4 +346,9 @@ urlpatterns = [
         name="actualizar_programas",
     ),
     path("eliminar/programa/", eliminar_programa, name="eliminar_programa"),
+    path(
+        "ciudadanos/crear/consulta/",
+        login_required(ConsultaRenaperView.as_view()),
+        name="renaper_consulta",
+    ),
 ]
