@@ -1,62 +1,57 @@
-async function getTerritoriales(comedorId) {
-    const data = {
-        Action: "Find",
-        Properties: { Locale: "es-ES" },
-        Rows: [{ ComedorID: comedorId }],
-    };
-
-    const headers = {
-        "applicationAccessKey": GESTIONAR_API_KEY,
-        "Content-Type": "application/json"
-    };
-
-    try {
-        const response = await fetch(GESTIONAR_API_CREAR_COMEDOR, {
-            method: "POST",
-            headers: headers,
-            body: JSON.stringify(data)
-        });
-
-        if (!response.ok) {
-            throw new Error(`Error al sincronizar con GESTIONAR: ${response.statusText}`);
-        }
-
-        const responseData = await response.json();
-
-        if (!responseData || !responseData[0]?.ListadoRelevadoresDisponibles) {
-            return [];
-        }
-
-        const territorialesData = parseStringToJSON(responseData[0].ListadoRelevadoresDisponibles)
-
-        const populateSelect = (selectId, data) => {
-            const select = document.getElementById(selectId);
-            if (!select) return;
-            data.forEach(territorial => {
-                const option = document.createElement("option");
-                option.value = JSON.stringify(territorial);
-                option.textContent = territorial.nombre;
-                select.appendChild(option);
-            });
+(() => {
+    async function getTerritoriales(comedorId) {
+        const payload = {
+            Action: 'Find',
+            Properties: { Locale: 'es-ES' },
+            Rows: [{ ComedorID: comedorId }]
         };
 
-        populateSelect("new_territorial_select", territorialesData);
-        populateSelect("update_territorial_select", territorialesData);
+        try {
+          const res = await fetch(GESTIONAR_API_CREAR_COMEDOR, {
+              method: 'POST',
+              headers: {
+                  applicationAccessKey: GESTIONAR_API_KEY,
+                  'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(payload)
+        });
+          if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
 
-        return territorialesData;
-    } catch (error) {
-        console.error(`Error al sincronizar con GESTIONAR: ${error.message}`);
-        return [];
+          const json = await res.json();
+          const raw = json?.[0]?.ListadoRelevadoresDisponibles;
+          const items = raw ? parseStringToJSON(raw) : [];
+
+          updateTerritoriales(items);
+          return items;
+      } catch (e) {
+          console.error('Error al sincronizar con GESTIONAR:', e);
+          updateTerritoriales([]);
+          return [];
+      }
     }
-}
 
-function parseStringToJSON(input) {
-    return input.split(' , ').map(entry => {
-        const [gestionar_uid, nombre] = entry.split('/ ');
-        return { gestionar_uid, nombre };
-    });
-}
+    function parseStringToJSON(input) {
+        return input
+            .split(/\s*,\s*/)
+            .filter(Boolean)
+            .map(entry => {
+                const [gestionar_uid, nombre] = entry.split(/\s*\/\s*/);
+                return { gestionar_uid, nombre };
+            });
+    }
 
-document.addEventListener("DOMContentLoaded", () => {
+    function updateTerritoriales(items) {
+        const frag = document.createDocumentFragment();
+        items.forEach(({ gestionar_uid, nombre }) => {
+            frag.append(new Option(nombre, JSON.stringify({ gestionar_uid, nombre })));
+        });
+        document.querySelectorAll('#new_territorial_select, #update_territorial_select')
+            .forEach(select => {
+                select.innerHTML = '';
+                select.appendChild(frag.cloneNode(true));
+            });
+    }
+
+    // Llamada inmediata
     getTerritoriales(comedorId);
-});
+})();

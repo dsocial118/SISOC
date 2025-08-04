@@ -1,5 +1,4 @@
 from django.db import models
-from django.forms import ValidationError
 
 
 class TipoOrganizacion(models.Model):
@@ -12,6 +11,38 @@ class TipoOrganizacion(models.Model):
         ordering = ["id"]
         verbose_name = "Tipo de Organización"
         verbose_name_plural = "Tipos de Organización"
+
+
+class TipoEntidad(models.Model):
+    nombre = models.CharField(max_length=255, unique=True)
+    descripcion = models.CharField(max_length=255, blank=True, null=True)
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        ordering = ["nombre"]
+        verbose_name = "Tipo de Entidad"
+        verbose_name_plural = "Tipos de Entidad"
+
+
+class SubtipoEntidad(models.Model):
+    nombre = models.CharField(max_length=255, unique=True)
+    tipo_entidad = models.ForeignKey(
+        TipoEntidad,
+        on_delete=models.CASCADE,
+        related_name="subtipos",
+        blank=True,
+        null=True,
+    )
+
+    def __str__(self):
+        return str(self.nombre)
+
+    class Meta:
+        ordering = ["nombre"]
+        verbose_name = "Subtipo de Entidad"
+        verbose_name_plural = "Subtipos de Entidad"
 
 
 class RolFirmante(models.Model):
@@ -44,11 +75,63 @@ class Firmante(models.Model):
         return f"{self.nombre} ({self.get_rol_display()})"
 
 
+class Aval1(models.Model):
+    organizacion = models.ForeignKey(
+        "Organizacion",
+        on_delete=models.CASCADE,
+        related_name="avales1",
+        blank=True,
+        null=True,
+    )
+    nombre = models.CharField(max_length=255, blank=True, null=True)
+    cuit = models.BigIntegerField(unique=True, blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.nombre} ({self.cuit})"
+
+    class Meta:
+        verbose_name = "Aval 1"
+        verbose_name_plural = "Avales 1"
+
+
+class Aval2(models.Model):
+    organizacion = models.ForeignKey(
+        "Organizacion",
+        on_delete=models.CASCADE,
+        related_name="avales2",
+        blank=True,
+        null=True,
+    )
+    nombre = models.CharField(max_length=255, blank=True, null=True)
+    cuit = models.BigIntegerField(unique=True, blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.nombre} ({self.cuit})"
+
+    class Meta:
+        verbose_name = "Aval 2"
+        verbose_name_plural = "Avales 2"
+
+
 class Organizacion(models.Model):
     nombre = models.CharField(max_length=255)
     cuit = models.BigIntegerField(blank=True, null=True, unique=True)
     telefono = models.BigIntegerField(blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
+    tipo_entidad = models.ForeignKey(
+        TipoEntidad,
+        on_delete=models.CASCADE,
+        related_name="organizaciones",
+        blank=True,
+        null=True,
+    )
+    subtipo_entidad = models.ForeignKey(
+        SubtipoEntidad,
+        on_delete=models.CASCADE,
+        related_name="organizaciones",
+        blank=True,
+        null=True,
+    )
     tipo_organizacion = models.ForeignKey(
         TipoOrganizacion,
         on_delete=models.CASCADE,
@@ -56,19 +139,6 @@ class Organizacion(models.Model):
         blank=True,
         null=True,
     )
-
-    def delete(self, *args, **kwargs):
-        from comedores.models.comedor import (  # pylint: disable=import-outside-toplevel
-            Comedor,
-        )
-
-        comedor_relacionado = Comedor.objects.filter(organizacion=self).first()
-
-        if comedor_relacionado:
-            raise ValidationError(
-                f"No puedes eliminar {self.nombre} porque está relacionado con el comedor: {comedor_relacionado.nombre}."
-            )
-        super().delete(*args, **kwargs)
 
     def __str__(self):
         return str(self.nombre)

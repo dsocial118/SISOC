@@ -1,0 +1,34 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Detalle Informe CABAL{% endblock %}
+{% block content %}
+    <div class="container-fluid no-gutters">
+        <div class="card bg-dark text-white mb-4">
+            <div class="card-header bg-secondary">Informe CABAL – {{ expediente.periodo }}</div>
+            <div class="card-body">
+                <dl class="row text-white">
+                    <dt class="col-sm-3">ID</dt>
+                    <dd class="col-sm-9">
+                        {{ expediente.id }}
+                    </dd>
+                    <dt class="col-sm-3">Periodo</dt>
+                    <dd class="col-sm-9">
+                        {{ expediente.periodo }}
+                    </dd>
+                    <dt class="col-sm-3">Fecha Creación</dt>
+                    <dd class="col-sm-9">
+                        {{ expediente.created_at }}
+                    </dd>
+                    <dt class="col-sm-3">Archivo</dt>
+                    <dd class="col-sm-9">
+                        <a href="{{ expediente.informe_file.url }}"
+                           class="text-info"
+                           target="_blank">Descargar Informe</a>
+                    </dd>
+                </dl>
+                <a href="{% url 'centro_detail' centro.id %}"
+                   class="btn btn-secondary mr-2">Volver</a>
+            </div>
+        </div>
+    </div>
+{% endblock %}

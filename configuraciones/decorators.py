@@ -1,15 +1,16 @@
-from django.contrib.auth.decorators import user_passes_test
+"""
+DEPRECATED MODULE - Use core.decorators instead
+All decorators migrated to core.decorators
+"""
 
+import warnings
 
-def group_required(*group_names):
-    """
-    Permite el acceso solo a usuarios autenticados que pertenezcan a alguno de los grupos indicados,
-    o que sean superusuarios.
-    """
+from core.decorators import group_required  # noqa
 
-    def in_group(user):
-        return user.is_authenticated and (
-            user.groups.filter(name__in=group_names).exists() or user.is_superuser
-        )
+warnings.warn(
+    "configuraciones.decorators is deprecated. Use core.decorators instead",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
-    return user_passes_test(in_group)
+__all__ = ["group_required"]

@@ -24,7 +24,7 @@ from ciudadanos.models import (
     VinculoFamiliar,
 )
 from config.validators import MaxSizeFileValidator
-from configuraciones.models import (
+from core.models import (
     Localidad,
     Municipio,
     Provincia,

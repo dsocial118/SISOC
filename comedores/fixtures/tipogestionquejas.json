@@ -1,34 +1,34 @@
 [
     {
-        "model": "comedores.tipogestionquejas",
+        "model": "relevamientos.tipogestionquejas",
         "pk": 1,
         "fields": {
             "nombre": "Reunion"
         }
     },
     {
-        "model": "comedores.tipogestionquejas",
+        "model": "relevamientos.tipogestionquejas",
         "pk": 2,
         "fields": {
             "nombre": "Buzón"
         }
     },
     {
-        "model": "comedores.tipogestionquejas",
+        "model": "relevamientos.tipogestionquejas",
         "pk": 3,
         "fields": {
             "nombre": "Cuaderno"
         }
     },
     {
-        "model": "comedores.tipogestionquejas",
+        "model": "relevamientos.tipogestionquejas",
         "pk": 4,
         "fields": {
             "nombre": "Otro"
         }
     },
     {
-        "model": "comedores.tipogestionquejas",
+        "model": "relevamientos.tipogestionquejas",
         "pk": 5,
         "fields": {
             "nombre": "Ninguna"

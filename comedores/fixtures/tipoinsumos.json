@@ -1,0 +1,30 @@
+[
+    {
+        "model": "relevamientos.tipoinsumos",
+        "pk": 1,
+        "fields": {
+            "nombre": "Dinero"
+        }
+    },
+    {
+        "model": "relevamientos.tipoinsumos",
+        "pk": 2,
+        "fields": {
+            "nombre": "Mercadería"
+        }
+    },
+    {
+        "model": "relevamientos.tipoinsumos",
+        "pk": 3,
+        "fields": {
+            "nombre": "Ambos"
+        }
+    },
+    {
+        "model": "relevamientos.tipoinsumos",
+        "pk": 4,
+        "fields": {
+            "nombre": "No sabe"
+        }
+    }
+]

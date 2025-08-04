@@ -1,0 +1,30 @@
+[
+    {
+        "model": "relevamientos.motivoexcepcion",
+        "pk": 1,
+        "fields": {
+            "nombre": "No existe"
+        }
+    },
+    {
+        "model": "relevamientos.motivoexcepcion",
+        "pk": 2,
+        "fields": {
+            "nombre": "Revisita"
+        }
+    },
+    {
+        "model": "relevamientos.motivoexcepcion",
+        "pk": 3,
+        "fields": {
+            "nombre": "Punto de entrega"
+        }
+    },
+    {
+        "model": "relevamientos.motivoexcepcion",
+        "pk": 4,
+        "fields": {
+            "nombre": "Otros"
+        }
+    }
+]

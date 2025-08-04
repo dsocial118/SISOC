@@ -1,9 +1,10 @@
-from comedores.models.relevamiento import (
-    Relevamiento,
-    ClasificacionComedor,
+from relevamientos.models import ClasificacionComedor
+from comedores.models import (
     CategoriaComedor,
 )
 from django.db.models import Case, When, IntegerField
+
+from relevamientos.models import Relevamiento
 
 
 class ClasificacionComedorService:
@@ -35,7 +36,6 @@ class ClasificacionComedorService:
     def get_puntuacion_total(relevamiento: Relevamiento) -> int:
         puntuacion = 0
 
-        # Puntuación por tipo de espacio físico
         if relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico:
             tipo_espacio = relevamiento.espacio.tipo_espacio_fisico.nombre
             puntuacion += {
@@ -48,7 +48,6 @@ class ClasificacionComedorService:
             if relevamiento.espacio.espacio_fisico_otro:
                 puntuacion += 3
 
-        # Puntuación por cocina
         if relevamiento.espacio and relevamiento.espacio.cocina:
             cocina = relevamiento.espacio.cocina
             puntuacion += sum(
@@ -75,7 +74,7 @@ class ClasificacionComedorService:
                 ).order_by("order")
 
                 for item in respuesta:
-                    respuesta_str = str(item)  # Convertir cada item a cadena
+                    respuesta_str = str(item)
 
                     if "Leña" in respuesta_str:
                         puntuacion += 3
@@ -101,7 +100,6 @@ class ClasificacionComedorService:
             if not cocina.instalacion_electrica:
                 puntuacion += 3
 
-        # Puntuación por prestación
         if relevamiento.espacio and relevamiento.espacio.prestacion:
             prestacion = relevamiento.espacio.prestacion
             puntuacion += sum(
@@ -122,7 +120,6 @@ class ClasificacionComedorService:
                     prestacion.desague_hinodoro.nombre, 0
                 )
 
-        # Puntuación por colaboradores
         if relevamiento.colaboradores:
             colaboradores = relevamiento.colaboradores
             puntuacion += sum(
@@ -151,7 +148,6 @@ class ClasificacionComedorService:
                 ]
             )
 
-        # Puntuación por anexo
         if relevamiento.anexo:
             anexo = relevamiento.anexo
             if anexo.tecnologia:

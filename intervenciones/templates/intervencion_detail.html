@@ -125,16 +125,9 @@
     </div>
     <script>
     function resetFilters() {
-        // Obtener el formulario
         const form = document.getElementById('filtros-form');
-        
-        // Resetear los valores del formulario
         form.reset();
-        
-        // Obtener la URL base sin parámetros
         const url = window.location.pathname;
-        
-        // Redirigir a la URL limpia (sin parámetros GET)
         window.location.href = url;
     }
     </script>

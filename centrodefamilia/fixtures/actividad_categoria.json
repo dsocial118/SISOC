@@ -1,0 +1,349 @@
+[
+  {
+    "model": "centrodefamilia.categoria",
+    "pk": 1,
+    "fields": { "nombre": "Deporte" }
+  },
+  {
+    "model": "centrodefamilia.categoria",
+    "pk": 2,
+    "fields": { "nombre": "Cultura" }
+  },
+  {
+    "model": "centrodefamilia.categoria",
+    "pk": 3,
+    "fields": { "nombre": "Educación" }
+  },
+  {
+    "model": "centrodefamilia.categoria",
+    "pk": 4,
+    "fields": { "nombre": "Salud" }
+  },
+
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 1,
+    "fields": { "nombre": "Fútbol infantil", "categoria": 1 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 2,
+    "fields": { "nombre": "Taller de pintura", "categoria": 2 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 3,
+    "fields": { "nombre": "Apoyo escolar primario", "categoria": 3 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 4,
+    "fields": { "nombre": "Charla sobre nutrición", "categoria": 4 }
+  },
+
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 5,
+    "fields": { "nombre": "Fútbol masculino y femenino", "categoria": 1 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 6,
+    "fields": { "nombre": "Apoyo escolar", "categoria": 3 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 7,
+    "fields": { "nombre": "Basquet", "categoria": 1 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 8,
+    "fields": { "nombre": "Taekwondo", "categoria": 1 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 9,
+    "fields": { "nombre": "Karate", "categoria": 1 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 10,
+    "fields": { "nombre": "Handball", "categoria": 1 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 11,
+    "fields": { "nombre": "Boxeo", "categoria": 1 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 12,
+    "fields": { "nombre": "Newcon", "categoria": 1 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 13,
+    "fields": { "nombre": "Futsal", "categoria": 1 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 14,
+    "fields": { "nombre": "Gimnasio", "categoria": 4 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 15,
+    "fields": { "nombre": "Musculación", "categoria": 4 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 16,
+    "fields": { "nombre": "Danzas y talleres de arte", "categoria": 2 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 17,
+    "fields": { "nombre": "Fútbol masculino", "categoria": 1 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 18,
+    "fields": { "nombre": "Fútbol masculino y femenino y hockey", "categoria": 1 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 19,
+    "fields": { "nombre": "Talleres de apoyo escolar y alfabetización", "categoria": 3 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 20,
+    "fields": { "nombre": "Voley", "categoria": 1 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 21,
+    "fields": { "nombre": "Taller de percusión y trompeta", "categoria": 2 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 22,
+    "fields": { "nombre": "Taller de guitarra", "categoria": 2 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 23,
+    "fields": { "nombre": "Talleres de alfabetización", "categoria": 3 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 24,
+    "fields": { "nombre": "Lectoescritura", "categoria": 3 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 25,
+    "fields": { "nombre": "Matemáticas", "categoria": 3 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 26,
+    "fields": { "nombre": "Acompañamiento pedagógico y emocional", "categoria": 3 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 27,
+    "fields": { "nombre": "Artes marciales mixtas y deportes de combate", "categoria": 1 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 28,
+    "fields": { "nombre": "Enseñanza de danzas clásicas", "categoria": 2 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 29,
+    "fields": { "nombre": "Jazz", "categoria": 2 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 30,
+    "fields": { "nombre": "Urbano", "categoria": 2 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 31,
+    "fields": { "nombre": "Ritmos latinos y pilates", "categoria": 4 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 32,
+    "fields": { "nombre": "Rugby y hockey masculino y femenino", "categoria": 1 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 33,
+    "fields": { "nombre": "Talleres educativos y de crecimiento personal", "categoria": 3 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 34,
+    "fields": { "nombre": "Gimnasia artística", "categoria": 1 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 35,
+    "fields": { "nombre": "Clases de danzas", "categoria": 2 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 36,
+    "fields": { "nombre": "Clásico", "categoria": 2 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 37,
+    "fields": { "nombre": "Arabe", "categoria": 2 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 38,
+    "fields": { "nombre": "Pop", "categoria": 2 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 39,
+    "fields": { "nombre": "Danza aérea juvenil", "categoria": 2 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 40,
+    "fields": { "nombre": "Zumba", "categoria": 4 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 41,
+    "fields": { "nombre": "Strong nation", "categoria": 4 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 42,
+    "fields": { "nombre": "Artes marciales", "categoria": 1 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 43,
+    "fields": { "nombre": "Dibujo y pintura", "categoria": 2 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 44,
+    "fields": { "nombre": "Art toy", "categoria": 2 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 45,
+    "fields": { "nombre": "Caricaturas", "categoria": 2 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 46,
+    "fields": { "nombre": "Stop motions", "categoria": 2 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 47,
+    "fields": { "nombre": "Patín", "categoria": 1 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 48,
+    "fields": { "nombre": "Telas", "categoria": 2 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 49,
+    "fields": { "nombre": "Boxeo recreativo", "categoria": 1 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 50,
+    "fields": { "nombre": "Danzas brasileras", "categoria": 2 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 51,
+    "fields": { "nombre": "Reggaeton", "categoria": 2 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 52,
+    "fields": { "nombre": "TikTokdance", "categoria": 2 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 53,
+    "fields": { "nombre": "Bachata", "categoria": 2 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 54,
+    "fields": { "nombre": "Clases de apoyo escolar", "categoria": 3 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 55,
+    "fields": { "nombre": "Taller de costura y bordado", "categoria": 2 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 56,
+    "fields": { "nombre": "Dibujo y artesanías manuales", "categoria": 2 }
+  },
+  {
+    "model": "centrodefamilia.actividad",
+    "pk": 57,
+    "fields": { "nombre": "Deportes y recreación", "categoria": 1 }
+  },
+
+  {
+    "model": "ciudadanos.secretarias",
+    "pk": 1,
+    "fields": {
+      "nombre": "Secretaria",
+      "observaciones": "",
+      "estado": 1
+    }
+  },
+  {
+    "model": "ciudadanos.subsecretarias",
+    "pk": 1,
+    "fields": {
+      "secretaria": 1,
+      "nombre": "Subsecretaria",
+      "observaciones": "",
+      "estado": 1
+    }
+  },
+  {
+    "model": "ciudadanos.programa",
+    "pk": 1,
+    "fields": {
+      "subsecretaria": 1,
+      "nombre": "Centro de Familia y Comedores",
+      "estado": 1,
+      "observaciones": ""
+    }
+  },
+  {
+    "model": "ciudadanos.programa",
+    "pk": 2,
+    "fields": {
+      "subsecretaria": 1,
+      "nombre": "Comedores",
+      "estado": 1,
+      "observaciones": ""
+    }
+  }
+]
