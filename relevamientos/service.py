@@ -531,7 +531,9 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             "otros_residuos": RelevamientoService.convert_to_boolean,
             "recipiente_otros_residuos": RelevamientoService.convert_to_boolean,
             "abastecimiento_agua": lambda x: (
-                RelevamientoService.get_object_or_none(TipoAgua, "nombre__iexact", x) if x else None
+                RelevamientoService.get_object_or_none(TipoAgua, "nombre__iexact", x)
+                if x
+                else None
             ),
             "instalacion_electrica": RelevamientoService.convert_to_boolean,
         }
