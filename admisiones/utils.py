@@ -1,6 +1,7 @@
 from collections import Counter
 from num2words import num2words
 
+
 def generar_texto_comidas(anexo):
     resultado = {}
 
