@@ -136,8 +136,7 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         # 5) Métricas avanzadas
         total_part = sum(a.inscritos for a in qs_acts)
         qs_inscritos = ParticipanteActividad.objects.filter(
-            estado="inscrito",
-            actividad_centro__centro=centro
+            estado="inscrito", actividad_centro__centro=centro
         )
         hombres = qs_inscritos.filter(ciudadano__sexo__sexo__iexact="Masculino").count()
         mujeres = qs_inscritos.filter(ciudadano__sexo__sexo__iexact="Femenino").count()
@@ -145,8 +144,7 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
 
         # Nuevo queryset para lista de espera
         espera = ParticipanteActividad.objects.filter(
-            estado="lista_espera",
-            actividad_centro__centro=centro
+            estado="lista_espera", actividad_centro__centro=centro
         ).count()
 
         ctx["metricas"] = {
@@ -166,6 +164,7 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
             "espera": espera,
         }
         return ctx
+
 
 class CentroCreateView(LoginRequiredMixin, CreateView):
     model = Centro
