@@ -3,21 +3,35 @@
 {% block title %}{{ centro.nombre }}{% endblock %}
 {% block content %}
     <link rel="stylesheet" href="{% static 'custom/css/centro_detail.css' %}" />
-    <div class="container-fluid no-gutters">
-        <!-- ====== 1) ACCIONES: VOLVER / IMPRIMIR ====== -->
-        <!-- ====== 2) ENCABEZADO full width y redondeado ====== -->
-        <div class="card mb-4 page-header">
-            <div class="card-body">
-                <div class="header-bar"></div>
-                <h1 class="header-title">
-                    {{ centro.nombre|capfirst }}
-                    <span class="separator">|</span>
-                    <span id="tipo-badge" class="badge header-badge">{{ centro.get_tipo_display|capfirst }}</span>
-                </h1>
-            </div>
-        </div>
-        <!-- ====== 3) UBICACIÓN con barras laterales ====== -->
-        <div class="location-card mb-4">
+<div class="card mb-4 page-header">
+  <!-- 1) HEADER -->
+  <div class="card-body">
+    <div class="header-bar"></div>
+    <h1 class="header-title mb-0">
+      {{ centro.nombre|capfirst }}
+      <span class="separator">|</span>
+      <span id="tipo-badge" class="badge header-badge">
+        {{ centro.get_tipo_display|capfirst }}
+      </span>
+    </h1>
+  </div>
+</div>
+  <!-- 2) BOTONES DEBAJO, ALINEADOS A LA DERECHA Y CON SEPARACIÓN ABAJO -->
+  <div class="mt-4 mb-4 d-flex justify-content-end">
+    <div class="btn-group btn-group-sm" role="group" aria-label="Acciones">
+      <a href="{% url 'centro_update' centro.id %}" class="btn btn-outline-primary">Editar</a>
+      <a href="{% url 'centro_list' %}" class="btn btn-outline-secondary">Volver</a>
+      <a href="{% url 'actividadcentro_create' centro_id=centro.id %}" class="btn btn-outline-success">Agregar Actividad</a>
+      {% if centro.tipo == 'faro' %}
+        <a href="{% url 'centro_create' %}?faro={{ centro.id }}" class="btn btn-outline-info">Agregar Centro Adherido</a>
+      {% endif %}
+    </div>
+  </div>
+
+<!-- 3) UBICACIÓN con barras laterales -->
+<div class="location-card mb-4">
+  <!-- resto -->
+
             <!-- 1) pestaña izquierda “Ubicación” -->
             <div class="left-tab" id="tab-ubicacion">
                 <span class="tab-text">Ubicación</span>
