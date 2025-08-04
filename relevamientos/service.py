@@ -1,7 +1,6 @@
 # pylint: disable=too-many-lines
 import json
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
 
 from comedores.models import (
     Comedor,
@@ -42,7 +41,6 @@ from relevamientos.models import (
 )
 from relevamientos.tasks import AsyncSendRelevamientoToGestionar
 from core.utils import convert_string_to_int
-from core.models import Provincia, Municipio, Localidad
 
 
 # TODO: Refactorizar todo esto, pylint esta muriendo aca
