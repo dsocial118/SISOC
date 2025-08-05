@@ -1,5 +1,3 @@
-# centrodefamilia/services/participante_service.py
-
 from django.db import transaction
 
 from centrodefamilia.models import (
