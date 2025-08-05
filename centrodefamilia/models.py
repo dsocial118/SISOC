@@ -179,13 +179,6 @@ class ParticipanteActividad(models.Model):
     class Meta:
         verbose_name = "Participante"
         verbose_name_plural = "Participantes"
-        constraints = [
-            UniqueConstraint(
-                fields=["actividad_centro", "ciudadano"],
-                condition=Q(estado__in=["inscrito", "lista_espera"]),
-                name="unique_activo_inscripcion",
-            )
-        ]
         indexes = [
             models.Index(fields=["actividad_centro"]),
             models.Index(fields=["estado"]),
