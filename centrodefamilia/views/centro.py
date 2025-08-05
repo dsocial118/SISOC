@@ -108,6 +108,8 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         )
         ctx["actividades"] = list(qs_acts)
         ctx["total_actividades"] = qs_acts.count()
+        # Suma en Python de la ganancia de cada actividad
+        ctx["total_recaudado"] = sum((act.ganancia or 0) for act in ctx["actividades"])
 
         # 3) Otras actividades (paginadas)
         otras = (
@@ -133,16 +135,24 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
 
         # 5) Métricas avanzadas
         total_part = sum(a.inscritos for a in qs_acts)
-        qs_part = ParticipanteActividad.objects.filter(actividad_centro__centro=centro)
-        hombres = qs_part.filter(ciudadano__sexo__sexo__iexact="Masculino").count()
-        mujeres = qs_part.filter(ciudadano__sexo__sexo__iexact="Femenino").count()
+        qs_inscritos = ParticipanteActividad.objects.filter(
+            estado="inscrito", actividad_centro__centro=centro
+        )
+        hombres = qs_inscritos.filter(ciudadano__sexo__sexo__iexact="Masculino").count()
+        mujeres = qs_inscritos.filter(ciudadano__sexo__sexo__iexact="Femenino").count()
         mixtas = total_part - hombres - mujeres
+
+        # Nuevo queryset para lista de espera
+        espera = ParticipanteActividad.objects.filter(
+            estado="lista_espera", actividad_centro__centro=centro
+        ).count()
 
         ctx["metricas"] = {
             "centros_faro": ctx["centros_adheridos_total"],
             "categorias": Categoria.objects.count(),
             "actividades": ctx["total_actividades"],
             "interacciones": total_part,
+            "inscriptos": qs_inscritos.count(),
             "hombres": hombres,
             "mujeres": mujeres,
             "mixtas": mixtas,
@@ -151,6 +161,7 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
             "total": total_part,
             "hombres": hombres,
             "mujeres": mujeres,
+            "espera": espera,
         }
         return ctx
 
@@ -178,11 +189,6 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
         user = self.request.user
         if form.cleaned_data.get("tipo") == "adherido":
             form.instance.faro_asociado_id = self.request.GET.get("faro")
-        if (
-            user.groups.filter(name="ReferenteCentro").exists()
-            and not user.is_superuser
-        ):
-            form.instance.referente = user
         messages.success(self.request, "Centro creado exitosamente.")
         return super().form_valid(form)
 

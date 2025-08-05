@@ -5,12 +5,10 @@ register = template.Library()
 
 @register.filter
 def has_group(user, group_name):
-    # Optimización: Cache los grupos del usuario para evitar queries repetidas
+    if not user or not hasattr(user, "groups"):
+        return False
     if not hasattr(user, "cached_groups"):
         user.cached_groups = list(user.groups.values_list("name", flat=True))
-
-    if user.is_superuser or "Admin" in user.cached_groups:
-        return True
     return group_name in user.cached_groups
 
 

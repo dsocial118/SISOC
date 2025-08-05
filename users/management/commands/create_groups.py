@@ -57,6 +57,8 @@ class Command(BaseCommand):
             "Técnico Validar Resultado Cruce",
             "Técnico Registrar Informe Pago", "ReferenteCentro",
             "CDF SSE",
+            "Dashboard Comedor",
+            "Dashboard Centrodefamilia",
             "TecnicoCeliaquia",
             "CoordinadorCeliaquia",
             "ProvinciaCeliaquia",

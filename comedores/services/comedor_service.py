@@ -271,7 +271,7 @@ class ComedorService:
                 "sabado",
                 "domingo",
             ]
-            tipos = ["desayuno", "almuerzo", "merienda", "cena"]
+            tipos = ["desayuno", "almuerzo", "merienda", "cena", "merienda_reforzada"]
 
             for tipo in tipos:
                 count[tipo] = sum(
