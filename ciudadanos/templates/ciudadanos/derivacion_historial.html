@@ -1,134 +1,696 @@
-{% extends "includes/main.html" %};
-{% load static %}
-;
-{% block title %}Historial de derivaciones{% endblock %}
-;
-{% block titulo-pagina %}Historial de derivaciones{% endblock %}
-;
-{% block breadcrumb %}
-    <ol class="breadcrumb float-sm-right">
-        <li class="breadcrumb-item">
-            <a href="{% url 'ciudadanos' %}">Ciudadano</a>
-        </li>
-        <li class="breadcrumb-item">
-            <a href="{% url 'ciudadanos_ver' ciudadano.id %}">{{ ciudadano.apellido }}, {{ ciudadano.nombre }}</a>
-        </li>
-        <li class="breadcrumb-item active">Derivaciones</li>
-    </ol>
+{% extends "includes/main.html" %} {% load static %} {% block head %}
+<link
+  rel="stylesheet"
+  href="{% static 'custom/css/ciudadano-detail-enhanced.css' %}"
+/>
+<link rel="stylesheet" href="{% static 'custom/css/table-styles.css' %}" />
+<style>
+  /* Sistema de CSS Variables para Historial de Derivaciones */
+  :root {
+    --gov-primary: #143570;
+    --gov-accent: #17a2b8;
+    --gov-danger: #dc3545;
+    --success: #28a745;
+    --warning: #ffc107;
+    --info: #17a2b8;
+    --secondary: #6c757d;
+  }
+
+  /* Botón principal de derivar mejorado */
+  .btn-derivar-main {
+    background: linear-gradient(
+      135deg,
+      var(--gov-primary),
+      var(--gov-accent)
+    ) !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 0.75rem 1.5rem !important;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    color: white !important;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn-derivar-main:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(20, 55, 107, 0.4);
+    color: white !important;
+    text-decoration: none;
+  }
+
+  /* Info boxes mejoradas */
+  .info-box-enhanced {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+  }
+
+  .info-box-enhanced:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  }
+
+  .info-box-enhanced .info-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    margin-bottom: 1rem;
+  }
+
+  .info-icon-success {
+    background: linear-gradient(135deg, var(--success), #20c997);
+  }
+
+  .info-icon-warning {
+    background: linear-gradient(135deg, var(--warning), #ffca2c);
+  }
+
+  .info-icon-danger {
+    background: linear-gradient(135deg, var(--gov-danger), #e74c3c);
+  }
+
+  .info-box-enhanced .info-text {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .info-box-enhanced .info-number {
+    color: white;
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  /* Tabla de derivaciones mejorada */
+  .derivaciones-table-section {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .section-title {
+    color: var(--gov-accent);
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* Badges de estado mejorados */
+  .estado-badge {
+    padding: 0.375rem 0.75rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .estado-pendiente {
+    background: linear-gradient(135deg, var(--warning), #ffca2c);
+    color: #333;
+  }
+
+  .estado-aceptada {
+    background: linear-gradient(135deg, var(--success), #20c997);
+    color: white;
+  }
+
+  .estado-rechazada {
+    background: linear-gradient(135deg, var(--gov-danger), #e74c3c);
+    color: white;
+  }
+
+  /* Botones de acción mejorados */
+  .btn-ver-derivacion {
+    background: linear-gradient(135deg, var(--info), #0dcaf0) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 0.375rem 0.75rem !important;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    color: white !important;
+  }
+
+  .btn-ver-derivacion:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(23, 162, 184, 0.4);
+    color: white !important;
+  }
+
+  /* Animaciones para las filas */
+  .standard-table tbody tr {
+    transition: all 0.3s ease !important;
+  }
+
+  .standard-table tbody tr:hover {
+    background: rgba(58, 80, 104, 0.8) !important;
+    transform: translateX(5px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Estado vacío mejorado */
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .empty-state i {
+    font-size: 5rem;
+    margin-bottom: 1.5rem;
+    opacity: 0.3;
+    color: var(--gov-accent);
+  }
+
+  .empty-state h5 {
+    color: white;
+    margin-bottom: 1rem;
+  }
+
+  .empty-state p {
+    font-size: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  /* Animaciones de entrada */
+  .fade-in-up {
+    animation: fadeInUp 0.6s ease-out forwards;
+  }
+
+  .fade-in-left {
+    animation: fadeInLeft 0.6s ease-out forwards;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeInLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  /* Responsividad */
+  @media (max-width: 768px) {
+    .info-box-enhanced {
+      padding: 1rem;
+    }
+
+    .info-box-enhanced .info-icon {
+      width: 50px;
+      height: 50px;
+    }
+
+    .info-box-enhanced .info-number {
+      font-size: 1.5rem;
+    }
+  }
+</style>
+{% endblock %} {% block title %}Historial de Derivaciones - {{ ciudadano.nombre
+}} {{ ciudadano.apellido }}{% endblock %} {% block titulo-pagina %}Ciudadano{%
+endblock %} {% block breadcrumb %}
+<ol class="breadcrumb float-sm-right mt-2 mr-2">
+  <li class="breadcrumb-item">
+    <a href="{% url 'ciudadanos' %}">Ciudadano</a>
+  </li>
+  <li class="breadcrumb-item">
+    <a href="{% url 'ciudadanos_ver' ciudadano.id %}"
+      >{{ ciudadano.apellido }}, {{ ciudadano.nombre }}</a
+    >
+  </li>
+  <li class="breadcrumb-item active">Derivaciones</li>
+</ol>
+{% endblock %} {% block menu-adicional %}{% endblock %} ; {% block content %}
+<div class="row">
+  <div class="col-md-12">
+    <div class="card shadow-lg">
+      <div class="card-body p-4">
+        <!-- Botón de derivar -->
+        <div class="row mb-4 fade-in-up">
+          <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+              <h6 class="text-white mb-0">
+                <i class="fas fa-share-alt me-2"></i>Gestión de Derivaciones
+              </h6>
+              <a
+                href="{% url 'ciudadanosderivaciones_crear' ciudadano.id %}"
+                class="btn-derivar-main"
+              >
+                <i class="fas fa-plus"></i>
+                Nueva Derivación
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Resumen del ciudadano y estadísticas -->
+        <div class="row mb-4 fade-in-up">
+          <div class="col-md-4">
+            {% include "components/ciudadanos/ciudadano_summary_card.html" with
+            ciudadano=ciudadano card_class="mb-0" %}
+          </div>
+          <div class="col-md-8">
+            <div class="card shadow-sm h-100">
+              <div class="card-header">
+                <h5 class="mb-0">
+                  <i class="fas fa-chart-bar me-2"></i>Estado de Derivaciones
+                </h5>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-4">
+                    <div class="info-box-enhanced text-center">
+                      <div class="info-icon info-icon-success mx-auto">
+                        <i class="far fa-thumbs-up"></i>
+                      </div>
+                      <div class="info-text">Admitidas</div>
+                      <div class="info-number">
+                        {{ admitidas|default_if_none:"0" }}
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="info-box-enhanced text-center">
+                      <div class="info-icon info-icon-warning mx-auto">
+                        <i class="far fa-clock"></i>
+                      </div>
+                      <div class="info-text">Pendientes</div>
+                      <div class="info-number">
+                        {{ pendientes|default_if_none:"0" }}
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="info-box-enhanced text-center">
+                      <div class="info-icon info-icon-danger mx-auto">
+                        <i class="fas fa-thumbs-down"></i>
+                      </div>
+                      <div class="info-text">Rechazadas</div>
+                      <div class="info-number">
+                        {{ rechazadas|default_if_none:"0" }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  class="alert alert-info border-0 mt-3"
+                  style="background: rgba(23, 162, 184, 0.1)"
+                >
+                  <i class="fas fa-info-circle me-2"></i>
+                  <strong>Resumen:</strong> Visualice el historial completo de
+                  derivaciones del ciudadano.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabla de historial de derivaciones -->
+        <div class="row fade-in-left">
+          <div class="col-12">
+            <div class="derivaciones-table-section">
+              <h6 class="section-title">
+                <i class="fas fa-history me-2"></i>Historial de Derivaciones
+                <span class="badge bg-primary ms-2"
+                  >{{ historial|length }}</span
+                >
+              </h6>
+
+              {% if historial %}
+              <div class="table-container">
+                <div class="table-responsive-custom">
+                  <table class="table standard-table">
+                    <thead>
+                      <tr>
+                        <th><i class="fas fa-calendar me-2"></i>Fecha</th>
+                        <th>
+                          <i class="fas fa-arrow-right me-2"></i>Derivado de
+                        </th>
+                        <th>
+                          <i class="fas fa-arrow-left me-2"></i>Derivado a
+                        </th>
+                        <th><i class="fas fa-flag me-2"></i>Estado</th>
+                        <th class="text-center" style="width: 120px">
+                          <i class="fas fa-cogs me-2"></i>Acciones
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for h in historial %}
+                      <tr id="tr-{{ h.id }}">
+                        <td>
+                          <span class="text-white"
+                            >{{ h.fecha_creado|date:"d/m/Y" }}</span
+                          >
+                        </td>
+                        <td>
+                          <span class="text-white"
+                            >{{ h.programa_solicitante }}</span
+                          >
+                        </td>
+                        <td>
+                          <span class="text-white">{{ h.programa }}</span>
+                        </td>
+                        <td>
+                          {% if h.estado == "Pendiente" %}
+                          <span class="estado-badge estado-pendiente">
+                            <i class="far fa-clock me-1"></i>{{ h.estado }}
+                          </span>
+                          {% elif h.estado == "Aceptada" %}
+                          <span class="estado-badge estado-aceptada">
+                            <i class="fas fa-check-circle me-1"></i>{{ h.estado
+                            }}
+                          </span>
+                          {% elif h.estado == "Rechazada" %}
+                          <span class="estado-badge estado-rechazada">
+                            <i class="fas fa-times-circle me-1"></i>{{ h.estado
+                            }}
+                          </span>
+                          {% endif %}
+                        </td>
+                        <td class="text-center">
+                          <a
+                            href="{% url 'ciudadanosderivaciones_ver' h.id %}"
+                            class="btn btn-ver-derivacion"
+                            title="Ver derivación"
+                          >
+                            <i class="fas fa-eye me-1"></i>Ver
+                          </a>
+                        </td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              {% else %}
+              <div class="empty-state">
+                <i class="fas fa-share-alt"></i>
+                <h5>No hay derivaciones registradas</h5>
+                <p>Este ciudadano aún no tiene derivaciones en su historial.</p>
+                <a
+                  href="{% url 'ciudadanosderivaciones_crear' ciudadano.id %}"
+                  class="btn-derivar-main"
+                >
+                  <i class="fas fa-plus me-2"></i>Crear Primera Derivación
+                </a>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Botón de volver -->
+        <div class="row mt-4 fade-in-up">
+          <div class="col-12">
+            <div class="d-flex justify-content-between">
+              <a
+                href="{% url 'ciudadanos_ver' ciudadano.id %}"
+                class="btn btn-secondary"
+              >
+                <i class="fas fa-arrow-left me-2"></i>Volver al Ciudadano
+              </a>
+              <a
+                href="{% url 'ciudadanosderivaciones_crear' ciudadano.id %}"
+                class="btn-derivar-main"
+              >
+                <i class="fas fa-plus me-2"></i>Nueva Derivación
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} ; {% block customJS %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Aplicar animaciones de entrada escalonadas
+    const derivacionRows = document.querySelectorAll(
+      ".standard-table tbody tr"
+    );
+    derivacionRows.forEach((row, index) => {
+      row.style.opacity = "0";
+      row.style.transform = "translateY(20px)";
+      row.style.animation = `fadeInUp 0.6s ease-out ${index * 0.1}s forwards`;
+    });
+
+    // Animación para las info boxes de estadísticas
+    const infoBoxes = document.querySelectorAll(".info-box-enhanced");
+    infoBoxes.forEach((box, index) => {
+      box.style.opacity = "0";
+      box.style.transform = "scale(0.9)";
+
+      setTimeout(() => {
+        box.style.transition = "all 0.5s ease-out";
+        box.style.opacity = "1";
+        box.style.transform = "scale(1)";
+      }, (index + 1) * 200);
+    });
+
+    // Efectos hover mejorados para los botones de acción
+    const actionButtons = document.querySelectorAll(".btn-ver-derivacion");
+    actionButtons.forEach((button) => {
+      button.addEventListener("mouseenter", function () {
+        this.style.transform = "translateY(-2px) scale(1.05)";
+      });
+
+      button.addEventListener("mouseleave", function () {
+        this.style.transform = "translateY(0) scale(1)";
+      });
+    });
+
+    // Efectos de click en badges de estado
+    const estadoBadges = document.querySelectorAll(".estado-badge");
+    estadoBadges.forEach((badge) => {
+      badge.addEventListener("click", function () {
+        this.style.transform = "scale(0.95)";
+        setTimeout(() => {
+          this.style.transform = "scale(1)";
+        }, 100);
+      });
+    });
+
+    // Contador animado para los números de estadísticas
+    const counters = document.querySelectorAll(".info-number");
+    counters.forEach((counter) => {
+      const target = parseInt(counter.textContent);
+      let current = 0;
+      const increment = target / 30; // 30 frames de animación
+
+      const updateCounter = () => {
+        if (current < target) {
+          current += increment;
+          counter.textContent = Math.floor(current);
+          requestAnimationFrame(updateCounter);
+        } else {
+          counter.textContent = target;
+        }
+      };
+
+      // Iniciar animación después de un retraso
+      setTimeout(() => {
+        updateCounter();
+      }, 1000);
+    });
+
+    // Efecto de pulso para derivaciones pendientes
+    const derivacionesPendientes =
+      document.querySelectorAll(".estado-pendiente");
+    derivacionesPendientes.forEach((badge) => {
+      setInterval(() => {
+        badge.style.transform = "scale(1.05)";
+        setTimeout(() => {
+          badge.style.transform = "scale(1)";
+        }, 200);
+      }, 3000); // Pulso cada 3 segundos
+    });
+
+    // Funcionalidad de filtrado dinámico (opcional)
+    window.filtrarDerivaciones = function (estado) {
+      const rows = document.querySelectorAll(".standard-table tbody tr");
+      rows.forEach((row) => {
+        const estadoCell = row.querySelector(".estado-badge");
+        if (
+          estado === "todas" ||
+          estadoCell.textContent
+            .trim()
+            .toLowerCase()
+            .includes(estado.toLowerCase())
+        ) {
+          row.style.display = "";
+        } else {
+          row.style.display = "none";
+        }
+      });
+    };
+
+    // Función para mostrar notificaciones (reutilizable)
+    window.showNotification = function (message, type = "info") {
+      const alertClass =
+        type === "success"
+          ? "alert-success"
+          : type === "error"
+          ? "alert-danger"
+          : type === "warning"
+          ? "alert-warning"
+          : "alert-info";
+
+      const iconClass =
+        type === "success"
+          ? "fas fa-check-circle"
+          : type === "error"
+          ? "fas fa-exclamation-triangle"
+          : type === "warning"
+          ? "fas fa-exclamation-circle"
+          : "fas fa-info-circle";
+
+      const notification = document.createElement("div");
+      notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+      notification.style.cssText =
+        "top: 20px; right: 20px; z-index: 10000; min-width: 350px; backdrop-filter: blur(10px);";
+      notification.innerHTML = `
+                <i class="${iconClass} me-2"></i>${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+      document.body.appendChild(notification);
+
+      // Auto-remover después de 5 segundos
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.remove();
+        }
+      }, 5000);
+    };
+
+    // Funcionalidad para actualizar estadísticas dinámicamente
+    window.actualizarEstadisticas = function () {
+      const rows = document.querySelectorAll(
+        '.standard-table tbody tr:not([style*="display: none"])'
+      );
+      let admitidas = 0,
+        pendientes = 0,
+        rechazadas = 0;
+
+      rows.forEach((row) => {
+        const estadoText = row
+          .querySelector(".estado-badge")
+          .textContent.trim();
+        if (estadoText.includes("Aceptada")) admitidas++;
+        else if (estadoText.includes("Pendiente")) pendientes++;
+        else if (estadoText.includes("Rechazada")) rechazadas++;
+      });
+
+      // Actualizar contadores
+      document.querySelector(
+        ".info-box-enhanced:nth-child(1) .info-number"
+      ).textContent = admitidas;
+      document.querySelector(
+        ".info-box-enhanced:nth-child(2) .info-number"
+      ).textContent = pendientes;
+      document.querySelector(
+        ".info-box-enhanced:nth-child(3) .info-number"
+      ).textContent = rechazadas;
+    };
+
+    // Scroll suave al hacer click en enlaces internos
+    const internalLinks = document.querySelectorAll('a[href^="#"]');
+    internalLinks.forEach((link) => {
+      link.addEventListener("click", function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute("href"));
+        if (target) {
+          target.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }
+      });
+    });
+
+    // Tooltip mejorado para elementos con estados
+    const tooltipElements = document.querySelectorAll("[title]");
+    tooltipElements.forEach((element) => {
+      element.addEventListener("mouseenter", function () {
+        // Crear tooltip personalizado si es necesario
+        this.style.position = "relative";
+      });
+    });
+
+    // Efecto de carga completa
+    setTimeout(() => {
+      const mainCard = document.querySelector(".card.shadow-lg");
+      if (mainCard) {
+        mainCard.style.opacity = "0";
+        mainCard.style.transform = "translateY(20px)";
+        mainCard.style.transition = "all 0.8s ease-out";
+
+        setTimeout(() => {
+          mainCard.style.opacity = "1";
+          mainCard.style.transform = "translateY(0)";
+        }, 100);
+      }
+    }, 100);
+
+    // Funcionalidad de búsqueda rápida (opcional)
+    window.buscarDerivacion = function (searchTerm) {
+      const rows = document.querySelectorAll(".standard-table tbody tr");
+      const term = searchTerm.toLowerCase();
+
+      rows.forEach((row) => {
+        const text = row.textContent.toLowerCase();
+        if (term === "" || text.includes(term)) {
+          row.style.display = "";
+        } else {
+          row.style.display = "none";
+        }
+      });
+
+      // Actualizar contador de resultados
+      const visibleRows = document.querySelectorAll(
+        '.standard-table tbody tr:not([style*="display: none"])'
+      );
+      const counter = document.querySelector(".section-title .badge");
+      if (counter) {
+        counter.textContent = visibleRows.length;
+      }
+    };
+  });
+</script>
 {% endblock %}
-;
-{% block menu-adicional %}{% endblock %}
-;
-{% block content %}
-    <div class="row">
-        <!-- botones -->
-        <div class="col-12 my-3 mx-2">
-            <a href="{% url 'ciudadanosderivaciones_crear' ciudadano.id %}"
-               class="btn btn-primary mr-1">Derivar</a>
-        </div>
-    </div>
-    <!-- ./botones -->
-    <!-- Datos de ciudadano -->
-    <div class="row">
-        <div class="col-sm-9">
-            <div class="card card-outline card-primary ">
-                <div class="card-header">
-                    <h3 class="card-title">Detalle Ciudadano</h3>
-                </div>
-                <div class="card-body">
-                    <dl class="row mb-0">
-                        <dd class="col-sm-3 mb-2">
-                            Nombre
-                        </dd>
-                        <dt class="col-sm-9 mb-2">
-                            <a href="{% url 'ciudadanos_ver' ciudadano.id %}" title="Ver ciudadano">{{ ciudadano.apellido }}, {{ ciudadano.nombre }}</a>
-                        </dt>
-                        <dd class="col-sm-3 mb-2">
-                            DNI
-                        </dd>
-                        <dt class="col-sm-9 mb-2">{{ ciudadano.documento }}</dt>
-                        <dd class="col-sm-3 mb-2">
-                            Fecha de nacimiento
-                        </dd>
-                        <dt class="col-sm-9 mb-2">{{ ciudadano.fecha_nacimiento|date:'d/m/Y' }}</dt>
-                        <dd class="col-sm-3 mb-2">
-                            Sexo
-                        </dd>
-                        <dt class="col-sm-9 mb-2">{{ ciudadano.sexo }}</dt>
-                    </dl>
-                </div>
-            </div>
-        </div>
-        <div class="col-sm-3">
-            <div class="row h-100">
-                <div class="col-sm-12">
-                    <div class="info-box py-3 mb-2">
-                        <span class="info-box-icon bg-success"><i class="far fa-thumbs-up"></i></span>
-                        <div class="info-box-content">
-                            <span class="info-box-text">Admitidas</span>
-                            <span class="info-box-number h5">{{ admitidas|default_if_none:"0" }}</span>
-                        </div>
-                    </div>
-                    <div class="info-box py-3 mb-2">
-                        <span class="info-box-icon bg-warning"><i class="far fa-clock"></i></span>
-                        <div class="info-box-content">
-                            <span class="info-box-text">Pendientes</span>
-                            <span class="info-box-number h5">{{ pendientes|default_if_none:"0" }}</span>
-                        </div>
-                    </div>
-                    <div class="info-box py-3 mb-2">
-                        <span class="info-box-icon bg-danger"><i class="fas fa-thumbs-down"></i></span>
-                        <div class="info-box-content">
-                            <span class="info-box-text">Rechazadas</span>
-                            <span class="info-box-number h5">{{ rechazadas|default_if_none:"0" }}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- tabla derivaciones -->
-    <div class="row mt-3">
-        <div class="col-12">
-            <div class="card">
-                <!-- /.card-header -->
-                <div class="card-body">
-                    <table class="table table-bordered table-striped projects tabladt">
-                        <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Derivado de:</th>
-                                <th>Derivado a:</th>
-                                <th>Estado</th>
-                                <th width="5%" class="notexport">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for h in historial %}
-                                <tr>
-                                    <td>{{ h.fecha_creado|date:'d/m/Y' }}</td>
-                                    <td>{{ h.programa_solicitante }}</td>
-                                    <td class="project_progress">{{ h.programa }}</td>
-                                    <td>
-                                        <span class="badge badge-{% if h.estado == "Pendiente" %}warning{% endif %}{% if h.estado == "Aceptada" %}success{% endif %}{% if h.estado == "Rechazada" %}danger{% endif %}"> {{ h.estado }} </span>
-                                    </td>
-                                    <td class="text-right">
-                                        <a href="{% url 'ciudadanosderivaciones_ver' h.id %}"
-                                           class="btn btn-secondary btn-sm ver"
-                                           title="Ver derivación">Ver</a>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                <!-- /.card-body -->
-            </div>
-            <!-- /.card -->
-        </div>
-        <!-- /.col -->
-    </div>
-    <!-- /.row -->
-{% endblock %}
-;
-{% block customJS %}{% endblock %}

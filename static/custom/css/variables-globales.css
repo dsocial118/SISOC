@@ -1,0 +1,249 @@
+/* ====================================
+   VARIABLES GLOBALES - SISTEMA DE GESTIÓN SOCIAL
+   ==================================== */
+
+:root {
+  /* === COLORES PRINCIPALES === */
+  --gov-primary: #14376b;
+  --gov-secondary: #1e3a5f;
+  --gov-accent: #17a2b8;
+  
+  /* === COLORES DE APOYO === */
+  --gov-dark: #1a2332;
+  --gov-medium: #2c3e50;
+  --gov-light: #34495e;
+  --gov-border: #4a5f7a;
+  --gov-text: #ffffff;
+  --gov-muted: #bdc3c7;
+  
+  /* === GRADIENTES === */
+  --gradient-primary: linear-gradient(135deg, var(--gov-primary) 0%, var(--gov-secondary) 100%);
+  --gradient-accent: linear-gradient(135deg, var(--gov-primary), var(--gov-accent));
+  
+  /* === GLASSMORPHISM === */
+  --glass-bg: rgba(255, 255, 255, 0.06);
+  --glass-bg-hover: rgba(255, 255, 255, 0.08);
+  --glass-bg-light: rgba(255, 255, 255, 0.03);
+  --glass-bg-medium: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.15);
+  --glass-border-hover: rgba(255, 255, 255, 0.2);
+  
+  /* === SOMBRAS === */
+  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.15);
+  --shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.25);
+  --shadow-card: 0 8px 25px rgba(0, 0, 0, 0.2);
+  
+  /* === TRANSICIONES === */
+  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: all 0.2s ease-in-out;
+  
+  /* === COLORES DE ESTADO === */
+  --success: #28a745;
+  --success-light: rgba(40, 167, 69, 0.1);
+  --warning: #ffc107;
+  --warning-light: rgba(255, 193, 7, 0.1);
+  --danger: #dc3545;
+  --danger-light: rgba(220, 53, 69, 0.1);
+  --info: var(--gov-accent);
+  --info-light: rgba(23, 162, 184, 0.1);
+  
+  /* === ALERTAS POR GRAVEDAD === */
+  --alert-critica: var(--danger);
+  --alert-importante: var(--warning);
+  --alert-precaucion: var(--info);
+}
+
+/* === BODY BASE === */
+body {
+  background: var(--gov-dark) !important;
+  color: var(--gov-text) !important;
+  font-family: "Segoe UI", sans-serif;
+}
+
+/* === COMPONENTES BASE === */
+.card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-soft);
+  transition: var(--transition-smooth);
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+
+.form-section {
+  background: var(--glass-bg-light);
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--glass-border);
+  transition: var(--transition-smooth);
+}
+
+.form-section:hover {
+  background: var(--glass-bg-medium);
+  border-color: var(--glass-border-hover);
+}
+
+/* === BOTONES === */
+.btn-primary {
+  background: var(--gradient-accent) !important;
+  border: none !important;
+  border-radius: 12px !important;
+  transition: var(--transition-smooth);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(23, 162, 184, 0.4);
+}
+
+.btn-secondary {
+  background: transparent !important;
+  border: 1px solid var(--glass-border) !important;
+  color: var(--gov-text) !important;
+  border-radius: 12px !important;
+  transition: var(--transition-smooth);
+}
+
+.btn-secondary:hover {
+  background: var(--glass-bg) !important;
+  border-color: var(--gov-accent) !important;
+  color: var(--gov-text) !important;
+}
+
+/* === FORMULARIOS === */
+.form-control, .form-select {
+  background: var(--glass-bg-medium) !important;
+  border: 1px solid var(--glass-border) !important;
+  color: var(--gov-text) !important;
+  border-radius: 10px !important;
+  transition: var(--transition-smooth);
+}
+
+.form-control:focus, .form-select:focus {
+  background: var(--glass-bg) !important;
+  border-color: var(--gov-accent) !important;
+  box-shadow: 0 0 0 0.2rem rgba(23, 162, 184, 0.25) !important;
+  color: var(--gov-text) !important;
+}
+
+.form-label {
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-weight: 500;
+  margin-bottom: 0.75rem;
+}
+
+/* === ALERTS === */
+.alert-info {
+  background: var(--info-light) !important;
+  border: 1px solid rgba(23, 162, 184, 0.3) !important;
+  color: var(--gov-text) !important;
+}
+
+.alert-success {
+  background: var(--success-light) !important;
+  border: 1px solid rgba(40, 167, 69, 0.3) !important;
+  color: var(--gov-text) !important;
+}
+
+.alert-warning {
+  background: var(--warning-light) !important;
+  border: 1px solid rgba(255, 193, 7, 0.3) !important;
+  color: var(--gov-text) !important;
+}
+
+.alert-danger {
+  background: var(--danger-light) !important;
+  border: 1px solid rgba(220, 53, 69, 0.3) !important;
+  color: var(--gov-text) !important;
+}
+
+/* === STEPPER === */
+.bs-stepper {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  box-shadow: var(--shadow-soft);
+  border: 1px solid var(--glass-border);
+}
+
+.bs-stepper-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.step-trigger {
+  color: rgba(255, 255, 255, 0.7) !important;
+  text-decoration: none;
+  transition: var(--transition-smooth);
+}
+
+.step.active .step-trigger {
+  color: var(--gov-accent) !important;
+}
+
+.bs-stepper-circle {
+  background: var(--gov-medium) !important;
+  color: var(--gov-text) !important;
+  border: 2px solid var(--glass-border);
+  transition: var(--transition-smooth);
+}
+
+.step.active .bs-stepper-circle {
+  background: var(--gradient-accent) !important;
+  border-color: var(--gov-accent);
+  box-shadow: 0 4px 12px rgba(23, 162, 184, 0.4);
+}
+
+/* === TABLAS === */
+.table-container {
+  background: var(--glass-bg-light);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: var(--shadow-card);
+}
+
+.standard-table thead th {
+  background-color: var(--gov-medium);
+  color: var(--gov-text);
+  border: none;
+  border-bottom: 1px solid var(--gov-light);
+}
+
+.standard-table tbody tr {
+  background-color: var(--gov-light);
+  border-bottom: 1px solid var(--gov-border);
+  transition: var(--transition-fast);
+}
+
+.standard-table tbody tr:hover {
+  background-color: rgba(58, 80, 104, 0.8);
+  box-shadow: var(--shadow-soft);
+}
+
+/* === BREADCRUMBS === */
+.breadcrumb {
+  background: var(--glass-bg-medium);
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+}
+
+.breadcrumb-item a {
+  color: var(--gov-accent);
+  text-decoration: none;
+  transition: var(--transition-smooth);
+}
+
+.breadcrumb-item a:hover {
+  color: var(--gov-text);
+  text-shadow: 0 0 8px var(--gov-accent);
+}
+
+.breadcrumb-item.active {
+  color: rgba(255, 255, 255, 0.8);
+}

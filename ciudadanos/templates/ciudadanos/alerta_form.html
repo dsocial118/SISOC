@@ -5,219 +5,139 @@
 {% block head %}
     <link rel="stylesheet" href="{% static 'custom/css/ciudadano-detail-enhanced.css' %}" />
     <style>
-        /* Estilos específicos para formulario de alertas */
-        .alert-form-container {
-            background: linear-gradient(135deg, var(--gov-dark) 0%, var(--gov-medium) 100%);
-            min-height: 100vh;
-            padding: 2rem 0;
-        }
-        
-        .form-card {
-            background: rgba(255, 255, 255, 0.06);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 20px;
-            box-shadow: var(--shadow-soft);
-            transition: var(--transition-smooth);
-        }
-        
-        .form-card:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-hover);
-        }
-        
-        .section-header {
-            background: linear-gradient(135deg, var(--gov-primary), var(--gov-accent));
-            color: white;
-            padding: 1.5rem 2rem;
-            border-radius: 16px 16px 0 0;
-            border: none;
+        /* Estilos específicos para formulario de alertas - CONSISTENTE CON OTROS FORMULARIOS */
+        .alerta-form-section {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         .section-title {
-            font-size: 1.25rem;
+            color: var(--gov-accent);
             font-weight: 600;
-            margin: 0;
+            margin-bottom: 1rem;
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 0.5rem;
         }
         
-        .form-section {
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 16px;
-            padding: 2rem;
-            margin-bottom: 1.5rem;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: var(--transition-smooth);
-        }
-        
-        .form-section:hover {
+        .form-control, .form-select {
             background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
         }
         
-        .add-alert-form {
-            background: linear-gradient(135deg, rgba(23, 162, 184, 0.1), rgba(20, 55, 107, 0.1));
-            border: 2px solid rgba(23, 162, 184, 0.3);
-            border-radius: 16px;
-            padding: 2rem;
-            position: relative;
-            overflow: hidden;
+        .form-control:focus, .form-select:focus {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--gov-accent);
+            box-shadow: 0 0 0 0.2rem rgba(23, 162, 184, 0.25);
+            color: white;
         }
         
-        .add-alert-form::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(23, 162, 184, 0.1), transparent);
-            transition: var(--transition-smooth);
-        }
-        
-        .add-alert-form:hover::before {
-            left: 100%;
+        .form-label {
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
         }
         
         .btn-add-alert {
-            background: linear-gradient(135deg, var(--gov-accent), #20c997);
-            border: none;
-            border-radius: 12px;
-            padding: 0.75rem 2rem;
+            background: linear-gradient(135deg, var(--gov-primary), var(--gov-accent)) !important;
+            border: none !important;
+            border-radius: 12px !important;
+            padding: 0.75rem 1.5rem !important;
             font-weight: 600;
-            color: white;
-            transition: var(--transition-smooth);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .btn-add-alert::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0.2));
-            transition: var(--transition-smooth);
+            transition: all 0.3s ease;
         }
         
         .btn-add-alert:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(23, 162, 184, 0.4);
+            box-shadow: 0 8px 25px rgba(20, 55, 107, 0.4);
         }
         
-        .btn-add-alert:hover::before {
-            left: 0;
-        }
-        
-        .form-control, .form-select {
-            background: rgba(255, 255, 255, 0.05) !important;
-            border: 1px solid rgba(255, 255, 255, 0.2) !important;
-            color: white !important;
-            border-radius: 10px !important;
-            transition: var(--transition-smooth);
-            padding: 0.75rem 1rem;
-        }
-        
-        .form-control:focus, .form-select:focus {
-            background: rgba(255, 255, 255, 0.1) !important;
-            border-color: var(--gov-accent) !important;
-            box-shadow: 0 0 0 0.2rem rgba(23, 162, 184, 0.25) !important;
-            color: white !important;
-        }
-        
-        .form-label {
-            color: rgba(255, 255, 255, 0.9) !important;
-            font-weight: 500;
-            margin-bottom: 0.75rem;
-            font-size: 0.95rem;
-        }
-        
-        /* Alertas timeline personalizadas */
+        /* Alertas timeline */
         .alertas-timeline {
-            max-height: 600px;
+            max-height: 500px;
             overflow-y: auto;
             padding: 1rem;
         }
         
-        .alertas-timeline::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .alertas-timeline::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 3px;
-        }
-        
-        .alertas-timeline::-webkit-scrollbar-thumb {
-            background: var(--gov-accent);
-            border-radius: 3px;
-        }
-        
-        /* Breadcrumb personalizado */
-        .breadcrumb {
+        .alert-card {
             background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px;
-            padding: 1rem 1.5rem;
-            margin-bottom: 2rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
         }
         
-        .breadcrumb-item a {
-            color: var(--gov-accent);
-            text-decoration: none;
-            transition: var(--transition-smooth);
+        .alert-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
         }
         
-        .breadcrumb-item a:hover {
+        .alert-card.critica {
+            border-left: 4px solid var(--danger);
+        }
+        
+        .alert-card.importante {
+            border-left: 4px solid var(--warning);
+        }
+        
+        .alert-card.precaucion {
+            border-left: 4px solid var(--info);
+        }
+        
+        .alert-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+        }
+        
+        .alert-icon.critica {
+            background: var(--danger);
             color: white;
-            text-shadow: 0 0 8px var(--gov-accent);
         }
         
-        .breadcrumb-item.active {
-            color: rgba(255, 255, 255, 0.8);
+        .alert-icon.importante {
+            background: var(--warning);
+            color: white;
         }
         
-        /* Animaciones de entrada */
-        .fade-in-up {
-            animation: fadeInUp 0.6s ease-out forwards;
+        .alert-icon.precaucion {
+            background: var(--info);
+            color: white;
         }
         
-        .fade-in-up:nth-child(1) { animation-delay: 0.1s; }
-        .fade-in-up:nth-child(2) { animation-delay: 0.2s; }
-        .fade-in-up:nth-child(3) { animation-delay: 0.3s; }
-        
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .btn-delete-alert {
+            background: linear-gradient(135deg, var(--danger), #e74c3c) !important;
+            border: none !important;
+            color: white !important;
+            transition: all 0.3s ease;
         }
         
-        /* Responsive */
-        @media (max-width: 768px) {
-            .alert-form-container {
-                padding: 1rem 0;
-            }
-            
-            .form-section {
-                padding: 1.5rem;
-                margin-bottom: 1rem;
-            }
-            
-            .section-header {
-                padding: 1rem 1.5rem;
-            }
-            
-            .add-alert-form {
-                padding: 1.5rem;
-            }
+        .btn-delete-alert:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+            color: white !important;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+            color: var(--gov-accent);
         }
     </style>
 {% endblock %}
@@ -227,193 +147,197 @@
 {% block titulo-pagina %}Gestión de Alertas{% endblock %}
 
 {% block breadcrumb %}
-    {% include "components/navigation/breadcrumb.html" with 
-       breadcrumb_items=breadcrumb_items 
-       current_item="Alertas"
-    %}
+    <ol class="breadcrumb float-sm-right mt-2 mr-2">
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanos' %}">Ciudadano</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanos_ver' ciudadano.id %}">{{ ciudadano.apellido }} {{ ciudadano.nombre }}</a>
+        </li>
+        <li class="breadcrumb-item active">Alertas</li>
+    </ol>
 {% endblock %}
 
 {% block content %}
-<div class="alert-form-container">
-    <div class="container-fluid">
-        <div class="row justify-content-center">
-            <div class="col-12 col-xl-10">
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow-lg">
+            <div class="card-body p-4">
                 
-                <!-- Stepper Navigation -->
-                <div class="fade-in-up mb-4">
-                    {% include "components/wizard/stepper_navigation.html" with 
-                       current_step=5 
-                       ciudadano_id=ciudadano.pk 
-                       show_mobile=False
-                    %}
-                </div>
+                <!-- Stepper usando componente existente -->
+                {% include "components/wizard/stepper_navigation.html" with current_step=5 ciudadano_id=ciudadano.id %}
                 
-                <!-- Información del ciudadano -->
-                <div class="fade-in-up mb-4">
-                    {% include "components/ciudadanos/ciudadano_summary_card.html" with 
-                       ciudadano=ciudadano 
-                       show_link=True
-                       card_class="border-0 shadow-sm"
-                    %}
-                </div>
-                
-                <!-- Formulario de agregar alerta -->
-                <div class="fade-in-up mb-4">
-                    <div class="form-card">
-                        <div class="section-header">
-                            <h3 class="section-title">
-                                <i class="fas fa-plus-circle"></i>
-                                Agregar Nueva Alerta
-                            </h3>
+                <!-- Resumen del ciudadano -->
+                <div class="row mt-4 mb-4">
+                    <div class="col-md-4">
+                        {% include "components/ciudadanos/ciudadano_summary_card.html" with ciudadano=ciudadano card_class="mb-0" %}
+                    </div>
+                    <div class="col-md-8">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>Gestión de Alertas
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="info-item mb-3">
+                                            <h6 class="text-warning mb-1">
+                                                <i class="fas fa-bell me-2"></i>Alertas Activas
+                                            </h6>
+                                            <span class="badge bg-warning text-dark fs-6">
+                                                {{ alertas|length }} alerta{{ alertas|length|pluralize }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="info-item mb-3">
+                                            <h6 class="text-info mb-1">
+                                                <i class="fas fa-shield-alt me-2"></i>Estado
+                                            </h6>
+                                            <span class="badge bg-info">
+                                                {% if alertas %}Monitoreado{% else %}Sin alertas{% endif %}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="alert alert-info border-0" style="background: rgba(23, 162, 184, 0.1);">
+                                    <i class="fas fa-lightbulb me-2"></i>
+                                    <strong>Paso 5 de 6:</strong> Configure las alertas del ciudadano para asegurar un seguimiento adecuado de situaciones importantes.
+                                </div>
+                            </div>
                         </div>
-                        
-                        <div class="card-body p-0">
-                            <div class="add-alert-form">
-                                <form id="agregarAlerta" 
-                                      name="agregarAlerta" 
-                                      method="POST" 
-                                      autocomplete="off" 
-                                      novalidate>
-                                    {% csrf_token %}
+                    </div>
+                </div>
+
+                <!-- Formulario para agregar nueva alerta -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="alerta-form-section">
+                            <h6 class="section-title">
+                                <i class="fas fa-plus-circle"></i>Agregar Nueva Alerta
+                            </h6>
+                            
+                            <form id="agregarAlerta" name="agregarAlerta" method="POST" autocomplete="off" novalidate>
+                                {% csrf_token %}
+                                
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="id_categoria" class="form-label">Categoría de Alerta</label>
+                                            <select class="form-select" id="id_categoria" name="categoria" required>
+                                                <option value="">Seleccionar categoría...</option>
+                                                {% for value, label in form.categoria.field.choices %}
+                                                    {% if value %}
+                                                        <option value="{{ value }}" {% if form.categoria.value == value %}selected{% endif %}>{{ label }}</option>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
                                     
-                                    <div class="row g-3 align-items-end">
-                                        <div class="col-md-4">
-                                            {% include 'components/dynamic_select.html' with 
-                                               field_id='id_categoria'
-                                               field_name='categoria'
-                                               field_label='Categoría de Alerta'
-                                               options=form.categoria.field.choices
-                                               selected_value=form.categoria.value
-                                               required=True
-                                               placeholder='Seleccionar categoría...'
-                                               css_class='form-select-lg'
-                                            %}
+                                    <div class="col-md-5">
+                                        <div class="form-group">
+                                            <label for="id_nombre" class="form-label">Tipo de Alerta</label>
+                                            <select class="form-select" id="id_nombre" name="nombre" required disabled>
+                                                <option value="">Seleccionar tipo...</option>
+                                            </select>
                                         </div>
-                                        
-                                        <div class="col-md-5">
-                                            {% include 'components/dynamic_select.html' with 
-                                               field_id='id_nombre'
-                                               field_name='nombre'
-                                               field_label='Tipo de Alerta'
-                                               depends_on='id_categoria'
-                                               ajax_url=alertasSelectUrl
-                                               selected_value=form.nombre.value
-                                               required=True
-                                               disabled=True
-                                               placeholder='Seleccionar tipo...'
-                                               data_param='categoria'
-                                               css_class='form-select-lg'
-                                            %}
-                                        </div>
-                                        
-                                        <div class="col-md-3">
-                                            <button class="btn btn-add-alert w-100 btn-lg" type="submit">
-                                                <i class="fas fa-plus me-2"></i>Agregar Alerta
+                                    </div>
+                                    
+                                    <div class="col-md-3 d-flex align-items-end">
+                                        <div class="form-group w-100">
+                                            <button class="btn btn-add-alert w-100" type="submit">
+                                                <i class="fas fa-plus me-2"></i>Agregar
                                             </button>
                                         </div>
                                     </div>
-                                    
-                                    <div class="row mt-3">
-                                        <div class="col-12">
-                                            <div class="alert alert-info border-0 bg-transparent" 
-                                                 style="background: rgba(23, 162, 184, 0.1) !important;">
-                                                <i class="fas fa-info-circle me-2"></i>
-                                                <strong>Información:</strong> 
-                                                Selecciona primero una categoría para ver los tipos de alerta disponibles.
+                                </div>
+                                
+                                <div class="alert alert-info mt-3 border-0" style="background: rgba(23, 162, 184, 0.1);">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>Información:</strong> Selecciona primero una categoría para ver los tipos de alerta disponibles.
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timeline de alertas existentes -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="alerta-form-section">
+                            <h6 class="section-title">
+                                <i class="fas fa-list-alt"></i>Alertas Registradas
+                                <span class="badge bg-primary ms-2">{{ alertas|length }}</span>
+                            </h6>
+                            
+                            <div class="alertas-timeline">
+                                {% if alertas %}
+                                    {% for item in alertas %}
+                                        <div class="alert-card {{ item.alerta.gravedad|lower }}" id="alertas-{{ item.id }}">
+                                            <div class="d-flex align-items-start">
+                                                <div class="alert-icon {{ item.alerta.gravedad|lower }}">
+                                                    {% if item.alerta.gravedad == 'Critica' %}
+                                                        <i class="fas fa-exclamation-triangle"></i>
+                                                    {% elif item.alerta.gravedad == 'Importante' %}
+                                                        <i class="fas fa-exclamation-circle"></i>
+                                                    {% else %}
+                                                        <i class="fas fa-info-circle"></i>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="alert-content flex-grow-1">
+                                                    <h6 class="text-white">{{ item.alerta.nombre }}</h6>
+                                                    <p class="mb-2 text-muted">
+                                                        <strong>Categoría:</strong> {{ item.alerta.categoria.nombre }}<br>
+                                                        <strong>Gravedad:</strong> 
+                                                        <span class="badge bg-{{ item.alerta.gravedad|lower }}">
+                                                            {{ item.alerta.gravedad }}
+                                                        </span>
+                                                    </p>
+                                                    {% if item.alerta.descripcion %}
+                                                        <p class="mb-2 text-muted">{{ item.alerta.descripcion|truncatewords:15 }}</p>
+                                                    {% endif %}
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-calendar me-1"></i>
+                                                        Agregada: {{ item.fecha_creacion|date:"d/m/Y H:i" }}
+                                                    </small>
+                                                </div>
+                                                <div class="alert-actions">
+                                                    <button class="btn btn-delete-alert btn-sm" 
+                                                            onclick='eliminarAlerta("{{ item.id }}")'
+                                                            type="button"
+                                                            title="Eliminar alerta">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="empty-state">
+                                        <i class="fas fa-bell"></i>
+                                        <h6 class="text-white mt-3">No hay alertas registradas</h6>
+                                        <p>Las alertas aparecerán aquí cuando sean creadas</p>
                                     </div>
-                                </form>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Timeline de alertas existentes -->
-                <div class="fade-in-up mb-4">
-                    <div class="form-card">
-                        <div class="section-header">
-                            <h3 class="section-title">
-                                <i class="fas fa-exclamation-triangle"></i>
-                                Alertas Activas
-                                <span class="badge bg-light text-dark ms-2">{{ alertas|length }}</span>
-                            </h3>
-                        </div>
-                        
-                        <div class="card-body p-0">
-                            <div class="alertas-timeline">
-                                {% include 'components/timeline_component.html' with 
-                                   items=alertas
-                                   item_type='alertas'
-                                   show_dates=True
-                                   show_actions=True
-                                   delete_function='eliminarAlerta'
-                                   layout='cards'
-                                   severity_field='alerta.gravedad'
-                                   empty_message='No hay alertas registradas para este ciudadano'
-                                   timeline_title=''
-                                   grid_cols=3
-                                %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Información adicional -->
-                <div class="fade-in-up mb-4">
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <div class="form-section text-center">
-                                <div class="mb-3">
-                                    <i class="fas fa-shield-alt fa-3x text-warning"></i>
-                                </div>
-                                <h6 class="text-white mb-2">Alertas de Seguridad</h6>
-                                <p class="text-muted small mb-0">
-                                    Alertas relacionadas con la seguridad del ciudadano
-                                </p>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-4">
-                            <div class="form-section text-center">
-                                <div class="mb-3">
-                                    <i class="fas fa-heartbeat fa-3x text-danger"></i>
-                                </div>
-                                <h6 class="text-white mb-2">Alertas Médicas</h6>
-                                <p class="text-muted small mb-0">
-                                    Alertas relacionadas con condiciones médicas
-                                </p>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-4">
-                            <div class="form-section text-center">
-                                <div class="mb-3">
-                                    <i class="fas fa-home fa-3x text-info"></i>
-                                </div>
-                                <h6 class="text-white mb-2">Alertas Sociales</h6>
-                                <p class="text-muted small mb-0">
-                                    Alertas relacionadas con situaciones sociales
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Botones de navegación -->
-                <div class="fade-in-up">
-                    {% include "components/forms/step_form_buttons.html" with 
-                       back_url='ciudadanosgrupohogar_crear'
-                       back_id=ciudadano.pk
-                       continue_url='ciudadanosarchivos_crear'
-                       continue_id=ciudadano.pk
-                       save_url='ciudadanos_ver'
-                       save_id=ciudadano.pk
-                       back_label='Volver a Grupo Hogar'
-                       save_label='Guardar y Ver Ciudadano'
-                       continue_label='Continuar a Archivos'
-                    %}
-                </div>
+
+                <!-- Botones del formulario usando componente -->
+                {% include "components/forms/step_form_buttons.html" with 
+                   back_url="grupohogar_crear" 
+                   back_id=ciudadano.id 
+                   save_url="ciudadanos_ver" 
+                   save_id=ciudadano.id 
+                   continue_url="ciudadanosarchivos_crear" 
+                   continue_id=ciudadano.id 
+                   back_label="Volver" 
+                   save_label="Guardar" 
+                   continue_label="Continuar" %}
                 
             </div>
         </div>
@@ -440,11 +364,6 @@
     const alertaAjaxBorrarUrl = '{% url "alerta_ajax_borrar" %}';
     
     document.addEventListener('DOMContentLoaded', function() {
-        // Configurar breadcrumb items
-        const breadcrumbItems = [
-            { url: '{% url "ciudadanos" %}', text: 'Ciudadanos' },
-            { url: '{% url "ciudadanos_ver" ciudadano.pk %}', text: '{{ ciudadano.nombre }} {{ ciudadano.apellido }}' }
-        ];
         
         // Función para eliminar alerta
         window.eliminarAlerta = function(alertaId) {
@@ -537,16 +456,50 @@
                 // Si no hay alertas, mostrar mensaje vacío
                 if (alertsCount === 0) {
                     alertsContainer.innerHTML = `
-                        <div class="text-center py-5">
-                            <div class="mb-3">
-                                <i class="fas fa-bell fa-4x text-muted opacity-50"></i>
-                            </div>
-                            <h6 class="text-muted">No hay alertas registradas</h6>
-                            <p class="text-muted small">Las alertas aparecerán aquí cuando sean creadas</p>
+                        <div class="empty-state">
+                            <i class="fas fa-bell"></i>
+                            <h6 class="text-white mt-3">No hay alertas registradas</h6>
+                            <p>Las alertas aparecerán aquí cuando sean creadas</p>
                         </div>
                     `;
                 }
             }
+        }
+        
+        // Configurar selects dependientes
+        const categoriaSelect = document.getElementById('id_categoria');
+        const nombreSelect = document.getElementById('id_nombre');
+        
+        if (categoriaSelect && nombreSelect) {
+            categoriaSelect.addEventListener('change', function() {
+                const categoriaId = this.value;
+                
+                // Limpiar el select de nombres
+                nombreSelect.innerHTML = '<option value="">Seleccionar tipo...</option>';
+                
+                if (categoriaId) {
+                    nombreSelect.disabled = true;
+                    
+                    // Cargar alertas por categoría
+                    fetch(alertasSelectUrl + '?categoria=' + categoriaId)
+                        .then(response => response.json())
+                        .then(data => {
+                            data.forEach(item => {
+                                const option = document.createElement('option');
+                                option.value = item.id;
+                                option.textContent = item.nombre;
+                                nombreSelect.appendChild(option);
+                            });
+                            nombreSelect.disabled = false;
+                        })
+                        .catch(error => {
+                            console.error('Error cargando alertas:', error);
+                            nombreSelect.disabled = false;
+                        });
+                } else {
+                    nombreSelect.disabled = true;
+                }
+            });
         }
         
         // Mejorar el formulario de agregar alerta
@@ -587,12 +540,6 @@
                 });
             });
         }
-        
-        // Efectos visuales adicionales
-        const formSections = document.querySelectorAll('.form-section, .form-card');
-        formSections.forEach((section, index) => {
-            section.style.animationDelay = `${index * 0.1}s`;
-        });
         
     });
 </script>
