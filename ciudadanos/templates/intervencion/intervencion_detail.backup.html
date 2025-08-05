@@ -1,0 +1,1353 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block head %}
+<link rel="stylesheet" href="{% static 'custom/css/ciudadano-detail-enhanced.css' %}" />
+<style>
+  /* Sistema de CSS Variables para Detalle de Intervenciones */
+  :root {
+    --gov-primary: #143570;
+    --gov-accent: #17a2b8;
+    --gov-danger: #dc3545;
+    --success: #28a745;
+    --warning: #ffc107;
+    --info: #17a2b8;
+    --secondary: #6c757d;
+  }
+
+  /* Botones de acción mejorados */
+  .action-buttons-section {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .btn-action-primary {
+    background: linear-gradient(135deg, var(--gov-primary), var(--gov-accent)) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 0.5rem 1rem !important;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    color: white !important;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-right: 0.5rem;
+  }
+
+  .btn-action-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(20, 55, 107, 0.4);
+    color: white !important;
+  }
+
+  .btn-action-secondary {
+    background: linear-gradient(135deg, var(--secondary), #6c757d) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 0.5rem 1rem !important;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    color: white !important;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn-action-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+    color: white !important;
+  }
+
+  /* Info boxes mejoradas */
+  .info-box-enhanced {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    height: 100%;
+  }
+
+  .info-box-enhanced:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    border-color: var(--gov-accent);
+  }
+
+  .info-box-enhanced .info-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: white;
+  }
+
+  .info-icon-primary {
+    background: linear-gradient(135deg, var(--gov-primary), var(--gov-accent));
+  }
+
+  .info-box-enhanced .info-text {
+    color: var(--gov-accent);
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .info-box-enhanced .info-number {
+    color: white;
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  /* Tabla de intervenciones mejorada */
+  .intervenciones-table-section {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .section-title {
+    color: var(--gov-accent);
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* Tabla mejorada */
+  .standard-table {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 8px;
+    overflow: hidden;
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+  }
+
+  .standard-table thead th {
+    background: linear-gradient(135deg, var(--gov-primary), var(--gov-accent));
+    color: white;
+    font-weight: 600;
+    padding: 1rem 0.75rem;
+    border: none;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .standard-table tbody td {
+    padding: 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    vertical-align: middle;
+    color: white;
+  }
+
+  .standard-table tbody tr {
+    transition: all 0.3s ease;
+    animation: fadeInUp 0.6s ease forwards;
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  .standard-table tbody tr:nth-child(1) { animation-delay: 0.1s; }
+  .standard-table tbody tr:nth-child(2) { animation-delay: 0.2s; }
+  .standard-table tbody tr:nth-child(3) { animation-delay: 0.3s; }
+  .standard-table tbody tr:nth-child(4) { animation-delay: 0.4s; }
+  .standard-table tbody tr:nth-child(5) { animation-delay: 0.5s; }
+
+  .standard-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    transform: translateX(3px);
+  }
+
+  /* Wrapper para tabla responsive */
+  .table-responsive-custom {
+    overflow-x: auto;
+    border-radius: 8px;
+  }
+
+  /* Badges de estado mejorados */
+  .estado-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .estado-activo {
+    background: linear-gradient(135deg, var(--success), #34ce57);
+    color: white;
+  }
+
+  .estado-pendiente {
+    background: linear-gradient(135deg, var(--warning), #ffcd39);
+    color: #333;
+  }
+
+  .estado-finalizado {
+    background: linear-gradient(135deg, var(--info), #20c997);
+    color: white;
+  }
+
+  /* Botones de acción en tabla */
+  .btn-table-action {
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-right: 0.25rem;
+    white-space: nowrap;
+  }
+
+  .btn-edit-action {
+    background: linear-gradient(135deg, var(--info), #20c997);
+    color: white;
+  }
+
+  .btn-edit-action:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(23, 162, 184, 0.4);
+    color: white;
+    text-decoration: none;
+  }
+
+  .btn-delete-action {
+    background: linear-gradient(135deg, var(--gov-danger), #e74c3c);
+    color: white;
+  }
+
+  .btn-delete-action:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+    color: white;
+    text-decoration: none;
+  }
+
+  /* Estado vacío mejorado */
+  .empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #6c757d;
+  }
+
+  .empty-state i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    color: var(--gov-accent);
+    opacity: 0.5;
+  }
+
+  .empty-state h5 {
+    color: white;
+    margin-bottom: 1rem;
+  }
+
+  .empty-state p {
+    color: #adb5bd;
+  }
+
+  /* Animaciones */
+  .fade-in-up {
+    animation: fadeInUp 0.6s ease forwards;
+  }
+
+  .fade-in-left {
+    animation: fadeInLeft 0.6s ease forwards;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeInLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  /* Botón de volver mejorado */
+  .btn-back {
+    background: linear-gradient(135deg, var(--secondary), #6c757d) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 0.75rem 1.5rem !important;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    color: white !important;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn-back:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+    color: white !important;
+  }
+
+  /* Responsividad */
+  @media (max-width: 768px) {
+    .action-buttons-section {
+      text-align: center;
+    }
+    
+    .btn-action-primary,
+    .btn-action-secondary {
+      margin-bottom: 0.5rem;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .standard-table {
+      font-size: 0.875rem;
+    }
+
+    .standard-table th,
+    .standard-table td {
+      padding: 0.5rem 0.25rem;
+    }
+
+    .btn-table-action {
+      padding: 0.2rem 0.4rem;
+      font-size: 0.7rem;
+    }
+
+    .info-box-enhanced {
+      margin-bottom: 1rem;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block title %}Detalle de Intervenciones - {{ object.nombre }} {{ object.apellido }}{% endblock %}
+{% block titulo-pagina %}Ciudadano{% endblock %}
+
+{% block breadcrumb %}
+  .action-buttons-section {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .btn-action-primary {
+    background: linear-gradient(135deg, var(--gov-primary), var(--gov-accent)) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 0.5rem 1rem !important;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    color: white !important;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-right: 0.5rem;
+  }
+
+  .btn-action-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(20, 55, 107, 0.4);
+    color: white !important;
+  }
+
+  .btn-action-secondary {
+    background: linear-gradient(135deg, var(--secondary), #6c757d) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 0.5rem 1rem !important;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    color: white !important;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn-action-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+    color: white !important;
+  }
+
+  /* Info boxes mejoradas */
+  .info-box-enhanced {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+  }
+
+  .info-box-enhanced:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    border-color: var(--gov-accent);
+  }
+
+  .info-box-enhanced .info-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: white;
+  }
+
+  .info-icon-primary {
+    background: linear-gradient(135deg, var(--gov-primary), var(--gov-accent));
+  }
+
+  .info-box-enhanced .info-text {
+    color: var(--gov-accent);
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .info-box-enhanced .info-number {
+    color: white;
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  /* Tabla de intervenciones mejorada */
+  .intervenciones-table-section {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .section-title {
+    color: var(--gov-accent);
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* Badges de estado mejorados */
+  .estado-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .estado-activo {
+    background: linear-gradient(135deg, var(--success), #34ce57);
+    color: white;
+  }
+
+  .estado-pendiente {
+    background: linear-gradient(135deg, var(--warning), #ffcd39);
+    color: #333;
+  }
+
+  .estado-finalizado {
+    background: linear-gradient(135deg, var(--info), #20c997);
+    color: white;
+  }
+
+  /* Botones de acción en tabla */
+  .btn-table-action {
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-right: 0.25rem;
+  }
+
+  .btn-edit-action {
+    background: linear-gradient(135deg, var(--info), #20c997);
+    color: white;
+  }
+
+  .btn-edit-action:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(23, 162, 184, 0.4);
+    color: white;
+    text-decoration: none;
+  }
+
+  .btn-delete-action {
+    background: linear-gradient(135deg, var(--gov-danger), #e74c3c);
+    color: white;
+  }
+
+  .btn-delete-action:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+    color: white;
+    text-decoration: none;
+  }
+
+  /* Animaciones para las filas */
+  .standard-table tbody tr {
+    animation: fadeInUp 0.6s ease forwards;
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  .standard-table tbody tr:nth-child(1) { animation-delay: 0.1s; }
+  .standard-table tbody tr:nth-child(2) { animation-delay: 0.2s; }
+  .standard-table tbody tr:nth-child(3) { animation-delay: 0.3s; }
+  .standard-table tbody tr:nth-child(4) { animation-delay: 0.4s; }
+  .standard-table tbody tr:nth-child(5) { animation-delay: 0.5s; }
+
+  .standard-table tbody tr:hover {
+    transform: translateX(5px);
+    background: rgba(255, 255, 255, 0.08) !important;
+  }
+
+  /* Estado vacío mejorado */
+  .empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #6c757d;
+  }
+
+  .empty-state i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    color: var(--gov-accent);
+    opacity: 0.5;
+  }
+
+  .empty-state h5 {
+    color: white;
+    margin-bottom: 1rem;
+  }
+
+  .empty-state p {
+    color: #adb5bd;
+  }
+
+  /* Animación de entrada */
+  .fade-in-up {
+    animation: fadeInUp 0.6s ease forwards;
+  }
+
+  .fade-in-left {
+    animation: fadeInLeft 0.6s ease forwards;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeInLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  /* Botón de volver mejorado */
+  .btn-back {
+    background: linear-gradient(135deg, var(--secondary), #6c757d) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 0.75rem 1.5rem !important;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    color: white !important;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn-back:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+    color: white !important;
+  }
+
+  /* Responsividad */
+  @media (max-width: 768px) {
+    .action-buttons-section {
+      text-align: center;
+    }
+    
+    .btn-action-primary,
+    .btn-action-secondary {
+      margin-bottom: 0.5rem;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .info-box-enhanced {
+      margin-bottom: 1rem;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block title %}Detalle de Intervenciones - {{ object.nombre }} {{ object.apellido }}{% endblock %}
+{% block titulo-pagina %}Ciudadano{% endblock %}
+
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right mt-2 mr-2">
+  <li class="breadcrumb-item">
+    <a href="{% url 'ciudadanos' %}" title="Ver listado de ciudadanos">
+      <i class="fas fa-users"></i> Ciudadanos
+    </a>
+  </li>
+  <li class="breadcrumb-item">
+    <a href="{% url 'ciudadanos_ver' object.id %}" title="Ver ciudadano">
+      <i class="fas fa-user"></i> {{ object.nombre }} {{ object.apellido }}
+    </a>
+  </li>
+  <li class="breadcrumb-item active">
+    <i class="fas fa-clipboard-list"></i> Intervenciones
+  </li>
+</ol>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-md-12">
+    <div class="card shadow-lg">
+      <div class="card-body p-4">
+        
+        <!-- Botones de Acción -->
+        <div class="row fade-in-up">
+          <div class="col-12">
+            <div class="action-buttons-section">
+              <h6 class="section-title">
+                <i class="fas fa-cogs"></i>
+                Gestión de Intervenciones
+              </h6>
+              <a href="{% url 'intervencion_crear' object.id %}" class="btn-action-primary">
+                <i class="fas fa-plus"></i>
+                Agregar Intervención
+              </a>
+              <button onclick="window.print()" class="btn-action-secondary">
+                <i class="fas fa-print"></i>
+                Imprimir
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Resumen del Ciudadano e Información -->
+        <div class="row fade-in-up" style="animation-delay: 0.2s;">
+          
+          <!-- Card de Resumen del Ciudadano -->
+          <div class="col-md-4">
+            {% include "components/ciudadanos/ciudadano_summary_card.html" with ciudadano=object %}
+          </div>
+
+          <!-- Estadísticas de Intervenciones -->
+          <div class="col-md-8">
+            <div class="row h-100">
+              <!-- Total de Intervenciones -->
+              <div class="col-md-6">
+                <div class="info-box-enhanced">
+                  <div class="info-icon info-icon-primary">
+                    {{ cantidad_intervenciones }}
+                  </div>
+                  <div class="info-text">Total de Intervenciones</div>
+                  {% if cantidad_intervenciones > 0 %}
+                    <small class="text-success">
+                      <i class="fas fa-chart-line"></i>
+                      Sistema activo
+                    </small>
+                  {% else %}
+                    <small class="text-warning">
+                      <i class="fas fa-exclamation-triangle"></i>
+                      Sin intervenciones
+                    </small>
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- Información del Proceso -->
+              <div class="col-md-6">
+                <div class="info-box-enhanced">
+                  <div class="info-icon" style="background: linear-gradient(135deg, var(--info), #20c997);">
+                    <i class="fas fa-clipboard-list"></i>
+                  </div>
+                  <div class="info-text">Estado del Proceso</div>
+                  <div class="info-number" style="font-size: 1rem;">
+                    {% if intervenciones %}
+                      <span class="estado-badge estado-activo">
+                        <i class="fas fa-check-circle"></i>
+                        En Seguimiento
+                      </span>
+                    {% else %}
+                      <span class="estado-badge estado-pendiente">
+                        <i class="fas fa-clock"></i>
+                        Sin Iniciar
+                      </span>
+                    {% endif %}
+                  </div>
+                  <small class="text-info mt-2 d-block">
+                    <i class="fas fa-info-circle"></i>
+                    Gestión de intervenciones sociales
+                  </small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Historial de Intervenciones -->
+        <div class="row fade-in-up" style="animation-delay: 0.4s;">
+          <div class="col-12">
+            <div class="intervenciones-table-section">
+              <h6 class="section-title">
+                <i class="fas fa-history"></i>
+                Historial de Intervenciones
+              </h6>
+              
+              {% if intervenciones %}
+                <div class="table-container">
+                  <div class="table-responsive-custom">
+                    <table class="table standard-table">
+                      <thead>
+                        <tr>
+                          <th><i class="fas fa-calendar-alt"></i> Fecha</th>
+                          <th><i class="fas fa-user"></i> Usuario</th>
+                          <th><i class="fas fa-tags"></i> Sub Intervención</th>
+                          <th><i class="fas fa-clipboard"></i> Tipo</th>
+                          <th><i class="fas fa-map-marker-alt"></i> Dirección</th>
+                          <th><i class="fas fa-flag"></i> Estado</th>
+                          <th class="text-center"><i class="fas fa-cogs"></i> Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for e in intervenciones %}
+                          <tr>
+                            <td>
+                              <span class="text-white">{{ e.fecha|date:"d/m/Y" }}</span>
+                            </td>
+                            <td>
+                              <span class="text-white">{{ e.usuario }}</span>
+                            </td>
+                            <td>
+                              <span class="text-white">{{ e.subintervencion }}</span>
+                            </td>
+                            <td>
+                              <span class="text-white">{{ e.tipo_intervencion }}</span>
+                            </td>
+                            <td>
+                              <span class="text-white">
+                                {% for direccion in e.direccion.all %}
+                                  {{ direccion }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                              </span>
+                            </td>
+                            <td>
+                              {% if e.estado == "Activo" %}
+                                <span class="estado-badge estado-activo">
+                                  <i class="fas fa-check-circle"></i>
+                                  {{ e.estado }}
+                                </span>
+                              {% elif e.estado == "Pendiente" %}
+                                <span class="estado-badge estado-pendiente">
+                                  <i class="fas fa-clock"></i>
+                                  {{ e.estado }}
+                                </span>
+                              {% else %}
+                                <span class="estado-badge estado-finalizado">
+                                  <i class="fas fa-flag-checkered"></i>
+                                  {{ e.estado }}
+                                </span>
+                              {% endif %}
+                            </td>
+                            <td class="text-center">
+                              <a href="{% url 'intervencion_editar' e.id object.id %}" 
+                                 class="btn-table-action btn-edit-action"
+                                 title="Editar intervención">
+                                <i class="fas fa-edit"></i>
+                                Editar
+                              </a>
+                              <a href="{% url 'intervencion_borrar' e.id object.id %}" 
+                                 class="btn-table-action btn-delete-action"
+                                 title="Eliminar intervención"
+                                 onclick="return confirm('¿Estás seguro de que deseas eliminar esta intervención?')">
+                                <i class="fas fa-trash"></i>
+                                Eliminar
+                              </a>
+                            </td>
+                          </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              {% else %}
+                <div class="empty-state">
+                  <i class="fas fa-clipboard-list"></i>
+                  <h5>No hay intervenciones registradas</h5>
+                  <p>Este ciudadano aún no tiene intervenciones asociadas.</p>
+                  <a href="{% url 'intervencion_crear' object.id %}" class="btn-action-primary mt-3">
+                    <i class="fas fa-plus"></i>
+                    Crear Primera Intervención
+                  </a>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Navegación -->
+        <div class="row fade-in-up" style="animation-delay: 0.6s;">
+          <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+              <a href="{% url 'ciudadanos_ver' object.id %}" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+                Volver al Ciudadano
+              </a>
+              
+              {% if intervenciones %}
+                <div class="text-right">
+                  <small class="text-muted">
+                    <i class="fas fa-info-circle"></i>
+                    {{ cantidad_intervenciones }} intervención{{ cantidad_intervenciones|pluralize:"es" }} registrada{{ cantidad_intervenciones|pluralize:"s" }}
+                  </small>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block customJS %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Función de notificación reutilizable
+    function showNotification(message, type = 'info') {
+      const notification = document.createElement('div');
+      notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+      notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+      notification.innerHTML = `
+        ${message}
+        <button type="button" class="close" data-dismiss="alert">
+          <span>&times;</span>
+        </button>
+      `;
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.parentNode.removeChild(notification);
+        }
+      }, 5000);
+    }
+
+    // Animación contador
+    function animateCounter(element, target) {
+      let current = 0;
+      const increment = target / 20;
+      const timer = setInterval(() => {
+        current += increment;
+        if (current >= target) {
+          current = target;
+          clearInterval(timer);
+        }
+        element.textContent = Math.floor(current);
+      }, 50);
+    }
+
+    // Animar contadores
+    const counters = document.querySelectorAll('.info-number');
+    counters.forEach(counter => {
+      const target = parseInt(counter.textContent);
+      if (!isNaN(target)) {
+        counter.textContent = '0';
+        animateCounter(counter, target);
+      }
+    });
+
+    // Mejorar efectos hover en botones
+    const actionButtons = document.querySelectorAll('.btn-action-primary, .btn-action-secondary');
+    actionButtons.forEach(button => {
+      button.addEventListener('mouseenter', function() {
+        this.style.transform = 'translateY(-2px) scale(1.02)';
+      });
+      
+      button.addEventListener('mouseleave', function() {
+        this.style.transform = 'translateY(0) scale(1)';
+      });
+    });
+
+    // Funcionalidad de impresión mejorada
+    const printButton = document.querySelector('.btn-action-secondary');
+    if (printButton) {
+      printButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        showNotification(
+          '<i class="fas fa-print"></i> Preparando documento para impresión...', 
+          'info'
+        );
+        
+        setTimeout(() => {
+          window.print();
+        }, 1000);
+      });
+    }
+
+    // Confirmación para eliminación con estilo
+    const deleteButtons = document.querySelectorAll('.btn-delete-action');
+    deleteButtons.forEach(button => {
+      button.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        const result = confirm('⚠️ ¿Estás seguro de que deseas eliminar esta intervención?\n\nEsta acción no se puede deshacer.');
+        
+        if (result) {
+          showNotification(
+            '<i class="fas fa-trash"></i> Eliminando intervención...', 
+            'warning'
+          );
+          
+          setTimeout(() => {
+            window.location.href = this.href;
+          }, 500);
+        }
+      });
+    });
+
+    // Efecto de loading para enlaces de edición
+    const editButtons = document.querySelectorAll('.btn-edit-action');
+    editButtons.forEach(button => {
+      button.addEventListener('click', function(e) {
+        showNotification(
+          '<i class="fas fa-edit"></i> Cargando editor de intervención...', 
+          'info'
+        );
+      });
+    });
+
+    console.log('✅ Intervenciones Detail - Componentes inicializados correctamente');
+  });
+</script>
+{% endblock %}
+
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right mt-2 mr-2">
+  <li class="breadcrumb-item">
+    <a href="{% url 'ciudadanos' %}" title="Ver listado de ciudadanos">
+      <i class="fas fa-users"></i> Ciudadanos
+    </a>
+  </li>
+  <li class="breadcrumb-item">
+    <a href="{% url 'ciudadanos_ver' object.id %}" title="Ver ciudadano">
+      <i class="fas fa-user"></i> {{ object.nombre }} {{ object.apellido }}
+    </a>
+  </li>
+  <li class="breadcrumb-item active">
+    <i class="fas fa-clipboard-list"></i> Intervenciones
+  </li>
+</ol>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-md-12">
+    <div class="card shadow-lg">
+      <div class="card-body p-4">
+        
+        <!-- Botones de Acción -->
+        <div class="row fade-in-up">
+          <div class="col-12">
+            <div class="action-buttons-section">
+              <h6 class="section-title">
+                <i class="fas fa-cogs"></i>
+                Gestión de Intervenciones
+              </h6>
+              <a href="{% url 'intervencion_crear' object.id %}" class="btn-action-primary">
+                <i class="fas fa-plus"></i>
+                Agregar Intervención
+              </a>
+              <button onclick="window.print()" class="btn-action-secondary">
+                <i class="fas fa-print"></i>
+                Imprimir
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Resumen del Ciudadano e Información -->
+        <div class="row fade-in-up" style="animation-delay: 0.2s;">
+          
+          <!-- Card de Resumen del Ciudadano -->
+          <div class="col-md-4">
+            {% include "components/ciudadanos/ciudadano_summary_card.html" with ciudadano=object %}
+          </div>
+
+          <!-- Estadísticas de Intervenciones -->
+          <div class="col-md-8">
+            <div class="row h-100">
+              <!-- Total de Intervenciones -->
+              <div class="col-md-6">
+                <div class="info-box-enhanced">
+                  <div class="info-icon info-icon-primary">
+                    {{ cantidad_intervenciones }}
+                  </div>
+                  <div class="info-text">Total de Intervenciones</div>
+                  {% if cantidad_intervenciones > 0 %}
+                    <small class="text-success">
+                      <i class="fas fa-chart-line"></i>
+                      Sistema activo
+                    </small>
+                  {% else %}
+                    <small class="text-warning">
+                      <i class="fas fa-exclamation-triangle"></i>
+                      Sin intervenciones
+                    </small>
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- Información del Proceso -->
+              <div class="col-md-6">
+                <div class="info-box-enhanced">
+                  <div class="info-icon" style="background: linear-gradient(135deg, var(--info), #20c997);">
+                    <i class="fas fa-clipboard-list"></i>
+                  </div>
+                  <div class="info-text">Estado del Proceso</div>
+                  <div class="info-number" style="font-size: 1rem;">
+                    {% if intervenciones %}
+                      <span class="estado-badge estado-activo">
+                        <i class="fas fa-check-circle"></i>
+                        En Seguimiento
+                      </span>
+                    {% else %}
+                      <span class="estado-badge estado-pendiente">
+                        <i class="fas fa-clock"></i>
+                        Sin Iniciar
+                      </span>
+                    {% endif %}
+                  </div>
+                  <small class="text-info mt-2 d-block">
+                    <i class="fas fa-info-circle"></i>
+                    Gestión de intervenciones sociales
+                  </small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Historial de Intervenciones -->
+        <div class="row fade-in-up" style="animation-delay: 0.4s;">
+          <div class="col-12">
+            <div class="intervenciones-table-section">
+              <h6 class="section-title">
+                <i class="fas fa-history"></i>
+                Historial de Intervenciones
+              </h6>
+              
+              {% if intervenciones %}
+                <div class="table-container">
+                  <div class="table-responsive-custom">
+                    <table class="table standard-table">
+                      <thead>
+                        <tr>
+                          <th><i class="fas fa-calendar-alt"></i> Fecha</th>
+                          <th><i class="fas fa-user"></i> Usuario</th>
+                          <th><i class="fas fa-tags"></i> Sub Intervención</th>
+                          <th><i class="fas fa-clipboard"></i> Tipo</th>
+                          <th><i class="fas fa-map-marker-alt"></i> Dirección</th>
+                          <th><i class="fas fa-flag"></i> Estado</th>
+                          <th class="text-center"><i class="fas fa-cogs"></i> Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for e in intervenciones %}
+                          <tr>
+                            <td>
+                              <span class="text-white">{{ e.fecha|date:"d/m/Y" }}</span>
+                            </td>
+                            <td>
+                              <span class="text-white">{{ e.usuario }}</span>
+                            </td>
+                            <td>
+                              <span class="text-white">{{ e.subintervencion }}</span>
+                            </td>
+                            <td>
+                              <span class="text-white">{{ e.tipo_intervencion }}</span>
+                            </td>
+                            <td>
+                              <span class="text-white">
+                                {% for direccion in e.direccion.all %}
+                                  {{ direccion }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                              </span>
+                            </td>
+                            <td>
+                              {% if e.estado == "Activo" %}
+                                <span class="estado-badge estado-activo">
+                                  <i class="fas fa-check-circle"></i>
+                                  {{ e.estado }}
+                                </span>
+                              {% elif e.estado == "Pendiente" %}
+                                <span class="estado-badge estado-pendiente">
+                                  <i class="fas fa-clock"></i>
+                                  {{ e.estado }}
+                                </span>
+                              {% else %}
+                                <span class="estado-badge estado-finalizado">
+                                  <i class="fas fa-flag-checkered"></i>
+                                  {{ e.estado }}
+                                </span>
+                              {% endif %}
+                            </td>
+                            <td class="text-center">
+                              <a href="{% url 'intervencion_editar' e.id object.id %}" 
+                                 class="btn-table-action btn-edit-action"
+                                 title="Editar intervención">
+                                <i class="fas fa-edit"></i>
+                                Editar
+                              </a>
+                              <a href="{% url 'intervencion_borrar' e.id object.id %}" 
+                                 class="btn-table-action btn-delete-action"
+                                 title="Eliminar intervención"
+                                 onclick="return confirm('¿Estás seguro de que deseas eliminar esta intervención?')">
+                                <i class="fas fa-trash"></i>
+                                Eliminar
+                              </a>
+                            </td>
+                          </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              {% else %}
+                <div class="empty-state">
+                  <i class="fas fa-clipboard-list"></i>
+                  <h5>No hay intervenciones registradas</h5>
+                  <p>Este ciudadano aún no tiene intervenciones asociadas.</p>
+                  <a href="{% url 'intervencion_crear' object.id %}" class="btn-action-primary mt-3">
+                    <i class="fas fa-plus"></i>
+                    Crear Primera Intervención
+                  </a>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Navegación -->
+        <div class="row fade-in-up" style="animation-delay: 0.6s;">
+          <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+              <a href="{% url 'ciudadanos_ver' object.id %}" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+                Volver al Ciudadano
+              </a>
+              
+              {% if intervenciones %}
+                <div class="text-right">
+                  <small class="text-muted">
+                    <i class="fas fa-info-circle"></i>
+                    {{ cantidad_intervenciones }} intervención{{ cantidad_intervenciones|pluralize:"es" }} registrada{{ cantidad_intervenciones|pluralize:"s" }}
+                  </small>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block customJS %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Función de notificación reutilizable
+    function showNotification(message, type = 'info') {
+      // Crear elemento de notificación
+      const notification = document.createElement('div');
+      notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+      notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+      notification.innerHTML = `
+        ${message}
+        <button type="button" class="close" data-dismiss="alert">
+          <span>&times;</span>
+        </button>
+      `;
+      
+      document.body.appendChild(notification);
+      
+      // Auto-remover después de 5 segundos
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.parentNode.removeChild(notification);
+        }
+      }, 5000);
+    }
+
+    // Animación contador
+    function animateCounter(element, target) {
+      let current = 0;
+      const increment = target / 20;
+      const timer = setInterval(() => {
+        current += increment;
+        if (current >= target) {
+          current = target;
+          clearInterval(timer);
+        }
+        element.textContent = Math.floor(current);
+      }, 50);
+    }
+
+    // Animar contadores
+    const counters = document.querySelectorAll('.info-number');
+    counters.forEach(counter => {
+      const target = parseInt(counter.textContent);
+      if (!isNaN(target)) {
+        counter.textContent = '0';
+        animateCounter(counter, target);
+      }
+    });
+
+    // Mejorar efectos hover en botones
+    const actionButtons = document.querySelectorAll('.btn-action-primary, .btn-action-secondary');
+    actionButtons.forEach(button => {
+      button.addEventListener('mouseenter', function() {
+        this.style.transform = 'translateY(-2px) scale(1.02)';
+      });
+      
+      button.addEventListener('mouseleave', function() {
+        this.style.transform = 'translateY(0) scale(1)';
+      });
+    });
+
+    // Funcionalidad de impresión mejorada
+    const printButton = document.querySelector('.btn-action-secondary');
+    if (printButton) {
+      printButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        showNotification(
+          '<i class="fas fa-print"></i> Preparando documento para impresión...', 
+          'info'
+        );
+        
+        setTimeout(() => {
+          window.print();
+        }, 1000);
+      });
+    }
+
+    // Confirmación para eliminación con estilo
+    const deleteButtons = document.querySelectorAll('.btn-delete-action');
+    deleteButtons.forEach(button => {
+      button.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        const result = confirm('⚠️ ¿Estás seguro de que deseas eliminar esta intervención?\n\nEsta acción no se puede deshacer.');
+        
+        if (result) {
+          showNotification(
+            '<i class="fas fa-trash"></i> Eliminando intervención...', 
+            'warning'
+          );
+          
+          // Pequeña pausa para mostrar la notificación antes de redirigir
+          setTimeout(() => {
+            window.location.href = this.href;
+          }, 500);
+        }
+      });
+    });
+
+    // Efecto de loading para enlaces de edición
+    const editButtons = document.querySelectorAll('.btn-edit-action');
+    editButtons.forEach(button => {
+      button.addEventListener('click', function(e) {
+        showNotification(
+          '<i class="fas fa-edit"></i> Cargando editor de intervención...', 
+          'info'
+        );
+      });
+    });
+
+    console.log('✅ Intervenciones Detail - Componentes inicializados correctamente');
+  });
+</script>
+{% endblock %}

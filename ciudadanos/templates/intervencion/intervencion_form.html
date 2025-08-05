@@ -1,115 +1,672 @@
-{% extends "includes/main.html" %}
-{% load static %}
-{% block title %}Intervenciones formulario{% endblock %}
-{% block titulo-pagina %}Intervenciones{% endblock %}
-;
-{% block breadcrumb %}
-    <ol class="breadcrumb float-sm-right ">
-        <li class="breadcrumb-item">Intervenciones</li>
-        <li class="breadcrumb-item">
-            <a href="{% url 'ciudadanos_ver' object.id %}" title="Ver ciudadano">{{ object.nombre }} {{ object.apellido }}</a>
-        </li>
-        <li class="breadcrumb-item active">Agregar</li>
-    </ol>
-{% endblock %}
-;
-{% load crispy_forms_tags %}
-{% block content %}
-    <!-- Datos de ciudadano -->
-    <div class="row mb-3">
-        <div class="col-12">
-            <div class="card card-outline card-primary ">
-                <div class="card-header">
-                    <h3 class="card-title">Detalle Ciudadano</h3>
-                </div>
-                <div class="card-body">
-                    <dl class="row">
-                        <dd class="col-sm-2 mb-2">
-                            Nombre
-                        </dd>
-                        <dt class="col-sm-10 mb-2">
-                            <a href="{% url 'ciudadanos_ver' object.id %}" title="Ver ciudadano">{{ object.nombre }} {{ object.apellido }}</a>
-                        </dt>
-                        <dd class="col-sm-2 mb-2">
-                            DNI
-                        </dd>
-                        <dt class="col-sm-10 mb-2">{{ object.documento }}</dt>
-                        <dd class="col-sm-2 mb-2">
-                            Fecha de nacimiento
-                        </dd>
-                        <dt class="col-sm-10 mb-2">{{ object.fecha_nacimiento|date:'d/m/Y' }}</dt>
-                        <dd class="col-sm-2 mb-2">
-                            Sexo
-                        </dd>
-                        <dt class="col-sm-10 mb-2">{{ object.sexo }}</dt>
-                    </dl>
-                </div>
+{% extends "includes/main.html" %} {% load static %} {% load crispy_forms_tags
+%} {% block head %}
+<link
+  rel="stylesheet"
+  href="{% static 'custom/css/ciudadano-detail-enhanced.css' %}"
+/>
+<style>
+  /* Sistema de CSS Variables para Formulario de Intervenciones */
+  :root {
+    --gov-primary: #143570;
+    --gov-accent: #17a2b8;
+    --gov-danger: #dc3545;
+    --success: #28a745;
+    --warning: #ffc107;
+    --info: #17a2b8;
+    --secondary: #6c757d;
+  }
+
+  /* Formulario mejorado */
+  .form-section {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+  }
+
+  .form-section:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    border-color: rgba(23, 162, 184, 0.3);
+  }
+
+  .form-section-header {
+    background: linear-gradient(135deg, var(--gov-primary), var(--gov-accent));
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 12px 12px 0 0;
+    margin: -2rem -2rem 1.5rem -2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .form-section-header h5 {
+    margin: 0;
+    font-weight: 600;
+  }
+
+  /* Campos de formulario mejorados */
+  .form-group label {
+    color: var(--gov-accent);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .form-control {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 8px !important;
+    color: white !important;
+    padding: 0.75rem 1rem !important;
+    transition: all 0.3s ease !important;
+  }
+
+  .form-control:focus {
+    background: rgba(255, 255, 255, 0.12) !important;
+    border-color: var(--gov-accent) !important;
+    box-shadow: 0 0 0 0.2rem rgba(23, 162, 184, 0.25) !important;
+    color: white !important;
+  }
+
+  .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.6) !important;
+  }
+
+  select.form-control option {
+    background: var(--gov-primary) !important;
+    color: white !important;
+  }
+
+  /* Botones de acción */
+  .action-buttons-section {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    text-align: center;
+  }
+
+  .btn-form-primary {
+    background: linear-gradient(135deg, var(--success), #34ce57) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 0.75rem 2rem !important;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    color: white !important;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-right: 1rem;
+    min-width: 150px;
+    justify-content: center;
+  }
+
+  .btn-form-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(52, 206, 87, 0.4);
+    color: white !important;
+  }
+
+  .btn-form-secondary {
+    background: linear-gradient(135deg, var(--secondary), #6c757d) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 0.75rem 2rem !important;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    color: white !important;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 150px;
+    justify-content: center;
+  }
+
+  .btn-form-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+    color: white !important;
+  }
+
+  /* Información del ciudadano mejorada */
+  .ciudadano-info-section {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .info-title {
+    color: var(--gov-accent);
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .info-list dt {
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .info-list dd {
+    color: white;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+  }
+
+  .info-list dd a {
+    color: var(--gov-accent);
+    text-decoration: none;
+    transition: all 0.3s ease;
+  }
+
+  .info-list dd a:hover {
+    color: #0dcaf0;
+    text-decoration: none;
+  }
+
+  /* Validación mejorada */
+  .form-control.is-invalid {
+    border-color: var(--gov-danger) !important;
+    background: rgba(220, 53, 69, 0.1) !important;
+  }
+
+  .invalid-feedback {
+    color: var(--gov-danger);
+    font-weight: 500;
+  }
+
+  /* Loading states */
+  .form-loading {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .form-loading::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.1),
+      transparent
+    );
+    animation: loading 1.5s infinite;
+  }
+
+  @keyframes loading {
+    0% {
+      left: -100%;
+    }
+    100% {
+      left: 100%;
+    }
+  }
+
+  /* Animaciones de entrada */
+  .fade-in-up {
+    animation: fadeInUp 0.6s ease forwards;
+  }
+
+  .fade-in-left {
+    animation: fadeInLeft 0.6s ease forwards;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeInLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  /* Responsividad */
+  @media (max-width: 768px) {
+    .form-section {
+      padding: 1rem;
+    }
+
+    .form-section-header {
+      margin: -1rem -1rem 1rem -1rem;
+      padding: 1rem;
+    }
+
+    .btn-form-primary,
+    .btn-form-secondary {
+      width: 100%;
+      margin: 0.5rem 0;
+    }
+
+    .action-buttons-section {
+      padding: 1rem;
+    }
+  }
+
+  /* Estilos específicos para crispy forms */
+  .crispy-form .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .crispy-form .asteriskField {
+    color: var(--gov-danger);
+    font-weight: bold;
+  }
+
+  .crispy-form .help-block {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+  }
+</style>
+{% endblock %} {% block title %} {% if form.instance.pk %} Editar Intervención -
+{{ object.nombre }} {{ object.apellido }} {% else %} Nueva Intervención - {{
+object.nombre }} {{ object.apellido }} {% endif %} {% endblock %} {% block
+titulo-pagina %}Intervenciones{% endblock %} {% block breadcrumb %}
+<ol class="breadcrumb float-sm-right mt-2 mr-2">
+  <li class="breadcrumb-item">
+    <a href="{% url 'ciudadanos' %}" title="Ver listado de ciudadanos">
+      <i class="fas fa-users"></i> Ciudadanos
+    </a>
+  </li>
+  <li class="breadcrumb-item">
+    <a href="{% url 'ciudadanos_ver' object.id %}" title="Ver ciudadano">
+      <i class="fas fa-user"></i> {{ object.nombre }} {{ object.apellido }}
+    </a>
+  </li>
+  <li class="breadcrumb-item">
+    <a
+      href="{% url 'ciudadano_intervencion_ver' object.id %}"
+      title="Ver intervenciones"
+    >
+      <i class="fas fa-clipboard-list"></i> Intervenciones
+    </a>
+  </li>
+  <li class="breadcrumb-item active">
+    <i class="fas fa-plus"></i>
+    {% if form.instance.pk %}Editar{% else %}Agregar{% endif %}
+  </li>
+</ol>
+{% endblock %} {% block content %}
+<div class="row">
+  <div class="col-md-12">
+    <div class="card shadow-lg">
+      <div class="card-body p-4">
+        <!-- Información del Ciudadano -->
+        <div class="row fade-in-up">
+          <div class="col-md-4">
+            {% include "components/ciudadanos/ciudadano_summary_card.html" with
+            ciudadano=object card_class="mb-3" %}
+          </div>
+
+          <div class="col-md-8">
+            <div class="ciudadano-info-section">
+              <h6 class="info-title">
+                <i class="fas fa-info-circle"></i>
+                Información Adicional del Ciudadano
+              </h6>
+              <dl class="info-list row">
+                <dt class="col-sm-3">DNI:</dt>
+                <dd class="col-sm-9">{{ object.documento }}</dd>
+
+                <dt class="col-sm-3">Fecha de nacimiento:</dt>
+                <dd class="col-sm-9">
+                  {{ object.fecha_nacimiento|date:'d/m/Y' }}
+                </dd>
+
+                <dt class="col-sm-3">Sexo:</dt>
+                <dd class="col-sm-9">{{ object.sexo }}</dd>
+
+                <dt class="col-sm-3">Ver perfil:</dt>
+                <dd class="col-sm-9">
+                  <a
+                    href="{% url 'ciudadanos_ver' object.id %}"
+                    title="Ver ciudadano completo"
+                  >
+                    <i class="fas fa-external-link-alt"></i>
+                    Ver perfil completo
+                  </a>
+                </dd>
+              </dl>
             </div>
+          </div>
         </div>
-    </div>
-    <!-- /  -->
-    <div class="row">
-        <div class="col">
-            <form class="needs-validation"
-                  novalidate
-                  method="POST"
-                  enctype="multipart/form-data">
-                <!-- Security token -->
-                {% csrf_token %}
-                <div class="card card-primary card-outline">
-                    <div class="card-header">
-                        <h3 class="card-title">Agregar Intervención</h3>
-                    </div>
-                    <div class="card-body ">
-                        <div class="row m-0 p-0">
-                            <input type="hidden" name="ciudadano" value="{{ object.id }}" />
-                            <input type="hidden" name="usuario" value="{{ request.user.id }}" />
-                            <div class="col-sm-6">
-                                <div class="form-group">{{ form.tipo_intervencion| as_crispy_field }}</div>
-                            </div>
-                            <div class="col-sm-6">
-                                <div class="form-group">{{ form.subintervencion| as_crispy_field }}</div>
-                            </div>
-                            <div class="col-sm-9">
-                                <div class="form-group">{{ form.direccion| as_crispy_field }}</div>
-                            </div>
-                            <div class="col-sm-3">
-                                <div class="form-group">{{ form.estado| as_crispy_field }}</div>
-                            </div>
-                        </div>
-                    </div>
+
+        <!-- Formulario de Intervención -->
+        <div class="row fade-in-up" style="animation-delay: 0.2s">
+          <div class="col-12">
+            <form
+              class="needs-validation crispy-form"
+              novalidate
+              method="POST"
+              enctype="multipart/form-data"
+              id="intervencionForm"
+            >
+              {% csrf_token %}
+
+              <div class="form-section">
+                <div class="form-section-header">
+                  <i class="fas fa-clipboard-list"></i>
+                  <h5>
+                    {% if form.instance.pk %} Editar Intervención {% else %}
+                    Nueva Intervención {% endif %}
+                  </h5>
                 </div>
-                <div class="mt-4 mx-2">
-                    <button class="btn btn-primary mr-1">Confirmar</button>
-                    <a href="{% url 'ciudadanos_ver' object.id %}" class="btn btn-secondary">Cancelar</a>
+
+                <!-- Campos ocultos -->
+                <input type="hidden" name="ciudadano" value="{{ object.id }}" />
+                <input
+                  type="hidden"
+                  name="usuario"
+                  value="{{ request.user.id }}"
+                />
+
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label for="{{ form.tipo_intervencion.id_for_label }}">
+                        <i class="fas fa-tags"></i>
+                        {{ form.tipo_intervencion.label }} {% if
+                        form.tipo_intervencion.field.required %}
+                        <span class="text-danger">*</span>
+                        {% endif %}
+                      </label>
+                      {{ form.tipo_intervencion }} {% if
+                      form.tipo_intervencion.help_text %}
+                      <small class="help-block"
+                        >{{ form.tipo_intervencion.help_text }}</small
+                      >
+                      {% endif %}
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label for="{{ form.subintervencion.id_for_label }}">
+                        <i class="fas fa-list"></i>
+                        {{ form.subintervencion.label }} {% if
+                        form.subintervencion.field.required %}
+                        <span class="text-danger">*</span>
+                        {% endif %}
+                      </label>
+                      {{ form.subintervencion }} {% if
+                      form.subintervencion.help_text %}
+                      <small class="help-block"
+                        >{{ form.subintervencion.help_text }}</small
+                      >
+                      {% endif %}
+                    </div>
+                  </div>
                 </div>
+
+                <div class="row">
+                  <div class="col-md-9">
+                    <div class="form-group">
+                      <label for="{{ form.direccion.id_for_label }}">
+                        <i class="fas fa-map-marker-alt"></i>
+                        {{ form.direccion.label }} {% if
+                        form.direccion.field.required %}
+                        <span class="text-danger">*</span>
+                        {% endif %}
+                      </label>
+                      {{ form.direccion }} {% if form.direccion.help_text %}
+                      <small class="help-block"
+                        >{{ form.direccion.help_text }}</small
+                      >
+                      {% endif %}
+                    </div>
+                  </div>
+
+                  <div class="col-md-3">
+                    <div class="form-group">
+                      <label for="{{ form.estado.id_for_label }}">
+                        <i class="fas fa-flag"></i>
+                        {{ form.estado.label }} {% if form.estado.field.required
+                        %}
+                        <span class="text-danger">*</span>
+                        {% endif %}
+                      </label>
+                      {{ form.estado }} {% if form.estado.help_text %}
+                      <small class="help-block"
+                        >{{ form.estado.help_text }}</small
+                      >
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Mostrar errores del formulario -->
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                  {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+              </div>
+
+              <!-- Botones de Acción -->
+              <div class="action-buttons-section">
+                <button type="submit" class="btn-form-primary" id="submitBtn">
+                  <i class="fas fa-save"></i>
+                  {% if form.instance.pk %}Actualizar{% else %}Confirmar{% endif
+                  %}
+                </button>
+                <a
+                  href="{% url 'ciudadano_intervencion_ver' object.id %}"
+                  class="btn-form-secondary"
+                >
+                  <i class="fas fa-times"></i>
+                  Cancelar
+                </a>
+              </div>
             </form>
+          </div>
         </div>
+      </div>
     </div>
-{% endblock %}
+  </div>
+</div>
+{% endblock %} 
+
 {% block customJS %}
-    <script>
-$(document).ready(function() {
-    $('.tipo_intervencion-select').change(function() {
-        var estadoId = $(this).val();
+<script>
+  $(document).ready(function () {
+    // Función para notificaciones
+    function showNotification(message, type = "info") {
+      const notification = $(`
+            <div class="alert alert-${type} alert-dismissible fade show position-fixed" 
+                 style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
+                ${message}
+                <button type="button" class="close" data-dismiss="alert">
+                    <span>&times;</span>
+                </button>
+            </div>
+        `);
+
+      $("body").append(notification);
+
+      setTimeout(() => {
+        notification.alert("close");
+      }, 5000);
+    }
+
+    // Carga dinámica de subintervenciones
+    $(".tipo_intervencion-select, #id_tipo_intervencion").change(function () {
+      const estadoId = $(this).val();
+      const $subIntervencion = $(
+        ".subintervencion-select, #id_subintervencion"
+      );
+
+      if (estadoId) {
+        // Mostrar loading
+        $subIntervencion.addClass("form-loading");
+        $subIntervencion.prop("disabled", true);
+
+        showNotification(
+          '<i class="fas fa-spinner fa-spin"></i> Cargando subintervenciones...',
+          "info"
+        );
+
         $.ajax({
-            url: "{% url 'ajax_load_subestadosintervenciones' %}",
-            data: {
-                'id': estadoId
-            },
-            success: function(data) {
-                var $subIntervencion = $('.subintervencion-select');
-                $subIntervencion.empty();
-                $.each(data, function(index, item) {
-                    $subIntervencion.append($('<option>', {
-                        value: item.id,
-                        text: item.text
-                    }));
-                });
-            }
+          url: "{% url 'ajax_load_subestadosintervenciones' %}",
+          data: {
+            id: estadoId,
+          },
+          success: function (data) {
+            $subIntervencion.removeClass("form-loading");
+            $subIntervencion.prop("disabled", false);
+            $subIntervencion.empty();
+
+            // Agregar opción por defecto
+            $subIntervencion.append(
+              $("<option>", {
+                value: "",
+                text: "Seleccione una subintervención...",
+              })
+            );
+
+            // Agregar opciones dinámicas
+            $.each(data, function (index, item) {
+              $subIntervencion.append(
+                $("<option>", {
+                  value: item.id,
+                  text: item.text,
+                })
+              );
+            });
+
+            showNotification(
+              '<i class="fas fa-check"></i> Subintervenciones cargadas correctamente',
+              "success"
+            );
+          },
+          error: function () {
+            $subIntervencion.removeClass("form-loading");
+            $subIntervencion.prop("disabled", false);
+
+            showNotification(
+              '<i class="fas fa-exclamation-triangle"></i> Error al cargar subintervenciones',
+              "danger"
+            );
+          },
         });
+      } else {
+        $subIntervencion.empty();
+        $subIntervencion.append(
+          $("<option>", {
+            value: "",
+            text: "Primero seleccione un tipo de intervención",
+          })
+        );
+      }
     });
-});
-    </script>
-{% endblock %}
-;
+
+    // Validación del formulario
+    $("#intervencionForm").on("submit", function (e) {
+      const form = this;
+
+      if (!form.checkValidity()) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        showNotification(
+          '<i class="fas fa-exclamation-triangle"></i> Por favor complete todos los campos requeridos',
+          "warning"
+        );
+      } else {
+        // Mostrar loading en el botón
+        const $submitBtn = $("#submitBtn");
+        const originalText = $submitBtn.html();
+
+        $submitBtn.html('<i class="fas fa-spinner fa-spin"></i> Procesando...');
+        $submitBtn.prop("disabled", true);
+
+        showNotification(
+          '<i class="fas fa-spinner fa-spin"></i> Guardando intervención...',
+          "info"
+        );
+
+        // Simular delay para mostrar el loading
+        setTimeout(() => {
+          // El formulario se enviará naturalmente
+        }, 500);
+      }
+
+      form.classList.add("was-validated");
+    });
+
+    // Efectos visuales para campos de formulario
+    $(".form-control").on("focus", function () {
+      $(this).parent().addClass("focused");
+    });
+
+    $(".form-control").on("blur", function () {
+      $(this).parent().removeClass("focused");
+    });
+
+    // Animaciones de entrada
+    const animatedElements = document.querySelectorAll(
+      ".fade-in-up, .fade-in-left"
+    );
+    animatedElements.forEach((element, index) => {
+      element.style.opacity = "0";
+      element.style.transform = element.classList.contains("fade-in-left")
+        ? "translateX(-30px)"
+        : "translateY(30px)";
+
+      setTimeout(() => {
+        element.style.transition = "all 0.6s ease-out";
+        element.style.opacity = "1";
+        element.style.transform = "translate(0, 0)";
+      }, index * 200);
+    });
+
+    // Efectos hover para botones
+    $(".btn-form-primary, .btn-form-secondary").hover(
+      function () {
+        $(this).css("transform", "translateY(-2px) scale(1.02)");
+      },
+      function () {
+        $(this).css("transform", "translateY(0) scale(1)");
+      }
+    );
+
+    console.log(
+      "✅ Intervención Form - Componentes inicializados correctamente"
+    );
+  });
+</script>
+{% endblock customJS %}
