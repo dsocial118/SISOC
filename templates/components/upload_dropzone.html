@@ -1,0 +1,515 @@
+{% comment %}
+Componente reutilizable de zona de subida de archivos con drag & drop
+Parámetros:
+- upload_url: URL para procesar la subida (requerido)
+- accept_types: Tipos de archivo aceptados (default: "image/*,.pdf,.doc,.docx,.xls,.xlsx")
+- max_files: Número máximo de archivos (default: 10)
+- max_file_size: Tamaño máximo por archivo en MB (default: 10)
+- dropzone_title: Título de la zona de subida (default: "Subir Archivos")
+- dropzone_message: Mensaje principal (default: "Arrastra archivos aquí o haz clic para seleccionar")
+- show_preview: Mostrar preview de archivos seleccionados (default: True)
+- multiple: Permitir múltiples archivos (default: True)
+- required: Campo requerido (default: False)
+- field_name: Nombre del campo input (default: "archivos")
+- existing_files: Archivos existentes para mostrar (opcional)
+- ciudadano_id: ID del ciudadano para formularios (opcional)
+- form_id: ID del formulario contenedor (default: "uploadForm")
+- progress_callback: Función JS para callback de progreso (opcional)
+- success_callback: Función JS para callback de éxito (opcional)
+- error_callback: Función JS para callback de error (opcional)
+{% endcomment %}
+
+{% load static %}
+
+<div class="upload-dropzone-container">
+    <div class="card shadow-sm">
+        <div class="card-header bg-gradient-primary text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-cloud-upload-alt me-2"></i>{{ dropzone_title|default:"Subir Archivos" }}
+            </h5>
+        </div>
+        
+        <div class="card-body p-4">
+            <form id="{{ form_id|default:'uploadForm' }}" method="post" enctype="multipart/form-data" action="{{ upload_url }}">
+                {% csrf_token %}
+                {% if ciudadano_id %}
+                <input type="hidden" name="ciudadano_id" value="{{ ciudadano_id }}">
+                {% endif %}
+                
+                <!-- Zona de Drop -->
+                <div class="dropzone-area" id="dropzoneArea">
+                    <div class="dropzone-content text-center">
+                        <div class="dropzone-icon mb-3">
+                            <i class="fas fa-cloud-upload-alt fa-4x text-primary opacity-75"></i>
+                        </div>
+                        <h6 class="dropzone-title mb-2">{{ dropzone_message|default:"Arrastra archivos aquí o haz clic para seleccionar" }}</h6>
+                        <p class="text-muted small mb-3">
+                            {% if max_files > 1 %}Máximo {{ max_files }} archivos{% else %}Un archivo{% endif %} 
+                            • Hasta {{ max_file_size|default:10 }}MB cada uno
+                        </p>
+                        <div class="dropzone-formats mb-3">
+                            <span class="badge bg-light text-dark me-1"><i class="fas fa-image me-1"></i>Imágenes</span>
+                            <span class="badge bg-light text-dark me-1"><i class="fas fa-file-pdf me-1"></i>PDF</span>
+                            <span class="badge bg-light text-dark me-1"><i class="fas fa-file-word me-1"></i>Word</span>
+                            <span class="badge bg-light text-dark"><i class="fas fa-file-excel me-1"></i>Excel</span>
+                        </div>
+                        <button type="button" class="btn btn-primary" id="selectFilesBtn">
+                            <i class="fas fa-folder-open me-2"></i>Seleccionar Archivos
+                        </button>
+                    </div>
+                    
+                    <!-- Input file oculto -->
+                    <input type="file" 
+                           id="fileInput" 
+                           name="{{ field_name|default:'archivos' }}"
+                           class="d-none"
+                           accept="{{ accept_types|default:'image/*,.pdf,.doc,.docx,.xls,.xlsx' }}"
+                           {% if multiple %}multiple{% endif %}
+                           {% if required %}required{% endif %}>
+                </div>
+                
+                <!-- Barra de progreso global -->
+                <div class="progress-container mt-3" id="globalProgressContainer" style="display: none;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <small class="text-muted">Subiendo archivos...</small>
+                        <small class="text-muted" id="globalProgressText">0%</small>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" 
+                             role="progressbar" 
+                             id="globalProgressBar"
+                             style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <!-- Preview de archivos seleccionados -->
+                {% if show_preview %}
+                <div class="files-preview-container mt-4" id="filesPreviewContainer" style="display: none;">
+                    <h6 class="mb-3">
+                        <i class="fas fa-list me-2"></i>Archivos seleccionados
+                        <span class="badge bg-primary ms-2" id="filesCount">0</span>
+                    </h6>
+                    <div class="files-preview" id="filesPreview"></div>
+                </div>
+                {% endif %}
+                
+                <!-- Archivos existentes -->
+                {% if existing_files %}
+                <div class="existing-files-container mt-4">
+                    <h6 class="mb-3">
+                        <i class="fas fa-folder me-2"></i>Archivos existentes
+                        <span class="badge bg-secondary ms-2">{{ existing_files|length }}</span>
+                    </h6>
+                    <div class="row g-2">
+                        {% for file in existing_files %}
+                        <div class="col-12 col-md-6">
+                            <div class="existing-file-item d-flex align-items-center p-2 border rounded">
+                                <div class="flex-shrink-0 me-3">
+                                    {% if file.tipo == 'Imagen' %}
+                                        <i class="fas fa-image text-primary"></i>
+                                    {% else %}
+                                        <i class="fas fa-file-alt text-secondary"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="fw-medium small">{{ file.archivo.name|cut:"ciudadanos/archivos/" }}</div>
+                                    <div class="text-muted small">{{ file.archivo.size|filesizeformat }}</div>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    <a href="{{ file.archivo.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Botones de acción -->
+                <div class="upload-actions mt-4 text-center" id="uploadActions" style="display: none;">
+                    <button type="submit" class="btn btn-success me-2" id="uploadBtn">
+                        <i class="fas fa-upload me-2"></i>Subir Archivos
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="clearBtn">
+                        <i class="fas fa-trash me-2"></i>Limpiar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Estilos para el componente upload dropzone */
+.upload-dropzone-container {
+    --dropzone-border-color: rgba(var(--bs-primary-rgb), 0.2);
+    --dropzone-bg-color: rgba(var(--bs-primary-rgb), 0.03);
+    --dropzone-hover-bg: rgba(var(--bs-primary-rgb), 0.08);
+    --dropzone-active-bg: rgba(var(--bs-success-rgb), 0.1);
+}
+
+.dropzone-area {
+    border: 2px dashed var(--dropzone-border-color);
+    border-radius: 16px;
+    background: var(--dropzone-bg-color);
+    padding: 3rem 2rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.dropzone-area::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 49%, rgba(var(--bs-primary-rgb), 0.05) 50%, transparent 51%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.dropzone-area:hover {
+    border-color: var(--bs-primary);
+    background: var(--dropzone-hover-bg);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+.dropzone-area:hover::before {
+    opacity: 1;
+}
+
+.dropzone-area.dragover {
+    border-color: var(--bs-success);
+    background: var(--dropzone-active-bg);
+    transform: scale(1.02);
+}
+
+.dropzone-area.dragover .dropzone-icon i {
+    color: var(--bs-success) !important;
+    transform: scale(1.1);
+}
+
+.dropzone-icon i {
+    transition: all 0.3s ease;
+}
+
+.dropzone-area:hover .dropzone-icon i {
+    transform: translateY(-4px);
+}
+
+/* Preview de archivos */
+.files-preview {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.file-preview-item {
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.file-preview-item:hover {
+    background: rgba(255, 255, 255, 0.95);
+    transform: translateX(4px);
+}
+
+.file-preview-item.uploading {
+    opacity: 0.7;
+}
+
+.file-preview-item.success {
+    border-color: var(--bs-success);
+    background: rgba(var(--bs-success-rgb), 0.1);
+}
+
+.file-preview-item.error {
+    border-color: var(--bs-danger);
+    background: rgba(var(--bs-danger-rgb), 0.1);
+}
+
+/* Archivos existentes */
+.existing-file-item {
+    background: rgba(var(--bs-secondary-rgb), 0.05);
+    transition: all 0.2s ease;
+}
+
+.existing-file-item:hover {
+    background: rgba(var(--bs-secondary-rgb), 0.1);
+    transform: translateY(-1px);
+}
+
+/* Progress bar personalizada */
+.progress {
+    height: 8px;
+    border-radius: 4px;
+    background: rgba(var(--bs-primary-rgb), 0.1);
+}
+
+.progress-bar {
+    border-radius: 4px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .dropzone-area {
+        padding: 2rem 1rem;
+    }
+    
+    .dropzone-icon i {
+        font-size: 2.5rem !important;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dropzoneArea = document.getElementById('dropzoneArea');
+    const fileInput = document.getElementById('fileInput');
+    const selectFilesBtn = document.getElementById('selectFilesBtn');
+    const filesPreview = document.getElementById('filesPreview');
+    const filesPreviewContainer = document.getElementById('filesPreviewContainer');
+    const uploadActions = document.getElementById('uploadActions');
+    const filesCount = document.getElementById('filesCount');
+    const uploadForm = document.getElementById('{{ form_id|default:"uploadForm" }}');
+    const globalProgressContainer = document.getElementById('globalProgressContainer');
+    const globalProgressBar = document.getElementById('globalProgressBar');
+    const globalProgressText = document.getElementById('globalProgressText');
+    
+    let selectedFiles = [];
+    const maxFiles = {{ max_files|default:10 }};
+    const maxFileSize = {{ max_file_size|default:10 }} * 1024 * 1024; // MB to bytes
+    
+    // Event listeners
+    selectFilesBtn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', handleFileSelect);
+    
+    // Drag & Drop events
+    dropzoneArea.addEventListener('dragover', handleDragOver);
+    dropzoneArea.addEventListener('dragleave', handleDragLeave);
+    dropzoneArea.addEventListener('drop', handleDrop);
+    dropzoneArea.addEventListener('click', () => fileInput.click());
+    
+    // Form submit
+    uploadForm.addEventListener('submit', handleFormSubmit);
+    
+    // Clear button
+    document.getElementById('clearBtn')?.addEventListener('click', clearFiles);
+    
+    function handleDragOver(e) {
+        e.preventDefault();
+        dropzoneArea.classList.add('dragover');
+    }
+    
+    function handleDragLeave(e) {
+        e.preventDefault();
+        if (!dropzoneArea.contains(e.relatedTarget)) {
+            dropzoneArea.classList.remove('dragover');
+        }
+    }
+    
+    function handleDrop(e) {
+        e.preventDefault();
+        dropzoneArea.classList.remove('dragover');
+        const files = Array.from(e.dataTransfer.files);
+        processFiles(files);
+    }
+    
+    function handleFileSelect(e) {
+        const files = Array.from(e.target.files);
+        processFiles(files);
+    }
+    
+    function processFiles(files) {
+        // Validar número máximo de archivos
+        if (selectedFiles.length + files.length > maxFiles) {
+            showAlert(`Máximo ${maxFiles} archivos permitidos`, 'warning');
+            return;
+        }
+        
+        files.forEach(file => {
+            // Validar tamaño
+            if (file.size > maxFileSize) {
+                showAlert(`${file.name} es demasiado grande (máx. {{ max_file_size|default:10 }}MB)`, 'error');
+                return;
+            }
+            
+            // Validar tipo
+            const acceptedTypes = '{{ accept_types|default:"image/*,.pdf,.doc,.docx,.xls,.xlsx" }}';
+            if (!isFileTypeAccepted(file, acceptedTypes)) {
+                showAlert(`Tipo de archivo no permitido: ${file.name}`, 'error');
+                return;
+            }
+            
+            selectedFiles.push(file);
+        });
+        
+        updatePreview();
+        updateUI();
+    }
+    
+    function isFileTypeAccepted(file, acceptedTypes) {
+        const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+        const mimeType = file.type.toLowerCase();
+        
+        return acceptedTypes.split(',').some(type => {
+            type = type.trim();
+            if (type.startsWith('.')) {
+                return fileExtension === type;
+            } else if (type.includes('/*')) {
+                return mimeType.startsWith(type.replace('/*', ''));
+            } else {
+                return mimeType === type;
+            }
+        });
+    }
+    
+    function updatePreview() {
+        {% if show_preview %}
+        filesPreview.innerHTML = '';
+        
+        selectedFiles.forEach((file, index) => {
+            const previewItem = createPreviewItem(file, index);
+            filesPreview.appendChild(previewItem);
+        });
+        {% endif %}
+    }
+    
+    function createPreviewItem(file, index) {
+        const item = document.createElement('div');
+        item.className = 'file-preview-item d-flex align-items-center';
+        item.innerHTML = `
+            <div class="flex-shrink-0 me-3">
+                <i class="fas fa-${getFileIcon(file)} text-primary"></i>
+            </div>
+            <div class="flex-grow-1">
+                <div class="fw-medium small">${file.name}</div>
+                <div class="text-muted small">${formatFileSize(file.size)}</div>
+                <div class="progress mt-1" style="height: 4px; display: none;">
+                    <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                </div>
+            </div>
+            <div class="flex-shrink-0">
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFile(${index})">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+        return item;
+    }
+    
+    function getFileIcon(file) {
+        const extension = file.name.split('.').pop().toLowerCase();
+        const iconMap = {
+            'pdf': 'file-pdf',
+            'doc': 'file-word', 'docx': 'file-word',
+            'xls': 'file-excel', 'xlsx': 'file-excel',
+            'jpg': 'image', 'jpeg': 'image', 'png': 'image', 'gif': 'image'
+        };
+        return iconMap[extension] || 'file-alt';
+    }
+    
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    function updateUI() {
+        filesCount.textContent = selectedFiles.length;
+        filesPreviewContainer.style.display = selectedFiles.length > 0 ? 'block' : 'none';
+        uploadActions.style.display = selectedFiles.length > 0 ? 'block' : 'none';
+    }
+    
+    function clearFiles() {
+        selectedFiles = [];
+        fileInput.value = '';
+        updatePreview();
+        updateUI();
+        globalProgressContainer.style.display = 'none';
+    }
+    
+    window.removeFile = function(index) {
+        selectedFiles.splice(index, 1);
+        updatePreview();
+        updateUI();
+    }
+    
+    function handleFormSubmit(e) {
+        e.preventDefault();
+        
+        if (selectedFiles.length === 0) {
+            showAlert('Selecciona al menos un archivo', 'warning');
+            return;
+        }
+        
+        uploadFiles();
+    }
+    
+    function uploadFiles() {
+        const formData = new FormData(uploadForm);
+        
+        // Limpiar archivos anteriores y agregar los nuevos
+        formData.delete('{{ field_name|default:"archivos" }}');
+        selectedFiles.forEach(file => {
+            formData.append('{{ field_name|default:"archivos" }}', file);
+        });
+        
+        globalProgressContainer.style.display = 'block';
+        
+        fetch(uploadForm.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('Archivos subidos correctamente', 'success');
+                {% if success_callback %}{{ success_callback }}(data);{% endif %}
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                throw new Error(data.message || 'Error al subir archivos');
+            }
+        })
+        .catch(error => {
+            showAlert(error.message, 'error');
+            {% if error_callback %}{{ error_callback }}(error);{% endif %}
+        })
+        .finally(() => {
+            globalProgressContainer.style.display = 'none';
+        });
+    }
+    
+    function showAlert(message, type) {
+        // Crear y mostrar alerta
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
+        alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alertDiv);
+        
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 5000);
+    }
+});
+</script>
