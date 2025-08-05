@@ -1,265 +1,603 @@
-{% extends "includes/main.html" %};
-{% load static %}
-;
-{% load crispy_forms_tags %}
-{% block head %}
-    <!-- Dropzone plugin -->
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.css" />
-{% endblock %}
-{% block title %}Archivo{% endblock %}
-;
-{% block titulo-pagina %}Ciudadano{% endblock %}
-;
-{% block breadcrumb %}
-    <ol class="breadcrumb float-sm-right mt-2 mr-2">
-        <li class="breadcrumb-item">
-            <a href="{% url 'ciudadanos' %}">Ciudadano</a>
-        </li>
-        <li class="breadcrumb-item">
-            <a href="{% url 'ciudadanos_ver' ciudadano.pk %}">{{ ciudadano }}</a>
-        </li>
-        <li class="breadcrumb-item active ">Archivo</li>
-    </ol>
-{% endblock %}
-;
-{% block menu-adicional %}{% endblock %}
-;
-{% block content %}
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card card-primary card-outline">
-                <div class="card-body">
-                    <div class="bs-stepper">
-                        <div class="bs-stepper-header" role="tablist">
-                            <div class="step d-none d-sm-inline">
-                                <a href="{% url 'ciudadanos_editar' ciudadano.pk %}"
-                                   class="step-trigger"
-                                   role="tab">
-                                    <span class="bs-stepper-circle">1</span>
-                                    <span class="bs-stepper-label">Datos Personales</span>
-                                </a>
-                            </div>
-                            <div class="line d-none d-sm-inline"></div>
-                            <div class="step d-none d-sm-inline">
-                                <a href="{% url 'ciudadanosdimensiones_editar' ciudadano.pk %}"
-                                   class="step-trigger"
-                                   role="tab">
-                                    <span class="bs-stepper-circle">2</span>
-                                    <span class="bs-stepper-label">Dimensiones</span>
-                                </a>
-                            </div>
-                            <div class="line d-none d-sm-inline"></div>
-                            <div class="step d-none d-sm-inline">
-                                <a href="{% url 'grupofamiliar_crear' ciudadano.pk %}"
-                                   class="step-trigger"
-                                   role="tab">
-                                    <span class="bs-stepper-circle">3</span>
-                                    <span class="bs-stepper-label">Grupo Familiar</span>
-                                </a>
-                            </div>
-                            <div class="line d-none d-sm-inline"></div>
-                            <div class="step d-none d-sm-inline">
-                                <a href="{% url 'ciudadanosgrupohogar_crear' ciudadano.pk %}"
-                                   class="step-trigger"
-                                   role="tab">
-                                    <span class="bs-stepper-circle">4</span>
-                                    <span class="bs-stepper-label">Grupo Hogar</span>
-                                </a>
-                            </div>
-                            <div class="line d-none d-sm-inline"></div>
-                            <div class="step ">
-                                <a href="{% url 'alertas_crear' ciudadano.pk %}"
-                                   class="step-trigger"
-                                   role="tab">
-                                    <span class="bs-stepper-circle">5</span>
-                                    <span class="bs-stepper-label">Alertas</span>
-                                </a>
-                            </div>
-                            <div class="line"></div>
-                            <div class="step active">
-                                <a type="button" class="step-trigger  text-primary" role="tab">
-                                    <span class="bs-stepper-circle">6</span>
-                                    <span class="bs-stepper-label">Archivos</span>
-                                </a>
-                            </div>
-                        </div>
-                        <div class="row mt-5">
-                            <div class="col-12">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h3 class="card-title font-weight-bold">Archivos</h3>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="row" id="resultado">
-                                            {% if imagenes or documentos %}
-                                                {% if imagenes %}
-                                                    {% for f in imagenes %}
-                                                        <ul class="list-unstyled">
-                                                            <li class="p-2 text-center" id="archivo-{{ f.id }}">
-                                                                <a href="{{ MEDIA_URL }}{{ f.archivo.url }}"
-                                                                   class=""
-                                                                   target="_blank"
-                                                                   title='{{ f.archivo|cut:"ciudadanos/archivos/" }}'>
-                                                                    <img src="{{ MEDIA_URL }}{{ f.archivo.url }}"
-                                                                         alt="archivo de imagen"
-                                                                         class="rounded"
-                                                                         style="width: 60px;
-                                                                                height: 60px" />
-                                                                    <span class="users-list-name">{{ f.archivo|cut:"ciudadanos/archivos/"|truncatechars:7 }}</span>
-                                                                </a>
-                                                                <span class="users-list-date">
-                                                                    <button class="btn btn-danger btn-sm"
-                                                                            onclick='deleteArchivo("{{ f.id }}")'
-                                                                            type="button">Eliminar</button>
-                                                                </span>
-                                                            </li>
-                                                        </ul>
-                                                    {% endfor %}
-                                                {% endif %}
-                                                {% if documentos %}
-                                                    {% for f in documentos %}
-                                                        <ul class="list-unstyled" id="archivo-{{ f.id }}">
-                                                            <li class="p-2 text-center">
-                                                                <a href="{{ MEDIA_URL }}{{ f.archivo.url }}"
-                                                                   class=""
-                                                                   target="_blank"
-                                                                   title='{{ f.archivo|cut:"ciudadanos/archivos/" }}'>
-                                                                    <i class="fas fa-file text-dark"
-                                                                       style="width: 60px;
-                                                                              height: 60px;
-                                                                              font-size: 60px"></i>
-                                                                    <span class="users-list-name">{{ f.archivo|cut:"ciudadanos/archivos/"|truncatechars:7 }}</span>
-                                                                </a>
-                                                                <span class="users-list-date">
-                                                                    <button class="btn btn-danger btn-sm"
-                                                                            onclick='deleteArchivo("{{ f.id }}")'
-                                                                            type="button">Eliminar</button>
-                                                                </span>
-                                                            </li>
-                                                        </ul>
-                                                    {% endfor %}
-                                                {% endif %}
-                                            {% else %}
-                                                <div class="col-12 text-center">
-                                                    <h6 class="text-muted">Sin archivos</h6>
-                                                </div>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+{% extends "includes/main.html" %} {% load static %} {% load crispy_forms_tags
+%} {% block head %}
+<!-- Dropzone plugin -->
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.css"
+/>
+<link
+  rel="stylesheet"
+  href="{% static 'custom/css/ciudadano-detail-enhanced.css' %}"
+/>
+<style>
+  /* Estilos específicos para formulario de archivos - CONSISTENTE CON OTROS FORMULARIOS */
+  .archivo-form-section {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .section-title {
+    color: var(--gov-accent);
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* Estilos para dropzone */
+  .dropzone {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 2px dashed rgba(255, 255, 255, 0.3) !important;
+    border-radius: 12px !important;
+    color: white !important;
+    transition: all 0.3s ease;
+  }
+
+  .dropzone:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: var(--gov-accent) !important;
+  }
+
+  .dropzone .dz-message {
+    color: rgba(255, 255, 255, 0.8) !important;
+  }
+
+  /* Archivos existentes */
+  .archivo-item {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+    text-align: center;
+  }
+
+  .archivo-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  }
+
+  .archivo-thumbnail {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    margin-bottom: 0.5rem;
+  }
+
+  .archivo-icon {
+    font-size: 4rem;
+    color: var(--gov-accent);
+    margin-bottom: 0.5rem;
+  }
+
+  .archivo-name {
+    color: white;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .btn-delete-archivo {
+    background: linear-gradient(135deg, var(--danger), #e74c3c) !important;
+    border: none !important;
+    color: white !important;
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    padding: 0.375rem 0.75rem;
+  }
+
+  .btn-delete-archivo:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+    color: white !important;
+  }
+
+  /* Botones de dropzone */
+  .btn-group .btn {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+    transition: all 0.3s ease;
+  }
+
+  .btn-group .btn:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: var(--gov-accent) !important;
+  }
+
+  .btn-group .btn-primary {
+    background: linear-gradient(
+      135deg,
+      var(--gov-primary),
+      var(--gov-accent)
+    ) !important;
+    border-color: var(--gov-accent) !important;
+  }
+
+  .btn-group .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(23, 162, 184, 0.4);
+  }
+
+  /* Progress bars */
+  .progress {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px;
+  }
+
+  .progress-bar {
+    background: var(--gov-accent) !important;
+  }
+
+  /* Estado vacío */
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .empty-state i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+    color: var(--gov-accent);
+  }
+
+  /* Preview de archivos en dropzone */
+  #previews .row {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 0.5rem 0;
+  }
+
+  #previews img {
+    border-radius: 8px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+  }
+
+  #previews .lead {
+    color: white;
+    font-weight: 500;
+  }
+
+  #previews span {
+    color: rgba(255, 255, 255, 0.8);
+  }
+</style>
+{% endblock %} {% block title %}Archivos - {{ ciudadano.nombre }} {{
+ciudadano.apellido }}{% endblock %} {% block titulo-pagina %}Ciudadano{%
+endblock %} {% block breadcrumb %}
+<ol class="breadcrumb float-sm-right mt-2 mr-2">
+  <li class="breadcrumb-item">
+    <a href="{% url 'ciudadanos' %}">Ciudadano</a>
+  </li>
+  <li class="breadcrumb-item">
+    <a href="{% url 'ciudadanos_ver' ciudadano.id %}"
+      >{{ ciudadano.apellido }} {{ ciudadano.nombre }}</a
+    >
+  </li>
+  <li class="breadcrumb-item active">Archivos</li>
+</ol>
+{% endblock %} {% block menu-adicional %}{% endblock %} {% block content %}
+<div class="row">
+  <div class="col-md-12">
+    <div class="card shadow-lg">
+      <div class="card-body p-4">
+        <!-- Stepper usando componente existente -->
+        {% include "components/wizard/stepper_navigation.html" with
+        current_step=6 ciudadano_id=ciudadano.id %}
+
+        <!-- Resumen del ciudadano -->
+        <div class="row mt-4 mb-4">
+          <div class="col-md-4">
+            {% include "components/ciudadanos/ciudadano_summary_card.html" with
+            ciudadano=ciudadano card_class="mb-0" %}
+          </div>
+          <div class="col-md-8">
+            <div class="card shadow-sm h-100">
+              <div class="card-header">
+                <h5 class="mb-0">
+                  <i class="fas fa-folder-open me-2"></i>Gestión de Archivos
+                </h5>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="info-item mb-3">
+                      <h6 class="text-info mb-1">
+                        <i class="fas fa-file me-2"></i>Archivos Totales
+                      </h6>
+                      <span class="badge bg-info fs-6">
+                        {% if imagenes or documentos %} {{
+                        imagenes|length|add:documentos|length }} archivo{{
+                        imagenes|length|add:documentos|length|pluralize }} {%
+                        else %} 0 archivos {% endif %}
+                      </span>
                     </div>
-                    <div class="row mt-3">
-                        <div class="col-md-12">
-                            <div class="card card-default">
-                                <div class="card-header">
-                                    <h3 class="card-title font-weight-bold">Agregar archivos</h3>
-                                </div>
-                                <div class="card-body">
-                                    <form method="post" enctype="multipart/form-data">
-                                        {% csrf_token %}
-                                        <div id="actions" class="row">
-                                            <div class="col-lg-6">
-                                                <div class="btn-group w-100">
-                                                    <span class="btn btn-light col fileinput-button dz-clickable">
-                                                        <span class="pl-1">Seleccionar achivos</span>
-                                                    </span>
-                                                    <button type="submit" class="btn btn-primary col start">
-                                                        <span class="pl-1">Agregar todos</span>
-                                                    </button>
-                                                    <button type="remove" class="btn btn-secondary col cancel">
-                                                        <span class="pl-1">Cancelar todos</span>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            <div class="col-lg-6 d-flex align-items-center">
-                                                <div class="fileupload-process w-100">
-                                                    <div id="total-progress"
-                                                         class="progress progress-striped active"
-                                                         role="progressbar"
-                                                         aria-valuemin="0"
-                                                         aria-valuemax="100"
-                                                         aria-valuenow="0">
-                                                        <div class="progress-bar progress-bar-success"
-                                                             style="width:0%"
-                                                             data-dz-uploadprogress=""></div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="table table-striped files" id="previews">
-                                            <div id="template" class="row mt-2">
-                                                <div class="col-auto">
-                                                    <span class="preview">
-                                                        <img src="data:," alt="" data-dz-thumbnail />
-                                                    </span>
-                                                </div>
-                                                <div class="col d-flex align-items-center">
-                                                    <p class="mb-0">
-                                                        <span class="lead" data-dz-name></span>
-                                                        (<span data-dz-size></span>)
-                                                    </p>
-                                                    <strong class="error text-danger" data-dz-errormessage></strong>
-                                                </div>
-                                                <div class="col-4 d-flex align-items-center">
-                                                    <div class="progress progress-striped active w-100"
-                                                         role="progressbar"
-                                                         aria-valuemin="0"
-                                                         aria-valuemax="100"
-                                                         aria-valuenow="0">
-                                                        <div class="progress-bar progress-bar-success"
-                                                             style="width:0%"
-                                                             data-dz-uploadprogress></div>
-                                                    </div>
-                                                </div>
-                                                <div class="col-auto d-flex align-items-center">
-                                                    <div class="btn-group">
-                                                        <button class="btn btn-primary start">
-                                                            <span class="pl-1">Agregar</span>
-                                                        </button>
-                                                        <button data-dz-remove class="btn btn-secondary cancel">
-                                                            <span class="pl-1">Cancelar</span>
-                                                        </button>
-                                                        <button data-dz-remove class="btn btn-danger delete">
-                                                            <span class="pl-1">Eliminar</span>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="info-item mb-3">
+                      <h6 class="text-success mb-1">
+                        <i class="fas fa-images me-2"></i>Imágenes
+                      </h6>
+                      <span class="badge bg-success">
+                        {{ imagenes|length }} imagen{{
+                        imagenes|length|pluralize:"es" }}
+                      </span>
                     </div>
+                  </div>
                 </div>
-            </div>
-            <!-- botones del pie -->
-            <div class="row mt-3">
-                <div class="col-md-12">
-                    <div class="form-group mb-0 mt-3 d-flex justify-content-between">
-                        <a href="{% url 'alertas_crear' ciudadano.pk %}"
-                           class="btn btn-secondary mb-3">Volver</a>
-                        <a href="{% url 'ciudadanos_ver' ciudadano.pk %}"
-                           class="btn btn-primary mb-3">Guardar</a>
-                        <a href="#" class="mx-5 d-none d-sm-inline"></a>
-                    </div>
+                <div
+                  class="alert alert-info border-0"
+                  style="background: rgba(23, 162, 184, 0.1)"
+                >
+                  <i class="fas fa-lightbulb me-2"></i>
+                  <strong>Paso 6 de 6:</strong> Agregue documentos e imágenes
+                  relacionados con el ciudadano para completar el expediente.
                 </div>
+              </div>
             </div>
-            <!-- /botones del pie -->
+          </div>
         </div>
+
+        <!-- Archivos existentes -->
+        <div class="row">
+          <div class="col-12">
+            <div class="archivo-form-section">
+              <h6 class="section-title">
+                <i class="fas fa-folder me-2"></i>Archivos Registrados
+                <span class="badge bg-primary ms-2">
+                  {% if imagenes or documentos %} {{
+                  imagenes|length|add:documentos|length }} {% else %} 0 {% endif
+                  %}
+                </span>
+              </h6>
+
+              <div class="row" id="resultado">
+                {% if imagenes or documentos %} {% if imagenes %} {% for f in
+                imagenes %}
+                <div class="col-md-3 col-sm-6 mb-3" id="archivo-{{ f.id }}">
+                  <div class="archivo-item">
+                    <a
+                      href="{{ MEDIA_URL }}{{ f.archivo.url }}"
+                      target="_blank"
+                      title='{{ f.archivo|cut:"ciudadanos/archivos/" }}'
+                    >
+                      <img
+                        src="{{ MEDIA_URL }}{{ f.archivo.url }}"
+                        alt="archivo"
+                        class="archivo-thumbnail"
+                      />
+                      <div class="archivo-name">
+                        {{ f.archivo|cut:"ciudadanos/archivos/"|truncatechars:12
+                        }}
+                      </div>
+                    </a>
+                    <button
+                      class="btn btn-delete-archivo btn-sm mt-2"
+                      onclick='deleteArchivo("{{ f.id }}")'
+                      type="button"
+                    >
+                      <i class="fas fa-trash-alt me-1"></i>Eliminar
+                    </button>
+                  </div>
+                </div>
+                {% endfor %} {% endif %} {% if documentos %} {% for f in
+                documentos %}
+                <div class="col-md-3 col-sm-6 mb-3" id="archivo-{{ f.id }}">
+                  <div class="archivo-item">
+                    <a
+                      href="{{ MEDIA_URL }}{{ f.archivo.url }}"
+                      target="_blank"
+                      title='{{ f.archivo|cut:"ciudadanos/archivos/" }}'
+                    >
+                      <i class="fas fa-file archivo-icon"></i>
+                      <div class="archivo-name">
+                        {{ f.archivo|cut:"ciudadanos/archivos/"|truncatechars:12
+                        }}
+                      </div>
+                    </a>
+                    <button
+                      class="btn btn-delete-archivo btn-sm mt-2"
+                      onclick='deleteArchivo("{{ f.id }}")'
+                      type="button"
+                    >
+                      <i class="fas fa-trash-alt me-1"></i>Eliminar
+                    </button>
+                  </div>
+                </div>
+                {% endfor %} {% endif %} {% else %}
+                <div class="col-12">
+                  <div class="empty-state">
+                    <i class="fas fa-folder-open"></i>
+                    <h6 class="text-white mt-3">No hay archivos registrados</h6>
+                    <p>Los archivos aparecerán aquí cuando sean agregados</p>
+                  </div>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Formulario para agregar archivos -->
+        <div class="row">
+          <div class="col-12">
+            <div class="archivo-form-section">
+              <h6 class="section-title">
+                <i class="fas fa-cloud-upload-alt me-2"></i>Agregar Nuevos
+                Archivos
+              </h6>
+
+              <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <!-- Controles de acción -->
+                <div id="actions" class="row mb-4">
+                  <div class="col-lg-6">
+                    <div class="btn-group w-100">
+                      <span
+                        class="btn btn-light col fileinput-button dz-clickable"
+                      >
+                        <i class="fas fa-plus me-2"></i>
+                        <span>Seleccionar archivos</span>
+                      </span>
+                      <button type="submit" class="btn btn-primary col start">
+                        <i class="fas fa-upload me-2"></i>
+                        <span>Agregar todos</span>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-secondary col cancel"
+                      >
+                        <i class="fas fa-times me-2"></i>
+                        <span>Cancelar todos</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="col-lg-6 d-flex align-items-center">
+                    <div class="fileupload-process w-100">
+                      <div
+                        id="total-progress"
+                        class="progress progress-striped active"
+                      >
+                        <div
+                          class="progress-bar progress-bar-success"
+                          style="width: 0%"
+                          data-dz-uploadprogress=""
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Template para preview de archivos -->
+                <div class="table table-striped files" id="previews">
+                  <div id="template" class="row mt-2">
+                    <div class="col-auto">
+                      <span class="preview">
+                        <img src="data:," alt="" data-dz-thumbnail />
+                      </span>
+                    </div>
+                    <div class="col d-flex align-items-center">
+                      <p class="mb-0">
+                        <span class="lead" data-dz-name></span>
+                        (<span data-dz-size></span>)
+                      </p>
+                      <strong
+                        class="error text-danger"
+                        data-dz-errormessage
+                      ></strong>
+                    </div>
+                    <div class="col-4 d-flex align-items-center">
+                      <div class="progress progress-striped active w-100">
+                        <div
+                          class="progress-bar progress-bar-success"
+                          style="width: 0%"
+                          data-dz-uploadprogress
+                        ></div>
+                      </div>
+                    </div>
+                    <div class="col-auto d-flex align-items-center">
+                      <div class="btn-group">
+                        <button class="btn btn-primary start">
+                          <i class="fas fa-upload me-1"></i>
+                          <span>Agregar</span>
+                        </button>
+                        <button data-dz-remove class="btn btn-secondary cancel">
+                          <i class="fas fa-times me-1"></i>
+                          <span>Cancelar</span>
+                        </button>
+                        <button data-dz-remove class="btn btn-danger delete">
+                          <i class="fas fa-trash me-1"></i>
+                          <span>Eliminar</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  class="alert alert-info mt-3 border-0"
+                  style="background: rgba(23, 162, 184, 0.1)"
+                >
+                  <i class="fas fa-info-circle me-2"></i>
+                  <strong>Información:</strong> Puede arrastrar archivos aquí o
+                  hacer clic en "Seleccionar archivos" para agregarlos.
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Botones del formulario usando componente -->
+        {% include "components/forms/step_form_buttons.html" with
+        back_url="alertas_crear" back_id=ciudadano.id save_url="ciudadanos_ver"
+        save_id=ciudadano.id back_label="Volver" save_label="Finalizar" %}
+      </div>
     </div>
-{% endblock %}
-{% block customJS %}
-    <!-- Dropzone plugin -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/min/dropzone.min.js"></script>
-    <script>
-        const csrf = document.getElementsByName('csrfmiddlewaretoken')[0].value
-        const pk = '{{ciudadano.pk}}';
-        const createUrl = "{% url 'archivo_ajax_crear' %}";
-        const deleteUrl = '{% url "archivo_ajax_borrar" %}';
-    </script>
-    <script src="{% static 'custom/js/ciudadanosarchivosform.js' %}"></script>
+  </div>
+</div>
+{% endblock %} {% block customJS %}
+<!-- Dropzone plugin -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/min/dropzone.min.js"></script>
+<script>
+  // URLs y configuraciones
+  const csrf = document.getElementsByName("csrfmiddlewaretoken")[0].value;
+  const pk = "{{ ciudadano.id }}";
+  const createUrl = "{% url 'archivo_ajax_crear' %}";
+  const deleteUrl = '{% url "archivo_ajax_borrar" %}';
+
+  // Función mejorada para eliminar archivo
+  window.deleteArchivo = function (archivoId) {
+    if (!confirm("¿Está seguro de que desea eliminar este archivo?")) {
+      return;
+    }
+
+    showLoadingOverlay();
+
+    fetch(deleteUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrf,
+        "X-Requested-With": "XMLHttpRequest",
+      },
+      body: JSON.stringify({ archivo_id: archivoId }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          // Remover elemento con animación
+          const archivoElement = document.getElementById(
+            `archivo-${archivoId}`
+          );
+          if (archivoElement) {
+            archivoElement.style.transition = "all 0.3s ease";
+            archivoElement.style.transform = "scale(0)";
+            archivoElement.style.opacity = "0";
+
+            setTimeout(() => {
+              archivoElement.remove();
+              updateArchivosCounter();
+            }, 300);
+          }
+
+          showNotification("Archivo eliminado correctamente", "success");
+        } else {
+          showNotification(
+            data.message || "Error al eliminar el archivo",
+            "error"
+          );
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        showNotification("Error de conexión al eliminar el archivo", "error");
+      })
+      .finally(() => {
+        hideLoadingOverlay();
+      });
+  };
+
+  // Función para mostrar overlay de carga
+  function showLoadingOverlay() {
+    let overlay = document.getElementById("loadingOverlay");
+    if (!overlay) {
+      overlay = document.createElement("div");
+      overlay.id = "loadingOverlay";
+      overlay.style.cssText = `
+                    display: block; 
+                    position: fixed; 
+                    top: 0; 
+                    left: 0; 
+                    width: 100%; 
+                    height: 100%; 
+                    background: rgba(0,0,0,0.7); 
+                    z-index: 9999; 
+                    backdrop-filter: blur(5px);
+                `;
+      overlay.innerHTML = `
+                    <div class="d-flex justify-content-center align-items-center h-100">
+                        <div class="text-center text-white">
+                            <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
+                            <h5>Procesando archivo...</h5>
+                        </div>
+                    </div>
+                `;
+      document.body.appendChild(overlay);
+    } else {
+      overlay.style.display = "block";
+    }
+  }
+
+  function hideLoadingOverlay() {
+    const overlay = document.getElementById("loadingOverlay");
+    if (overlay) {
+      overlay.style.display = "none";
+    }
+  }
+
+  // Función para mostrar notificaciones
+  function showNotification(message, type) {
+    const alertClass = type === "success" ? "alert-success" : "alert-danger";
+    const iconClass =
+      type === "success"
+        ? "fas fa-check-circle"
+        : "fas fa-exclamation-triangle";
+
+    const notification = document.createElement("div");
+    notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+    notification.style.cssText =
+      "top: 20px; right: 20px; z-index: 10000; min-width: 350px; backdrop-filter: blur(10px);";
+    notification.innerHTML = `
+                <i class="${iconClass} me-2"></i>${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+    document.body.appendChild(notification);
+
+    // Auto-remover después de 5 segundos
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.remove();
+      }
+    }, 5000);
+  }
+
+  // Actualizar contador de archivos
+  function updateArchivosCounter() {
+    const resultadoContainer = document.getElementById("resultado");
+    const counter = document.querySelector(".section-title .badge");
+
+    if (resultadoContainer && counter) {
+      const archivosCount =
+        resultadoContainer.querySelectorAll('[id^="archivo-"]').length;
+      counter.textContent = archivosCount;
+
+      // Si no hay archivos, mostrar mensaje vacío
+      if (archivosCount === 0) {
+        resultadoContainer.innerHTML = `
+                        <div class="col-12">
+                            <div class="empty-state">
+                                <i class="fas fa-folder-open"></i>
+                                <h6 class="text-white mt-3">No hay archivos registrados</h6>
+                                <p>Los archivos aparecerán aquí cuando sean agregados</p>
+                            </div>
+                        </div>
+                    `;
+      }
+    }
+  }
+</script>
+<script src="{% static 'custom/js/ciudadanosarchivosform.js' %}"></script>
 {% endblock %}

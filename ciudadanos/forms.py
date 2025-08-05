@@ -417,7 +417,13 @@ class ArchivoForm(forms.ModelForm):
 
 
 class DerivacionForm(forms.ModelForm):
-    archivos = MultipleFileField(label="Seleccionar archivos", required=False)
+    archivos = forms.FileField(
+        label="Seleccionar archivo",
+        required=False,
+        widget=forms.ClearableFileInput(
+            attrs={"accept": ".pdf,.doc,.docx,.jpg,.jpeg,.png", "class": "form-control"}
+        ),
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -440,6 +446,7 @@ class DerivacionForm(forms.ModelForm):
             "alertas": "Alertas detectadas",
             "programa": "Derivar a",
             "programa_solicitante": "Derivar de",
+            "archivos": "Adjuntar archivo",
         }
 
 
@@ -561,19 +568,19 @@ class DimensionEducacionForm(forms.ModelForm):
         label="Provincia",
         queryset=Provincia.objects.all(),
         required=False,
-        empty_label="Seleccionar provincia"  
+        empty_label="Seleccionar provincia",
     )
     municipioInstitucion = forms.ModelChoiceField(
         label="Municipio",
         queryset=Municipio.objects.none(),
         required=False,
-        empty_label="Seleccionar municipio"  
+        empty_label="Seleccionar municipio",
     )
     localidadInstitucion = forms.ModelChoiceField(
         label="Localidad",
         queryset=Localidad.objects.none(),
         required=False,
-        empty_label="Seleccionar localidad"  
+        empty_label="Seleccionar localidad",
     )
     interes_capacitacion_laboral = forms.ChoiceField(
         choices=BOOLEAN_CHOICE,
@@ -657,6 +664,7 @@ class DimensionEducacionForm(forms.ModelForm):
         if data and len(data) > 3:
             raise forms.ValidationError("Solo puedes seleccionar hasta 3 opciones.")
         return data
+
 
 class DimensionEconomiaForm(forms.ModelForm):
     recibe_plan = forms.ChoiceField(

@@ -1,142 +1,678 @@
-{% extends "includes/main.html" %}
-{% load static %}
-{% block title %}Derivaciones{% endblock %}
-{% block titulo-pagina %}Derivaciones{% endblock %}
-;
-{% block breadcrumb %}
-    <ol class="breadcrumb float-sm-right ">
-        <li class="breadcrumb-item">
-            <a href="{% url 'ciudadanosderivaciones_historial' ciudadano.id %}">Historial derivaciones</a>
-        </li>
-        <li class="breadcrumb-item">
-            <a href="{% url 'ciudadanos_ver' ciudadano.id %}">{{ ciudadano.apellido }}, {{ ciudadano.nombre }}</a>
-        </li>
-        {% if request.resolver_match.url_name == 'ciudadanosderivaciones_editar' %}
-            <li class="breadcrumb-item active">Editar</li>
-        {% else %}
-            <li class="breadcrumb-item active">Agregar</li>
-        {% endif %}
-    </ol>
-{% endblock %}
-;
-{% load crispy_forms_tags %}
-{% block content %}
-    <!-- Datos de ciudadano -->
-    <div class="row mb-3">
-        <div class="col-12">
-            <div class="card card-outline card-primary ">
-                <div class="card-header">
-                    <h3 class="card-title">Datos personales</h3>
+{% extends "includes/main.html" %} {% load static %} {% load crispy_forms_tags
+%} {% block head %}
+<link
+  rel="stylesheet"
+  href="{% static 'custom/css/ciudadano-detail-enhanced.css' %}"
+/>
+<style>
+  /* Sistema de CSS Variables para Formulario de Derivaciones */
+  :root {
+    --gov-primary: #143570;
+    --gov-accent: #17a2b8;
+    --gov-danger: #dc3545;
+    --success: #28a745;
+    --warning: #ffc107;
+    --info: #17a2b8;
+    --secondary: #6c757d;
+  }
+
+  /* Formulario mejorado */
+  .derivacion-form-section {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+  }
+
+  .section-title {
+    color: var(--gov-accent);
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* Campos de formulario mejorados */
+  .form-group label {
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+
+  .form-control {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 8px !important;
+    color: white !important;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+  }
+
+  .form-control:focus {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: var(--gov-accent) !important;
+    box-shadow: 0 0 0 0.2rem rgba(23, 162, 184, 0.25) !important;
+    color: white !important;
+  }
+
+  .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  select.form-control option {
+    background: #2c3e50;
+    color: white;
+  }
+
+  /* Área de archivo simplificada */
+  .file-upload-area {
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px dashed rgba(255, 255, 255, 0.3);
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .file-upload-area:hover,
+  .file-upload-area.dragover {
+    border-color: var(--gov-accent);
+    background: rgba(23, 162, 184, 0.1);
+    transform: translateY(-2px);
+  }
+
+  .file-upload-area input[type="file"] {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .file-upload-icon {
+    font-size: 3rem;
+    color: var(--gov-accent);
+    margin-bottom: 1rem;
+  }
+
+  .file-upload-text {
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+  }
+
+  .file-upload-hint {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.875rem;
+  }
+
+  /* Información del archivo seleccionado */
+  .selected-file-info {
+    margin-top: 1rem;
+  }
+
+  .file-info-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    color: white;
+  }
+
+  .file-info-card i {
+    color: var(--gov-accent);
+  }
+
+  /* Botones mejorados */
+  .btn-submit-main {
+    background: linear-gradient(135deg, var(--success), #20c997) !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 0.75rem 2rem !important;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    color: white !important;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn-submit-main:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
+    color: white !important;
+  }
+
+  .btn-cancel-secondary {
+    background: linear-gradient(135deg, var(--secondary), #6c757d) !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 0.75rem 1.5rem !important;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    color: white !important;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn-cancel-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(108, 117, 125, 0.4);
+    color: white !important;
+  }
+
+  /* Validación de formulario */
+  .invalid-feedback {
+    color: var(--gov-danger);
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+  }
+
+  .is-invalid {
+    border-color: var(--gov-danger) !important;
+  }
+
+  /* Campos obligatorios */
+  .required-field label::after {
+    content: " *";
+    color: var(--gov-danger);
+  }
+
+  /* Animaciones de entrada */
+  .fade-in-up {
+    animation: fadeInUp 0.6s ease-out forwards;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Responsividad */
+  @media (max-width: 768px) {
+    .derivacion-form-section {
+      padding: 1rem;
+    }
+
+    .file-upload-area {
+      padding: 1.5rem 1rem;
+    }
+
+    .file-upload-icon {
+      font-size: 2rem;
+    }
+  }
+</style>
+{% endblock %} {% block title %} {% if request.resolver_match.url_name ==
+'ciudadanosderivaciones_editar' %} Editar Derivación - {{ ciudadano.nombre }} {{
+ciudadano.apellido }} {% else %} Nueva Derivación - {{ ciudadano.nombre }} {{
+ciudadano.apellido }} {% endif %} {% endblock %} {% block titulo-pagina
+%}Ciudadano{% endblock %} {% block breadcrumb %}
+<ol class="breadcrumb float-sm-right mt-2 mr-2">
+  <li class="breadcrumb-item">
+    <a href="{% url 'ciudadanosderivaciones_historial' ciudadano.id %}"
+      >Historial derivaciones</a
+    >
+  </li>
+  <li class="breadcrumb-item">
+    <a href="{% url 'ciudadanos_ver' ciudadano.id %}"
+      >{{ ciudadano.apellido }}, {{ ciudadano.nombre }}</a
+    >
+  </li>
+  {% if request.resolver_match.url_name == 'ciudadanosderivaciones_editar' %}
+  <li class="breadcrumb-item active">Editar</li>
+  {% else %}
+  <li class="breadcrumb-item active">Agregar</li>
+  {% endif %}
+</ol>
+{% endblock %} {% block content %}
+<div class="row">
+  <div class="col-md-12">
+    <div class="card shadow-lg">
+      <div class="card-body p-4">
+        <!-- Resumen del ciudadano -->
+        <div class="row mb-4 fade-in-up">
+          <div class="col-md-4">
+            {% include "components/ciudadanos/ciudadano_summary_card.html" with
+            ciudadano=ciudadano card_class="mb-0" %}
+          </div>
+          <div class="col-md-8">
+            <div class="card shadow-sm h-100">
+              <div class="card-header">
+                <h5 class="mb-0">
+                  <i class="fas fa-share-alt me-2"></i>
+                  {% if request.resolver_match.url_name ==
+                  'ciudadanosderivaciones_editar' %} Editar Derivación {% else
+                  %} Nueva Derivación {% endif %}
+                </h5>
+              </div>
+              <div class="card-body">
+                <div
+                  class="alert alert-info border-0"
+                  style="background: rgba(23, 162, 184, 0.1)"
+                >
+                  <i class="fas fa-info-circle me-2"></i>
+                  <strong>Información:</strong> Complete todos los campos
+                  requeridos para {% if request.resolver_match.url_name ==
+                  'ciudadanosderivaciones_editar' %} actualizar la derivación.
+                  {% else %} crear la nueva derivación. {% endif %}
                 </div>
-                <div class="card-body">
-                    <dl class="row mb-0">
-                        <dd class="col-sm-2 mb-2">
-                            Nombre
-                        </dd>
-                        <dt class="col-sm-10 mb-2">
-                            <a href="{{ url }}" title="Ver ciudadano">{{ ciudadano.apellido }}, {{ ciudadano.nombre }}</a>
-                        </dt>
-                        <dd class="col-sm-2 mb-2">
-                            DNI
-                        </dd>
-                        <dt class="col-sm-10 mb-2">{{ ciudadano.documento }}</dt>
-                        <dd class="col-sm-2 mb-2">
-                            Fecha de nacimiento
-                        </dd>
-                        <dt class="col-sm-10 mb-2">{{ ciudadano.fecha_nacimiento|date:'d/m/Y' }}</dt>
-                        <dd class="col-sm-2 mb-2">
-                            Sexo
-                        </dd>
-                        <dt class="col-sm-10 mb-2">{{ ciudadano.sexo }}</dt>
-                    </dl>
-                </div>
+              </div>
             </div>
+          </div>
         </div>
-    </div>
-    <!-- /  -->
-    <div class="row">
-        <div class="col">
-            <form class="needs-validation"
-                  novalidate
-                  method="POST"
-                  enctype="multipart/form-data">
-                <!-- Security token -->
+
+        <!-- Formulario de derivación -->
+        <div class="row fade-in-up">
+          <div class="col-12">
+            <div class="derivacion-form-section">
+              <h6 class="section-title">
+                <i class="fas fa-edit me-2"></i>Datos de la Derivación
+              </h6>
+
+              <form
+                id="derivacionForm"
+                class="needs-validation"
+                novalidate
+                method="POST"
+                enctype="multipart/form-data"
+              >
                 {% csrf_token %}
-                <div class="card card-primary card-outline">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            {% if request.resolver_match.url_name != 'ciudadanosderivaciones_editar' %}
-                                Agregar
-                            {% else %}
-                                Editar
-                            {% endif %}
-                            derivación
-                        </h3>
+
+                <!-- Campos ocultos -->
+                <div class="d-none">
+                  {{ form.usuario|as_crispy_field }} {{
+                  form.estado|as_crispy_field }} {{
+                  form.ciudadano|as_crispy_field }}
+                </div>
+
+                <!-- Campos principales -->
+                <div class="row">
+                  <div class="col-md-4 required-field">
+                    <div class="form-group">
+                      {{ form.programa_solicitante|as_crispy_field }}
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <!-- <div class="col-12 mb-3">
-                            <h3 class="font-weight-bold" id="ciudadano"></h3>
-</div> -->
-                            <div class="col-6 d-none">
-                                <div class="form-group col-12">{{ form.usuario| as_crispy_field }}</div>
-                            </div>
-                            <div class="col-12 d-none">
-                                <div class="form-group col-6">{{ form.estado| as_crispy_field }}</div>
-                            </div>
-                            <div class="col-sm-4 d-none">
-                                <div class="form-group">{{ form.ciudadano| as_crispy_field }}</div>
-                            </div>
-                            <div class="col-sm-4">
-                                <div class="form-group">{{ form.programa_solicitante| as_crispy_field }}</div>
-                            </div>
-                            <div class="col-sm-4">
-                                <div class="form-group">{{ form.programa| as_crispy_field }}</div>
-                            </div>
-                            <div class="col-sm-4">
-                                <div class="form-group">{{ form.importancia| as_crispy_field }}</div>
-                            </div>
-                            <div class="col-sm-6">
-                                <div class="form-group">{{ form.alertas| as_crispy_field }}</div>
-                            </div>
-                            <div class="col-sm-6">
-                                <div class="form-group">{{ form.organismo| as_crispy_field }}</div>
-                            </div>
-                            <div class="col-sm-6">
-                                <div class="form-group">
-                                    <label for="exampleInputFile">Adjuntar archivos</label>
-                                    <div class="input-group">
-                                        <div class="custom-file">
-                                            <input type="file"
-                                                   class="custom-file-input"
-                                                   id="exampleInputFile"
-                                                   multiple
-                                                   name="archivos" />
-                                            <label class="custom-file-label" for="exampleInputFile"></label>
-                                        </div>
-                                        <div class="input-group-append">
-                                            <span class="input-group-text"><i class="fas fa-paperclip"></i></span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <div class="form-group">{{ form.detalles| as_crispy_field }}</div>
-                            </div>
+                  </div>
+                  <div class="col-md-4 required-field">
+                    <div class="form-group">
+                      {{ form.programa|as_crispy_field }}
+                    </div>
+                  </div>
+                  <div class="col-md-4 required-field">
+                    <div class="form-group">
+                      {{ form.importancia|as_crispy_field }}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      {{ form.alertas|as_crispy_field }}
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      {{ form.organismo|as_crispy_field }}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Área de archivo simplificada -->
+                <div class="row">
+                  <div class="col-12">
+                    <div class="form-group">
+                      <label for="id_archivos" class="form-label">
+                        <i class="fas fa-paperclip me-2"></i>Adjuntar archivo
+                      </label>
+                      <div class="file-upload-area" id="fileUploadArea">
+                        <div class="file-upload-icon">
+                          <i class="fas fa-cloud-upload-alt"></i>
                         </div>
+                        <div class="file-upload-text">
+                          <strong>Haga clic aquí o arrastre un archivo</strong>
+                        </div>
+                        <div class="file-upload-hint">
+                          Archivos soportados: PDF, DOC, DOCX, JPG, PNG (Máx.
+                          10MB)
+                        </div>
+                        {{ form.archivos }}
+                      </div>
+                      <div
+                        class="selected-file-info"
+                        id="selectedFileInfo"
+                        style="display: none"
+                      >
+                        <div class="file-info-card">
+                          <i class="fas fa-file me-2"></i>
+                          <span id="fileNameDisplay"></span>
+                          <span
+                            id="fileSizeDisplay"
+                            class="text-muted ms-2"
+                          ></span>
+                          <button
+                            type="button"
+                            class="btn btn-sm btn-outline-danger ms-auto"
+                            onclick="clearFile()"
+                          >
+                            <i class="fas fa-times"></i>
+                          </button>
+                        </div>
+                      </div>
                     </div>
+                  </div>
                 </div>
-                <div class="mt-4 mx-2">
-                    <button type="#" class="btn btn-primary mr-1">Confirmar</button>
-                    <!-- <a href="{% url 'ciudadanos_ver' request.resolver_match.kwargs.pk %}" -->
-                    <a href="{% url 'ciudadanos_ver' ciudadano.id %}"
-                       class="btn btn-secondary">Cancelar</a>
+
+                <!-- Campo de detalles -->
+                <div class="row">
+                  <div class="col-12 required-field">
+                    <div class="form-group">
+                      {{ form.detalles|as_crispy_field }}
+                    </div>
+                  </div>
                 </div>
-            </form>
+
+                <!-- Botones de acción -->
+                <div class="row mt-4">
+                  <div class="col-12">
+                    <div class="d-flex justify-content-between">
+                      <a
+                        href="{% url 'ciudadanos_ver' ciudadano.id %}"
+                        class="btn-cancel-secondary"
+                      >
+                        <i class="fas fa-times me-2"></i>Cancelar
+                      </a>
+                      <button
+                        type="submit"
+                        class="btn-submit-main"
+                        id="submitBtn"
+                      >
+                        <i class="fas fa-save me-2"></i>
+                        {% if request.resolver_match.url_name ==
+                        'ciudadanosderivaciones_editar' %} Actualizar Derivación
+                        {% else %} Crear Derivación {% endif %}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
+      </div>
     </div>
+  </div>
+</div>
+{% endblock %} {% block customJS %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Referencias a elementos
+    const form = document.getElementById("derivacionForm");
+    const fileUploadArea = document.getElementById("fileUploadArea");
+    const fileInput = document.querySelector("#id_archivos");
+    const selectedFileInfo = document.getElementById("selectedFileInfo");
+    const fileNameDisplay = document.getElementById("fileNameDisplay");
+    const fileSizeDisplay = document.getElementById("fileSizeDisplay");
+    const submitBtn = document.getElementById("submitBtn");
+
+    // Configurar área de carga de archivos
+    setupFileUpload();
+
+    // Configurar validación del formulario
+    setupFormValidation();
+
+    // Aplicar animaciones de entrada
+    applyEntryAnimations();
+
+    function setupFileUpload() {
+      // Click en el área de carga
+      fileUploadArea.addEventListener("click", (e) => {
+        if (e.target.type !== "file") {
+          fileInput.click();
+        }
+      });
+
+      // Drag and drop
+      fileUploadArea.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        fileUploadArea.classList.add("dragover");
+      });
+
+      fileUploadArea.addEventListener("dragleave", () => {
+        fileUploadArea.classList.remove("dragover");
+      });
+
+      fileUploadArea.addEventListener("drop", (e) => {
+        e.preventDefault();
+        fileUploadArea.classList.remove("dragover");
+
+        const files = Array.from(e.dataTransfer.files);
+        if (files.length > 0) {
+          handleFile(files[0]); // Solo tomar el primer archivo
+        }
+      });
+
+      // Selección de archivo
+      fileInput.addEventListener("change", (e) => {
+        if (e.target.files.length > 0) {
+          handleFile(e.target.files[0]);
+        }
+      });
+    }
+
+    function handleFile(file) {
+      // Validar archivo
+      const validTypes = [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+      ];
+      const maxSize = 10 * 1024 * 1024; // 10MB
+
+      if (!validTypes.includes(file.type)) {
+        showNotification(
+          `Tipo de archivo no soportado: ${file.name}`,
+          "warning"
+        );
+        return;
+      }
+
+      if (file.size > maxSize) {
+        showNotification(`Archivo ${file.name}: Tamaño excede 10MB`, "warning");
+        return;
+      }
+
+      // Mostrar información del archivo
+      updateFileDisplay(file);
+    }
+
+    function updateFileDisplay(file) {
+      fileNameDisplay.textContent = file.name;
+      fileSizeDisplay.textContent = `(${formatFileSize(file.size)})`;
+      selectedFileInfo.style.display = "block";
+    }
+
+    window.clearFile = function () {
+      fileInput.value = "";
+      selectedFileInfo.style.display = "none";
+      fileNameDisplay.textContent = "";
+      fileSizeDisplay.textContent = "";
+    };
+
+    function formatFileSize(bytes) {
+      if (bytes === 0) return "0 Bytes";
+      const k = 1024;
+      const sizes = ["Bytes", "KB", "MB", "GB"];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+    }
+
+    function setupFormValidation() {
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        // Validar formulario
+        if (!form.checkValidity()) {
+          e.stopPropagation();
+          form.classList.add("was-validated");
+
+          // Encontrar primer campo inválido y hacer scroll
+          const firstInvalid = form.querySelector(":invalid");
+          if (firstInvalid) {
+            firstInvalid.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            });
+            firstInvalid.focus();
+          }
+
+          showNotification(
+            "Por favor, complete todos los campos requeridos",
+            "error"
+          );
+          return;
+        }
+
+        // Mostrar loading
+        showLoadingState();
+
+        // Si la validación pasa, enviar el formulario
+        setTimeout(() => {
+          form.submit();
+        }, 500);
+      });
+    }
+
+    function showLoadingState() {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `
+                <div class="spinner-border spinner-border-sm me-2" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                Guardando...
+            `;
+    }
+
+    function applyEntryAnimations() {
+      // Animación del formulario
+      const formSection = document.querySelector(".derivacion-form-section");
+      if (formSection) {
+        formSection.style.opacity = "0";
+        formSection.style.transform = "translateY(30px)";
+
+        setTimeout(() => {
+          formSection.style.transition = "all 0.6s ease-out";
+          formSection.style.opacity = "1";
+          formSection.style.transform = "translateY(0)";
+        }, 300);
+      }
+
+      // Animación de los campos
+      const formGroups = document.querySelectorAll(".form-group");
+      formGroups.forEach((group, index) => {
+        group.style.opacity = "0";
+        group.style.transform = "translateX(-20px)";
+
+        setTimeout(() => {
+          group.style.transition = "all 0.4s ease-out";
+          group.style.opacity = "1";
+          group.style.transform = "translateX(0)";
+        }, 400 + index * 100);
+      });
+    }
+
+    // Función para mostrar notificaciones
+    function showNotification(message, type = "info") {
+      const alertClass =
+        type === "success"
+          ? "alert-success"
+          : type === "error"
+          ? "alert-danger"
+          : type === "warning"
+          ? "alert-warning"
+          : "alert-info";
+
+      const iconClass =
+        type === "success"
+          ? "fas fa-check-circle"
+          : type === "error"
+          ? "fas fa-exclamation-triangle"
+          : type === "warning"
+          ? "fas fa-exclamation-circle"
+          : "fas fa-info-circle";
+
+      const notification = document.createElement("div");
+      notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+      notification.style.cssText =
+        "top: 20px; right: 20px; z-index: 10000; min-width: 350px; backdrop-filter: blur(10px);";
+      notification.innerHTML = `
+                <i class="${iconClass} me-2"></i>${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+      document.body.appendChild(notification);
+
+      // Auto-remover después de 5 segundos
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.remove();
+        }
+      }, 5000);
+    }
+
+    // Mejorar la experiencia de los campos select
+    const selectFields = document.querySelectorAll("select.form-control");
+    selectFields.forEach((select) => {
+      select.addEventListener("focus", function () {
+        this.style.background = "rgba(255, 255, 255, 0.08)";
+      });
+
+      select.addEventListener("blur", function () {
+        this.style.background = "rgba(255, 255, 255, 0.05)";
+      });
+    });
+
+    // Configurar tooltips para campos requeridos
+    const requiredFields = document.querySelectorAll(
+      ".required-field input, .required-field select, .required-field textarea"
+    );
+    requiredFields.forEach((field) => {
+      field.setAttribute("required", "required");
+
+      if (!field.getAttribute("title")) {
+        field.setAttribute("title", "Este campo es obligatorio");
+      }
+    });
+
+    // Auto-resize para textarea
+    const textareas = document.querySelectorAll("textarea");
+    textareas.forEach((textarea) => {
+      textarea.addEventListener("input", function () {
+        this.style.height = "auto";
+        this.style.height = this.scrollHeight + "px";
+      });
+    });
+  });
+</script>
 {% endblock %}
-{% block customJS %}
-    <script src="{% static 'custom/js/ciudadanosderivacionesform.js' %}"></script>
-{% endblock %}
-;
