@@ -1,4 +1,3 @@
-import threading
 from django.db import transaction
 
 from centrodefamilia.models import (
@@ -20,7 +19,6 @@ from ciudadanos.models import (
 )
 
 
-# Excepciones específicas para flujo de inscripción
 class AlreadyRegistered(Exception):
     """Se lanza cuando un ciudadano ya está inscrito en la actividad."""
 
@@ -33,37 +31,22 @@ class SexoNoPermitido(Exception):
     """Se lanza cuando el sexo del ciudadano no está permitido en la actividad."""
 
 
-# Funciones auxiliares originales
-
-
 def puede_operar(centro):
-    """
-    Verifica si un centro adherido puede operar solo si su faro asociado está activo.
-    """
     if centro.tipo == "adherido":
         return bool(centro.faro_asociado and centro.faro_asociado.activo)
     return True
 
 
 def obtener_centros_adheridos_de_faro(faro):
-    """
-    Retorna centros adheridos activos de un faro específico.
-    """
     return Centro.objects.filter(faro_asociado=faro, activo=True)
 
 
 def validar_cuit(cuit):
-    """
-    Valida que el CUIT esté compuesto solo por dígitos y su longitud.
-    """
     s = str(cuit)
     return s.isdigit() and len(s) in (10, 11)
 
 
 def validar_ciudadano_en_rango_para_actividad(ciudadano, actividad_centro):
-    """
-    Restringe inscritos en centros adheridos a ciertos IDs de ciudadanos.
-    """
     if actividad_centro.centro.tipo == "adherido" and not 1 <= ciudadano.id <= 975:
         raise ValueError(
             f"El ciudadano ID {ciudadano.id} no está habilitado para inscribirse en este centro adherido."
@@ -71,10 +54,6 @@ def validar_ciudadano_en_rango_para_actividad(ciudadano, actividad_centro):
 
 
 class ActividadService:
-    """
-    Servicio para obtener instancias de ActividadCentro con manejo de errores.
-    """
-
     @staticmethod
     def obtener_o_error(actividad_id):
         actividad = ActividadCentro.objects.filter(pk=actividad_id).first()
@@ -84,37 +63,27 @@ class ActividadService:
 
 
 class ParticipanteService:
-    """
-    Servicio de inscripción con gestión de estados, cupos y lista de espera.
-    Incluye carga masiva, validaciones y asignación de programas.
-    """
 
     @staticmethod
     def contar_inscritos(actividad_centro):
-        """Cuenta solo los inscritos efectivos (estado='inscrito')."""
         return ParticipanteActividad.objects.filter(
             actividad_centro=actividad_centro, estado="inscrito"
         ).count()
 
     @staticmethod
     def obtener_inscritos(actividad_centro):
-        """Devuelve queryset de participantes en estado 'inscrito'."""
         return ParticipanteActividad.objects.filter(
             actividad_centro=actividad_centro, estado="inscrito"
         ).select_related("ciudadano")
 
     @staticmethod
     def obtener_lista_espera(actividad_centro):
-        """Devuelve queryset de participantes en estado 'lista_espera'."""
         return ParticipanteActividad.objects.filter(
             actividad_centro=actividad_centro, estado="lista_espera"
         ).select_related("ciudadano")
 
     @staticmethod
     def cargar_participantes_desde_lista(lista_dnis, actividad_centro):
-        """
-        Carga masiva desde una lista de documentos (DNI), ignora duplicados.
-        """
         existing = set(
             ParticipanteActividad.objects.filter(
                 actividad_centro=actividad_centro, ciudadano__documento__in=lista_dnis
@@ -132,9 +101,6 @@ class ParticipanteService:
 
     @staticmethod
     def _crear_dimensiones_y_programa(ciudadano, usuario, actividad_id):
-        """
-        Tarea en background para crear dimensiones y asignar programa.
-        """
         for Modelo in (
             DimensionEconomia,
             DimensionEducacion,
@@ -143,13 +109,14 @@ class ParticipanteService:
             DimensionTrabajo,
             DimensionVivienda,
         ):
-            Modelo.objects.create(ciudadano=ciudadano)
-        _, created = CiudadanoPrograma.objects.get_or_create(
-            ciudadano=ciudadano,
-            programas_id=actividad_id,
-            defaults={"creado_por": usuario},
-        )
-        if created:
+            Modelo.objects.update_or_create(ciudadano=ciudadano)
+
+            creado = CiudadanoPrograma.objects.update_or_create(
+                ciudadano=ciudadano,
+                programas_id=actividad_id,
+                defaults={"creado_por": usuario},
+            )
+        if creado:
             HistorialCiudadanoProgramas.objects.create(
                 programa_id=actividad_id,
                 ciudadano=ciudadano,
@@ -159,9 +126,6 @@ class ParticipanteService:
 
     @staticmethod
     def crear_ciudadano_con_dimensiones(datos, usuario, actividad_id):
-        """
-        Crea un ciudadano y dispara la creación de dimensiones en background.
-        """
         ciudadano = Ciudadano.objects.create(
             nombre=datos.get("nombre"),
             apellido=datos.get("apellido"),
@@ -170,18 +134,13 @@ class ParticipanteService:
             tipo_documento=datos.get("tipo_documento"),
             sexo=datos.get("genero"),
         )
-        threading.Thread(
-            target=ParticipanteService._crear_dimensiones_y_programa,
-            args=(ciudadano, usuario, actividad_id),
-            daemon=True,
-        ).start()
+        ParticipanteService._crear_dimensiones_y_programa(
+            ciudadano, usuario, actividad_id
+        )
         return ciudadano
 
     @staticmethod
     def crear_participante(actividad_id, ciudadano, estado):
-        """
-        Crea un registro de ParticipanteActividad con estado dado.
-        """
         actividad = ActividadService.obtener_o_error(actividad_id)
         return ParticipanteActividad.objects.create(
             actividad_centro=actividad, ciudadano=ciudadano, estado=estado
@@ -189,23 +148,11 @@ class ParticipanteService:
 
     @staticmethod
     def validar_ciudadano(ciudadano, actividad_centro):
-        """
-        Ejecuta validaciones custom para el ciudadano en la actividad.
-        """
         validar_ciudadano_en_rango_para_actividad(ciudadano, actividad_centro)
 
     @classmethod
     @transaction.atomic
     def procesar_creacion(cls, usuario, actividad_id, datos=None, **kwargs):
-        """
-        Flujo completo de creación de inscripción:
-        - Verifica duplicados
-        - Verifica cupo (lanza CupoExcedido si está lleno y no allow_waitlist)
-        - Obtiene o crea ciudadano
-        - Valida género y rango
-        - Registra inscripción con estado 'inscrito' o 'lista_espera'
-        Retorna ('inscrito'|'lista_espera', participante).
-        """
         ciudadano_id = kwargs.get("ciudadano_id")
         allow_waitlist = kwargs.get("allow_waitlist", False)
 
@@ -229,11 +176,7 @@ class ParticipanteService:
             ciudadano = Ciudadano.objects.filter(pk=ciudadano_id).first()
             if not ciudadano:
                 raise LookupError("Ciudadano no encontrado.")
-            threading.Thread(
-                target=cls._crear_dimensiones_y_programa,
-                args=(ciudadano, usuario, actividad_id),
-                daemon=True,
-            ).start()
+            cls._crear_dimensiones_y_programa(ciudadano, usuario, actividad_id)
         else:
             genero = datos.get("genero")
             if actividad.sexoact.exists() and genero not in actividad.sexoact.all():
