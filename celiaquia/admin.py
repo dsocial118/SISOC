@@ -7,9 +7,7 @@ from .models import (
     Expediente,
     ExpedienteCiudadano,
     AsignacionTecnico,
-    ArchivoCruce,
-    ResultadoCruce,
-    InformePago,
+
 )
 
 
@@ -58,22 +56,5 @@ class AsignacionTecnicoAdmin(admin.ModelAdmin):
     search_fields = ("expediente__codigo", "tecnico__username")
 
 
-@admin.register(ArchivoCruce)
-class ArchivoCruceAdmin(admin.ModelAdmin):
-    list_display = ("expediente", "organismo", "tipo", "fecha_subida")
-    list_filter = ("organismo", "tipo")
-    search_fields = ("expediente__codigo",)
 
 
-@admin.register(ResultadoCruce)
-class ResultadoCruceAdmin(admin.ModelAdmin):
-    list_display = ("expediente_ciudadano", "organismo", "estado")
-    list_filter = ("organismo", "estado")
-    search_fields = ("expediente_ciudadano__ciudadano__documento",)
-
-
-@admin.register(InformePago)
-class InformePagoAdmin(admin.ModelAdmin):
-    list_display = ("expediente", "tecnico", "fecha_pago", "monto")
-    list_filter = ("fecha_pago",)
-    search_fields = ("expediente__codigo", "tecnico__username")

@@ -6,8 +6,6 @@ from django.utils.translation import gettext_lazy as _
 from celiaquia.models import (
     Expediente,
     ExpedienteCiudadano,
-    ArchivoCruce,
-    InformePago,
     Organismo,
     TipoCruce,
 )
@@ -80,47 +78,6 @@ class LegajoArchivoForm(BaseStyledForm):
         fields = ["archivo"]
 
 
-class CruceUploadForm(BaseStyledForm):
-    organismo = forms.ModelChoiceField(
-        label=_("Organismo"),
-        queryset=Organismo.objects.none(),  # set in __init__
-        widget=forms.Select(attrs={"class": "form-select select2"}),
-    )
-    tipo = forms.ModelChoiceField(
-        label=_("Tipo de Cruce"),
-        queryset=TipoCruce.objects.all(),
-        widget=forms.Select(attrs={"class": "form-select"}),
-    )
-    archivo = forms.FileField(
-        label=_("Archivo de Cruce"),
-        validators=[FileExtensionValidator(["xlsx"]), validate_file_size],
-        widget=forms.ClearableFileInput(attrs={"accept": ".xlsx"}),
-        required=True,
-    )
-
-    class Meta:
-        model = ArchivoCruce
-        fields = ["organismo", "tipo", "archivo"]
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # dynamic, ordered queryset
-        self.fields["organismo"].queryset = Organismo.objects.order_by("nombre")
 
 
-class PagoForm(BaseStyledForm):
-    fecha_pago = forms.DateField(
-        label=_("Fecha de Pago"), widget=forms.DateInput(attrs={"type": "date"})
-    )
-    monto = forms.DecimalField(
-        label=_("Monto"), widget=forms.NumberInput(attrs={"step": "0.01"})
-    )
-    observaciones = forms.CharField(
-        label=_("Observaciones"),
-        widget=forms.Textarea(attrs={"rows": 2}),
-        required=False,
-    )
 
-    class Meta:
-        model = InformePago
-        fields = ["fecha_pago", "monto", "observaciones"]
