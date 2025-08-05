@@ -7,6 +7,7 @@ from comedores.models import (
     Referente,
     TipoDeComedor,
 )
+from core.models import Localidad, Municipio, Provincia
 from relevamientos.models import (
     Anexo,
     CantidadColaboradores,
@@ -47,6 +48,43 @@ from core.utils import convert_string_to_int
 class RelevamientoService:  # pylint: disable=too-many-public-methods
 
     # TODO: Mover metodos no genericos al utils.py
+
+    @staticmethod
+    def update_comedor(comedor_data, comedor_instance):
+        comedor_instance.numero = convert_string_to_int(
+            comedor_data.get("numero", comedor_instance.numero)
+        )
+        comedor_instance.calle = comedor_data.get("calle", comedor_instance.calle)
+        comedor_instance.entre_calle_1 = comedor_data.get(
+            "entre_calle_1", comedor_instance.entre_calle_1
+        )
+        comedor_instance.entre_calle_2 = comedor_data.get(
+            "entre_calle_2", comedor_instance.entre_calle_2
+        )
+        comedor_instance.barrio = comedor_data.get("barrio", comedor_instance.barrio)
+        comedor_instance.codigo_postal = convert_string_to_int(
+            comedor_data.get("codigo_postal", comedor_instance.codigo_postal)
+        )
+        comedor_instance.provincia = Provincia.objects.get(
+            nombre=comedor_data.get("provincia", comedor_instance.provincia)
+        )
+        comedor_instance.municipio = Municipio.objects.get(
+            nombre=comedor_data.get("municipio", comedor_instance.municipio)
+        )
+        comedor_instance.localidad = Localidad.objects.get(
+            nombre=comedor_data.get("localidad", comedor_instance.localidad)
+        )
+        comedor_instance.partido = comedor_data.get("partido", comedor_instance.partido)
+        comedor_instance.manzana = comedor_data.get("manzana", comedor_instance.manzana)
+        comedor_instance.lote = comedor_data.get("lote", comedor_instance.lote)
+        comedor_instance.comienzo = (
+            convert_string_to_int(comedor_data.get("comienzo", "").split("/")[-1])
+            if comedor_data.get("comienzo")
+            else comedor_instance.comienzo
+        )
+        comedor_instance.save()
+
+        return comedor_instance.id
 
     @staticmethod
     def create_pendiente(request, comedor_id):
