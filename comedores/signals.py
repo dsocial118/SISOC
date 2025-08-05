@@ -11,6 +11,7 @@ from comedores.tasks import (
     AsyncSendComedorToGestionar,
     AsyncSendObservacionToGestionar,
     AsyncSendReferenteToGestionar,
+    build_comedor_payload,
 )
 from relevamientos.models import Relevamiento
 from rendicioncuentasfinal.models import (
@@ -23,24 +24,26 @@ from rendicioncuentasfinal.models import (
 @receiver(post_save, sender=Comedor)
 def send_comedor_to_gestionar(sender, instance, created, **kwargs):
     if created:
-        AsyncSendComedorToGestionar(instance.id).start()
+        payload = build_comedor_payload(instance)  # usa los NEW values de la instancia
+        AsyncSendComedorToGestionar(payload).start()
 
 
 @receiver(pre_save, sender=Comedor)
 def update_comedor_in_gestionar(sender, instance, **kwargs):
-    if instance.pk:
-        previous_instance = sender.objects.get(pk=instance.pk)
-        for field in instance._meta.fields:
-            field_name = field.name
-            new_value = getattr(instance, field_name)
-            old_value = getattr(previous_instance, field_name)
+    if not instance.pk:
+        return
+    previous = sender.objects.get(pk=instance.pk)
 
-            if field_name == "foto_legajo" and not new_value:
-                continue
+    changed = any(
+        f.name not in {"foto_legajo"}
+        and getattr(instance, f.name) != getattr(previous, f.name)
+        for f in instance._meta.fields
+    )
+    if not changed:
+        return
 
-            if new_value != old_value:
-                AsyncSendComedorToGestionar(instance.id).start()
-                break
+    payload = build_comedor_payload(instance)  # usa los NEW values de la instancia
+    AsyncSendComedorToGestionar(payload).start()
 
 
 @receiver(pre_delete, sender=Comedor)
