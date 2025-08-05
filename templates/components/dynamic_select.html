@@ -1,0 +1,419 @@
+{% comment %}
+Componente reutilizable para selects dependientes con carga AJAX
+Parámetros:
+- field_id: ID del campo select (requerido)
+- field_name: Nombre del campo (requerido)
+- field_label: Label del campo (requerido)
+- depends_on: ID del campo del que depende (requerido para selects dependientes)
+- ajax_url: URL para cargar opciones via AJAX (requerido para selects dependientes)
+- options: Lista de opciones estáticas (opcional, para select principal)
+- selected_value: Valor seleccionado actual (opcional)
+- placeholder: Texto placeholder (default: "Seleccionar...")
+- required: Campo requerido (default: False)
+- disabled: Campo deshabilitado inicialmente (default: True para dependientes)
+- css_class: Clases CSS adicionales (opcional)
+- data_param: Nombre del parámetro en la request AJAX (default: usa depends_on)
+- empty_message: Mensaje cuando no hay opciones (default: "No hay opciones disponibles")
+- loading_message: Mensaje durante carga (default: "Cargando...")
+- error_message: Mensaje de error (default: "Error al cargar opciones")
+- show_loader: Mostrar spinner durante carga (default: True)
+- multiple: Select múltiple (default: False)
+- size: Tamaño del select múltiple (default: 4)
+- help_text: Texto de ayuda (opcional)
+{% endcomment %}
+
+{% load static %}
+
+<div class="form-group dynamic-select-container" data-field-id="{{ field_id }}">
+    <label for="{{ field_id }}" class="form-label">
+        {{ field_label }}
+        {% if required %}
+            <span class="text-danger">*</span>
+        {% endif %}
+    </label>
+    
+    <div class="position-relative">
+        <select id="{{ field_id }}" 
+                name="{{ field_name }}" 
+                class="form-select dynamic-select {{ css_class }}"
+                {% if required %}required{% endif %}
+                {% if disabled %}disabled{% endif %}
+                {% if multiple %}multiple size="{{ size|default:4 }}"{% endif %}
+                {% if depends_on %}
+                    data-depends-on="{{ depends_on }}"
+                    data-ajax-url="{{ ajax_url }}"
+                    data-param-name="{{ data_param|default:depends_on }}"
+                {% endif %}
+                data-placeholder="{{ placeholder|default:'Seleccionar...' }}"
+                data-empty-message="{{ empty_message|default:'No hay opciones disponibles' }}"
+                data-loading-message="{{ loading_message|default:'Cargando...' }}"
+                data-error-message="{{ error_message|default:'Error al cargar opciones' }}">
+            
+            <option value="">{{ placeholder|default:"Seleccionar..." }}</option>
+            
+            {% if options %}
+                {% for option in options %}
+                    {% if option|length == 2 %}
+                        <!-- Manejar tuplas (value, label) típicas de choices -->
+                        <option value="{{ option.0 }}" 
+                                {% if selected_value and option.0|stringformat:"s" == selected_value|stringformat:"s" %}selected{% endif %}>
+                            {{ option.1 }}
+                        </option>
+                    {% else %}
+                        <!-- Manejar objetos con atributos -->
+                        <option value="{{ option.value|default:option.id|default:option }}" 
+                                {% if selected_value and option.value|default:option.id|default:option|stringformat:"s" == selected_value|stringformat:"s" %}selected{% endif %}>
+                            {{ option.text|default:option.nombre|default:option }}
+                        </option>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        </select>
+        
+        <!-- Spinner de carga -->
+        {% if show_loader|default:True %}
+        <div class="select-loader position-absolute top-50 end-0 translate-middle-y me-3" 
+             id="loader-{{ field_id }}" style="display: none;">
+            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Indicador de error -->
+        <div class="select-error position-absolute top-50 end-0 translate-middle-y me-3"
+             id="error-{{ field_id }}" style="display: none;">
+            <i class="fas fa-exclamation-triangle text-danger" title="{{ error_message|default:'Error al cargar opciones' }}"></i>
+        </div>
+    </div>
+    
+    {% if help_text %}
+    <div class="form-text">{{ help_text }}</div>
+    {% endif %}
+    
+    <div class="invalid-feedback" id="feedback-{{ field_id }}"></div>
+</div>
+
+<style>
+/* Estilos para dynamic select */
+.dynamic-select-container {
+    position: relative;
+}
+
+.dynamic-select {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+    border-radius: 8px !important;
+    transition: var(--transition-smooth);
+    padding-right: 3rem !important; /* Espacio para loader/error */
+}
+
+.dynamic-select:focus {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: var(--gov-accent) !important;
+    box-shadow: 0 0 0 0.2rem rgba(23, 162, 184, 0.25) !important;
+    color: white !important;
+}
+
+.dynamic-select:disabled {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: rgba(255, 255, 255, 0.5) !important;
+    cursor: not-allowed;
+}
+
+.dynamic-select option {
+    background: var(--gov-dark) !important;
+    color: white !important;
+    padding: 0.5rem !important;
+}
+
+.dynamic-select option:hover,
+.dynamic-select option:focus,
+.dynamic-select option:checked {
+    background: var(--gov-primary) !important;
+    color: white !important;
+}
+
+/* Loading state */
+.dynamic-select.loading {
+    background-image: none !important;
+    position: relative;
+}
+
+.select-loader .spinner-border {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.1em;
+}
+
+/* Error state */
+.dynamic-select.error {
+    border-color: #dc3545 !important;
+    background: rgba(220, 53, 69, 0.1) !important;
+}
+
+/* Success state */
+.dynamic-select.success {
+    border-color: #28a745 !important;
+}
+
+/* Animaciones */
+.dynamic-select-container {
+    animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Multiple select styling */
+.dynamic-select[multiple] {
+    min-height: 120px;
+    padding: 0.5rem !important;
+}
+
+.dynamic-select[multiple] option {
+    padding: 0.375rem 0.75rem !important;
+    margin-bottom: 2px;
+    border-radius: 4px;
+}
+
+.dynamic-select[multiple] option:checked {
+    background: linear-gradient(135deg, var(--gov-primary), var(--gov-accent)) !important;
+    color: white !important;
+    font-weight: 500;
+}
+
+/* Form text styling */
+.form-text {
+    color: rgba(255, 255, 255, 0.7) !important;
+    font-size: 0.875rem;
+}
+
+/* Invalid feedback */
+.invalid-feedback {
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+.dynamic-select.is-invalid {
+    border-color: #dc3545 !important;
+    background: rgba(220, 53, 69, 0.1) !important;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+    .dynamic-select {
+        font-size: 16px; /* Previene zoom en iOS */
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar todos los selects dinámicos
+    const dynamicSelects = document.querySelectorAll('.dynamic-select[data-depends-on]');
+    
+    dynamicSelects.forEach(initializeDynamicSelect);
+    
+    function initializeDynamicSelect(selectElement) {
+        const dependsOnId = selectElement.dataset.dependsOn;
+        const parentSelect = document.getElementById(dependsOnId);
+        
+        if (!parentSelect) {
+            console.warn(`Parent select with ID '${dependsOnId}' not found for ${selectElement.id}`);
+            return;
+        }
+        
+        // Listener para el select padre
+        parentSelect.addEventListener('change', function() {
+            handleParentChange(this, selectElement);
+        });
+        
+        // Inicializar estado basado en valor actual del padre
+        if (parentSelect.value) {
+            handleParentChange(parentSelect, selectElement);
+        }
+    }
+    
+    function handleParentChange(parentSelect, childSelect) {
+        const parentValue = parentSelect.value;
+        const ajaxUrl = childSelect.dataset.ajaxUrl;
+        const paramName = childSelect.dataset.paramName;
+        
+        if (!parentValue) {
+            resetChildSelect(childSelect);
+            return;
+        }
+        
+        loadChildOptions(childSelect, ajaxUrl, paramName, parentValue);
+    }
+    
+    function resetChildSelect(selectElement) {
+        // Limpiar opciones
+        selectElement.innerHTML = `<option value="">${selectElement.dataset.placeholder}</option>`;
+        
+        // Deshabilitar
+        selectElement.disabled = true;
+        
+        // Remover clases de estado
+        selectElement.classList.remove('loading', 'error', 'success');
+        
+        // Ocultar indicadores
+        hideLoader(selectElement);
+        hideError(selectElement);
+        
+        // Trigger change event para selects que dependan de este
+        selectElement.dispatchEvent(new Event('change'));
+    }
+    
+    function loadChildOptions(selectElement, ajaxUrl, paramName, parentValue) {
+        // Mostrar loader
+        showLoader(selectElement);
+        selectElement.classList.add('loading');
+        selectElement.disabled = true;
+        
+        // Preparar parámetros
+        const params = new URLSearchParams();
+        params.append(paramName, parentValue);
+        
+        // Realizar petición AJAX
+        fetch(`${ajaxUrl}?${params.toString()}`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            populateOptions(selectElement, data);
+            selectElement.classList.remove('loading', 'error');
+            selectElement.classList.add('success');
+            selectElement.disabled = false;
+            hideLoader(selectElement);
+        })
+        .catch(error => {
+            console.error('Error loading options:', error);
+            handleLoadError(selectElement);
+        });
+    }
+    
+    function populateOptions(selectElement, data) {
+        // Limpiar opciones existentes
+        selectElement.innerHTML = `<option value="">${selectElement.dataset.placeholder}</option>`;
+        
+        if (!data || data.length === 0) {
+            selectElement.innerHTML += `<option value="" disabled>${selectElement.dataset.emptyMessage}</option>`;
+            return;
+        }
+        
+        // Agregar nuevas opciones
+        data.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item.id || item.value;
+            option.textContent = item.nombre || item.text || item.name;
+            
+            // Mantener selección previa si existe
+            const selectedValue = selectElement.dataset.selectedValue;
+            if (selectedValue && option.value == selectedValue) {
+                option.selected = true;
+                delete selectElement.dataset.selectedValue; // Limpiar después de usar
+            }
+            
+            selectElement.appendChild(option);
+        });
+        
+        // Dispatch change event para dependientes
+        selectElement.dispatchEvent(new Event('change'));
+    }
+    
+    function handleLoadError(selectElement) {
+        selectElement.innerHTML = `
+            <option value="">${selectElement.dataset.placeholder}</option>
+            <option value="" disabled style="color: #dc3545;">${selectElement.dataset.errorMessage}</option>
+        `;
+        
+        selectElement.classList.remove('loading', 'success');
+        selectElement.classList.add('error');
+        selectElement.disabled = false;
+        
+        hideLoader(selectElement);
+        showError(selectElement);
+        
+        // Auto-ocultar error después de 3 segundos
+        setTimeout(() => {
+            hideError(selectElement);
+            selectElement.classList.remove('error');
+        }, 3000);
+    }
+    
+    function showLoader(selectElement) {
+        const loader = document.getElementById(`loader-${selectElement.id}`);
+        if (loader) {
+            loader.style.display = 'block';
+        }
+    }
+    
+    function hideLoader(selectElement) {
+        const loader = document.getElementById(`loader-${selectElement.id}`);
+        if (loader) {
+            loader.style.display = 'none';
+        }
+    }
+    
+    function showError(selectElement) {
+        const error = document.getElementById(`error-${selectElement.id}`);
+        if (error) {
+            error.style.display = 'block';
+        }
+    }
+    
+    function hideError(selectElement) {
+        const error = document.getElementById(`error-${selectElement.id}`);
+        if (error) {
+            error.style.display = 'none';
+        }
+    }
+    
+    // Función global para setear valor seleccionado (útil para edición)
+    window.setDynamicSelectValue = function(selectId, value) {
+        const selectElement = document.getElementById(selectId);
+        if (selectElement) {
+            selectElement.dataset.selectedValue = value;
+            
+            // Si ya tiene opciones, seleccionar inmediatamente
+            const existingOption = selectElement.querySelector(`option[value="${value}"]`);
+            if (existingOption) {
+                existingOption.selected = true;
+            }
+        }
+    };
+    
+    // Función global para recargar opciones manualmente
+    window.reloadDynamicSelect = function(selectId) {
+        const selectElement = document.getElementById(selectId);
+        if (selectElement && selectElement.dataset.dependsOn) {
+            const parentSelect = document.getElementById(selectElement.dataset.dependsOn);
+            if (parentSelect && parentSelect.value) {
+                handleParentChange(parentSelect, selectElement);
+            }
+        }
+    };
+});
+</script>

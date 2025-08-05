@@ -1587,40 +1587,194 @@ class AlertaListView(ListView):
 
 
 class AlertaCreateView(SuccessMessageMixin, CreateView):
+    """
+    View refactorizada para manejar alertas usando componentes modernos
+    """
+
     model = Alerta
     form_class = AlertaForm
+    template_name = "ciudadanos/alerta_form.html"
     success_message = "Alerta asignada correctamente."
 
     def get_context_data(self, **kwargs):
-        pk = self.kwargs["pk"]
+        """Contexto optimizado para usar con componentes"""
         context = super().get_context_data(**kwargs)
+        pk = self.kwargs["pk"]
 
-        alertas = Alerta.objects.filter(ciudadano=pk)
+        # Cargar ciudadano con select_related para optimizar
+        ciudadano = (
+            Ciudadano.objects.select_related("tipo_documento", "sexo", "nacionalidad")
+            .only(
+                "id",
+                "nombre",
+                "apellido",
+                "documento",
+                "tipo_documento__tipo",
+                "sexo__sexo",
+                "nacionalidad__nacionalidad",
+                "fecha_nacimiento",
+                "telefono",
+                "email",
+                "observaciones",
+            )
+            .get(pk=pk)
+        )
 
-        ciudadano = Ciudadano.objects.values(
-            "pk", "dimensionfamilia__id", "nombre", "apellido"
-        ).get(pk=pk)
+        # Cargar alertas existentes con relaciones optimizadas
+        alertas = ciudadano.alertas.select_related("categoria__dimension")
 
-        context["alertas"] = alertas
-        context["ciudadano"] = ciudadano
+        # Convertir alertas para el componente timeline
+        alertas_for_timeline = []
+        for alerta in alertas:
+            alertas_for_timeline.append(
+                {
+                    "id": alerta.id,
+                    "alerta": alerta,  # El objeto alerta completo
+                    "categoria": (alerta.categoria.nombre if alerta.categoria else ""),
+                    "gravedad": (
+                        alerta.gravedad if hasattr(alerta, "gravedad") else "info"
+                    ),
+                    "fecha_creacion": (
+                        alerta.fecha_creado if hasattr(alerta, "fecha_creado") else None
+                    ),
+                    "descripcion": (
+                        alerta.descripcion if hasattr(alerta, "descripcion") else ""
+                    ),
+                }
+            )
+
+        # Breadcrumbs para navegación
+        breadcrumb_items = [
+            {"url": reverse_lazy("ciudadanos"), "text": "Ciudadanos"},
+            {
+                "url": reverse_lazy("ciudadanos_ver", kwargs={"pk": pk}),
+                "text": f"{ciudadano.nombre} {ciudadano.apellido}",
+            },
+        ]
+
+        context.update(
+            {
+                "ciudadano": ciudadano,
+                "alertas": alertas_for_timeline,
+                "breadcrumb_items": breadcrumb_items,
+                # URLs para JavaScript
+                "alertas_select_url": reverse_lazy("alertas_select"),
+                "categorias_select_url": reverse_lazy("categorias_select"),
+                "alerta_ajax_borrar_url": reverse_lazy("alerta_ajax_borrar"),
+            }
+        )
+
         return context
 
+    def form_valid(self, form):
+        """Manejo optimizado del formulario válido con AJAX support"""
+        pk = self.kwargs["pk"]
+
+        try:
+            # Crear la relación ciudadano-alerta
+            alerta_ciudadano = form.save(commit=False)
+            alerta_ciudadano.ciudadano_id = pk
+            alerta_ciudadano.save()
+
+            # Crear entrada en historial de alertas
+            HistorialAlerta.objects.create(
+                ciudadano_id=pk,
+                alerta=alerta_ciudadano.alerta,
+                fecha_inicio=date.today(),
+                creada_por=self.request.user.username,
+            )
+
+            # Si es petición AJAX, responder con JSON
+            if self.request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return JsonResponse(
+                    {
+                        "success": True,
+                        "message": self.success_message,
+                        "alerta": {
+                            "id": alerta_ciudadano.id,
+                            "nombre": str(alerta_ciudadano.alerta),
+                            "categoria": (
+                                alerta_ciudadano.alerta.categoria.nombre
+                                if alerta_ciudadano.alerta.categoria
+                                else ""
+                            ),
+                            "gravedad": getattr(
+                                alerta_ciudadano.alerta, "gravedad", "info"
+                            ),
+                        },
+                    }
+                )
+
+            messages.success(self.request, self.success_message)
+            return redirect(self.get_success_url())
+
+        except Exception as e:
+            if self.request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": f"Error al crear la alerta: {str(e)}",
+                    },
+                    status=400,
+                )
+
+            messages.error(self.request, f"Error al crear la alerta: {str(e)}")
+            return self.form_invalid(form)
+
+    def form_invalid(self, form):
+        """Manejo de errores en el formulario"""
+        if self.request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": "Formulario inválido",
+                    "errors": form.errors,
+                },
+                status=400,
+            )
+
+        messages.error(self.request, "Por favor corrige los errores en el formulario.")
+        return super().form_invalid(form)
+
     def get_success_url(self):
-        # Redirige a la misma página después de agregar la alerta
-        return self.request.path
+        """URL de éxito - redirige a la misma página para mostrar la nueva alerta"""
+        return reverse_lazy("alertas_crear", kwargs={"pk": self.kwargs["pk"]})
 
 
 class DeleteAlerta(View):
+    """
+    View actualizada para eliminar alertas con mejor manejo de errores
+    """
 
     def get(self, request):
+        return JsonResponse(
+            {"success": False, "message": "Método no permitido"}, status=405
+        )
+
+    def post(self, request):
+        """Manejo seguro de eliminación de alertas"""
         try:
-            pk = request.GET.get("id", None)
-            ciudadano_alerta = get_object_or_404(Alerta, pk=pk)
+            # Obtener ID de la alerta desde JSON body
+            import json
+
+            data = json.loads(request.body)
+            alerta_id = data.get("alerta_id")
+
+            if not alerta_id:
+                return JsonResponse(
+                    {"success": False, "message": "ID de alerta no proporcionado"},
+                    status=400,
+                )
+
+            # Buscar la alerta
+            ciudadano_alerta = get_object_or_404(Alerta, pk=alerta_id)
             ciudadano = ciudadano_alerta.ciudadano
             alerta = ciudadano_alerta.alerta
+
+            # Eliminar la relación ciudadano-alerta
             ciudadano_alerta.delete()
 
-            # Filtrar el registro activo actualmente (sin fecha_fin)
+            # Actualizar el historial de alertas
             registro_historial = HistorialAlerta.objects.filter(
                 Q(alerta=alerta) & Q(ciudadano=ciudadano) & Q(fecha_fin__isnull=True)
             ).first()
@@ -1630,25 +1784,19 @@ class DeleteAlerta(View):
                 registro_historial.fecha_fin = date.today()
                 registro_historial.save()
 
-                data = {
-                    "deleted": True,
-                    "tipo_mensaje": "success",
-                    "mensaje": "Alerta eliminada correctamente.",
-                }
-            else:
-                data = {
-                    "deleted": True,
-                    "tipo_mensaje": "warning",
-                    "mensaje": "Alerta eliminada, con errores en el historial.",
-                }
-        except Exception as e:
-            data = {
-                "deleted": False,
-                "tipo_mensaje": "error",
-                "mensaje": f"No fue posible eliminar el alerta. Error: {e}",
-            }
+            return JsonResponse(
+                {"success": True, "message": "Alerta eliminada correctamente."}
+            )
 
-        return JsonResponse(data)
+        except Exception as e:
+            logger.error(f"Error eliminando alerta: {str(e)}")
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": f"No fue posible eliminar la alerta. Error: {str(e)}",
+                },
+                status=500,
+            )
 
 
 class CategoriasSelectView(View):

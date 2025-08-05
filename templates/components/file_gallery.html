@@ -1,0 +1,386 @@
+{% comment %}
+Componente reutilizable de galería de archivos
+Parámetros:
+- files: Lista de archivos (requerido)
+- gallery_title: Título de la galería (opcional)
+- show_actions: Mostrar botones de acción (default: True)
+- show_upload: Mostrar botón de subir archivos (default: True)
+- show_details: Mostrar detalles del archivo (tamaño, fecha) (default: True)
+- delete_function: Función JS para eliminar (default: 'deleteFile')
+- upload_url: URL para subir archivos (opcional)
+- layout: 'grid', 'list', 'masonry' (default: 'grid')
+- grid_cols: Columnas en grid - 2,3,4,6 (default: 4)
+- file_types: Tipos permitidos para mostrar iconos (default: todos)
+- show_preview: Mostrar preview de imágenes (default: True)
+- max_preview_size: Tamaño máximo preview en MB (default: 5)
+- empty_message: Mensaje cuando no hay archivos (default: "No hay archivos")
+- ciudadano_id: ID del ciudadano para URLs (opcional)
+{% endcomment %}
+
+{% load static %}
+
+<div class="card shadow-sm">
+    {% if gallery_title or show_upload %}
+    <div class="card-header border-0 bg-gradient-primary text-white d-flex justify-content-between align-items-center">
+        <div>
+            {% if gallery_title %}
+            <h3 class="card-title font-weight-bold mb-0">
+                <i class="fas fa-folder-open me-2"></i>{{ gallery_title }}
+            </h3>
+            {% endif %}
+        </div>
+        {% if show_upload and upload_url %}
+        <div>
+            <a href="{% if ciudadano_id %}{% url upload_url ciudadano_id %}{% else %}{{ upload_url }}{% endif %}" 
+               class="btn btn-light btn-sm">
+                <i class="fas fa-upload me-1"></i>Subir Archivos
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <div class="card-body p-3">
+        {% if files %}
+            {% if layout == 'list' %}
+                {# Vista de Lista #}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 50px;"></th>
+                                <th>Nombre</th>
+                                {% if show_details %}
+                                <th>Tipo</th>
+                                <th>Tamaño</th>
+                                <th>Fecha</th>
+                                {% endif %}
+                                {% if show_actions %}
+                                <th style="width: 120px;" class="text-center">Acciones</th>
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for file in files %}
+                            <tr id="file-{{ file.id }}">
+                                <td class="text-center">
+                                    {% if file.tipo == 'Imagen' or file.archivo.url|slice:"-4:" == '.jpg' or file.archivo.url|slice:"-4:" == '.png' or file.archivo.url|slice:"-5:" == '.jpeg' %}
+                                        <i class="fas fa-image text-primary"></i>
+                                    {% elif file.archivo.url|slice:"-4:" == '.pdf' %}
+                                        <i class="fas fa-file-pdf text-danger"></i>
+                                    {% elif file.archivo.url|slice:"-4:" == '.doc' or file.archivo.url|slice:"-5:" == '.docx' %}
+                                        <i class="fas fa-file-word text-info"></i>
+                                    {% elif file.archivo.url|slice:"-4:" == '.xls' or file.archivo.url|slice:"-5:" == '.xlsx' %}
+                                        <i class="fas fa-file-excel text-success"></i>
+                                    {% else %}
+                                        <i class="fas fa-file-alt text-secondary"></i>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="fw-medium">{{ file.archivo.name|cut:"ciudadanos/archivos/"|default:file.nombre }}</div>
+                                    {% if file.descripcion %}
+                                    <small class="text-muted">{{ file.descripcion|truncatechars:50 }}</small>
+                                    {% endif %}
+                                </td>
+                                {% if show_details %}
+                                <td>
+                                    <span class="badge bg-{% if file.tipo == 'Imagen' %}primary{% else %}secondary{% endif %}">
+                                        {{ file.tipo|default:'Documento' }}
+                                    </span>
+                                </td>
+                                <td class="text-muted small">
+                                    <i class="fas fa-weight me-1"></i>{{ file.archivo.size|filesizeformat }}
+                                </td>
+                                <td class="text-muted small">
+                                    <i class="fas fa-calendar me-1"></i>{{ file.fecha|date:"d/m/Y" }}
+                                </td>
+                                {% endif %}
+                                {% if show_actions %}
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ file.archivo.url }}" target="_blank" 
+                                           class="btn btn-outline-primary" title="Ver archivo">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ file.archivo.url }}" download 
+                                           class="btn btn-outline-success" title="Descargar">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        <button onclick="{{ delete_function|default:'deleteFile' }}('{{ file.id }}')" 
+                                                class="btn btn-outline-danger" title="Eliminar">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                                {% endif %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+            {% elif layout == 'masonry' %}
+                {# Vista Masonry (Pinterest-style) #}
+                <div class="masonry-grid">
+                    {% for file in files %}
+                    <div class="masonry-item" id="file-{{ file.id }}">
+                        <div class="card h-100 shadow-sm hover-lift">
+                            {% if show_preview and file.tipo == 'Imagen' %}
+                            <div class="card-img-top position-relative overflow-hidden" style="height: 200px;">
+                                <img src="{{ file.archivo.url }}" 
+                                     class="img-fluid w-100 h-100 object-cover"
+                                     alt="{{ file.nombre }}"
+                                     loading="lazy"
+                                     onclick="openImageModal('{{ file.archivo.url }}', '{{ file.nombre }}')">
+                                {% if show_actions %}
+                                <div class="position-absolute top-0 end-0 p-2">
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-light rounded-circle" data-bs-toggle="dropdown">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li><a class="dropdown-item" href="{{ file.archivo.url }}" target="_blank">
+                                                <i class="fas fa-eye me-2"></i>Ver
+                                            </a></li>
+                                            <li><a class="dropdown-item" href="{{ file.archivo.url }}" download>
+                                                <i class="fas fa-download me-2"></i>Descargar
+                                            </a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><button class="dropdown-item text-danger" onclick="{{ delete_function|default:'deleteFile' }}('{{ file.id }}')">
+                                                <i class="fas fa-trash me-2"></i>Eliminar
+                                            </button></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            <div class="card-body text-center py-4">
+                                <div class="mb-3">
+                                    {% if file.archivo.url|slice:"-4:" == '.pdf' %}
+                                        <i class="fas fa-file-pdf fa-3x text-danger"></i>
+                                    {% elif file.archivo.url|slice:"-4:" == '.doc' or file.archivo.url|slice:"-5:" == '.docx' %}
+                                        <i class="fas fa-file-word fa-3x text-info"></i>
+                                    {% elif file.archivo.url|slice:"-4:" == '.xls' or file.archivo.url|slice:"-5:" == '.xlsx' %}
+                                        <i class="fas fa-file-excel fa-3x text-success"></i>
+                                    {% else %}
+                                        <i class="fas fa-file-alt fa-3x text-secondary"></i>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="card-body {% if show_preview and file.tipo == 'Imagen' %}pt-2{% endif %}">
+                                <h6 class="card-title text-truncate" title="{{ file.archivo.name|cut:'ciudadanos/archivos/' }}">
+                                    {{ file.archivo.name|cut:"ciudadanos/archivos/"|default:file.nombre }}
+                                </h6>
+                                {% if show_details %}
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">{{ file.archivo.size|filesizeformat }}</small>
+                                    <small class="text-muted">{{ file.fecha|date:"d/m" }}</small>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+            {% else %}
+                {# Vista Grid (default) #}
+                <div class="row g-3">
+                    {% for file in files %}
+                    <div class="col-12 col-sm-6 col-md-{% if grid_cols == 2 %}6{% elif grid_cols == 3 %}4{% elif grid_cols == 6 %}2{% else %}3{% endif %}" id="file-{{ file.id }}">
+                        <div class="card h-100 shadow-sm hover-lift transition-smooth">
+                            {% if show_preview and file.tipo == 'Imagen' %}
+                            {# Preview de imagen #}
+                            <div class="position-relative overflow-hidden" style="height: 180px;">
+                                <img src="{{ file.archivo.url }}" 
+                                     class="card-img-top w-100 h-100 object-cover"
+                                     alt="{{ file.nombre }}"
+                                     loading="lazy"
+                                     style="cursor: pointer;"
+                                     onclick="openImageModal('{{ file.archivo.url }}', '{{ file.nombre }}')">
+                                <div class="position-absolute top-0 start-0 p-2">
+                                    <span class="badge bg-primary">
+                                        <i class="fas fa-image me-1"></i>Imagen
+                                    </span>
+                                </div>
+                            </div>
+                            {% else %}
+                            {# Vista de archivo no imagen #}
+                            <div class="card-body text-center py-4">
+                                <div class="mb-3">
+                                    {% if file.archivo.url|slice:"-4:" == '.pdf' %}
+                                        <i class="fas fa-file-pdf fa-4x text-danger"></i>
+                                        <div class="mt-2">
+                                            <span class="badge bg-danger">PDF</span>
+                                        </div>
+                                    {% elif file.archivo.url|slice:"-4:" == '.doc' or file.archivo.url|slice:"-5:" == '.docx' %}
+                                        <i class="fas fa-file-word fa-4x text-info"></i>
+                                        <div class="mt-2">
+                                            <span class="badge bg-info">DOC</span>
+                                        </div>
+                                    {% elif file.archivo.url|slice:"-4:" == '.xls' or file.archivo.url|slice:"-5:" == '.xlsx' %}
+                                        <i class="fas fa-file-excel fa-4x text-success"></i>
+                                        <div class="mt-2">
+                                            <span class="badge bg-success">XLS</span>
+                                        </div>
+                                    {% else %}
+                                        <i class="fas fa-file-alt fa-4x text-secondary"></i>
+                                        <div class="mt-2">
+                                            <span class="badge bg-secondary">{{ file.tipo|default:'DOC' }}</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="card-body {% if show_preview and file.tipo == 'Imagen' %}pt-3{% else %}pt-0{% endif %}">
+                                <h6 class="card-title text-truncate mb-2" title="{{ file.archivo.name|cut:'ciudadanos/archivos/' }}">
+                                    {{ file.archivo.name|cut:"ciudadanos/archivos/"|default:file.nombre }}
+                                </h6>
+                                
+                                {% if show_details %}
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-weight me-1"></i>{{ file.archivo.size|filesizeformat }}
+                                    </small>
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar me-1"></i>{{ file.fecha|date:"d/m/Y" }}
+                                    </small>
+                                </div>
+                                {% endif %}
+                                
+                                {% if show_actions %}
+                                <div class="d-grid gap-2 d-md-flex">
+                                    <a href="{{ file.archivo.url }}" target="_blank" 
+                                       class="btn btn-sm btn-outline-primary flex-fill">
+                                        <i class="fas fa-eye me-1"></i>Ver
+                                    </a>
+                                    <a href="{{ file.archivo.url }}" download 
+                                       class="btn btn-sm btn-outline-success">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                    <button onclick="{{ delete_function|default:'deleteFile' }}('{{ file.id }}')" 
+                                            class="btn btn-sm btn-outline-danger"
+                                            title="Eliminar archivo">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% else %}
+            {# Estado vacío #}
+            <div class="text-center py-5">
+                <div class="mb-3">
+                    <i class="fas fa-folder-open fa-4x text-muted opacity-50"></i>
+                </div>
+                <h6 class="text-muted font-weight-normal">{{ empty_message|default:"No hay archivos" }}</h6>
+                <p class="text-muted small mb-3">Los archivos subidos aparecerán aquí</p>
+                {% if show_upload and upload_url %}
+                <a href="{% if ciudadano_id %}{% url upload_url ciudadano_id %}{% else %}{{ upload_url }}{% endif %}" 
+                   class="btn btn-primary">
+                    <i class="fas fa-upload me-2"></i>Subir primer archivo
+                </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal para preview de imágenes -->
+<div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-white" id="imageModalTitle">Vista previa</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-0">
+                <img id="imageModalImg" src="" class="img-fluid" alt="Vista previa">
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Estilos para el componente file gallery */
+.object-cover {
+    object-fit: cover;
+}
+
+.hover-lift {
+    transition: var(--transition-smooth);
+}
+
+.hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-hover);
+}
+
+/* Masonry Grid */
+.masonry-grid {
+    column-count: 3;
+    column-gap: 1rem;
+}
+
+.masonry-item {
+    break-inside: avoid;
+    margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+    .masonry-grid {
+        column-count: 2;
+    }
+}
+
+@media (max-width: 576px) {
+    .masonry-grid {
+        column-count: 1;
+    }
+}
+
+/* Responsive grid */
+@media (max-width: 576px) {
+    .col-md-3, .col-md-4, .col-md-6 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+}
+</style>
+
+<script>
+// Función para abrir modal de imagen
+function openImageModal(imageSrc, imageTitle) {
+    document.getElementById('imageModalImg').src = imageSrc;
+    document.getElementById('imageModalTitle').textContent = imageTitle || 'Vista previa';
+    new bootstrap.Modal(document.getElementById('imagePreviewModal')).show();
+}
+
+// Lazy loading para imágenes
+document.addEventListener('DOMContentLoaded', function() {
+    if ('IntersectionObserver' in window) {
+        const imageObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    img.src = img.dataset.src || img.src;
+                    img.classList.remove('lazy');
+                    observer.unobserve(img);
+                }
+            });
+        });
+        
+        document.querySelectorAll('img[loading="lazy"]').forEach(img => {
+            imageObserver.observe(img);
+        });
+    }
+});
+</script>

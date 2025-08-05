@@ -1,0 +1,242 @@
+{% comment %}
+Componente reutilizable de timeline para mostrar elementos cronológicos
+Parámetros:
+- items: Lista de objetos timeline (requerido)
+- item_type: Tipo de items - 'alertas', 'eventos', 'historial' (default: 'alertas')
+- show_dates: Mostrar fechas en timeline (default: True)
+- show_actions: Mostrar botones de acción (default: True)
+- delete_function: Función JS para eliminar (default: 'deleteItem')
+- timeline_title: Título del timeline (opcional)
+- empty_message: Mensaje cuando no hay items (default: "No hay elementos")
+- layout: 'cards' o 'timeline' (default: 'cards')
+{% endcomment %}
+
+{% load static %}
+
+<div class="card shadow-sm">
+    {% if timeline_title %}
+    <div class="card-header border-0 bg-gradient-primary text-white">
+        <h3 class="card-title font-weight-bold mb-0">
+            <i class="fas fa-clock me-2"></i>{{ timeline_title }}
+        </h3>
+    </div>
+    {% endif %}
+    
+    <div class="card-body p-3">
+        {% if items %}
+            {% if layout == 'timeline' %}
+                {# Layout Timeline Vertical #}
+                <div class="timeline timeline-inverse">
+                    {% for item in items %}
+                    <div class="time-label">
+                        <span class="badge bg-{% if item_type == 'alertas' %}{% if item.gravedad %}{{ item.gravedad }}{% else %}info{% endif %}{% else %}primary{% endif %}">
+                            {% if show_dates %}
+                                {% if item.fecha_creacion %}{{ item.fecha_creacion|date:"d M Y" }}{% else %}{{ item.fecha|date:"d M Y" }}{% endif %}
+                            {% else %}
+                                {{ forloop.counter }}
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div>
+                        <i class="fas fa-{% if item_type == 'alertas' %}exclamation-triangle{% elif item_type == 'eventos' %}calendar{% else %}info-circle{% endif %} 
+                           bg-{% if item_type == 'alertas' %}{% if item.gravedad %}{{ item.gravedad }}{% else %}info{% endif %}{% else %}primary{% endif %}"></i>
+                        <div class="timeline-item">
+                            <span class="time">
+                                {% if show_dates %}
+                                    {% if item.fecha_creacion %}
+                                        <i class="fas fa-clock"></i> {{ item.fecha_creacion|date:"H:i" }}
+                                    {% elif item.fecha %}
+                                        <i class="fas fa-clock"></i> {{ item.fecha|date:"H:i" }}
+                                    {% endif %}
+                                {% endif %}
+                            </span>
+                            <h3 class="timeline-header">
+                                {% if item_type == 'alertas' %}
+                                    {{ item.alerta|default:item.nombre|default:item.titulo }}
+                                {% else %}
+                                    {{ item.nombre|default:item.titulo|default:item }}
+                                {% endif %}
+                                {% if show_actions %}
+                                <div class="float-right">
+                                    <button type="button" 
+                                            class="btn btn-tool btn-sm text-danger" 
+                                            onclick="{{ delete_function|default:'deleteItem' }}('{{ item.id }}')"
+                                            title="Eliminar">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                {% endif %}
+                            </h3>
+                            {% if item.descripcion or item.observaciones %}
+                            <div class="timeline-body">
+                                {{ item.descripcion|default:item.observaciones }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                    <div>
+                        <i class="fas fa-clock bg-gray"></i>
+                    </div>
+                </div>
+                
+            {% else %}
+                {# Layout Cards Grid (default) #}
+                <div class="row g-3">
+                    {% for item in items %}
+                    <div class="col-sm-6 col-md-4 col-lg-3" id="{{ item_type }}-{{ item.id }}">
+                        <div class="position-relative">
+                            {% if show_actions %}
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-1 rounded-circle d-flex align-items-center justify-content-center"
+                                    title="Eliminar {{ item_type|capfirst|slice:':-1' }}"
+                                    onclick="{{ delete_function|default:'deleteItem' }}('{{ item.id }}')"
+                                    style="width: 28px; height: 28px; z-index: 10;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            {% endif %}
+                            
+                            <div class="card h-100 border-left-{% if item_type == 'alertas' %}{% if item.gravedad %}{{ item.gravedad }}{% else %}primary{% endif %}{% else %}primary{% endif %} shadow-sm hover-shadow transition-smooth">
+                                <div class="card-body p-3">
+                                    <div class="d-flex align-items-start mb-2">
+                                        <div class="flex-shrink-0 me-3">
+                                            <div class="rounded-circle bg-{% if item_type == 'alertas' %}{% if item.gravedad %}{{ item.gravedad }}{% else %}primary{% endif %}{% else %}primary{% endif %} 
+                                                        d-flex align-items-center justify-content-center"
+                                                 style="width: 40px; height: 40px;">
+                                                <i class="fas fa-{% if item_type == 'alertas' %}exclamation-triangle{% elif item_type == 'eventos' %}calendar{% else %}info-circle{% endif %} text-white"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="card-title mb-1 font-weight-bold text-truncate">
+                                                {% if item_type == 'alertas' %}
+                                                    {{ item.alerta|default:item.nombre|default:item.titulo }}
+                                                {% else %}
+                                                    {{ item.nombre|default:item.titulo|default:item }}
+                                                {% endif %}
+                                            </h6>
+                                            {% if show_dates %}
+                                            <small class="text-muted">
+                                                <i class="fas fa-clock me-1"></i>
+                                                {% if item.fecha_creacion %}
+                                                    {{ item.fecha_creacion|date:"d/m/Y H:i" }}
+                                                {% elif item.fecha %}
+                                                    {{ item.fecha|date:"d/m/Y H:i" }}
+                                                {% endif %}
+                                            </small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    {% if item.descripcion or item.observaciones %}
+                                    <p class="card-text small text-muted mb-2">
+                                        {{ item.descripcion|default:item.observaciones|truncatechars:80 }}
+                                    </p>
+                                    {% endif %}
+                                    
+                                    {% if item_type == 'alertas' and item.gravedad %}
+                                    <div class="mt-2">
+                                        <span class="badge bg-{% if item.gravedad == 'danger' %}danger{% elif item.gravedad == 'warning' %}warning{% else %}info{% endif %} fs-6">
+                                            {% if item.gravedad == 'danger' %}
+                                                <i class="fas fa-exclamation-circle me-1"></i>Alta
+                                            {% elif item.gravedad == 'warning' %}
+                                                <i class="fas fa-exclamation-triangle me-1"></i>Media
+                                            {% else %}
+                                                <i class="fas fa-info-circle me-1"></i>Baja
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="card-footer bg-transparent border-0 pt-0">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        {% if item.categoria %}
+                                        <small class="text-primary font-weight-medium">
+                                            <i class="fas fa-tag me-1"></i>{{ item.categoria }}
+                                        </small>
+                                        {% else %}
+                                        <span></span>
+                                        {% endif %}
+                                        
+                                        {% if show_dates %}
+                                        <small class="text-muted">
+                                            {% if item.fecha_creacion %}
+                                                {{ item.fecha_creacion|timesince }} atrás
+                                            {% elif item.fecha %}
+                                                {{ item.fecha|timesince }} atrás
+                                            {% endif %}
+                                        </small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% else %}
+            {# Estado vacío #}
+            <div class="text-center py-5">
+                <div class="mb-3">
+                    <i class="fas fa-{% if item_type == 'alertas' %}bell{% elif item_type == 'eventos' %}calendar{% else %}info-circle{% endif %} fa-3x text-muted opacity-50"></i>
+                </div>
+                <h6 class="text-muted font-weight-normal">{{ empty_message|default:"No hay elementos" }}</h6>
+                {% if item_type == 'alertas' %}
+                <p class="text-muted small">Las alertas aparecerán aquí cuando sean creadas</p>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+/* Estilos adicionales para el componente timeline */
+.border-left-primary { border-left: 4px solid var(--gov-primary) !important; }
+.border-left-danger { border-left: 4px solid #dc3545 !important; }
+.border-left-warning { border-left: 4px solid #ffc107 !important; }
+.border-left-info { border-left: 4px solid var(--gov-accent) !important; }
+.border-left-success { border-left: 4px solid #28a745 !important; }
+
+.hover-shadow {
+    transition: var(--transition-smooth);
+}
+
+.hover-shadow:hover {
+    box-shadow: var(--shadow-hover) !important;
+    transform: translateY(-2px);
+}
+
+.transition-smooth {
+    transition: var(--transition-smooth);
+}
+
+/* Timeline vertical styles */
+.timeline > div > .timeline-item {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: var(--shadow-soft);
+}
+
+.timeline > div > .timeline-item > .timeline-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--gov-dark);
+}
+
+/* Cards responsive */
+@media (max-width: 576px) {
+    .col-sm-6.col-md-4.col-lg-3 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+}
+
+@media (min-width: 577px) and (max-width: 768px) {
+    .col-sm-6.col-md-4.col-lg-3 {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+}
+</style>
