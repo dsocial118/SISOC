@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from weasyprint import HTML
 from django.core.files.base import ContentFile
+from admisiones.utils import generar_texto_comidas
 
 from admisiones.models.admisiones import (
     InformeTecnico,
@@ -110,12 +111,14 @@ class InformeService:
     @staticmethod
     def generar_y_guardar_pdf(informe, tipo):
         anexo = Anexo.objects.filter(admision=informe.admision).first()
+        texto_comidas = generar_texto_comidas(anexo)
 
         html_string = render_to_string(
             "pdf_informe_tecnico.html",
             {
                 "informe": informe,
                 "anexo": anexo,
+                "texto_comidas": texto_comidas,
             },
         )
 
@@ -211,10 +214,8 @@ class InformeService:
 
     @staticmethod
     def generar_y_guardar_pdf_complementario(informe_complementario):
-        campos = [
-            (campo.campo, campo.value)
-            for campo in informe_complementario.informecomplementariocampos_set.all()
-        ]
+        campos = informe_complementario.informecomplementariocampos_set.all()
+
         html_string = render_to_string(
             "pdf_informe_complementario.html",
             {"informe": informe_complementario, "campos": campos},

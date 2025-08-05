@@ -225,7 +225,6 @@ class ComedorCreateView(CreateView):
             self.object = form.save(commit=False)
             self.object.referente = referente_form.save()
             self.object.save()
-
             for imagen in imagenes:
                 try:
                     ComedorService.create_imagenes(imagen, self.object.pk)
@@ -240,350 +239,6 @@ class ComedorCreateView(CreateView):
 class ComedorDetailView(DetailView):
     model = Comedor
     template_name = "comedor/comedor_detail.html"
-    context_object_name = "comedor"
-
-    def get_object(self, queryset=None):
-        return ComedorService.get_comedor_detail_object(self.kwargs["pk"])
-
-    def _get_presupuestos_data(self):
-        """Obtiene datos de presupuestos usando cache y datos prefetched cuando sea posible."""
-        if (
-            hasattr(self.object, "relevamientos_optimized")
-            and self.object.relevamientos_optimized
-        ):
-            cache_key = f"presupuestos_comedor_{self.object.id}"
-            cached_presupuestos = cache.get(cache_key)
-
-            if cached_presupuestos:
-                presupuestos_tuple = cached_presupuestos
-            else:
-                presupuestos_tuple = ComedorService.get_presupuestos(
-                    self.object.id,
-                    relevamientos_prefetched=self.object.relevamientos_optimized,
-                )
-                cache.set(
-                    cache_key,
-                    presupuestos_tuple,
-                    getattr(settings, "COMEDOR_CACHE_TIMEOUT", 300),
-                )
-        else:
-            presupuestos_tuple = ComedorService.get_presupuestos(self.object.id)
-
-        # Desempaquetar la tupla y crear diccionario
-        (
-            count_beneficiarios,
-            valor_cena,
-            valor_desayuno,
-            valor_almuerzo,
-            valor_merienda,
-        ) = presupuestos_tuple
-
-        return {
-            "count_beneficiarios": count_beneficiarios,
-            "presupuesto_desayuno": valor_desayuno,
-            "presupuesto_almuerzo": valor_almuerzo,
-            "presupuesto_merienda": valor_merienda,
-            "presupuesto_cena": valor_cena,
-        }
-
-    def _get_relaciones_optimizadas(self):
-        """Obtiene datos de relaciones usando prefetch cuando sea posible."""
-        # Optimización: Usar rendiciones prefetched en lugar de query adicional
-        rendiciones_mensuales = (
-            len(self.object.rendiciones_optimized)
-            if hasattr(self.object, "rendiciones_optimized")
-            else RendicionCuentaMensualService.cantidad_rendiciones_cuentas_mensuales(
-                self.object
-            )
-        )
-
-        # Optimización: Usar relaciones prefetched en lugar de queries adicionales
-        relevamientos = (
-            self.object.relevamientos_optimized[:1]
-            if hasattr(self.object, "relevamientos_optimized")
-            else []
-        )
-        observaciones = (
-            self.object.observaciones_optimized
-            if hasattr(self.object, "observaciones_optimized")
-            else []
-        )
-
-        # Optimización: Contar relevamientos usando los prefetched o query única si es necesario
-        count_relevamientos = (
-            len(self.object.relevamientos_optimized)
-            if hasattr(self.object, "relevamientos_optimized")
-            else self.object.relevamiento_set.count()
-        )
-
-        # Optimización: Usar clasificación prefetched
-        comedor_categoria = (
-            self.object.clasificaciones_optimized[0]
-            if hasattr(self.object, "clasificaciones_optimized")
-            and self.object.clasificaciones_optimized
-            else None
-        )
-
-        # Optimización: Usar admisión prefetched
-        admision = (
-            self.object.admisiones_optimized[0]
-            if hasattr(self.object, "admisiones_optimized")
-            and self.object.admisiones_optimized
-            else None
-        )
-
-        # Usar imágenes directamente - asegurar que se carguen
-        imagenes = self.object.imagenes.all()
-
-        return {
-            "relevamientos": relevamientos,
-            "observaciones": observaciones,
-            "count_relevamientos": count_relevamientos,
-            "imagenes": imagenes,
-            "comedor_categoria": comedor_categoria,
-            "rendicion_cuentas_final_activo": rendiciones_mensuales >= 5,
-            "admision": admision,
-        }
-
-    def _get_environment_config(self):
-        """Obtiene configuración del entorno."""
-        return {
-            "GESTIONAR_API_KEY": os.getenv("GESTIONAR_API_KEY"),
-            "GESTIONAR_API_CREAR_COMEDOR": os.getenv("GESTIONAR_API_CREAR_COMEDOR"),
-        }
-
-    def get_context_data(self, **kwargs) -> dict[str, Any]:
-        context = super().get_context_data(**kwargs)
-
-        # Obtener datos de presupuestos
-        presupuestos_data = self._get_presupuestos_data()
-
-        # Obtener datos optimizados de relaciones
-        relaciones_data = self._get_relaciones_optimizadas()
-
-        # Obtener configuración del entorno
-        env_config = self._get_environment_config()
-
-        # Combinar todos los datos en el contexto
-        context.update({**presupuestos_data, **relaciones_data, **env_config})
-
-        return context
-
-    def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
-
-        is_new_relevamiento = "territorial" in request.POST
-        is_edit_relevamiento = "territorial_editar" in request.POST
-
-        if is_new_relevamiento or is_edit_relevamiento:
-            try:
-                relevamiento = None
-                if is_new_relevamiento:
-                    relevamiento = RelevamientoService.create_pendiente(
-                        request, self.object.id
-                    )
-
-                elif is_edit_relevamiento:
-                    relevamiento = RelevamientoService.update_territorial(request)
-
-                return redirect(
-                    reverse(
-                        "relevamiento_detalle",
-                        kwargs={
-                            "pk": relevamiento.pk,
-                            "comedor_pk": relevamiento.comedor.pk,
-                        },
-                    )
-                )
-            except Exception as e:
-                messages.error(request, f"Error al crear el relevamiento: {e}")
-                return redirect("comedor_detalle", pk=self.object.id)
-
-        else:
-            return redirect("comedor_detalle", pk=self.object.id)
-
-
-class AsignarDuplaListView(ListView):
-    model = Comedor
-    template_name = "comedor/asignar_dupla_form.html"
-
-    def get_context_data(self, **kwargs):
-        data = super().get_context_data(**kwargs)
-        comedor = ComedorService.get_comedor(self.kwargs["pk"])
-        duplas = DuplaService.get_duplas_by_estado_activo()
-        data["comedor"] = comedor
-        data["duplas"] = duplas
-        return data
-
-    def post(self, request, *args, **kwargs):
-        dupla_id = request.POST.get("dupla_id")
-        comedor_id = self.kwargs["pk"]
-
-        if dupla_id:
-            try:
-                ComedorService.asignar_dupla_a_comedor(dupla_id, comedor_id)
-                messages.success(request, "Dupla asignada correctamente.")
-            except Exception as e:
-                messages.error(request, f"Error al asignar la dupla: {e}")
-        else:
-            messages.error(request, "No se seleccionó ninguna dupla.")
-
-        return redirect("comedor_detalle", pk=comedor_id)
-
-
-class ComedorUpdateView(UpdateView):
-    model = Comedor
-    form_class = ComedorForm
-    template_name = "comedor/comedor_form.html"
-
-    def get_success_url(self):
-        return reverse("comedor_detalle", kwargs={"pk": self.object.pk})
-
-    def get_context_data(self, **kwargs):
-        data = super().get_context_data(**kwargs)
-        self.object = self.get_object()
-        data["referente_form"] = ReferenteForm(
-            self.request.POST if self.request.POST else None,
-            instance=self.object.referente,
-            prefix="referente",
-        )
-        data["imagenes_borrar"] = ImagenComedor.objects.filter(
-            comedor=self.object.pk
-        ).values("id", "imagen")
-        return data
-
-    def form_valid(self, form):
-        context = self.get_context_data()
-        referente_form = context["referente_form"]
-        imagenes = self.request.FILES.getlist("imagenes")
-        dupla_original = self.object.dupla
-
-        if referente_form.is_valid():
-            self.object = form.save(commit=False)
-            self.object.dupla = dupla_original
-            self.object.referente = referente_form.save()
-            self.object.save()
-
-            ComedorService.borrar_imagenes(self.request.POST)
-            ComedorService.borrar_foto_legajo(self.request.POST, self.object)
-
-            for imagen in imagenes:
-                try:
-                    ComedorService.create_imagenes(imagen, self.object.pk)
-                except Exception:
-                    return self.form_invalid(form)
-
-            return super().form_valid(form)
-        else:
-            return self.form_invalid(form)
-
-
-class ComedorDeleteView(DeleteView):
-    model = Comedor
-    template_name = "comedor/comedor_confirm_delete.html"
-    context_object_name = "comedor"
-    success_url = reverse_lazy("comedores")
-
-
-class ObservacionCreateView(CreateView):
-    model = Observacion
-    form_class = ObservacionForm
-    template_name = "observacion/observacion_form.html"
-    context_object_name = "observacion"
-
-    def get_context_data(self, **kwargs) -> dict[str, Any]:
-        context = super().get_context_data(**kwargs)
-
-        context.update(
-            {
-                "comedor": Comedor.objects.values("id", "nombre").get(
-                    pk=self.kwargs["comedor_pk"]
-                )
-            }
-        )
-
-        return context
-
-    def form_valid(self, form: BaseModelForm) -> HttpResponse:
-        form.instance.comedor_id = Comedor.objects.get(pk=self.kwargs["comedor_pk"]).id
-        usuario = User.objects.get(pk=self.request.user.id)
-        form.instance.observador = f"{usuario.first_name} {usuario.last_name}"
-        form.instance.fecha_visita = timezone.now()
-
-        self.object = form.save()
-
-        return redirect(
-            "observacion_detalle",
-            comedor_pk=int(self.kwargs["comedor_pk"]),
-            pk=int(self.object.id),
-        )
-
-
-class ObservacionDetailView(DetailView):
-    model = Observacion
-    template_name = "observacion/observacion_detail.html"
-    context_object_name = "observacion"
-
-    def get_object(self, queryset=None) -> Model:
-        return (
-            Observacion.objects.prefetch_related("comedor")
-            .values(
-                "id",
-                "fecha_visita",
-                "observacion",
-                "comedor__id",
-                "comedor__nombre",
-                "observador",
-            )
-            .get(pk=self.kwargs["pk"])
-        )
-
-
-class ObservacionUpdateView(UpdateView):
-    model = Observacion
-    form_class = ObservacionForm
-    template_name = "observacion/observacion_form.html"
-    context_object_name = "observacion"
-
-    def get_context_data(self, **kwargs) -> dict[str, Any]:
-        context = super().get_context_data(**kwargs)
-        comedor = Comedor.objects.values("id", "nombre").get(
-            pk=self.kwargs["comedor_pk"]
-        )
-
-        context.update({"comedor": comedor})
-
-        return context
-
-    def form_valid(self, form: BaseModelForm) -> HttpResponse:
-        form.instance.comedor_id = Comedor.objects.get(pk=self.kwargs["comedor_pk"]).id
-        usuario = User.objects.get(pk=self.request.user.id)
-        form.instance.observador = f"{usuario.first_name} {usuario.last_name}"
-        form.instance.fecha_visita = timezone.now()
-
-        self.object = form.save()
-
-        return redirect(
-            "observacion_detalle",
-            comedor_pk=int(self.kwargs["comedor_pk"]),
-            pk=int(self.object.id),
-        )
-
-
-class ObservacionDeleteView(DeleteView):
-    model = Observacion
-    template_name = "observacion/observacion_confirm_delete.html"
-    context_object_name = "observacion"
-
-    def get_success_url(self):
-        comedor = self.object.comedor
-
-        return reverse_lazy("comedor_detalle", kwargs={"pk": comedor.id})
-
-
-class NewComedorDetailView(DetailView):
-    model = Comedor
-    template_name = "comedor/new_comedor_detail.html"
     context_object_name = "comedor"
 
     def get_object(self, queryset=None):
@@ -749,3 +404,180 @@ class NewComedorDetailView(DetailView):
 
         else:
             return redirect("comedor_detalle", pk=self.object.id)
+
+
+class AsignarDuplaListView(ListView):
+    model = Comedor
+    template_name = "comedor/asignar_dupla_form.html"
+
+    def get_context_data(self, **kwargs):
+        data = super().get_context_data(**kwargs)
+        comedor = ComedorService.get_comedor(self.kwargs["pk"])
+        duplas = DuplaService.get_duplas_by_estado_activo()
+        data["comedor"] = comedor
+        data["duplas"] = duplas
+        return data
+
+    def post(self, request, *args, **kwargs):
+        dupla_id = request.POST.get("dupla_id")
+        comedor_id = self.kwargs["pk"]
+
+        if dupla_id:
+            try:
+                ComedorService.asignar_dupla_a_comedor(dupla_id, comedor_id)
+                messages.success(request, "Dupla asignada correctamente.")
+            except Exception as e:
+                messages.error(request, f"Error al asignar la dupla: {e}")
+        else:
+            messages.error(request, "No se seleccionó ninguna dupla.")
+
+        return redirect("comedor_detalle", pk=comedor_id)
+
+
+class ComedorUpdateView(UpdateView):
+    model = Comedor
+    form_class = ComedorForm
+    template_name = "comedor/comedor_form.html"
+
+    def get_success_url(self):
+        return reverse("comedor_detalle", kwargs={"pk": self.object.pk})
+
+    def get_context_data(self, **kwargs):
+        data = super().get_context_data(**kwargs)
+        self.object = self.get_object()
+        data["referente_form"] = ReferenteForm(
+            self.request.POST if self.request.POST else None,
+            instance=self.object.referente,
+            prefix="referente",
+        )
+        data["imagenes_borrar"] = ImagenComedor.objects.filter(
+            comedor=self.object.pk
+        ).values("id", "imagen")
+        return data
+
+    def form_valid(self, form):
+        context = self.get_context_data()
+        referente_form = context["referente_form"]
+        imagenes = self.request.FILES.getlist("imagenes")
+        dupla_original = self.object.dupla
+
+        if referente_form.is_valid():
+            self.object = form.save(commit=False)
+            self.object.dupla = dupla_original
+            self.object.referente = referente_form.save()
+            self.object.save()
+
+            ComedorService.borrar_imagenes(self.request.POST)
+
+            for imagen in imagenes:
+                try:
+                    ComedorService.create_imagenes(imagen, self.object.pk)
+                except Exception:
+                    return self.form_invalid(form)
+
+            return super().form_valid(form)
+        else:
+            return self.form_invalid(form)
+
+
+class ComedorDeleteView(DeleteView):
+    model = Comedor
+    template_name = "comedor/comedor_confirm_delete.html"
+    context_object_name = "comedor"
+    success_url = reverse_lazy("comedores")
+
+
+class ObservacionCreateView(CreateView):
+    model = Observacion
+    form_class = ObservacionForm
+    template_name = "observacion/observacion_form.html"
+    context_object_name = "observacion"
+
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+
+        context.update(
+            {
+                "comedor": Comedor.objects.values("id", "nombre").get(
+                    pk=self.kwargs["comedor_pk"]
+                )
+            }
+        )
+
+        return context
+
+    def form_valid(self, form: BaseModelForm) -> HttpResponse:
+        form.instance.comedor_id = Comedor.objects.get(pk=self.kwargs["comedor_pk"]).id
+        usuario = User.objects.get(pk=self.request.user.id)
+        form.instance.observador = f"{usuario.first_name} {usuario.last_name}"
+        form.instance.fecha_visita = timezone.now()
+
+        self.object = form.save()
+
+        return redirect(
+            "observacion_detalle",
+            comedor_pk=int(self.kwargs["comedor_pk"]),
+            pk=int(self.object.id),
+        )
+
+
+class ObservacionDetailView(DetailView):
+    model = Observacion
+    template_name = "observacion/observacion_detail.html"
+    context_object_name = "observacion"
+
+    def get_object(self, queryset=None) -> Model:
+        return (
+            Observacion.objects.prefetch_related("comedor")
+            .values(
+                "id",
+                "fecha_visita",
+                "observacion",
+                "comedor__id",
+                "comedor__nombre",
+                "observador",
+            )
+            .get(pk=self.kwargs["pk"])
+        )
+
+
+class ObservacionUpdateView(UpdateView):
+    model = Observacion
+    form_class = ObservacionForm
+    template_name = "observacion/observacion_form.html"
+    context_object_name = "observacion"
+
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        comedor = Comedor.objects.values("id", "nombre").get(
+            pk=self.kwargs["comedor_pk"]
+        )
+
+        context.update({"comedor": comedor})
+
+        return context
+
+    def form_valid(self, form: BaseModelForm) -> HttpResponse:
+        form.instance.comedor_id = Comedor.objects.get(pk=self.kwargs["comedor_pk"]).id
+        usuario = User.objects.get(pk=self.request.user.id)
+        form.instance.observador = f"{usuario.first_name} {usuario.last_name}"
+        form.instance.fecha_visita = timezone.now()
+
+        self.object = form.save()
+
+        return redirect(
+            "observacion_detalle",
+            comedor_pk=int(self.kwargs["comedor_pk"]),
+            pk=int(self.object.id),
+        )
+
+
+class ObservacionDeleteView(DeleteView):
+    model = Observacion
+    template_name = "observacion/observacion_confirm_delete.html"
+    context_object_name = "observacion"
+
+    def get_success_url(self):
+        comedor = self.object.comedor
+
+        return reverse_lazy("comedor_detalle", kwargs={"pk": comedor.id})

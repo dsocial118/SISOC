@@ -110,13 +110,22 @@ class LegalesService:
             nuevo_formulario.creado_por = request.user
             nuevo_formulario.save()
 
+            informe = (
+                InformeTecnico.objects.filter(admision=admision).order_by("-id").first()
+            )
+
             template_name = (
                 "pdf_dispo_incorporacion.html"
                 if nuevo_formulario.tipo == "incorporacion"
                 else "pdf_dispo_renovacion.html"
             )
 
-            context = {"admision": admision, "formulario": nuevo_formulario}
+            context = {
+                "admision": admision,
+                "formulario": nuevo_formulario,
+                "informe": informe,
+            }
+
             html_string = render_to_string(template_name, context)
 
             pdf_filename = f"disposicion_{admision.id}_{nuevo_formulario.id}.pdf"
@@ -151,7 +160,16 @@ class LegalesService:
             nuevo_formulario.creado_por = request.user
             nuevo_formulario.save()
 
-            context = {"admision": admision, "formulario": nuevo_formulario}
+            informe = (
+                InformeTecnico.objects.filter(admision=admision).order_by("-id").first()
+            )
+
+            context = {
+                "admision": admision,
+                "formulario": nuevo_formulario,
+                "informe": informe,
+            }
+
             html_string = render_to_string("pdf_convenio.html", context)
 
             pdf_filename = f"convenio_{admision.id}_{nuevo_formulario.id}.pdf"

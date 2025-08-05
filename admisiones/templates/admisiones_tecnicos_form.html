@@ -310,7 +310,7 @@
                                                                 <tr id="fila-{{ doc.id }}">
                                                                     <td class="ps-3">{{ doc.nombre }}</td>
                                                                     {% if doc.estado == "Aceptado" %}
-                                                                        <td class="ps-3 text-success" id="estado-{{ doc.id }}">Aceptado</td>
+                                                                        <td class="ps-3 bg-success text-white" id="estado-{{ doc.id }}">Aceptado</td>
                                                                     {% elif doc.estado == "Pendiente" %}
                                                                         <td class="ps-3" id="estado-{{ doc.id }}">{{ doc.estado }}</td>
                                                                     {% elif doc.estado == "A Validar Abogado" %}
@@ -336,7 +336,7 @@
                                                                     {% else %}
                                                                         {% if request.user|has_group:"Tecnico Comedor" %}
                                                                             <td id="estado-{{ doc.id }}">
-                                                                                <select class="form-control"
+                                                                                <select class="form-control {% if doc.estado == "Rectificar" %}border border-danger border-2{% endif %}"
                                                                                         onchange="actualizarEstado(this)"
                                                                                         data-admision-id="{{ admision.id }}"
                                                                                         data-documento-id="{{ doc.id }}"
@@ -363,7 +363,7 @@
                                                                                target="_blank"
                                                                                class="btn btn-primary btn-sm">Ver Archivo</a>
                                                                             {% if request.user|has_group:"Tecnico Comedor" %}
-                                                                                <button class="btn btn-secondary btn-sm" disabled>Archivado</button>
+                                                                                <button class="btn btn-secondary btn-sm" disabled>Adjuntado</button>
                                                                                 {% if admision.estado.nombre != "Finalizada" %}
                                                                                     <button class="btn btn-sm btn-danger fw-bold px-3"
                                                                                             onclick="confirmarEliminar({{ admision.id }}, {{ doc.id }})">
@@ -376,7 +376,7 @@
                                                                                 <input type="file" id="file-{{ doc.id }}" />
                                                                                 <button class="btn btn-primary btn-sm"
                                                                                         onclick="subirArchivo({{ admision.id }}, {{ doc.id }})">
-                                                                                    Archivar
+                                                                                    Adjuntar
                                                                                 </button>
                                                                                 <!-- Barra de progreso que se muestra cuando se sube un archivo -->
                                                                                 <div class="progress mt-2"
