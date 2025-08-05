@@ -460,6 +460,27 @@
 
                                 <!-- Botones usando componente -->
                                 {% include "components/forms/step_form_buttons.html" with form_step_back="form_step1" form_step_save="form_step2" form_step_continue="form_step3" back_label="Volver" save_label="Guardar" continue_label="Continuar" %}
+                                 <!-- Botones del formulario -->
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="form-group mb-0 mt-3 d-flex justify-content-between">
+                                            <!-- Botón Volver -->
+                                            <button type="submit" name="form_step1" class="btn btn-secondary mb-3">
+                                                <i class="fas fa-arrow-left me-1"></i>Volver
+                                            </button>
+                                            
+                                            <!-- Botón Guardar -->
+                                            <button type="submit" name="form_step2" class="btn btn-primary mb-3">
+                                                <i class="fas fa-save me-1"></i>Guardar
+                                            </button>
+                                            
+                                            <!-- Botón Continuar -->
+                                            <button type="submit" name="form_step3" class="btn btn-secondary mb-3">
+                                                <i class="fas fa-arrow-right me-1"></i>Continuar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             </form>
                         </div>
                     </div>

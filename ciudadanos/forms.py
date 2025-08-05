@@ -560,14 +560,20 @@ class DimensionEducacionForm(forms.ModelForm):
     provinciaInstitucion = forms.ModelChoiceField(
         label="Provincia",
         queryset=Provincia.objects.all(),
+        required=False,
+        empty_label="Seleccionar provincia"  
     )
     municipioInstitucion = forms.ModelChoiceField(
         label="Municipio",
         queryset=Municipio.objects.none(),
+        required=False,
+        empty_label="Seleccionar municipio"  
     )
     localidadInstitucion = forms.ModelChoiceField(
         label="Localidad",
         queryset=Localidad.objects.none(),
+        required=False,
+        empty_label="Seleccionar localidad"  
     )
     interes_capacitacion_laboral = forms.ChoiceField(
         choices=BOOLEAN_CHOICE,
@@ -647,11 +653,10 @@ class DimensionEducacionForm(forms.ModelForm):
         }
 
     def clean_area_curso(self):
-        data = self.cleaned_data["area_curso"]
-        if len(data) > 3:
+        data = self.cleaned_data.get("area_curso")
+        if data and len(data) > 3:
             raise forms.ValidationError("Solo puedes seleccionar hasta 3 opciones.")
         return data
-
 
 class DimensionEconomiaForm(forms.ModelForm):
     recibe_plan = forms.ChoiceField(
