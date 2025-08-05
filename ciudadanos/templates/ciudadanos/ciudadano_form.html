@@ -271,9 +271,16 @@
                                             <div class="col-12">{{ form.observaciones|as_crispy_field }}</div>
                                         </div>
                                     </div>
-                                    
                                 </div>
                             </div>
+
+                            <!-- Campo oculto de foto -->
+                            <input type="file"
+                                   name="foto"
+                                   id="id_foto"
+                                   class="input-file"
+                                   accept="image/*"
+                                   hidden />
 
                             <!-- Botones del formulario -->
                             <div class="row">

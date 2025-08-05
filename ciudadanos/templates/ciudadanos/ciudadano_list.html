@@ -55,6 +55,12 @@
                     <i class="bi bi-arrow-clockwise"></i> Resetear
                 </a>
             {% endif %}
+            {% if perms.Usuarios.rol_admin %}
+                <a href="{% url 'renaper_consulta' %}"
+                   class="btn btn-primary btn-lg d-inline-block mt-2">
+                    <i class="bi bi-plus-circle"></i> Agregar desde RENAPER
+                </a>
+            {% endif %}
         </div>
     </div>
 

@@ -161,7 +161,6 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.contrib.admindocs.middleware.XViewMiddleware",
-    "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "config.middlewares.xss_protection.XSSProtectionMiddleware",
     "config.middlewares.threadlocals.ThreadLocalMiddleware",
@@ -295,11 +294,12 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # Configuración de Django Debug Toolbar
-DEBUG_TOOLBAR_CONFIG = {
-    "SHOW_TOOLBAR_CALLBACK": lambda request: (
-        True if DEBUG else False  # pylint: disable=simplifiable-if-expression
-    )
-}
+if DEBUG:
+    DEBUG_TOOLBAR_CONFIG = {
+        "SHOW_TOOLBAR_CALLBACK": lambda request: True  # ✅ Esto es válido
+    }
+    MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
+
 
 if DEBUG:
     # Configuración para desarrollo
@@ -334,3 +334,8 @@ DOMINIO = os.environ.get("DOMINIO", default="localhost:8001")
 if DEBUG:
     SILKY_PYTHON_PROFILER = True
     MIDDLEWARE.insert(0, "silk.middleware.SilkyMiddleware")
+
+# API RENAPER
+RENAPER_API_USERNAME = os.getenv("RENAPER_API_USERNAME")
+RENAPER_API_PASSWORD = os.getenv("RENAPER_API_PASSWORD")
+RENAPER_API_URL = os.getenv("RENAPER_API_URL")

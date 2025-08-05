@@ -12,6 +12,12 @@ from centrodefamilia.models import (
     Actividad,
     Expediente,
 )
+from centrodefamilia.services.participante import (
+    ParticipanteService,
+    AlreadyRegistered,
+    CupoExcedido,
+    SexoNoPermitido,
+)
 
 HORAS_DEL_DIA = [(f"{h:02d}:00", f"{h:02d}:00") for h in range(0, 24)] + [
     (f"{h:02d}:30", f"{h:02d}:30") for h in range(0, 24)
@@ -185,6 +191,11 @@ class ActividadCentroForm(forms.ModelForm):
 
 
 class ParticipanteActividadForm(forms.ModelForm):
+    """
+    Form para inscripción de participantes: crea o reutiliza ciudadano,
+    y registra inscripción (o lista de espera) usando ParticipanteService.
+    """
+
     nombre = forms.CharField(max_length=255, label="Nombre")
     apellido = forms.CharField(max_length=255, label="Apellido")
     fecha_nacimiento = forms.DateField(
@@ -198,8 +209,48 @@ class ParticipanteActividadForm(forms.ModelForm):
 
     class Meta:
         model = ParticipanteActividad
-        # no usamos directamente los campos del modelo porque todos se construyen en la vista
-        fields = []
+        fields = []  # se procesan todos los datos en save()
+
+    def __init__(self, *args, **kwargs):
+        self.actividad_id = kwargs.pop("actividad_id")
+        self.usuario = kwargs.pop("usuario")
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned = super().clean()
+        # Validar existencia previa
+        documento = cleaned.get("dni")
+        if ParticipanteActividad.objects.filter(
+            actividad_centro_id=self.actividad_id,
+            ciudadano__documento=documento,
+            estado__in=["inscrito", "lista_espera"],
+        ).exists():
+            raise ValidationError("El ciudadano ya está inscrito o en lista de espera.")
+        return cleaned
+
+    def save(self, commit=True):
+        datos = {
+            "nombre": self.cleaned_data["nombre"],
+            "apellido": self.cleaned_data["apellido"],
+            "dni": self.cleaned_data["dni"],
+            "fecha_nacimiento": self.cleaned_data["fecha_nacimiento"],
+            "tipo_documento": self.cleaned_data["tipo_documento"],
+            "genero": self.cleaned_data["genero"],
+        }
+        try:
+            _, participante = ParticipanteService.procesar_creacion(
+                usuario=self.usuario,
+                actividad_id=self.actividad_id,
+                datos=datos,
+                ciudadano_id=None,
+            )
+        except (AlreadyRegistered, SexoNoPermitido) as e:
+            raise ValidationError(str(e)) from e
+        except CupoExcedido as e:
+            raise ValidationError(
+                str(e) + " Se agregará a lista de espera si lo desea."
+            ) from e
+        return participante
 
 
 class ExpedienteCabalForm(forms.ModelForm):
