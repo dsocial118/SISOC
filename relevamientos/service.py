@@ -68,11 +68,27 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         comedor_instance.provincia = Provincia.objects.get(
             nombre=comedor_data.get("provincia", comedor_instance.provincia)
         )
-        comedor_instance.municipio = Municipio.objects.get(
-            nombre=comedor_data.get("municipio", comedor_instance.municipio)
+        comedor_instance.municipio = (
+            Municipio.objects.get(
+                nombre=comedor_data.get("municipio"),
+            )
+            if comedor_data.get("municipio")
+            else comedor_instance.municipio
         )
         comedor_instance.localidad = Localidad.objects.get(
-            nombre=comedor_data.get("localidad", comedor_instance.localidad)
+            nombre=comedor_data.get("localidad", comedor_instance.localidad),
+            municipio=(
+                Municipio.objects.get(
+                    nombre=comedor_data.get("municipio"),
+                    provincia=(
+                        Provincia.objects.get(nombre=comedor_data.get("provincia"))
+                        if comedor_data.get("provincia")
+                        else comedor_instance.provincia
+                    ),
+                )
+                if comedor_data.get("municipio")
+                else comedor_instance.municipio
+            ),
         )
         comedor_instance.partido = comedor_data.get("partido", comedor_instance.partido)
         comedor_instance.manzana = comedor_data.get("manzana", comedor_instance.manzana)
