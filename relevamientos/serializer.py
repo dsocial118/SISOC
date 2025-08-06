@@ -15,6 +15,16 @@ class RelevamientoSerializer(serializers.ModelSerializer):
                 self.initial_data["fecha_visita"]
             )
 
+        if "comedor" in self.initial_data:
+            self.initial_data["comedor"] = RelevamientoService.update_comedor(
+                self.initial_data["comedor"],
+                (
+                    self.instance.comedor
+                    if self.instance and self.instance.comedor
+                    else None
+                ),
+            )
+
         if "territorial" in self.initial_data:
             territorial_data = self.initial_data["territorial"]
             self.initial_data["territorial_nombre"] = territorial_data["nombre"]
