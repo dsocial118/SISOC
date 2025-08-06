@@ -8,6 +8,7 @@ from comedores.models import (
     TipoDeComedor,
 )
 from core.models import Localidad, Municipio, Provincia
+from core.utils import convert_string_to_int
 from relevamientos.models import (
     Anexo,
     CantidadColaboradores,
@@ -41,7 +42,6 @@ from relevamientos.models import (
     TipoTecnologia,
 )
 from relevamientos.tasks import AsyncSendRelevamientoToGestionar
-from core.utils import convert_string_to_int
 
 
 # TODO: Refactorizar todo esto, pylint esta muriendo aca
