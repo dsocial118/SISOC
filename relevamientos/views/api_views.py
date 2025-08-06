@@ -9,6 +9,7 @@ from core.utils import format_serializer_errors
 
 logger = logging.getLogger(__name__)
 
+
 class RelevamientoApiView(APIView):
     permission_classes = [HasAPIKey]
 
