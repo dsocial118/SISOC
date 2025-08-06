@@ -1,0 +1,180 @@
+{% comment %} Componente wrapper para formularios con diseño moderno Parámetros:
+- form_title: Título del formulario (requerido) - form_icon: Icono del
+formulario (default: "fas fa-edit") - submit_text: Texto del botón submit
+(default: "Confirmar") - cancel_url: URL de cancelación (opcional) -
+cancel_text: Texto del botón cancelar (default: "Cancelar") - form_method:
+Método del formulario (default: "POST") - form_enctype: Enctype del formulario
+(default: "multipart/form-data") - extra_classes: Clases CSS adicionales
+(opcional) - show_validation: Mostrar validación Bootstrap (default: True) {%
+endcomment %} {% load static %}
+
+<div class="modern-form-wrapper">
+  <form
+    class="{% if show_validation|default:True %}needs-validation{% endif %} {{ extra_classes }}"
+    {%
+    if
+    show_validation|default:True
+    %}novalidate{%
+    endif
+    %}
+    method="{{ form_method|default:'POST' }}"
+    enctype="{{ form_enctype|default:'multipart/form-data' }}"
+  >
+    <!-- Security token -->
+    {% csrf_token %}
+
+    <div class="card modern-form-card">
+      <div class="card-header section-header">
+        <h3 class="section-title">
+          <i class="{{ form_icon|default:'fas fa-edit' }}"></i>
+          {{ form_title }}
+        </h3>
+      </div>
+
+      <div class="card-body form-section">
+        {% block form_content %}
+        <!-- Contenido del formulario va aquí -->
+        {% endblock %}
+      </div>
+    </div>
+
+    <div class="form-actions mt-4">
+      <button type="submit" class="btn btn-modern-primary">
+        <i class="fas fa-check me-2"></i>{{ submit_text|default:"Confirmar" }}
+      </button>
+      {% if cancel_url %}
+      <a href="{{ cancel_url }}" class="btn btn-modern-secondary">
+        <i class="fas fa-times me-2"></i>{{ cancel_text|default:"Cancelar" }}
+      </a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+<style>
+  /* Estilos para formularios modernos */
+  .modern-form-wrapper {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 20px;
+    padding: 1.5rem;
+    margin: 1rem 0;
+  }
+
+  .modern-form-card {
+    border: none;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 30px rgba(32, 201, 151, 0.1);
+    background: rgba(255, 255, 255, 0.98);
+  }
+
+  .section-header {
+    background: linear-gradient(135deg, #20c997, #17a2b8);
+    color: white;
+    padding: 1.5rem 2rem;
+    border: none;
+  }
+
+  .section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .form-section {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 2rem;
+    color: #2c3e50;
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-start;
+    padding: 0 1.5rem;
+  }
+
+  .btn-modern-primary {
+    background: linear-gradient(135deg, #20c997, #17a2b8);
+    border: none;
+    border-radius: 12px;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    color: white;
+    transition: var(--transition-smooth);
+    box-shadow: 0 4px 15px rgba(32, 201, 151, 0.2);
+  }
+
+  .btn-modern-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(32, 201, 151, 0.4);
+    color: white;
+  }
+
+  .btn-modern-secondary {
+    background: #6c757d;
+    border: none;
+    border-radius: 12px;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    color: white;
+    transition: var(--transition-smooth);
+  }
+
+  .btn-modern-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+    color: white;
+  }
+
+  /* Estilos para campos de formulario */
+  .form-section .form-control,
+  .form-section .form-select {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid rgba(32, 201, 151, 0.3) !important;
+    color: #2c3e50 !important;
+    border-radius: 10px !important;
+    transition: var(--transition-smooth);
+    padding: 0.75rem 1rem;
+  }
+
+  .form-section .form-control:focus,
+  .form-section .form-select:focus {
+    background: rgba(255, 255, 255, 1) !important;
+    border-color: #20c997 !important;
+    box-shadow: 0 0 0 0.2rem rgba(32, 201, 151, 0.25) !important;
+    color: #2c3e50 !important;
+  }
+
+  .form-section .form-label {
+    color: #2c3e50 !important;
+    font-weight: 500;
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+  }
+
+  .form-section textarea {
+    min-height: 120px;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .modern-form-wrapper {
+      padding: 1rem;
+      margin: 0.5rem 0;
+    }
+
+    .form-actions {
+      flex-direction: column;
+    }
+
+    .btn-modern-primary,
+    .btn-modern-secondary {
+      width: 100%;
+      text-align: center;
+    }
+  }
+</style>

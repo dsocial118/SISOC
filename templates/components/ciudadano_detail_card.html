@@ -1,0 +1,122 @@
+{% comment %} Componente reutilizable para mostrar información básica de un
+ciudadano Parámetros: - ciudadano: Objeto ciudadano (requerido) - show_link:
+Mostrar enlace al detalle del ciudadano (default: True) - card_class: Clases CSS
+adicionales para la tarjeta (opcional) - title: Título de la tarjeta (default:
+"Detalle Ciudadano") - compact: Versión compacta (default: False) - show_tools:
+Mostrar herramientas en el header (default: False) - tools_content: Contenido
+HTML para las herramientas (opcional) {% endcomment %} {% load static %}
+
+<div
+  class="card card-outline {{ card_class|default:'card-primary' }} h-100 mb-0"
+>
+  <div class="card-header bg-gradient-primary text-white">
+    <h3 class="card-title font-weight-bold mb-0">
+      <i class="fas fa-user me-2"></i>{{ title|default:"Detalle Ciudadano" }}
+    </h3>
+    {% if show_tools %}
+    <div class="card-tools d-inline">
+      {% if tools_content %} {{ tools_content|safe }} {% endif %} {% if
+      show_link|default:True %}
+      <a
+        href="{% url 'ciudadanos_ver' ciudadano.id %}"
+        class="btn btn-sm btn-light ml-3 mr-2"
+      >
+        <i class="fas fa-eye me-1"></i>Ver detalles
+      </a>
+      {% endif %}
+      <button
+        type="button"
+        class="btn btn-tool text-white d-md-none"
+        data-card-widget="collapse"
+      >
+        <i class="fas fa-minus"></i>
+      </button>
+    </div>
+    {% endif %}
+  </div>
+  <div class="card-body">
+    <dl class="row">
+      <dd
+        class="{% if compact %}col-sm-4{% else %}col-sm-3{% endif %} mb-2 text-muted"
+      >
+        <i class="fas fa-user me-1"></i>Nombre
+      </dd>
+      <dt class="{% if compact %}col-sm-8{% else %}col-sm-9{% endif %} mb-2">
+        {% if show_link|default:True %}
+        <a
+          href="{% url 'ciudadanos_ver' ciudadano.id %}"
+          title="Ver ciudadano"
+          class="text-primary text-decoration-none"
+        >
+          {{ ciudadano.nombre }} {{ ciudadano.apellido }}
+        </a>
+        {% else %} {{ ciudadano.nombre }} {{ ciudadano.apellido }} {% endif %}
+      </dt>
+
+      <dd
+        class="{% if compact %}col-sm-4{% else %}col-sm-3{% endif %} mb-2 text-muted"
+      >
+        <i class="fas fa-id-card me-1"></i>DNI
+      </dd>
+      <dt class="{% if compact %}col-sm-8{% else %}col-sm-9{% endif %} mb-2">
+        {{ ciudadano.documento }}
+      </dt>
+
+      <dd
+        class="{% if compact %}col-sm-4{% else %}col-sm-3{% endif %} mb-2 text-muted"
+      >
+        <i class="fas fa-calendar me-1"></i>Fecha de nacimiento
+      </dd>
+      <dt class="{% if compact %}col-sm-8{% else %}col-sm-9{% endif %} mb-2">
+        {{ ciudadano.fecha_nacimiento|date:'d/m/Y' }}
+      </dt>
+
+      <dd
+        class="{% if compact %}col-sm-4{% else %}col-sm-3{% endif %} mb-2 text-muted"
+      >
+        <i class="fas fa-venus-mars me-1"></i>Sexo
+      </dd>
+      <dt class="{% if compact %}col-sm-8{% else %}col-sm-9{% endif %} mb-2">
+        {{ ciudadano.sexo }}
+      </dt>
+    </dl>
+  </div>
+</div>
+
+<style>
+  /* Estilos para el componente de detalle ciudadano */
+  .card-outline {
+    border: 2px solid rgba(32, 201, 151, 0.3);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: var(--transition-smooth);
+  }
+
+  .card-outline:hover {
+    border-color: rgba(32, 201, 151, 0.5);
+    box-shadow: 0 4px 15px rgba(32, 201, 151, 0.1);
+  }
+
+  .card-header.bg-gradient-primary {
+    background: linear-gradient(135deg, #20c997, #17a2b8) !important;
+    border-bottom: none;
+  }
+
+  .card-body dl dd {
+    font-weight: 500;
+    font-size: 0.9rem;
+  }
+
+  .card-body dl dt {
+    font-weight: 600;
+    color: #2c3e50;
+  }
+
+  .text-primary {
+    color: #20c997 !important;
+  }
+
+  .text-primary:hover {
+    color: #17a2b8 !important;
+  }
+</style>
