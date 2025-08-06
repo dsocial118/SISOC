@@ -29,7 +29,9 @@ class RelevamientoApiView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            return Response((relevamiento).data, status=status.HTTP_200_OK)
+            return Response(
+                RelevamientoSerializer(relevamiento).data, status=status.HTTP_200_OK
+            )
         except Relevamiento.DoesNotExist:
             return Response(
                 f"Relevamiento {request.data['sisoc_id']} no encontrado",
