@@ -1087,10 +1087,20 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             prestacion_data["lunes_merienda_actual"] = convert_string_to_int(
                 prestacion_data["lunes_merienda_actual"]
             )
+        if "lunes_merienda_reforzada_actual" in prestacion_data:
+            prestacion_data["lunes_merienda_reforzada_actual"] = convert_string_to_int(
+                prestacion_data["lunes_merienda_reforzada_actual"]
+            )
+
         if "lunes_merienda_espera" in prestacion_data:
             prestacion_data["lunes_merienda_espera"] = convert_string_to_int(
                 prestacion_data["lunes_merienda_espera"]
             )
+        if "lunes_merienda_reforzada_espera" in prestacion_data:
+            prestacion_data["lunes_merienda_reforzada_espera"] = convert_string_to_int(
+                prestacion_data["lunes_merienda_reforzada_espera"]
+            )
+
         if "lunes_cena_actual" in prestacion_data:
             prestacion_data["lunes_cena_actual"] = convert_string_to_int(
                 prestacion_data["lunes_cena_actual"]
@@ -1119,10 +1129,20 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             prestacion_data["martes_merienda_actual"] = convert_string_to_int(
                 prestacion_data["martes_merienda_actual"]
             )
+        if "martes_merienda_reforzada_actual" in prestacion_data:
+            prestacion_data["martes_merienda_reforzada_actual"] = convert_string_to_int(
+                prestacion_data["martes_merienda_reforzada_actual"]
+            )
+
         if "martes_merienda_espera" in prestacion_data:
             prestacion_data["martes_merienda_espera"] = convert_string_to_int(
                 prestacion_data["martes_merienda_espera"]
             )
+        if "martes_merienda_reforzada_espera" in prestacion_data:
+            prestacion_data["martes_merienda_reforzada_espera"] = convert_string_to_int(
+                prestacion_data["martes_merienda_reforzada_espera"]
+            )
+
         if "martes_cena_actual" in prestacion_data:
             prestacion_data["martes_cena_actual"] = convert_string_to_int(
                 prestacion_data["martes_cena_actual"]
@@ -1151,10 +1171,24 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             prestacion_data["miercoles_merienda_actual"] = convert_string_to_int(
                 prestacion_data["miercoles_merienda_actual"]
             )
+        if "miercoles_merienda_reforzada_actual" in prestacion_data:
+            prestacion_data["miercoles_merienda_reforzada_actual"] = (
+                convert_string_to_int(
+                    prestacion_data["miercoles_merienda_reforzada_actual"]
+                )
+            )
+
         if "miercoles_merienda_espera" in prestacion_data:
             prestacion_data["miercoles_merienda_espera"] = convert_string_to_int(
                 prestacion_data["miercoles_merienda_espera"]
             )
+        if "miercoles_merienda_reforzada_espera" in prestacion_data:
+            prestacion_data["miercoles_merienda_reforzada_espera"] = (
+                convert_string_to_int(
+                    prestacion_data["miercoles_merienda_reforzada_espera"]
+                )
+            )
+
         if "miercoles_cena_actual" in prestacion_data:
             prestacion_data["miercoles_cena_actual"] = convert_string_to_int(
                 prestacion_data["miercoles_cena_actual"]
@@ -1183,10 +1217,20 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             prestacion_data["jueves_merienda_actual"] = convert_string_to_int(
                 prestacion_data["jueves_merienda_actual"]
             )
+        if "jueves_merienda_reforzada_actual" in prestacion_data:
+            prestacion_data["jueves_merienda_reforzada_actual"] = convert_string_to_int(
+                prestacion_data["jueves_merienda_reforzada_actual"]
+            )
+
         if "jueves_merienda_espera" in prestacion_data:
             prestacion_data["jueves_merienda_espera"] = convert_string_to_int(
                 prestacion_data["jueves_merienda_espera"]
             )
+        if "jueves_merienda_reforzada_espera" in prestacion_data:
+            prestacion_data["jueves_merienda_reforzada_espera"] = convert_string_to_int(
+                prestacion_data["jueves_merienda_reforzada_espera"]
+            )
+
         if "jueves_cena_actual" in prestacion_data:
             prestacion_data["jueves_cena_actual"] = convert_string_to_int(
                 prestacion_data["jueves_cena_actual"]
@@ -1215,10 +1259,24 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             prestacion_data["viernes_merienda_actual"] = convert_string_to_int(
                 prestacion_data["viernes_merienda_actual"]
             )
+        if "viernes_merienda_reforzada_actual" in prestacion_data:
+            prestacion_data["viernes_merienda_reforzada_actual"] = (
+                convert_string_to_int(
+                    prestacion_data["viernes_merienda_reforzada_actual"]
+                )
+            )
+
         if "viernes_merienda_espera" in prestacion_data:
             prestacion_data["viernes_merienda_espera"] = convert_string_to_int(
                 prestacion_data["viernes_merienda_espera"]
             )
+        if "viernes_merienda_reforzada_espera" in prestacion_data:
+            prestacion_data["viernes_merienda_reforzada_espera"] = (
+                convert_string_to_int(
+                    prestacion_data["viernes_merienda_reforzada_espera"]
+                )
+            )
+
         if "viernes_cena_actual" in prestacion_data:
             prestacion_data["viernes_cena_actual"] = convert_string_to_int(
                 prestacion_data["viernes_cena_actual"]
@@ -1247,10 +1305,20 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             prestacion_data["sabado_merienda_actual"] = convert_string_to_int(
                 prestacion_data["sabado_merienda_actual"]
             )
+        if "sabado_merienda_reforzada_actual" in prestacion_data:
+            prestacion_data["sabado_merienda_reforzada_actual"] = convert_string_to_int(
+                prestacion_data["sabado_merienda_reforzada_actual"]
+            )
+
         if "sabado_merienda_espera" in prestacion_data:
             prestacion_data["sabado_merienda_espera"] = convert_string_to_int(
                 prestacion_data["sabado_merienda_espera"]
             )
+        if "sabado_merienda_reforzada_espera" in prestacion_data:
+            prestacion_data["sabado_merienda_reforzada_espera"] = convert_string_to_int(
+                prestacion_data["sabado_merienda_reforzada_espera"]
+            )
+
         if "sabado_cena_actual" in prestacion_data:
             prestacion_data["sabado_cena_actual"] = convert_string_to_int(
                 prestacion_data["sabado_cena_actual"]
@@ -1279,10 +1347,24 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             prestacion_data["domingo_merienda_actual"] = convert_string_to_int(
                 prestacion_data["domingo_merienda_actual"]
             )
+        if "domingo_merienda_reforzada_actual" in prestacion_data:
+            prestacion_data["domingo_merienda_reforzada_actual"] = (
+                convert_string_to_int(
+                    prestacion_data["domingo_merienda_reforzada_actual"]
+                )
+            )
+
         if "domingo_merienda_espera" in prestacion_data:
             prestacion_data["domingo_merienda_espera"] = convert_string_to_int(
                 prestacion_data["domingo_merienda_espera"]
             )
+        if "domingo_merienda_reforzada_espera" in prestacion_data:
+            prestacion_data["domingo_merienda_reforzada_espera"] = (
+                convert_string_to_int(
+                    prestacion_data["domingo_merienda_reforzada_espera"]
+                )
+            )
+
         if "domingo_cena_actual" in prestacion_data:
             prestacion_data["domingo_cena_actual"] = convert_string_to_int(
                 prestacion_data["domingo_cena_actual"]
