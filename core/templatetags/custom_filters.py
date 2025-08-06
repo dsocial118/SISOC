@@ -12,6 +12,7 @@ def has_group(user, group_name):
     except Exception:
         return False
 
+
 @register.filter
 def endswith(value, suffix):
     try:
