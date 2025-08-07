@@ -312,7 +312,6 @@ else:
     # Configuración para producción
     SECURE_HSTS_SECONDS = 0  # Cambiar a 31536000 cuando tengamos HTTPS
     SECURE_HSTS_INCLUDE_SUBDOMAINS = False
-    SECURE_HSTS_PRELOAD = False
     SECURE_SSL_REDIRECT = False  # Cambiar a True cuando tengamos HTTPS
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
@@ -339,3 +338,26 @@ if DEBUG:
 RENAPER_API_USERNAME = os.getenv("RENAPER_API_USERNAME")
 RENAPER_API_PASSWORD = os.getenv("RENAPER_API_PASSWORD")
 RENAPER_API_URL = os.getenv("RENAPER_API_URL")
+
+
+LOGGING = {
+  "version": 1,
+  "disable_existing_loggers": False,
+  "handlers": {
+    "console": {"class": "logging.StreamHandler"},
+  },
+  "loggers": {
+    "django": {
+      "handlers": ["console"],
+      "level": "ERROR",
+      "propagate": False
+    },
+    "django.request": {
+      "handlers": ["console"],
+      "level": "ERROR",
+      "propagate": False
+    },
+  },
+}
+
+

@@ -101,6 +101,9 @@ class ParticipanteService:
 
     @staticmethod
     def _crear_dimensiones_y_programa(ciudadano, usuario, actividad_id):
+        # Forzar siempre programa ID = 1
+        programa_id = 1
+
         for Modelo in (
             DimensionEconomia,
             DimensionEducacion,
@@ -113,12 +116,12 @@ class ParticipanteService:
 
             creado = CiudadanoPrograma.objects.update_or_create(
                 ciudadano=ciudadano,
-                programas_id=actividad_id,
+                programas_id=programa_id,
                 defaults={"creado_por": usuario},
             )
         if creado:
             HistorialCiudadanoProgramas.objects.create(
-                programa_id=actividad_id,
+                programa_id=programa_id,
                 ciudadano=ciudadano,
                 accion="agregado",
                 usuario=usuario,
