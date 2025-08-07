@@ -32,6 +32,7 @@ class RelevamientoApiView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
+            logger.info(f"Relevamiento {relevamiento.id} actualizado correctamente")
             return Response(
                 RelevamientoSerializer(relevamiento).data, status=status.HTTP_200_OK
             )

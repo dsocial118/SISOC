@@ -225,7 +225,7 @@
                     <div class="nav-item col-1 d-flex justify-content-center">
                         <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                             Localidad
-                            <span class="username fw-bold fs-5">{{ relevamiento.comedor.localidad.nombre | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.comedor.localida.nombre | default_if_none:"-" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-1 d-flex justify-content-center">
@@ -964,19 +964,19 @@
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             ¿En el comedor se realizan emprendimientos productivos/de servicios?
-                            <span class="username fw-bold fs-5">{{ relevamiento.anexo__emprendimientos_productivos | yesno:"Sí,No,-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.anexo.emprendimientos_productivos | yesno:"Sí,No,-" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             ¿En el comedor se realizan actividades religiosas?
-                            <span class="username fw-bold fs-5">{{ relevamiento.anexo__actividades_religiosas | yesno:"Sí,No,-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.anexo.actividades_religiosas | yesno:"Sí,No,-" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             ¿En el comedor se realizan actividades de huerta?
-                            <span class="username fw-bold fs-5">{{ relevamiento.anexo__actividades_huerta | yesno:"Sí,No,-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.anexo.actividades_huerta | yesno:"Sí,No,-" }}</span>
                         </div>
                     </div>
                 </div>
@@ -984,19 +984,19 @@
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             ¿Cuenta con espacio para realizar actividades de huerta?
-                            <span class="username fw-bold fs-5">{{ relevamiento.anexo__espacio_huerta | yesno:"Sí,No,-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.anexo.espacio_huerta | yesno:"Sí,No,-" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             ¿En el comedor se realizan otras actividades?
-                            <span class="username fw-bold fs-5">{{ relevamiento.anexo__otras_actividades | yesno:"Sí,No,-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.anexo.otras_actividades | yesno:"Sí,No,-" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             ¿Cuáles otras actividades se realizan en el comedor?
-                            <span class="username fw-bold fs-5">{{ relevamiento.anexo__cuales_otras_actividades | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.anexo.cuales_otras_actividades | default_if_none:"-" }}</span>
                         </div>
                     </div>
                 </div>
@@ -1016,19 +1016,19 @@
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Tipo de comedor
-                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas__tipo_comedor__nombre| default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas.tipo_comedor.nombre| default_if_none:"-" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             ¿El Punto de entrega existe o existió?
-                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas__existe_punto_entregas | yesno:"Sí,No,-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas.existe_punto_entregas | yesno:"Sí,No,-" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             ¿El Punto de entrega funciona?
-                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas__funciona_punto_entregas | yesno:"Sí,No,-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas.funciona_punto_entregas | yesno:"Sí,No,-" }}</span>
                         </div>
                     </div>
                 </div>
@@ -1036,19 +1036,19 @@
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             ¿Se puede/pudo observar la entrega durante la visita?
-                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas__observa_entregas | yesno:"Sí,No,-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas.observa_entregas | yesno:"Sí,No,-" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Retiran mercadería del Punto de Distribución
-                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas__retiran_mercaderias_distribucion | yesno:"Sí,No,-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas.retiran_mercaderias_distribucion | yesno:"Sí,No,-" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Retiran mercadería del comercio
-                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas__retiran_mercaderias_comercio | yesno:"Sí,No,-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas.retiran_mercaderias_comercio | yesno:"Sí,No,-" }}</span>
                         </div>
                     </div>
                 </div>
@@ -1056,13 +1056,13 @@
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Reciben dinero
-                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas__reciben_dinero | yesno:"Sí,No,-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas.reciben_dinero | yesno:"Sí,No,-" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Otro
-                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas__reciben_otros_recepcion | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas.reciben_otros_recepcion | default_if_none:"-" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
@@ -1076,19 +1076,19 @@
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Frecuencia de entrega de bolsones
-                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas__frecuencia_entrega_bolsones__nombre | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas.frecuencia_entrega_bolsones.nombre | default_if_none:"-" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Tipo de módulo/bolsones de alimento que entregan
-                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas__tipo_modulo_bolsones__nombre | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas.tipo_modulo_bolsones.nombre | default_if_none:"-" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             ¿El espacio cuenta con un registro de la entrega de los módulos/bolsones de alimentos?
-                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas__registran_entrega_bolsones | yesno:"Sí,No,-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas.registran_entrega_bolsones | yesno:"Sí,No,-" }}</span>
                         </div>
                     </div>
                 </div>
@@ -1096,7 +1096,7 @@
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Otros (Especificar en el punto 6- Observaciones)
-                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas__otros_punto_entregas | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas.otros_punto_entregas | default_if_none:"-" }}</span>
                         </div>
                     </div>
                 </div>
@@ -1135,19 +1135,19 @@
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Motivo
-                            <span class="username fw-bold fs-5">{{ relevamiento.excepcion__motivo__nombre | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.excepcion.motivo.nombre | default_if_none:"-" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Longitud
-                            <span class="username fw-bold fs-5">{{ relevamiento.excepcion__longitud | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.excepcion.longitud | default_if_none:"-" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Latitud
-                            <span class="username fw-bold fs-5">{{ relevamiento.excepcion__latitud | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.excepcion.latitud | default_if_none:"-" }}</span>
                         </div>
                     </div>
                 </div>
@@ -1155,7 +1155,7 @@
                     <div class="nav-item col-5 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Descripcion
-                            <span class="text-wrap username fw-bold fs-5">{{ relevamiento.excepcion__descripcion | default_if_none:'-' }}</span>
+                            <span class="text-wrap username fw-bold fs-5">{{ relevamiento.excepcion.descripcion | default_if_none:'-' }}</span>
                         </div>
                     </div>
                 </div>
@@ -1163,12 +1163,14 @@
                     <div class="nav-item col-5 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm w-100">
                             Adjuntos
-                            {% for imagen in relevamiento.excepcion__adjuntos %}
-                                <div class="col-2 d-flex">
-                                    <img src="{{ imagen }}"
-                                         alt="Adjunto del comedor"
-                                         class="img-fluid my-1 rounded object-fit-contain" />
-                                </div>
+                            {% for imagen in relevamiento.excepcion.adjuntos %}
+                                {% if imagen and imagen != "" %}
+                                    <div class="col-2 d-flex">
+                                        <img src="{{ imagen }}"
+                                             alt="Adjunto del comedor"
+                                             class="img-fluid my-1 rounded object-fit-contain" />
+                                    </div>
+                                {% endif %}
                             {% endfor %}
                         </div>
                     </div>
@@ -1178,8 +1180,8 @@
                         <div class="comment-text comment-text d-flex flex-column text-sm w-100">
                             Firma
                             <div class="col-2 d-flex">
-                                {% if relevamiento.excepcion__firma is not None %}
-                                    <img src="{{ relevamiento.excepcion__firma }}"
+                                {% if relevamiento.excepcion.firma is not None %}
+                                    <img src="{{ relevamiento.excepcion.firma }}"
                                          alt="Firma del responsable"
                                          class="img-fluid my-1 rounded object-fit-contain" />
                                 {% endif %}
