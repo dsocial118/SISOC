@@ -57,11 +57,11 @@ class LegalesService:
                 messages.success(request, "Enviado a rectificar con éxito.")
             else:
                 messages.error(request, "Error al enviar a rectificar.")
-            return redirect(request.path_info)
+            return redirect("admisiones_legales_ver", pk=admision.pk)
         except Exception as e:
             logger.error("Ocurrió un error inesperado en enviar_a_rectificar", exc_info=True)
             messages.error(request, "Error inesperado al enviar a rectificar.")
-            return redirect(request.path_info)
+            return redirect("admisiones_legales_ver", pk=admision.pk)
 
     @staticmethod
     def guardar_legales_num_if(request, admision):
