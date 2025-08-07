@@ -94,6 +94,10 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         )
         comedor_instance.partido = comedor_data.get("partido", comedor_instance.partido)
         comedor_instance.manzana = comedor_data.get("manzana", comedor_instance.manzana)
+        comedor_instance.piso = comedor_data.get("piso", comedor_instance.piso)
+        comedor_instance.departamento = comedor_data.get(
+            "departamento", comedor_instance.departamento
+        )
         comedor_instance.lote = comedor_data.get("lote", comedor_instance.lote)
         comedor_instance.comienzo = (
             convert_string_to_int(comedor_data.get("comienzo", "").split("/")[-1])
