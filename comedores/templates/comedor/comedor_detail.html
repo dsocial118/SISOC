@@ -1,30 +1,18 @@
-{% extends "includes/main.html" %};
+{% extends "includes/main.html" %}
 {% load static %}
-;
+
 {% block title %}Comedor: {{ comedor.nombre }}{% endblock %}
-;
-<div class="col-md-2 pt-5">
-    <c-dashboard.v-info-box titulo='Beneficiarios' valor='{{ tipo_comedor }}' color='success'>
-    <i class="fa fa-user"></i>
-    </c-dashboard.v-info-box>
-</div>
 {% block titulo-pagina %}
     {{ comedor.nombre }}
     <span class="ml-2 h5">| {{ comedor.provincia.nombre | default_if_none:"-" }}, {{ comedor.municipio.nombre | default_if_none:"-" }}, {{ comedor.localidad.nombre | default_if_none:"-" }}</span>
     <span class="ml-2 h5">- {{ comedor.programa.nombre }} - {{ comedor_categoria.categoria.nombre }}</span>
 {% endblock %}
-;
+
 {% block breadcrumb %}
-    <ol class="breadcrumb float-sm-right">
-        <div class="breadcrumb-item">
-            <a href="{% url 'comedores' %}">Comedores</a>
-        </div>
-        <div class="breadcrumb-item active">{{ comedor.nombre }}</div>
-    </ol>
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
-;
+
 {% load crispy_forms_tags %}
-;
 {% block content %}
     <link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
     <link rel="stylesheet"
