@@ -3,6 +3,7 @@ from django.urls import path
 from configuraciones.decorators import group_required
 
 from centrodefamilia.views.informecabal import (
+    InformeCabalArchivoDetailView,
     InformeCabalListView,
     InformeCabalPreviewAjaxView,
     InformeCabalProcessAjaxView,
@@ -116,6 +117,8 @@ urlpatterns = [
         group_required(["CDF SSE"])(InformeCabalPreviewAjaxView.as_view()),
         name="informecabal_preview",
     ),
+    path("informecabal/<int:pk>/", InformeCabalArchivoDetailView.as_view(), name="informecabal_archivo_detail"),
+
     path(
         "informecabal/process/",
         group_required(["CDF SSE"])(InformeCabalProcessAjaxView.as_view()),

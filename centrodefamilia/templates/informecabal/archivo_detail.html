@@ -1,0 +1,102 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Detalle Archivo CABAL{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="mb-3">
+    <a href="{% url 'informecabal_list' %}" class="btn btn-secondary btn-sm">← Volver</a>
+  </div>
+
+  <!-- Datos del archivo -->
+  <div class="card mb-3">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0">Detalle del Archivo</h5>
+    </div>
+    <div class="card-body">
+      <dl class="row mb-0">
+        <dt class="col-sm-3">Nombre Original</dt>
+        <dd class="col-sm-9">{{ archivo.nombre_original }}</dd>
+
+        <dt class="col-sm-3">Fecha de Subida</dt>
+        <dd class="col-sm-9">{{ archivo.fecha_subida|date:"d/m/Y H:i" }}</dd>
+
+        <dt class="col-sm-3">Usuario</dt>
+        <dd class="col-sm-9">{{ archivo.usuario.username }}</dd>
+
+        <dt class="col-sm-3">Total Filas</dt>
+        <dd class="col-sm-9">{{ archivo.total_filas }}</dd>
+
+        <dt class="col-sm-3">Válidas (Impactadas)</dt>
+        <dd class="col-sm-9 text-success">{{ archivo.total_validas }}</dd>
+
+        <dt class="col-sm-3">Inválidas (Rechazadas)</dt>
+        <dd class="col-sm-9 text-danger">{{ archivo.total_invalidas }}</dd>
+
+        <dt class="col-sm-3">Creadas</dt>
+        <dd class="col-sm-9 text-info">{{ archivo.total_creadas }}</dd>
+      </dl>
+    </div>
+  </div>
+
+  <!-- Tabla de registros -->
+  <div class="card">
+    <div class="card-header bg-secondary text-white">
+      Registros Procesados
+    </div>
+    <div class="card-body table-responsive">
+      <table class="table table-sm table-bordered table-hover">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>NroComercio</th>
+            <th>RazonSocial</th>
+            <th>Importe</th>
+            <th>FechaTRX</th>
+            <th>MonedaOrigen</th>
+            <th>ImportePesos</th>
+            <th>MotivoRechazo</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in registros %}
+          <tr 
+            {% if r.motivo_rechazo %}
+              class="table-danger"
+            {% elif r.es_creado %}
+              class="table-info"
+            {% else %}
+              class="table-success"
+            {% endif %}
+          >
+            <td>{{ forloop.counter }}</td>
+            <td>{{ r.nro_comercio }}</td>
+            <td>{{ r.razon_social }}</td>
+            <td>{{ r.importe }}</td>
+            <td>{{ r.fecha_trx|date:"d/m/Y" }}</td>
+            <td>{{ r.moneda_origen }}</td>
+            <td>{{ r.importe_pesos }}</td>
+            <td>{{ r.motivo_rechazo|default:"-" }}</td>
+            <td>
+              {% if r.motivo_rechazo %}
+                <span class="badge badge-danger">Rechazado</span>
+              {% elif r.es_creado %}
+                <span class="badge badge-info">Creado</span>
+              {% else %}
+                <span class="badge badge-success">Impactado</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="9" class="text-center">No hay registros asociados a este archivo.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

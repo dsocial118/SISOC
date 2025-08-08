@@ -31,6 +31,7 @@
             <th>Total</th>
             <th>Válidas</th>
             <th>Inválidas</th>
+            <th>acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -42,6 +43,11 @@
             <td>{{ a.total_filas }}</td>
             <td>{{ a.total_validas }}</td>
             <td>{{ a.total_invalidas }}</td>
+            <td>
+  <a href="{% url 'informecabal_archivo_detail' a.id %}" class="btn btn-sm btn-info">
+    Ver detalle
+  </a>
+</td>
           </tr>
           {% empty %}
           <tr><td colspan="6" class="text-center">Sin archivos procesados aún.</td></tr>
@@ -128,6 +134,8 @@
 </div>
 
 {% endblock %}
+
+{% block customJS %}
 <script>
   window.csrfToken = '{{ csrf_token }}';
   window.urls = {
@@ -135,8 +143,5 @@
     informecabal_process: '{% url "informecabal_process" %}',
   };
 </script>
-
-
-{% block customJS %}
-<script src="{% static 'js/informecabal.js' %}"></script>
+<script src="{% static 'custom/js/informecabal.js' %}"></script>
 {% endblock %}
