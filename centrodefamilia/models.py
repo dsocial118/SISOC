@@ -1,10 +1,16 @@
+# centrodefamilia/models.py
+"""
+[Informe Cabal] 
+- Agrega modelos: CabalArchivo e InformeCabalRegistro para auditoría y registros históricos.
+- Flujos impactados: carga y procesamiento de Excel CABAL desde centro_list → vista historial → modal.
+- Dependencias: views/informecabal.py, services/informe_cabal_service.py, templates/informecabal/*.html, static/js/informecabal.js
+"""
 from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.postgres.indexes import GinIndex
 from ciudadanos.models import Ciudadano
 from core.models import Dia, Localidad, Municipio, Provincia, Sexo
 from organizaciones.models import Organizacion
-
 
 class Centro(models.Model):
     TIPO_CHOICES = [
@@ -81,7 +87,6 @@ class Centro(models.Model):
             ),
         ]
 
-
 class Categoria(models.Model):
     nombre = models.CharField(max_length=100, verbose_name="Nombre de la Categoría")
 
@@ -98,7 +103,6 @@ class Categoria(models.Model):
                 opclasses=["gin_trgm_ops"],
             ),
         ]
-
 
 class Actividad(models.Model):
     nombre = models.CharField(max_length=200, verbose_name="Nombre de la Actividad")
@@ -118,14 +122,12 @@ class Actividad(models.Model):
             ),
         ]
 
-
 class ActividadCentro(models.Model):
     ESTADO_CHOICES = [
         ("planificada", "Planificada"),
         ("en_curso", "En curso"),
         ("finalizada", "Finalizada"),
     ]
-
     centro = models.ForeignKey(Centro, on_delete=models.CASCADE, verbose_name="Centro")
     actividad = models.ForeignKey(
         Actividad, on_delete=models.CASCADE, verbose_name="Actividad"
@@ -171,7 +173,6 @@ class ActividadCentro(models.Model):
             ),
         ]
 
-
 class ParticipanteActividad(models.Model):
     ESTADO_INSCRIPCION = [
         ("inscrito", "Inscrito"),
@@ -216,7 +217,6 @@ class ParticipanteActividad(models.Model):
             ),
         ]
 
-
 class ParticipanteActividadHistorial(models.Model):
     participante = models.ForeignKey(
         ParticipanteActividad, on_delete=models.CASCADE, related_name="historial"
@@ -251,7 +251,71 @@ class ParticipanteActividadHistorial(models.Model):
         verbose_name_plural = "Historial de Inscripciones"
         ordering = ["-fecha_cambio"]
 
+# ——— NUEVO MÓDULO INFORME CABAL ———
 
+class CabalArchivo(models.Model):
+    """
+    Archivo subido para Informe Cabal con auditoría y totales.
+    """
+    archivo = models.FileField(upload_to="informes_cabal/")
+    nombre_original = models.CharField(max_length=255)
+    usuario = models.ForeignKey(User, on_delete=models.PROTECT)
+    fecha_subida = models.DateTimeField(auto_now_add=True)
+    advertencia_nombre_duplicado = models.BooleanField(default=False)
+    total_filas = models.PositiveIntegerField(default=0)
+    total_validas = models.PositiveIntegerField(default=0)
+    total_invalidas = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.nombre_original} ({self.fecha_subida:%Y-%m-%d %H:%M})"
+
+    class Meta:
+        verbose_name = "Archivo CABAL"
+        verbose_name_plural = "Archivos CABAL"
+        indexes = [
+            models.Index(fields=["fecha_subida"]),
+            models.Index(fields=["nombre_original"]),
+        ]
+
+class InformeCabalRegistro(models.Model):
+    """
+    Registro histórico: una fila por línea del Excel.
+    Si no hay match de NroComercio → Centro.codigo, centro queda NULL y se marca no_coincidente=True.
+    """
+    archivo = models.ForeignKey(CabalArchivo, on_delete=models.CASCADE, related_name="registros")
+    centro = models.ForeignKey(Centro, null=True, blank=True, on_delete=models.SET_NULL)
+
+    # Campos del Excel
+    nro_tarjeta = models.CharField(max_length=50)
+    nro_auto = models.CharField(max_length=50)
+    mti = models.CharField(max_length=20)
+    nro_comercio = models.CharField(max_length=50)
+    razon_social = models.CharField(max_length=255, blank=True)
+    importe = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    fecha_trx = models.DateField(null=True, blank=True)
+    moneda_origen = models.CharField(max_length=10, blank=True)
+    importe_mon_origen = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    importe_pesos = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    cant_cuotas = models.IntegerField(null=True, blank=True)
+    motivo_rechazo = models.CharField(max_length=50, blank=True)
+    desc_motivo_rechazo = models.CharField(max_length=255, blank=True)
+    disponibles = models.CharField(max_length=50, blank=True)
+
+    # Flags / meta
+    no_coincidente = models.BooleanField(default=False)
+    fila_numero = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        verbose_name = "Registro CABAL"
+        verbose_name_plural = "Registros CABAL"
+        indexes = [
+            models.Index(fields=["archivo"]),
+            models.Index(fields=["centro"]),
+            models.Index(fields=["nro_comercio"]),
+            models.Index(fields=["fecha_trx"]),
+        ]
+
+# (Dejamos tu modelo Expediente tal cual, sin uso en este flujo)
 class Expediente(models.Model):
     centro = models.ForeignKey(
         Centro, on_delete=models.CASCADE, related_name="expedientes_cabal"
