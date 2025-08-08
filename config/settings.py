@@ -301,7 +301,8 @@ LOGGING = {
             "propagate": True,
         },
         "django.request": {
-            "handlers": ["error_file"],
+            "handlers": [
+                "error_file"],
             "level": "ERROR",
             "propagate": False,
         },
@@ -342,6 +343,7 @@ if DEBUG:
 
 if ENVIRONMENT == "prd":
     # Configuración para producción
+    STATICFILES_STORAGE = "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = False
     SECURE_SSL_REDIRECT = True
@@ -349,6 +351,7 @@ if ENVIRONMENT == "prd":
     CSRF_COOKIE_SECURE = True
 else:
     # Configuración para entornos bajos (no ssl)
+    STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
     SECURE_HSTS_SECONDS = 0
     SECURE_HSTS_INCLUDE_SUBDOMAINS = False
     SECURE_SSL_REDIRECT = False
@@ -371,20 +374,3 @@ DOMINIO = os.environ.get("DOMINIO", default="localhost:8001")
 RENAPER_API_USERNAME = os.getenv("RENAPER_API_USERNAME")
 RENAPER_API_PASSWORD = os.getenv("RENAPER_API_PASSWORD")
 RENAPER_API_URL = os.getenv("RENAPER_API_URL")
-
-
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "handlers": {
-        "console": {"class": "logging.StreamHandler"},
-    },
-    "loggers": {
-        "django": {"handlers": ["console"], "level": "ERROR", "propagate": False},
-        "django.request": {
-            "handlers": ["console"],
-            "level": "ERROR",
-            "propagate": False,
-        },
-    },
-}
