@@ -341,23 +341,17 @@ RENAPER_API_URL = os.getenv("RENAPER_API_URL")
 
 
 LOGGING = {
-  "version": 1,
-  "disable_existing_loggers": False,
-  "handlers": {
-    "console": {"class": "logging.StreamHandler"},
-  },
-  "loggers": {
-    "django": {
-      "handlers": ["console"],
-      "level": "ERROR",
-      "propagate": False
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {"class": "logging.StreamHandler"},
     },
-    "django.request": {
-      "handlers": ["console"],
-      "level": "ERROR",
-      "propagate": False
+    "loggers": {
+        "django": {"handlers": ["console"], "level": "ERROR", "propagate": False},
+        "django.request": {
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": False,
+        },
     },
-  },
 }
-
-
