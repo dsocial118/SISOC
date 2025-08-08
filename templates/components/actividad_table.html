@@ -1,0 +1,50 @@
+<!-- Actividad Data Table Component -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body p-0">
+                <table class="table table-bordered table-striped mb-0">
+                    <thead class="thead-light">
+                        <tr>
+                            {% for header in headers %}
+                                <th{% if header.class %} class="{{ header.class }}"{% endif %}{% if header.style %} style="{{ header.style }}"{% endif %}>{{ header.title }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for actividad in objects %}
+                            <tr>
+                                <td>{{ actividad.centro.nombre }}</td>
+                                <td>
+                                    {% if actividad.id %}
+                                        <a href="{% url 'actividadcentro_detail' centro_id=actividad.centro.id pk=actividad.id %}" class="text-decoration-none">
+                                            {{ actividad.actividad.nombre }}
+                                        </a>
+                                    {% else %}
+                                        {{ actividad.actividad.nombre }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% for dia in actividad.dias.all %}
+                                        {{ dia.nombre }}{% if not forloop.last %}, {% endif %}
+                                    {% empty %}
+                                        {{ actividad.dias }}
+                                    {% endfor %}
+                                </td>
+                                <td>{{ actividad.horariosdesde }}</td>
+                                <td>{{ actividad.horarioshasta }}</td>
+                                <td>
+                                    <span class="badge badge-info">{{ actividad.get_estado_display }}</span>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="{{ headers|length }}" class="text-center">{{ empty_message|default:"No hay actividades registradas." }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
