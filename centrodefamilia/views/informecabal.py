@@ -96,3 +96,13 @@ class InformeCabalRegistroDetailView(LoginRequiredMixin, DetailView):
     model = InformeCabalRegistro
     template_name = "informecabal/registro_detail.html"
     context_object_name = "registro"
+
+class InformeCabalArchivoDetailView(LoginRequiredMixin, DetailView):
+    model = CabalArchivo
+    template_name = "informecabal/archivo_detail.html"
+    context_object_name = "archivo"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["registros"] = InformeCabalRegistro.objects.filter(archivo=self.object).order_by("id")
+        return ctx
