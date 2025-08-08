@@ -305,7 +305,7 @@ if DEBUG:
     MIDDLEWARE += ["silk.middleware.SilkyMiddleware"]
     SILKY_PYTHON_PROFILER = True
 
-if ENVIRONMENT in ("prd", "qa"):
+if ENVIRONMENT in ("prd"):
     # Configuración para producción
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = False
@@ -313,7 +313,7 @@ if ENVIRONMENT in ("prd", "qa"):
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
 else:
-    # Configuración para qa (no ssl)
+    # Configuración para entornos bajos (no ssl)
     SECURE_HSTS_SECONDS = 0
     SECURE_HSTS_INCLUDE_SUBDOMAINS = False
     SECURE_SSL_REDIRECT = False
