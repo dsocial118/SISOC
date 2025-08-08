@@ -1,0 +1,177 @@
+{# Componente Mailbox de Derivaciones #}
+{# Uso: {% include 'components/derivaciones_mailbox.html' with carpetas=sidebar_folders active_folder='pendientes' main_title="Bandeja de derivaciones" table_headers=headers object_list=object_list search_form=True %} #}
+
+<div class="row">
+    <!-- Sidebar con Carpetas -->
+    <div class="col-md-3">
+        {% if add_button_url %}
+            <a href="{{ add_button_url }}" class="btn btn-primary btn-block mb-3">
+                {% if add_button_text %}{{ add_button_text }}{% else %}Agregar{% endif %}
+            </a>
+        {% endif %}
+        
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">{{ sidebar_title|default:"Carpetas" }}</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                        <i class="fas fa-minus pr-2"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0 d-block">
+                <ul class="nav nav-pills flex-column">
+                    {% for carpeta in carpetas %}
+                        <li class="nav-item {% if carpeta.id == active_folder %}active{% endif %}">
+                            <a href="{{ carpeta.url }}" class="nav-link {% if carpeta.class %}{{ carpeta.class }}{% endif %}">
+                                {% if carpeta.icon %}<i class="{{ carpeta.icon }} pr-2"></i>{% endif %}
+                                {{ carpeta.title }}
+                                {% if carpeta.count %}
+                                    <span class="badge bg-{{ carpeta.badge_color|default:'secondary' }} float-right">
+                                        {{ carpeta.count }}
+                                    </span>
+                                {% endif %}
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="col-md-9">
+        <div class="card card-primary card-outline">
+            <div class="card-header mt-2">
+                <h3 class="card-title">{{ main_title|default:"Bandeja" }}</h3>
+                {% if search_form %}
+                    <div class="card-tools">
+                        <form method="GET">
+                            <div class="input-group input-group-sm">
+                                <input type="text" 
+                                       class="form-control" 
+                                       name="busqueda" 
+                                       value="{{ request.GET.busqueda }}" 
+                                       placeholder="{{ search_placeholder|default:'Buscar' }}" 
+                                       aria-label="Search" />
+                                <div class="input-group-append">
+                                    <button class="btn btn-primary" type="submit">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="card-body p-0">
+                <!-- Controles de paginación superior -->
+                {% if is_paginated %}
+                    <div class="mailbox-controls">
+                        <div class="float-right mb-2">
+                            {{ page_obj.number }} | {{ page_obj.paginator.num_pages }}
+                            <div class="btn-group ml-2">
+                                {% if page_obj.has_previous %}
+                                    <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.busqueda %}&busqueda={{ request.GET.busqueda }}{% endif %}" 
+                                       class="btn btn-default btn-sm">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </a>
+                                    <a href="?page=1{% if request.GET.busqueda %}&busqueda={{ request.GET.busqueda }}{% endif %}" 
+                                       class="btn btn-primary btn-sm">Primera</a>
+                                {% endif %}
+                                {% if page_obj.has_next %}
+                                    <a href="?page={{ page_obj.next_page_number }}{% if request.GET.busqueda %}&busqueda={{ request.GET.busqueda }}{% endif %}" 
+                                       class="btn btn-default btn-sm">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                    <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.busqueda %}&busqueda={{ request.GET.busqueda }}{% endif %}" 
+                                       class="btn btn-primary btn-sm">Última</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- Tabla de datos -->
+                <div class="table-responsive mailbox-messages mt-2">
+                    <table class="table table-hover table-striped">
+                        {% if table_headers %}
+                            <thead>
+                                <tr>
+                                    {% for header in table_headers %}
+                                        <th class="{% if header.class %}{{ header.class }}{% endif %}">
+                                            {{ header.title }}
+                                        </th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                        {% endif %}
+                        <tbody>
+                            {% for item in object_list %}
+                                <tr class="{% if item.row_class %}{{ item.row_class }}{% endif %}">
+                                    {% if custom_cells %}
+                                        {{ custom_cells|safe }}
+                                    {% else %}
+                                        {% for field in table_fields %}
+                                            <td>
+                                                {% if field.type == 'badge' %}
+                                                    <span class="badge {{ field.badge_class|default:'badge-gb-color' }}">
+                                                        {{ item|attr:field.name }}
+                                                    </span>
+                                                {% elif field.type == 'link' %}
+                                                    <a href="{{ field.url_pattern|replace:'<pk>':item.pk }}">
+                                                        {{ item|attr:field.name }}
+                                                    </a>
+                                                {% elif field.type == 'date' %}
+                                                    {{ item|attr:field.name|date:"d/m/Y" }}
+                                                {% elif field.type == 'icon' %}
+                                                    {% if item|attr:field.condition %}<i class="{{ field.icon }}"></i>{% endif %}
+                                                {% else %}
+                                                    {{ item|attr:field.name }}
+                                                {% endif %}
+                                            </td>
+                                        {% endfor %}
+                                    {% endif %}
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="{{ table_headers|length|default:'5' }}" class="text-muted text-center">
+                                        {% if empty_message %}{{ empty_message }}{% else %}Sin resultados{% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Controles de paginación inferior -->
+                {% if is_paginated %}
+                    <div class="mailbox-controls">
+                        <div class="float-right mb-3">
+                            {{ page_obj.number }} | {{ page_obj.paginator.num_pages }}
+                            <div class="btn-group ml-2">
+                                {% if page_obj.has_previous %}
+                                    <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.busqueda %}&busqueda={{ request.GET.busqueda }}{% endif %}" 
+                                       class="btn btn-default btn-sm">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </a>
+                                    <a href="?page=1{% if request.GET.busqueda %}&busqueda={{ request.GET.busqueda }}{% endif %}" 
+                                       class="btn btn-primary btn-sm">Primera</a>
+                                {% endif %}
+                                {% if page_obj.has_next %}
+                                    <a href="?page={{ page_obj.next_page_number }}{% if request.GET.busqueda %}&busqueda={{ request.GET.busqueda }}{% endif %}" 
+                                       class="btn btn-default btn-sm">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                    <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.busqueda %}&busqueda={{ request.GET.busqueda }}{% endif %}" 
+                                       class="btn btn-primary btn-sm">Última</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
