@@ -11,7 +11,9 @@ from duplas.models import Dupla
 from intervenciones.models.intervenciones import Intervencion, SubIntervencion
 from comedores.models import Comedor
 import logging
+
 logger = logging.getLogger("django")
+
 
 class AcompanamientoService:
     @staticmethod
@@ -42,7 +44,9 @@ class AcompanamientoService:
             )
 
             if hitos_existente:
-                AcompanamientoService._actualizar_hitos(hitos_existente, hitos_a_actualizar)
+                AcompanamientoService._actualizar_hitos(
+                    hitos_existente, hitos_a_actualizar
+                )
             else:
                 nuevo_hito = Hitos.objects.create(comedor=intervenciones.comedor)
                 AcompanamientoService._actualizar_hitos(nuevo_hito, hitos_a_actualizar)
@@ -80,7 +84,9 @@ class AcompanamientoService:
             Hitos | None
         """
         try:
-            return Hitos.objects.select_related("comedor").filter(comedor=comedor).first()
+            return (
+                Hitos.objects.select_related("comedor").filter(comedor=comedor).first()
+            )
         except Exception as e:
             logger.error("Ocurrió un error inesperado en get_queryset", exc_info=True)
 
@@ -147,7 +153,9 @@ class AcompanamientoService:
 
             if admision:
                 info_relevante = (
-                    InformeTecnico.objects.filter(admision=admision).order_by("-id").first()
+                    InformeTecnico.objects.filter(admision=admision)
+                    .order_by("-id")
+                    .first()
                 )
                 anexo = Anexo.objects.filter(admision=admision).first()
                 comedor = Comedor.objects.filter(id=admision.comedor_id).first()
@@ -253,17 +261,23 @@ class AcompanamientoService:
             QuerySet: QuerySet de objetos Comedor filtrados según los criterios especificados.
         """
         try:
-                
+
             user_groups = list(user.groups.values_list("name", flat=True))
             is_area_legales = "Area Legales" in user_groups
-            is_dupla = "Tecnico Comedor" in user_groups or "Abogado Dupla" in user_groups
+            is_dupla = (
+                "Tecnico Comedor" in user_groups or "Abogado Dupla" in user_groups
+            )
 
             # Subqueries para evitar JOINs 1:N y uso de distinct()
             admision_subq = Admision.objects.filter(
                 comedor=OuterRef("pk"), enviado_acompaniamiento=True
             )
-            dupla_abogado_subq = Dupla.objects.filter(comedor=OuterRef("pk"), abogado=user)
-            dupla_tecnico_subq = Dupla.objects.filter(comedor=OuterRef("pk"), tecnico=user)
+            dupla_abogado_subq = Dupla.objects.filter(
+                comedor=OuterRef("pk"), abogado=user
+            )
+            dupla_tecnico_subq = Dupla.objects.filter(
+                comedor=OuterRef("pk"), tecnico=user
+            )
 
             qs = Comedor.objects.select_related(
                 "referente", "tipocomedor", "provincia", "dupla__abogado"
@@ -271,7 +285,9 @@ class AcompanamientoService:
 
             if not user.is_superuser:
                 if is_dupla:
-                    qs = qs.filter(Exists(dupla_abogado_subq) | Exists(dupla_tecnico_subq))
+                    qs = qs.filter(
+                        Exists(dupla_abogado_subq) | Exists(dupla_tecnico_subq)
+                    )
                 if is_area_legales:
                     qs = qs.filter(Exists(admision_subq))
 
@@ -302,6 +318,8 @@ class AcompanamientoService:
             bool: True si tiene permisos, False en caso contrario.
         """
         try:
-            return user.is_superuser or user.groups.filter(name="Tecnico Comedor").exists()
+            return (
+                user.is_superuser or user.groups.filter(name="Tecnico Comedor").exists()
+            )
         except Exception as e:
             logger.error("Ocurrió un error inesperado en get_queryset", exc_info=True)

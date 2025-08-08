@@ -1,9 +1,7 @@
-// centrodefamilia.js
+// custom/js/centrodefamilia.js
 
 document.addEventListener("DOMContentLoaded", function() {
-  // 1) FILTROS EN VIVO
-
-  // Filtrar Centros
+  // 1) FILTRO EN VIVO DE CENTROS ADHERIDOS
   const filtroCentros = document.getElementById('filterCentros');
   const tablaCentros = document.querySelector('#tablaCentros tbody');
   if (filtroCentros && tablaCentros) {
@@ -12,22 +10,6 @@ document.addEventListener("DOMContentLoaded", function() {
       tablaCentros.querySelectorAll('tr').forEach(fila => {
         const nombre = fila.cells[0].textContent.trim().toLowerCase();
         fila.style.display = nombre.startsWith(termino) ? '' : 'none';
-      });
-    });
-  }
-
-  // Filtrar Actividades (por Centro, Actividad, Categoría, Estado)
-  const filtroActividades = document.getElementById('filterActividades');
-  const tablaActividades = document.querySelector('#tablaActividades tbody');
-  if (filtroActividades && tablaActividades) {
-    filtroActividades.addEventListener('input', () => {
-      const termino = filtroActividades.value.trim().toLowerCase();
-      tablaActividades.querySelectorAll('tr').forEach(fila => {
-        const textos = Array.from(fila.cells)
-          .slice(0, 4)
-          .map(celda => celda.textContent.trim().toLowerCase());
-        const coincide = textos.some(texto => texto.startsWith(termino));
-        fila.style.display = coincide ? '' : 'none';
       });
     });
   }
@@ -50,19 +32,24 @@ document.addEventListener("DOMContentLoaded", function() {
       });
   });
 
-  // Filtrar Expedientes
-  const buscadorExpedientes = document.getElementById('searchExpedientes');
-  const tablaExpedientes = document.querySelector('#tablaExpedientes tbody');
-  if (buscadorExpedientes && tablaExpedientes) {
-    buscadorExpedientes.addEventListener('input', () => {
-      const termino = buscadorExpedientes.value.trim().toLowerCase();
-      tablaExpedientes.querySelectorAll('tr').forEach(fila => {
-        const archivo = fila.cells[0].textContent.trim().toLowerCase();
-        const periodo = fila.cells[1].textContent.trim().toLowerCase();
-        fila.style.display = (archivo.includes(termino) || periodo.includes(termino))
-          ? '' 
-          : 'none';
-      });
-    });
-  }
+  // 3) FILTRO POR QUERY STRING PARA ACTIVIDADES
+  updateQueryParam("searchActividades", "search_actividades");
+  updateQueryParam("searchCurso", "search_actividades_curso");
 });
+
+// Función para actualizar parámetros en la URL y recargar
+function updateQueryParam(inputId, paramName) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  input.addEventListener('input', function () {
+    const url = new URL(window.location);
+    const value = this.value;
+    url.searchParams.set(paramName, value);
+    if (paramName === "search_actividades") {
+      url.searchParams.delete("page_act");
+    } else if (paramName === "search_actividades_curso") {
+      url.searchParams.delete("page");
+    }
+    window.location = url.toString();
+  });
+}
