@@ -904,7 +904,9 @@ class CiudadanosCreateView(CreateView):
             "breadcrumb_items": [
                 {"text": "Ciudadano", "url": reverse("ciudadanos")},
                 {"text": "Agregar", "active": True}
-            ]
+            ],
+            # Stepper mode
+            "is_edit_mode": False
         })
         return context
 
@@ -985,7 +987,9 @@ class CiudadanosUpdateView(UpdateView):
                 {"text": "Ciudadano", "url": reverse("ciudadanos")},
                 {"text": str(self.object), "url": reverse("ciudadanos_ver", kwargs={"pk": self.object.id})},
                 {"text": "Editar", "active": True}
-            ]
+            ],
+            # Stepper mode
+            "is_edit_mode": True
         })
         return context
 
