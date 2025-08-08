@@ -1,35 +1,39 @@
 /* ========================================
    MEJORAS PARA CIUDADANO_DETAIL.HTML
-   Tema Gubernamental Azul Mejorado
+   Tema Gubernamental Poncho sobre Bootstrap 5
    ======================================== */
 
-/* Variables CSS para consistencia */
+/* Variables CSS para colores Poncho oficiales formales */
 :root {
-    --gov-primary: #14376b;
-    --gov-secondary: #1e3a5f;
-    --gov-accent: #17a2b8;
-    --gov-dark: #1a2332;
-    --gov-medium: #2c3e50;
-    --gov-light: #34495e;
-    --gov-border: #4a5f7a;
-    --gov-text: #ffffff;
-    --gov-muted: #bdc3c7;
-    --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.15);
-    --shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.25);
+    --poncho-primary: #0072bb;      /* Azul oficial Argentina */
+    --poncho-secondary: #1f4788;    /* Azul más oscuro y formal */
+    --poncho-accent: #005faa;       /* Azul intermedio */
+    --poncho-dark: #343a40;         /* Gris oscuro */
+    --poncho-medium: #495057;       /* Gris medio */
+    --poncho-light: #f8f9fa;        /* Gris muy claro */
+    --poncho-border: #dee2e6;       /* Borde estándar */
+    --poncho-text: #212529;         /* Negro texto */
+    --poncho-muted: #6c757d;        /* Gris muted */
+    --poncho-white: #ffffff;        /* Blanco puro */
+    --poncho-success: #28a745;      /* Verde éxito */
+    --poncho-warning: #856404;      /* Amarillo/marrón warning más formal */
+    --poncho-danger: #721c24;       /* Rojo más oscuro y formal */
+    --poncho-info: #004085;         /* Azul info más formal */
+    --poncho-formal-gray: #8d9aa5;  /* Gris corporativo */
+    --shadow-soft: 0 4px 20px rgba(0, 114, 187, 0.08);
+    --shadow-hover: 0 8px 32px rgba(0, 114, 187, 0.12);
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ==========================================
-   GLASSMORPHISM PARA CARDS
+   CARDS ESTILO PONCHO MEJORADO
    ========================================== */
 .card {
-    background: rgba(255, 255, 255, 0.06) !important;
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
-    border-radius: 16px !important;
+    background: var(--poncho-white) !important;
+    border: 1px solid var(--poncho-border) !important;
+    border-radius: 0.75rem !important;
     box-shadow: var(--shadow-soft) !important;
-    color: var(--gov-text) !important;
+    color: var(--poncho-text) !important;
     transition: var(--transition-smooth) !important;
     overflow: hidden;
 }
@@ -37,19 +41,19 @@
 .card:hover {
     transform: translateY(-4px);
     box-shadow: var(--shadow-hover) !important;
-    border-color: rgba(255, 255, 255, 0.25) !important;
+    border-color: var(--poncho-primary) !important;
 }
 
 /* ==========================================
-   HEADERS CON GRADIENTES GUBERNAMENTALES
+   HEADERS CON GRADIENTES PONCHO FORMALES
    ========================================== */
 .card-header {
-    background: linear-gradient(135deg, var(--gov-primary) 0%, var(--gov-secondary) 100%) !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-    color: var(--gov-text) !important;
+    background: linear-gradient(135deg, var(--poncho-primary) 0%, var(--poncho-secondary) 100%) !important;
+    border-bottom: 1px solid var(--poncho-border) !important;
+    color: var(--poncho-white) !important;
     padding: 1.25rem !important;
     position: relative;
-    border-radius: 16px 16px 0 0 !important;
+    border-radius: 0.75rem 0.75rem 0 0 !important;
 }
 
 .card-header::before {
@@ -58,26 +62,33 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--gov-accent), #3498db, var(--gov-accent));
-    border-radius: 16px 16px 0 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--poncho-accent), var(--poncho-primary), var(--poncho-accent));
+    border-radius: 0.75rem 0.75rem 0 0;
 }
 
-.card-header h5 {
+.card-header h5,
+.card-header h3 {
     font-weight: 600;
     letter-spacing: 0.5px;
     margin-bottom: 0;
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    color: var(--poncho-white) !important;
+}
+
+.card-header .card-title {
+    color: var(--poncho-white) !important;
 }
 
 /* ==========================================
-   INDICADORES CON EFECTOS ESPECIALES
+   INDICADORES CON EFECTOS PONCHO FORMALES
    ========================================== */
 .card-body.d-flex.align-items-center {
     padding: 2rem 1.5rem !important;
     position: relative;
+    background: var(--poncho-white);
 }
 
 .card-body.d-flex.align-items-center::before {
@@ -87,37 +98,50 @@
     left: 0;
     width: 4px;
     height: 100%;
-    background: linear-gradient(180deg, var(--gov-accent), #3498db);
-    border-radius: 0 0 0 16px;
+    background: linear-gradient(180deg, var(--poncho-primary), var(--poncho-accent));
+    border-radius: 0 0 0 0.75rem;
 }
 
 .card-body i.fa-2x {
     padding: 1rem;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    border-radius: 0.75rem;
+    background: linear-gradient(135deg, var(--poncho-light), var(--poncho-white));
+    border: 2px solid var(--poncho-border);
+    color: var(--poncho-primary) !important;
+    box-shadow: 0 4px 12px rgba(0, 114, 187, 0.08);
     transition: var(--transition-smooth);
 }
 
 .card-body:hover i.fa-2x {
-    transform: scale(1.1) rotate(5deg);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(0, 114, 187, 0.15);
+    border-color: var(--poncho-primary);
+}
+
+.card-body h4 {
+    color: var(--poncho-primary) !important;
+    font-weight: 700;
+}
+
+.card-body p {
+    color: var(--poncho-muted) !important;
 }
 
 /* ==========================================
-   TABLAS MEJORADAS
+   TABLAS ESTILO PONCHO MEJORADAS
    ========================================== */
 .table {
-    color: var(--gov-text) !important;
-    border-radius: 12px !important;
+    color: var(--poncho-text) !important;
+    border-radius: 0.5rem !important;
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 114, 187, 0.08);
+    background: var(--poncho-white);
 }
 
 .table th {
-    background: linear-gradient(135deg, var(--gov-medium) 0%, var(--gov-light) 100%) !important;
+    background: linear-gradient(135deg, var(--poncho-light) 0%, #e9ecef 100%) !important;
     border: none !important;
-    color: var(--gov-text) !important;
+    color: var(--poncho-dark) !important;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -133,38 +157,52 @@
     left: 0;
     right: 0;
     height: 2px;
-    background: linear-gradient(90deg, transparent, var(--gov-accent), transparent);
+    background: linear-gradient(90deg, transparent, var(--poncho-primary), transparent);
+}
+
+.table th i {
+    color: var(--poncho-primary) !important;
+    margin-right: 0.5rem;
 }
 
 .table td {
-    background-color: var(--gov-light) !important;
-    border-color: var(--gov-border) !important;
-    color: var(--gov-text) !important;
+    background-color: var(--poncho-white) !important;
+    border-color: var(--poncho-border) !important;
+    color: var(--poncho-text) !important;
     padding: 1rem !important;
     transition: var(--transition-smooth);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    border-bottom: 1px solid var(--poncho-border) !important;
 }
 
 .table-hover tbody tr:hover td {
-    background-color: rgba(255, 255, 255, 0.1) !important;
+    background-color: rgba(0, 114, 187, 0.05) !important;
     transform: translateX(4px);
 }
 
+.table-striped tbody tr:nth-of-type(odd) td {
+    background-color: var(--poncho-light) !important;
+}
+
+.table-striped tbody tr:nth-of-type(odd):hover td {
+    background-color: rgba(0, 114, 187, 0.08) !important;
+}
+
 /* ==========================================
-   NAVEGACIÓN DE PESTAÑAS MODERNA
+   NAVEGACIÓN DE PESTAÑAS BOOTSTRAP 5 + PONCHO
    ========================================== */
 .nav-pills {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--poncho-light);
     padding: 0.5rem;
-    border-radius: 12px;
+    border-radius: 0.75rem;
     gap: 0.25rem;
+    border: 1px solid var(--poncho-border);
 }
 
 .nav-pills .nav-link {
     background: transparent !important;
-    color: rgba(255, 255, 255, 0.7) !important;
+    color: var(--poncho-muted) !important;
     border: 1px solid transparent !important;
-    border-radius: 8px !important;
+    border-radius: 0.5rem !important;
     padding: 0.75rem 1.25rem !important;
     font-weight: 500;
     transition: var(--transition-smooth);
@@ -179,7 +217,7 @@
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, var(--gov-primary), var(--gov-accent));
+    background: linear-gradient(135deg, var(--poncho-primary), var(--poncho-secondary));
     transition: var(--transition-smooth);
     z-index: -1;
 }
@@ -189,22 +227,54 @@
 }
 
 .nav-pills .nav-link:hover {
-    color: var(--gov-text) !important;
-    border-color: rgba(255, 255, 255, 0.2) !important;
+    color: var(--poncho-white) !important;
+    border-color: var(--poncho-primary) !important;
 }
 
 .nav-pills .nav-link.active {
-    background: linear-gradient(135deg, var(--gov-primary), var(--gov-accent)) !important;
-    color: var(--gov-text) !important;
-    border-color: rgba(255, 255, 255, 0.3) !important;
-    box-shadow: 0 4px 12px rgba(20, 55, 107, 0.4);
+    background: linear-gradient(135deg, var(--poncho-primary), var(--poncho-secondary)) !important;
+    color: var(--poncho-white) !important;
+    border-color: var(--poncho-primary) !important;
+    box-shadow: 0 4px 12px rgba(0, 114, 187, 0.3);
+}
+
+/* Para Bootstrap tabs también */
+.nav-tabs {
+    border-bottom: 2px solid var(--poncho-border);
+}
+
+.nav-tabs .nav-link {
+    border: 1px solid transparent;
+    color: var(--poncho-muted);
+    background: transparent;
+    padding: 0.75rem 1rem;
+    transition: var(--transition-smooth);
+    border-radius: 0.5rem 0.5rem 0 0;
+    margin-bottom: -2px;
+}
+
+.nav-tabs .nav-link:hover {
+    border-color: var(--poncho-border);
+    color: var(--poncho-primary);
+    background: var(--poncho-light);
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--poncho-primary);
+    background: var(--poncho-white);
+    border-color: var(--poncho-border) var(--poncho-border) var(--poncho-white);
+    font-weight: 600;
+}
+
+.tab-content {
+    padding-top: 1.5rem;
 }
 
 /* ==========================================
-   BOTONES MEJORADOS
+   BOTONES ESTILO PONCHO MEJORADOS
    ========================================== */
 .btn {
-    border-radius: 10px !important;
+    border-radius: 0.5rem !important;
     font-weight: 500;
     letter-spacing: 0.3px;
     transition: var(--transition-smooth);
@@ -231,100 +301,252 @@
 
 .btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, var(--gov-primary), var(--gov-secondary)) !important;
+    background: linear-gradient(135deg, var(--poncho-primary), var(--poncho-secondary)) !important;
     border: none !important;
-    box-shadow: 0 4px 12px rgba(20, 55, 107, 0.3);
+    color: var(--poncho-white) !important;
+    box-shadow: 0 4px 12px rgba(0, 114, 187, 0.3);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #005a9e, #1e3a5f) !important;
+    color: var(--poncho-white) !important;
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, var(--poncho-medium), var(--poncho-dark)) !important;
+    border: none !important;
+    color: var(--poncho-white) !important;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, var(--poncho-success), #1e7e34) !important;
+    border: none !important;
+    color: var(--poncho-white) !important;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, var(--poncho-danger), #c82333) !important;
+    border: none !important;
+    color: var(--poncho-white) !important;
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, var(--poncho-warning), #a0690f) !important;
+    border: none !important;
+    color: var(--poncho-white) !important;
+}
+
+.btn-info {
+    background: linear-gradient(135deg, var(--poncho-info), var(--poncho-primary)) !important;
+    border: none !important;
+    color: var(--poncho-white) !important;
+}
+
+.btn-light {
+    background: linear-gradient(135deg, var(--poncho-light), #e9ecef) !important;
+    border: 1px solid var(--poncho-border) !important;
+    color: var(--poncho-dark) !important;
+}
+
+.btn-outline-primary {
+    color: var(--poncho-primary) !important;
+    border-color: var(--poncho-primary) !important;
+    background: var(--poncho-white) !important;
+}
+
+.btn-outline-primary:hover {
+    background: var(--poncho-primary) !important;
+    border-color: var(--poncho-primary) !important;
+    color: var(--poncho-white) !important;
 }
 
 .btn-outline-light {
-    color: var(--gov-text) !important;
-    border-color: rgba(255, 255, 255, 0.3) !important;
-    background: rgba(255, 255, 255, 0.05) !important;
+    color: var(--poncho-dark) !important;
+    border-color: var(--poncho-border) !important;
+    background: var(--poncho-white) !important;
 }
 
 .btn-outline-light:hover {
-    background: rgba(255, 255, 255, 0.15) !important;
-    border-color: rgba(255, 255, 255, 0.5) !important;
-    color: var(--gov-text) !important;
+    background: var(--poncho-light) !important;
+    border-color: var(--poncho-border) !important;
+    color: var(--poncho-dark) !important;
 }
 
 /* ==========================================
    PERFIL DE CIUDADANO MEJORADO
    ========================================== */
 .list-group-item {
-    background: rgba(255, 255, 255, 0.05) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    color: var(--gov-text) !important;
+    background: var(--poncho-white) !important;
+    border: 1px solid var(--poncho-border) !important;
+    color: var(--poncho-text) !important;
     transition: var(--transition-smooth);
     padding: 1rem 1.25rem !important;
 }
 
 .list-group-item:hover {
-    background: rgba(255, 255, 255, 0.1) !important;
-    border-color: rgba(255, 255, 255, 0.2) !important;
+    background: var(--poncho-light) !important;
+    border-color: var(--poncho-primary) !important;
     transform: translateX(4px);
 }
 
 .list-group-item:first-child {
-    border-radius: 0 !important;
+    border-radius: 0.5rem 0.5rem 0 0 !important;
 }
 
 .list-group-item:last-child {
-    border-radius: 0 0 16px 16px !important;
+    border-radius: 0 0 0.5rem 0.5rem !important;
+}
+
+.list-group-item .fw-medium i {
+    color: var(--poncho-primary);
 }
 
 /* ==========================================
-   BADGES Y ELEMENTOS ESPECIALES
+   BADGES ESTILO PONCHO
    ========================================== */
 .badge-custom, .badge {
-    background: linear-gradient(135deg, var(--gov-accent), #3498db) !important;
-    color: var(--gov-text) !important;
+    background: linear-gradient(135deg, var(--poncho-primary), var(--poncho-secondary)) !important;
+    color: var(--poncho-white) !important;
     padding: 0.5rem 1rem !important;
-    border-radius: 20px !important;
+    border-radius: 1.25rem !important;
     font-weight: 500;
-    box-shadow: 0 2px 8px rgba(23, 162, 184, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 114, 187, 0.2);
     transition: var(--transition-smooth);
 }
 
 .badge:hover {
     transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(23, 162, 184, 0.4);
+    box-shadow: 0 4px 12px rgba(0, 114, 187, 0.3);
+}
+
+.badge-primary {
+    background: linear-gradient(135deg, var(--poncho-primary), var(--poncho-secondary)) !important;
+}
+
+.badge-secondary {
+    background: linear-gradient(135deg, var(--poncho-medium), var(--poncho-dark)) !important;
+}
+
+.badge-success {
+    background: linear-gradient(135deg, var(--poncho-success), #1e7e34) !important;
+}
+
+.badge-danger {
+    background: linear-gradient(135deg, var(--poncho-danger), #c82333) !important;
+}
+
+.badge-warning {
+    background: linear-gradient(135deg, var(--poncho-warning), #a0690f) !important;
+    color: var(--poncho-white) !important;
+}
+
+.badge-info {
+    background: linear-gradient(135deg, var(--poncho-info), var(--poncho-primary)) !important;
+}
+
+.badge-light {
+    background: var(--poncho-light) !important;
+    color: var(--poncho-dark) !important;
+    border: 1px solid var(--poncho-border) !important;
 }
 
 /* ==========================================
    FOTO DE PERFIL MEJORADA
    ========================================== */
 .card-header.text-center img {
-    border: 4px solid rgba(255, 255, 255, 0.2) !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+    border: 4px solid var(--poncho-white) !important;
+    box-shadow: 0 8px 32px rgba(0, 114, 187, 0.2) !important;
     transition: var(--transition-smooth);
 }
 
 .card-header.text-center img:hover {
     transform: scale(1.05);
-    border-color: var(--gov-accent) !important;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4) !important;
+    border-color: var(--poncho-accent) !important;
+    box-shadow: 0 12px 40px rgba(0, 114, 187, 0.3) !important;
 }
 
 /* ==========================================
    FOOTER DE CARDS
    ========================================== */
 .card-footer {
-    background: linear-gradient(135deg, var(--gov-medium), var(--gov-light)) !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 0 0 16px 16px !important;
+    background: linear-gradient(135deg, var(--poncho-light), #e9ecef) !important;
+    border-top: 1px solid var(--poncho-border) !important;
+    border-radius: 0 0 0.75rem 0.75rem !important;
     padding: 1.25rem !important;
+}
+
+/* ==========================================
+   ESTADOS VACÍOS MEJORADOS
+   ========================================== */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--poncho-muted);
+    background: var(--poncho-white);
+    border-radius: 0.5rem;
+}
+
+.empty-state i {
+    color: var(--poncho-muted);
+    margin-bottom: 1rem;
+    opacity: 0.6;
+}
+
+.empty-state h5,
+.empty-state h6 {
+    color: var(--poncho-muted);
+    font-weight: 500;
+}
+
+/* ==========================================
+   PROGRAMA CARDS
+   ========================================== */
+.program-card {
+    background: var(--poncho-white);
+    border: 1px solid var(--poncho-border);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    transition: var(--transition-smooth);
+    position: relative;
+    overflow: hidden;
+}
+
+.program-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--poncho-primary);
+    transform: scaleY(0);
+    transition: var(--transition-smooth);
+}
+
+.program-card:hover::before {
+    transform: scaleY(1);
+}
+
+.program-card:hover {
+    border-color: var(--poncho-primary);
+    box-shadow: 0 4px 12px rgba(0, 114, 187, 0.1);
+    transform: translateY(-2px);
 }
 
 /* ==========================================
    TEXTO Y UTILIDADES
    ========================================== */
 .text-muted {
-    color: var(--gov-muted) !important;
+    color: var(--poncho-muted) !important;
+}
+
+.text-primary {
+    color: var(--poncho-primary) !important;
 }
 
 /* ==========================================
@@ -354,7 +576,7 @@
    ========================================== */
 @media (max-width: 768px) {
     .card {
-        border-radius: 12px !important;
+        border-radius: 0.5rem !important;
         margin-bottom: 1rem;
     }
     
@@ -370,5 +592,25 @@
     .btn-group {
         flex-direction: column;
         gap: 0.5rem;
+    }
+    
+    .btn-group .btn {
+        width: 100%;
+    }
+    
+    .table th,
+    .table td {
+        padding: 0.75rem 0.5rem !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .card-header h5,
+    .card-header h3 {
+        font-size: 1.125rem;
+    }
+    
+    .card-body {
+        padding: 1rem !important;
     }
 }
