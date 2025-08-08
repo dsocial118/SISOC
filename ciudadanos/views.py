@@ -675,6 +675,70 @@ class CiudadanosDetailView(DetailView):
             }
         )
 
+        # Datos para componentes
+        context.update({
+            # Breadcrumb
+            "breadcrumb_items": [
+                {"text": "Ciudadanos", "url": reverse("ciudadanos")},
+                {"text": f"{ciudadano.apellido}, {ciudadano.nombre}", "active": True}
+            ],
+            # Back button
+            "back_button": {
+                "url": reverse("ciudadanos"),
+                "text": "Volver",
+                "type": "outline-light",
+                "icon": "fas fa-arrow-left"
+            },
+            # Action buttons
+            "action_buttons": []
+        })
+        
+        # Agregar botones según permisos
+        if self.request.user.has_perm('Usuarios.rol_admin'):
+            context["action_buttons"].extend([
+                {
+                    "url": reverse("ciudadanosderivaciones_historial", kwargs={"pk": ciudadano.id}),
+                    "text": "Derivar",
+                    "type": "primary text-white",
+                    "icon": "fas fa-share-square"
+                },
+                {
+                    "url": reverse("ciudadanos_eliminar", kwargs={"pk": ciudadano.id}),
+                    "text": "Eliminar", 
+                    "type": "danger",
+                    "icon": "fas fa-trash-alt"
+                }
+            ])
+        
+        context["action_buttons"].extend([
+            {
+                "text": "Imprimir",
+                "type": "secondary d-print-none",
+                "icon": "fas fa-print",
+                "onclick": "window.print()"
+            },
+            {
+                "url": reverse("ciudadano_intervencion_ver", kwargs={"pk": ciudadano.id}),
+                "text": "Intervenciones",
+                "type": "purple",
+                "icon": "fas fa-notes-medical"
+            },
+            {
+                "url": reverse("llamados_ver", kwargs={"pk": ciudadano.id}),
+                "text": "Llamados",
+                "type": "success", 
+                "icon": "fas fa-phone-alt"
+            }
+        ])
+        
+        if self.request.user.has_perm('Usuarios.rol_admin'):
+            context["action_buttons"].append({
+                "url": reverse("ciudadanos_editar", kwargs={"pk": ciudadano.id}),
+                "text": "Editar",
+                "type": "primary",
+                "icon": "fas fa-edit"
+            })
+
         return context
 
     def grafico_evolucion_de_riesgo(
@@ -833,6 +897,15 @@ class CiudadanosCreateView(CreateView):
         context = super().get_context_data(**kwargs)
         # Pasamos 'precargado' al contexto para usar en el template
         context["datos_api"] = getattr(self, "precargado", None)
+        
+        # Datos para componentes
+        context.update({
+            # Breadcrumb
+            "breadcrumb_items": [
+                {"text": "Ciudadano", "url": reverse("ciudadanos")},
+                {"text": "Agregar", "active": True}
+            ]
+        })
         return context
 
     def form_invalid(self, form):
@@ -901,6 +974,20 @@ class CiudadanosCreateView(CreateView):
 class CiudadanosUpdateView(UpdateView):
     model = Ciudadano
     form_class = CiudadanoUpdateForm
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Datos para componentes
+        context.update({
+            # Breadcrumb
+            "breadcrumb_items": [
+                {"text": "Ciudadano", "url": reverse("ciudadanos")},
+                {"text": str(self.object), "url": reverse("ciudadanos_ver", kwargs={"pk": self.object.id})},
+                {"text": "Editar", "active": True}
+            ]
+        })
+        return context
 
     def form_valid(self, form):
         ciudadano = form.save(
@@ -1122,13 +1209,47 @@ class GrupoFamiliarList(ListView):
     def get_context_data(self, **kwargs):
         pk = self.kwargs["pk"]
         context = super().get_context_data(**kwargs)
-        context["familiares_fk1"] = GrupoFamiliar.objects.filter(ciudadano_1=pk)
-        context["familiares_fk2"] = GrupoFamiliar.objects.filter(ciudadano_2=pk)
+        context["familiares_fk1"] = GrupoFamiliar.objects.filter(ciudadano_1=pk).select_related('ciudadano_2', 'vinculo', 'estado_relacion')
+        context["familiares_fk2"] = GrupoFamiliar.objects.filter(ciudadano_2=pk).select_related('ciudadano_1', 'vinculo', 'estado_relacion')
         context["count_familia"] = (
-            context["familiares_fk1"].count() + context["familiares_fk1"].count()
+            context["familiares_fk1"].count() + context["familiares_fk2"].count()
         )
-        context["nombre"] = Ciudadano.objects.filter(pk=pk).first()
+        nombre = Ciudadano.objects.filter(pk=pk).first()
+        context["nombre"] = nombre
         context["pk"] = pk
+        
+        # Datos para componentes
+        context.update({
+            # Breadcrumb
+            "breadcrumb_items": [
+                {"text": "Ciudadano", "url": reverse("ciudadanos")},
+                {"text": str(nombre), "url": reverse("ciudadanos_ver", kwargs={"pk": pk})},
+                {"text": "Grupo Familiar", "active": True}
+            ],
+            # Action buttons
+            "action_buttons": [
+                {
+                    "url": reverse("grupofamiliar_crear", kwargs={"pk": pk}),
+                    "text": "Editar",
+                    "type": "primary",
+                    "class": "mr-1"
+                },
+                {
+                    "text": "Imprimir",
+                    "type": "secondary",
+                    "class": "mr-1 print",
+                    "onclick": "window.print()"
+                }
+            ],
+            # Back button
+            "back_button": {
+                "url": reverse("ciudadanos_ver", kwargs={"pk": pk}),
+                "text": "Volver",
+                "type": "secondary"
+            },
+            # Add URL for empty state
+            "add_url": reverse("grupofamiliar_crear", kwargs={"pk": pk})
+        })
         return context
 
 
@@ -1309,7 +1430,59 @@ class DerivacionListView(ListView):
             enviadas=Count(Case(When(usuario=self.request.user, then=1))),
         )
 
-        context.update(counts)
+        # Datos para componente derivaciones_mailbox
+        sidebar_folders = [
+            {
+                "id": "pendientes",
+                "title": "Pendientes",
+                "url": reverse("ciudadanosderivaciones_listar", args=["pendientes"]),
+                "icon": "fas fa-inbox",
+                "count": counts["pendientes"],
+                "badge_color": "primary"
+            },
+            {
+                "id": "enviadas", 
+                "title": "Enviadas",
+                "url": "#",
+                "icon": "far fa-envelope",
+                "count": counts["enviadas"],
+                "badge_color": "secondary",
+                "class": "carpeta"
+            },
+            {
+                "id": "analisis",
+                "title": "En análisis", 
+                "url": "#",
+                "icon": "far fa-eye",
+                "count": counts["analisis"],
+                "badge_color": "secondary",
+                "class": "carpeta"
+            },
+            {
+                "id": "aceptadas",
+                "title": "Aceptadas",
+                "url": "#", 
+                "icon": "fas fa-thumbs-up",
+                "count": counts["aceptadas"],
+                "badge_color": "secondary",
+                "class": "carpeta"
+            },
+            {
+                "id": "asesoradas",
+                "title": "Asesoradas",
+                "url": "#",
+                "icon": "fas fa-info-circle", 
+                "count": counts["asesoradas"],
+                "badge_color": "secondary",
+                "class": "carpeta"
+            }
+        ]
+        
+        context.update({
+            **counts,
+            "sidebar_folders": sidebar_folders,
+            "add_url": reverse("ciudadanosderivaciones_buscar")
+        })
         return context
 
     # Funcion de busqueda
@@ -1437,6 +1610,25 @@ class DerivacionHistorial(ListView):
 
 class DerivacionDeleteView(DeleteView):
     model = Derivacion
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        derivacion = self.object
+        
+        context.update({
+            # Breadcrumb
+            "breadcrumb_items": [
+                {"text": "Derivaciones", "url": reverse("ciudadanosderivaciones_listar")},
+                {"text": str(derivacion.ciudadano), "url": reverse("ciudadanos_ver", kwargs={"pk": derivacion.ciudadano.id})},
+                {"text": "Eliminar", "active": True}
+            ],
+            # Delete confirm data
+            "object_title": f"la derivación de {derivacion.ciudadano}",
+            "delete_message": f"¿Estás seguro que deseas eliminar de manera permanente la derivación de {derivacion.ciudadano}?",
+            "cancel_url": reverse("ciudadanosderivaciones_ver", kwargs={"pk": derivacion.id})
+        })
+        
+        return context
 
     def form_valid(self, form):
         if (
@@ -1469,6 +1661,96 @@ class DerivacionDeleteView(DeleteView):
 
 class DerivacionDetailView(DetailView):
     model = Derivacion
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        derivacion = context['object']
+        
+        # Preparar datos para info_card de derivación
+        derivacion_data = [
+            {"label": "Fecha de solicitud", "value": derivacion.fecha_creado.strftime("%d/%m/%Y")},
+            {"label": "Estado", "value": f'<span class="badge badge-{"warning" if derivacion.estado == "Pendiente" else "success" if derivacion.estado == "Aceptada" else "danger"}">{derivacion.estado}</span>'},
+            {"label": "Importancia", "value": f'<span class="badge badge-gb-color">{derivacion.importancia}</span>'},
+            {"label": "Usuario que solicitó", "value": str(derivacion.usuario)},
+            {"label": "Teléfono del usuario", "value": derivacion.usuario.usuarios.telefono if hasattr(derivacion.usuario, 'usuarios') and derivacion.usuario.usuarios.telefono else "-"},
+            {"label": "Email del usuario", "value": derivacion.usuario.email},
+            {"label": "Organismo relacionado", "value": derivacion.organismo if derivacion.organismo else "-"},
+            {"label": "Observaciones", "value": derivacion.detalles},
+        ]
+        
+        # Agregar alertas si existen
+        if derivacion.alertas.all().count():
+            derivacion_data.append({"label": "Alertas", "value": ", ".join([str(a) for a in derivacion.alertas.all()])})
+        
+        # Agregar archivos si existen
+        if derivacion.archivos:
+            archivo_link = f'<a href="{derivacion.archivos.url}" target="_blank">{derivacion.archivos.name.split("/")[-1]}</a>'
+            derivacion_data.append({"label": "Archivos adjuntos", "value": archivo_link})
+        
+        # Agregar datos de rechazo si aplica
+        if derivacion.estado == "Rechazada":
+            derivacion_data.extend([
+                {"label": "Fecha de rechazo", "value": derivacion.fecha_rechazo.strftime("%d/%m/%Y") if derivacion.fecha_rechazo else "-"},
+                {"label": "Motivo de rechazo", "value": derivacion.motivo_rechazo if derivacion.motivo_rechazo else "-"},
+                {"label": "Observaciones de rechazo", "value": derivacion.obs_rechazo if derivacion.obs_rechazo else "-"},
+            ])
+        
+        # Preparar datos para info_card de ciudadano
+        ciudadano_data = [
+            {"label": "Nombre", "value": f'<a href="/ciudadanos/{derivacion.ciudadano.id}/" title="Ver ciudadano">{derivacion.ciudadano}</a>'},
+            {"label": "DNI", "value": derivacion.ciudadano.documento},
+            {"label": "Fecha de nacimiento", "value": derivacion.ciudadano.fecha_nacimiento.strftime("%d/%m/%Y") if derivacion.ciudadano.fecha_nacimiento else "-"},
+            {"label": "Sexo", "value": derivacion.ciudadano.sexo if derivacion.ciudadano.sexo else "-"},
+            {"label": "Teléfono", "value": derivacion.ciudadano.telefono if derivacion.ciudadano.telefono else "-"},
+            {"label": "Email", "value": derivacion.ciudadano.email if derivacion.ciudadano.email else "-"},
+            {"label": "Observaciones", "value": derivacion.ciudadano.observaciones if derivacion.ciudadano.observaciones else "-"},
+        ]
+        
+        # Botones condicionales
+        action_buttons = []
+        if self.request.user.id == derivacion.usuario.id and derivacion.estado == 'Pendiente':
+            action_buttons.extend([
+                {
+                    "url": reverse("ciudadanosderivaciones_editar", kwargs={"pk": derivacion.id}),
+                    "text": "Editar",
+                    "type": "primary",
+                    "class": "mr-1"
+                },
+                {
+                    "url": reverse("ciudadanosderivaciones_eliminar", kwargs={"pk": derivacion.id}),
+                    "text": "Eliminar",
+                    "type": "danger",
+                    "class": "mr-1"
+                }
+            ])
+        
+        action_buttons.append({
+            "text": "Imprimir",
+            "type": "secondary",
+            "class": "mr-1 print",
+            "onclick": "window.print()"
+        })
+        
+        context.update({
+            # Breadcrumb
+            "breadcrumb_items": [
+                {"text": "Historial derivaciones", "url": reverse("ciudadanosderivaciones_historial", kwargs={"pk": derivacion.ciudadano.id})},
+                {"text": str(derivacion.ciudadano), "url": reverse("ciudadanos_ver", kwargs={"pk": derivacion.ciudadano.id})},
+                {"text": "Detalle", "active": True}
+            ],
+            # Data para cards
+            "derivacion_data": derivacion_data,
+            "ciudadano_data": ciudadano_data,
+            # Buttons
+            "action_buttons": action_buttons,
+            "back_button": {
+                "url": reverse("ciudadanosderivaciones_historial", kwargs={"pk": derivacion.ciudadano.id}),
+                "text": "Volver",
+                "type": "secondary"
+            }
+        })
+        
+        return context
 
 
 class AlertaListView(ListView):
@@ -1479,9 +1761,45 @@ class AlertaListView(ListView):
         pk = self.kwargs["pk"]
         context = super().get_context_data(**kwargs)
         context["ciudadano_alertas"] = HistorialAlerta.objects.filter(ciudadano=pk)
-        context["ciudadano"] = (
-            Ciudadano.objects.filter(id=pk).values("apellido", "nombre", "id").first()
-        )
+        ciudadano = Ciudadano.objects.filter(id=pk).values("apellido", "nombre", "id").first()
+        context["ciudadano"] = ciudadano
+        
+        # Datos para componentes
+        context.update({
+            # Breadcrumb
+            "breadcrumb_items": [
+                {"text": "Ciudadano", "url": reverse("ciudadanos")},
+                {"text": f"{ciudadano['apellido']}, {ciudadano['nombre']}", "url": reverse("ciudadanos_ver", kwargs={"pk": pk})},
+                {"text": "Historial de alertas", "active": True}
+            ],
+            # Table headers
+            "table_headers": [
+                {"title": "Estado"},
+                {"title": "Alerta"},
+                {"title": "Categoría"},
+                {"title": "Dimensión"},
+                {"title": "Gravedad"},
+                {"title": "Creada por"},
+                {"title": "Fecha Inicio"},
+                {"title": "Eliminada por"},
+                {"title": "Fecha Fin"}
+            ],
+            # Action buttons
+            "action_buttons": [
+                {
+                    "url": reverse("alertas_crear", kwargs={"pk": pk}),
+                    "text": "Editar",
+                    "type": "primary",
+                    "class": "mr-1"
+                }
+            ],
+            # Back button
+            "back_button": {
+                "url": reverse("ciudadanos_ver", kwargs={"pk": pk}),
+                "text": "Volver",
+                "type": "secondary"
+            }
+        })
         return context
 
 
@@ -1883,13 +2201,47 @@ class DimensionesDetailView(DetailView):
 
 class ArchivosListView(ListView):
     model = Archivo
-    template_name = "ciudadanos/archivos_list.html"
+    template_name = "ciudadanos/archivo_list.html"
 
     def get_context_data(self, **kwargs):
         pk = self.kwargs["pk"]
         context = super().get_context_data(**kwargs)
         context["ciudadano_archivos"] = Archivo.objects.filter(ciudadano=pk)
-        context["ciudadano"] = Ciudadano.objects.filter(id=pk).first()
+        ciudadano = Ciudadano.objects.filter(id=pk).first()
+        context["ciudadano"] = ciudadano
+        
+        # Datos para componentes
+        context.update({
+            # Breadcrumb
+            "breadcrumb_items": [
+                {"text": "Ciudadano", "url": reverse("ciudadanos")},
+                {"text": str(ciudadano), "url": reverse("ciudadanos_ver", kwargs={"pk": pk})},
+                {"text": "Archivo", "active": True}
+            ],
+            # Table headers
+            "table_headers": [
+                {"title": "Fecha"},
+                {"title": "Nombre"},
+                {"title": "Tipo"},
+                {"title": "Tamaño"},
+                {"title": "Acciones", "style": "width: 15%", "class": "notexport"}
+            ],
+            # Action buttons
+            "action_buttons": [
+                {
+                    "url": reverse("ciudadanosarchivos_crear", kwargs={"pk": pk}),
+                    "text": "Editar",
+                    "type": "primary",
+                    "class": "mr-1"
+                }
+            ],
+            # Back button
+            "back_button": {
+                "url": reverse("ciudadanos_ver", kwargs={"pk": pk}),
+                "text": "Volver",
+                "type": "secondary"
+            }
+        })
         return context
 
 
@@ -2209,35 +2561,37 @@ def busqueda_hogar(request):
 
 class GrupoHogarList(ListView):
     model = GrupoFamiliar
+    template_name = "ciudadanos/hogar_list.html"
 
     def get_context_data(self, **kwargs):
         pk = self.kwargs["pk"]
         context = super().get_context_data(**kwargs)
 
-        # FIXME: Esta query optimizada de "familiares" no se termino de implementar
+        # Query optimizada con valores específicos
         familiares = GrupoFamiliar.objects.filter(
             Q(ciudadano_1=pk) | Q(ciudadano_2=pk)
         ).values(
-            "ciudadano2__id",
-            "ciudadano1__id",
+            "ciudadano_2__id",
+            "ciudadano_1__id",
             "ciudadano_2__nombre",
             "ciudadano_2__apellido",
             "ciudadano_2__calle",
+            "ciudadano_2__altura",
             "ciudadano_2__telefono",
-            "estado_relacion",
-            "conviven",
-            "cuidado_principal",
             "ciudadano_2__foto",
             "ciudadano_1__nombre",
             "ciudadano_1__apellido",
             "ciudadano_1__calle",
+            "ciudadano_1__altura",
             "ciudadano_1__telefono",
+            "ciudadano_1__foto",
             "estado_relacion",
             "conviven",
-            "cuidado_principal",
-            "ciudadano_1__foto",
+            "cuidador_principal",
             "vinculo",
+            "vinculo_inverso",
         )
+        
         context["familiares_fk1"] = [
             familiar
             for familiar in familiares
@@ -2246,13 +2600,48 @@ class GrupoHogarList(ListView):
         context["familiares_fk2"] = [
             familiar
             for familiar in familiares
-            if familiar["ciudadano_1__id"] == int(pk)
+            if familiar["ciudadano_2__id"] == int(pk)
         ]
         context["count_familia"] = (
-            context["familiares_fk1"].count() + context["familiares_fk1"].count()
+            len(context["familiares_fk1"]) + len(context["familiares_fk2"])
         )
-        context["nombre"] = Ciudadano.objects.filter(pk=pk).values("nombre").first()
+        
+        nombre_obj = Ciudadano.objects.filter(pk=pk).first()
+        context["nombre"] = nombre_obj
         context["pk"] = pk
+        
+        # Datos para componentes
+        context.update({
+            # Breadcrumb
+            "breadcrumb_items": [
+                {"text": "Ciudadano", "url": reverse("ciudadanos")},
+                {"text": str(nombre_obj), "url": reverse("ciudadanos_ver", kwargs={"pk": pk})},
+                {"text": "Grupo Hogar", "active": True}
+            ],
+            # Action buttons
+            "action_buttons": [
+                {
+                    "url": reverse("grupofamiliar_crear", kwargs={"pk": pk}),
+                    "text": "Editar",
+                    "type": "primary",
+                    "class": "mr-1"
+                },
+                {
+                    "text": "Imprimir",
+                    "type": "secondary", 
+                    "class": "mr-1 print",
+                    "onclick": "window.print()"
+                }
+            ],
+            # Back button
+            "back_button": {
+                "url": reverse("ciudadanos_ver", kwargs={"pk": pk}),
+                "text": "Volver",
+                "type": "secondary"
+            },
+            # Add URL for empty state
+            "add_url": reverse("grupofamiliar_crear", kwargs={"pk": pk})
+        })
         return context
 
 
