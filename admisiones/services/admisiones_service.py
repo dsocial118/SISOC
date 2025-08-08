@@ -40,19 +40,25 @@ class AdmisionService:
                 queryset = Comedor.objects.all()
             else:
                 queryset = Comedor.objects.filter(
-                    Q(dupla__tecnico=user) | Q(dupla__abogado=user), dupla__estado="Activo"
+                    Q(dupla__tecnico=user) | Q(dupla__abogado=user),
+                    dupla__estado="Activo",
                 )
 
             return (
                 queryset.annotate(
                     admision_id=Subquery(admision_subquery.values("id")[:1]),
-                    estado_legales=Subquery(admision_subquery.values("estado_legales")[:1]),
+                    estado_legales=Subquery(
+                        admision_subquery.values("estado_legales")[:1]
+                    ),
                 )
                 .distinct()
                 .order_by("-id")
             )
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en get_comedores_with_admision", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en get_comedores_with_admision",
+                exc_info=True,
+            )
             return Comedor.objects.none()
 
     @staticmethod
@@ -75,7 +81,9 @@ class AdmisionService:
 
             return comedores
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en get_comedores_filtrados", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en get_comedores_filtrados", exc_info=True
+            )
             return Comedor.objects.none()
 
     @staticmethod
@@ -85,7 +93,10 @@ class AdmisionService:
             convenios = TipoConvenio.objects.all()
             return {"comedor": comedor, "convenios": convenios, "es_crear": True}
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en get_admision_create_context", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en get_admision_create_context",
+                exc_info=True,
+            )
             return {}
 
     @staticmethod
@@ -99,7 +110,9 @@ class AdmisionService:
                 comedor=comedor, tipo_convenio=tipo_convenio, estado_id=estado
             )
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en create_admision", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en create_admision", exc_info=True
+            )
             return None
 
     @staticmethod
@@ -154,14 +167,19 @@ class AdmisionService:
                 "informes_complementarios": informes_complementarios,
             }
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en get_admision_update_context", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en get_admision_update_context",
+                exc_info=True,
+            )
             return {}
 
     @staticmethod
     def procesar_post_update(request, admision):
         try:
             if "mandarLegales" in request.POST:
-                if AdmisionService.marcar_como_enviado_a_legales(admision, request.user):
+                if AdmisionService.marcar_como_enviado_a_legales(
+                    admision, request.user
+                ):
                     return True, "La admisión fue enviada a legales correctamente."
                 return False, "La admisión ya estaba marcada como enviada a legales."
 
@@ -194,7 +212,9 @@ class AdmisionService:
 
             return None, None
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en procesar_post_update", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en procesar_post_update", exc_info=True
+            )
             return None, "Error inesperado."
 
     @staticmethod
@@ -210,7 +230,9 @@ class AdmisionService:
             ArchivoAdmision.objects.filter(admision=admision).delete()
             return True
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en update_convenio", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en update_convenio", exc_info=True
+            )
             return False
 
     @staticmethod
@@ -225,7 +247,9 @@ class AdmisionService:
                 defaults={"archivo": archivo, "estado": "A Validar"},
             )
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en handle_file_upload", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en handle_file_upload", exc_info=True
+            )
             return None, False
 
     @staticmethod
@@ -238,7 +262,9 @@ class AdmisionService:
 
             archivo.delete()
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en delete_admision_file", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en delete_admision_file", exc_info=True
+            )
 
     @staticmethod
     def actualizar_estado_ajax(request):
@@ -268,7 +294,9 @@ class AdmisionService:
             }
 
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en actualizar_estado_ajax", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en actualizar_estado_ajax", exc_info=True
+            )
             return {"success": False, "error": str(e)}
 
     @staticmethod
@@ -283,7 +311,9 @@ class AdmisionService:
             AdmisionService.verificar_estado_admision(archivo.admision)
             return True
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en update_estado_archivo", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en update_estado_archivo", exc_info=True
+            )
             return False
 
     @staticmethod
@@ -299,7 +329,10 @@ class AdmisionService:
                         admision.estado_id = 2
                         admision.save()
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en verificar_estado_admision", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en verificar_estado_admision",
+                exc_info=True,
+            )
 
     @staticmethod
     def get_dupla_grupo_por_usuario(user):
@@ -311,7 +344,10 @@ class AdmisionService:
             else:
                 return "Otro"
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en get_dupla_grupo_por_usuario", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en get_dupla_grupo_por_usuario",
+                exc_info=True,
+            )
             return "Otro"
 
     @staticmethod
@@ -331,7 +367,10 @@ class AdmisionService:
                 return True
             return False
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en marcar_como_enviado_a_legales", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en marcar_como_enviado_a_legales",
+                exc_info=True,
+            )
             return False
 
     @staticmethod
@@ -343,7 +382,10 @@ class AdmisionService:
                 return True
             return False
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en marcar_como_enviado_a_acompaniamiento", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en marcar_como_enviado_a_acompaniamiento",
+                exc_info=True,
+            )
             return False
 
     @staticmethod
@@ -373,7 +415,10 @@ class AdmisionService:
 
             return False
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en marcar_como_documentacion_rectificada", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en marcar_como_documentacion_rectificada",
+                exc_info=True,
+            )
             return False
 
     @staticmethod
@@ -390,7 +435,9 @@ class AdmisionService:
 
             return admision
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en comenzar_acompanamiento", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en comenzar_acompanamiento", exc_info=True
+            )
             return None
 
     @staticmethod
@@ -399,7 +446,9 @@ class AdmisionService:
             admision = get_object_or_404(Admision, id=admision_id)
             return {"admision": admision}
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en get_admision_context", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en get_admision_context", exc_info=True
+            )
             return {}
 
     @staticmethod
@@ -407,5 +456,7 @@ class AdmisionService:
         try:
             return get_object_or_404(Admision, id=admision_id)
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en get_admision_instance", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en get_admision_instance", exc_info=True
+            )
             return None
