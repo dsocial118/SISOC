@@ -38,7 +38,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         if settings.DEBUG:
-            self.stdout.write(self.style.ERROR("👥 Creando usuarios para test..."))
+            self.stdout.write("👥 Creando usuarios para test...")
 
             usuarios = [
                 {
