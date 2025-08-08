@@ -350,6 +350,8 @@ if ENVIRONMENT == "prd":
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    USE_X_FORWARDED_HOST = True
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 else:
     # Configuración para entornos bajos (no ssl)
     STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
