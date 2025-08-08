@@ -1,3 +1,5 @@
+import logging
+
 from django.db.models import Q, Exists, OuterRef
 from admisiones.models.admisiones import (
     Admision,
@@ -10,7 +12,6 @@ from acompanamientos.models.acompanamiento import InformacionRelevante, Prestaci
 from duplas.models import Dupla
 from intervenciones.models.intervenciones import Intervencion, SubIntervencion
 from comedores.models import Comedor
-import logging
 
 logger = logging.getLogger("django")
 
@@ -50,7 +51,7 @@ class AcompanamientoService:
             else:
                 nuevo_hito = Hitos.objects.create(comedor=intervenciones.comedor)
                 AcompanamientoService._actualizar_hitos(nuevo_hito, hitos_a_actualizar)
-        except Exception as e:
+        except Exception:
             logger.error("Ocurrió un error inesperado en get_queryset", exc_info=True)
 
     @staticmethod
@@ -70,7 +71,7 @@ class AcompanamientoService:
                     if field.verbose_name == hito.hito:
                         setattr(hitos_objeto, field.name, True)
             hitos_objeto.save()
-        except Exception as e:
+        except Exception:
             logger.error("Ocurrió un error inesperado en get_queryset", exc_info=True)
 
     @staticmethod
@@ -87,8 +88,9 @@ class AcompanamientoService:
             return (
                 Hitos.objects.select_related("comedor").filter(comedor=comedor).first()
             )
-        except Exception as e:
+        except Exception:
             logger.error("Ocurrió un error inesperado en get_queryset", exc_info=True)
+            return None
 
     @staticmethod
     def importar_datos_desde_admision(comedor):
@@ -125,7 +127,7 @@ class AcompanamientoService:
                     merienda=prestacion.merienda,
                     cena=prestacion.cena,
                 )
-        except Exception as e:
+        except Exception:
             logger.error("Ocurrió un error inesperado en get_queryset", exc_info=True)
 
     @staticmethod
@@ -178,8 +180,9 @@ class AcompanamientoService:
                 "numero_if": admision.legales_num_if if admision else None,
                 "numero_disposicion": resolucion,
             }
-        except Exception as e:
+        except Exception:
             logger.error("Ocurrió un error inesperado en get_queryset", exc_info=True)
+            return None
 
     @staticmethod
     def obtener_prestaciones_detalladas(anexo):
@@ -238,8 +241,9 @@ class AcompanamientoService:
                 "prestaciones_dias": prestaciones_totales,
                 "dias_semana": [dia.capitalize() for dia in dias],
             }
-        except Exception as e:
+        except Exception:
             logger.error("Ocurrió un error inesperado en get_queryset", exc_info=True)
+            return None
 
     @staticmethod
     def obtener_comedores_acompanamiento(user, busqueda=None):
@@ -304,8 +308,9 @@ class AcompanamientoService:
                 )
 
             return qs
-        except Exception as e:
+        except Exception:
             logger.error("Ocurrió un error inesperado en get_queryset", exc_info=True)
+            return None
 
     @staticmethod
     def verificar_permisos_tecnico_comedor(user):
@@ -321,5 +326,6 @@ class AcompanamientoService:
             return (
                 user.is_superuser or user.groups.filter(name="Tecnico Comedor").exists()
             )
-        except Exception as e:
+        except Exception:
             logger.error("Ocurrió un error inesperado en get_queryset", exc_info=True)
+            return None
