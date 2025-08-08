@@ -1,0 +1,46 @@
+{% extends "includes/main.html" %}
+{% block title %}Detalle Registro CABAL{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h3>Detalle de Registro CABAL #{{ registro.id }}</h3>
+  <div class="card">
+    <div class="card-body">
+      <dl class="row">
+        <dt class="col-sm-3">Centro</dt>
+        <dd class="col-sm-9">{{ registro.centro|default:"—" }}</dd>
+
+        <dt class="col-sm-3">NroComercio</dt>
+        <dd class="col-sm-9">{{ registro.nro_comercio }}</dd>
+
+        <dt class="col-sm-3">RazonSocial</dt>
+        <dd class="col-sm-9">{{ registro.razon_social }}</dd>
+
+        <dt class="col-sm-3">FechaTRX</dt>
+        <dd class="col-sm-9">{{ registro.fecha_trx|date:"d/m/Y" }}</dd>
+
+        <dt class="col-sm-3">Importe</dt>
+        <dd class="col-sm-9">{{ registro.importe }}</dd>
+
+        <dt class="col-sm-3">ImportePesos</dt>
+        <dd class="col-sm-9">{{ registro.importe_pesos }}</dd>
+
+        <dt class="col-sm-3">MonedaOrigen</dt>
+        <dd class="col-sm-9">{{ registro.moneda_origen }}</dd>
+
+        <dt class="col-sm-3">MotivoRechazo</dt>
+        <dd class="col-sm-9">{{ registro.motivo_rechazo }}</dd>
+
+        <dt class="col-sm-3">Desc Motivo Rechazo</dt>
+        <dd class="col-sm-9">{{ registro.desc_motivo_rechazo }}</dd>
+
+        <dt class="col-sm-3">No coincidente</dt>
+        <dd class="col-sm-9">{{ registro.no_coincidente|yesno:"Sí,No" }}</dd>
+
+        <dt class="col-sm-3">Fila (Excel)</dt>
+        <dd class="col-sm-9">{{ registro.fila_numero }}</dd>
+      </dl>
+    </div>
+  </div>
+</div>
+{% endblock %}
