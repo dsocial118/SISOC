@@ -64,8 +64,9 @@ def run_server():
     Inicia el servidor de Django. Usa Gunicorn en producción o el servidor de desarrollo si no.
     """
     environment = os.getenv("ENVIRONMENT", "dev").lower()
+    deploy_gunicorn = environment in ("prd", "qa")
 
-    if environment == "prd":
+    if deploy_gunicorn:
         cache_busting()
         print("🚀 Iniciando Django en modo producción con Gunicorn...")
         subprocess.run(
