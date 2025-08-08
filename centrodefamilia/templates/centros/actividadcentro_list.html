@@ -1,57 +1,10 @@
 {% extends "includes/main.html" %}
 {% block title %}Actividades{% endblock %}
 {% block breadcrumb %}
-    <ol class="breadcrumb float-sm-right">
-        <li class="breadcrumb-item">
-            <a href="{% url 'actividadcentro_list' %}">Actividades</a>
-        </li>
-        <li class="breadcrumb-item active">Listar</li>
-    </ol>
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
 {% block content %}
-    <h2 class="text-center display-4 mb-4">Listado de Actividades</h2>
-    <div class="row mt-3">
-        <div class="col-12 text-center">
-            <a href="{% url 'actividadcentro_create' %}"
-               class="btn btn-primary btn-lg d-block d-sm-inline mt-2">Agregar Actividad</a>
-        </div>
-    </div>
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body p-0">
-                    <table class="table table-bordered table-striped mb-0">
-                        <thead class="thead-light">
-                            <tr>
-                                <th>Centro</th>
-                                <th>Actividad</th>
-                                <th>Días</th>
-                                <th>Horarios desde</th>
-                                <th>Horarios hasta</th>
-                                <th>Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for actividad in actividades %}
-                                <tr>
-                                    <td>{{ actividad.centro.nombre }}</td>
-                                    <td>{{ actividad.actividad.nombre }}</td>
-                                    <td>{{ actividad.dias }}</td>
-                                    <td>{{ actividad.horariosdesde }}</td>
-                                    <td>{{ actividad.horarioshasta }}</td>
-                                    <td>
-                                        <span class="badge badge-info">{{ actividad.get_estado_display }}</span>
-                                    </td>
-                                </tr>
-                            {% empty %}
-                                <tr>
-                                    <td colspan="6" class="text-center">No hay actividades registradas.</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
+    <h2 class="text-center display-4 mb-4">{{ page_title }}</h2>
+    {% include 'components/action_buttons.html' with buttons=action_buttons class="row mt-3" %}
+    {% include 'components/actividad_table.html' with headers=table_headers objects=actividades empty_message='No hay actividades registradas.' %}
 {% endblock %}

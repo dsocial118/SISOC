@@ -1,59 +1,19 @@
 {% extends "includes/main.html" %}
 {% load static %}
 {% block title %}Expedientes CABAL – {{ centro.nombre }}{% endblock %}
+{% block breadcrumb %}
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
+{% endblock %}
 {% block content %}
     <link rel="stylesheet" href="{% static 'custom/css/centro_detail.css' %}" />
     <div class="container-fluid no-gutters">
         <div class="d-flex bg-primary text-white mb-4 page-header"
              style="height:100px">
             <div class="flex-grow-1 d-flex align-items-center px-4">
-                <h1 class="mb-0" style="font-size:2rem;">Expedientes CABAL</h1>
+                <h1 class="mb-0" style="font-size:2rem;">{{ page_title }}</h1>
             </div>
         </div>
-        <a href="{% url 'centro_detail' centro.id %}"
-           class="btn btn-secondary mr-2">Volver</a>
-        <div class="card bg-dark text-white mb-4">
-            <div class="card-header bg-secondary d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Listado de Expedientes</h5>
-                <a href="{% url 'expediente_create' centro.id %}"
-                   class="btn btn-outline-success btn-sm">
-                    <i class="fas fa-plus"></i> Agregar Expediente CABAL
-                </a>
-            </div>
-            <div class="card-body p-0">
-                {% if expedientes %}
-                    <div class="table-responsive">
-                        <table class="table table-dark table-striped mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Período</th>
-                                    <th>Archivo</th>
-                                    <th class="text-end">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for exp in expedientes %}
-                                    <tr>
-                                        <td>{{ exp.periodo|date:"d/m/Y" }}</td>
-                                        <td>{{ exp.archivo.name }}</td>
-                                        <td class="text-end">
-                                            <a href="{{ exp.informe_pdf.url }}"
-                                               class="btn btn-outline-info btn-sm"
-                                               target="_blank">
-                                                <i class="fas fa-file-pdf"></i>
-                                            </a>
-                                            <a href="{% url 'expediente_update' centro_id=centro.id pk=exp.id %}"
-                                               class="btn btn-sm btn-outline-primary">Editar</a>
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% else %}
-                    <div class="p-3 text-center text-muted">No hay expedientes cargados.</div>
-                {% endif %}
-            </div>
-        </div>
+        {% include 'components/action_buttons.html' with buttons=action_buttons class="mb-3" %}
+        {% include 'components/expediente_table.html' with expedientes=expedientes centro=centro %}
     </div>
 {% endblock %}

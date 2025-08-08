@@ -3,25 +3,11 @@
 {% load crispy_forms_tags %}
 {% block title %}Nuevo Centro{% endblock %}
 {% block breadcrumb %}
-    <ol class="breadcrumb float-sm-right">
-        <li class="breadcrumb-item">
-            <a href="{% url 'centro_list' %}">Centros</a>
-        </li>
-        <li class="breadcrumb-item active">Nuevo</li>
-    </ol>
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
 {% block content %}
-    <h2 class="text-center display-4 mb-4">Nuevo Centro</h2>
-    <div class="card card-body shadow">
-        <form method="post" enctype="multipart/form-data">
-            {% csrf_token %}
-            {{ form|crispy }}
-            <div class="text-center mt-4">
-                <button type="submit" class="btn btn-primary">Guardar</button>
-                <a href="{% url 'centro_list' %}" class="btn btn-secondary ml-2">Cancelar</a>
-            </div>
-        </form>
-    </div>
+    {% include 'components/alert_message.html' with show_django_messages=True %}
+    {% include 'components/form_card.html' with title=page_title form=form cancel_url=cancel_url submit_text=submit_text %}
 {% endblock %}
 {% block customJS %}
     <script>
