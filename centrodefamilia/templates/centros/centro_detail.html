@@ -1,6 +1,9 @@
 {% extends "includes/main.html" %}
 {% load static %}
 {% block title %}{{ centro.nombre }}{% endblock %}
+{% block breadcrumb %}
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
+{% endblock %}
 {% block content %}
     <link rel="stylesheet" href="{% static 'custom/css/centro_detail.css' %}" />
     <!-- 1) HEADER -->
@@ -15,19 +18,7 @@
         </div>
     </div>
     <!-- 2) BOTONES DE ACCIÓN -->
-    <div class="mt-4 mb-4 d-flex justify-content-end">
-        <div class="btn-group btn-group-sm" role="group" aria-label="Acciones">
-            <a href="{% url 'centro_update' centro.id %}"
-               class="btn btn-outline-primary">Editar</a>
-            <a href="{% url 'centro_list' %}" class="btn btn-outline-secondary">Volver</a>
-            <a href="{% url 'actividadcentro_create' centro_id=centro.id %}"
-               class="btn btn-outline-success">Agregar Actividad</a>
-            {% if centro.tipo == 'faro' %}
-                <a href="{% url 'centro_create' %}?faro={{ centro.id }}"
-                   class="btn btn-outline-info">Agregar Centro Adherido</a>
-            {% endif %}
-        </div>
-    </div>
+    {% include 'components/action_buttons.html' with buttons=action_buttons class="mt-4 mb-4 d-flex justify-content-end" %}
     <!-- 3) UBICACIÓN -->
     <div class="location-card mb-4">
         <div class="left-tab" id="tab-ubicacion">

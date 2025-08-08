@@ -1,31 +1,8 @@
 {% extends "includes/main.html" %}
 {% block title %}Confirmar Eliminación{% endblock %}
 {% block breadcrumb %}
-    <ol class="breadcrumb float-sm-right">
-        <li class="breadcrumb-item">
-            <a href="{% url 'centro_list' %}">Centro de Familia</a>
-        </li>
-        <li class="breadcrumb-item active">Eliminar</li>
-    </ol>
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
 {% block content %}
-    <div class="container">
-        <div class="alert alert-danger text-center mt-5">
-            <h4 class="mb-4">¿Estás seguro que querés eliminar este centro?</h4>
-            <p>
-                <strong>Nombre:</strong> {{ object.nombre }}
-            </p>
-            <p>
-                <strong>Dirección:</strong> {{ object.calle }}
-            </p>
-            <p>
-                <strong>Tipo:</strong> {{ object.get_tipo_display }}
-            </p>
-        </div>
-        <form method="post" class="text-center mt-4">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-danger btn-lg">Confirmar Eliminación</button>
-            <a href="{% url 'centro_list' %}" class="btn btn-secondary btn-lg ml-2">Cancelar</a>
-        </form>
-    </div>
+    {% include 'components/delete_confirm.html' with object_name=object_title message=delete_message cancel_url=cancel_url %}
 {% endblock %}

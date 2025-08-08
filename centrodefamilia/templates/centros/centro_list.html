@@ -49,12 +49,9 @@
                     <table class="table table-bordered table-striped projects">
                         <thead>
                             <tr>
-                                <th>Nombre</th>
-                                <th>Tipo</th>
-                                <th>Dirección</th>
-                                <th>telefono / celular</th>
-                                <th>Estado</th>
-                                <th class="notexport" style="width: 15%">Acciones</th>
+                                {% for header in table_headers %}
+                                    <th{% if header.class %} class="{{ header.class }}"{% endif %}{% if header.style %} style="{{ header.style }}"{% endif %}>{{ header.title }}</th>
+                                {% endfor %}
                             </tr>
                         </thead>
                         <tbody>
@@ -103,41 +100,7 @@
                             {% endfor %}
                         </tbody>
                     </table>
-                    {% if is_paginated %}
-                        <div class="mt-2">
-                            <ul class="pagination">
-                                {% if page_obj.has_previous %}
-                                    <li class="page-item">
-                                        <a href="?page={{ page_obj.previous_page_number }}" class="page-link">Volver</a>
-                                    </li>
-                                {% else %}
-                                    <li class="page-item disabled">
-                                        <span class="page-link">Volver</span>
-                                    </li>
-                                {% endif %}
-                                {% for i in page_obj.paginator.page_range %}
-                                    {% if page_obj.number == i %}
-                                        <li class="page-item active">
-                                            <span class="page-link">{{ i }}</span>
-                                        </li>
-                                    {% elif i > page_obj.number|add:'-5' and i < page_obj.number|add:'5' %}
-                                        <li class="page-item">
-                                            <a href="?page={{ i }}" class="page-link">{{ i }}</a>
-                                        </li>
-                                    {% endif %}
-                                {% endfor %}
-                                {% if page_obj.has_next %}
-                                    <li class="page-item">
-                                        <a href="?page={{ page_obj.next_page_number }}" class="page-link">Continuar</a>
-                                    </li>
-                                {% else %}
-                                    <li class="page-item disabled">
-                                        <span class="page-link">Continuar</span>
-                                    </li>
-                                {% endif %}
-                            </ul>
-                        </div>
-                    {% endif %}
+                    {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj query=request.GET.busqueda prev_text='Volver' next_text='Continuar' %}
                 </div>
             </div>
         </div>
