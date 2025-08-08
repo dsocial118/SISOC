@@ -23,7 +23,7 @@ from django.db.models import (
 from django.db.models.functions import Cast
 from django.http import HttpResponseRedirect, JsonResponse, Http404
 from django.shortcuts import get_object_or_404, redirect
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 from django.conf import settings
@@ -378,12 +378,20 @@ class CiudadanosListView(ListView):
                 # Fallback para versiones anteriores de Django
                 context["page_range"] = page_obj.paginator.page_range
 
-        context.update(
-            {
-                "mostrar_resultados": mostrar_resultados,
-                "query": query,
-            }
-        )
+        # Datos para componentes Cotton
+        context.update({
+            "mostrar_resultados": mostrar_resultados,
+            "query": query,
+            # Breadcrumb
+            "breadcrumb_items": [
+                {"text": "Ciudadano", "url": reverse("ciudadanos")},
+                {"text": "Listar", "active": True}
+            ],
+            # Search bar
+            "reset_url": reverse("ciudadanos"),
+            "add_url": reverse("renaper_consulta") if self.request.user.has_perm('Usuarios.rol_admin') else None,
+            "can_add": self.request.user.has_perm('Usuarios.rol_admin'),
+        })
 
         return context
 
@@ -777,8 +785,19 @@ class CiudadanosDeleteView(DeleteView):
         ):
             relaciones_existentes.append("Grupo Familiar")
 
-        # Agregar la lista de nombres de relaciones al contexto
-        context["relaciones_existentes"] = relaciones_existentes
+        # Datos para componentes Cotton
+        context.update({
+            "relaciones_existentes": relaciones_existentes,
+            # Breadcrumb
+            "breadcrumb_items": [
+                {"text": "Ciudadano", "url": reverse("ciudadanos")},
+                {"text": str(ciudadano), "url": reverse("ciudadanos_ver", kwargs={"pk": ciudadano.id})},
+                {"text": "Eliminar", "active": True}
+            ],
+            # Delete confirm
+            "cancel_url": reverse("ciudadanos_ver", kwargs={"pk": ciudadano.id}),
+        })
+        
         return context
 
     def form_valid(self, form):
