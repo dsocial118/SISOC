@@ -305,7 +305,7 @@ if DEBUG:
     MIDDLEWARE += ["silk.middleware.SilkyMiddleware"]
     SILKY_PYTHON_PROFILER = True
 
-if ENVIRONMENT in ("prd"):
+if ENVIRONMENT == "prd":
     # Configuración para producción
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = False
