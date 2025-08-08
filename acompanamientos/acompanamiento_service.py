@@ -53,7 +53,7 @@ class AcompanamientoService:
                 AcompanamientoService._actualizar_hitos(nuevo_hito, hitos_a_actualizar)
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en AcomanamientoService.crear_hitos {e}",
+                f"Ocurrió un error inesperado en AcomanamientoService.crear_hitos {e}",
                 exc_info=True,
             )
             raise
@@ -98,9 +98,9 @@ class AcompanamientoService:
             )
         except Exception as e:
             logger.error(
-                    f"Ocurrió un error inesperado en AcompanamientoService.obtener_hitos para comedor: {comedor} {e}",
-                    exc_info=True,
-                )
+                f"Ocurrió un error inesperado en AcompanamientoService.obtener_hitos para comedor: {comedor} {e}",
+                exc_info=True,
+            )
             raise
 
     @staticmethod
@@ -140,9 +140,9 @@ class AcompanamientoService:
                 )
         except Exception as e:
             logger.error(
-                    f"Ocurrió un error inesperado en AcompanamientoService.importar_datos_desde_admision para comedor: {comedor} {e}",
-                    exc_info=True,
-                )
+                f"Ocurrió un error inesperado en AcompanamientoService.importar_datos_desde_admision para comedor: {comedor} {e}",
+                exc_info=True,
+            )
             raise
 
     @staticmethod

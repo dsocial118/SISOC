@@ -75,7 +75,9 @@ class LegalesService:
                 messages.success(request, "Número de IF guardado correctamente.")
             else:
                 messages.error(request, "Error al guardar el número de IF.")
-            if url_has_allowed_host_and_scheme(request.path_info, allowed_hosts={request.get_host()}):
+            if url_has_allowed_host_and_scheme(
+                request.path_info, allowed_hosts={request.get_host()}
+            ):
                 return redirect(request.path_info)
             else:
                 return redirect("admisiones_legales_ver", pk=admision.pk)
@@ -84,7 +86,9 @@ class LegalesService:
                 "Ocurrió un error inesperado en guardar_legales_num_if", exc_info=True
             )
             messages.error(request, "Error inesperado al guardar el número de IF.")
-            if url_has_allowed_host_and_scheme(request.path_info, allowed_hosts={request.get_host()}):
+            if url_has_allowed_host_and_scheme(
+                request.path_info, allowed_hosts={request.get_host()}
+            ):
                 return redirect(request.path_info)
             else:
                 return redirect("admisiones_legales_ver", pk=admision.pk)
@@ -122,7 +126,9 @@ class LegalesService:
                     "No se puede validar: asegúrese de completar ambos formularios y agregar el Número IF.",
                 )
 
-            if url_has_allowed_host_and_scheme(request.path_info, allowed_hosts={request.get_host()}):
+            if url_has_allowed_host_and_scheme(
+                request.path_info, allowed_hosts={request.get_host()}
+            ):
                 return redirect(request.path_info)
             else:
                 return redirect("admisiones_legales_ver", pk=admision.pk)
@@ -131,7 +137,9 @@ class LegalesService:
                 "Ocurrió un error inesperado en validar_juridicos", exc_info=True
             )
             messages.error(request, "Error inesperado al validar jurídicos.")
-            if url_has_allowed_host_and_scheme(request.path_info, allowed_hosts={request.get_host()}):
+            if url_has_allowed_host_and_scheme(
+                request.path_info, allowed_hosts={request.get_host()}
+            ):
                 return redirect(request.path_info)
             else:
                 return redirect("admisiones_legales_ver", pk=admision.pk)
@@ -189,7 +197,9 @@ class LegalesService:
             else:
                 messages.error(request, "Error al guardar el formulario RESO.")
 
-            if url_has_allowed_host_and_scheme(request.path_info, allowed_hosts={request.get_host()}):
+            if url_has_allowed_host_and_scheme(
+                request.path_info, allowed_hosts={request.get_host()}
+            ):
                 return redirect(request.path_info)
             else:
                 return redirect("admisiones_legales_ver", pk=admision.pk)
@@ -198,7 +208,9 @@ class LegalesService:
                 "Ocurrió un error inesperado en guardar_formulario_reso", exc_info=True
             )
             messages.error(request, "Error inesperado al guardar el formulario RESO.")
-            if url_has_allowed_host_and_scheme(request.path_info, allowed_hosts={request.get_host()}):
+            if url_has_allowed_host_and_scheme(
+                request.path_info, allowed_hosts={request.get_host()}
+            ):
                 return redirect(request.path_info)
             else:
                 return redirect("admisiones_legales_ver", pk=admision.pk)

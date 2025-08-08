@@ -301,8 +301,7 @@ LOGGING = {
             "propagate": True,
         },
         "django.request": {
-            "handlers": [
-                "error_file"],
+            "handlers": ["error_file"],
             "level": "ERROR",
             "propagate": False,
         },
@@ -343,7 +342,9 @@ if DEBUG:
 
 if ENVIRONMENT == "prd":
     # Configuración para producción
-    STATICFILES_STORAGE = "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
+    STATICFILES_STORAGE = (
+        "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
+    )
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = False
     SECURE_SSL_REDIRECT = True
