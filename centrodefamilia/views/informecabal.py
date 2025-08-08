@@ -33,7 +33,19 @@ class ExpedienteListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["centro"] = get_object_or_404(Centro, pk=self.kwargs["centro_id"])
+        centro = get_object_or_404(Centro, pk=self.kwargs["centro_id"])
+        ctx["centro"] = centro
+        ctx.update({
+            "breadcrumb_items": [
+                {"text": "Centro de Familia", "url": reverse("centro_list")},
+                {"text": centro.nombre, "url": reverse("centro_detail", args=[centro.id])},
+                {"text": "Expedientes CABAL", "active": True}
+            ],
+            "page_title": "Expedientes CABAL",
+            "action_buttons": [
+                {"url": reverse("centro_detail", args=[centro.id]), "text": "Volver", "type": "secondary"}
+            ]
+        })
         return ctx
 
 
