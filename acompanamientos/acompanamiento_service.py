@@ -51,9 +51,9 @@ class AcompanamientoService:
             else:
                 nuevo_hito = Hitos.objects.create(comedor=intervenciones.comedor)
                 AcompanamientoService._actualizar_hitos(nuevo_hito, hitos_a_actualizar)
-        except Exception:
+        except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en AcomanamientoService.crear_hitos",
+                "Ocurrió un error inesperado en AcomanamientoService.crear_hitos {e}",
                 exc_info=True,
             )
             raise
@@ -96,11 +96,11 @@ class AcompanamientoService:
             return (
                 Hitos.objects.select_related("comedor").filter(comedor=comedor).first()
             )
-        except Exception:
+        except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en AcompanamientoService.obtener_hitos para el comedor: {comedor}",
-                exc_info=True,
-            )
+                    f"Ocurrió un error inesperado en AcompanamientoService.obtener_hitos para comedor: {comedor} {e}",
+                    exc_info=True,
+                )
             raise
 
     @staticmethod
@@ -138,11 +138,11 @@ class AcompanamientoService:
                     merienda=prestacion.merienda,
                     cena=prestacion.cena,
                 )
-        except Exception:
+        except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en AcompanamientoService.importar_datos_desde_admision para comedor: {comedor}",
-                exc_info=True,
-            )
+                    f"Ocurrió un error inesperado en AcompanamientoService.importar_datos_desde_admision para comedor: {comedor} {e}",
+                    exc_info=True,
+                )
             raise
 
     @staticmethod
@@ -195,9 +195,9 @@ class AcompanamientoService:
                 "numero_if": admision.legales_num_if if admision else None,
                 "numero_disposicion": resolucion,
             }
-        except Exception:
+        except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en AcompanamientoService.obtener_datos_admision para comedor: {comedor}",
+                f"Ocurrió un error inesperado en AcompanamientoService.obtener_datos_admision para comedor: {comedor} {e}",
                 exc_info=True,
             )
             raise
@@ -259,9 +259,9 @@ class AcompanamientoService:
                 "prestaciones_dias": prestaciones_totales,
                 "dias_semana": [dia.capitalize() for dia in dias],
             }
-        except Exception:
+        except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en AcompanamientoService.ontener_prestaciones_detalladas para anexo: {anexo}",
+                f"Ocurrió un error inesperado en AcompanamientoService.ontener_prestaciones_detalladas para anexo: {anexo} {e}",
                 exc_info=True,
             )
             raise
@@ -329,9 +329,9 @@ class AcompanamientoService:
                 )
 
             return qs
-        except Exception:
+        except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en AcompanamientoService.obtener_comedores_acompanamiento para user: {user}",
+                f"Ocurrió un error inesperado en AcompanamientoService.obtener_comedores_acompanamiento para user: {user} {e}",
                 exc_info=True,
             )
             raise
@@ -350,9 +350,9 @@ class AcompanamientoService:
             return (
                 user.is_superuser or user.groups.filter(name="Tecnico Comedor").exists()
             )
-        except Exception:
+        except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en Acompanamiento.verificar_permisos_tecnico_comedor para user: {user}",
+                f"Ocurrió un error inesperado en Acompanamiento.verificar_permisos_tecnico_comedor para user: {user} {e}",
                 exc_info=True,
             )
             raise
