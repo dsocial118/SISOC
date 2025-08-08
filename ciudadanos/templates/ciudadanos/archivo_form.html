@@ -1,6 +1,5 @@
-{% extends "includes/main.html" %};
+{% extends "includes/main.html" %}
 {% load static %}
-;
 {% load crispy_forms_tags %}
 {% block head %}
     <!-- Dropzone plugin -->
@@ -8,82 +7,17 @@
           href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.css" />
 {% endblock %}
 {% block title %}Archivo{% endblock %}
-;
 {% block titulo-pagina %}Ciudadano{% endblock %}
-;
 {% block breadcrumb %}
-    <ol class="breadcrumb float-sm-right mt-2 mr-2">
-        <li class="breadcrumb-item">
-            <a href="{% url 'ciudadanos' %}">Ciudadano</a>
-        </li>
-        <li class="breadcrumb-item">
-            <a href="{% url 'ciudadanos_ver' ciudadano.pk %}">{{ ciudadano }}</a>
-        </li>
-        <li class="breadcrumb-item active ">Archivo</li>
-    </ol>
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
-;
 {% block menu-adicional %}{% endblock %}
-;
 {% block content %}
     <div class="row">
         <div class="col-md-12">
             <div class="card card-primary card-outline">
                 <div class="card-body">
-                    <div class="bs-stepper">
-                        <div class="bs-stepper-header" role="tablist">
-                            <div class="step d-none d-sm-inline">
-                                <a href="{% url 'ciudadanos_editar' ciudadano.pk %}"
-                                   class="step-trigger"
-                                   role="tab">
-                                    <span class="bs-stepper-circle">1</span>
-                                    <span class="bs-stepper-label">Datos Personales</span>
-                                </a>
-                            </div>
-                            <div class="line d-none d-sm-inline"></div>
-                            <div class="step d-none d-sm-inline">
-                                <a href="{% url 'ciudadanosdimensiones_editar' ciudadano.pk %}"
-                                   class="step-trigger"
-                                   role="tab">
-                                    <span class="bs-stepper-circle">2</span>
-                                    <span class="bs-stepper-label">Dimensiones</span>
-                                </a>
-                            </div>
-                            <div class="line d-none d-sm-inline"></div>
-                            <div class="step d-none d-sm-inline">
-                                <a href="{% url 'grupofamiliar_crear' ciudadano.pk %}"
-                                   class="step-trigger"
-                                   role="tab">
-                                    <span class="bs-stepper-circle">3</span>
-                                    <span class="bs-stepper-label">Grupo Familiar</span>
-                                </a>
-                            </div>
-                            <div class="line d-none d-sm-inline"></div>
-                            <div class="step d-none d-sm-inline">
-                                <a href="{% url 'ciudadanosgrupohogar_crear' ciudadano.pk %}"
-                                   class="step-trigger"
-                                   role="tab">
-                                    <span class="bs-stepper-circle">4</span>
-                                    <span class="bs-stepper-label">Grupo Hogar</span>
-                                </a>
-                            </div>
-                            <div class="line d-none d-sm-inline"></div>
-                            <div class="step ">
-                                <a href="{% url 'alertas_crear' ciudadano.pk %}"
-                                   class="step-trigger"
-                                   role="tab">
-                                    <span class="bs-stepper-circle">5</span>
-                                    <span class="bs-stepper-label">Alertas</span>
-                                </a>
-                            </div>
-                            <div class="line"></div>
-                            <div class="step active">
-                                <a type="button" class="step-trigger  text-primary" role="tab">
-                                    <span class="bs-stepper-circle">6</span>
-                                    <span class="bs-stepper-label">Archivos</span>
-                                </a>
-                            </div>
-                        </div>
+                    {% include 'components/ciudadano_stepper_archivos.html' with object=ciudadano %}
                         <div class="row mt-5">
                             <div class="col-12">
                                 <div class="card">
