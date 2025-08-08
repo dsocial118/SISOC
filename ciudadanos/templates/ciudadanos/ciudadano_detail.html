@@ -6,48 +6,15 @@
 {% endblock %}
 {% block title %}Ciudadano – {{ object.apellido }}, {{ object.nombre }}{% endblock %}
 {% block breadcrumb %}
-    <ol class="breadcrumb float-sm-right mt-2">
-        <li class="breadcrumb-item">
-            <a href="{% url 'ciudadanos' %}">Ciudadanos</a>
-        </li>
-        <li class="breadcrumb-item active">{{ object.apellido }}, {{ object.nombre }}</li>
-    </ol>
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
 {% block content %}
+    {% include 'components/alert_message.html' with show_django_messages=True %}
+    
     <div class="container-fluid">
         <!-- Acciones -->
         <div class="d-flex justify-content-between mb-4">
-            <a href="{% url 'ciudadanos' %}" class="btn btn-outline-light">
-                <i class="fas fa-arrow-left me-1"></i> Volver
-            </a>
-            <div class="btn-group">
-                {% if perms.Usuarios.rol_admin %}
-                    <a href="{% url 'ciudadanosderivaciones_historial' object.id %}"
-                       class="btn btn-primary text-white">
-                        <i class="fas fa-share-square me-1"></i> Derivar
-                    </a>
-                    <a href="{% url 'ciudadanos_eliminar' object.id %}"
-                       class="btn btn-danger">
-                        <i class="fas fa-trash-alt me-1"></i> Eliminar
-                    </a>
-                {% endif %}
-                <button class="btn btn-secondary d-print-none" onclick="window.print()">
-                    <i class="fas fa-print me-1"></i> Imprimir
-                </button>
-                <a href="{% url 'ciudadano_intervencion_ver' object.id %}"
-                   class="btn btn-purple">
-                    <i class="fas fa-notes-medical me-1"></i> Intervenciones
-                </a>
-                <a href="{% url 'llamados_ver' object.id %}" class="btn btn-success">
-                    <i class="fas fa-phone-alt me-1"></i> Llamados
-                </a>
-                {% if perms.Usuarios.rol_admin %}
-                    <a href="{% url 'ciudadanos_editar' object.id %}"
-                       class="btn btn-primary">
-                        <i class="fas fa-edit me-1"></i> Editar
-                    </a>
-                {% endif %}
-            </div>
+            {% include 'components/action_buttons.html' with back_button=back_button buttons=action_buttons button_group=True %}
         </div>
         <!-- Indicadores -->
         <div class="row g-3 mb-4">
