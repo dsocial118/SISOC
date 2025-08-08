@@ -1,117 +1,650 @@
-/* Estilos estandarizados para tablas del sistema */
+/* ========================================
+   MEJORAS PARA CIUDADANO_DETAIL.HTML
+   Tema Gubernamental Poncho sobre Bootstrap 5
+   ======================================== */
 
-body {
-  background-color: #1a2332 !important;
-  color: #ffffff;
+/* Variables CSS para colores Poncho oficiales formales con tema oscuro */
+:root {
+    --poncho-primary: #0072bb;      /* Azul oficial Argentina */
+    --poncho-secondary: #1f4788;    /* Azul más oscuro y formal */
+    --poncho-accent: #005faa;       /* Azul intermedio */
+    --poncho-dark: #1a2332;         /* Fondo principal oscuro */
+    --poncho-card-bg: #2c3e50;      /* Fondo de cards oscuro */
+    --poncho-card-light: #34495e;   /* Fondo alternativo cards */
+    --poncho-medium: #495057;       /* Gris medio */
+    --poncho-light: #ecf0f1;        /* Gris muy claro para texto */
+    --poncho-border: #4a5f7a;       /* Borde para tema oscuro */
+    --poncho-text: #ffffff;         /* Texto blanco */
+    --poncho-text-muted: #bdc3c7;   /* Texto muted claro */
+    --poncho-white: #ffffff;        /* Blanco puro */
+    --poncho-success: #27ae60;      /* Verde éxito ajustado */
+    --poncho-warning: #f39c12;      /* Naranja warning para tema oscuro */
+    --poncho-danger: #e74c3c;       /* Rojo ajustado para tema oscuro */
+    --poncho-info: #3498db;         /* Azul info para tema oscuro */
+    --poncho-formal-gray: #8d9aa5;  /* Gris corporativo */
+    --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.3);
+    --shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.4);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.table-wrapper {
-  margin-top: 2rem;
+/* ==========================================
+   CARDS ESTILO PONCHO TEMA OSCURO
+   ========================================== */
+.card {
+    background: var(--poncho-card-bg) !important;
+    border: 1px solid var(--poncho-border) !important;
+    border-radius: 0.75rem !important;
+    box-shadow: var(--shadow-soft) !important;
+    color: var(--poncho-text) !important;
+    transition: var(--transition-smooth) !important;
+    overflow: hidden;
 }
 
-.table-container {
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-hover) !important;
+    border-color: var(--poncho-primary) !important;
 }
 
-.table-responsive-custom {
-  border-radius: 0.5rem;
+/* ==========================================
+   HEADERS CON GRADIENTES PONCHO FORMALES
+   ========================================== */
+.card-header {
+    background: linear-gradient(135deg, var(--poncho-primary) 0%, var(--poncho-secondary) 100%) !important;
+    border-bottom: 1px solid var(--poncho-border) !important;
+    color: var(--poncho-white) !important;
+    padding: 1.25rem !important;
+    position: relative;
+    border-radius: 0.75rem 0.75rem 0 0 !important;
 }
 
-.standard-table {
-  margin-bottom: 0;
-  background: transparent;
-  border: none;
+.card-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--poncho-accent), var(--poncho-primary), var(--poncho-accent));
+    border-radius: 0.75rem 0.75rem 0 0;
 }
 
-.standard-table thead th {
-  background-color: #2c3e50;
-  color: #ffffff;
-  border: none;
-  border-bottom: 1px solid #34495e;
-  padding: 1rem 0.75rem;
-  font-weight: 600;
-  font-size: 1rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05rem;
+.card-header h5,
+.card-header h3 {
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--poncho-white) !important;
 }
 
-.standard-table tbody tr {
-  background-color: #34495e;
-  border-bottom: 1px solid #4a5f7a;
-  transition: background-color 0.2s ease-in-out;
+.card-header .card-title {
+    color: var(--poncho-white) !important;
 }
 
-.standard-table tbody tr:hover {
-  background-color: #3a5068;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+/* ==========================================
+   INDICADORES CON EFECTOS PONCHO TEMA OSCURO
+   ========================================== */
+.card-body.d-flex.align-items-center {
+    padding: 2rem 1.5rem !important;
+    position: relative;
+    background: var(--poncho-card-bg);
 }
 
-.standard-table tbody tr:last-child {
-  border-bottom: none;
+.card-body.d-flex.align-items-center::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, var(--poncho-primary), var(--poncho-accent));
+    border-radius: 0 0 0 0.75rem;
 }
 
-.standard-table tbody td {
-  padding: 1rem 0.75rem;
-  vertical-align: middle;
-  color: #ffffff;
-  border: none;
+.card-body i.fa-2x {
+    padding: 1rem;
+    border-radius: 0.75rem;
+    background: linear-gradient(135deg, var(--poncho-card-light), var(--poncho-card-bg));
+    border: 2px solid var(--poncho-border);
+    color: var(--poncho-primary) !important;
+    box-shadow: 0 4px 12px rgba(0, 114, 187, 0.08);
+    transition: var(--transition-smooth);
 }
 
-.standard-table .empty-state {
-  padding: 2rem 0.75rem;
-  text-align: center;
-  color: #bdc3c7;
-  font-style: italic;
-  background-color: #34495e;
+.card-body:hover i.fa-2x {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(0, 114, 187, 0.15);
+    border-color: var(--poncho-primary);
 }
 
-.standard-table tbody td a {
-  color: #3498db;
-  text-decoration: none;
+.card-body h4 {
+    color: var(--poncho-primary) !important;
+    font-weight: 700;
 }
 
-.standard-table tbody td a:hover {
-  color: #5dade2;
-  text-decoration: underline;
+.card-body p {
+    color: var(--poncho-text-muted) !important;
 }
 
-.table-title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin-bottom: 1rem;
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+/* ==========================================
+   TABLAS ESTILO PONCHO TEMA OSCURO
+   ========================================== */
+.table {
+    color: var(--poncho-text) !important;
+    border-radius: 0.5rem !important;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 114, 187, 0.08);
+    background: var(--poncho-card-bg);
 }
 
-.create-button {
-  margin-left: auto;
+.table th {
+    background: linear-gradient(135deg, var(--poncho-card-light) 0%, var(--poncho-card-bg) 100%) !important;
+    border: none !important;
+    color: var(--poncho-text) !important;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.875rem;
+    padding: 1.25rem 1rem !important;
+    position: relative;
 }
 
-.btn-group a.btn i {
-  margin: 0;
+.table th::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--poncho-primary), transparent);
 }
 
-input.form-control {
-  background-color: #1a2332;
-  color: #ffffff;
-  border: 1px solid #4a5f7a;
-}
-input.form-control::placeholder {
-  color: #bdc3c7;
+.table th i {
+    color: var(--poncho-primary) !important;
+    margin-right: 0.5rem;
 }
 
+.table td {
+    background-color: var(--poncho-card-bg) !important;
+    border-color: var(--poncho-border) !important;
+    color: var(--poncho-text) !important;
+    padding: 1rem !important;
+    transition: var(--transition-smooth);
+    border-bottom: 1px solid var(--poncho-border) !important;
+}
+
+.table-hover tbody tr:hover td {
+    background-color: var(--poncho-card-light) !important;
+    transform: translateX(4px);
+}
+
+.table-striped tbody tr:nth-of-type(odd) td {
+    background-color: var(--poncho-card-light) !important;
+}
+
+.table-striped tbody tr:nth-of-type(odd):hover td {
+    background-color: rgba(52, 152, 219, 0.1) !important;
+}
+
+/* ==========================================
+   NAVEGACIÓN DE PESTAÑAS BOOTSTRAP 5 + PONCHO
+   ========================================== */
+.nav-pills {
+    background: var(--poncho-light);
+    padding: 0.5rem;
+    border-radius: 0.75rem;
+    gap: 0.25rem;
+    border: 1px solid var(--poncho-border);
+}
+
+.nav-pills .nav-link {
+    background: transparent !important;
+    color: var(--poncho-muted) !important;
+    border: 1px solid transparent !important;
+    border-radius: 0.5rem !important;
+    padding: 0.75rem 1.25rem !important;
+    font-weight: 500;
+    transition: var(--transition-smooth);
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-pills .nav-link::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, var(--poncho-primary), var(--poncho-secondary));
+    transition: var(--transition-smooth);
+    z-index: -1;
+}
+
+.nav-pills .nav-link:hover::before {
+    left: 0;
+}
+
+.nav-pills .nav-link:hover {
+    color: var(--poncho-white) !important;
+    border-color: var(--poncho-primary) !important;
+}
+
+.nav-pills .nav-link.active {
+    background: linear-gradient(135deg, var(--poncho-primary), var(--poncho-secondary)) !important;
+    color: var(--poncho-white) !important;
+    border-color: var(--poncho-primary) !important;
+    box-shadow: 0 4px 12px rgba(0, 114, 187, 0.3);
+}
+
+/* Para Bootstrap tabs también */
+.nav-tabs {
+    border-bottom: 2px solid var(--poncho-border);
+}
+
+.nav-tabs .nav-link {
+    border: 1px solid transparent;
+    color: var(--poncho-muted);
+    background: transparent;
+    padding: 0.75rem 1rem;
+    transition: var(--transition-smooth);
+    border-radius: 0.5rem 0.5rem 0 0;
+    margin-bottom: -2px;
+}
+
+.nav-tabs .nav-link:hover {
+    border-color: var(--poncho-border);
+    color: var(--poncho-primary);
+    background: var(--poncho-light);
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--poncho-primary);
+    background: var(--poncho-white);
+    border-color: var(--poncho-border) var(--poncho-border) var(--poncho-white);
+    font-weight: 600;
+}
+
+.tab-content {
+    padding-top: 1.5rem;
+}
+
+/* ==========================================
+   BOTONES ESTILO PONCHO MEJORADOS
+   ========================================== */
+.btn {
+    border-radius: 0.5rem !important;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    transition: var(--transition-smooth);
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0.2));
+    transition: var(--transition-smooth);
+    z-index: -1;
+}
+
+.btn:hover::before {
+    left: 0;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--poncho-primary), var(--poncho-secondary)) !important;
+    border: none !important;
+    color: var(--poncho-white) !important;
+    box-shadow: 0 4px 12px rgba(0, 114, 187, 0.3);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #005a9e, #1e3a5f) !important;
+    color: var(--poncho-white) !important;
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, var(--poncho-medium), var(--poncho-dark)) !important;
+    border: none !important;
+    color: var(--poncho-white) !important;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, var(--poncho-success), #1e7e34) !important;
+    border: none !important;
+    color: var(--poncho-white) !important;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, var(--poncho-danger), #c82333) !important;
+    border: none !important;
+    color: var(--poncho-white) !important;
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, var(--poncho-warning), #a0690f) !important;
+    border: none !important;
+    color: var(--poncho-white) !important;
+}
+
+.btn-info {
+    background: linear-gradient(135deg, var(--poncho-info), var(--poncho-primary)) !important;
+    border: none !important;
+    color: var(--poncho-white) !important;
+}
+
+.btn-light {
+    background: linear-gradient(135deg, var(--poncho-light), #e9ecef) !important;
+    border: 1px solid var(--poncho-border) !important;
+    color: var(--poncho-dark) !important;
+}
+
+.btn-outline-primary {
+    color: var(--poncho-primary) !important;
+    border-color: var(--poncho-primary) !important;
+    background: var(--poncho-white) !important;
+}
+
+.btn-outline-primary:hover {
+    background: var(--poncho-primary) !important;
+    border-color: var(--poncho-primary) !important;
+    color: var(--poncho-white) !important;
+}
+
+.btn-outline-light {
+    color: var(--poncho-dark) !important;
+    border-color: var(--poncho-border) !important;
+    background: var(--poncho-white) !important;
+}
+
+.btn-outline-light:hover {
+    background: var(--poncho-light) !important;
+    border-color: var(--poncho-border) !important;
+    color: var(--poncho-dark) !important;
+}
+
+/* ==========================================
+   PERFIL DE CIUDADANO TEMA OSCURO
+   ========================================== */
+.list-group-item {
+    background: var(--poncho-card-bg) !important;
+    border: 1px solid var(--poncho-border) !important;
+    color: var(--poncho-text) !important;
+    transition: var(--transition-smooth);
+    padding: 1rem 1.25rem !important;
+}
+
+.list-group-item:hover {
+    background: var(--poncho-card-light) !important;
+    border-color: var(--poncho-primary) !important;
+    transform: translateX(4px);
+}
+
+.list-group-item:first-child {
+    border-radius: 0.5rem 0.5rem 0 0 !important;
+}
+
+.list-group-item:last-child {
+    border-radius: 0 0 0.5rem 0.5rem !important;
+}
+
+.list-group-item .fw-medium i {
+    color: var(--poncho-primary);
+}
+
+.list-group-item .fw-medium {
+    color: var(--poncho-light);
+}
+
+.list-group-item span:not(.fw-medium) {
+    color: var(--poncho-text-muted);
+}
+
+/* ==========================================
+   BADGES ESTILO PONCHO
+   ========================================== */
+.badge-custom, .badge {
+    background: linear-gradient(135deg, var(--poncho-primary), var(--poncho-secondary)) !important;
+    color: var(--poncho-white) !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 1.25rem !important;
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(0, 114, 187, 0.2);
+    transition: var(--transition-smooth);
+}
+
+.badge:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 114, 187, 0.3);
+}
+
+.badge-primary {
+    background: linear-gradient(135deg, var(--poncho-primary), var(--poncho-secondary)) !important;
+}
+
+.badge-secondary {
+    background: linear-gradient(135deg, var(--poncho-medium), var(--poncho-dark)) !important;
+}
+
+.badge-success {
+    background: linear-gradient(135deg, var(--poncho-success), #1e7e34) !important;
+}
+
+.badge-danger {
+    background: linear-gradient(135deg, var(--poncho-danger), #c82333) !important;
+}
+
+.badge-warning {
+    background: linear-gradient(135deg, var(--poncho-warning), #a0690f) !important;
+    color: var(--poncho-white) !important;
+}
+
+.badge-info {
+    background: linear-gradient(135deg, var(--poncho-info), var(--poncho-primary)) !important;
+}
+
+.badge-light {
+    background: var(--poncho-light) !important;
+    color: var(--poncho-dark) !important;
+    border: 1px solid var(--poncho-border) !important;
+}
+
+/* ==========================================
+   FOTO DE PERFIL MEJORADA
+   ========================================== */
+.card-header.text-center img {
+    border: 4px solid var(--poncho-white) !important;
+    box-shadow: 0 8px 32px rgba(0, 114, 187, 0.2) !important;
+    transition: var(--transition-smooth);
+}
+
+.card-header.text-center img:hover {
+    transform: scale(1.05);
+    border-color: var(--poncho-accent) !important;
+    box-shadow: 0 12px 40px rgba(0, 114, 187, 0.3) !important;
+}
+
+/* ==========================================
+   FOOTER DE CARDS TEMA OSCURO
+   ========================================== */
+.card-footer {
+    background: linear-gradient(135deg, var(--poncho-card-light), var(--poncho-card-bg)) !important;
+    border-top: 1px solid var(--poncho-border) !important;
+    border-radius: 0 0 0.75rem 0.75rem !important;
+    padding: 1.25rem !important;
+}
+
+/* ==========================================
+   ESTADOS VACÍOS TEMA OSCURO
+   ========================================== */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--poncho-text-muted);
+    background: var(--poncho-card-bg);
+    border-radius: 0.5rem;
+}
+
+.empty-state i {
+    color: var(--poncho-text-muted);
+    margin-bottom: 1rem;
+    opacity: 0.6;
+}
+
+.empty-state h5,
+.empty-state h6 {
+    color: var(--poncho-text-muted);
+    font-weight: 500;
+}
+
+/* ==========================================
+   PROGRAMA CARDS TEMA OSCURO
+   ========================================== */
+.program-card {
+    background: var(--poncho-card-bg);
+    border: 1px solid var(--poncho-border);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    transition: var(--transition-smooth);
+    position: relative;
+    overflow: hidden;
+}
+
+.program-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--poncho-primary);
+    transform: scaleY(0);
+    transition: var(--transition-smooth);
+}
+
+.program-card:hover::before {
+    transform: scaleY(1);
+}
+
+.program-card:hover {
+    border-color: var(--poncho-primary);
+    box-shadow: 0 4px 12px rgba(0, 114, 187, 0.1);
+    transform: translateY(-2px);
+}
+
+.program-card h6 {
+    color: var(--poncho-text);
+    margin-bottom: 0.25rem;
+}
+
+.program-card small {
+    color: var(--poncho-text-muted);
+}
+
+.program-card i {
+    color: var(--poncho-primary);
+}
+
+/* ==========================================
+   TEXTO Y UTILIDADES TEMA OSCURO
+   ========================================== */
+.text-muted {
+    color: var(--poncho-text-muted) !important;
+}
+
+.text-primary {
+    color: var(--poncho-primary) !important;
+}
+
+/* Ajustes para texto en cards */
+.card-body h6,
+.card-body p {
+    color: var(--poncho-text-muted) !important;
+}
+
+.card-header h4,
+.card-header h5 {
+    color: var(--poncho-white) !important;
+}
+
+/* ==========================================
+   ANIMACIONES SUAVES
+   ========================================== */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card {
+    animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.card:nth-child(2) { animation-delay: 0.1s; }
+.card:nth-child(3) { animation-delay: 0.2s; }
+.card:nth-child(4) { animation-delay: 0.3s; }
+
+/* ==========================================
+   RESPONSIVE MEJORADO
+   ========================================== */
 @media (max-width: 768px) {
-  .table-wrapper {
-    margin-top: 1rem;
-  }
+    .card {
+        border-radius: 0.5rem !important;
+        margin-bottom: 1rem;
+    }
+    
+    .card-header {
+        padding: 1rem !important;
+    }
+    
+    .nav-pills {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .btn-group {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .btn-group .btn {
+        width: 100%;
+    }
+    
+    .table th,
+    .table td {
+        padding: 0.75rem 0.5rem !important;
+    }
+}
 
-  .standard-table thead th,
-  .standard-table tbody td {
-    padding: 0.75rem 0.5rem;
-  }
+@media (max-width: 576px) {
+    .card-header h5,
+    .card-header h3 {
+        font-size: 1.125rem;
+    }
+    
+    .card-body {
+        padding: 1rem !important;
+    }
 }

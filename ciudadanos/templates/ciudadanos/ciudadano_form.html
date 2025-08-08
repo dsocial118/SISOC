@@ -5,21 +5,35 @@
 {% block head %}
     <link rel="stylesheet" href="{% static 'custom/css/ciudadano-detail-enhanced.css' %}" />
     <style>
-        /* Estilos específicos para formulario de ciudadano */
+        /* Estilos específicos para formulario de ciudadano - Tema Oscuro Poncho */
+        
+        /* Variables consistentes con el tema */
+        :root {
+            --form-bg: #2c3e50;
+            --form-bg-light: #34495e;
+            --form-border: #4a5f7a;
+            --form-text: #ffffff;
+            --form-text-muted: #bdc3c7;
+            --form-accent: #0072bb;
+            --form-primary: #0072bb;
+            --form-hover: rgba(0, 114, 187, 0.1);
+        }
+        
         .foto-upload-section {
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--form-bg);
             border-radius: 16px;
             padding: 2rem;
-            border: 2px dashed rgba(255, 255, 255, 0.2);
-            transition: var(--transition-smooth);
+            border: 2px dashed var(--form-border);
+            transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
         }
         
         .foto-upload-section:hover {
-            border-color: var(--gov-accent);
-            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--form-accent);
+            background: var(--form-bg-light);
             transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 114, 187, 0.15);
         }
         
         .foto-upload-section::before {
@@ -29,8 +43,8 @@
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(23, 162, 184, 0.1), transparent);
-            transition: var(--transition-smooth);
+            background: linear-gradient(90deg, transparent, rgba(0, 114, 187, 0.1), transparent);
+            transition: all 0.3s ease;
         }
         
         .foto-upload-section:hover::before {
@@ -38,28 +52,29 @@
         }
         
         .avatar {
-            border: 4px solid rgba(255, 255, 255, 0.2) !important;
+            border: 4px solid var(--form-border) !important;
             border-radius: 50% !important;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
-            transition: var(--transition-smooth);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+            transition: all 0.3s ease;
         }
         
         .avatar:hover {
             transform: scale(1.05);
-            border-color: var(--gov-accent) !important;
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4) !important;
+            border-color: var(--form-accent) !important;
+            box-shadow: 0 12px 40px rgba(0, 114, 187, 0.3) !important;
         }
         
         .btn-foto-upload {
-            background: linear-gradient(135deg, var(--gov-primary), var(--gov-accent)) !important;
+            background: linear-gradient(135deg, var(--form-primary), #005faa) !important;
             border: none !important;
             border-radius: 12px !important;
             padding: 0.75rem 1.5rem !important;
             font-weight: 600;
             letter-spacing: 0.3px;
-            transition: var(--transition-smooth);
+            transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
+            color: white !important;
         }
         
         .btn-foto-upload::before {
@@ -70,7 +85,7 @@
             width: 100%;
             height: 100%;
             background: linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0.2));
-            transition: var(--transition-smooth);
+            transition: all 0.3s ease;
         }
         
         .btn-foto-upload:hover::before {
@@ -79,19 +94,31 @@
         
         .btn-foto-upload:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(20, 55, 107, 0.4);
+            box-shadow: 0 8px 25px rgba(0, 114, 187, 0.4);
         }
         
         .form-section {
-            background: rgba(255, 255, 255, 0.03);
+            background: var(--form-bg);
             border-radius: 12px;
             padding: 2rem;
             margin-bottom: 1.5rem;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--form-border);
+            position: relative;
+        }
+        
+        .form-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--form-accent), #005faa);
+            border-radius: 12px 0 0 12px;
         }
         
         .section-title {
-            color: var(--gov-accent);
+            color: var(--form-accent);
             font-weight: 600;
             margin-bottom: 1.5rem;
             display: flex;
@@ -100,29 +127,117 @@
             font-size: 1.1rem;
         }
         
+        .section-title i {
+            color: var(--form-accent);
+            width: 20px;
+            text-align: center;
+        }
+        
+        /* Formularios Bootstrap 5 tema oscuro */
         .form-control, .form-select {
-            background: rgba(255, 255, 255, 0.05) !important;
-            border: 1px solid rgba(255, 255, 255, 0.2) !important;
-            color: white !important;
+            background: var(--form-bg-light) !important;
+            border: 1px solid var(--form-border) !important;
+            color: var(--form-text) !important;
             border-radius: 8px !important;
-            transition: var(--transition-smooth);
+            transition: all 0.3s ease;
         }
         
         .form-control:focus, .form-select:focus {
-            background: rgba(255, 255, 255, 0.1) !important;
-            border-color: var(--gov-accent) !important;
-            box-shadow: 0 0 0 0.2rem rgba(23, 162, 184, 0.25) !important;
-            color: white !important;
+            background: var(--form-bg-light) !important;
+            border-color: var(--form-accent) !important;
+            box-shadow: 0 0 0 0.2rem rgba(0, 114, 187, 0.25) !important;
+            color: var(--form-text) !important;
+        }
+        
+        .form-control::placeholder {
+            color: var(--form-text-muted) !important;
+            opacity: 0.7;
+        }
+        
+        .form-select option {
+            background: var(--form-bg) !important;
+            color: var(--form-text) !important;
         }
         
         .form-label {
-            color: rgba(255, 255, 255, 0.9) !important;
+            color: var(--form-text) !important;
             font-weight: 500;
             margin-bottom: 0.5rem;
         }
         
         .input-file {
             display: none !important;
+        }
+        
+        /* Ajustes para crispy forms */
+        .form-group .form-text,
+        .form-group .invalid-feedback,
+        .form-group .valid-feedback {
+            color: var(--form-text-muted) !important;
+        }
+        
+        .invalid-feedback {
+            color: #e74c3c !important;
+        }
+        
+        .valid-feedback {
+            color: #27ae60 !important;
+        }
+        
+        /* Cards tema oscuro */
+        .card {
+            background: var(--form-bg) !important;
+            border: 1px solid var(--form-border) !important;
+            color: var(--form-text) !important;
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, var(--form-primary), #1f4788) !important;
+            border-bottom: 1px solid var(--form-border) !important;
+            color: white !important;
+        }
+        
+        .card-body {
+            background: var(--form-bg) !important;
+        }
+        
+        /* Alert tema oscuro */
+        .alert-info {
+            background: rgba(0, 114, 187, 0.15) !important;
+            border: 1px solid rgba(0, 114, 187, 0.3) !important;
+            color: var(--form-text) !important;
+            border-radius: 8px;
+        }
+        
+        /* Botones tema oscuro */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--form-primary), #005faa) !important;
+            border: none !important;
+            color: white !important;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #005faa, #004085) !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(0, 114, 187, 0.3);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d, #495057) !important;
+            border: none !important;
+            color: white !important;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #5a6268, #343a40) !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
         }
         
         /* Animación para campos */
@@ -133,6 +248,43 @@
         .form-group:nth-child(2) { animation-delay: 0.1s; }
         .form-group:nth-child(3) { animation-delay: 0.2s; }
         .form-group:nth-child(4) { animation-delay: 0.3s; }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .form-section {
+                padding: 1.5rem 1rem;
+            }
+            
+            .foto-upload-section {
+                padding: 1.5rem;
+            }
+            
+            .section-title {
+                font-size: 1rem;
+            }
+        }
+        
+        /* Mejoras de accesibilidad */
+        .form-control:focus,
+        .form-select:focus {
+            outline: none;
+        }
+        
+        .btn:focus {
+            outline: 2px solid var(--form-accent);
+            outline-offset: 2px;
+        }
     </style>
 {% endblock %}
 
@@ -181,7 +333,7 @@
                                 </h5>
                             </div>
                             <div class="card-body">
-                                <div class="alert alert-info border-0" style="background: rgba(23, 162, 184, 0.1);">
+                                <div class="alert alert-info border-0">
                                     <i class="fas fa-lightbulb me-2"></i>
                                     <strong>Paso 1 de 6:</strong> 
                                     {% if request.resolver_match.url_name == "ciudadanos_editar" %}

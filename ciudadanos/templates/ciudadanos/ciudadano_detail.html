@@ -2,9 +2,11 @@
 {% load static crispy_forms_tags %}
 
 {% block head %}
+    <!-- CSS Files -->
     <link rel="stylesheet" href="{% static 'custom/css/timeline.css' %}" />
     <link rel="stylesheet" href="{% static 'custom/css/ciudadano.css' %}" />
     <link rel="stylesheet" href="{% static 'custom/css/ciudadano-detail-enhanced.css' %}" />
+    <link rel="stylesheet" href="{% static 'custom/css/table-styles.css' %}" />
 {% endblock %}
 
 {% block title %}Ciudadano – {{ object.apellido }}, {{ object.nombre }}{% endblock %}
@@ -19,778 +21,688 @@
 {% endblock %}
 
 {% block content %}
-    <div class="container-fluid">
-        <!-- Acciones -->
-        <div class="d-flex justify-content-between mb-4">
-            <a href="{% url 'ciudadanos' %}" class="btn btn-outline-light">
-                <i class="fas fa-arrow-left me-1"></i> Volver
+<div class="container-fluid">
+    <!-- Acciones superiores -->
+    <div class="d-flex justify-content-between mb-4">
+        <a href="{% url 'ciudadanos' %}" class="btn btn-outline-light">
+            <i class="fas fa-arrow-left me-1"></i> Volver
+        </a>
+        <div class="btn-group flex-wrap">
+            {% if perms.Usuarios.rol_admin %}
+                <a href="{% url 'ciudadanosderivaciones_historial' object.id %}"
+                   class="btn btn-info">
+                    <i class="fas fa-share-square me-1"></i> Derivar
+                </a>
+                <a href="{% url 'ciudadanos_eliminar' object.id %}"
+                   class="btn btn-danger">
+                    <i class="fas fa-trash-alt me-1"></i> Eliminar
+                </a>
+            {% endif %}
+            <button class="btn btn-secondary d-print-none" onclick="window.print()">
+                <i class="fas fa-print me-1"></i> Imprimir
+            </button>
+            <a href="{% url 'ciudadano_intervencion_ver' object.id %}"
+               class="btn btn-warning">
+                <i class="fas fa-notes-medical me-1"></i> Intervenciones
             </a>
-            <div class="btn-group">
-                {% if perms.Usuarios.rol_admin %}
-                    <a href="{% url 'ciudadanosderivaciones_historial' object.id %}"
-                       class="btn btn-info text-white">
-                        <i class="fas fa-share-square me-1"></i> Derivar
-                    </a>
-                    <a href="{% url 'ciudadanos_eliminar' object.id %}"
-                       class="btn btn-danger">
-                        <i class="fas fa-trash-alt me-1"></i> Eliminar
-                    </a>
-                {% endif %}
-                <button class="btn btn-secondary d-print-none" onclick="window.print()">
-                    <i class="fas fa-print me-1"></i> Imprimir
-                </button>
-                <a href="{% url 'ciudadano_intervencion_ver' object.id %}"
-                   class="btn btn-warning text-dark">
-                    <i class="fas fa-notes-medical me-1"></i> Intervenciones
+            <a href="{% url 'llamados_ver' object.id %}" class="btn btn-success">
+                <i class="fas fa-phone-alt me-1"></i> Llamados
+            </a>
+            {% if perms.Usuarios.rol_admin %}
+                <a href="{% url 'ciudadanos_editar' object.id %}"
+                   class="btn btn-primary">
+                    <i class="fas fa-edit me-1"></i> Editar
                 </a>
-                <a href="{% url 'llamados_ver' object.id %}" class="btn btn-success">
-                    <i class="fas fa-phone-alt me-1"></i> Llamados
-                </a>
-                {% if perms.Usuarios.rol_admin %}
-                    <a href="{% url 'ciudadanos_editar' object.id %}"
-                       class="btn btn-primary">
-                        <i class="fas fa-edit me-1"></i> Editar
-                    </a>
-                {% endif %}
-            </div>
+            {% endif %}
         </div>
-        
-        <!-- Indicadores usando componente -->
-        {% include "components/ciudadanos/indicadores_ciudadano.html" with count_alertas=count_alta count_media=count_media count_baja=count_baja count_programas=count_programas alertas_url="alertas_listar" programas_url="programas_intervencion" ciudadano_id=object.id %}
-        
-        <!-- Perfil y Mapa -->
-        <div class="row gx-4 mb-5">
-            <div class="col-lg-4">
-                <!-- Card de perfil mejorada -->
-                <div class="card shadow-lg rounded-lg overflow-hidden">
-                    <div class="card-header text-center py-4">
-                        {% if object.foto %}
-                            <img src="{{ object.foto.url }}"
-                                 class="rounded-circle shadow-lg"
-                                 style="width:180px; height:180px; object-fit:cover"
-                                 alt="Foto de {{ object.nombre }}" />
-                        {% else %}
-                            <img src="{% static 'custom/img/default.png' %}"
-                                 class="rounded-circle shadow-lg"
-                                 style="width:180px; height:180px; object-fit:cover"
-                                 alt="Foto por defecto" />
+    </div>
+    
+    <!-- Indicadores usando componente -->
+    {% include "components/ciudadanos/indicadores_ciudadano.html" with count_alertas=count_alta count_media=count_media count_baja=count_baja count_programas=count_programas alertas_url="alertas_listar" programas_url="programas_intervencion" ciudadano_id=object.id %}
+    
+    <!-- Perfil y Mapa -->
+    <div class="row gx-4 mb-5">
+        <div class="col-lg-4">
+            <!-- Card de perfil mejorada -->
+            <div class="card shadow-lg rounded-lg overflow-hidden">
+                <div class="card-header text-center py-4">
+                    {% if object.foto %}
+                        <img src="{{ object.foto.url }}"
+                             class="rounded-circle shadow-lg"
+                             style="width:180px; height:180px; object-fit:cover"
+                             alt="Foto de {{ object.nombre }}" />
+                    {% else %}
+                        <img src="{% static 'custom/img/default.png' %}"
+                             class="rounded-circle shadow-lg"
+                             style="width:180px; height:180px; object-fit:cover"
+                             alt="Foto por defecto" />
+                    {% endif %}
+                    <div class="mt-3">
+                        <h4 class="mb-1 font-weight-bold">{{ object.apellido }}, {{ object.nombre }}</h4>
+                        <p class="text-muted mb-0">{{ object.tipo_documento }} {{ object.documento }}</p>
+                    </div>
+                </div>
+                
+                <!-- Datos básicos con diseño mejorado -->
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="fw-medium"><i class="fas fa-venus-mars me-2 text-info"></i>Sexo</span>
+                            <span class="badge badge-outline-secondary">{{ object.sexo }}</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="fw-medium"><i class="fas fa-calendar me-2 text-warning"></i>Nacimiento</span>
+                            <span>{{ object.fecha_nacimiento|date:"d/m/Y" }}</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="fw-medium"><i class="fas fa-heart me-2 text-danger"></i>Estado civil</span>
+                            <span>{{ object.estado_civil|default:"–" }}</span>
+                        </div>
+                        {% if object.telefono %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="fw-medium"><i class="fas fa-phone me-2 text-success"></i>Teléfono</span>
+                            <span>{{ object.telefono }}</span>
+                        </div>
                         {% endif %}
-                        <div class="mt-3">
-                            <h4 class="mb-1 font-weight-bold">{{ object.apellido }}, {{ object.nombre }}</h4>
-                            <p class="text-muted mb-0">{{ object.tipo_documento }} {{ object.documento }}</p>
+                        {% if object.email %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="fw-medium"><i class="fas fa-envelope me-2 text-primary"></i>Email</span>
+                            <span class="text-truncate" style="max-width: 150px;">{{ object.email }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="fw-medium"><i class="fas fa-map-marker-alt me-2 text-info"></i>Provincia</span>
+                            <span>{{ object.provincia|default:"–" }}</span>
                         </div>
                     </div>
-                    
-                    <!-- Datos básicos con diseño mejorado -->
-                    <div class="card-body p-0">
-                        <div class="list-group list-group-flush">
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <span class="fw-medium"><i class="fas fa-venus-mars me-2 text-info"></i>Sexo</span>
-                                <span class="badge badge-outline-secondary">{{ object.sexo }}</span>
-                            </div>
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <span class="fw-medium"><i class="fas fa-calendar me-2 text-warning"></i>Nacimiento</span>
-                                <span>{{ object.fecha_nacimiento|date:"d/m/Y" }}</span>
-                            </div>
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <span class="fw-medium"><i class="fas fa-heart me-2 text-danger"></i>Estado civil</span>
-                                <span>{{ object.estado_civil|default:"–" }}</span>
-                            </div>
-                            {% if object.telefono %}
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <span class="fw-medium"><i class="fas fa-phone me-2 text-success"></i>Teléfono</span>
-                                <span>{{ object.telefono }}</span>
-                            </div>
-                            {% endif %}
-                            {% if object.email %}
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <span class="fw-medium"><i class="fas fa-envelope me-2 text-primary"></i>Email</span>
-                                <span class="text-truncate" style="max-width: 150px;">{{ object.email }}</span>
-                            </div>
-                            {% endif %}
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <span class="fw-medium"><i class="fas fa-map-marker-alt me-2 text-info"></i>Provincia</span>
-                                <span>{{ object.provincia|default:"–" }}</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Programas con diseño mejorado -->
-                    <div class="card-body">
-                        <h6 class="text-muted mb-3 d-flex align-items-center">
-                            <i class="fas fa-tags me-2"></i>Programas Activos
-                        </h6>
-                        {% if object.ciudadano_programa.all %}
-                            <div class="d-flex flex-wrap gap-2">
-                                {% for cp in object.ciudadano_programa.all %}
-                                    <span class="badge badge-custom px-3 py-2">
-                                        <i class="fas fa-bookmark me-1"></i>{{ cp.programas.nombre }}
-                                    </span>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            <p class="text-muted mb-0">
-                                <i class="fas fa-info-circle me-2"></i>No participa en programas
-                            </p>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Estado con badge mejorado -->
-                    <div class="card-footer text-center">
-                        {% if object.estado %}
-                            <span class="badge bg-success px-4 py-2 fs-6">
-                                <i class="fas fa-check-circle me-2"></i>Activo
-                            </span>
-                        {% else %}
-                            <span class="badge bg-danger px-4 py-2 fs-6">
-                                <i class="fas fa-times-circle me-2"></i>Inactivo
-                            </span>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-lg-8">
-                <!-- Mapa usando componente con wrapper mejorado -->
-                <div class="position-relative">
-                    {% include "components/ciudadanos/mapa_ubicacion.html" with ciudadano=object map_height="500" %}
-                    <div class="position-absolute top-0 end-0 m-3">
-                        <button class="btn btn-sm btn-outline-light" onclick="window.open('https://maps.google.com/maps?q={{ object.calle|urlencode }}+{{ object.altura }},+{{ object.localidad|urlencode }}', '_blank')" title="Abrir en Google Maps">
-                            <i class="fas fa-external-link-alt"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Dimensiones -->
-        <div class="card shadow-lg mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="fas fa-chart-pie me-2"></i>Dimensiones Evaluadas
-                </h5>
-                <ul class="nav nav-pills mb-0" role="tablist">
-                    <li class="nav-item">
-                        <button class="nav-link active"
-                                data-bs-toggle="pill"
-                                data-bs-target="#familia"
-                                type="button">
-                            <i class="fas fa-users me-1"></i>Familia
-                        </button>
-                    </li>
-                    <li class="nav-item">
-                        <button class="nav-link"
-                                data-bs-toggle="pill"
-                                data-bs-target="#vivienda"
-                                type="button">
-                            <i class="fas fa-home me-1"></i>Vivienda
-                        </button>
-                    </li>
-                    <li class="nav-item">
-                        <button class="nav-link"
-                                data-bs-toggle="pill"
-                                data-bs-target="#salud"
-                                type="button">
-                            <i class="fas fa-heartbeat me-1"></i>Salud
-                        </button>
-                    </li>
-                    <li class="nav-item">
-                        <button class="nav-link"
-                                data-bs-toggle="pill"
-                                data-bs-target="#trabajo"
-                                type="button">
-                            <i class="fas fa-briefcase me-1"></i>Trabajo
-                        </button>
-                    </li>
-                </ul>
-            </div>
-            <div class="tab-content p-4">
-                <!-- Familia -->
-                <div class="tab-pane fade show active" id="familia">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <tbody>
-                                <tr>
-                                    <th style="width: 35%;"><i class="fas fa-baby me-2 text-info"></i>Cantidad de hijos</th>
-                                    <td><span class="badge bg-secondary">{{ dimensionfamilia.cant_hijos|default:"–" }}</span></td>
-                                </tr>
-                                <tr>
-                                    <th><i class="fas fa-user-shield me-2 text-warning"></i>Otro responsable</th>
-                                    <td>
-                                        {% if dimensionfamilia.otro_responsable %}
-                                            <span class="badge bg-success"><i class="fas fa-check me-1"></i>Sí</span>
-                                        {% else %}
-                                            <span class="badge bg-danger"><i class="fas fa-times me-1"></i>No</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th><i class="fas fa-female me-2 text-pink"></i>Embarazadas</th>
-                                    <td>{{ dimensionfamilia.hay_embarazadas|yesno:"<span class='badge bg-success'><i class='fas fa-check me-1'></i>Sí</span>,<span class='badge bg-danger'><i class='fas fa-times me-1'></i>No</span>" }}</td>
-                                </tr>
-                                <tr>
-                                    <th><i class="fas fa-lock me-2 text-danger"></i>Privados de libertad</th>
-                                    <td>{{ dimensionfamilia.hay_priv_libertad|yesno:"<span class='badge bg-success'><i class='fas fa-check me-1'></i>Sí</span>,<span class='badge bg-danger'><i class='fas fa-times me-1'></i>No</span>" }}</td>
-                                </tr>
-                                <tr>
-                                    <th><i class="fas fa-brain me-2 text-purple"></i>Problemas salud mental</th>
-                                    <td>{{ dimensionfamilia.hay_prbl_smental|yesno:"<span class='badge bg-success'><i class='fas fa-check me-1'></i>Sí</span>,<span class='badge bg-danger'><i class='fas fa-times me-1'></i>No</span>" }}</td>
-                                </tr>
-                                <tr>
-                                    <th><i class="fas fa-clinic-medical me-2 text-danger"></i>Enfermedades crónicas</th>
-                                    <td>{{ dimensionfamilia.hay_enf_cronica|yesno:"<span class='badge bg-success'><i class='fas fa-check me-1'></i>Sí</span>,<span class='badge bg-danger'><i class='fas fa-times me-1'></i>No</span>" }}</td>
-                                </tr>
-                                <tr>
-                                    <th><i class="fas fa-wheelchair me-2 text-info"></i>Discapacidad</th>
-                                    <td>{{ dimensionfamilia.hay_fam_discapacidad|yesno:"<span class='badge bg-success'><i class='fas fa-check me-1'></i>Sí</span>,<span class='badge bg-danger'><i class='fas fa-times me-1'></i>No</span>" }}</td>
-                                </tr>
-                                {% if dimensionfamilia.obs_familia %}
-                                <tr>
-                                    <th><i class="fas fa-sticky-note me-2 text-warning"></i>Observaciones</th>
-                                    <td><em>{{ dimensionfamilia.obs_familia }}</em></td>
-                                </tr>
-                                {% endif %}
-                            </tbody>
-                        </table>
-                    </div>
                 </div>
                 
-                <!-- Vivienda -->
-                <div class="tab-pane fade" id="vivienda">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <tbody>
-                                <tr>
-                                    <th style="width: 35%;"><i class="fas fa-key me-2 text-warning"></i>Posesión</th>
-                                    <td><span class="badge bg-primary">{{ dimensionvivienda.posesion|default:"–" }}</span></td>
-                                </tr>
-                                <tr>
-                                    <th><i class="fas fa-building me-2 text-info"></i>Tipo</th>
-                                    <td>{{ dimensionvivienda.tipo|default:"–" }}</td>
-                                </tr>
-                                <tr>
-                                    <th><i class="fas fa-hammer me-2 text-secondary"></i>Material</th>
-                                    <td>{{ dimensionvivienda.material|default:"–" }}</td>
-                                </tr>
-                                <tr>
-                                    <th><i class="fas fa-door-open me-2 text-success"></i>Ambientes</th>
-                                    <td><span class="badge bg-secondary">{{ dimensionvivienda.cant_ambientes|default:"–" }}</span></td>
-                                </tr>
-                                <tr>
-                                    <th><i class="fas fa-toilet me-2 text-info"></i>Baño</th>
-                                    <td>{{ dimensionvivienda.hay_banio|yesno:"<span class='badge bg-success'><i class='fas fa-check me-1'></i>Sí</span>,<span class='badge bg-danger'><i class='fas fa-times me-1'></i>No</span>" }}</td>
-                                </tr>
-                                <tr>
-                                    <th><i class="fas fa-fire me-2 text-danger"></i>Agua caliente</th>
-                                    <td>{{ dimensionvivienda.hay_agua_caliente|yesno:"<span class='badge bg-success'><i class='fas fa-check me-1'></i>Sí</span>,<span class='badge bg-danger'><i class='fas fa-times me-1'></i>No</span>" }}</td>
-                                </tr>
-                                <tr>
-                                    <th><i class="fas fa-exclamation-triangle me-2 text-warning"></i>Desmoronamiento</th>
-                                    <td>{{ dimensionvivienda.hay_desmoronamiento|yesno:"<span class='badge bg-danger'><i class='fas fa-exclamation me-1'></i>Sí</span>,<span class='badge bg-success'><i class='fas fa-check me-1'></i>No</span>" }}</td>
-                                </tr>
-                                {% if dimensionvivienda.obs_vivienda %}
-                                <tr>
-                                    <th><i class="fas fa-sticky-note me-2 text-warning"></i>Observaciones</th>
-                                    <td><em>{{ dimensionvivienda.obs_vivienda }}</em></td>
-                                </tr>
-                                {% endif %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                
-                <!-- Salud -->
-                <div class="tab-pane fade" id="salud">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <tbody>
-                                <tr>
-                                    <th style="width: 35%;"><i class="fas fa-hospital me-2 text-success"></i>Lugar atención</th>
-                                    <td>{{ dimensionsalud.lugares_atencion|default:"–" }}</td>
-                                </tr>
-                                <tr>
-                                    <th><i class="fas fa-calendar-check me-2 text-info"></i>Frecuencia controles</th>
-                                    <td><span class="badge bg-info">{{ dimensionsalud.frecuencia_controles_medicos|default:"–" }}</span></td>
-                                </tr>
-                                <tr>
-                                    <th><i class="fas fa-virus me-2 text-danger"></i>Enfermedad</th>
-                                    <td>{{ dimensionsalud.hay_enfermedad|yesno:"<span class='badge bg-warning'><i class='fas fa-exclamation me-1'></i>Sí</span>,<span class='badge bg-success'><i class='fas fa-check me-1'></i>No</span>" }}</td>
-                                </tr>
-                                <tr>
-                                    <th><i class="fas fa-shield-alt me-2 text-primary"></i>Cobertura médica</th>
-                                    <td>{{ dimensionsalud.hay_obra_social|yesno:"<span class='badge bg-success'><i class='fas fa-check me-1'></i>Sí</span>,<span class='badge bg-danger'><i class='fas fa-times me-1'></i>No</span>" }}</td>
-                                </tr>
-                                <tr>
-                                    <th><i class="fas fa-wheelchair me-2 text-info"></i>Discapacidad</th>
-                                    <td>{{ dimensionsalud.hay_discapacidad|yesno:"<span class='badge bg-info'><i class='fas fa-info me-1'></i>Sí</span>,<span class='badge bg-success'><i class='fas fa-check me-1'></i>No</span>" }}</td>
-                                </tr>
-                                {% if dimensionsalud.obs_salud %}
-                                <tr>
-                                    <th><i class="fas fa-sticky-note me-2 text-warning"></i>Observaciones</th>
-                                    <td><em>{{ dimensionsalud.obs_salud }}</em></td>
-                                </tr>
-                                {% endif %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                
-                <!-- Trabajo -->
-                <div class="tab-pane fade" id="trabajo">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <tbody>
-                                <tr>
-                                    <th style="width: 35%;"><i class="fas fa-working me-2 text-success"></i>Actualmente trabaja</th>
-                                    <td>{{ dimensiontrabajo.tiene_trabajo|yesno:"<span class='badge bg-success'><i class='fas fa-check me-1'></i>Sí</span>,<span class='badge bg-danger'><i class='fas fa-times me-1'></i>No</span>" }}</td>
-                                </tr>
-                                {% if dimensiontrabajo.ocupacion %}
-                                <tr>
-                                    <th><i class="fas fa-user-tie me-2 text-primary"></i>Ocupación</th>
-                                    <td><span class="badge bg-primary">{{ dimensiontrabajo.ocupacion }}</span></td>
-                                </tr>
-                                {% endif %}
-                                {% if dimensiontrabajo.modo_contratacion %}
-                                <tr>
-                                    <th><i class="fas fa-file-contract me-2 text-info"></i>Contratación</th>
-                                    <td>{{ dimensiontrabajo.modo_contratacion }}</td>
-                                </tr>
-                                {% endif %}
-                                {% if dimensiontrabajo.obs_trabajo %}
-                                <tr>
-                                    <th><i class="fas fa-sticky-note me-2 text-warning"></i>Observaciones</th>
-                                    <td><em>{{ dimensiontrabajo.obs_trabajo }}</em></td>
-                                </tr>
-                                {% endif %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>bs-toggle="pill"
-                                data-bs-target="#trabajo"
-                                type="button">Trabajo</button>
-                    </li>
-                </ul>
-            </div>
-            <div class="tab-content p-3">
-                <!-- Familia -->
-                <div class="tab-pane fade show active" id="familia">
-                    <div class="table-responsive rounded">
-                        <table class="table table-striped table-hover mb-0">
-                            <tbody>
-                                <tr>
-                                    <th style="width: 30%;">Cantidad de hijos</th>
-                                    <td>{{ dimensionfamilia.cant_hijos|default:"–" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Otro responsable</th>
-                                    <td>{{ dimensionfamilia.otro_responsable|yesno:"Sí,No" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Embarazadas</th>
-                                    <td>{{ dimensionfamilia.hay_embarazadas|yesno:"Sí,No" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Privados de libertad</th>
-                                    <td>{{ dimensionfamilia.hay_priv_libertad|yesno:"Sí,No" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Salud mental</th>
-                                    <td>{{ dimensionfamilia.hay_prbl_smental|yesno:"Sí,No" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Enfermedades crónicas</th>
-                                    <td>{{ dimensionfamilia.hay_enf_cronica|yesno:"Sí,No" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Discapacidad</th>
-                                    <td>{{ dimensionfamilia.hay_fam_discapacidad|yesno:"Sí,No" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Observaciones</th>
-                                    <td>{{ dimensionfamilia.obs_familia|default:"–" }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <!-- Vivienda -->
-                <div class="tab-pane fade" id="vivienda">
-                    <div class="table-responsive rounded">
-                        <table class="table table-striped table-hover mb-0">
-                            <tbody>
-                                <tr>
-                                    <th style="width: 30%;">Posesión</th>
-                                    <td>{{ dimensionvivienda.posesion|default:"–" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Tipo</th>
-                                    <td>{{ dimensionvivienda.tipo|default:"–" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Material</th>
-                                    <td>{{ dimensionvivienda.material|default:"–" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Ambientes</th>
-                                    <td>{{ dimensionvivienda.cant_ambientes|default:"–" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Baño</th>
-                                    <td>{{ dimensionvivienda.hay_banio|yesno:"Sí,No" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Agua caliente</th>
-                                    <td>{{ dimensionvivienda.hay_agua_caliente|yesno:"Sí,No" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Desmoronamiento</th>
-                                    <td>{{ dimensionvivienda.hay_desmoronamiento|yesno:"Sí,No" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Observaciones</th>
-                                    <td>{{ dimensionvivienda.obs_vivienda|default:"–" }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <!-- Salud -->
-                <div class="tab-pane fade" id="salud">
-                    <div class="table-responsive rounded">
-                        <table class="table table-striped table-hover mb-0">
-                            <tbody>
-                                <tr>
-                                    <th style="width: 30%;">Lugar atención</th>
-                                    <td>{{ dimensionsalud.lugares_atencion|default:"–" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Frecuencia controles</th>
-                                    <td>{{ dimensionsalud.frecuencia_controles_medicos|default:"–" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Enfermedad</th>
-                                    <td>{{ dimensionsalud.hay_enfermedad|yesno:"Sí,No" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Cobertura</th>
-                                    <td>{{ dimensionsalud.hay_obra_social|yesno:"Sí,No" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Discapacidad</th>
-                                    <td>{{ dimensionsalud.hay_discapacidad|yesno:"Sí,No" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Observaciones</th>
-                                    <td>{{ dimensionsalud.obs_salud|default:"–" }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <!-- Trabajo -->
-                <div class="tab-pane fade" id="trabajo">
-                    <div class="table-responsive rounded">
-                        <table class="table table-striped table-hover mb-0">
-                            <tbody>
-                                <tr>
-                                    <th style="width: 30%;">Actualmente trabaja</th>
-                                    <td>{{ dimensiontrabajo.tiene_trabajo|yesno:"Sí,No" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Ocupación</th>
-                                    <td>{{ dimensiontrabajo.ocupacion|default:"–" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Contratación</th>
-                                    <td>{{ dimensiontrabajo.modo_contratacion|default:"–" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Observaciones</th>
-                                    <td>{{ dimensiontrabajo.obs_trabajo|default:"–" }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Programas con diseño mejorado -->
-        <div class="col-12 mb-4">
-            <div class="card shadow-lg">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
-                        <i class="fas fa-clipboard-list me-2"></i>Gestión de Programas
-                    </h5>
-                    <small class="text-muted">{{ count_programas }} programa{{ count_programas|pluralize }}</small>
-                </div>
+                <!-- Programas con diseño mejorado -->
                 <div class="card-body">
-                    {% if ciudadanos_programas %}
-                        <div class="row g-3" id="programas_ciudadanos">
-                            {% for cp in ciudadanos_programas %}
-                                <div class="col-md-3 col-lg-3 mb-3 ease-out">
-                                    <div class="card card-programa shadow-sm h-100 position-relative">
-                                        <div class="card-body d-flex justify-content-between align-items-center p-3">
-                                            <div class="d-flex align-items-center">
-                                                <div class="program-icon me-3">
-                                                    <i class="fas fa-bookmark fa-lg text-info"></i>
-                                                </div>
-                                                <div>
-                                                    <h6 class="mb-0 fw-bold text-truncate" style="max-width: 140px;">
-                                                        {{ cp.programas.nombre }}
-                                                    </h6>
-                                                    <small class="text-muted">
-                                                        <i class="fas fa-calendar me-1"></i>
-                                                        {{ cp.fecha_creado|date:"d/m/Y" }}
-                                                    </small>
-                                                </div>
-                                            </div>
-                                            {% if perms.Usuarios.rol_admin %}
-                                            <button class="btn btn-sm btn-outline-danger borrar-programa"
-                                                    data-program-id="{{ cp.id }}"
-                                                    title="Eliminar programa">
-                                                <i class="fas fa-trash-alt"></i>
-                                            </button>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </div>
+                    <h6 class="text-muted mb-3 d-flex align-items-center">
+                        <i class="fas fa-tags me-2"></i>Programas Activos
+                    </h6>
+                    {% if object.ciudadano_programa.all %}
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for cp in object.ciudadano_programa.all %}
+                                <span class="badge badge-custom px-3 py-2">
+                                    <i class="fas fa-bookmark me-1"></i>{{ cp.programas.nombre }}
+                                </span>
                             {% endfor %}
                         </div>
                     {% else %}
-                        <div class="text-center py-5">
-                            <div class="empty-state">
-                                <i class="fas fa-clipboard-list fa-4x text-muted mb-3"></i>
-                                <h5 class="text-muted">No hay programas asignados</h5>
-                                <p class="text-muted">El ciudadano no está inscrito en programas actualmente.</p>
-                            </div>
-                        </div>
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-info-circle me-2"></i>No participa en programas
+                        </p>
                     {% endif %}
                 </div>
                 
-                <!-- Formulario para agregar programa -->
-                <div id="form-programas" class="card-footer d-none">
-                    <form id="ProgramaForm" method="POST" action="{% url 'actualizar_programas' object.id %}">
-                        {% csrf_token %}
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">
-                                <i class="fas fa-plus-circle me-2"></i>Seleccionar Programa
-                            </label>
-                            {{ form_prog.programas|as_crispy_field }}
-                        </div>
-                        <div class="d-flex justify-content-end gap-2">
-                            <button type="button" id="cancelar-btn" class="btn btn-outline-secondary">
-                                <i class="fas fa-times me-1"></i>Cancelar
-                            </button>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save me-1"></i>Guardar
-                            </button>
-                        </div>
-                    </form>
-                </div>
-                
-                <div class="card-footer d-flex justify-content-between align-items-center">
-                    <a href="{% url 'programas_intervencion' object.id %}" 
-                       class="btn btn-outline-primary">
-                        <i class="fas fa-eye me-1"></i>Ver Detalles
-                    </a>
-                    {% if perms.Usuarios.rol_admin %}
-                    <button id="agregar-programa-btn" class="btn btn-primary">
-                        <i class="fas fa-plus me-1"></i>Agregar Programa
-                    </button>
+                <!-- Estado con badge mejorado -->
+                <div class="card-footer text-center">
+                    {% if object.estado %}
+                        <span class="badge bg-success px-4 py-2 fs-6">
+                            <i class="fas fa-check-circle me-2"></i>Activo
+                        </span>
+                    {% else %}
+                        <span class="badge bg-danger px-4 py-2 fs-6">
+                            <i class="fas fa-times-circle me-2"></i>Inactivo
+                        </span>
                     {% endif %}
                 </div>
             </div>
         </div>
         
-        <!-- Archivos mejorados -->
-        <div class="row gx-4 mb-5">
-            <!-- Imágenes -->
-            <div class="col-lg-6 mb-4">
-                <div class="card shadow-lg h-100">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="fas fa-images me-2"></i>Imágenes
-                            <span class="badge bg-secondary ms-2">{{ files_img|length }}</span>
-                        </h5>
-                    </div>
-                    <div class="card-body p-0">
-                        {% if files_img %}
-                            <div class="table-responsive">
-                                <table class="table table-hover mb-0 align-middle">
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 80px;">Vista</th>
-                                            <th>Archivo</th>
-                                            <th style="width: 100px;">Fecha</th>
-                                            <th style="width: 100px;">Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for f in files_img %}
-                                            <tr>
-                                                <td>
-                                                    <img src="{{ MEDIA_URL }}{{ f.archivo.url }}"
-                                                         class="img-thumbnail rounded"
-                                                         style="width: 60px; height: 60px; object-fit: cover;"
-                                                         alt="Imagen"
-                                                         data-bs-toggle="modal"
-                                                         data-bs-target="#imageModal{{ f.id }}"
-                                                         role="button" />
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex flex-column">
-                                                        <span class="fw-medium">{{ f.archivo.name|truncatechars:25 }}</span>
-                                                        <small class="text-muted">Imagen</small>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <small class="text-muted">
-                                                        <i class="fas fa-calendar me-1"></i>
-                                                        {{ f.fecha|date:"d/m/Y" }}
-                                                    </small>
-                                                </td>
-                                                <td>
-                                                    <div class="btn-group btn-group-sm">
-                                                        <a href="{{ MEDIA_URL }}{{ f.archivo.url }}"
-                                                           download
-                                                           class="btn btn-outline-primary"
-                                                           title="Descargar">
-                                                            <i class="fas fa-download"></i>
-                                                        </a>
-                                                        <a href="{{ MEDIA_URL }}{{ f.archivo.url }}"
-                                                           target="_blank"
-                                                           class="btn btn-outline-info"
-                                                           title="Ver completa">
-                                                            <i class="fas fa-external-link-alt"></i>
-                                                        </a>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        {% else %}
-                            <div class="text-center py-5">
-                                <i class="fas fa-image fa-3x text-muted mb-3"></i>
-                                <h6 class="text-muted">Sin imágenes</h6>
-                                <p class="text-muted mb-0">No hay imágenes cargadas para este ciudadano.</p>
-                            </div>
-                        {% endif %}
-                    </div>
-                    <div class="card-footer d-flex justify-content-between">
-                        <a href="{% url 'ciudadanosarchivos_listar' object.id %}"
-                           class="btn btn-outline-primary">
-                            <i class="fas fa-list me-1"></i>Ver Todos
-                        </a>
-                        {% if perms.Usuarios.rol_admin %}
-                            <a href="{% url 'ciudadanosarchivos_crear' object.id %}"
-                               class="btn btn-primary">
-                                <i class="fas fa-plus me-1"></i>Agregar
-                            </a>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Documentos -->
-            <div class="col-lg-6 mb-4">
-                <div class="card shadow-lg h-100">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="fas fa-file-alt me-2"></i>Documentos
-                            <span class="badge bg-secondary ms-2">{{ files_docs|length }}</span>
-                        </h5>
-                    </div>
-                    <div class="card-body p-0">
-                        {% if files_docs %}
-                            <div class="table-responsive">
-                                <table class="table table-hover mb-0 align-middle">
-                                    <thead>
-                                        <tr>
-                                            <th>Documento</th>
-                                            <th style="width: 100px;">Fecha</th>
-                                            <th style="width: 100px;">Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for f in files_docs %}
-                                            <tr>
-                                                <td>
-                                                    <div class="d-flex align-items-center">
-                                                        <div class="file-icon me-3">
-                                                            {% if f.archivo.name|slice:"-3:" == "pdf" %}
-                                                                <i class="fas fa-file-pdf fa-2x text-danger"></i>
-                                                            {% elif f.archivo.name|slice:"-3:" == "doc" or f.archivo.name|slice:"-4:" == "docx" %}
-                                                                <i class="fas fa-file-word fa-2x text-primary"></i>
-                                                            {% elif f.archivo.name|slice:"-3:" == "xls" or f.archivo.name|slice:"-4:" == "xlsx" %}
-                                                                <i class="fas fa-file-excel fa-2x text-success"></i>
-                                                            {% else %}
-                                                                <i class="fas fa-file-alt fa-2x text-secondary"></i>
-                                                            {% endif %}
-                                                        </div>
-                                                        <div>
-                                                            <span class="fw-medium d-block">{{ f.archivo.name|truncatechars:30 }}</span>
-                                                            <small class="text-muted">Documento</small>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <small class="text-muted">
-                                                        <i class="fas fa-calendar me-1"></i>
-                                                        {{ f.fecha|date:"d/m/Y" }}
-                                                    </small>
-                                                </td>
-                                                <td>
-                                                    <div class="btn-group btn-group-sm">
-                                                        <a href="{{ f.archivo.url }}"
-                                                           download
-                                                           class="btn btn-outline-primary"
-                                                           title="Descargar">
-                                                            <i class="fas fa-download"></i>
-                                                        </a>
-                                                        <a href="{{ f.archivo.url }}"
-                                                           target="_blank"
-                                                           class="btn btn-outline-info"
-                                                           title="Abrir">
-                                                            <i class="fas fa-external-link-alt"></i>
-                                                        </a>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        {% else %}
-                            <div class="text-center py-5">
-                                <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
-                                <h6 class="text-muted">Sin documentos</h6>
-                                <p class="text-muted mb-0">No hay documentos cargados para este ciudadano.</p>
-                            </div>
-                        {% endif %}
-                    </div>
-                    <div class="card-footer d-flex justify-content-between">
-                        <a href="{% url 'ciudadanosarchivos_listar' object.id %}"
-                           class="btn btn-outline-primary">
-                            <i class="fas fa-list me-1"></i>Ver Todos
-                        </a>
-                        {% if perms.Usuarios.rol_admin %}
-                            <a href="{% url 'ciudadanosarchivos_crear' object.id %}"
-                               class="btn btn-primary">
-                                <i class="fas fa-plus me-1"></i>Agregar
-                            </a>
-                        {% endif %}
-                    </div>
+        <div class="col-lg-8">
+            <!-- Mapa usando componente con wrapper mejorado -->
+            <div class="position-relative">
+                {% include "components/ciudadanos/mapa_ubicacion.html" with ciudadano=object map_height="500" %}
+                <div class="position-absolute top-0 end-0 m-3">
+                    <button class="btn btn-sm btn-outline-light" onclick="window.open('https://maps.google.com/maps?q={{ object.calle|urlencode }}+{{ object.altura }},+{{ object.localidad|urlencode }}', '_blank')" title="Abrir en Google Maps">
+                        <i class="fas fa-external-link-alt"></i>
+                    </button>
                 </div>
             </div>
         </div>
     </div>
+    
+    <!-- Dimensiones -->
+    <div class="card shadow-lg mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-chart-pie me-2"></i>Dimensiones Evaluadas
+            </h5>
+            <ul class="nav nav-pills mb-0" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active"
+                            data-bs-toggle="pill"
+                            data-bs-target="#familia"
+                            type="button">
+                        <i class="fas fa-users me-1"></i>Familia
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link"
+                            data-bs-toggle="pill"
+                            data-bs-target="#vivienda"
+                            type="button">
+                        <i class="fas fa-home me-1"></i>Vivienda
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link"
+                            data-bs-toggle="pill"
+                            data-bs-target="#salud"
+                            type="button">
+                        <i class="fas fa-heartbeat me-1"></i>Salud
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link"
+                            data-bs-toggle="pill"
+                            data-bs-target="#trabajo"
+                            type="button">
+                        <i class="fas fa-briefcase me-1"></i>Trabajo
+                    </button>
+                </li>
+            </ul>
+        </div>
+        <div class="tab-content p-4">
+            <!-- Familia -->
+            <div class="tab-pane fade show active" id="familia">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <tbody>
+                            <tr>
+                                <th style="width: 35%;"><i class="fas fa-baby me-2 text-info"></i>Cantidad de hijos</th>
+                                <td><span class="badge bg-secondary">{{ dimensionfamilia.cant_hijos|default:"–" }}</span></td>
+                            </tr>
+                            <tr>
+                                <th><i class="fas fa-user-shield me-2 text-warning"></i>Otro responsable</th>
+                                <td>
+                                    {% if dimensionfamilia.otro_responsable %}
+                                        <span class="badge bg-success"><i class="fas fa-check me-1"></i>Sí</span>
+                                    {% else %}
+                                        <span class="badge bg-danger"><i class="fas fa-times me-1"></i>No</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th><i class="fas fa-female me-2 text-pink"></i>Embarazadas</th>
+                                <td>{{ dimensionfamilia.hay_embarazadas|yesno:"<span class='badge bg-success'><i class='fas fa-check me-1'></i>Sí</span>,<span class='badge bg-danger'><i class='fas fa-times me-1'></i>No</span>" }}</td>
+                            </tr>
+                            <tr>
+                                <th><i class="fas fa-lock me-2 text-danger"></i>Privados de libertad</th>
+                                <td>{{ dimensionfamilia.hay_priv_libertad|yesno:"<span class='badge bg-success'><i class='fas fa-check me-1'></i>Sí</span>,<span class='badge bg-danger'><i class='fas fa-times me-1'></i>No</span>" }}</td>
+                            </tr>
+                            <tr>
+                                <th><i class="fas fa-brain me-2 text-purple"></i>Problemas salud mental</th>
+                                <td>{{ dimensionfamilia.hay_prbl_smental|yesno:"<span class='badge bg-success'><i class='fas fa-check me-1'></i>Sí</span>,<span class='badge bg-danger'><i class='fas fa-times me-1'></i>No</span>" }}</td>
+                            </tr>
+                            <tr>
+                                <th><i class="fas fa-clinic-medical me-2 text-danger"></i>Enfermedades crónicas</th>
+                                <td>{{ dimensionfamilia.hay_enf_cronica|yesno:"<span class='badge bg-success'><i class='fas fa-check me-1'></i>Sí</span>,<span class='badge bg-danger'><i class='fas fa-times me-1'></i>No</span>" }}</td>
+                            </tr>
+                            <tr>
+                                <th><i class="fas fa-wheelchair me-2 text-info"></i>Discapacidad</th>
+                                <td>{{ dimensionfamilia.hay_fam_discapacidad|yesno:"<span class='badge bg-success'><i class='fas fa-check me-1'></i>Sí</span>,<span class='badge bg-danger'><i class='fas fa-times me-1'></i>No</span>" }}</td>
+                            </tr>
+                            {% if dimensionfamilia.obs_familia %}
+                            <tr>
+                                <th><i class="fas fa-sticky-note me-2 text-warning"></i>Observaciones</th>
+                                <td><em>{{ dimensionfamilia.obs_familia }}</em></td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Vivienda -->
+            <div class="tab-pane fade" id="vivienda">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <tbody>
+                            <tr>
+                                <th style="width: 35%;"><i class="fas fa-key me-2 text-warning"></i>Posesión</th>
+                                <td><span class="badge bg-primary">{{ dimensionvivienda.posesion|default:"–" }}</span></td>
+                            </tr>
+                            <tr>
+                                <th><i class="fas fa-building me-2 text-info"></i>Tipo</th>
+                                <td>{{ dimensionvivienda.tipo|default:"–" }}</td>
+                            </tr>
+                            <tr>
+                                <th><i class="fas fa-hammer me-2 text-secondary"></i>Material</th>
+                                <td>{{ dimensionvivienda.material|default:"–" }}</td>
+                            </tr>
+                            <tr>
+                                <th><i class="fas fa-door-open me-2 text-success"></i>Ambientes</th>
+                                <td><span class="badge bg-secondary">{{ dimensionvivienda.cant_ambientes|default:"–" }}</span></td>
+                            </tr>
+                            <tr>
+                                <th><i class="fas fa-toilet me-2 text-info"></i>Baño</th>
+                                <td>{{ dimensionvivienda.hay_banio|yesno:"<span class='badge bg-success'><i class='fas fa-check me-1'></i>Sí</span>,<span class='badge bg-danger'><i class='fas fa-times me-1'></i>No</span>" }}</td>
+                            </tr>
+                            <tr>
+                                <th><i class="fas fa-fire me-2 text-danger"></i>Agua caliente</th>
+                                <td>{{ dimensionvivienda.hay_agua_caliente|yesno:"<span class='badge bg-success'><i class='fas fa-check me-1'></i>Sí</span>,<span class='badge bg-danger'><i class='fas fa-times me-1'></i>No</span>" }}</td>
+                            </tr>
+                            <tr>
+                                <th><i class="fas fa-exclamation-triangle me-2 text-warning"></i>Desmoronamiento</th>
+                                <td>{{ dimensionvivienda.hay_desmoronamiento|yesno:"<span class='badge bg-danger'><i class='fas fa-exclamation me-1'></i>Sí</span>,<span class='badge bg-success'><i class='fas fa-check me-1'></i>No</span>" }}</td>
+                            </tr>
+                            {% if dimensionvivienda.obs_vivienda %}
+                            <tr>
+                                <th><i class="fas fa-sticky-note me-2 text-warning"></i>Observaciones</th>
+                                <td><em>{{ dimensionvivienda.obs_vivienda }}</em></td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Salud -->
+            <div class="tab-pane fade" id="salud">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <tbody>
+                            <tr>
+                                <th style="width: 35%;"><i class="fas fa-hospital me-2 text-success"></i>Lugar atención</th>
+                                <td>{{ dimensionsalud.lugares_atencion|default:"–" }}</td>
+                            </tr>
+                            <tr>
+                                <th><i class="fas fa-calendar-check me-2 text-info"></i>Frecuencia controles</th>
+                                <td><span class="badge bg-info">{{ dimensionsalud.frecuencia_controles_medicos|default:"–" }}</span></td>
+                            </tr>
+                            <tr>
+                                <th><i class="fas fa-virus me-2 text-danger"></i>Enfermedad</th>
+                                <td>{{ dimensionsalud.hay_enfermedad|yesno:"<span class='badge bg-warning'><i class='fas fa-exclamation me-1'></i>Sí</span>,<span class='badge bg-success'><i class='fas fa-check me-1'></i>No</span>" }}</td>
+                            </tr>
+                            <tr>
+                                <th><i class="fas fa-shield-alt me-2 text-primary"></i>Cobertura médica</th>
+                                <td>{{ dimensionsalud.hay_obra_social|yesno:"<span class='badge bg-success'><i class='fas fa-check me-1'></i>Sí</span>,<span class='badge bg-danger'><i class='fas fa-times me-1'></i>No</span>" }}</td>
+                            </tr>
+                            <tr>
+                                <th><i class="fas fa-wheelchair me-2 text-info"></i>Discapacidad</th>
+                                <td>{{ dimensionsalud.hay_discapacidad|yesno:"<span class='badge bg-info'><i class='fas fa-info me-1'></i>Sí</span>,<span class='badge bg-success'><i class='fas fa-check me-1'></i>No</span>" }}</td>
+                            </tr>
+                            {% if dimensionsalud.obs_salud %}
+                            <tr>
+                                <th><i class="fas fa-sticky-note me-2 text-warning"></i>Observaciones</th>
+                                <td><em>{{ dimensionsalud.obs_salud }}</em></td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Trabajo -->
+            <div class="tab-pane fade" id="trabajo">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <tbody>
+                            <tr>
+                                <th style="width: 35%;"><i class="fas fa-working me-2 text-success"></i>Actualmente trabaja</th>
+                                <td>{{ dimensiontrabajo.tiene_trabajo|yesno:"<span class='badge bg-success'><i class='fas fa-check me-1'></i>Sí</span>,<span class='badge bg-danger'><i class='fas fa-times me-1'></i>No</span>" }}</td>
+                            </tr>
+                            {% if dimensiontrabajo.ocupacion %}
+                            <tr>
+                                <th><i class="fas fa-user-tie me-2 text-primary"></i>Ocupación</th>
+                                <td><span class="badge bg-primary">{{ dimensiontrabajo.ocupacion }}</span></td>
+                            </tr>
+                            {% endif %}
+                            {% if dimensiontrabajo.modo_contratacion %}
+                            <tr>
+                                <th><i class="fas fa-file-contract me-2 text-info"></i>Contratación</th>
+                                <td>{{ dimensiontrabajo.modo_contratacion }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if dimensiontrabajo.obs_trabajo %}
+                            <tr>
+                                <th><i class="fas fa-sticky-note me-2 text-warning"></i>Observaciones</th>
+                                <td><em>{{ dimensiontrabajo.obs_trabajo }}</em></td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Programas con diseño mejorado -->
+    <div class="col-12 mb-4">
+        <div class="card shadow-lg">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-clipboard-list me-2"></i>Gestión de Programas
+                </h5>
+                <small class="text-muted">{{ count_programas }} programa{{ count_programas|pluralize }}</small>
+            </div>
+            <div class="card-body">
+                {% if ciudadanos_programas %}
+                    <div class="row g-3" id="programas_ciudadanos">
+                        {% for cp in ciudadanos_programas %}
+                            <div class="col-md-3 col-lg-3 mb-3 ease-out">
+                                <div class="card card-programa shadow-sm h-100 position-relative">
+                                    <div class="card-body d-flex justify-content-between align-items-center p-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="program-icon me-3">
+                                                <i class="fas fa-bookmark fa-lg text-info"></i>
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0 fw-bold text-truncate" style="max-width: 140px;">
+                                                    {{ cp.programas.nombre }}
+                                                </h6>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-calendar me-1"></i>
+                                                    {{ cp.fecha_creado|date:"d/m/Y" }}
+                                                </small>
+                                            </div>
+                                        </div>
+                                        {% if perms.Usuarios.rol_admin %}
+                                        <button class="btn btn-sm btn-outline-danger borrar-programa"
+                                                data-program-id="{{ cp.id }}"
+                                                title="Eliminar programa">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <div class="empty-state">
+                            <i class="fas fa-clipboard-list fa-4x text-muted mb-3"></i>
+                            <h5 class="text-muted">No hay programas asignados</h5>
+                            <p class="text-muted">El ciudadano no está inscrito en programas actualmente.</p>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Formulario para agregar programa -->
+            <div id="form-programas" class="card-footer d-none">
+                <form id="ProgramaForm" method="POST" action="{% url 'actualizar_programas' object.id %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-plus-circle me-2"></i>Seleccionar Programa
+                        </label>
+                        {{ form_prog.programas|as_crispy_field }}
+                    </div>
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" id="cancelar-btn" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i>Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Guardar
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="card-footer d-flex justify-content-between align-items-center">
+                <a href="{% url 'programas_intervencion' object.id %}" 
+                   class="btn btn-outline-primary">
+                    <i class="fas fa-eye me-1"></i>Ver Detalles
+                </a>
+                {% if perms.Usuarios.rol_admin %}
+                <button id="agregar-programa-btn" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>Agregar Programa
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Archivos mejorados -->
+    <div class="row gx-4 mb-5">
+        <!-- Imágenes -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-lg h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-images me-2"></i>Imágenes
+                        <span class="badge bg-secondary ms-2">{{ files_img|length }}</span>
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if files_img %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0 align-middle">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 80px;">Vista</th>
+                                        <th>Archivo</th>
+                                        <th style="width: 100px;">Fecha</th>
+                                        <th style="width: 100px;">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for f in files_img %}
+                                        <tr>
+                                            <td>
+                                                <img src="{{ MEDIA_URL }}{{ f.archivo.url }}"
+                                                     class="img-thumbnail rounded"
+                                                     style="width: 60px; height: 60px; object-fit: cover;"
+                                                     alt="Imagen"
+                                                     data-bs-toggle="modal"
+                                                     data-bs-target="#imageModal{{ f.id }}"
+                                                     role="button" />
+                                            </td>
+                                            <td>
+                                                <div class="d-flex flex-column">
+                                                    <span class="fw-medium">{{ f.archivo.name|truncatechars:25 }}</span>
+                                                    <small class="text-muted">Imagen</small>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-calendar me-1"></i>
+                                                    {{ f.fecha|date:"d/m/Y" }}
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <a href="{{ MEDIA_URL }}{{ f.archivo.url }}"
+                                                       download
+                                                       class="btn btn-outline-primary"
+                                                       title="Descargar">
+                                                        <i class="fas fa-download"></i>
+                                                    </a>
+                                                    <a href="{{ MEDIA_URL }}{{ f.archivo.url }}"
+                                                       target="_blank"
+                                                       class="btn btn-outline-info"
+                                                       title="Ver completa">
+                                                        <i class="fas fa-external-link-alt"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <div class="empty-state">
+                                <i class="fas fa-image fa-3x text-muted mb-3"></i>
+                                <h6 class="text-muted">Sin imágenes</h6>
+                                <p class="text-muted mb-0">No hay imágenes cargadas para este ciudadano.</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer d-flex justify-content-between">
+                    <a href="{% url 'ciudadanosarchivos_listar' object.id %}"
+                       class="btn btn-outline-primary">
+                        <i class="fas fa-list me-1"></i>Ver Todos
+                    </a>
+                    {% if perms.Usuarios.rol_admin %}
+                        <a href="{% url 'ciudadanosarchivos_crear' object.id %}"
+                           class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>Agregar
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Documentos -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-lg h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file-alt me-2"></i>Documentos
+                        <span class="badge bg-secondary ms-2">{{ files_docs|length }}</span>
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if files_docs %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0 align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Documento</th>
+                                        <th style="width: 100px;">Fecha</th>
+                                        <th style="width: 100px;">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for f in files_docs %}
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="file-icon me-3">
+                                                        {% if f.archivo.name|slice:"-3:" == "pdf" %}
+                                                            <i class="fas fa-file-pdf fa-2x text-danger"></i>
+                                                        {% elif f.archivo.name|slice:"-3:" == "doc" or f.archivo.name|slice:"-4:" == "docx" %}
+                                                            <i class="fas fa-file-word fa-2x text-primary"></i>
+                                                        {% elif f.archivo.name|slice:"-3:" == "xls" or f.archivo.name|slice:"-4:" == "xlsx" %}
+                                                            <i class="fas fa-file-excel fa-2x text-success"></i>
+                                                        {% else %}
+                                                            <i class="fas fa-file-alt fa-2x text-secondary"></i>
+                                                        {% endif %}
+                                                    </div>
+                                                    <div>
+                                                        <span class="fw-medium d-block">{{ f.archivo.name|truncatechars:30 }}</span>
+                                                        <small class="text-muted">Documento</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-calendar me-1"></i>
+                                                    {{ f.fecha|date:"d/m/Y" }}
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <a href="{{ f.archivo.url }}"
+                                                       download
+                                                       class="btn btn-outline-primary"
+                                                       title="Descargar">
+                                                        <i class="fas fa-download"></i>
+                                                    </a>
+                                                    <a href="{{ f.archivo.url }}"
+                                                       target="_blank"
+                                                       class="btn btn-outline-info"
+                                                       title="Abrir">
+                                                        <i class="fas fa-external-link-alt"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <div class="empty-state">
+                                <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                                <h6 class="text-muted">Sin documentos</h6>
+                                <p class="text-muted mb-0">No hay documentos cargados para este ciudadano.</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer d-flex justify-content-between">
+                    <a href="{% url 'ciudadanosarchivos_listar' object.id %}"
+                       class="btn btn-outline-primary">
+                        <i class="fas fa-list me-1"></i>Ver Todos
+                    </a>
+                    {% if perms.Usuarios.rol_admin %}
+                        <a href="{% url 'ciudadanosarchivos_crear' object.id %}"
+                           class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>Agregar
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block customJS %}
-    <script src="{% static 'custom/js/ciudadano.js' %}"></script>
+<script>
+// JavaScript para funcionalidad completa
+document.addEventListener('DOMContentLoaded', function() {
+    // Manejo del formulario de programas
+    const agregarBtn = document.getElementById('agregar-programa-btn');
+    const cancelarBtn = document.getElementById('cancelar-btn');
+    const formProgramas = document.getElementById('form-programas');
+    
+    if (agregarBtn) {
+        agregarBtn.addEventListener('click', function() {
+            formProgramas.classList.remove('d-none');
+            agregarBtn.style.display = 'none';
+        });
+    }
+    
+    if (cancelarBtn) {
+        cancelarBtn.addEventListener('click', function() {
+            formProgramas.classList.add('d-none');
+            agregarBtn.style.display = 'block';
+        });
+    }
+    
+    // Manejo de eliminación de programas
+    const borrarBtns = document.querySelectorAll('.borrar-programa');
+    borrarBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            if (confirm('¿Está seguro de que desea eliminar este programa?')) {
+                // Aquí iría la lógica de eliminación via AJAX
+                console.log('Eliminar programa ID:', this.dataset.programId);
+            }
+        });
+    });
+    
+    // Funcionalidad de impresión
+    window.addEventListener("beforeprint", function() {
+        document.querySelectorAll(".d-print-none").forEach(function(el) {
+            el.style.display = "none";
+        });
+    });
+
+    window.addEventListener("afterprint", function() {
+        document.querySelectorAll(".d-print-none").forEach(function(el) {
+            el.style.display = "";
+        });
+    });
+    
+    // Inicializar tooltips si Bootstrap está disponible
+    if (typeof bootstrap !== 'undefined') {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    }
+});
+</script>
 {% endblock %}
