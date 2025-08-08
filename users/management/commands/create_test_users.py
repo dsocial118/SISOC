@@ -37,117 +37,136 @@ class Command(BaseCommand):
     help = "Crea usuarios de testing y sus grupos solo si DEBUG=True"
 
     def handle(self, *args, **kwargs):
-        if not settings.DEBUG:
-            self.stdout.write(
-                self.style.ERROR("No se puede crear usuarios porque DEBUG=False.")
-            )
-            return
+        if settings.DEBUG:
+            self.stdout.write(self.style.ERROR("👥 Creando usuarios para test..."))
 
-        usuarios = [
-            {
-                "username": "1",
-                "email": "1@gmail.com",
-                "password": "1",
-                "is_superuser": True,
-                "grupos": [],
-            },
-            {
-                "username": "abogadoqa",
-                "email": "abogadoqa@example.com",
-                "password": "qa1234",
-                "is_superuser": False,
-                "grupos": [
-                    "Abogado Dupla",
-                    "Acompanamiento Detalle",
-                    "Acompanamiento Listar",
-                    "Comedores",
-                    "Comedores Intervencion Crear",
-                    "Comedores Intervencion Editar",
-                    "Comedores Intervencion Ver",
-                    "Comedores Intervenciones Detalle",
-                    "Comedores Listar",
-                ],
-            },
-            {
-                "username": "tecnicoqa",
-                "email": "tecnicoqa@example.com",
-                "password": "qa1234",
-                "is_superuser": False,
-                "grupos": [
-                    "Acompanamiento Detalle",
-                    "Acompanamiento Listar",
-                    "Comedores",
-                    "Comedores Editar",
-                    "Comedores Intervencion Crear",
-                    "Comedores Intervencion Editar",
-                    "Comedores Intervencion Ver",
-                    "Comedores Intervenciones Detalle",
-                    "Comedores Listar",
-                    "Comedores Observaciones Crear",
-                    "Comedores Observaciones Detalle",
-                    "Comedores Observaciones Editar",
-                    "Comedores Observaciones Eliminar",
-                    "Comedores Relevamiento Detalle",
-                    "Comedores Ver",
-                    "Tecnico Comedor",
-                ],
-            },
-            {
-                "username": "legalesqa",
-                "email": "legalesqa@example.com",
-                "password": "qa1234",
-                "is_superuser": False,
-                "grupos": [
-                    "Comedores",
-                    "Area Legales",
-                    "Comedores Relevamiento Ver",
-                    "Comedores Relevamiento Detalle",
-                    "Comedores Observaciones Detalle",
-                    "Comedores Intervencion Ver",
-                    "Comedores Intervenciones Detalle",
-                    "Comedores Nomina Ver",
-                    "Acompanamiento Detalle",
-                    "Acompanamiento Listar",
-                ],
-            },
-            {
-                "username": "contableqa",
-                "email": "contableqa@example.com",
-                "password": "qa1234",
-                "is_superuser": False,
-                "grupos": [
-                    "Comedores",
-                    "Area Contable",
-                    "Comedores Relevamiento Ver",
-                    "Comedores Relevamiento Detalle",
-                    "Comedores Observaciones Detalle",
-                    "Comedores Intervencion Ver",
-                    "Comedores Intervenciones Detalle",
-                    "Comedores Nomina Ver",
-                    "Acompanamiento Detalle",
-                    "Acompanamiento Listar",
-                ],
-            },
-        ]
+            usuarios = [
+                {
+                    "username": "1",
+                    "email": "1@gmail.com",
+                    "password": "1",
+                    "is_superuser": True,
+                    "grupos": [],
+                },
+                {
+                    "username": "abogadoqa",
+                    "email": "abogadoqa@example.com",
+                    "password": "qa1234",
+                    "is_superuser": False,
+                    "grupos": [
+                        "Abogado Dupla",
+                        "Acompanamiento Detalle",
+                        "Acompanamiento Listar",
+                        "Comedores",
+                        "Comedores Intervencion Crear",
+                        "Comedores Intervencion Editar",
+                        "Comedores Intervencion Ver",
+                        "Comedores Intervenciones Detalle",
+                        "Comedores Listar",
+                    ],
+                },
+                {
+                    "username": "tecnicoqa",
+                    "email": "tecnicoqa@example.com",
+                    "password": "qa1234",
+                    "is_superuser": False,
+                    "grupos": [
+                        "Acompanamiento Detalle",
+                        "Acompanamiento Listar",
+                        "Comedores",
+                        "Comedores Editar",
+                        "Comedores Intervencion Crear",
+                        "Comedores Intervencion Editar",
+                        "Comedores Intervencion Ver",
+                        "Comedores Intervenciones Detalle",
+                        "Comedores Listar",
+                        "Comedores Observaciones Crear",
+                        "Comedores Observaciones Detalle",
+                        "Comedores Observaciones Editar",
+                        "Comedores Observaciones Eliminar",
+                        "Comedores Relevamiento Detalle",
+                        "Comedores Ver",
+                        "Tecnico Comedor",
+                    ],
+                },
+                {
+                    "username": "legalesqa",
+                    "email": "legalesqa@example.com",
+                    "password": "qa1234",
+                    "is_superuser": False,
+                    "grupos": [
+                        "Comedores",
+                        "Area Legales",
+                        "Comedores Relevamiento Ver",
+                        "Comedores Relevamiento Detalle",
+                        "Comedores Observaciones Detalle",
+                        "Comedores Intervencion Ver",
+                        "Comedores Intervenciones Detalle",
+                        "Comedores Nomina Ver",
+                        "Acompanamiento Detalle",
+                        "Acompanamiento Listar",
+                    ],
+                },
+                {
+                    "username": "contableqa",
+                    "email": "contableqa@example.com",
+                    "password": "qa1234",
+                    "is_superuser": False,
+                    "grupos": [
+                        "Comedores",
+                        "Area Contable",
+                        "Comedores Relevamiento Ver",
+                        "Comedores Relevamiento Detalle",
+                        "Comedores Observaciones Detalle",
+                        "Comedores Intervencion Ver",
+                        "Comedores Intervenciones Detalle",
+                        "Comedores Nomina Ver",
+                        "Acompanamiento Detalle",
+                        "Acompanamiento Listar",
+                    ],
+                },
+                # Usuarios de Centro de Familia (ReferenteCentro + Ciudadanos):
+                {
+                    "username": "CDF SSE",
+                    "email": "rubenarellano@example.com",
+                    "password": "8392017",
+                    "is_superuser": False,
+                    "grupos": ["CDF SSE", "Ciudadanos"],
+                },
+                {
+                    "username": "FARO",
+                    "email": "natashabraga@example.com",
+                    "password": "5823109",
+                    "is_superuser": False,
+                    "grupos": ["ReferenteCentro", "Ciudadanos"],
+                },
+                {
+                    "username": "AD",
+                    "email": "natashabraga@example.com",
+                    "password": "5823109",
+                    "is_superuser": False,
+                    "grupos": ["ReferenteCentro", "Ciudadanos"],
+                },
+            ]
 
-        for conf in usuarios:
-            user, creado = crear_usuario_con_grupos(
-                username=conf["username"],
-                email=conf["email"],
-                password=conf["password"],
-                grupos=conf.get("grupos"),
-                is_superuser=conf.get("is_superuser", False),
-            )
-            tipo = "Superusuario" if conf.get("is_superuser") else "Usuario"
-            if creado:
-                self.stdout.write(
-                    self.style.SUCCESS(f"{tipo} '{conf['username']}' creado.")
+            for conf in usuarios:
+                user, creado = crear_usuario_con_grupos(
+                    username=conf["username"],
+                    email=conf["email"],
+                    password=conf["password"],
+                    grupos=conf.get("grupos"),
+                    is_superuser=conf.get("is_superuser", False),
                 )
-            else:
-                self.stdout.write(
-                    self.style.WARNING(
-                        f"{tipo} '{conf['username']}' ya existe (actualizado)."
+                tipo = "Superusuario" if conf.get("is_superuser") else "Usuario"
+                if creado:
+                    self.stdout.write(
+                        self.style.SUCCESS(f"{tipo} '{conf['username']}' creado.")
                     )
-                )
+                else:
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"{tipo} '{conf['username']}' ya existe (actualizado)."
+                        )
+                    )
 
-        self.stdout.write(self.style.SUCCESS("Proceso completado."))
+            self.stdout.write(self.style.SUCCESS("Proceso completado."))

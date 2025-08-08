@@ -1,4 +1,20 @@
 {% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Confirmar Eliminación{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'centro_list' %}">Centro de Familia</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'actividadcentro_list' %}">Actividades</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'actividadcentro_detail' centro_id=participante.actividad_centro.centro.id pk=participante.actividad_centro.id %}">Detalle Actividad</a>
+        </li>
+        <li class="breadcrumb-item active">Confirmar Eliminación</li>
+    </ol>
+{% endblock %}
 {% block content %}
     <div class="container mt-5">
         <div class="row justify-content-center">
@@ -10,14 +26,15 @@
                     <div class="card-body">
                         <p class="lead">¿Estás seguro que querés eliminar al siguiente participante?</p>
                         <p class="mb-4">
-                            <strong>{{ object.ciudadano.apellido }}, {{ object.ciudadano.nombre }}</strong>
+                            <strong>{{ participante.ciudadano.apellido }}, {{ participante.ciudadano.nombre }}</strong>
                             <br />
-                            DNI: <strong>{{ object.ciudadano.documento }}</strong>
+                            DNI: <strong>{{ participante.ciudadano.documento }}</strong>
                         </p>
                         <form method="post">
                             {% csrf_token %}
                             <div class="d-flex justify-content-between">
-                                <a href="{{ request.META.HTTP_REFERER }}" class="btn btn-secondary">
+                                <a href="{% url 'actividadcentro_detail' centro_id=participante.actividad_centro.centro.id pk=participante.actividad_centro.id %}"
+                                   class="btn btn-secondary">
                                     <i class="fas fa-times"></i> Cancelar
                                 </a>
                                 <button type="submit" class="btn btn-danger">
