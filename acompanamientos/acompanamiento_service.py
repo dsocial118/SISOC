@@ -52,7 +52,11 @@ class AcompanamientoService:
                 nuevo_hito = Hitos.objects.create(comedor=intervenciones.comedor)
                 AcompanamientoService._actualizar_hitos(nuevo_hito, hitos_a_actualizar)
         except Exception:
-            logger.error("Ocurrió un error inesperado en get_queryset", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en AcomanamientoService.crear_hitos",
+                exc_info=True,
+            )
+            raise
 
     @staticmethod
     def _actualizar_hitos(hitos_objeto, hitos_a_actualizar):
@@ -72,7 +76,11 @@ class AcompanamientoService:
                         setattr(hitos_objeto, field.name, True)
             hitos_objeto.save()
         except Exception:
-            logger.error("Ocurrió un error inesperado en get_queryset", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en AcompanamientoService.crear_hitos",
+                exc_info=True,
+            )
+            raise
 
     @staticmethod
     def obtener_hitos(comedor):
@@ -89,8 +97,11 @@ class AcompanamientoService:
                 Hitos.objects.select_related("comedor").filter(comedor=comedor).first()
             )
         except Exception:
-            logger.error("Ocurrió un error inesperado en get_queryset", exc_info=True)
-            return None
+            logger.error(
+                f"Ocurrió un error inesperado en AcompanamientoService.obtener_hitos para el comedor: {comedor}",
+                exc_info=True,
+            )
+            raise
 
     @staticmethod
     def importar_datos_desde_admision(comedor):
@@ -128,7 +139,11 @@ class AcompanamientoService:
                     cena=prestacion.cena,
                 )
         except Exception:
-            logger.error("Ocurrió un error inesperado en get_queryset", exc_info=True)
+            logger.error(
+                f"Ocurrió un error inesperado en AcompanamientoService.importar_datos_desde_admision para comedor: {comedor}",
+                exc_info=True,
+            )
+            raise
 
     @staticmethod
     def obtener_datos_admision(comedor):
@@ -181,8 +196,11 @@ class AcompanamientoService:
                 "numero_disposicion": resolucion,
             }
         except Exception:
-            logger.error("Ocurrió un error inesperado en get_queryset", exc_info=True)
-            return None
+            logger.error(
+                f"Ocurrió un error inesperado en AcompanamientoService.obtener_datos_admision para comedor: {comedor}",
+                exc_info=True,
+            )
+            raise
 
     @staticmethod
     def obtener_prestaciones_detalladas(anexo):
@@ -242,8 +260,11 @@ class AcompanamientoService:
                 "dias_semana": [dia.capitalize() for dia in dias],
             }
         except Exception:
-            logger.error("Ocurrió un error inesperado en get_queryset", exc_info=True)
-            return None
+            logger.error(
+                f"Ocurrió un error inesperado en AcompanamientoService.ontener_prestaciones_detalladas para anexo: {anexo}",
+                exc_info=True,
+            )
+            raise
 
     @staticmethod
     def obtener_comedores_acompanamiento(user, busqueda=None):
@@ -309,8 +330,11 @@ class AcompanamientoService:
 
             return qs
         except Exception:
-            logger.error("Ocurrió un error inesperado en get_queryset", exc_info=True)
-            return None
+            logger.error(
+                f"Ocurrió un error inesperado en AcompanamientoService.obtener_comedores_acompanamiento para user: {user}",
+                exc_info=True,
+            )
+            raise
 
     @staticmethod
     def verificar_permisos_tecnico_comedor(user):
@@ -327,5 +351,8 @@ class AcompanamientoService:
                 user.is_superuser or user.groups.filter(name="Tecnico Comedor").exists()
             )
         except Exception:
-            logger.error("Ocurrió un error inesperado en get_queryset", exc_info=True)
-            return None
+            logger.error(
+                f"Ocurrió un error inesperado en Acompanamiento.verificar_permisos_tecnico_comedor para user: {user}",
+                exc_info=True,
+            )
+            raise
