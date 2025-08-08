@@ -1,13 +1,14 @@
 # pylint: disable=too-many-lines
 import json
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
 
 from comedores.models import (
     Comedor,
     Referente,
     TipoDeComedor,
 )
+from core.models import Localidad, Municipio, Provincia
+from core.utils import convert_string_to_int
 from relevamientos.models import (
     Anexo,
     CantidadColaboradores,
@@ -41,8 +42,6 @@ from relevamientos.models import (
     TipoTecnologia,
 )
 from relevamientos.tasks import AsyncSendRelevamientoToGestionar
-from core.utils import convert_string_to_int
-from core.models import Provincia, Municipio, Localidad
 
 
 # TODO: Refactorizar todo esto, pylint esta muriendo aca
@@ -105,6 +104,65 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         return instance
 
     @staticmethod
+    def update_comedor(comedor_data, comedor_instance):
+        comedor_instance.numero = convert_string_to_int(
+            comedor_data.get("numero", comedor_instance.numero)
+        )
+        comedor_instance.calle = comedor_data.get("calle", comedor_instance.calle)
+        comedor_instance.entre_calle_1 = comedor_data.get(
+            "entre_calle_1", comedor_instance.entre_calle_1
+        )
+        comedor_instance.entre_calle_2 = comedor_data.get(
+            "entre_calle_2", comedor_instance.entre_calle_2
+        )
+        comedor_instance.barrio = comedor_data.get("barrio", comedor_instance.barrio)
+        comedor_instance.codigo_postal = convert_string_to_int(
+            comedor_data.get("codigo_postal", comedor_instance.codigo_postal)
+        )
+        comedor_instance.provincia = (
+            Provincia.objects.get(nombre=comedor_data.get("provincia"))
+            if comedor_data.get("provincia")
+            else comedor_instance.provincia
+        )
+        comedor_instance.municipio = (
+            Municipio.objects.get(
+                nombre=comedor_data.get("municipio"),
+            )
+            if comedor_data.get("municipio")
+            else comedor_instance.municipio
+        )
+        comedor_instance.localidad = Localidad.objects.get(
+            nombre=comedor_data.get("localidad", comedor_instance.localidad),
+            municipio=(
+                Municipio.objects.get(
+                    nombre=comedor_data.get("municipio"),
+                    provincia=(
+                        Provincia.objects.get(nombre=comedor_data.get("provincia"))
+                        if comedor_data.get("provincia")
+                        else comedor_instance.provincia
+                    ),
+                )
+                if comedor_data.get("municipio")
+                else comedor_instance.municipio
+            ),
+        )
+        comedor_instance.partido = comedor_data.get("partido", comedor_instance.partido)
+        comedor_instance.manzana = comedor_data.get("manzana", comedor_instance.manzana)
+        comedor_instance.piso = comedor_data.get("piso", comedor_instance.piso)
+        comedor_instance.departamento = comedor_data.get(
+            "departamento", comedor_instance.departamento
+        )
+        comedor_instance.lote = comedor_data.get("lote", comedor_instance.lote)
+        comedor_instance.comienzo = (
+            convert_string_to_int(comedor_data.get("comienzo", "").split("/")[-1])
+            if comedor_data.get("comienzo")
+            else comedor_instance.comienzo
+        )
+        comedor_instance.save()
+
+        return comedor_instance.id
+
+    @staticmethod
     def create_pendiente(request, comedor_id):
         comedor = get_object_or_404(Comedor, id=comedor_id)
         relevamiento = Relevamiento(comedor=comedor, estado="Pendiente")
@@ -139,87 +197,6 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         relevamiento.save()
 
         AsyncSendRelevamientoToGestionar(relevamiento.id).start()
-
-        return relevamiento
-
-    @staticmethod
-    def update_comedor(comedor_data, comedor_instance):
-        comedor_instance.numero = convert_string_to_int(
-            comedor_data.get("numero", comedor_instance.numero)
-        )
-        comedor_instance.calle = comedor_data.get("calle", comedor_instance.calle)
-        comedor_instance.entre_calle_1 = comedor_data.get(
-            "entre_calle_1", comedor_instance.entre_calle_1
-        )
-        comedor_instance.entre_calle_2 = comedor_data.get(
-            "entre_calle_2", comedor_instance.entre_calle_2
-        )
-        comedor_instance.barrio = comedor_data.get("barrio", comedor_instance.barrio)
-        comedor_instance.codigo_postal = convert_string_to_int(
-            comedor_data.get("codigo_postal", comedor_instance.codigo_postal)
-        )
-        comedor_instance.provincia = Provincia.objects.get(
-            nombre=comedor_data.get("provincia", comedor_instance.provincia)
-        )
-        comedor_instance.municipio = Municipio.objects.get(
-            nombre=comedor_data.get("municipio", comedor_instance.municipio)
-        )
-        comedor_instance.localidad = Localidad.objects.get(
-            nombre=comedor_data.get("localidad", comedor_instance.localidad)
-        )
-        comedor_instance.partido = comedor_data.get("partido", comedor_instance.partido)
-        comedor_instance.manzana = comedor_data.get("manzana", comedor_instance.manzana)
-        comedor_instance.lote = comedor_data.get("lote", comedor_instance.lote)
-        comedor_instance.comienzo = (
-            convert_string_to_int(comedor_data.get("comienzo", "").split("/")[-1])
-            if comedor_data.get("comienzo")
-            else comedor_instance.comienzo
-        )
-        comedor_instance.save()
-
-        return comedor_instance
-
-    @staticmethod
-    def populate_relevamiento(relevamiento_form, extra_forms):
-        relevamiento = relevamiento_form.save(commit=False)
-
-        funcionamiento = extra_forms["funcionamiento_form"].save()
-        relevamiento.funcionamiento = funcionamiento
-
-        espacio = extra_forms["espacio_form"].save(commit=False)
-        cocina = extra_forms["espacio_cocina_form"].save(commit=True)
-        espacio.cocina = cocina
-        prestacion = extra_forms["espacio_prestacion_form"].save(commit=True)
-        espacio.prestacion = prestacion
-        espacio.save()
-        relevamiento.espacio = espacio
-
-        colaboradores = extra_forms["colaboradores_form"].save()
-        relevamiento.colaboradores = colaboradores
-
-        recursos = extra_forms["recursos_form"].save()
-        relevamiento.recursos = recursos
-
-        anexo = extra_forms["anexo_form"].save()
-        relevamiento.anexo = anexo
-
-        compras = extra_forms["compras_form"].save()
-        relevamiento.compras = compras
-
-        prestacion = extra_forms["prestacion_form"].save()
-        relevamiento.prestacion = prestacion
-
-        referente = extra_forms["referente_form"].save()
-        relevamiento.responsable = referente
-        relevamiento.responsable_es_referente = (
-            relevamiento_form.cleaned_data["responsable_es_referente"] == "True"
-        )
-        punto_entregas = extra_forms["punto_entregas_form"].save()
-        relevamiento.punto_entregas = punto_entregas
-
-        relevamiento.fecha_visita = timezone.now()
-
-        relevamiento.save()
 
         return relevamiento
 
@@ -895,6 +872,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             "almuerzo",
             "merienda",
             "cena",
+            "merienda_reforzada"
         ]
         aoe = [
             "actual",
