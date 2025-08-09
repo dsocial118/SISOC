@@ -181,5 +181,50 @@
   });
   btnProcesar.addEventListener('click', () => processFile(false));
 
-  // helpers globales (inyectados desde template)
-})();
+
+
+  const btnReprocesarCentro = document.getElementById('btn-reprocesar-centro');
+  const modalReprocesar = $('#modalReprocesarCentro');
+  const btnConfirmReprocesar = document.getElementById('btnConfirmReprocesar');
+
+  if (btnReprocesarCentro) {
+    btnReprocesarCentro.addEventListener('click', () => {
+      modalReprocesar.modal('show');
+    });
+  }
+
+  if (btnConfirmReprocesar) {
+    btnConfirmReprocesar.addEventListener('click', () => {
+      const codigo = document.getElementById('codigoCentro').value.trim();
+      if (!codigo) {
+        alert("Debe ingresar un código de comedor.");
+        return;
+      }
+      if (!confirm(`¿Seguro que deseas reprocesar el centro ${codigo}?`)) return;
+
+      fetch(window.urls.informecabal_reprocess, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': window.csrfToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ centro: codigo })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          alert(`Centro ${codigo} reprocesado correctamente.`);
+          modalReprocesar.modal('hide');
+          location.reload();
+        } else {
+          alert(data.error || "Ocurrió un error al reprocesar.");
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Error de conexión al reprocesar.");
+      });
+    });
+  }
+
+});

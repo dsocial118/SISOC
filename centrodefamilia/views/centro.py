@@ -13,10 +13,11 @@ from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 
 from centrodefamilia.models import (
+    CabalArchivo,
     Categoria,
     Centro,
     ActividadCentro,
-    Expediente,
+    InformeCabalRegistro,
     ParticipanteActividad,
 )
 from centrodefamilia.forms import CentroForm
@@ -79,11 +80,6 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         ctx = super().get_context_data(**kwargs)
         centro = self.object
 
-        # 1) Expedientes
-        qs_exp = Expediente.objects.filter(centro=centro).order_by("-fecha_subida")
-        ctx["expedientes_cabal"] = Paginator(qs_exp, 3).get_page(
-            self.request.GET.get("page_exp")
-        )
 
         # 2) Actividades en curso
         search_curso = (
@@ -108,6 +104,7 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         ctx["actividades"] = list(qs_acts)
         ctx["total_actividades"] = qs_acts.count()
         ctx["total_recaudado"] = sum((act.ganancia or 0) for act in ctx["actividades"])
+        
 
         # 3) Actividades de otros centros
         search_otras = self.request.GET.get("search_actividades", "").strip().lower()
@@ -137,7 +134,6 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         )
         ctx["centros_adheridos_total"] = adheridos.count()
 
-        # 5) Métricas
         total_part = sum(a.inscritos for a in qs_acts)
         qs_inscritos = ParticipanteActividad.objects.filter(
             estado="inscrito", actividad_centro__centro=centro
@@ -165,6 +161,12 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
             "mujeres": mujeres,
             "espera": espera,
         }
+
+        # 6) Archivos CABAL vinculados al centro
+        ctx["archivos_cabal_centro"] = CabalArchivo.objects.filter(
+            registros__centro=centro
+        ).distinct().order_by("-fecha_subida")
+
         return ctx
 
 
@@ -230,3 +232,24 @@ class CentroDeleteView(LoginRequiredMixin, DeleteView):
     def delete(self, request, *args, **kwargs):
         messages.success(self.request, "Centro eliminado correctamente.")
         return super().delete(request, *args, **kwargs)
+
+class InformeCabalArchivoPorCentroDetailView(DetailView):
+    model = CabalArchivo
+    template_name = "informecabal/archivo_por_centro.html"
+    context_object_name = "archivo"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        centro_id = self.kwargs.get("centro_id")
+
+        registros = InformeCabalRegistro.objects.filter(
+            archivo=self.object,
+            centro_id=centro_id
+        ).order_by("fila_numero")
+
+        paginator = Paginator(registros, 50)
+        page = self.request.GET.get("page")
+        context["registros"] = paginator.get_page(page)
+
+        context["centro"] = Centro.objects.get(id=centro_id)
+        return context

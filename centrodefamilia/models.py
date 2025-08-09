@@ -315,21 +315,4 @@ class InformeCabalRegistro(models.Model):
             models.Index(fields=["fecha_trx"]),
         ]
 
-# (Dejamos tu modelo Expediente tal cual, sin uso en este flujo)
-class Expediente(models.Model):
-    centro = models.ForeignKey(
-        Centro, on_delete=models.CASCADE, related_name="expedientes_cabal"
-    )
-    archivo = models.FileField(upload_to="informes_cabal/")
-    periodo = models.DateField(help_text="Fecha del informe")
-    fecha_subida = models.DateTimeField(auto_now_add=True)
-    usuario = models.ForeignKey(User, on_delete=models.PROTECT)
-    procesado = models.BooleanField(default=False)
-    errores = models.TextField(blank=True)
 
-    class Meta:
-        verbose_name = "Expediente CABAL"
-        verbose_name_plural = "Expedientes CABAL"
-        indexes = [
-            models.Index(fields=["centro", "periodo"]),
-        ]
