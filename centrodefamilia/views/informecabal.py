@@ -7,6 +7,7 @@
 Mensajería: usa messages y JSON con errores controlados. 
 """
 import logging
+from django.views import View
 from django.views.generic import ListView, DetailView, TemplateView
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -16,7 +17,8 @@ from django.utils.decorators import method_decorator
 from django.shortcuts import get_object_or_404, render
 from django.contrib import messages
 
-from centrodefamilia.models import CabalArchivo, InformeCabalRegistro
+from centrodefamilia.models import CabalArchivo, Centro, InformeCabalRegistro
+from centrodefamilia.services.informe_cabal_reprocess import reprocesar_registros_rechazados
 from centrodefamilia.services.informe_cabal_service import (
     read_excel_preview,
     persist_file_and_rows,
@@ -93,9 +95,20 @@ class InformeCabalProcessAjaxView(LoginRequiredMixin, TemplateView):
             return JsonResponse({"ok": False, "error": "Error inesperado al procesar."}, status=500)
 
 class InformeCabalRegistroDetailView(LoginRequiredMixin, DetailView):
-    model = InformeCabalRegistro
+    model = CabalArchivo
     template_name = "informecabal/registro_detail.html"
-    context_object_name = "registro"
+    context_object_name = "archivo"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        registros = InformeCabalRegistro.objects.filter(archivo=self.object)
+
+        ctx["validos"] = registros.filter(estado="Impactado")
+        ctx["rechazados"] = registros.filter(estado="Rechazado")
+        ctx["creados"] = registros.filter(estado="Creado")
+        ctx["total"] = registros.count()
+        return ctx
+
 
 class InformeCabalArchivoDetailView(LoginRequiredMixin, DetailView):
     model = CabalArchivo
@@ -106,3 +119,30 @@ class InformeCabalArchivoDetailView(LoginRequiredMixin, DetailView):
         ctx = super().get_context_data(**kwargs)
         ctx["registros"] = InformeCabalRegistro.objects.filter(archivo=self.object).order_by("id")
         return ctx
+
+@method_decorator(csrf_exempt, name="dispatch")
+class InformeCabalReprocessCenterAjaxView(LoginRequiredMixin, View):
+    """
+    POST: codigo (centro.codigo) y optional only_pago_rechazado ('1'/'0')
+    Ejecuta el reproceso para ese centro.
+    """
+    def post(self, request, *args, **kwargs):
+        codigo = (request.POST.get("codigo") or "").strip()
+        only_rej = request.POST.get("only_pago_rechazado") == "1"
+        if not codigo:
+            return JsonResponse({"ok": False, "error": "Falta el código."}, status=400)
+        # buscar centro por código (case-insensitive)
+        try:
+            centro = Centro.objects.get(codigo__iexact=codigo)
+        except Centro.DoesNotExist:
+            return JsonResponse({"ok": False, "error": "No existe un centro con ese código."}, status=404)
+        try:
+            res = reprocesar_registros_rechazados(
+                centro_id=centro.id,
+                only_pago_rechazado=only_rej,
+                dry_run=False,   # commit
+            )
+            return JsonResponse(res)
+        except Exception as e:
+            logger.exception("Error reprocesando centro %s", centro.id)
+            return JsonResponse({"ok": False, "error": "Error inesperado en el reproceso."}, status=500)

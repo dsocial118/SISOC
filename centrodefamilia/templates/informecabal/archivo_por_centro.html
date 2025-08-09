@@ -1,0 +1,73 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Archivos CABAL - {{ centro.nombre }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Registros CABAL para {{ centro.nombre }}</h5>
+    </div>
+    <div class="card-body">
+
+        {% if registros %}
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover table-sm">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>#</th>
+                        <th>Nro Comercio</th>
+                        <th>Razón Social</th>
+                        <th>Importe</th>
+                        <th>Fecha Transacción</th>
+                        <th>Pago</th>
+                        
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reg in registros %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ reg.nro_comercio }}</td>
+                        <td>{{ reg.razon_social }}</td>
+                        <td>${{ reg.importe|floatformat:2 }}</td>
+                        <td>{{ reg.fecha_trx|date:"d/m/Y" }}</td>
+
+                        {# Pago aceptado o no aceptado según motivo_rechazo #}
+                        {% if reg.motivo_rechazo and reg.motivo_rechazo != "0" %}
+                            <td class="text-danger font-weight-bold">Pago no aceptado</td>
+                        {% else %}
+                            <td class="text-success font-weight-bold">Pago aceptado</td>
+                        {% endif %}
+
+                        {# Estado de nuestro proceso: verde si procesado, rojo si no #}
+                        {% if reg.estado == "procesado" %}
+                            <td class="text-success font-weight-bold">Procesado</td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-3">
+            {{ registros.paginator.count }} registros encontrados.
+        </div>
+
+        <div class="mt-2">
+            {% if registros.has_previous %}
+                <a href="?page={{ registros.previous_page_number }}" class="btn btn-secondary btn-sm">Anterior</a>
+            {% endif %}
+            <span>Página {{ registros.number }} de {{ registros.paginator.num_pages }}</span>
+            {% if registros.has_next %}
+                <a href="?page={{ registros.next_page_number }}" class="btn btn-secondary btn-sm">Siguiente</a>
+            {% endif %}
+        </div>
+
+        {% else %}
+        <div class="alert alert-info">No hay registros CABAL para este centro.</div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

@@ -10,7 +10,6 @@ from centrodefamilia.models import (
     ParticipanteActividad,
     Categoria,
     Actividad,
-    Expediente,
 )
 from centrodefamilia.services.participante import (
     ParticipanteService,
@@ -253,23 +252,7 @@ class ParticipanteActividadForm(forms.ModelForm):
         return participante
 
 
-class ExpedienteCabalForm(forms.ModelForm):
-    periodo = forms.DateField(
-        label="Periodo",
-        widget=forms.DateInput(
-            attrs={"type": "date", "class": "form-control form-control-sm"}
-        ),
-    )
-    archivo = forms.FileField(
-        label="Archivo",
-        widget=forms.ClearableFileInput(
-            attrs={"class": "form-control form-control-sm", "accept": ".pdf,.xlsx,.csv"}
-        ),
-    )
 
-    class Meta:
-        model = Expediente
-        fields = ["periodo", "archivo"]
 
 
 class ActividadForm(forms.ModelForm):
