@@ -6,32 +6,48 @@
 - Persiste CabalArchivo + InformeCabalRegistro (sin bloquear por no-coincidentes).
 - Si nombre de archivo ya existe, marca advertencia para preguntar “¿desea proseguir?”.
 """
+# stdlib
 import logging
 from dataclasses import dataclass
 from typing import List, Dict, Any, Tuple, Optional
+from datetime import datetime
 
+# third-party
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
 from django.core.paginator import Paginator
 from openpyxl import load_workbook
-from datetime import datetime
 
+# local
 from centrodefamilia.models import Centro, CabalArchivo, InformeCabalRegistro
 
 logger = logging.getLogger(__name__)
 
 # Layout esperado (en este orden)
 EXPECTED_HEADERS = [
-    "NroTarjeta", "NroAuto", "MTI", "NroComercio", "RazonSocial", "Importe",
-    "FechaTRX", "MonedaOrigen", "ImporteMonOrigen", "ImportePesos",
-    "CantCuotas", "MotivoRechazo", "Desc_MotivoRechazo", "Disponibles"
+    "NroTarjeta",
+    "NroAuto",
+    "MTI",
+    "NroComercio",
+    "RazonSocial",
+    "Importe",
+    "FechaTRX",
+    "MonedaOrigen",
+    "ImporteMonOrigen",
+    "ImportePesos",
+    "CantCuotas",
+    "MotivoRechazo",
+    "Desc_MotivoRechazo",
+    "Disponibles",
 ]
+
 
 @dataclass
 class PreviewRow:
     fila: int
     data: Dict[str, Any]
     no_coincidente: bool
+
 
 def _parse_date_ddmmyyyy(value: Any) -> Optional[datetime.date]:
     if value in (None, "", 0):
@@ -48,11 +64,16 @@ def _parse_date_ddmmyyyy(value: Any) -> Optional[datetime.date]:
     # último intento: excel serial? (no lo forzamos)
     return None
 
+
 def _get_cell(row, col_index):
     val = row[col_index].value
     return "" if val is None else val
 
-def read_excel_preview(file: UploadedFile, page: int = 1, per_page: int = 25) -> Tuple[List[PreviewRow], List[int], int]:
+
+def read_excel_preview(
+    file: UploadedFile, page: int = 1, per_page: int = 25
+) -> Tuple[List[PreviewRow], List[int], int]:
+    # pylint: disable=too-many-locals
     """
     Lee el Excel y devuelve:
       - rows de la página solicitada (PreviewRow)
@@ -64,8 +85,10 @@ def read_excel_preview(file: UploadedFile, page: int = 1, per_page: int = 25) ->
     ws = wb.active
 
     # Validar headers exactos
-    headers = [str(cell.value).strip() if cell.value is not None else "" for cell in ws[1]]
-    if headers[:len(EXPECTED_HEADERS)] != EXPECTED_HEADERS:
+    headers = [
+        str(cell.value).strip() if cell.value is not None else "" for cell in ws[1]
+    ]
+    if headers[: len(EXPECTED_HEADERS)] != EXPECTED_HEADERS:
         raise ValueError("El encabezado del Excel no coincide con el esperado.")
 
     # Construir filas
@@ -93,11 +116,14 @@ def read_excel_preview(file: UploadedFile, page: int = 1, per_page: int = 25) ->
         no_coincidente = not match
         if no_coincidente:
             not_matching.append(i - 1)  # “registro (1,2,3...)” respecto a min_row=2
-        all_rows.append(PreviewRow(fila=i - 1, data=data, no_coincidente=no_coincidente))
+        all_rows.append(
+            PreviewRow(fila=i - 1, data=data, no_coincidente=no_coincidente)
+        )
 
     paginator = Paginator(all_rows, per_page)
     page_obj = paginator.get_page(page)
     return list(page_obj.object_list), not_matching, paginator.count
+
 
 @transaction.atomic
 def persist_file_and_rows(
@@ -105,6 +131,7 @@ def persist_file_and_rows(
     user,
     force_proceed: bool = False,
 ) -> Tuple[CabalArchivo, int, int, List[int]]:
+    # pylint: disable=too-many-locals
     """
     Persiste CabalArchivo + InformeCabalRegistro.
     - Si nombre ya existe, marca advertencia y requiere confirmación (force_proceed True).
@@ -120,7 +147,9 @@ def persist_file_and_rows(
         raise FileExistsError("DUPLICATE_NAME")
 
     # Re-parseo completo para persistir todo
-    preview_rows, not_matching, total_rows = read_excel_preview(file, page=1, per_page=10**9)
+    preview_rows, not_matching, total_rows = read_excel_preview(
+        file, page=1, per_page=10**9
+    )
 
     cabal_archivo = CabalArchivo.objects.create(
         archivo=file,
@@ -128,8 +157,8 @@ def persist_file_and_rows(
         usuario=user,
         advertencia_nombre_duplicado=nombre_duplicado,
         total_filas=total_rows,
-        total_validas=0,      # actualizamos luego
-        total_invalidas=0,    # actualizamos luego
+        total_validas=0,  # actualizamos luego
+        total_invalidas=0,  # actualizamos luego
     )
 
     total_validas = 0
@@ -137,6 +166,7 @@ def persist_file_and_rows(
     registros_bulk = []
     for pr in preview_rows:
         d = pr.data
+
         # parseos numéricos/fecha
         def _to_decimal(v):
             if v in ("", None):
@@ -159,7 +189,9 @@ def persist_file_and_rows(
             moneda_origen=str(d["MonedaOrigen"]),
             importe_mon_origen=_to_decimal(d["ImporteMonOrigen"]),
             importe_pesos=_to_decimal(d["ImportePesos"]),
-            cant_cuotas=int(d["CantCuotas"]) if str(d["CantCuotas"]).strip().isdigit() else None,
+            cant_cuotas=(
+                int(d["CantCuotas"]) if str(d["CantCuotas"]).strip().isdigit() else None
+            ),
             motivo_rechazo=str(d["MotivoRechazo"]),
             desc_motivo_rechazo=str(d["Desc_MotivoRechazo"]),
             disponibles=str(d["Disponibles"]),

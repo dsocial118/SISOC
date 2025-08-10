@@ -12,6 +12,7 @@ from ciudadanos.models import Ciudadano
 from core.models import Dia, Localidad, Municipio, Provincia, Sexo
 from organizaciones.models import Organizacion
 
+
 class Centro(models.Model):
     TIPO_CHOICES = [
         ("faro", "faro"),
@@ -87,6 +88,7 @@ class Centro(models.Model):
             ),
         ]
 
+
 class Categoria(models.Model):
     nombre = models.CharField(max_length=100, verbose_name="Nombre de la Categoría")
 
@@ -103,6 +105,7 @@ class Categoria(models.Model):
                 opclasses=["gin_trgm_ops"],
             ),
         ]
+
 
 class Actividad(models.Model):
     nombre = models.CharField(max_length=200, verbose_name="Nombre de la Actividad")
@@ -121,6 +124,7 @@ class Actividad(models.Model):
                 opclasses=["gin_trgm_ops"],
             ),
         ]
+
 
 class ActividadCentro(models.Model):
     ESTADO_CHOICES = [
@@ -173,6 +177,7 @@ class ActividadCentro(models.Model):
             ),
         ]
 
+
 class ParticipanteActividad(models.Model):
     ESTADO_INSCRIPCION = [
         ("inscrito", "Inscrito"),
@@ -217,6 +222,7 @@ class ParticipanteActividad(models.Model):
             ),
         ]
 
+
 class ParticipanteActividadHistorial(models.Model):
     participante = models.ForeignKey(
         ParticipanteActividad, on_delete=models.CASCADE, related_name="historial"
@@ -251,12 +257,15 @@ class ParticipanteActividadHistorial(models.Model):
         verbose_name_plural = "Historial de Inscripciones"
         ordering = ["-fecha_cambio"]
 
+
 # ——— NUEVO MÓDULO INFORME CABAL ———
+
 
 class CabalArchivo(models.Model):
     """
     Archivo subido para Informe Cabal con auditoría y totales.
     """
+
     archivo = models.FileField(upload_to="informes_cabal/")
     nombre_original = models.CharField(max_length=255)
     usuario = models.ForeignKey(User, on_delete=models.PROTECT)
@@ -277,12 +286,16 @@ class CabalArchivo(models.Model):
             models.Index(fields=["nombre_original"]),
         ]
 
+
 class InformeCabalRegistro(models.Model):
     """
     Registro histórico: una fila por línea del Excel.
     Si no hay match de NroComercio → Centro.codigo, centro queda NULL y se marca no_coincidente=True.
     """
-    archivo = models.ForeignKey(CabalArchivo, on_delete=models.CASCADE, related_name="registros")
+
+    archivo = models.ForeignKey(
+        CabalArchivo, on_delete=models.CASCADE, related_name="registros"
+    )
     centro = models.ForeignKey(Centro, null=True, blank=True, on_delete=models.SET_NULL)
 
     # Campos del Excel
@@ -291,11 +304,17 @@ class InformeCabalRegistro(models.Model):
     mti = models.CharField(max_length=20)
     nro_comercio = models.CharField(max_length=50)
     razon_social = models.CharField(max_length=255, blank=True)
-    importe = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    importe = models.DecimalField(
+        max_digits=14, decimal_places=2, null=True, blank=True
+    )
     fecha_trx = models.DateField(null=True, blank=True)
     moneda_origen = models.CharField(max_length=10, blank=True)
-    importe_mon_origen = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
-    importe_pesos = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    importe_mon_origen = models.DecimalField(
+        max_digits=14, decimal_places=2, null=True, blank=True
+    )
+    importe_pesos = models.DecimalField(
+        max_digits=14, decimal_places=2, null=True, blank=True
+    )
     cant_cuotas = models.IntegerField(null=True, blank=True)
     motivo_rechazo = models.CharField(max_length=50, blank=True)
     desc_motivo_rechazo = models.CharField(max_length=255, blank=True)
@@ -314,5 +333,3 @@ class InformeCabalRegistro(models.Model):
             models.Index(fields=["nro_comercio"]),
             models.Index(fields=["fecha_trx"]),
         ]
-
-

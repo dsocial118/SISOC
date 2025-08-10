@@ -252,9 +252,6 @@ class ParticipanteActividadForm(forms.ModelForm):
         return participante
 
 
-
-
-
 class ActividadForm(forms.ModelForm):
     nombre = forms.CharField(
         label="Nombre de la Actividad",
