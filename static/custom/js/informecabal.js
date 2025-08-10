@@ -1,9 +1,9 @@
-// static/js/informecabal.js
+// static/custom/js/informecabal.js
 // [Informe Cabal - JS]
 // - Maneja modal, preview AJAX paginado (25), spinner y proceso final.
 // - Mensajes Bootstrap fade show.
 
-(function() {
+(function () {
   const btnOpen = document.getElementById('btn-open-modal');
   const modalId = '#modalCabal';
   const fileInput = document.getElementById('fileCabal');
@@ -18,7 +18,8 @@
   let totalRows = 0;
   let fileObj = null;
 
-  function showAlert(msg, type='warning') {
+  function showAlert(msg, type = 'warning') {
+    if (!alertZone) return;
     const div = document.createElement('div');
     div.className = `alert alert-${type} fade show`;
     div.role = 'alert';
@@ -28,16 +29,18 @@
   }
 
   function clearTable() {
+    if (!tableBody) return;
     tableBody.innerHTML = `<tr><td colspan="8" class="text-center">Sin datos</td></tr>`;
     totalRows = 0;
     currentPage = 1;
-    pageIndicator.textContent = '1';
-    btnPrev.disabled = true;
-    btnNext.disabled = true;
-    btnProcesar.disabled = true;
+    if (pageIndicator) pageIndicator.textContent = '1';
+    if (btnPrev) btnPrev.disabled = true;
+    if (btnNext) btnNext.disabled = true;
+    if (btnProcesar) btnProcesar.disabled = true;
   }
 
   function renderRows(rows) {
+    if (!tableBody) return;
     if (!rows || !rows.length) {
       clearTable();
       return;
@@ -63,97 +66,97 @@
 
   function updatePager() {
     const totalPages = Math.ceil(totalRows / 25);
-    pageIndicator.textContent = String(currentPage);
-    btnPrev.disabled = currentPage <= 1;
-    btnNext.disabled = currentPage >= totalPages || totalPages <= 1;
+    if (pageIndicator) pageIndicator.textContent = String(currentPage);
+    if (btnPrev) btnPrev.disabled = currentPage <= 1;
+    if (btnNext) btnNext.disabled = currentPage >= totalPages || totalPages <= 1;
   }
 
-  function fetchPreview(page=1) {
-    if (!fileObj) return;
+  function fetchPreview(page = 1) {
+    if (!fileObj || !window.urls?.informecabal_preview) return;
     const form = new FormData();
     form.append('file', fileObj);
     form.append('page', String(page));
 
-    btnProcesar.disabled = true;
+    if (btnProcesar) btnProcesar.disabled = true;
     fetch(window.urls.informecabal_preview, {
       method: 'POST',
       headers: { 'X-CSRFToken': window.csrfToken },
       body: form
     })
-    .then(r => r.json())
-    .then(j => {
-      if (!j.ok) {
-        showAlert(j.error || 'Error al previsualizar', 'danger');
-        clearTable();
-        return;
-      }
-      totalRows = j.total || 0;
-      renderRows(j.rows);
-      btnProcesar.disabled = false;
-      updatePager();
+      .then(r => r.json())
+      .then(j => {
+        if (!j.ok) {
+          showAlert(j.error || 'Error al previsualizar', 'danger');
+          clearTable();
+          return;
+        }
+        totalRows = j.total || 0;
+        renderRows(j.rows);
+        if (btnProcesar) btnProcesar.disabled = false;
+        updatePager();
 
-      if (j.not_matching && j.not_matching.length) {
-        showAlert(`Registros no coincidentes: (${j.not_matching.join(', ')})`, 'warning');
-      } else {
-        alertZone.innerHTML = '';
-      }
-    })
-    .catch(() => {
-      showAlert('Error inesperado al previsualizar', 'danger');
-      clearTable();
-    });
+        if (j.not_matching && j.not_matching.length) {
+          showAlert(`Registros no coincidentes: (${j.not_matching.join(', ')})`, 'warning');
+        } else if (alertZone) {
+          alertZone.innerHTML = '';
+        }
+      })
+      .catch(() => {
+        showAlert('Error inesperado al previsualizar', 'danger');
+        clearTable();
+      });
   }
 
-  function processFile(force=false) {
-    if (!fileObj) return;
+  function processFile(force = false) {
+    if (!fileObj || !window.urls?.informecabal_process) return;
     const form = new FormData();
     form.append('file', fileObj);
     form.append('force', force ? 'true' : 'false');
 
     const spinner = document.getElementById('spin-procesar');
-    spinner.classList.remove('d-none');
-    btnProcesar.disabled = true;
+    if (spinner) spinner.classList.remove('d-none');
+    if (btnProcesar) btnProcesar.disabled = true;
 
     fetch(window.urls.informecabal_process, {
       method: 'POST',
       headers: { 'X-CSRFToken': window.csrfToken },
       body: form
     })
-    .then(r => r.json().then(j => ({ status: r.status, body: j })))
-    .then(({ status, body }) => {
-      spinner.classList.add('d-none');
-      if (body.ok) {
-        showAlert(`Archivo procesado. Total: ${body.total}, Válidas: ${body.validas}, Inválidas: ${body.invalidas}`, 'success');
-        btnProcesar.disabled = true;
-        // Recargar página para ver historial actualizado
-        setTimeout(() => window.location.reload(), 800);
-        return;
-      }
-      if (status === 409 && body.duplicate_name) {
-        // Confirmación por nombre duplicado
-        if (confirm('Ya se subió un archivo con este nombre. ¿Desea proseguir?')) {
-          processFile(true);
-        } else {
-          btnProcesar.disabled = false;
+      .then(r => r.json().then(j => ({ status: r.status, body: j })))
+      .then(({ status, body }) => {
+        if (spinner) spinner.classList.add('d-none');
+        if (body.ok) {
+          showAlert(`Archivo procesado. Total: ${body.total}, Válidas: ${body.validas}, Inválidas: ${body.invalidas}`, 'success');
+          if (btnProcesar) btnProcesar.disabled = true;
+          setTimeout(() => window.location.reload(), 800);
+          return;
         }
-        return;
-      }
-      showAlert(body.error || 'Error al procesar', 'danger');
-      btnProcesar.disabled = false;
-    })
-    .catch(() => {
-      spinner.classList.add('d-none');
-      showAlert('Error inesperado al procesar', 'danger');
-      btnProcesar.disabled = false;
-    });
+        if (status === 409 && body.duplicate_name) {
+          if (confirm('Ya se subió un archivo con este nombre. ¿Desea proseguir?')) {
+            processFile(true);
+          } else if (btnProcesar) {
+            btnProcesar.disabled = false;
+          }
+          return;
+        }
+        showAlert(body.error || 'Error al procesar', 'danger');
+        if (btnProcesar) btnProcesar.disabled = false;
+      })
+      .catch(() => {
+        if (spinner) spinner.classList.add('d-none');
+        showAlert('Error inesperado al procesar', 'danger');
+        if (btnProcesar) btnProcesar.disabled = false;
+      });
   }
 
   // Eventos
   if (btnOpen) {
     btnOpen.addEventListener('click', () => {
-      $(modalId).modal('show');
+      if (typeof $ !== 'undefined') {
+        $(modalId).modal('show');
+      }
       clearTable();
-      fileInput.value = '';
+      if (fileInput) fileInput.value = '';
     });
   }
 
@@ -169,25 +172,32 @@
     });
   }
 
-  btnPrev.addEventListener('click', () => {
-    if (currentPage > 1) {
-      currentPage -= 1;
+  if (btnPrev) {
+    btnPrev.addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage -= 1;
+        fetchPreview(currentPage);
+      }
+    });
+  }
+
+  if (btnNext) {
+    btnNext.addEventListener('click', () => {
+      currentPage += 1;
       fetchPreview(currentPage);
-    }
-  });
-  btnNext.addEventListener('click', () => {
-    currentPage += 1;
-    fetchPreview(currentPage);
-  });
-  btnProcesar.addEventListener('click', () => processFile(false));
+    });
+  }
 
+  if (btnProcesar) {
+    btnProcesar.addEventListener('click', () => processFile(false));
+  }
 
-
+  // ——— (Opcional) Código de reproceso por centro: si no usás estos IDs, no pasa nada ———
   const btnReprocesarCentro = document.getElementById('btn-reprocesar-centro');
-  const modalReprocesar = $('#modalReprocesarCentro');
+  const modalReprocesar = typeof $ !== 'undefined' ? $('#modalReprocesarCentro') : null;
   const btnConfirmReprocesar = document.getElementById('btnConfirmReprocesar');
 
-  if (btnReprocesarCentro) {
+  if (btnReprocesarCentro && modalReprocesar) {
     btnReprocesarCentro.addEventListener('click', () => {
       modalReprocesar.modal('show');
     });
@@ -195,9 +205,10 @@
 
   if (btnConfirmReprocesar) {
     btnConfirmReprocesar.addEventListener('click', () => {
-      const codigo = document.getElementById('codigoCentro').value.trim();
+      const codigoEl = document.getElementById('codigoCentro');
+      const codigo = (codigoEl ? codigoEl.value : '').trim();
       if (!codigo) {
-        alert("Debe ingresar un código de comedor.");
+        alert('Debe ingresar un código de comedor.');
         return;
       }
       if (!confirm(`¿Seguro que deseas reprocesar el centro ${codigo}?`)) return;
@@ -210,21 +221,20 @@
         },
         body: JSON.stringify({ centro: codigo })
       })
-      .then(r => r.json())
-      .then(data => {
-        if (data.success) {
-          alert(`Centro ${codigo} reprocesado correctamente.`);
-          modalReprocesar.modal('hide');
-          location.reload();
-        } else {
-          alert(data.error || "Ocurrió un error al reprocesar.");
-        }
-      })
-      .catch(err => {
-        console.error(err);
-        alert("Error de conexión al reprocesar.");
-      });
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            alert(`Centro ${codigo} reprocesado correctamente.`);
+            if (modalReprocesar) modalReprocesar.modal('hide');
+            location.reload();
+          } else {
+            alert(data.error || 'Ocurrió un error al reprocesar.');
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          alert('Error de conexión al reprocesar.');
+        });
     });
   }
-
-});
+})();
