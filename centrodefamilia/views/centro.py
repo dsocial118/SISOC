@@ -80,7 +80,6 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         ctx = super().get_context_data(**kwargs)
         centro = self.object
 
-
         # 2) Actividades en curso
         search_curso = (
             self.request.GET.get("search_actividades_curso", "").strip().lower()
@@ -104,7 +103,6 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         ctx["actividades"] = list(qs_acts)
         ctx["total_actividades"] = qs_acts.count()
         ctx["total_recaudado"] = sum((act.ganancia or 0) for act in ctx["actividades"])
-        
 
         # 3) Actividades de otros centros
         search_otras = self.request.GET.get("search_actividades", "").strip().lower()
@@ -163,9 +161,11 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         }
 
         # 6) Archivos CABAL vinculados al centro
-        ctx["archivos_cabal_centro"] = CabalArchivo.objects.filter(
-            registros__centro=centro
-        ).distinct().order_by("-fecha_subida")
+        ctx["archivos_cabal_centro"] = (
+            CabalArchivo.objects.filter(registros__centro=centro)
+            .distinct()
+            .order_by("-fecha_subida")
+        )
 
         return ctx
 
@@ -233,6 +233,7 @@ class CentroDeleteView(LoginRequiredMixin, DeleteView):
         messages.success(self.request, "Centro eliminado correctamente.")
         return super().delete(request, *args, **kwargs)
 
+
 class InformeCabalArchivoPorCentroDetailView(DetailView):
     model = CabalArchivo
     template_name = "informecabal/archivo_por_centro.html"
@@ -243,8 +244,7 @@ class InformeCabalArchivoPorCentroDetailView(DetailView):
         centro_id = self.kwargs.get("centro_id")
 
         registros = InformeCabalRegistro.objects.filter(
-            archivo=self.object,
-            centro_id=centro_id
+            archivo=self.object, centro_id=centro_id
         ).order_by("fila_numero")
 
         paginator = Paginator(registros, 50)
