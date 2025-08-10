@@ -6,6 +6,7 @@
 - Detail de un registro.
 Mensajería: usa messages y JSON con errores controlados. 
 """
+from django.db.models import F
 import logging
 from django.views import View
 from django.views.generic import ListView, DetailView, TemplateView
@@ -18,7 +19,7 @@ from django.shortcuts import get_object_or_404, render
 from django.contrib import messages
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from core.decorators import group_required
-from centrodefamilia.services.informe_cabal_reprocess import reprocesar_registros_rechazados
+from centrodefamilia.services.informe_cabal_reprocess import ReprocessError, reprocesar_registros_rechazados_por_codigo
 
 from centrodefamilia.models import CabalArchivo, Centro, InformeCabalRegistro
 from centrodefamilia.services.informe_cabal_service import (
@@ -130,11 +131,9 @@ class InformeCabalReprocessCenterAjaxView(LoginRequiredMixin, View):
         if not codigo:
             return JsonResponse({"ok": False, "error": "Falta código de centro"}, status=400)
         try:
-            centro = Centro.objects.get(codigo=codigo)   # ajustá si tu campo se llama distinto
-            res = reprocesar_registros_rechazados(centro_id=centro.id, dry_run=False)
-            return JsonResponse({"ok": True, **res}, status=200)
-        except Centro.DoesNotExist:
-            return JsonResponse({"ok": False, "error": f"Código '{codigo}' no encontrado"}, status=404)
+            res = reprocesar_registros_rechazados_por_codigo(codigo=codigo, dry_run=False)
+            return JsonResponse({"ok": True, **res})
+        except ReprocessError as e:
+            return JsonResponse({"ok": False, "error": str(e)}, status=400)
         except Exception as e:
             return JsonResponse({"ok": False, "error": str(e)}, status=500)
-
