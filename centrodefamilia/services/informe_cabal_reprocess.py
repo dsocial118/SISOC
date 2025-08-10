@@ -1,65 +1,67 @@
 # centrodefamilia/services/informe_cabal_reprocess.py
-from __future__ import annotations
-from typing import Dict, Any, List
+from collections import defaultdict
+from typing import Dict, Any
 from django.db import transaction
-import logging
+from django.db.models import Count
+from centrodefamilia.models import Centro, InformeCabalRegistro, CabalArchivo
+from django.db.models import F
 
-log = logging.getLogger(__name__)
 
-class ReprocessError(Exception):
-    pass
+class ReprocessError(Exception): ...
 
-def reprocesar_registros_rechazados(centro_id: int, dry_run: bool = False) -> Dict[str, Any]:
+@transaction.atomic
+def reprocesar_registros_rechazados_por_codigo(codigo: str, *, dry_run: bool = False) -> Dict[str, Any]:
     """
-    Reprocesa los registros rechazados de un centro.
-    Retorna un dict normalizado: {"procesados": int, "impactados": int, "detalles": [str, ...]}
-    - procesados: cantidad de intentos de reproceso (registros iterados)
-    - impactados: cantidad de registros que efectivamente modificaron/actualizaron algo
-    - detalles: mensajes útiles (ids con error, etc.)
+    Reprocesa todos los registros rechazados (no_coincidente=True o centro=None)
+    cuyo nro_comercio == codigo. Setea centro, limpia no_coincidente y
+    actualiza contadores en CabalArchivo.
     """
-    if not isinstance(centro_id, int) or centro_id <= 0:
-        raise ReprocessError("centro_id inválido")
+    codigo = (codigo or "").strip()
+    if not codigo:
+        raise ReprocessError("Código de centro vacío")
 
-    procesados = 0
-    impactados = 0
-    detalles: List[str] = []
+    try:
+        centro = Centro.objects.only("id").get(codigo=codigo)
+    except Centro.DoesNotExist:
+        raise ReprocessError(f"Código '{codigo}' no encontrado")
 
-    # 1) Si querés que no queden cambios en dry_run, usamos atomic + rollback.
-    with transaction.atomic():
-        try:
-            # TODO conecta con tu lógica real (lo que hoy corrés en consola):
-            # from .mi_core_de_informe_cabal import obtener_rechazados, intentar_reprocesar
-            # registros = obtener_rechazados(centro_id)
-            # ---- Ejemplo genérico (reemplazar por tu implementación real) ----
-            registros = _obtener_rechazados_stub(centro_id)  # TODO reemplazar
-            for reg in registros:
-                procesados += 1
-                try:
-                    # changed = intentar_reprocesar(reg)  # TODO reemplazar
-                    changed = _intentar_reprocesar_stub(reg)  # TODO reemplazar
-                    if changed:
-                        impactados += 1
-                except Exception as e:
-                    log.exception("Error reprocesando registro %s", getattr(reg, "id", reg))
-                    detalles.append(f"error en {getattr(reg, 'id', reg)}: {e}")
+    # Seleccionamos SOLO rechazados de ese código
+    qs = (InformeCabalRegistro.objects
+          .select_for_update()
+          .filter(nro_comercio=codigo)
+          .filter(no_coincidente=True)  # la regla de negocio base
+          )
 
-        except Exception as e:
-            # si algo crítico falla arriba, lo reflejamos y dejamos rollback implícito por la excepción si sube
-            raise ReprocessError(str(e)) from e
-        finally:
-            if dry_run:
-                # anulamos cualquier cambio hecho dentro del bloque
-                transaction.set_rollback(True)
+    procesados = qs.count()
+    if procesados == 0:
+        return {"procesados": 0, "impactados": 0, "detalles": [], "por_archivo": {}}
 
-    return {"procesados": procesados, "impactados": impactados, "detalles": detalles}
+    # Guardamos agrupación por archivo para después actualizar contadores
+    # (lo hacemos ANTES del update masivo)
+    por_archivo_ids = list(qs.values_list("archivo_id", flat=True))
+    conteo_por_archivo = (qs.values("archivo_id")
+                            .annotate(cnt=Count("id")))
+    cnt_map = {row["archivo_id"]: row["cnt"] for row in conteo_por_archivo}
 
+    # Impacto: setear centro y no_coincidente=False en un solo UPDATE
+    impactados = (qs.update(centro=centro, no_coincidente=False))
 
-# ----------------- STUBS (borralos cuando conectes tu lógica real) -----------------
-def _obtener_rechazados_stub(centro_id: int):
-    # simulamos 3 registros rechazados
-    return [{"id": 1}, {"id": 2}, {"id": 3}]
+    # Actualizar contadores de CabalArchivo (validas/invalidas) por archivo
+    # total_validas += cnt, total_invalidas -= cnt
+    # Lo hacemos por lotes para mantener claridad (volúmenes razonables)
+    for archivo_id, cnt in cnt_map.items():
+        CabalArchivo.objects.filter(id=archivo_id).update(
+            total_validas = F("total_validas") + cnt,
+            total_invalidas = F("total_invalidas") - cnt,
+        )
 
-def _intentar_reprocesar_stub(reg) -> bool:
-    # “procesa” y dice si impactó algo (ej: 2 de 3)
-    return reg["id"] % 2 == 1
-# -------------------------------------------------------------------------------
+    if dry_run:
+        transaction.set_rollback(True)
+
+    # Optional: devolver desglose por archivo para que puedas auditar
+    return {
+        "procesados": procesados,
+        "impactados": impactados,
+        "detalles": [f"centro_id={centro.id}, codigo={codigo}"],
+        "por_archivo": cnt_map,  # {archivo_id: cantidad_impactada}
+    }
