@@ -1,22 +1,16 @@
 // static/custom/js/informecabal.js
 // [Informe Cabal - JS]
-// - Maneja modal, preview AJAX paginado (25), spinner y proceso final.
-// - Mensajes Bootstrap fade show.
+// - Modal de carga + previsualización AJAX paginada (25)
+// - Procesamiento final del archivo
+// - Reproceso por CÓDIGO de centro (pop-up) → POST JSON/URL-encoded
+// - Mensajes Bootstrap (alertas)
 
 (function () {
-  const btnOpen = document.getElementById('btn-open-modal');
-  const modalId = '#modalCabal';
-  const fileInput = document.getElementById('fileCabal');
-  const tableBody = document.querySelector('#preview-table tbody');
-  const btnPrev = document.getElementById('btn-prev');
-  const btnNext = document.getElementById('btn-next');
-  const pageIndicator = document.getElementById('page-indicator');
-  const btnProcesar = document.getElementById('btn-procesar');
-  const alertZone = document.getElementById('alert-zone');
-
-  let currentPage = 1;
-  let totalRows = 0;
-  let fileObj = null;
+  // ---------- Helpers ----------
+  function getCookie(name) {
+    const m = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+    return m ? m.pop() : '';
+  }
 
   function showAlert(msg, type = 'warning') {
     if (!alertZone) return;
@@ -28,6 +22,37 @@
     alertZone.appendChild(div);
   }
 
+  // ---------- Elements ----------
+  const btnOpen = document.getElementById('btn-open-modal');
+  const modalId = '#modalCabal';
+  const fileInput = document.getElementById('fileCabal');
+  const tableBody = document.querySelector('#preview-table tbody');
+  const btnPrev = document.getElementById('btn-prev');
+  const btnNext = document.getElementById('btn-next');
+  const pageIndicator = document.getElementById('page-indicator');
+  const btnProcesar = document.getElementById('btn-procesar');
+  const alertZone = document.getElementById('alert-zone');
+
+  // Reproceso por código (pop-up)
+  const btnReprocesar = document.getElementById('btn-reprocesar'); // botón que abre el modal
+  const modalReprocesarEl = document.getElementById('modalReprocesarCentro');
+  const inputCodigo = document.getElementById('codigoCentro');
+  const btnConfirmReprocesar = document.getElementById('btnConfirmReprocesar');
+  const outReprocess = document.getElementById('reprocess-result');
+  const reprocessUrl = btnReprocesar ? btnReprocesar.dataset.url : null;
+
+  // Si usás Bootstrap 5
+  const BootstrapModal = window.bootstrap?.Modal;
+  const modalReprocesar = (BootstrapModal && modalReprocesarEl)
+    ? new BootstrapModal(modalReprocesarEl)
+    : null;
+
+  // ---------- State ----------
+  let currentPage = 1;
+  let totalRows = 0;
+  let fileObj = null;
+
+  // ---------- Tabla Preview ----------
   function clearTable() {
     if (!tableBody) return;
     tableBody.innerHTML = `<tr><td colspan="8" class="text-center">Sin datos</td></tr>`;
@@ -47,25 +72,25 @@
     }
     tableBody.innerHTML = '';
     rows.forEach(r => {
-      const d = r.data;
+      const d = r.data || {};
       const tr = document.createElement('tr');
       if (r.no_coincidente) tr.classList.add('table-warning');
       tr.innerHTML = `
-        <td>${r.fila}</td>
-        <td>${d.NroComercio}</td>
-        <td>${d.RazonSocial || ''}</td>
-        <td>${d.Importe || ''}</td>
-        <td>${d.FechaTRX || ''}</td>
-        <td>${d.MonedaOrigen || ''}</td>
-        <td>${d.ImportePesos || ''}</td>
-        <td>${d.MotivoRechazo || ''}</td>
+        <td>${r.fila ?? ''}</td>
+        <td>${d.NroComercio ?? ''}</td>
+        <td>${d.RazonSocial ?? ''}</td>
+        <td>${d.Importe ?? ''}</td>
+        <td>${d.FechaTRX ?? ''}</td>
+        <td>${d.MonedaOrigen ?? ''}</td>
+        <td>${d.ImportePesos ?? ''}</td>
+        <td>${d.MotivoRechazo ?? ''}</td>
       `;
       tableBody.appendChild(tr);
     });
   }
 
   function updatePager() {
-    const totalPages = Math.ceil(totalRows / 25);
+    const totalPages = Math.ceil((totalRows || 0) / 25);
     if (pageIndicator) pageIndicator.textContent = String(currentPage);
     if (btnPrev) btnPrev.disabled = currentPage <= 1;
     if (btnNext) btnNext.disabled = currentPage >= totalPages || totalPages <= 1;
@@ -78,9 +103,10 @@
     form.append('page', String(page));
 
     if (btnProcesar) btnProcesar.disabled = true;
+
     fetch(window.urls.informecabal_preview, {
       method: 'POST',
-      headers: { 'X-CSRFToken': window.csrfToken },
+      headers: { 'X-CSRFToken': window.csrfToken || getCookie('csrftoken') },
       body: form
     })
       .then(r => r.json())
@@ -107,6 +133,7 @@
       });
   }
 
+  // ---------- Procesar Archivo ----------
   function processFile(force = false) {
     if (!fileObj || !window.urls?.informecabal_process) return;
     const form = new FormData();
@@ -119,14 +146,17 @@
 
     fetch(window.urls.informecabal_process, {
       method: 'POST',
-      headers: { 'X-CSRFToken': window.csrfToken },
+      headers: { 'X-CSRFToken': window.csrfToken || getCookie('csrftoken') },
       body: form
     })
       .then(r => r.json().then(j => ({ status: r.status, body: j })))
       .then(({ status, body }) => {
         if (spinner) spinner.classList.add('d-none');
         if (body.ok) {
-          showAlert(`Archivo procesado. Total: ${body.total}, Válidas: ${body.validas}, Inválidas: ${body.invalidas}`, 'success');
+          showAlert(
+            `Archivo procesado. Total: ${body.total}, Válidas: ${body.validas}, Inválidas: ${body.invalidas}`,
+            'success'
+          );
           if (btnProcesar) btnProcesar.disabled = true;
           setTimeout(() => window.location.reload(), 800);
           return;
@@ -149,7 +179,7 @@
       });
   }
 
-  // Eventos
+  // ---------- Eventos: Modal de carga / Preview / Paginación / Proceso ----------
   if (btnOpen) {
     btnOpen.addEventListener('click', () => {
       if (typeof $ !== 'undefined') {
@@ -192,49 +222,62 @@
     btnProcesar.addEventListener('click', () => processFile(false));
   }
 
-  // ——— (Opcional) Código de reproceso por centro: si no usás estos IDs, no pasa nada ———
-  const btnReprocesarCentro = document.getElementById('btn-reprocesar-centro');
-  const modalReprocesar = typeof $ !== 'undefined' ? $('#modalReprocesarCentro') : null;
-  const btnConfirmReprocesar = document.getElementById('btnConfirmReprocesar');
-
-  if (btnReprocesarCentro && modalReprocesar) {
-    btnReprocesarCentro.addEventListener('click', () => {
-      modalReprocesar.modal('show');
-    });
+  // ---------- Reproceso por CÓDIGO de centro (Opción A con pop-up) ----------
+  function showReprocessMessage(kind, text) {
+    if (!outReprocess) return;
+    outReprocess.classList.remove('d-none', 'alert-success', 'alert-danger', 'alert-info');
+    outReprocess.classList.add(kind);
+    outReprocess.textContent = text;
   }
 
-  if (btnConfirmReprocesar) {
-    btnConfirmReprocesar.addEventListener('click', () => {
-      const codigoEl = document.getElementById('codigoCentro');
-      const codigo = (codigoEl ? codigoEl.value : '').trim();
+  if (btnReprocesar && modalReprocesarEl && inputCodigo && btnConfirmReprocesar && reprocessUrl) {
+    // Abre el modal para ingresar CÓDIGO
+    btnReprocesar.addEventListener('click', () => {
+      if (modalReprocesar) modalReprocesar.show();
+      else modalReprocesarEl.style.display = 'block';
+
+      inputCodigo.value = '';
+      setTimeout(() => inputCodigo.focus(), 150);
+    });
+
+    // Confirma y envía POST con CÓDIGO
+    btnConfirmReprocesar.addEventListener('click', async () => {
+      const codigo = (inputCodigo.value || '').trim();
       if (!codigo) {
-        alert('Debe ingresar un código de comedor.');
+        showReprocessMessage('alert-danger', 'Debés ingresar un código de centro.');
+        inputCodigo.focus();
         return;
       }
-      if (!confirm(`¿Seguro que deseas reprocesar el centro ${codigo}?`)) return;
 
-      fetch(window.urls.informecabal_reprocess, {
-        method: 'POST',
-        headers: {
-          'X-CSRFToken': window.csrfToken,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ centro: codigo })
-      })
-        .then(r => r.json())
-        .then(data => {
-          if (data.success) {
-            alert(`Centro ${codigo} reprocesado correctamente.`);
-            if (modalReprocesar) modalReprocesar.modal('hide');
-            location.reload();
-          } else {
-            alert(data.error || 'Ocurrió un error al reprocesar.');
-          }
-        })
-        .catch(err => {
-          console.error(err);
-          alert('Error de conexión al reprocesar.');
+      btnConfirmReprocesar.disabled = true;
+      showReprocessMessage('alert-info', `Procesando centro ${codigo}...`);
+
+      try {
+        const resp = await fetch(reprocessUrl, {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': window.csrfToken || getCookie('csrftoken'),
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({ codigo }).toString(),
         });
+
+        const data = await resp.json();
+        if (!resp.ok || !data.ok) {
+          const msg = (data && (data.error || data.detail)) || `HTTP ${resp.status}`;
+          showReprocessMessage('alert-danger', `Error: ${msg}`);
+        } else {
+          const proc = data.procesados ?? 0;
+          const imp = data.impactados ?? 0;
+          showReprocessMessage('alert-success', `OK. Procesados: ${proc} | Impactados: ${imp}`);
+          if (modalReprocesar) modalReprocesar.hide();
+          else modalReprocesarEl.style.display = 'none';
+        }
+      } catch (e) {
+        showReprocessMessage('alert-danger', `Error de red: ${e.message}`);
+      } finally {
+        btnConfirmReprocesar.disabled = false;
+      }
     });
   }
 })();

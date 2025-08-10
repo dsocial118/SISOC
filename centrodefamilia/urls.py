@@ -8,6 +8,7 @@ from centrodefamilia.views.informecabal import (
     InformeCabalPreviewAjaxView,
     InformeCabalProcessAjaxView,
     InformeCabalRegistroDetailView,
+    InformeCabalReprocessCenterAjaxView,
 )
 
 from centrodefamilia.views.centro import (
@@ -142,4 +143,8 @@ urlpatterns = [
         group_required(["CDF SSE"])(ActividadCreateView.as_view()),
         name="actividad_create_sola",
     ),
+
+    # repro
+ path("informecabal/reprocess/", InformeCabalReprocessCenterAjaxView.as_view(),
+         name="informecabal_reprocess_center")
 ]
