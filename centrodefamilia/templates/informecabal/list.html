@@ -11,10 +11,16 @@
         <span class="spinner-border spinner-border-sm d-none" id="btn-open-modal-spin"></span>
         Procesar nuevo archivo
       </button>
-      <button class="btn btn-warning ml-2" id="btn-reprocesar">
-        <span class="spinner-border spinner-border-sm d-none" id="btn-reprocesar-spin"></span>
+
+      <!-- Botón que abre el pop-up de REPROCESO por CÓDIGO -->
+      <button
+        id="btn-reprocesar"
+        class="btn btn-warning"
+        data-url="{% url 'informecabal_reprocess_center' %}">  <!-- ← ojo: con namespace -->
         Reprocesar rechazados
       </button>
+
+      <div id="reprocess-result" class="mt-2 d-none alert" role="alert"></div>
     </div>
   </div>
 
@@ -81,7 +87,7 @@
   </div>
 </div>
 
-<!-- Modal de carga/preview -->
+<!-- Modal de carga/preview (Bootstrap 4) -->
 <div class="modal fade" id="modalCabal" tabindex="-1" role="dialog" aria-labelledby="modalCabalLabel" aria-hidden="true">
   <div class="modal-dialog modal-xl" role="document">
     <div class="modal-content">
@@ -138,15 +144,38 @@
     </div>
   </div>
 </div>
+
+<!-- Modal REPROCESAR por CÓDIGO (Bootstrap 4)  // ← nuevo -->
+<div class="modal fade" id="modalReprocesarCentro" tabindex="-1" role="dialog" aria-labelledby="modalReprocesarLabel" aria-hidden="true">
+  <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalReprocesarLabel">Reprocesar centro</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <label for="codigoCentro" class="col-form-label">Código de centro</label>
+        <input type="text" id="codigoCentro" class="form-control" placeholder="Ej: FARO-001" />
+        <small class="form-text text-muted">Ingresá el código exactamente como figura en el sistema.</small>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btnConfirmReprocesar" class="btn btn-primary">Reprocesar</button>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block customJS %}
 <script>
-  window.csrfToken = '{{ csrf_token }}';
+  // Si usás nuestro JS, él ya lee el token desde cookie como fallback.
   window.urls = {
     informecabal_preview: '{% url "informecabal_preview" %}',
     informecabal_process: '{% url "informecabal_process" %}',
   }
-  </script>
+</script>
 <script src="{% static 'custom/js/informecabal.js' %}"></script>
+
 {% endblock %}

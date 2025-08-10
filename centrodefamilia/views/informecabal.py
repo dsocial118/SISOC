@@ -16,6 +16,9 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.shortcuts import get_object_or_404, render
 from django.contrib import messages
+from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
+from core.decorators import group_required
+from centrodefamilia.services.informe_cabal_reprocess import reprocesar_registros_rechazados
 
 from centrodefamilia.models import CabalArchivo, Centro, InformeCabalRegistro
 from centrodefamilia.services.informe_cabal_service import (
@@ -25,6 +28,7 @@ from centrodefamilia.services.informe_cabal_service import (
 
 logger = logging.getLogger(__name__)
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
 class InformeCabalListView(LoginRequiredMixin, TemplateView):
     template_name = "informecabal/list.html"
 
@@ -118,4 +122,19 @@ class InformeCabalArchivoDetailView(LoginRequiredMixin, DetailView):
         ctx = super().get_context_data(**kwargs)
         ctx["registros"] = InformeCabalRegistro.objects.filter(archivo=self.object).order_by("id")
         return ctx
+
+@method_decorator(csrf_protect, name="dispatch")
+class InformeCabalReprocessCenterAjaxView(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        codigo = (request.POST.get("codigo") or "").strip()
+        if not codigo:
+            return JsonResponse({"ok": False, "error": "Falta código de centro"}, status=400)
+        try:
+            centro = Centro.objects.get(codigo=codigo)   # ajustá si tu campo se llama distinto
+            res = reprocesar_registros_rechazados(centro_id=centro.id, dry_run=False)
+            return JsonResponse({"ok": True, **res}, status=200)
+        except Centro.DoesNotExist:
+            return JsonResponse({"ok": False, "error": f"Código '{codigo}' no encontrado"}, status=404)
+        except Exception as e:
+            return JsonResponse({"ok": False, "error": str(e)}, status=500)
 
