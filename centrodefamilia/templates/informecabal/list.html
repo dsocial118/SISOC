@@ -146,40 +146,7 @@
   window.urls = {
     informecabal_preview: '{% url "informecabal_preview" %}',
     informecabal_process: '{% url "informecabal_process" %}',
-    informecabal_reprocess: '{% url "informecabal_reprocess_center" %}'
-  };
-
-  // Acción botón reprocesar
-  document.getElementById("btn-reprocesar").addEventListener("click", function() {
-    if(!confirm("¿Desea reprocesar todos los registros rechazados?")) return;
-    const btn = this;
-    const spin = document.getElementById("btn-reprocesar-spin");
-    btn.disabled = true;
-    spin.classList.remove("d-none");
-
-    fetch(window.urls.informecabal_reprocess, {
-      method: "POST",
-      headers: {
-        "X-CSRFToken": window.csrfToken,
-        "Content-Type": "application/x-www-form-urlencoded"
-      },
-      body: "commit=true"
-    })
-    .then(r => r.json())
-    .then(data => {
-      alert(data.detalle || "Proceso finalizado");
-      location.reload();
-    })
-    .catch(err => {
-      console.error(err);
-      alert("Error en reprocesar");
-    })
-    .finally(() => {
-      btn.disabled = false;
-      spin.classList.add("d-none");
-    });
-  });
-</script>
-
+  }
+  </script>
 <script src="{% static 'custom/js/informecabal.js' %}"></script>
 {% endblock %}
