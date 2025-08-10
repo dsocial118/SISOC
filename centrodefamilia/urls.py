@@ -8,7 +8,6 @@ from centrodefamilia.views.informecabal import (
     InformeCabalPreviewAjaxView,
     InformeCabalProcessAjaxView,
     InformeCabalRegistroDetailView,
-    InformeCabalReprocessCenterAjaxView,
 )
 
 from centrodefamilia.views.centro import (
@@ -37,11 +36,7 @@ from centrodefamilia.views.participante import (
 )
 
 urlpatterns = [
-        path("informecabal/reprocess-center/", 
-         InformeCabalReprocessCenterAjaxView.as_view(), 
-         name="informecabal_reprocess_center"),
-         
-        path(
+            path(
         "centros/<int:centro_id>/informecabal/<int:pk>/",
         InformeCabalArchivoPorCentroDetailView.as_view(),
         name="informecabal_archivo_centro_detail",
