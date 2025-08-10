@@ -22,6 +22,8 @@
     alertZone.appendChild(div);
   }
 
+  const CSRF_COOKIE_NAME = window.CSRF_COOKIE_NAME || 'csrftoken_v2';
+
   // ---------- Elements ----------
   const btnOpen = document.getElementById('btn-open-modal');
   const modalId = '#modalCabal';
@@ -106,7 +108,8 @@
 
     fetch(window.urls.informecabal_preview, {
       method: 'POST',
-      headers: { 'X-CSRFToken': window.csrfToken || getCookie('csrftoken') },
+      credentials: 'same-origin',
+      headers: { 'X-CSRFToken': window.csrfToken || getCookie(CSRF_COOKIE_NAME) },
       body: form
     })
       .then(r => r.json())
@@ -146,7 +149,8 @@
 
     fetch(window.urls.informecabal_process, {
       method: 'POST',
-      headers: { 'X-CSRFToken': window.csrfToken || getCookie('csrftoken') },
+      credentials: 'same-origin',
+      headers: { 'X-CSRFToken': window.csrfToken || getCookie(CSRF_COOKIE_NAME) },
       body: form
     })
       .then(r => r.json().then(j => ({ status: r.status, body: j })))
@@ -255,8 +259,9 @@
       try {
         const resp = await fetch(reprocessUrl, {
           method: 'POST',
+          credentials: 'same-origin',
           headers: {
-            'X-CSRFToken': window.csrfToken || getCookie('csrftoken'),
+            'X-CSRFToken': window.csrfToken || getCookie(CSRF_COOKIE_NAME),
             'Content-Type': 'application/x-www-form-urlencoded',
           },
           body: new URLSearchParams({ codigo }).toString(),
