@@ -54,12 +54,14 @@ def relevamiento_crear_editar_ajax(request, pk):
         if "territorial" in request.POST:
             relevamiento = RelevamientoService.create_pendiente(request, pk)
             if is_ajax:
-                response = JsonResponse(
-                    {
-                        "url": f"/comedores/{relevamiento.comedor.pk}/relevamiento/{relevamiento.pk}"
+                url = reverse(
+                    "relevamiento_detalle",
+                    kwargs={
+                        "pk": relevamiento.pk,
+                        "comedor_pk": relevamiento.comedor.pk,
                     },
-                    status=200,
                 )
+                response = JsonResponse({"url": url}, status=200)
             else:
                 messages.success(
                     request, "Relevamiento territorial creado correctamente."
@@ -101,7 +103,7 @@ def relevamiento_crear_editar_ajax(request, pk):
             exc_info=True,
         )
         if is_ajax:
-            response = JsonResponse({"error": "An internal error occurred"}, status=500)
+            response = JsonResponse({"error": str(e)}, status=500)
         else:
             messages.error(
                 request, "Hubo un error al guardar el relevamiento. Intenta de nuevo."
@@ -259,7 +261,7 @@ class ComedorDetailView(DetailView):
     def get_object(self, queryset=None):
         return ComedorService.get_comedor_detail_object(self.kwargs["pk"])
 
-    def _get_presupuestos_data(self):
+    def get_presupuestos_data(self):
         """Obtiene datos de presupuestos usando cache y datos prefetched cuando sea posible."""
         if (
             hasattr(self.object, "relevamientos_optimized")
@@ -299,7 +301,7 @@ class ComedorDetailView(DetailView):
             "presupuesto_cena": valor_cena,
         }
 
-    def _get_relaciones_optimizadas(self):
+    def get_relaciones_optimizadas(self):
         """Obtiene datos de relaciones usando prefetch cuando sea posible."""
         rendiciones_mensuales = (
             len(self.object.rendiciones_optimized)
@@ -366,8 +368,8 @@ class ComedorDetailView(DetailView):
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
-        presupuestos_data = self._get_presupuestos_data()
-        relaciones_data = self._get_relaciones_optimizadas()
+        presupuestos_data = self.get_presupuestos_data()
+        relaciones_data = self.get_relaciones_optimizadas()
         env_config = self._get_environment_config()
         context.update({**presupuestos_data, **relaciones_data, **env_config})
         return context
@@ -479,8 +481,7 @@ class ObservacionCreateView(CreateView):
 
     def form_valid(self, form: BaseModelForm) -> HttpResponse:
         form.instance.comedor_id = Comedor.objects.get(pk=self.kwargs["comedor_pk"]).id
-        user_model = get_user_model()
-        usuario = user_model.objects.get(pk=self.request.user.id)
+        usuario = self.request.user
         form.instance.observador = f"{usuario.first_name} {usuario.last_name}"
         form.instance.fecha_visita = timezone.now()
         self.object = form.save()
@@ -529,8 +530,7 @@ class ObservacionUpdateView(UpdateView):
 
     def form_valid(self, form: BaseModelForm) -> HttpResponse:
         form.instance.comedor_id = Comedor.objects.get(pk=self.kwargs["comedor_pk"]).id
-        user_model = get_user_model()
-        usuario = user_model.objects.get(pk=self.request.user.id)
+        usuario = self.request.user
         form.instance.observador = f"{usuario.first_name} {usuario.last_name}"
         form.instance.fecha_visita = timezone.now()
         self.object = form.save()
