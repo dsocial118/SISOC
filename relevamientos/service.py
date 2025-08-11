@@ -1,6 +1,8 @@
 # pylint: disable=too-many-lines
 import json
 from django.shortcuts import get_object_or_404
+from django.db import transaction
+from django.utils import timezone
 
 from comedores.models import (
     Comedor,
@@ -196,6 +198,50 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         relevamiento.save()
 
         AsyncSendRelevamientoToGestionar(relevamiento.id).start()
+
+        return relevamiento
+
+    @staticmethod
+    def populate_relevamiento(relevamiento_form, extra_forms):
+        relevamiento = relevamiento_form.save(commit=False)
+
+        funcionamiento = extra_forms["funcionamiento_form"].save()
+        relevamiento.funcionamiento = funcionamiento
+
+        espacio = extra_forms["espacio_form"].save(commit=False)
+        cocina = extra_forms["espacio_cocina_form"].save(commit=True)
+        espacio.cocina = cocina
+        prestacion = extra_forms["espacio_prestacion_form"].save(commit=True)
+        espacio.prestacion = prestacion
+        espacio.save()
+        relevamiento.espacio = espacio
+
+        colaboradores = extra_forms["colaboradores_form"].save()
+        relevamiento.colaboradores = colaboradores
+
+        recursos = extra_forms["recursos_form"].save()
+        relevamiento.recursos = recursos
+
+        anexo = extra_forms["anexo_form"].save()
+        relevamiento.anexo = anexo
+
+        compras = extra_forms["compras_form"].save()
+        relevamiento.compras = compras
+
+        prestacion = extra_forms["prestacion_form"].save()
+        relevamiento.prestacion = prestacion
+
+        referente = extra_forms["referente_form"].save()
+        relevamiento.responsable = referente
+        relevamiento.responsable_es_referente = (
+            relevamiento_form.cleaned_data["responsable_es_referente"] == "True"
+        )
+        punto_entregas = extra_forms["punto_entregas_form"].save()
+        relevamiento.punto_entregas = punto_entregas
+
+        relevamiento.fecha_visita = timezone.now()
+
+        relevamiento.save()
 
         return relevamiento
 
