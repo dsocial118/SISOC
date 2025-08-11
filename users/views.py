@@ -19,6 +19,37 @@ class UserListView(AdminRequiredMixin, ListView):
     model = User
     template_name = "user/user_list.html"
     context_object_name = "users"
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Configuración para el componente data_table
+        context['table_headers'] = [
+            {'title': 'Username'},
+            {'title': 'Email'},
+        ]
+        
+        context['table_fields'] = [
+            {'name': 'username'},
+            {'name': 'email'},
+        ]
+        
+        context['table_actions'] = [
+            {
+                'label': 'Editar',
+                'url_name': 'usuario_editar',
+                'type': 'primary',
+                'class': 'editar'
+            },
+            {
+                'label': 'Eliminar',
+                'url_name': 'usuario_borrar',
+                'type': 'danger',
+                'class': 'eliminar'
+            }
+        ]
+        
+        return context
 
 
 class UserCreateView(AdminRequiredMixin, CreateView):
@@ -45,3 +76,17 @@ class GroupListView(AdminRequiredMixin, ListView):
     model = Group
     template_name = "group/group_list.html"
     context_object_name = "groups"
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Configuración para el componente data_table
+        context['table_headers'] = [
+            {'title': 'Nombre'},
+        ]
+        
+        context['table_fields'] = [
+            {'name': 'name'},
+        ]
+        
+        return context
