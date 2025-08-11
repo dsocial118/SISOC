@@ -1,11 +1,11 @@
+import logging
 from typing import Union
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from cdi.models import CentroDesarrolloInfantil
 from core.models import Mes, Dia, Turno
-import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 class CentroDesarrolloInfantilService:
@@ -35,9 +35,10 @@ class CentroDesarrolloInfantilService:
             return queryset
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en get_centros_filtrados", exc_info=True
+                f"Ocurrió un error inesperado en CentroDesarrolloInfantilService.get_centros_filtrados para centro: {e}",
+                exc_info=True,
             )
-            return CentroDesarrolloInfantil.objects.none()
+            raise
 
     @staticmethod
     def get_centro_detail_object(centro_id: int):
@@ -55,9 +56,10 @@ class CentroDesarrolloInfantilService:
             )
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en get_centro_detail_object", exc_info=True
+                f"Ocurrió un error inesperado en CentroDesarrolloInfantilService.get_centro_detail_object para centro:{centro_id} {e}",
+                exc_info=True,
             )
-            return None
+            raise
 
     @staticmethod
     def create_imagenes(imagen, centro_id):
@@ -76,9 +78,10 @@ class CentroDesarrolloInfantilService:
                 return imagen_centro.errors
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en create_imagenes", exc_info=True
+                f"Ocurrió un error inesperado en CentroDesarrolloInfantilService.create_imagenes para centro:{centro_id} {e}",
+                exc_info=True,
             )
-            return None
+            raise
 
     @staticmethod
     def get_mes_dia_turno_ids(data):
@@ -101,9 +104,10 @@ class CentroDesarrolloInfantilService:
             return data
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en get_mes_dia_turno_ids", exc_info=True
+                f"Ocurrió un error inesperado en CentroDesarrolloInfantilService.get_mes_dia_turno_ids para centro:{data} {e}",
+                exc_info=True,
             )
-            return data
+            raise
 
     @staticmethod
     def get_informacion_adicional(centro_id: int):
@@ -119,7 +123,7 @@ class CentroDesarrolloInfantilService:
             }
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en get_informacion_adicional",
+                f"Ocurrió un error inesperado en CentroDesarrolloInfantilService.get_informacion_adicional para centro:{centro_id} {e}",
                 exc_info=True,
             )
-            return {}
+            raise

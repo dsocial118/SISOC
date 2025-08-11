@@ -1,9 +1,9 @@
 import re
+import logging
 from datetime import datetime
 from django.core.exceptions import ValidationError
-import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 def procesar_informe(ruta_archivo: str) -> dict:
@@ -48,5 +48,8 @@ def procesar_informe(ruta_archivo: str) -> dict:
             "ruta": ruta_archivo,
         }
     except Exception as e:
-        logger.error("Ocurrió un error inesperado en procesar_informe", exc_info=True)
+        logger.error(
+            f"Ocurrió un error inesperado en AcompanamientoService.obtener_hitos para comedor: {nombre} {e}",
+            exc_info=True,
+        )
         raise
