@@ -1,7 +1,7 @@
-"""Utility helpers for the ``relevamientos`` app.
+"""Funciones auxiliares para la app ``relevamientos``.
 
-These functions encapsulate common data manipulation logic used by the
-service layer to keep ``service.py`` focused on orchestration.
+Estas utilidades encapsulan lógica de transformación y consulta de datos,
+permitiendo mantener el servicio principal enfocado en la orquestación.
 """
 
 from typing import Any, Callable, Dict, Optional, Type
@@ -10,16 +10,16 @@ from django.db import models
 
 
 def get_recursos(nombre: str, recursos_data: Dict[str, str], model: Type[models.Model]):
-    """Return a queryset of resources existing in the database.
+    """Obtener un queryset con los recursos existentes en la base de datos.
 
     Args:
-        nombre: Key in ``recursos_data`` with comma-separated resource names.
-        recursos_data: Dictionary containing raw data with resource names.
-        model: Django model class to query.
+        nombre: Clave en ``recursos_data`` con nombres separados por comas.
+        recursos_data: Diccionario con datos crudos de los recursos.
+        model: Clase de modelo de Django a consultar.
 
     Returns:
-        Queryset of matching ``model`` instances or ``model.objects.none()`` when
-        ``nombre`` is not present or empty.
+        QuerySet de instancias de ``model`` coincidentes o ``model.objects.none()``
+        si ``nombre`` no está presente o es vacío.
     """
     recursos_str = recursos_data.pop(nombre, "")
     if recursos_str:
@@ -29,16 +29,16 @@ def get_recursos(nombre: str, recursos_data: Dict[str, str], model: Type[models.
 
 
 def convert_to_boolean(value: str) -> bool:
-    """Convert ``Y``/``N`` strings to boolean values.
+    """Convertir cadenas ``Y``/``N`` a valores booleanos.
 
     Args:
-        value: String containing ``"Y"`` or ``"N"``.
+        value: Cadena que contiene ``"Y"`` o ``"N"``.
 
     Returns:
-        ``True`` if value is ``"Y"`` or ``False`` if ``"N"``.
+        ``True`` si el valor es ``"Y"`` o ``False`` si es ``"N"``.
 
     Raises:
-        ValueError: If value is not ``"Y"`` or ``"N"``.
+        ValueError: Si el valor no es ``"Y"`` ni ``"N"``.
     """
     if value in {"Y", "N"}:
         return value == "Y"
@@ -48,14 +48,14 @@ def convert_to_boolean(value: str) -> bool:
 def get_object_or_none(
     model: Type[models.Model], field_name: str, value: Any
 ) -> Optional[models.Model]:
-    """Return a model instance matching ``field_name`` and ``value``.
+    """Obtener una instancia que coincida con ``field_name`` y ``value``.
 
-    If no instance exists or multiple are found, ``None`` is returned.
+    Si no existe una instancia o se encuentran múltiples, se devuelve ``None``.
 
     Args:
-        model: Django model class to query.
-        field_name: Name of the field to filter.
-        value: Value used for filtering.
+        model: Clase de modelo de Django a consultar.
+        field_name: Nombre del campo para filtrar.
+        value: Valor utilizado para el filtro.
     """
     try:
         return model.objects.get(**{field_name: value})
@@ -68,14 +68,14 @@ def get_object_or_none(
 def assign_values_to_instance(
     instance: models.Model, data: Dict[str, Any]
 ) -> models.Model:
-    """Assign values from ``data`` to ``instance`` and save it.
+    """Asignar valores desde ``data`` a ``instance`` y guardarla.
 
     Args:
-        instance: Django model instance to update.
-        data: Dictionary of field names and values.
+        instance: Instancia de modelo a actualizar.
+        data: Diccionario de nombres de campo y valores.
 
     Returns:
-        The updated instance.
+        La instancia actualizada.
     """
     for field, value in data.items():
         setattr(instance, field, value)
@@ -86,15 +86,15 @@ def assign_values_to_instance(
 def populate_data(
     data: Dict[str, Any], transformations: Dict[str, Callable[[Any], Any]]
 ) -> Dict[str, Any]:
-    """Apply transformation functions to ``data`` if keys are present.
+    """Aplicar funciones de transformación a ``data`` si las claves existen.
 
     Args:
-        data: Dictionary with raw values.
-        transformations: Mapping of keys to callables used to transform the
-            corresponding values.
+        data: Diccionario con valores crudos.
+        transformations: Mapeo de claves a funciones que transforman los valores
+            correspondientes.
 
     Returns:
-        The ``data`` dictionary with transformations applied.
+        El diccionario ``data`` con las transformaciones aplicadas.
     """
     for key, func in transformations.items():
         if key in data:
