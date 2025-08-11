@@ -55,29 +55,28 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
     def get_recursos(nombre, recursos_data, model):
         recursos_str = recursos_data.pop(nombre, "")
         if recursos_str:
-            recursos_arr = [nombre.strip() for nombre in recursos_str.split(",")]
-            valid_recursos = model.objects.filter(nombre__in=recursos_arr).values_list(
-                "nombre", flat=True
-            )
-            return model.objects.filter(nombre__in=valid_recursos)
+            recursos_arr = [n.strip() for n in recursos_str.split(",")]
+            return model.objects.filter(nombre__in=recursos_arr)
         return model.objects.none()
 
     # Convierte un valor de string a booleano
     # Si el valor es "Y" devuelve True, si es "N" devuelve False
     @staticmethod
     def convert_to_boolean(value):
-        return value == "Y" if value in ["Y", "N"] else False
+        if value in {"Y", "N"}:
+            return value == "Y"
+        raise ValueError(f"Valor inesperado para booleano: {value}")
 
     # Obtiene un objeto del modelo dado, filtrando por el nombre del campo y el valor
     # Si el valor es None o una cadena vacía, devuelve None
     @staticmethod
     def get_object_or_none(model, field_name, value):
-        if not value:
-            return None
         try:
             return model.objects.get(**{field_name: value})
         except model.DoesNotExist:
             return None
+        except model.MultipleObjectsReturned:
+            return model.objects.filter(**{field_name: value}).first()
 
     # Asigna los valores del diccionario data a los campos del instance
     # y guarda el instance en la base de datos
@@ -867,13 +866,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             "sabado",
             "domingo",
         ]
-        comidas = [
-            "desayuno",
-            "almuerzo",
-            "merienda",
-            "cena",
-            "merienda_reforzada"
-        ]
+        comidas = ["desayuno", "almuerzo", "merienda", "cena", "merienda_reforzada"]
         aoe = [
             "actual",
             "espera",
