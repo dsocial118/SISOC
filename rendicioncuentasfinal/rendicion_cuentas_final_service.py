@@ -28,7 +28,10 @@ class RendicionCuentasFinalService:
                 instancia=documento,
             )
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en actualizar_documento_con_archivo", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en actualizar_documento_con_archivo",
+                exc_info=True,
+            )
 
     @staticmethod
     def adjuntar_archivo_a_documento(documento_id, archivo):
@@ -44,7 +47,10 @@ class RendicionCuentasFinalService:
 
             return True, documento
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en adjuntar_archivo_a_documento", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en adjuntar_archivo_a_documento",
+                exc_info=True,
+            )
             return False, None
 
     @staticmethod
@@ -67,7 +73,10 @@ class RendicionCuentasFinalService:
 
             return documentos
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en get_documentos_rendicion_cuentas_final", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en get_documentos_rendicion_cuentas_final",
+                exc_info=True,
+            )
             return DocumentoRendicionFinal.objects.none()
 
     @staticmethod
@@ -75,7 +84,9 @@ class RendicionCuentasFinalService:
         try:
             filtros_validador = Q()
             if user.is_superuser:
-                filtros_validador = Q(tipo__validador__in=["Contable", "Legales", "Dupla"])
+                filtros_validador = Q(
+                    tipo__validador__in=["Contable", "Legales", "Dupla"]
+                )
             else:
                 if user.groups.filter(name="Area Contable").exists():
                     filtros_validador |= Q(tipo__validador="Contable")
@@ -100,5 +111,8 @@ class RendicionCuentasFinalService:
 
             return qs
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en filter_documentos_por_area", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en filter_documentos_por_area",
+                exc_info=True,
+            )
             return DocumentoRendicionFinal.objects.none()
