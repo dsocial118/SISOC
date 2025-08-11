@@ -21,14 +21,18 @@ from ciudadanos.models import (
 
 logger = logging.getLogger("django")
 
+
 class AlreadyRegistered(Exception):
     """Se lanza cuando un ciudadano ya está inscrito en la actividad."""
+
 
 class CupoExcedido(Exception):
     """Se lanza cuando la actividad alcanzó su cupo máximo."""
 
+
 class SexoNoPermitido(Exception):
     """Se lanza cuando el sexo del ciudadano no está permitido en la actividad."""
+
 
 def puede_operar(centro):
     try:
@@ -42,6 +46,7 @@ def puede_operar(centro):
         )
         raise
 
+
 def obtener_centros_adheridos_de_faro(faro):
     try:
         return Centro.objects.filter(faro_asociado=faro, activo=True)
@@ -51,6 +56,7 @@ def obtener_centros_adheridos_de_faro(faro):
             exc_info=True,
         )
         raise
+
 
 def validar_cuit(cuit):
     try:
@@ -62,6 +68,7 @@ def validar_cuit(cuit):
             exc_info=True,
         )
         raise
+
 
 def validar_ciudadano_en_rango_para_actividad(ciudadano, actividad_centro):
     try:
@@ -75,6 +82,7 @@ def validar_ciudadano_en_rango_para_actividad(ciudadano, actividad_centro):
             exc_info=True,
         )
         raise
+
 
 class ActividadService:
     @staticmethod
@@ -90,6 +98,7 @@ class ActividadService:
                 exc_info=True,
             )
             raise
+
 
 class ParticipanteService:
 
@@ -113,11 +122,11 @@ class ParticipanteService:
                 actividad_centro=actividad_centro, estado="inscrito"
             ).select_related("ciudadano")
         except Exception as e:
-                logger.error(
-                    f"Ocurrió un error inesperado en SexoNoPermitido.obtener_inscritos para ciudadano: {actividad_centro} {e}",
-                    exc_info=True,
-                )
-                raise
+            logger.error(
+                f"Ocurrió un error inesperado en SexoNoPermitido.obtener_inscritos para ciudadano: {actividad_centro} {e}",
+                exc_info=True,
+            )
+            raise
 
     @staticmethod
     def obtener_lista_espera(actividad_centro):
@@ -137,7 +146,8 @@ class ParticipanteService:
         try:
             existing = set(
                 ParticipanteActividad.objects.filter(
-                    actividad_centro=actividad_centro, ciudadano__documento__in=lista_dnis
+                    actividad_centro=actividad_centro,
+                    ciudadano__documento__in=lista_dnis,
                 ).values_list("ciudadano__documento", flat=True)
             )
             ciudadanos = Ciudadano.objects.filter(documento__in=lista_dnis)
@@ -207,11 +217,11 @@ class ParticipanteService:
             )
             return ciudadano
         except Exception as e:
-                logger.error(
-                    f"Ocurrió un error inesperado en SexoNoPermitido.contar_inscrear_ciudadano_con_dimensionescritos para ciudadano: {usuario} {e}",
-                    exc_info=True,
-                )
-                raise
+            logger.error(
+                f"Ocurrió un error inesperado en SexoNoPermitido.contar_inscrear_ciudadano_con_dimensionescritos para ciudadano: {usuario} {e}",
+                exc_info=True,
+            )
+            raise
 
     @staticmethod
     def crear_participante(actividad_id, ciudadano, estado):
@@ -226,6 +236,7 @@ class ParticipanteService:
                 exc_info=True,
             )
             raise
+
     @staticmethod
     def validar_ciudadano(ciudadano, actividad_centro):
         validar_ciudadano_en_rango_para_actividad(ciudadano, actividad_centro)
@@ -266,7 +277,10 @@ class ParticipanteService:
                     datos, usuario, actividad_id
                 )
 
-            if actividad.sexoact.exists() and ciudadano.sexo not in actividad.sexoact.all():
+            if (
+                actividad.sexoact.exists()
+                and ciudadano.sexo not in actividad.sexoact.all()
+            ):
                 raise SexoNoPermitido("Sexo no permitido para esta actividad.")
             cls.validar_ciudadano(ciudadano, actividad)
 
@@ -283,11 +297,11 @@ class ParticipanteService:
             )
             return estado, participante
         except Exception as e:
-                logger.error(
-                    f"Ocurrió un error inesperado en SexoNoPermitido.procesar_creacion para ciudadano: {usuario} {e}",
-                    exc_info=True,
-                )
-                raise
+            logger.error(
+                f"Ocurrió un error inesperado en SexoNoPermitido.procesar_creacion para ciudadano: {usuario} {e}",
+                exc_info=True,
+            )
+            raise
 
     @classmethod
     @transaction.atomic
@@ -316,6 +330,7 @@ class ParticipanteService:
                 exc_info=True,
             )
             raise
+
     @classmethod
     @transaction.atomic
     def promover_lista_espera(cls, actividad_centro, usuario):
