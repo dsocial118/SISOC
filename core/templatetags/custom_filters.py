@@ -28,7 +28,7 @@ def is_url(value):
     Usage: {% if cancel_url|is_url %}{{ cancel_url }}{% else %}{% url cancel_url %}{% endif %}
     """
     try:
-        return str(value).startswith('/')
+        return str(value).startswith("/")
     except:
         return False
 
@@ -36,10 +36,17 @@ def is_url(value):
 @register.filter
 def getattr(obj, attr_name):
     """
-    Obtiene un atributo de un objeto de forma segura
+    Obtiene un atributo de un objeto de forma segura, manejando relaciones
     Usage: {{ obj|getattr:"field_name" }}
     """
+    import builtins
+
     try:
-        return getattr(obj, attr_name, '')
+        value = builtins.getattr(obj, attr_name, None)
+        # Si es None, devolvemos una cadena vacía
+        if value is None:
+            return ""
+        # Si es un objeto relacionado, devolvemos su representación string
+        return str(value)
     except (AttributeError, TypeError):
-        return ''
+        return ""
