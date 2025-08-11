@@ -38,8 +38,8 @@ from centrodefamilia.views.participante import (
 
 urlpatterns = [
     path(
-        "centros/<int:centro_id>/informecabal/<int:pk>/",
-        InformeCabalArchivoPorCentroDetailView.as_view(),
+        "centros/<int:centro_id>/informecabal/<int:pk>/",group_required(["CDF SSE"])
+        (InformeCabalArchivoPorCentroDetailView.as_view()),
         name="informecabal_archivo_centro_detail",
     ),
     path(
@@ -164,8 +164,8 @@ urlpatterns = [
     ),
     # repro
     path(
-        "informecabal/reprocess/",
-        InformeCabalReprocessCenterAjaxView.as_view(),
+        "informecabal/reprocess/",group_required(["CDF SSE"])
+        (InformeCabalReprocessCenterAjaxView.as_view()),
         name="informecabal_reprocess_center",
     ),
 ]
