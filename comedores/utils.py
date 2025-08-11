@@ -1,9 +1,3 @@
-"""Funciones auxiliares para la app de comedores.
-
-Este módulo contiene utilidades reutilizables para transformaciones de datos
-comunes y manejo de cache utilizadas por los servicios de comedores.
-"""
-
 from typing import Any, Optional, Type
 
 from django.conf import settings
