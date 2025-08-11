@@ -1,7 +1,10 @@
+import logging
 from expedientespagos.models import ExpedientePago
 import logging
 
 logger = logging.getLogger(__name__)
+
+logger = logger = logging.getLogger(__name__)
 
 
 class ExpedientesPagosService:
@@ -24,7 +27,7 @@ class ExpedientesPagosService:
             return expediente_pago
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en ExpedientesPagosService.crear_expediente_pago para comedor: {comedor} {e}",
+                f"Error en ExpedientesPagosService.crear_expediente_pago para comedor: {comedor} {e}",
                 exc_info=True,
             )
             raise
@@ -48,7 +51,7 @@ class ExpedientesPagosService:
             return expediente_pago
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en ExpedientesPagosService.crear_expediente_pago para expediente:{expediente_pago} {data} {e}",
+                f"Error en ExpedientesPagosService.actualizar_expediente_pago para comedor: {expediente_pago} {e}",
                 exc_info=True,
             )
             raise
@@ -59,7 +62,7 @@ class ExpedientesPagosService:
             expediente_pago.delete()
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en ExpedientesPagosService.eliminar_expediente_pago para expediente:{expediente_pago} {e}",
+                f"Error en ExpedientesPagosService.eliminar_expediente_pago para comedor: {expediente_pago} {e}",
                 exc_info=True,
             )
             raise
@@ -70,23 +73,19 @@ class ExpedientesPagosService:
             return ExpedientePago.objects.filter(comedor=comedor)
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en ExpedientesPagosService.eliminar_expediente_pago para comedor:{comedor} {e}",
+                f"Error en ExpedientesPagosService.obtener_expedientes_pagos para comedor: {comedor} {e}",
                 exc_info=True,
             )
             raise
 
     @staticmethod
     def obtener_expediente_pago(id_enviado):
+        # Obtener un expediente de pago
         try:
             return ExpedientePago.objects.get(pk=id_enviado)
-        except ExpedientePago.DoesNotExist:
-            logger.error(
-                "ExpedientePago no encontrado en obtener_expediente_pago", exc_info=True
-            )
-            return None
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en ExpedientesPagosService.eliminar_expediente_pago para expediente:{id_enviado} {e}",
+                f"Error en ExpedientesPagosService.obtener_expediente_pago para comedor: {id_enviado} {e}",
                 exc_info=True,
             )
             raise
