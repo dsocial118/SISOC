@@ -51,7 +51,7 @@ class NominaForm(forms.ModelForm):
     ciudadano = forms.ModelChoiceField(
         queryset=Ciudadano.objects.all(),
         label="Ciudadano",
-        widget=forms.Select(attrs={"class": "form-control select2"}),
+        widget=forms.Select(attrs={"class": "form-control"}),
         help_text="Selecciona un ciudadano del legajo",
     )
 

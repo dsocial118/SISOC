@@ -3,6 +3,24 @@ from typing import Any
 from django.contrib import messages
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
+
+from comedores.forms.comedor_form import ReferenteForm
+from comedores.models import Comedor
+from relevamientos.form import (
+    AnexoForm,
+    ColaboradoresForm,
+    EspacioCocinaForm,
+    EspacioForm,
+    EspacioPrestacionForm,
+    FuenteComprasForm,
+    FuenteRecursosForm,
+    FuncionamientoPrestacionForm,
+    PrestacionForm,
+    PuntosEntregaForm,
+    RelevamientoForm,
+)
+from relevamientos.models import Prestacion, Relevamiento
+from relevamientos.service import RelevamientoService
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -57,6 +75,78 @@ class RelevamientoCreateView(CreateView):
             self.request, forms, validation_results
         )
         return self.form_invalid(form)
+
+    def error_message(self, forms):
+        for form_name, form_instance in forms.items():
+            if not form_instance.is_valid():
+                messages.error(
+                    self.request, f"Errores en {form_name}: {form_instance.errors}"
+                )
+
+
+class RelevamientoCreateView(CreateView):
+    model = Relevamiento
+    form_class = RelevamientoForm
+    template_name = "relevamiento_form.html"
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["comedor_pk"] = self.kwargs["comedor_pk"]
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        data = super().get_context_data(**kwargs)
+        forms = {
+            "funcionamiento_form": FuncionamientoPrestacionForm,
+            "espacio_form": EspacioForm,
+            "espacio_cocina_form": EspacioCocinaForm,
+            "espacio_prestacion_form": EspacioPrestacionForm,
+            "colaboradores_form": ColaboradoresForm,
+            "recursos_form": FuenteRecursosForm,
+            "compras_form": FuenteComprasForm,
+            "prestacion_form": PrestacionForm,
+            "referente_form": ReferenteForm,
+            "anexo_form": AnexoForm,
+            "punto_entregas_form": PuntosEntregaForm,
+        }
+
+        for form_name, form_class in forms.items():
+            data[form_name] = form_class(
+                self.request.POST if self.request.POST else None
+            )
+
+        data["comedor"] = Comedor.objects.values("id", "nombre").get(
+            pk=self.kwargs["comedor_pk"]
+        )
+
+        return data
+
+    def form_valid(self, form):
+        context = self.get_context_data()
+        forms = {
+            "funcionamiento_form": context["funcionamiento_form"],
+            "espacio_form": context["espacio_form"],
+            "espacio_cocina_form": context["espacio_cocina_form"],
+            "espacio_prestacion_form": context["espacio_prestacion_form"],
+            "colaboradores_form": context["colaboradores_form"],
+            "recursos_form": context["recursos_form"],
+            "compras_form": context["compras_form"],
+            "prestacion_form": context["prestacion_form"],
+            "referente_form": context["referente_form"],
+            "anexo_form": context["anexo_form"],
+        }
+
+        if all(form.is_valid() for form in forms.values()):
+            self.object = RelevamientoService.populate_relevamiento(form, forms)
+
+            return redirect(
+                "relevamiento_detalle",
+                comedor_pk=int(self.object.comedor.id),
+                pk=int(self.object.id),
+            )
+        else:
+            self.error_message(forms)
+            return self.form_invalid(form)
 
     def error_message(self, forms):
         for form_name, form_instance in forms.items():
@@ -171,6 +261,7 @@ class RelevamientoDetailView(DetailView):
         return context
 
     def get_object(self, queryset=None):
+        # Optimización: Retornar objeto completo con todas las relaciones optimizadas
         return (
             Relevamiento.objects.select_related(
                 "comedor",
