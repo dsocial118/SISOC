@@ -1,139 +1,18 @@
-{% extends "includes/main.html" %};
+{% extends "includes/main.html" %}
 {% load static %}
-;
-{% block title %}Organizaciones{% endblock %}
-;
+
+{% block title %}Centro Desarrollo Infantil{% endblock %}
+
 {% block breadcrumb %}
-    <ol class="breadcrumb float-sm-right">
-        <li class="breadcrumb-item">
-            <a href="{% url 'cdi' %}">Centro Desarrollo Infantil</a>
-        </li>
-        <li class="breadcrumb-item active">Listar</li>
-    </ol>
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
-;
+
 {% block content %}
-    <h2 class="text-center display-4 mb-4">Buscar Centro Desarrollo Infantil</h2>
-    <form method="GET">
-        <div class="row">
-            <div class="col-md-10 offset-md-1">
-                <div class="form-group">
-                    <div class="input-group input-group-lg">
-                        <input type="search"
-                               class="form-control form-control-lg"
-                               placeholder="Buscar por nombre, numero expediente, numero repi, organizacion, provincia, telefono o email"
-                               title="Ingresar nombre, CUIT, telefono o email."
-                               name="busqueda" />
-                        <div class="input-group-append">
-                            <button type="submit" class="btn btn-lg btn-primary">
-                                <i class="fa fa-search"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </form>
-    <div class="row mt-3">
-        <div class="col-12 text-center">
-            <a href="{% url 'cdi' %}"
-               class="btn btn-secondary btn-lg d-block d-sm-inline mt-2 ">Resetear</a>
-            <a href="{% url 'cdi_crear' %}"
-               class="btn btn-primary btn-lg d-block d-sm-inline mt-2 mr-2 ">Agregar</a>
-        </div>
-    </div>
-    <div class="row mt-5">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body">
-                    <table class="table table-bordered table-striped projects">
-                        <thead>
-                            <tr>
-                                <th>Nombre</th>
-                                <th>Numero Expediente</th>
-                                <th>Numero Repi</th>
-                                <th>Organizacion</th>
-                                <th>Provincia</th>
-                                <th style="width: 15%" class="notexport">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for centrodesarrolloinfantil in centrodesarrolloinfantiles %}
-                                <tr>
-                                    <td>
-                                        <a href="{% url 'cdi_detalle' centrodesarrolloinfantil.id %}"
-                                           class="font-weight-bold link-handler"
-                                           title="Ver detalles">{{ centrodesarrolloinfantil.nombre }}</a>
-                                    </td>
-                                    <td>{{ centrodesarrolloinfantil.numexpe |default_if_none:"-" }}</td>
-                                    <td>{{ centrodesarrolloinfantil.numrepo |default_if_none:"-" }}</td>
-                                    <td>{{ centrodesarrolloinfantil.organizacion |default_if_none:"-" }}</td>
-                                    <td>{{ centrodesarrolloinfantil.provincia |default_if_none:"-" }}</td>
-                                    <td>
-                                        <div class="btn-group" role="group">
-                                            <a href="{% url 'cdi_detalle' centrodesarrolloinfantil.id %}"
-                                               class="btn btn-primary btn-sm ver link-handler">Ver</a>
-                                            <a href="{% url 'cdi_editar' centrodesarrolloinfantil.id %}"
-                                               class="btn btn-primary btn-sm editar link-handler">Editar</a>
-                                            <a href="{% url 'cdi_eliminar' centrodesarrolloinfantil.id %}"
-                                               class="btn btn-danger btn-sm eliminar link-handler">Eliminar</a>
-                                        </div>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                    {% if is_paginated %}
-                        <div class="mt-2">
-                            <ul class="pagination">
-                                {% if page_obj.has_previous %}
-                                    <li class="page-item">
-                                        <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ page_obj.previous_page_number }}"
-                                           class="page-link">Volver</a>
-                                    </li>
-                                {% else %}
-                                    <li class="page-item disabled">
-                                        <a href="#" class="page-link">Volver</a>
-                                    </li>
-                                {% endif %}
-                                {% for i in page_obj.paginator.page_range %}
-                                    {% if page_obj.number == i %}
-                                        <li class="page-item active">
-                                            <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ i }}"
-                                               class="page-link">{{ i }}</a>
-                                        </li>
-                                    {% elif i > page_obj.number|add:'-5' and i < page_obj.number|add:'5' %}
-                                        <li class="page-item">
-                                            <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ i }}"
-                                               class="page-link">{{ i }}</a>
-                                        </li>
-                                    {% elif i == 1 or i == page_obj.paginator.num_pages %}
-                                        <li class="page-item">
-                                            <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ i }}"
-                                               class="page-link">{{ i }}</a>
-                                        </li>
-                                    {% elif i == page_obj.number|add:'-6' or i == page_obj.number|add:'6' %}
-                                        <li class="page-item disabled">
-                                            <a href="#" class="page-link">...</a>
-                                        </li>
-                                    {% endif %}
-                                {% endfor %}
-                                {% if page_obj.has_next %}
-                                    <li class="page-item">
-                                        <a href="?{% if query %}busqueda={{ query }}&{% endif %}page={{ page_obj.next_page_number }}"
-                                           class="page-link">Continuar</a>
-                                    </li>
-                                {% else %}
-                                    <li class="page-item disabled">
-                                        <a href="#" class="page-link">Continuar</a>
-                                    </li>
-                                {% endif %}
-                            </ul>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
+    {% include 'components/search_bar.html' with titulo='Buscar Centro Desarrollo Infantil' placeholder='Buscar por nombre, numero expediente, numero repi, organizacion, provincia, telefono o email' help_text='Ingresar nombre, CUIT, telefono o email.' reset_url='cdi' add_url='cdi_crear' query=query add_text='Agregar' %}
+    {% include 'components/data_table.html' with headers=table_headers items=centrodesarrolloinfantiles fields=fields actions=actions show_actions=show_actions empty_message='No hay centros de desarrollo infantil registrados.' %}
+    {% if is_paginated %}
+        {% include 'components/pagination.html' %}
+    {% endif %}
 {% endblock %}
+
 {% block customJS %}{% endblock %}
