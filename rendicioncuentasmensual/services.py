@@ -2,7 +2,7 @@ import logging
 from django.shortcuts import get_object_or_404
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 
-logger = logging.getLogger("django")
+logger = logger = logging.getLogger(__name__)
 
 
 class RendicionCuentaMensualService:

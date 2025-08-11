@@ -1,7 +1,7 @@
 import logging
 from centrodefamilia.models import Centro
 
-logger = logging.getLogger("django")
+logger = logger = logging.getLogger(__name__)
 
 
 def puede_operar(centro):
@@ -16,7 +16,7 @@ def puede_operar(centro):
         return True
     except Exception as e:
         logger.error(
-            f"Error en AcompanamientoService.puede_operar para comedor: {centro} {e}",
+            f"Error en AcompanamientoService.puede_operar para centro: {centro} {e}",
             exc_info=True,
         )
         raise
