@@ -1,7 +1,7 @@
-from centrodefamilia.models import Actividad
 import logging
+from centrodefamilia.models import Actividad
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 def actividades_disponibles_para_centro():
@@ -13,7 +13,7 @@ def actividades_disponibles_para_centro():
         return Actividad.objects.all()
     except Exception as e:
         logger.error(
-            "Ocurrió un error inesperado en actividades_disponibles_para_centro",
+            f"Ocurrió un error inesperado en Actividad.actividades_disponibles_para_centro para comedor: {e}",
             exc_info=True,
         )
-        return Actividad.objects.none()
+        raise

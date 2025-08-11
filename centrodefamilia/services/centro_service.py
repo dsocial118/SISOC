@@ -1,7 +1,7 @@
-from centrodefamilia.models import Centro
 import logging
+from centrodefamilia.models import Centro
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 def puede_operar(centro):
@@ -15,8 +15,11 @@ def puede_operar(centro):
             return centro.faro_asociado and centro.faro_asociado.activo
         return True
     except Exception as e:
-        logger.error("Ocurrió un error inesperado en puede_operar", exc_info=True)
-        return False
+        logger.error(
+            f"Ocurrió un error inesperado en AcompanamientoService.puede_operar para comedor: {centro} {e}",
+            exc_info=True,
+        )
+        raise
 
 
 def obtener_centros_adheridos_de_faro(faro):
@@ -27,7 +30,7 @@ def obtener_centros_adheridos_de_faro(faro):
         return Centro.objects.filter(faro_asociado=faro, activo=True)
     except Exception as e:
         logger.error(
-            "Ocurrió un error inesperado en obtener_centros_adheridos_de_faro",
+            f"Ocurrió un error inesperado en AcompanamientoService.obtener_centros_adheridos_de_faro para comedor: {faro} {e}",
             exc_info=True,
         )
-        return Centro.objects.none()
+        raise
