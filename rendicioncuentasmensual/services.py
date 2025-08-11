@@ -20,7 +20,7 @@ class RendicionCuentaMensualService:
             return rendicion
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en RendicionCuentaMensualService.crear_rendicion_cuenta_mensual para comedor: {comedor} {e}",
+                f"Error en RendicionCuentaMensualService.crear_rendicion_cuenta_mensual para comedor: {comedor} {e}",
                 exc_info=True,
             )
             raise
@@ -37,7 +37,7 @@ class RendicionCuentaMensualService:
             return rendicion
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en RendicionCuentaMensualService.actualizar_rendicion_cuenta_mensual para rendicion: {rendicion} {e}",
+                f"Error en RendicionCuentaMensualService.actualizar_rendicion_cuenta_mensual para rendicion: {rendicion} {e}",
                 exc_info=True,
             )
             raise
@@ -48,7 +48,7 @@ class RendicionCuentaMensualService:
             rendicion.delete()
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en RendicionCuentaMensualService.eliminar_rendicion_cuenta_mensual para rendicion: {rendicion} {e}",
+                f"Error en RendicionCuentaMensualService.eliminar_rendicion_cuenta_mensual para rendicion: {rendicion} {e}",
                 exc_info=True,
             )
             raise
@@ -61,7 +61,7 @@ class RendicionCuentaMensualService:
             ).prefetch_related("arvhios_adjuntos")
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en RendicionCuentaMensualService.obtener_rendiciones_cuentas_mensuales para comedor: {comedor} {e}",
+                f"Error en RendicionCuentaMensualService.obtener_rendiciones_cuentas_mensuales para comedor: {comedor} {e}",
                 exc_info=True,
             )
             raise
@@ -72,7 +72,7 @@ class RendicionCuentaMensualService:
             return get_object_or_404(RendicionCuentaMensual, pk=id_enviado)
         except Exception as e:
             logger.exception(
-                f"Ocurrió un error inesperado en RendicionCuentaMensualService.obtener_rendicion_cuenta_mensual para {id_enviado}"
+                f"Error en RendicionCuentaMensualService.obtener_rendicion_cuenta_mensual para {id_enviado}: {e}"
             )
             raise
 
@@ -83,7 +83,7 @@ class RendicionCuentaMensualService:
             return RendicionCuentaMensual.objects.filter(comedor=comedor).count()
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en RendicionCuentaMensualService.cantidad_rendiciones_cuentas_mensuales para comedor: {comedor} {e}",
+                f"Error en RendicionCuentaMensualService.cantidad_rendiciones_cuentas_mensuales para comedor: {comedor} {e}",
                 exc_info=True,
             )
             raise

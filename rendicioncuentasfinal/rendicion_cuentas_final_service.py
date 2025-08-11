@@ -29,7 +29,7 @@ class RendicionCuentasFinalService:
                 )
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en RendicionCuentasFinalService.actualizar_documento_con_archivo para el documento: {documento} {e}",
+                f"Error en RendicionCuentasFinalService.actualizar_documento_con_archivo para el documento: {documento} {e}",
                 exc_info=True,
             )
             raise
@@ -49,7 +49,7 @@ class RendicionCuentasFinalService:
             return True, documento
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en RendicionCuentasFinalService.adjuntar_archivo_a_documento para el documento: {documento_id} {e}",
+                f"Error en RendicionCuentasFinalService.adjuntar_archivo_a_documento para el documento: {documento_id} {e}",
                 exc_info=True,
             )
             raise
@@ -75,9 +75,10 @@ class RendicionCuentasFinalService:
             return documentos
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en RendicionCuentasFinalService.get_documentos_rendicion_cuentas_final para la rendicion: {rendicion_cuentas_final} {e}",
+                f"Error en RendicionCuentasFinalService.get_documentos_rendicion_cuentas_final: {rendicion_cuentas_final} {e}",
                 exc_info=True,
             )
+
             raise
 
     @staticmethod
@@ -113,7 +114,7 @@ class RendicionCuentasFinalService:
             return qs
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en RendicionCuentasFinalService.filter_documentos_por_area para el usuario: {user} {e}",
+                f"Error en RendicionCuentasFinalService.filter_documentos_por_area para el usuario: {user} {e}",
                 exc_info=True,
             )
             raise
