@@ -6,6 +6,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class HistorialService:
     @staticmethod
     def registrar_historial(
@@ -38,7 +39,9 @@ class HistorialService:
             else:
                 raise ValueError("Debe especificar 'instancia'")
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en registrar_historial", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en registrar_historial", exc_info=True
+            )
             raise
 
     @staticmethod
@@ -52,11 +55,17 @@ class HistorialService:
         """
         try:
             content_type = ContentType.objects.get_for_model(DocumentoRendicionFinal)
-            documentos_ids = rendicion_cuentas_final.documentos.values_list("pk", flat=True)
+            documentos_ids = rendicion_cuentas_final.documentos.values_list(
+                "pk", flat=True
+            )
 
             return Historial.objects.filter(
-                content_type=content_type, object_id__in=[str(pk) for pk in documentos_ids]
+                content_type=content_type,
+                object_id__in=[str(pk) for pk in documentos_ids],
             ).order_by("-fecha")
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en get_historial_documentos_by_rendicion_cuentas_final", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en get_historial_documentos_by_rendicion_cuentas_final",
+                exc_info=True,
+            )
             return Historial.objects.none()
