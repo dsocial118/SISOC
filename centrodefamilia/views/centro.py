@@ -32,23 +32,15 @@ class CentroListView(LoginRequiredMixin, ListView):
         qs = Centro.objects.select_related("faro_asociado", "referente")
         user = self.request.user
 
-        # 1) Superuser ve tod
         if user.is_superuser:
             pass
-
-        # 2) CDF SSE ve todo
         elif user.groups.filter(name="CDF SSE").exists():
             pass
-
-        # 3) ReferenteCentro ve SOLO los centros donde es referente
         elif user.groups.filter(name="ReferenteCentro").exists():
             qs = qs.filter(referente=user)
-
-        # 4) Resto de usuarios no ven nada
         else:
             return Centro.objects.none()
 
-        # Filtro de texto
         busq = self.request.GET.get("busqueda", "").strip()
         if busq:
             qs = qs.filter(Q(nombre__icontains=busq) | Q(tipo__icontains=busq))
@@ -58,8 +50,6 @@ class CentroListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         user = self.request.user
-
-        # Control de botones “Agregar”
         ctx["can_add"] = (
             user.is_superuser or user.groups.filter(name="CDF SSE").exists()
         )
@@ -89,13 +79,16 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         ctx = super().get_context_data(**kwargs)
         centro = self.object
 
-        # 1) Expedientes paginados
+        # 1) Expedientes
         qs_exp = Expediente.objects.filter(centro=centro).order_by("-fecha_subida")
         ctx["expedientes_cabal"] = Paginator(qs_exp, 3).get_page(
             self.request.GET.get("page_exp")
         )
 
-        # 2) Actividades con inscritos y ganancia en DB
+        # 2) Actividades en curso
+        search_curso = (
+            self.request.GET.get("search_actividades_curso", "").strip().lower()
+        )
         qs_acts = (
             ActividadCentro.objects.filter(centro=centro)
             .select_related("actividad", "actividad__categoria")
@@ -106,22 +99,33 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
                 ),
             )
         )
+        if search_curso:
+            qs_acts = qs_acts.filter(
+                Q(actividad__nombre__icontains=search_curso)
+                | Q(actividad__categoria__nombre__icontains=search_curso)
+                | Q(estado__icontains=search_curso)
+            )
         ctx["actividades"] = list(qs_acts)
         ctx["total_actividades"] = qs_acts.count()
-        # Suma en Python de la ganancia de cada actividad
         ctx["total_recaudado"] = sum((act.ganancia or 0) for act in ctx["actividades"])
 
-        # 3) Otras actividades (paginadas)
-        otras = (
-            ActividadCentro.objects.exclude(centro=centro)
-            .select_related("actividad", "actividad__categoria", "centro")
-            .order_by("centro__nombre", "actividad__nombre")
+        # 3) Actividades de otros centros
+        search_otras = self.request.GET.get("search_actividades", "").strip().lower()
+        otras = ActividadCentro.objects.exclude(centro=centro).select_related(
+            "actividad", "actividad__categoria", "centro"
         )
+        if search_otras:
+            otras = otras.filter(
+                Q(actividad__nombre__icontains=search_otras)
+                | Q(actividad__categoria__nombre__icontains=search_otras)
+                | Q(estado__icontains=search_otras)
+                | Q(centro__nombre__icontains=search_otras)
+            )
         ctx["actividades_paginados"] = Paginator(otras, 5).get_page(
             self.request.GET.get("page_act")
         )
 
-        # 4) Centros adheridos FARO
+        # 4) Centros adheridos
         if centro.tipo == "faro":
             adheridos = Centro.objects.filter(
                 faro_asociado=centro, activo=True
@@ -133,19 +137,24 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         )
         ctx["centros_adheridos_total"] = adheridos.count()
 
-        # 5) Métricas avanzadas
+        # 5) Métricas
         total_part = sum(a.inscritos for a in qs_acts)
-        qs_part = ParticipanteActividad.objects.filter(actividad_centro__centro=centro)
-        hombres = qs_part.filter(ciudadano__sexo__sexo__iexact="Masculino").count()
-        mujeres = qs_part.filter(ciudadano__sexo__sexo__iexact="Femenino").count()
+        qs_inscritos = ParticipanteActividad.objects.filter(
+            estado="inscrito", actividad_centro__centro=centro
+        )
+        hombres = qs_inscritos.filter(ciudadano__sexo__sexo__iexact="Masculino").count()
+        mujeres = qs_inscritos.filter(ciudadano__sexo__sexo__iexact="Femenino").count()
         mixtas = total_part - hombres - mujeres
+        espera = ParticipanteActividad.objects.filter(
+            estado="lista_espera", actividad_centro__centro=centro
+        ).count()
 
         ctx["metricas"] = {
             "centros_faro": ctx["centros_adheridos_total"],
             "categorias": Categoria.objects.count(),
             "actividades": ctx["total_actividades"],
             "interacciones": total_part,
-            "inscriptos": qs_part.count(),
+            "inscriptos": qs_inscritos.count(),
             "hombres": hombres,
             "mujeres": mujeres,
             "mixtas": mixtas,
@@ -154,6 +163,7 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
             "total": total_part,
             "hombres": hombres,
             "mujeres": mujeres,
+            "espera": espera,
         }
         return ctx
 
