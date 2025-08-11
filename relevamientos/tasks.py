@@ -8,7 +8,7 @@ from relevamientos.models import Relevamiento
 
 
 logger = logging.getLogger(__name__)
-TIMEOUT = 600  # Segundos máximos de espera por respuesta
+TIMEOUT = 360  # Segundos máximos de espera por respuesta
 
 
 # FIXME: Evitar que se ejecute el hilo al correr los tests
@@ -50,9 +50,8 @@ class AsyncSendRelevamientoToGestionar(threading.Thread):
         }
 
         try:
-            url = os.getenv("GESTIONAR_API_CREAR_RELEVAMIENTO")
             response = requests.post(
-                url,
+                os.getenv("GESTIONAR_API_CREAR_RELEVAMIENTO"),
                 json=data,
                 headers=headers,
                 timeout=TIMEOUT,

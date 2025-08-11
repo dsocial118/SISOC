@@ -808,3 +808,16 @@ class ProgramaForm(forms.ModelForm):
         labels = {
             "programas": "",
         }
+
+
+class ConsultaForm(forms.Form):
+    dni = forms.CharField(label="DNI", max_length=10)
+    sexo = forms.ChoiceField(
+        label="Sexo", choices=[("M", "Masculino"), ("F", "Femenino")]
+    )
+
+    def clean_dni(self):
+        dni = self.cleaned_data["dni"]
+        if not dni.isdigit():
+            raise forms.ValidationError("El DNI debe contener solo números.")
+        return dni
