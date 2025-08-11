@@ -4,7 +4,7 @@ Este módulo contiene utilidades reutilizables para transformaciones de datos
 comunes y manejo de cache utilizadas por los servicios de comedores.
 """
 
-from typing import Any, Type
+from typing import Any, Optional, Type
 
 from django.conf import settings
 from django.core.cache import cache
@@ -28,7 +28,7 @@ def get_id_by_nombre(model: Type[Model], nombre: str):
     return obj.id if obj else ""
 
 
-def normalize_field(valor: str | None, chars_to_remove: str) -> str | None:
+def normalize_field(valor: Optional[str], chars_to_remove: str) -> Optional[str]:
     """Eliminar caracteres específicos de ``valor`` y normalizar vacíos."""
     if valor:
         for char in chars_to_remove:
