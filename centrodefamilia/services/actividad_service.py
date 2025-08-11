@@ -3,6 +3,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def actividades_disponibles_para_centro():
     """
     Devuelve todas las actividades cargadas por el técnico
@@ -11,5 +12,8 @@ def actividades_disponibles_para_centro():
     try:
         return Actividad.objects.all()
     except Exception as e:
-        logger.error("Ocurrió un error inesperado en actividades_disponibles_para_centro", exc_info=True)
+        logger.error(
+            "Ocurrió un error inesperado en actividades_disponibles_para_centro",
+            exc_info=True,
+        )
         return Actividad.objects.none()
