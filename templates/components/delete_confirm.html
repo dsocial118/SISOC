@@ -1,3 +1,4 @@
+{% load custom_filters %}
 {# Componente Delete Confirm #}
 {# Uso: {% include 'components/delete_confirm.html' with object_name=object title='Mi Título' warning_items=lista warning_message='Mensaje' cancel_url=url confirm_text='Eliminar' cancel_text='Cancelar' %} #}
 
@@ -28,9 +29,15 @@
                 <button type="submit" class="btn btn-danger btn-sm">
                     {{ confirm_text|default:"Eliminar" }}
                 </button>
-                <a href="{{ cancel_url }}" class="btn btn-secondary btn-sm">
-                    {{ cancel_text|default:"Cancelar" }}
-                </a>
+                {% if cancel_url_with_id %}
+                    <a href="{% url cancel_url object.id %}" class="btn btn-secondary btn-sm">
+                        {{ cancel_text|default:"Cancelar" }}
+                    </a>
+                {% else %}
+                    <a href="{% if cancel_url_full %}{{ cancel_url_full }}{% elif cancel_url|is_url %}{{ cancel_url }}{% else %}{% url cancel_url %}{% endif %}" class="btn btn-secondary btn-sm">
+                        {{ cancel_text|default:"Cancelar" }}
+                    </a>
+                {% endif %}
             </form>
         </div>
     </div>
