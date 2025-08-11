@@ -9,7 +9,7 @@ from rendicioncuentasfinal.models import (
 )
 from historial.services.historial_service import HistorialService
 
-logger = logging.getLogger("django")
+logger = logger = logging.getLogger(__name__)
 
 
 class RendicionCuentasFinalService:
