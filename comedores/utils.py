@@ -1,8 +1,3 @@
-"""Utility helpers for comedores app.
-
-This module provides small reusable functions for common data
-transformations and cache handling used across comedor services."""
-
 from typing import Any, Optional, Type
 
 from django.conf import settings
@@ -13,21 +8,22 @@ from comedores.models import ValorComida
 
 
 def get_object_by_filter(model: Type[Model], **kwargs):
-    """Return the first object of ``model`` matching ``kwargs`` or ``None``."""
+    """Obtener el primer objeto de ``model`` que coincida con ``kwargs``."""
     return model.objects.filter(**kwargs).first()
 
 
 def get_id_by_nombre(model: Type[Model], nombre: str):
-    """Return the ``id`` of the instance whose ``nombre`` matches ``nombre``.
+    """Devolver el ``id`` de la instancia cuyo ``nombre`` coincide.
 
-    Comparison is case-insensitive. Returns an empty string if not found.
+    La comparación no distingue mayúsculas de minúsculas. Retorna cadena vacía
+    si no se encuentra coincidencia.
     """
     obj = model.objects.filter(nombre__iexact=nombre).first()
     return obj.id if obj else ""
 
 
 def normalize_field(valor: Optional[str], chars_to_remove: str) -> Optional[str]:
-    """Remove any ``chars_to_remove`` from ``valor`` and normalize empty values."""
+    """Eliminar caracteres específicos de ``valor`` y normalizar vacíos."""
     if valor:
         for char in chars_to_remove:
             valor = valor.replace(char, "")
@@ -35,7 +31,7 @@ def normalize_field(valor: Optional[str], chars_to_remove: str) -> Optional[str]
 
 
 def preload_valores_comida_cache() -> dict[str, Any]:
-    """Load ``ValorComida`` values into cache and return the mapping."""
+    """Cargar valores de ``ValorComida`` en cache y devolver el mapeo."""
     valor_map = cache.get("valores_comida_map")
     if not valor_map:
         valores_comida = ValorComida.objects.filter(
