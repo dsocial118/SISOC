@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404
 from cdi.models import CentroDesarrolloInfantil
 from core.models import Mes, Dia, Turno
 
-logger = logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class CentroDesarrolloInfantilService:
