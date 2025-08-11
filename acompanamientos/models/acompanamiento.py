@@ -11,3 +11,26 @@ class InformacionRelevante(models.Model):
 
     def __str__(self):
         return f"Información Relevante - {self.comedor.nombre}"
+
+
+class Prestacion(models.Model):
+    comedor = models.ForeignKey(Comedor, on_delete=models.CASCADE)
+    dia = models.CharField(
+        max_length=20,
+        choices=[
+            ("lunes", "Lunes"),
+            ("martes", "Martes"),
+            ("miercoles", "Miércoles"),
+            ("jueves", "Jueves"),
+            ("viernes", "Viernes"),
+            ("sabado", "Sábado"),
+            ("domingo", "Domingo"),
+        ],
+    )
+    desayuno = models.BooleanField(default=False)
+    almuerzo = models.BooleanField(default=False)
+    merienda = models.BooleanField(default=False)
+    cena = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Prestación - {self.comedor.nombre} - {self.dia}"

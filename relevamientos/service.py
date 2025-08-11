@@ -9,6 +9,8 @@ from comedores.models import (
     Referente,
     TipoDeComedor,
 )
+from core.models import Localidad, Municipio, Provincia
+from core.utils import convert_string_to_int
 from relevamientos.models import (
     Anexo,
     CantidadColaboradores,
@@ -23,6 +25,7 @@ from relevamientos.models import (
     FuenteRecursos,
     FuncionamientoPrestacion,
     MotivoExcepcion,
+    Prestacion,
     PuntoEntregas,
     Relevamiento,
     TipoAccesoComedor,
@@ -41,14 +44,124 @@ from relevamientos.models import (
     TipoTecnologia,
 )
 from relevamientos.tasks import AsyncSendRelevamientoToGestionar
-from core.utils import convert_string_to_int
-from core.models import Prestacion, Provincia, Municipio, Localidad
 
 
 # TODO: Refactorizar todo esto, pylint esta muriendo aca
 class RelevamientoService:  # pylint: disable=too-many-public-methods
 
     # TODO: Mover metodos no genericos al utils.py
+
+    # Este metodo recibe el nombre del campo de la base, el array de datos y el modelo
+    # y devuelve un queryset de los recursos que existen en la base de datos
+    @staticmethod
+    def get_recursos(nombre, recursos_data, model):
+        recursos_str = recursos_data.pop(nombre, "")
+        if recursos_str:
+            recursos_arr = [n.strip() for n in recursos_str.split(",")]
+            return model.objects.filter(nombre__in=recursos_arr)
+        return model.objects.none()
+
+    # Convierte un valor de string a booleano
+    # Si el valor es "Y" devuelve True, si es "N" devuelve False
+    @staticmethod
+    def convert_to_boolean(value):
+        if value in {"Y", "N"}:
+            return value == "Y"
+        raise ValueError(f"Valor inesperado para booleano: {value}")
+
+    # Obtiene un objeto del modelo dado, filtrando por el nombre del campo y el valor
+    # Si el valor es None o una cadena vacía, devuelve None
+    @staticmethod
+    def get_object_or_none(model, field_name, value):
+        try:
+            return model.objects.get(**{field_name: value})
+        except model.DoesNotExist:
+            return None
+        except model.MultipleObjectsReturned:
+            return model.objects.filter(**{field_name: value}).first()
+
+    # Asigna los valores del diccionario data a los campos del instance
+    # y guarda el instance en la base de datos
+    @staticmethod
+    def assign_values_to_instance(instance, data):
+        for field, value in data.items():
+            setattr(instance, field, value)
+        instance.save()
+        return instance
+
+    @staticmethod
+    def populate_data(data, transformations):
+        for key, func in transformations.items():
+            if key in data:
+                data[key] = func(data[key])
+        return data
+
+    @staticmethod
+    def create_or_update_instance(model, data, instance=None):
+        if instance is None:
+            instance = model.objects.create(**data)
+        else:
+            instance = RelevamientoService.assign_values_to_instance(instance, data)
+        return instance
+
+    @staticmethod
+    def update_comedor(comedor_data, comedor_instance):
+        comedor_instance.numero = convert_string_to_int(
+            comedor_data.get("numero", comedor_instance.numero)
+        )
+        comedor_instance.calle = comedor_data.get("calle", comedor_instance.calle)
+        comedor_instance.entre_calle_1 = comedor_data.get(
+            "entre_calle_1", comedor_instance.entre_calle_1
+        )
+        comedor_instance.entre_calle_2 = comedor_data.get(
+            "entre_calle_2", comedor_instance.entre_calle_2
+        )
+        comedor_instance.barrio = comedor_data.get("barrio", comedor_instance.barrio)
+        comedor_instance.codigo_postal = convert_string_to_int(
+            comedor_data.get("codigo_postal", comedor_instance.codigo_postal)
+        )
+        comedor_instance.provincia = (
+            Provincia.objects.get(nombre=comedor_data.get("provincia"))
+            if comedor_data.get("provincia")
+            else comedor_instance.provincia
+        )
+        comedor_instance.municipio = (
+            Municipio.objects.get(
+                nombre=comedor_data.get("municipio"),
+            )
+            if comedor_data.get("municipio")
+            else comedor_instance.municipio
+        )
+        comedor_instance.localidad = Localidad.objects.get(
+            nombre=comedor_data.get("localidad", comedor_instance.localidad),
+            municipio=(
+                Municipio.objects.get(
+                    nombre=comedor_data.get("municipio"),
+                    provincia=(
+                        Provincia.objects.get(nombre=comedor_data.get("provincia"))
+                        if comedor_data.get("provincia")
+                        else comedor_instance.provincia
+                    ),
+                )
+                if comedor_data.get("municipio")
+                else comedor_instance.municipio
+            ),
+        )
+        comedor_instance.partido = comedor_data.get("partido", comedor_instance.partido)
+        comedor_instance.manzana = comedor_data.get("manzana", comedor_instance.manzana)
+        comedor_instance.piso = comedor_data.get("piso", comedor_instance.piso)
+        comedor_instance.departamento = comedor_data.get(
+            "departamento", comedor_instance.departamento
+        )
+        comedor_instance.lote = comedor_data.get("lote", comedor_instance.lote)
+        comedor_instance.comienzo = (
+            convert_string_to_int(comedor_data.get("comienzo", "").split("/")[-1])
+            if comedor_data.get("comienzo")
+            else comedor_instance.comienzo
+        )
+        comedor_instance.save()
+
+        return comedor_instance.id
 
     @staticmethod
     def create_pendiente(request, comedor_id):
@@ -311,203 +424,6 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             return None
 
     @staticmethod
-    def build_prestacion_compat(prestaciones):
-        """Devuelve un objeto con el formato de prestaciones anterior."""
-
-        class PrestacionCompat:  # pylint: disable=too-few-public-methods
-            def __init__(self):
-                dias = [
-                    "lunes",
-                    "martes",
-                    "miercoles",
-                    "jueves",
-                    "viernes",
-                    "sabado",
-                    "domingo",
-                ]
-                comidas = [
-                    "desayuno",
-                    "almuerzo",
-                    "merienda",
-                    "cena",
-                    "merienda_reforzada",
-                ]
-                tipos = ["actual", "espera"]
-
-                for dia in dias:
-                    for comida in comidas:
-                        for tipo in tipos:
-                            setattr(self, f"{dia}_{comida}_{tipo}", 0)
-
-        compat = PrestacionCompat()
-
-        for prestacion in prestaciones:
-            dia = prestacion.dia.lower()
-
-            if prestacion.desayuno:
-                setattr(
-                    compat,
-                    f"{dia}_desayuno_actual",
-                    prestacion.desayuno_cantidad_actual or 0,
-                )
-                setattr(
-                    compat,
-                    f"{dia}_desayuno_espera",
-                    prestacion.desayuno_cantidad_espera or 0,
-                )
-
-            if prestacion.almuerzo:
-                setattr(
-                    compat,
-                    f"{dia}_almuerzo_actual",
-                    prestacion.almuerzo_cantidad_actual or 0,
-                )
-                setattr(
-                    compat,
-                    f"{dia}_almuerzo_espera",
-                    prestacion.almuerzo_cantidad_espera or 0,
-                )
-
-            if prestacion.merienda:
-                setattr(
-                    compat,
-                    f"{dia}_merienda_actual",
-                    prestacion.merienda_cantidad_actual or 0,
-                )
-                setattr(
-                    compat,
-                    f"{dia}_merienda_espera",
-                    prestacion.merienda_cantidad_espera or 0,
-                )
-
-            if prestacion.cena:
-                setattr(
-                    compat,
-                    f"{dia}_cena_actual",
-                    prestacion.cena_cantidad_actual or 0,
-                )
-                setattr(
-                    compat,
-                    f"{dia}_cena_espera",
-                    prestacion.cena_cantidad_espera or 0,
-                )
-
-            if prestacion.merienda_reforzada:
-                setattr(
-                    compat,
-                    f"{dia}_merienda_reforzada_actual",
-                    prestacion.merienda_reforzada_cantidad_actual or 0,
-                )
-                setattr(
-                    compat,
-                    f"{dia}_merienda_reforzada_espera",
-                    prestacion.merienda_reforzada_cantidad_espera or 0,
-                )
-
-        return compat
-
-    @staticmethod
-    def build_detail_extra_data(relevamiento):
-        """Genera un diccionario de datos adicionales para la vista detalle."""
-
-        data = {}
-
-        data["gas"] = (
-            RelevamientoService.separate_string(
-                relevamiento.espacio.cocina.abastecimiento_combustible.all()
-            )
-            if relevamiento.espacio
-            else None
-        )
-
-        data["donaciones"] = (
-            RelevamientoService.separate_string(
-                relevamiento.recursos.recursos_donaciones_particulares.all()
-            )
-            if relevamiento.recursos
-            else None
-        )
-
-        data["nacional"] = (
-            RelevamientoService.separate_string(
-                relevamiento.recursos.recursos_estado_nacional.all()
-            )
-            if relevamiento.recursos
-            else None
-        )
-
-        data["provincial"] = (
-            RelevamientoService.separate_string(
-                relevamiento.recursos.recursos_estado_provincial.all()
-            )
-            if relevamiento.recursos
-            else None
-        )
-
-        data["municipal"] = (
-            RelevamientoService.separate_string(
-                relevamiento.recursos.recursos_estado_municipal.all()
-            )
-            if relevamiento.recursos
-            else None
-        )
-
-        data["otras"] = (
-            RelevamientoService.separate_string(
-                relevamiento.recursos.recursos_otros.all()
-            )
-            if relevamiento.recursos
-            else None
-        )
-
-        data["Entregas"] = (
-            RelevamientoService.separate_string(
-                relevamiento.punto_entregas.frecuencia_recepcion_mercaderias.all()
-            )
-            if relevamiento.punto_entregas
-            else None
-        )
-
-        return data
-
-    @staticmethod
-    def update_comedor(comedor_data, comedor_instance):
-        comedor_instance.numero = convert_string_to_int(
-            comedor_data.get("numero", comedor_instance.numero)
-        )
-        comedor_instance.calle = comedor_data.get("calle", comedor_instance.calle)
-        comedor_instance.entre_calle_1 = comedor_data.get(
-            "entre_calle_1", comedor_instance.entre_calle_1
-        )
-        comedor_instance.entre_calle_2 = comedor_data.get(
-            "entre_calle_2", comedor_instance.entre_calle_2
-        )
-        comedor_instance.barrio = comedor_data.get("barrio", comedor_instance.barrio)
-        comedor_instance.codigo_postal = convert_string_to_int(
-            comedor_data.get("codigo_postal", comedor_instance.codigo_postal)
-        )
-        comedor_instance.provincia = Provincia.objects.get(
-            nombre=comedor_data.get("provincia", comedor_instance.provincia)
-        )
-        comedor_instance.municipio = Municipio.objects.get(
-            nombre=comedor_data.get("municipio", comedor_instance.municipio)
-        )
-        comedor_instance.localidad = Localidad.objects.get(
-            nombre=comedor_data.get("localidad", comedor_instance.localidad)
-        )
-        comedor_instance.partido = comedor_data.get("partido", comedor_instance.partido)
-        comedor_instance.manzana = comedor_data.get("manzana", comedor_instance.manzana)
-        comedor_instance.lote = comedor_data.get("lote", comedor_instance.lote)
-        comedor_instance.comienzo = (
-            convert_string_to_int(comedor_data.get("comienzo", "").split("/")[-1])
-            if comedor_data.get("comienzo")
-            else comedor_instance.comienzo
-        )
-        comedor_instance.save()
-
-        return comedor_instance
-
-    @staticmethod
     def create_or_update_funcionamiento(
         funcionamiento_data, funcionamiento_instance=None
     ):
@@ -525,7 +441,9 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
         if "servicio_por_turnos" in funcionamiento_data:
             funcionamiento_data["servicio_por_turnos"] = (
-                funcionamiento_data["servicio_por_turnos"] == "Y"
+                RelevamientoService.convert_to_boolean(
+                    funcionamiento_data["servicio_por_turnos"]
+                )
             )
 
         if "cantidad_turnos" in funcionamiento_data:
@@ -540,9 +458,9 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 **funcionamiento_data
             )
         else:
-            for field, value in funcionamiento_data.items():
-                setattr(funcionamiento_instance, field, value)
-            funcionamiento_instance.save()
+            funcionamiento_instance = RelevamientoService.assign_values_to_instance(
+                funcionamiento_instance, funcionamiento_data
+            )
 
         return funcionamiento_instance
 
@@ -559,76 +477,41 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 **espacio_prestacion_data
             )
         else:
-            for field, value in espacio_prestacion_data.items():
-                setattr(espacio_prestacion_instance, field, value)
-            espacio_prestacion_instance.save()
-
+            espacio_prestacion_instance = RelevamientoService.assign_values_to_instance(
+                espacio_prestacion_instance, espacio_prestacion_data
+            )
         return espacio_prestacion_instance
 
     @staticmethod
     def populate_espacio_prestacion_data(
         prestacion_data,
     ):  # pylint: disable=too-many-statements,too-many-branches
-        if "espacio_equipado" in prestacion_data:
-            prestacion_data["espacio_equipado"] = (
-                prestacion_data["espacio_equipado"] == "Y"
-            )
-        if "tiene_ventilacion" in prestacion_data:
-            prestacion_data["tiene_ventilacion"] = (
-                prestacion_data["tiene_ventilacion"] == "Y"
-            )
-        if "tiene_salida_emergencia" in prestacion_data:
-            prestacion_data["tiene_salida_emergencia"] = (
-                prestacion_data["tiene_salida_emergencia"] == "Y"
-            )
-        if "salida_emergencia_senializada" in prestacion_data:
-            prestacion_data["salida_emergencia_senializada"] = (
-                prestacion_data["salida_emergencia_senializada"] == "Y"
-            )
-        if "tiene_equipacion_incendio" in prestacion_data:
-            prestacion_data["tiene_equipacion_incendio"] = (
-                prestacion_data["tiene_equipacion_incendio"] == "Y"
-            )
-        if "tiene_botiquin" in prestacion_data:
-            prestacion_data["tiene_botiquin"] = prestacion_data["tiene_botiquin"] == "Y"
-        if "tiene_buena_iluminacion" in prestacion_data:
-            prestacion_data["tiene_buena_iluminacion"] = (
-                prestacion_data["tiene_buena_iluminacion"] == "Y"
-            )
-        if "tiene_sanitarios" in prestacion_data:
-            prestacion_data["tiene_sanitarios"] = (
-                prestacion_data["tiene_sanitarios"] == "Y"
-            )
-        if "desague_hinodoro" in prestacion_data:
-            prestacion_data["desague_hinodoro"] = (
-                TipoDesague.objects.get(
-                    nombre__iexact=prestacion_data["desague_hinodoro"]
-                )
-                if prestacion_data["desague_hinodoro"] != ""
-                else None
-            )
-        if "gestion_quejas" in prestacion_data:
-            prestacion_data["gestion_quejas"] = (
-                TipoGestionQuejas.objects.get(nombre=prestacion_data["gestion_quejas"])
-                if prestacion_data["gestion_quejas"] != ""
-                else None
-            )
-        if "gestion_quejas_otro" in prestacion_data:
-            prestacion_data["gestion_quejas_otro"] = prestacion_data[
-                "gestion_quejas_otro"
-            ]
-        if "informacion_quejas" in prestacion_data:
-            prestacion_data["informacion_quejas"] = (
-                prestacion_data["informacion_quejas"] == "Y"
-            )
-        if "frecuencia_limpieza" in prestacion_data:
-            prestacion_data["frecuencia_limpieza"] = (
-                FrecuenciaLimpieza.objects.get(
-                    nombre__iexact=prestacion_data["frecuencia_limpieza"]
-                )
-                if prestacion_data["frecuencia_limpieza"] != ""
-                else None
-            )
+        # Esto es una lista de metodos a ejecutar para cada item de la prestacion_data
+        transformations = {
+            "espacio_equipado": RelevamientoService.convert_to_boolean,
+            "tiene_ventilacion": RelevamientoService.convert_to_boolean,
+            "tiene_salida_emergencia": RelevamientoService.convert_to_boolean,
+            "salida_emergencia_senializada": RelevamientoService.convert_to_boolean,
+            "tiene_equipacion_incendio": RelevamientoService.convert_to_boolean,
+            "tiene_botiquin": RelevamientoService.convert_to_boolean,
+            "tiene_buena_iluminacion": RelevamientoService.convert_to_boolean,
+            "tiene_sanitarios": RelevamientoService.convert_to_boolean,
+            "informacion_quejas": RelevamientoService.convert_to_boolean,
+            "desague_hinodoro": lambda x: RelevamientoService.get_object_or_none(
+                TipoDesague, "nombre__iexact", x
+            ),
+            "gestion_quejas": lambda x: RelevamientoService.get_object_or_none(
+                TipoGestionQuejas, "nombre__iexact", x
+            ),
+            "gestion_quejas_otro": lambda x: x,
+            "frecuencia_limpieza": lambda x: RelevamientoService.get_object_or_none(
+                FrecuenciaLimpieza, "nombre__iexact", x
+            ),
+        }
+        # Se ejecuta el metodo populate_data que recorre la prestacion_data y aplica las transformaciones
+        prestacion_data = RelevamientoService.populate_data(
+            prestacion_data, transformations
+        )
 
         return prestacion_data
 
@@ -659,45 +542,25 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def populate_cocina_data(cocina_data):
-        if "espacio_elaboracion_alimentos" in cocina_data:
-            cocina_data["espacio_elaboracion_alimentos"] = (
-                cocina_data["espacio_elaboracion_alimentos"] == "Y"
-            )
-        if "almacenamiento_alimentos_secos" in cocina_data:
-            cocina_data["almacenamiento_alimentos_secos"] = (
-                cocina_data["almacenamiento_alimentos_secos"] == "Y"
-            )
-        if "heladera" in cocina_data:
-            cocina_data["heladera"] = cocina_data["heladera"] == "Y"
-        if "freezer" in cocina_data:
-            cocina_data["freezer"] = cocina_data["freezer"] == "Y"
-        if "recipiente_residuos_organicos" in cocina_data:
-            cocina_data["recipiente_residuos_organicos"] = (
-                cocina_data["recipiente_residuos_organicos"] == "Y"
-            )
-        if "recipiente_residuos_reciclables" in cocina_data:
-            cocina_data["recipiente_residuos_reciclables"] = (
-                cocina_data["recipiente_residuos_reciclables"] == "Y"
-            )
-        if "otros_residuos" in cocina_data:
-            cocina_data["otros_residuos"] = (
-                cocina_data["recipiente_otros_residuos"] == "Y"
-            )
-        if "recipiente_otros_residuos" in cocina_data:
-            cocina_data["recipiente_otros_residuos"] = (
-                cocina_data["recipiente_otros_residuos"] == "Y"
-            )
-        if "abastecimiento_agua" in cocina_data:
-            cocina_data["abastecimiento_agua"] = (
-                TipoAgua.objects.get(nombre__iexact=cocina_data["abastecimiento_agua"])
-                if cocina_data["abastecimiento_agua"] != ""
+        # Esto es una lista de metodos a ejecutar para cada item de la cocina_data
+        transformations = {
+            "espacio_elaboracion_alimentos": RelevamientoService.convert_to_boolean,
+            "almacenamiento_alimentos_secos": RelevamientoService.convert_to_boolean,
+            "heladera": RelevamientoService.convert_to_boolean,
+            "freezer": RelevamientoService.convert_to_boolean,
+            "recipiente_residuos_organicos": RelevamientoService.convert_to_boolean,
+            "recipiente_residuos_reciclables": RelevamientoService.convert_to_boolean,
+            "otros_residuos": RelevamientoService.convert_to_boolean,
+            "recipiente_otros_residuos": RelevamientoService.convert_to_boolean,
+            "abastecimiento_agua": lambda x: (
+                RelevamientoService.get_object_or_none(TipoAgua, "nombre__iexact", x)
+                if x
                 else None
-            )
-        if "instalacion_electrica" in cocina_data:
-            cocina_data["instalacion_electrica"] = (
-                cocina_data["instalacion_electrica"] == "Y"
-            )
-
+            ),
+            "instalacion_electrica": RelevamientoService.convert_to_boolean,
+        }
+        # Se ejecuta el metodo populate_data que recorre la cocina_data y aplica las transformaciones
+        cocina_data = RelevamientoService.populate_data(cocina_data, transformations)
         return cocina_data
 
     @staticmethod
@@ -729,9 +592,9 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         if espacio_instance is None:
             espacio_instance = Espacio.objects.create(**espacio_data)
         else:
-            for field, value in espacio_data.items():
-                setattr(espacio_instance, field, value)
-            espacio_instance.save()
+            espacio_instance = RelevamientoService.assign_values_to_instance(
+                espacio_instance, espacio_data
+            )
 
         return espacio_instance
 
@@ -744,46 +607,29 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         if colaboradores_instance is None:
             colaboradores_instance = Colaboradores.objects.create(**colaboradores_data)
         else:
-            for field, value in colaboradores_data.items():
-                setattr(colaboradores_instance, field, value)
-            colaboradores_instance.save()
+            colaboradores_instance = RelevamientoService.assign_values_to_instance(
+                colaboradores_instance, colaboradores_data
+            )
 
         return colaboradores_instance
 
     @staticmethod
     def populate_colaboradores_data(colaboradores_data):
-        if "cantidad_colaboradores" in colaboradores_data:
-            colaboradores_data["cantidad_colaboradores"] = (
-                CantidadColaboradores.objects.get(
-                    nombre__iexact=colaboradores_data["cantidad_colaboradores"]
-                )
-                if colaboradores_data["cantidad_colaboradores"] != ""
-                else None
-            )
-        if "colaboradores_capacitados_alimentos" in colaboradores_data:
-            colaboradores_data["colaboradores_capacitados_alimentos"] = (
-                colaboradores_data["colaboradores_capacitados_alimentos"] == "Y"
-            )
-        if "colaboradores_recibieron_capacitacion_alimentos" in colaboradores_data:
-            colaboradores_data["colaboradores_recibieron_capacitacion_alimentos"] = (
-                colaboradores_data["colaboradores_recibieron_capacitacion_alimentos"]
-                == "Y"
-            )
-        if "colaboradores_capacitados_salud_seguridad" in colaboradores_data:
-            colaboradores_data["colaboradores_capacitados_salud_seguridad"] = (
-                colaboradores_data["colaboradores_capacitados_salud_seguridad"] == "Y"
-            )
-        if "colaboradores_recibieron_capacitacion_emergencias" in colaboradores_data:
-            colaboradores_data["colaboradores_recibieron_capacitacion_emergencias"] = (
-                colaboradores_data["colaboradores_recibieron_capacitacion_emergencias"]
-                == "Y"
-            )
-        if "colaboradores_recibieron_capacitacion_violencia" in colaboradores_data:
-            colaboradores_data["colaboradores_recibieron_capacitacion_violencia"] = (
-                colaboradores_data["colaboradores_recibieron_capacitacion_violencia"]
-                == "Y"
-            )
-
+        # Esto es una lista de metodos a ejecutar para cada item de la colaboradores_data
+        transformations = {
+            "colaboradores_capacitados_alimentos": RelevamientoService.convert_to_boolean,
+            "colaboradores_recibieron_capacitacion_alimentos": RelevamientoService.convert_to_boolean,
+            "colaboradores_capacitados_salud_seguridad": RelevamientoService.convert_to_boolean,
+            "colaboradores_recibieron_capacitacion_emergencias": RelevamientoService.convert_to_boolean,
+            "colaboradores_recibieron_capacitacion_violencia": RelevamientoService.convert_to_boolean,
+            "cantidad_colaboradores": lambda x: RelevamientoService.get_object_or_none(
+                CantidadColaboradores, "nombre__iexact", x
+            ),
+        }
+        # Se ejecuta el metodo populate_data que recorre la colaboradores_data y aplica las transformaciones
+        colaboradores_data = RelevamientoService.populate_data(
+            colaboradores_data, transformations
+        )
         return colaboradores_data
 
     @staticmethod
@@ -834,93 +680,48 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
     def populate_recursos_data(
         recursos_data,
     ):  # pylint: disable=too-many-statements,too-many-branches
-        def get_frecuencia_recepcion(nombre):
-            return (
-                FrecuenciaRecepcionRecursos.objects.get(
-                    nombre__iexact=recursos_data[f"{nombre}"]
-                )
-                if recursos_data[f"{nombre}"] != ""
-                else None
-            )
-
-        def get_recursos(nombre):
-            recursos_str = recursos_data.pop(nombre, "")
-            if recursos_str:
-                recursos_arr = [nombre.strip() for nombre in recursos_str.split(",")]
-                return TipoRecurso.objects.filter(nombre__in=recursos_arr)
-            return TipoRecurso.objects.none()
-
-        if "recibe_donaciones_particulares" in recursos_data:
-            recursos_data["recibe_donaciones_particulares"] = (
-                recursos_data["recibe_donaciones_particulares"] == "Y"
-            )
-
-        if "frecuencia_donaciones_particulares" in recursos_data:
-            recursos_data["frecuencia_donaciones_particulares"] = (
-                get_frecuencia_recepcion("frecuencia_donaciones_particulares")
-            )
-
-        if "recursos_donaciones_particulares" in recursos_data:
-            recursos_data["recursos_donaciones_particulares"] = get_recursos(
-                "recursos_donaciones_particulares"
-            )
-
-        if "recibe_estado_nacional" in recursos_data:
-            recursos_data["recibe_estado_nacional"] = (
-                recursos_data["recibe_estado_nacional"] == "Y"
-            )
-
-        if "frecuencia_estado_nacional" in recursos_data:
-            recursos_data["frecuencia_estado_nacional"] = get_frecuencia_recepcion(
-                "frecuencia_estado_nacional"
-            )
-
-        if "recursos_estado_nacional" in recursos_data:
-            recursos_data["recursos_estado_nacional"] = get_recursos(
-                "recursos_estado_nacional"
-            )
-
-        if "recibe_estado_provincial" in recursos_data:
-            recursos_data["recibe_estado_provincial"] = (
-                recursos_data["recibe_estado_provincial"] == "Y"
-            )
-
-        if "frecuencia_estado_provincial" in recursos_data:
-            recursos_data["frecuencia_estado_provincial"] = get_frecuencia_recepcion(
-                "frecuencia_estado_provincial"
-            )
-
-        if "recursos_estado_provincial" in recursos_data:
-            recursos_data["recursos_estado_provincial"] = get_recursos(
-                "recursos_estado_provincial"
-            )
-
-        if "recibe_estado_municipal" in recursos_data:
-            recursos_data["recibe_estado_municipal"] = (
-                recursos_data["recibe_estado_municipal"] == "Y"
-            )
-
-        if "frecuencia_estado_municipal" in recursos_data:
-            recursos_data["frecuencia_estado_municipal"] = get_frecuencia_recepcion(
-                "frecuencia_estado_municipal"
-            )
-
-        if "recursos_estado_municipal" in recursos_data:
-            recursos_data["recursos_estado_municipal"] = get_recursos(
-                "recursos_estado_municipal"
-            )
-
-        if "recibe_otros" in recursos_data:
-            recursos_data["recibe_otros"] = recursos_data["recibe_otros"] == "Y"
-
-        if "frecuencia_otros" in recursos_data:
-            recursos_data["frecuencia_otros"] = get_frecuencia_recepcion(
-                "frecuencia_otros"
-            )
-
-        if "recursos_otros" in recursos_data:
-            recursos_data["recursos_otros"] = get_recursos("recursos_otros")
-
+        # Esto es una lista de metodos a ejecutar para cada item de la recursos_data
+        transformations = {
+            "recibe_donaciones_particulares": RelevamientoService.convert_to_boolean,
+            "frecuencia_donaciones_particulares": lambda x: RelevamientoService.get_object_or_none(
+                FrecuenciaRecepcionRecursos, "nombre__iexact", x
+            ),
+            "recibe_estado_nacional": RelevamientoService.convert_to_boolean,
+            "frecuencia_estado_nacional": lambda x: RelevamientoService.get_object_or_none(
+                FrecuenciaRecepcionRecursos, "nombre__iexact", x
+            ),
+            "recibe_estado_provincial": RelevamientoService.convert_to_boolean,
+            "frecuencia_estado_provincial": lambda x: RelevamientoService.get_object_or_none(
+                FrecuenciaRecepcionRecursos, "nombre__iexact", x
+            ),
+            "recibe_estado_municipal": RelevamientoService.convert_to_boolean,
+            "frecuencia_estado_municipal": lambda x: RelevamientoService.get_object_or_none(
+                FrecuenciaRecepcionRecursos, "nombre__iexact", x
+            ),
+            "recibe_otros": RelevamientoService.convert_to_boolean,
+            "frecuencia_otros": lambda x: RelevamientoService.get_object_or_none(
+                FrecuenciaRecepcionRecursos, "nombre__iexact", x
+            ),
+            "recursos_donaciones_particulares": lambda x: RelevamientoService.get_recursos(
+                "recursos_donaciones_particulares", recursos_data, TipoRecurso
+            ),
+            "recursos_estado_nacional": lambda x: RelevamientoService.get_recursos(
+                "recursos_estado_nacional", recursos_data, TipoRecurso
+            ),
+            "recursos_estado_provincial": lambda x: RelevamientoService.get_recursos(
+                "recursos_estado_provincial", recursos_data, TipoRecurso
+            ),
+            "recursos_estado_municipal": lambda x: RelevamientoService.get_recursos(
+                "recursos_estado_municipal", recursos_data, TipoRecurso
+            ),
+            "recursos_otros": lambda x: RelevamientoService.get_recursos(
+                "recursos_otros", recursos_data, TipoRecurso
+            ),
+        }
+        # Se ejecuta el metodo populate_data que recorre la recursos_data y aplica las transformaciones
+        recursos_data = RelevamientoService.populate_data(
+            recursos_data, transformations
+        )
         return recursos_data
 
     @staticmethod
@@ -930,10 +731,9 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         if compras_instance is None:
             compras_instance = FuenteCompras.objects.create(**compras_data)
         else:
-            for field, value in compras_data.items():
-                setattr(compras_instance, field, value)
-            compras_instance.save()
-
+            compras_instance = RelevamientoService.assign_values_to_instance(
+                compras_instance, compras_data
+            )
         return compras_instance
 
     @staticmethod
@@ -943,155 +743,54 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         if anexo_instance is None:
             anexo_instance = Anexo.objects.create(**anexo_data)
         else:
-            for field, value in anexo_data.items():
-                setattr(anexo_instance, field, value)
-            anexo_instance.save()
-
+            anexo_instance = RelevamientoService.assign_values_to_instance(
+                anexo_instance, anexo_data
+            )
         return anexo_instance
 
     @staticmethod
     def populate_anexo_data(  # pylint: disable=too-many-statements,too-many-branches
         anexo_data,
     ):
-        if "tipo_insumo" in anexo_data and anexo_data["tipo_insumo"]:
-            try:
-                anexo_data["tipo_insumo"] = TipoInsumos.objects.get(
-                    nombre__iexact=anexo_data["tipo_insumo"]
-                )
-            except TipoInsumos.DoesNotExist:
-                anexo_data["tipo_insumo"] = None
-        else:
-            anexo_data["tipo_insumo"] = None
-        if "frecuencia_insumo" in anexo_data and anexo_data["frecuencia_insumo"]:
-            try:
-                anexo_data["frecuencia_insumo"] = TipoFrecuenciaInsumos.objects.get(
-                    nombre__iexact=anexo_data["frecuencia_insumo"]
-                )
-            except TipoFrecuenciaInsumos.DoesNotExist:
-                anexo_data["frecuencia_insumo"] = None
-        else:
-            anexo_data["frecuencia_insumo"] = None
-
-        if "tecnologia" in anexo_data and anexo_data["tecnologia"]:
-            try:
-                anexo_data["tecnologia"] = TipoTecnologia.objects.get(
-                    nombre__iexact=anexo_data["tecnologia"]
-                )
-            except TipoTecnologia.DoesNotExist:
-                anexo_data["tecnologia"] = None
-        else:
-            anexo_data["tecnologia"] = None
-
-        if "acceso_comedor" in anexo_data and anexo_data["acceso_comedor"]:
-            try:
-                anexo_data["acceso_comedor"] = TipoAccesoComedor.objects.get(
-                    nombre__iexact=anexo_data["acceso_comedor"]
-                )
-            except TipoAccesoComedor.DoesNotExist:
-                anexo_data["acceso_comedor"] = None
-        else:
-            anexo_data["acceso_comedor"] = None
-
-        if "distancia_transporte" in anexo_data and anexo_data["distancia_transporte"]:
-            try:
-                anexo_data["distancia_transporte"] = (
-                    TipoDistanciaTransporte.objects.get(
-                        nombre__iexact=anexo_data["distancia_transporte"]
-                    )
-                )
-            except TipoDistanciaTransporte.DoesNotExist:
-                anexo_data["distancia_transporte"] = None
-        else:
-            anexo_data["distancia_transporte"] = None
-        if "comedor_merendero" in anexo_data:
-            anexo_data["comedor_merendero"] = anexo_data["comedor_merendero"] == "Y"
-
-        if "insumos_organizacion" in anexo_data:
-            anexo_data["insumos_organizacion"] = (
-                anexo_data["insumos_organizacion"] == "Y"
-            )
-
-        if "servicio_internet" in anexo_data:
-            if (
-                anexo_data["servicio_internet"] != ""
-                and anexo_data["servicio_internet"] == "Y"
-            ):
-                anexo_data["servicio_internet"] = True
-            elif (
-                anexo_data["servicio_internet"] != ""
-                and anexo_data["servicio_internet"] == "N"
-            ):
-                anexo_data["servicio_internet"] = False
-            elif anexo_data["servicio_internet"] == "":
-                anexo_data["servicio_internet"] = None
-
-        if "zona_inundable" in anexo_data:
-            anexo_data["zona_inundable"] = anexo_data["zona_inundable"] == "Y"
-
-        if "actividades_jardin_maternal" in anexo_data:
-            anexo_data["actividades_jardin_maternal"] = (
-                anexo_data["actividades_jardin_maternal"] == "Y"
-            )
-
-        if "actividades_jardin_infantes" in anexo_data:
-            anexo_data["actividades_jardin_infantes"] = (
-                anexo_data["actividades_jardin_infantes"] == "Y"
-            )
-
-        if "apoyo_escolar" in anexo_data:
-            anexo_data["apoyo_escolar"] = anexo_data["apoyo_escolar"] == "Y"
-
-        if "alfabetizacion_terminalidad" in anexo_data:
-            anexo_data["alfabetizacion_terminalidad"] = (
-                anexo_data["alfabetizacion_terminalidad"] == "Y"
-            )
-
-        if "capacitaciones_talleres" in anexo_data:
-            anexo_data["capacitaciones_talleres"] = (
-                anexo_data["capacitaciones_talleres"] == "Y"
-            )
-
-        if "promocion_salud" in anexo_data:
-            anexo_data["promocion_salud"] = anexo_data["promocion_salud"] == "Y"
-
-        if "actividades_discapacidad" in anexo_data:
-            anexo_data["actividades_discapacidad"] = (
-                anexo_data["actividades_discapacidad"] == "Y"
-            )
-
-        if "necesidades_alimentarias" in anexo_data:
-            anexo_data["necesidades_alimentarias"] = (
-                anexo_data["necesidades_alimentarias"] == "Y"
-            )
-
-        if "actividades_recreativas" in anexo_data:
-            anexo_data["actividades_recreativas"] = (
-                anexo_data["actividades_recreativas"] == "Y"
-            )
-
-        if "actividades_culturales" in anexo_data:
-            anexo_data["actividades_culturales"] = (
-                anexo_data["actividades_culturales"] == "Y"
-            )
-
-        if "emprendimientos_productivos" in anexo_data:
-            anexo_data["emprendimientos_productivos"] = (
-                anexo_data["emprendimientos_productivos"] == "Y"
-            )
-
-        if "actividades_religiosas" in anexo_data:
-            anexo_data["actividades_religiosas"] = (
-                anexo_data["actividades_religiosas"] == "Y"
-            )
-
-        if "actividades_huerta" in anexo_data:
-            anexo_data["actividades_huerta"] = anexo_data["actividades_huerta"] == "Y"
-
-        if "espacio_huerta" in anexo_data:
-            anexo_data["espacio_huerta"] = anexo_data["espacio_huerta"] == "Y"
-
-        if "otras_actividades" in anexo_data:
-            anexo_data["otras_actividades"] = anexo_data["otras_actividades"] == "Y"
+        # Esto es una lista de metodos a ejecutar para cada item de la anexo_data
+        transformations = {
+            "tipo_insumo": lambda x: RelevamientoService.get_object_or_none(
+                TipoInsumos, "nombre__iexact", x
+            ),
+            "frecuencia_insumo": lambda x: RelevamientoService.get_object_or_none(
+                TipoFrecuenciaInsumos, "nombre__iexact", x
+            ),
+            "tecnologia": lambda x: RelevamientoService.get_object_or_none(
+                TipoTecnologia, "nombre__iexact", x
+            ),
+            "acceso_comedor": lambda x: RelevamientoService.get_object_or_none(
+                TipoAccesoComedor, "nombre__iexact", x
+            ),
+            "distancia_transporte": lambda x: RelevamientoService.get_object_or_none(
+                TipoDistanciaTransporte, "nombre__iexact", x
+            ),
+            "comedor_merendero": RelevamientoService.convert_to_boolean,
+            "insumos_organizacion": RelevamientoService.convert_to_boolean,
+            "servicio_internet": RelevamientoService.convert_to_boolean,
+            "zona_inundable": RelevamientoService.convert_to_boolean,
+            "actividades_jardin_maternal": RelevamientoService.convert_to_boolean,
+            "actividades_jardin_infantes": RelevamientoService.convert_to_boolean,
+            "apoyo_escolar": RelevamientoService.convert_to_boolean,
+            "alfabetizacion_terminalidad": RelevamientoService.convert_to_boolean,
+            "capacitaciones_talleres": RelevamientoService.convert_to_boolean,
+            "promocion_salud": RelevamientoService.convert_to_boolean,
+            "actividades_discapacidad": RelevamientoService.convert_to_boolean,
+            "necesidades_alimentarias": RelevamientoService.convert_to_boolean,
+            "actividades_recreativas": RelevamientoService.convert_to_boolean,
+            "actividades_culturales": RelevamientoService.convert_to_boolean,
+            "emprendimientos_productivos": RelevamientoService.convert_to_boolean,
+            "actividades_religiosas": RelevamientoService.convert_to_boolean,
+            "actividades_huerta": RelevamientoService.convert_to_boolean,
+            "espacio_huerta": RelevamientoService.convert_to_boolean,
+            "otras_actividades": RelevamientoService.convert_to_boolean,
+        }
+        # Se ejecuta el metodo populate_data que recorre la anexo_data y aplica las transformaciones
+        anexo_data = RelevamientoService.populate_data(anexo_data, transformations)
 
         if "veces_recibio_insumos_2024" in anexo_data:
             anexo_data["veces_recibio_insumos_2024"] = convert_string_to_int(
@@ -1142,166 +841,68 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def populate_punto_entregas_data(punto_entregas_data):
-        def get_frecuencia_entrega(nombre):
-            return (
-                TipoFrecuenciaBolsones.objects.get(
-                    nombre__iexact=punto_entregas_data[f"{nombre}"]
-                )
-                if punto_entregas_data[f"{nombre}"] != ""
-                else None
-            )
-
-        if "tipo_comedor" in punto_entregas_data:
-            punto_entregas_data["tipo_comedor"] = (
-                TipoDeComedor.objects.get(
-                    nombre__iexact=punto_entregas_data["tipo_comedor"]
-                )
-                if punto_entregas_data["tipo_comedor"]
-                else None
-            )
-
-        if "frecuencia_entrega_bolsones" in punto_entregas_data:
-            punto_entregas_data["frecuencia_entrega_bolsones"] = get_frecuencia_entrega(
-                "frecuencia_entrega_bolsones"
-            )
-
-        if "tipo_modulo_bolsones" in punto_entregas_data:
-            punto_entregas_data["tipo_modulo_bolsones"] = (
-                TipoModuloBolsones.objects.get(
-                    nombre__iexact=punto_entregas_data["tipo_modulo_bolsones"]
-                )
-                if punto_entregas_data["tipo_modulo_bolsones"] != ""
-                else None
-            )
-        else:
-            punto_entregas_data["tipo_modulo_bolsones"] = None
-
-        if "existe_punto_entregas" in punto_entregas_data:
-            punto_entregas_data["existe_punto_entregas"] = (
-                punto_entregas_data["existe_punto_entregas"] == "Y"
-            )
-
-        if "funciona_punto_entregas" in punto_entregas_data:
-            punto_entregas_data["funciona_punto_entregas"] = (
-                punto_entregas_data["funciona_punto_entregas"] == "Y"
-            )
-
-        if "observa_entregas" in punto_entregas_data:
-            punto_entregas_data["observa_entregas"] = (
-                punto_entregas_data["observa_entregas"] == "Y"
-            )
-
-        if "retiran_mercaderias_distribucion" in punto_entregas_data:
-            punto_entregas_data["retiran_mercaderias_distribucion"] = (
-                punto_entregas_data["retiran_mercaderias_distribucion"] == "Y"
-            )
-
-        if "retiran_mercaderias_comercio" in punto_entregas_data:
-            punto_entregas_data["retiran_mercaderias_comercio"] = (
-                punto_entregas_data["retiran_mercaderias_comercio"] == "Y"
-            )
-
-        if "reciben_dinero" in punto_entregas_data:
-            punto_entregas_data["reciben_dinero"] = (
-                punto_entregas_data["reciben_dinero"] == "Y"
-            )
-
-        if "registran_entrega_bolsones" in punto_entregas_data:
-            punto_entregas_data["registran_entrega_bolsones"] = (
-                punto_entregas_data["registran_entrega_bolsones"] == "Y"
-            )
+        # Esto es una lista de metodos a ejecutar para cada item de la punto_entregas_data
+        transformations = {
+            "tipo_comedor": lambda x: RelevamientoService.get_object_or_none(
+                TipoDeComedor, "nombre__iexact", x
+            ),
+            "frecuencia_entrega_bolsones": lambda x: RelevamientoService.get_object_or_none(
+                TipoFrecuenciaBolsones, "nombre__iexact", x
+            ),
+            "tipo_modulo_bolsones": lambda x: RelevamientoService.get_object_or_none(
+                TipoModuloBolsones, "nombre__iexact", x
+            ),
+            "existe_punto_entregas": RelevamientoService.convert_to_boolean,
+            "funciona_punto_entregas": RelevamientoService.convert_to_boolean,
+            "observa_entregas": RelevamientoService.convert_to_boolean,
+            "retiran_mercaderias_distribucion": RelevamientoService.convert_to_boolean,
+            "retiran_mercaderias_comercio": RelevamientoService.convert_to_boolean,
+            "reciben_dinero": RelevamientoService.convert_to_boolean,
+            "registran_entrega_bolsones": RelevamientoService.convert_to_boolean,
+        }
+        # Se ejecuta el metodo populate_data que recorre la punto_entregas_data y aplica las transformaciones
+        punto_entregas_data = RelevamientoService.populate_data(
+            punto_entregas_data, transformations
+        )
 
         return punto_entregas_data
 
     @staticmethod
     def populate_compras_data(compras_data):
-        if "almacen_cercano" in compras_data:
-            compras_data["almacen_cercano"] = compras_data["almacen_cercano"] == "Y"
-        if "verduleria" in compras_data:
-            compras_data["verduleria"] = compras_data["verduleria"] == "Y"
-        if "granja" in compras_data:
-            compras_data["granja"] = compras_data["granja"] == "Y"
-        if "carniceria" in compras_data:
-            compras_data["carniceria"] = compras_data["carniceria"] == "Y"
-        if "pescaderia" in compras_data:
-            compras_data["pescaderia"] = compras_data["pescaderia"] == "Y"
-        if "supermercado" in compras_data:
-            compras_data["supermercado"] = compras_data["supermercado"] == "Y"
-        if "mercado_central" in compras_data:
-            compras_data["mercado_central"] = compras_data["mercado_central"] == "Y"
-        if "ferias_comunales" in compras_data:
-            compras_data["ferias_comunales"] = compras_data["ferias_comunales"] == "Y"
-        if "mayoristas" in compras_data:
-            compras_data["mayoristas"] = compras_data["mayoristas"] == "Y"
-        if "otro" in compras_data:
-            compras_data["otro"] = compras_data["otro"] == "Y"
+        # Esto es una lista de metodos a ejecutar para cada item de la compras_data
+        transformations = {
+            "almacen_cercano": RelevamientoService.convert_to_boolean,
+            "verduleria": RelevamientoService.convert_to_boolean,
+            "granja": RelevamientoService.convert_to_boolean,
+            "carniceria": RelevamientoService.convert_to_boolean,
+            "pescaderia": RelevamientoService.convert_to_boolean,
+            "supermercado": RelevamientoService.convert_to_boolean,
+            "mercado_central": RelevamientoService.convert_to_boolean,
+            "ferias_comunales": RelevamientoService.convert_to_boolean,
+            "mayoristas": RelevamientoService.convert_to_boolean,
+            "otro": RelevamientoService.convert_to_boolean,
+        }
+        # Se ejecuta el metodo populate_data que recorre la compras_data y aplica las transformaciones
+        compras_data = RelevamientoService.populate_data(compras_data, transformations)
 
         return compras_data
 
     @staticmethod
-    def _process_prestacion_tipo(tipo, dia, prestacion_data, defaults_data):
-        """
-        Procesa un tipo específico de prestación (desayuno, almuerzo, etc.) para un día.
-        Retorna True si hay datos de prestación para este tipo.
-        """
-        campo_actual = f"{dia}_{tipo}_actual"
-        campo_espera = f"{dia}_{tipo}_espera"
+    def create_or_update_prestacion(prestacion_data, prestacion_instance=None):
+        prestacion_data = RelevamientoService.populate_prestacion_data(prestacion_data)
 
-        cantidad_actual = prestacion_data.get(campo_actual)
-        cantidad_espera = prestacion_data.get(campo_espera)
-
-        # Si hay cantidad, marcar como True y guardar las cantidades
-        tipo_activo = False
-        has_data = False
-
-        if cantidad_actual and cantidad_actual != "" and int(cantidad_actual) > 0:
-            tipo_activo = True
-            defaults_data[f"{tipo}_cantidad_actual"] = int(cantidad_actual)
-            has_data = True
-
-        if cantidad_espera and cantidad_espera != "" and int(cantidad_espera) > 0:
-            tipo_activo = True
-            defaults_data[f"{tipo}_cantidad_espera"] = int(cantidad_espera)
-            has_data = True
-
-        # Setear el flag booleano
-        defaults_data[tipo] = tipo_activo
-        return has_data
+        if prestacion_instance is None:
+            prestacion_instance = Prestacion.objects.create(**prestacion_data)
+        else:
+            prestacion_instance = RelevamientoService.assign_values_to_instance(
+                prestacion_instance, prestacion_data
+            )
+        return prestacion_instance
 
     @staticmethod
-    def _clear_prestacion_data(comedor, dia):
-        """
-        Limpia los datos de prestación para un comedor y día específicos.
-        """
-        Prestacion.objects.filter(comedor=comedor, dia=dia).update(
-            desayuno=False,
-            almuerzo=False,
-            merienda=False,
-            cena=False,
-            merienda_reforzada=False,
-            desayuno_cantidad_actual=None,
-            desayuno_cantidad_espera=None,
-            almuerzo_cantidad_actual=None,
-            almuerzo_cantidad_espera=None,
-            merienda_cantidad_actual=None,
-            merienda_cantidad_espera=None,
-            cena_cantidad_actual=None,
-            cena_cantidad_espera=None,
-            merienda_reforzada_cantidad_actual=None,
-            merienda_reforzada_cantidad_espera=None,
-        )
-
-    @staticmethod
-    @transaction.atomic
-    def create_or_update_prestaciones_from_relevamiento(
-        prestacion_data, comedor, relevamiento_id
-    ):
-        """
-        Nueva función para crear/actualizar prestaciones usando el modelo unificado.
-        Convierte los datos del modelo viejo al nuevo formato por días.
-        Usa transaction.atomic para garantizar consistencia de datos.
-        """
-        relevamiento = Relevamiento.objects.get(pk=relevamiento_id)
+    def populate_prestacion_data(
+        prestacion_data,
+    ):  # pylint: disable=too-many-statements,too-many-branches
         dias = [
             "lunes",
             "martes",
@@ -1311,58 +912,22 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             "sabado",
             "domingo",
         ]
-        tipos_comida = [
-            "desayuno",
-            "almuerzo",
-            "merienda",
-            "cena",
-            "merienda_reforzada",
+        comidas = ["desayuno", "almuerzo", "merienda", "cena", "merienda_reforzada"]
+        aoe = [
+            "actual",
+            "espera",
         ]
 
-        primera_prestacion = None
-
-        # Crear/actualizar prestaciones por día usando update_or_create
         for dia in dias:
-            defaults_data = {}
-            has_prestacion = False
+            for comida in comidas:
+                for estado in aoe:
+                    key = f"{dia}_{comida}_{estado}"
+                    if key in prestacion_data:
+                        prestacion_data[key] = convert_string_to_int(
+                            prestacion_data[key]
+                        )
 
-            # Para cada tipo de comida, verificar si hay datos
-            for tipo in tipos_comida:
-                if RelevamientoService._process_prestacion_tipo(
-                    tipo, dia, prestacion_data, defaults_data
-                ):
-                    has_prestacion = True
-
-            # Solo crear/actualizar si hay al menos una prestación
-            if has_prestacion:
-                prestacion_dia, _ = Prestacion.objects.update_or_create(
-                    comedor=comedor, dia=dia, defaults=defaults_data
-                )
-                relevamiento.prestaciones.add(prestacion_dia)
-                relevamiento.save()
-
-                if primera_prestacion is None:
-                    primera_prestacion = prestacion_dia
-            else:
-                RelevamientoService._clear_prestacion_data(comedor, dia)
-
-        # Si no hay prestaciones, crear una vacía para compatibilidad
-        if primera_prestacion is None:
-            primera_prestacion, _ = Prestacion.objects.update_or_create(
-                comedor=comedor,
-                dia="lunes",
-                defaults={
-                    "desayuno": False,
-                    "almuerzo": False,
-                    "merienda": False,
-                    "cena": False,
-                    "merienda_reforzada": False,
-                },
-            )
-            relevamiento.prestaciones.add(primera_prestacion)
-            relevamiento.save()
-
-        return primera_prestacion
+        return prestacion_data
 
     @staticmethod
     def create_or_update_responsable_y_referente(
@@ -1431,19 +996,16 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         if excepcion_instance is None:
             excepcion_instance = Excepcion.objects.create(**excepcion_data)
         else:
-            for field, value in excepcion_data.items():
-                setattr(excepcion_instance, field, value)
-            excepcion_instance.save()
-
+            excepcion_instance = RelevamientoService.assign_values_to_instance(
+                excepcion_instance, excepcion_data
+            )
         return excepcion_instance
 
     @staticmethod
     def populate_excepcion_data(excepcion_data):
         if "motivo" in excepcion_data:
-            excepcion_data["motivo"] = (
-                MotivoExcepcion.objects.get(nombre__iexact=excepcion_data["motivo"])
-                if excepcion_data["motivo"] != ""
-                else None
+            excepcion_data["motivo"] = RelevamientoService.get_object_or_none(
+                MotivoExcepcion, "nombre__iexact", excepcion_data["motivo"]
             )
         if "adjuntos" in excepcion_data:
             excepcion_data["adjuntos"] = [
