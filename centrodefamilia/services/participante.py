@@ -1,4 +1,11 @@
-from centrodefamilia.models import Centro, ActividadCentro, ParticipanteActividad
+from django.db import transaction
+
+from centrodefamilia.models import (
+    Centro,
+    ActividadCentro,
+    ParticipanteActividad,
+    ParticipanteActividadHistorial,
+)
 from ciudadanos.models import (
     Ciudadano,
     DimensionEconomia,
@@ -40,7 +47,7 @@ def validar_cuit(cuit):
 
 
 def validar_ciudadano_en_rango_para_actividad(ciudadano, actividad_centro):
-    if actividad_centro.centro.tipo == "adherido" and not 1 <= ciudadano.id <= 975:
+    if actividad_centro.centro.tipo == "adherido" and not 1 <= ciudadano.id <= 1000:
         raise ValueError(
             f"El ciudadano ID {ciudadano.id} no está habilitado para inscribirse en este centro adherido."
         )
@@ -56,15 +63,27 @@ class ActividadService:
 
 
 class ParticipanteService:
+
     @staticmethod
-    def contar_participantes_por_actividad(actividad_centro):
+    def contar_inscritos(actividad_centro):
         return ParticipanteActividad.objects.filter(
-            actividad_centro=actividad_centro
+            actividad_centro=actividad_centro, estado="inscrito"
         ).count()
 
     @staticmethod
+    def obtener_inscritos(actividad_centro):
+        return ParticipanteActividad.objects.filter(
+            actividad_centro=actividad_centro, estado="inscrito"
+        ).select_related("ciudadano")
+
+    @staticmethod
+    def obtener_lista_espera(actividad_centro):
+        return ParticipanteActividad.objects.filter(
+            actividad_centro=actividad_centro, estado="lista_espera"
+        ).select_related("ciudadano")
+
+    @staticmethod
     def cargar_participantes_desde_lista(lista_dnis, actividad_centro):
-        """Carga masiva desde una lista de documentos (DNI)"""
         existing = set(
             ParticipanteActividad.objects.filter(
                 actividad_centro=actividad_centro, ciudadano__documento__in=lista_dnis
@@ -73,7 +92,7 @@ class ParticipanteService:
         ciudadanos = Ciudadano.objects.filter(documento__in=lista_dnis)
 
         nuevos = [
-            ParticipanteActividad(ciudadano=c, actividad_centro=actividad_centro)
+            ParticipanteActividad(actividad_centro=actividad_centro, ciudadano=c)
             for c in ciudadanos
             if c.documento not in existing
         ]
@@ -81,15 +100,10 @@ class ParticipanteService:
         return len(nuevos)
 
     @staticmethod
-    def crear_ciudadano_con_dimensiones(datos):
-        ciudadano = Ciudadano.objects.create(
-            nombre=datos.get("nombre"),
-            apellido=datos.get("apellido"),
-            documento=datos.get("dni"),
-            fecha_nacimiento=datos.get("fecha_nacimiento"),
-            tipo_documento=datos.get("tipo_documento"),
-            sexo=datos.get("genero"),
-        )
+    def _crear_dimensiones_y_programa(ciudadano, usuario, actividad_id):
+        # Forzar siempre programa ID = 1
+        programa_id = 1
+
         for Modelo in (
             DimensionEconomia,
             DimensionEducacion,
@@ -98,27 +112,14 @@ class ParticipanteService:
             DimensionTrabajo,
             DimensionVivienda,
         ):
-            Modelo.objects.create(ciudadano=ciudadano)
-        return ciudadano
+            Modelo.objects.update_or_create(ciudadano=ciudadano)
 
-    @staticmethod
-    def crear_participante(actividad_id, ciudadano):
-        return ParticipanteActividad.objects.create(
-            actividad_centro_id=actividad_id, ciudadano=ciudadano
-        )
-
-    @staticmethod
-    def validar_ciudadano(ciudadano, actividad_centro):
-        validar_ciudadano_en_rango_para_actividad(ciudadano, actividad_centro)
-
-    @staticmethod
-    def asignar_programa(ciudadano, usuario, programa_id=1):
-        _, created = CiudadanoPrograma.objects.get_or_create(
-            ciudadano=ciudadano,
-            programas_id=programa_id,
-            defaults={"creado_por": usuario},
-        )
-        if created:
+            creado = CiudadanoPrograma.objects.update_or_create(
+                ciudadano=ciudadano,
+                programas_id=programa_id,
+                defaults={"creado_por": usuario},
+            )
+        if creado:
             HistorialCiudadanoProgramas.objects.create(
                 programa_id=programa_id,
                 ciudadano=ciudadano,
@@ -126,66 +127,136 @@ class ParticipanteService:
                 usuario=usuario,
             )
 
+    @staticmethod
+    def crear_ciudadano_con_dimensiones(datos, usuario, actividad_id):
+        ciudadano = Ciudadano.objects.create(
+            nombre=datos.get("nombre"),
+            apellido=datos.get("apellido"),
+            documento=datos.get("dni"),
+            fecha_nacimiento=datos.get("fecha_nacimiento"),
+            tipo_documento=datos.get("tipo_documento"),
+            sexo=datos.get("genero"),
+        )
+        ParticipanteService._crear_dimensiones_y_programa(
+            ciudadano, usuario, actividad_id
+        )
+        return ciudadano
+
+    @staticmethod
+    def crear_participante(actividad_id, ciudadano, estado):
+        actividad = ActividadService.obtener_o_error(actividad_id)
+        return ParticipanteActividad.objects.create(
+            actividad_centro=actividad, ciudadano=ciudadano, estado=estado
+        )
+
+    @staticmethod
+    def validar_ciudadano(ciudadano, actividad_centro):
+        validar_ciudadano_en_rango_para_actividad(ciudadano, actividad_centro)
+
     @classmethod
-    def procesar_creacion(cls, usuario, actividad_id, datos=None, ciudadano_id=None):
-        # Validar inscripción duplicada
+    @transaction.atomic
+    def procesar_creacion(cls, usuario, actividad_id, datos=None, **kwargs):
+        ciudadano_id = kwargs.get("ciudadano_id")
+        allow_waitlist = kwargs.get("allow_waitlist", False)
+
         if (
             ciudadano_id
             and ParticipanteActividad.objects.filter(
-                actividad_centro_id=actividad_id, ciudadano_id=ciudadano_id
+                actividad_centro_id=actividad_id,
+                ciudadano_id=ciudadano_id,
+                estado__in=["inscrito", "lista_espera"],
             ).exists()
         ):
-            raise AlreadyRegistered("Este ciudadano ya está inscrito en la actividad.")
+            raise AlreadyRegistered("Ya está inscrito o en lista de espera.")
 
-        # Verificar cupo
         actividad = ActividadService.obtener_o_error(actividad_id)
-        total = ParticipanteActividad.objects.filter(
-            actividad_centro_id=actividad_id
-        ).count()
-        if total >= actividad.cantidad_personas:
-            raise CupoExcedido(
-                "Se alcanzó el cupo máximo de asistentes para esta actividad."
-            )
+        ocupados = cls.contar_inscritos(actividad)
 
-        # Obtener o crear ciudadano
+        if ocupados >= actividad.cantidad_personas and not allow_waitlist:
+            raise CupoExcedido("Cupo máximo alcanzado.")
+
         if ciudadano_id:
             ciudadano = Ciudadano.objects.filter(pk=ciudadano_id).first()
             if not ciudadano:
                 raise LookupError("Ciudadano no encontrado.")
+            cls._crear_dimensiones_y_programa(ciudadano, usuario, actividad_id)
         else:
-            # Validar sexo antes de crear
             genero = datos.get("genero")
             if actividad.sexoact.exists() and genero not in actividad.sexoact.all():
-                raise SexoNoPermitido(
-                    "El sexo del ciudadano no coincide con los permitidos para esta actividad."
-                )
-            ciudadano = cls.crear_ciudadano_con_dimensiones(datos)
-
-        # Validar sexo para todos los casos
-        if actividad.sexoact.exists() and ciudadano.sexo not in actividad.sexoact.all():
-            raise SexoNoPermitido(
-                "El sexo del ciudadano no coincide con los permitidos para esta actividad."
+                raise SexoNoPermitido("Sexo no permitido para esta actividad.")
+            ciudadano = cls.crear_ciudadano_con_dimensiones(
+                datos, usuario, actividad_id
             )
 
-        # Registrar participante
+        if actividad.sexoact.exists() and ciudadano.sexo not in actividad.sexoact.all():
+            raise SexoNoPermitido("Sexo no permitido para esta actividad.")
         cls.validar_ciudadano(ciudadano, actividad)
-        participante = cls.crear_participante(actividad_id, ciudadano)
-        cls.asignar_programa(ciudadano, usuario)
-        tipo = "existente" if ciudadano_id else "nuevo"
-        return tipo, participante
+
+        estado = (
+            "inscrito" if ocupados < actividad.cantidad_personas else "lista_espera"
+        )
+        participante = cls.crear_participante(actividad_id, ciudadano, estado)
+
+        ParticipanteActividadHistorial.objects.create(
+            participante=participante,
+            estado_anterior=None,
+            estado_nuevo=estado,
+            usuario=usuario,
+        )
+        return estado, participante
+
+    @classmethod
+    @transaction.atomic
+    def dar_de_baja(cls, participante_id, usuario):
+        participante = ParticipanteActividad.objects.select_for_update().get(
+            pk=participante_id
+        )
+        prev = participante.estado
+        if prev == "dado_baja":
+            return participante
+        participante.estado = "dado_baja"
+        participante.save()
+
+        ParticipanteActividadHistorial.objects.create(
+            participante=participante,
+            estado_anterior=prev,
+            estado_nuevo="dado_baja",
+            usuario=usuario,
+        )
+        cls.promover_lista_espera(participante.actividad_centro, usuario)
+        return participante
+
+    @classmethod
+    @transaction.atomic
+    def promover_lista_espera(cls, actividad_centro, usuario):
+        siguiente = (
+            ParticipanteActividad.objects.filter(
+                actividad_centro=actividad_centro, estado="lista_espera"
+            )
+            .order_by("fecha_registro")
+            .first()
+        )
+        if not siguiente:
+            return None
+        prev = siguiente.estado
+        siguiente.estado = "inscrito"
+        siguiente.save()
+
+        ParticipanteActividadHistorial.objects.create(
+            participante=siguiente,
+            estado_anterior=prev,
+            estado_nuevo="inscrito",
+            usuario=usuario,
+        )
+        return siguiente
 
     @staticmethod
-    def buscar_ciudadanos(query, max_results=10):
+    def buscar_ciudadanos_por_documento(query, max_results=10):
         cleaned = (query or "").strip()
         if len(cleaned) < 4 or not cleaned.isdigit():
             return []
-        qs = Ciudadano.objects.extra(
-            where=["CAST(documento AS CHAR) LIKE %s"], params=[cleaned + "%"]
-        ).order_by("documento")[:max_results]
-        return list(qs)
-
-    @staticmethod
-    def obtener_participantes_con_ciudadanos(actividad_centro):
-        return ParticipanteActividad.objects.filter(
-            actividad_centro=actividad_centro
-        ).select_related("ciudadano")
+        return list(
+            Ciudadano.objects.filter(documento__startswith=cleaned).order_by(
+                "documento"
+            )[:max_results]
+        )

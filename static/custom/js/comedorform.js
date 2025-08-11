@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Agregar nuevos archivos al array existente
             newFiles.forEach(file => {
                 // Verificar que no esté duplicado (por nombre y tamaño)
-                const isDuplicate = selectedFiles.some(existingFile =>
+                const isDuplicate = selectedFiles.some(existingFile => 
                     existingFile.name === file.name && existingFile.size === file.size
                 );
                 
@@ -79,8 +79,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // Actualizar la previsualización
             updateImagePreview();
             
-            // NO limpiar el input para mantener los archivos
-            // imageInput.value = '';
+            // Limpiar el input para permitir seleccionar los mismos archivos otra vez
+            imageInput.value = '';
         });
     }
     
@@ -122,16 +122,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     previewDiv.innerHTML = `
                         <div class="card position-relative">
                             <!-- Botón para eliminar -->
-                            <button type="button" class="btn btn-danger btn-sm position-absolute"
+                            <button type="button" class="btn btn-danger btn-sm position-absolute" 
                                     style="top: 5px; right: 5px; z-index: 10; width: 30px; height: 30px; padding: 0;"
                                     onclick="removeImage(${index})"
                                     title="Eliminar imagen">
                                 <i class="fas fa-times"></i>
                             </button>
                             
-                            <img src="${e.target.result}"
+                            <img src="${e.target.result}" 
                                  class="card-img-top" 
-                                 style="height: 150px; object-fit: cover;"
+                                 style="height: 150px; object-fit: cover;" 
                                  alt="Preview">
                             
                             <div class="card-body p-2">
@@ -159,57 +159,14 @@ document.addEventListener('DOMContentLoaded', function() {
     };
     
     function updateFileInput() {
-        try {
-            // Crear un nuevo DataTransfer para actualizar el input file
-            const dt = new DataTransfer();
-            
-            selectedFiles.forEach(file => {
-                dt.items.add(file);
-            });
-            
-            imageInput.files = dt.files;
-        } catch (error) {
-            console.error('Error updating file input:', error);
-            // Fallback: usar un FormData personalizado en el submit
-        }
-    }
-    
-    // Manejar envío del formulario con fallback para navegadores que no soportan DataTransfer
-    const comedorForm = document.getElementById('comedorForm');
-    if (comedorForm) {
-        comedorForm.addEventListener('submit', function(e) {
-            // Si DataTransfer no funciona, usar FormData personalizado
-            if (imageInput.files.length === 0 && selectedFiles.length > 0) {
-                e.preventDefault();
-                
-                const formData = new FormData(comedorForm);
-                
-                // Eliminar archivos de imagen existentes del FormData
-                formData.delete('imagenes');
-                
-                // Agregar archivos seleccionados
-                selectedFiles.forEach(file => {
-                    formData.append('imagenes', file);
-                });
-                
-                // Enviar con fetch
-                fetch(comedorForm.action, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                    }
-                }).then(response => {
-                    if (response.ok) {
-                        window.location.href = response.url;
-                    } else {
-                        console.error('Error submitting form:', response);
-                    }
-                });
-                
-                return false;
-            }
+        // Crear un nuevo DataTransfer para actualizar el input file
+        const dt = new DataTransfer();
+        
+        selectedFiles.forEach(file => {
+            dt.items.add(file);
         });
+        
+        imageInput.files = dt.files;
     }
     
     // ...existing code for foto_legajo...
@@ -273,78 +230,4 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
         console.error('foto_legajo input element not found');
     }
-    
-    // Funcionalidad para manejar eliminación de imágenes existentes
-    setupExistingImagesHandling();
 });
-
-function setupExistingImagesHandling() {
-    // Encontrar todos los checkboxes de eliminación de imágenes existentes
-    const deleteCheckboxes = document.querySelectorAll('input[name^="imagen_ciudadano-borrar-"]');
-    
-    deleteCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            applyDeletionStyles(this);
-        });
-    });
-    
-    // Manejar checkbox de foto del legajo
-    const fotoLegajoCheckbox = document.getElementById('foto_legajo_borrar');
-    if (fotoLegajoCheckbox) {
-        fotoLegajoCheckbox.addEventListener('change', function() {
-            applyDeletionStyles(this);
-        });
-    }
-}
-
-// Función global para manejar click en botón de eliminar
-window.toggleImageDeletion = function(imagenId) {
-    const checkbox = document.getElementById('imagen_ciudadano-borrar-' + imagenId);
-    if (checkbox) {
-        checkbox.checked = !checkbox.checked;
-        applyDeletionStyles(checkbox);
-    }
-}
-
-// Función global para manejar eliminación de foto del legajo
-window.toggleFotoLegajoDeletion = function() {
-    const checkbox = document.getElementById('foto_legajo_borrar');
-    if (checkbox) {
-        checkbox.checked = !checkbox.checked;
-        applyDeletionStyles(checkbox);
-    }
-};
-
-function applyDeletionStyles(checkbox) {
-    const imageCard = checkbox.closest('.card');
-    const deleteButton = imageCard.querySelector('.btn-outline-danger, .btn-danger');
-
-    if (checkbox.checked) {
-        imageCard.style.opacity = '0.5';
-        imageCard.style.filter = 'grayscale(100%)';
-        deleteButton.classList.remove('btn-outline-danger');
-        deleteButton.classList.add('btn-danger');
-        deleteButton.innerHTML = '<i class="fas fa-undo"></i>';
-        deleteButton.title = 'Desmarcar eliminación';
-
-        if (!imageCard.querySelector('.delete-overlay')) {
-            const overlay = document.createElement('div');
-            overlay.className = 'delete-overlay position-absolute d-flex align-items-center justify-content-center';
-            overlay.style.cssText = 'top: 0; left: 0; right: 0; bottom: 0; background: rgba(220, 53, 69, 0.8); color: white; font-weight: bold; z-index: 5;';
-            overlay.innerHTML = '<span><i class="fas fa-trash"></i> MARCADA PARA ELIMINAR</span>';
-            imageCard.querySelector('.position-relative').appendChild(overlay);
-        }
-    } else {
-        imageCard.style.opacity = '1';
-        imageCard.style.filter = 'none';
-        deleteButton.classList.remove('btn-danger');
-        deleteButton.classList.add('btn-outline-danger');
-        deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
-        deleteButton.title = 'Marcar para eliminar';
-
-        const overlay = imageCard.querySelector('.delete-overlay');
-        if (overlay) {
-            overlay.remove();
-        }
-    }
-}
