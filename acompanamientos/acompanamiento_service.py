@@ -54,7 +54,7 @@ class AcompanamientoService:
                 AcompanamientoService._actualizar_hitos(nuevo_hito, hitos_a_actualizar)
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en AcomanamientoService.crear_hitos {e}",
+                f"Error en AcomanamientoService.crear_hitos {e}",
                 exc_info=True,
             )
             raise
@@ -78,7 +78,7 @@ class AcompanamientoService:
             hitos_objeto.save()
         except Exception:
             logger.error(
-                "Ocurrió un error inesperado en AcompanamientoService.crear_hitos",
+                "Error en AcompanamientoService.crear_hitos",
                 exc_info=True,
             )
             raise
@@ -99,7 +99,7 @@ class AcompanamientoService:
             )
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en AcompanamientoService.obtener_hitos para comedor: {comedor} {e}",
+                f"Error en AcompanamientoService.obtener_hitos para comedor: {comedor} {e}",
                 exc_info=True,
             )
             raise
@@ -146,7 +146,7 @@ class AcompanamientoService:
                     )
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en AcompanamientoService.importar_datos_desde_admision para comedor: {comedor} {e}",
+                f"Error en AcompanamientoService.importar_datos_desde_admision para comedor: {comedor} {e}",
                 exc_info=True,
             )
             raise
@@ -203,7 +203,7 @@ class AcompanamientoService:
             }
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en AcompanamientoService.obtener_datos_admision para comedor: {comedor} {e}",
+                f"Error en AcompanamientoService.obtener_datos_admision para comedor: {comedor} {e}",
                 exc_info=True,
             )
             raise
@@ -267,7 +267,7 @@ class AcompanamientoService:
             }
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en AcompanamientoService.ontener_prestaciones_detalladas para anexo: {anexo} {e}",
+                f"Error en AcompanamientoService.ontener_prestaciones_detalladas para anexo: {anexo} {e}",
                 exc_info=True,
             )
             raise
@@ -337,7 +337,7 @@ class AcompanamientoService:
             return qs
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en AcompanamientoService.obtener_comedores_acompanamiento para user: {user} {e}",
+                f"Error en AcompanamientoService.obtener_comedores_acompanamiento para user: {user} {e}",
                 exc_info=True,
             )
             raise
@@ -358,7 +358,7 @@ class AcompanamientoService:
             )
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en Acompanamiento.verificar_permisos_tecnico_comedor para user: {user} {e}",
+                f"Error en Acompanamiento.verificar_permisos_tecnico_comedor para user: {user} {e}",
                 exc_info=True,
             )
             raise
