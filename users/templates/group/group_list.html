@@ -1,47 +1,19 @@
-{% extends "includes/main.html" %};
-{% load static %}
-;
-{% block head %}{% endblock %}
-{% block title %}Grupos de usuarios{% endblock %}
-;
-{% block titulo-pagina %}Grupos de usuarios{% endblock %}
-;
+{% extends "includes/main.html" %}
+{% load static custom_filters %}
 {% load crispy_forms_tags %}
-;
+
+{% block title %}Grupos de usuarios{% endblock %}
+{% block titulo-pagina %}Grupos de usuarios{% endblock %}
+
 {% block breadcrumb %}
-    <ol class="breadcrumb float-sm-right ">
+    <ol class="breadcrumb float-sm-right">
         <li class="breadcrumb-item">Administración</li>
         <li class="breadcrumb-item">
             <a href="{% url 'grupos' %}">Grupos</a>
         </li>
     </ol>
 {% endblock %}
-;
+
 {% block content %}
-    <div class="row ">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body ">
-                    <table class="table table-bordered table-striped projects">
-                        <thead>
-                            <tr>
-                                <th>Nombre</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for o in groups %}
-                                <tr>
-                                    <td>
-                                        <a>
-                                            <span class="font-weight-bold ">{{ o }}</span>
-                                        </a>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
+    {% include 'components/data_table.html' with headers=table_headers items=groups show_actions=False empty_message='No hay grupos disponibles.' fields=table_fields %}
 {% endblock content %}
