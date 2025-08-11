@@ -4,6 +4,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class DuplaService:
 
     @staticmethod
@@ -21,7 +22,9 @@ class DuplaService:
         except Dupla.DoesNotExist:
             return None
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en get_dupla_by_id", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en get_dupla_by_id", exc_info=True
+            )
             return None
 
     @staticmethod
@@ -47,7 +50,10 @@ class DuplaService:
         try:
             return Dupla.objects.filter(estado="Activo")
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en get_duplas_by_estado_activo", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en get_duplas_by_estado_activo",
+                exc_info=True,
+            )
             return Dupla.objects.none()
 
     @staticmethod

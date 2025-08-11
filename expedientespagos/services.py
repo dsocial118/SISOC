@@ -3,6 +3,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class ExpedientesPagosService:
     @staticmethod
     def crear_expediente_pago(comedor, data):
@@ -22,7 +23,9 @@ class ExpedientesPagosService:
             )
             return expediente_pago
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en crear_expediente_pago", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en crear_expediente_pago", exc_info=True
+            )
             return None
 
     @staticmethod
@@ -43,7 +46,10 @@ class ExpedientesPagosService:
             expediente_pago.save()
             return expediente_pago
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en actualizar_expediente_pago", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en actualizar_expediente_pago",
+                exc_info=True,
+            )
             return None
 
     @staticmethod
@@ -51,14 +57,19 @@ class ExpedientesPagosService:
         try:
             expediente_pago.delete()
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en eliminar_expediente_pago", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en eliminar_expediente_pago", exc_info=True
+            )
 
     @staticmethod
     def obtener_expedientes_pagos(comedor):
         try:
             return ExpedientePago.objects.filter(comedor=comedor)
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en obtener_expedientes_pagos", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en obtener_expedientes_pagos",
+                exc_info=True,
+            )
             return ExpedientePago.objects.none()
 
     @staticmethod
@@ -66,8 +77,12 @@ class ExpedientesPagosService:
         try:
             return ExpedientePago.objects.get(pk=id_enviado)
         except ExpedientePago.DoesNotExist:
-            logger.error("ExpedientePago no encontrado en obtener_expediente_pago", exc_info=True)
+            logger.error(
+                "ExpedientePago no encontrado en obtener_expediente_pago", exc_info=True
+            )
             return None
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en obtener_expediente_pago", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en obtener_expediente_pago", exc_info=True
+            )
             return None
