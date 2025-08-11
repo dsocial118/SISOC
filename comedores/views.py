@@ -45,7 +45,7 @@ from duplas.dupla_service import DuplaService
 from rendicioncuentasmensual.services import RendicionCuentaMensualService
 
 
-logger = logging.getLogger("django")
+logger = logger = logging.getLogger(__name__)
 
 
 @require_POST
