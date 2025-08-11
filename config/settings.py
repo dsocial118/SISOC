@@ -1,15 +1,16 @@
 import os
+import logging
 from pathlib import Path
 import sys
 from django.contrib.messages import constants as messages
 from dotenv import load_dotenv
-
 
 # Cargar variables de entorno desde el archivo .env
 load_dotenv()
 
 # Definición de entorno
 DEBUG = os.environ.get("DJANGO_DEBUG", default=False) == "True"
+ENVIRONMENT = os.environ.get("ENVIRONMENT", default="dev")
 
 # Definición del directorio base del proyecto
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -120,12 +121,10 @@ INSTALLED_APPS = [
     # Librerias
     "django_cotton",
     "crispy_forms",
-    "silk",
     "crispy_bootstrap5",
     "django_extensions",
     "import_export",
     "multiselectfield",
-    "debug_toolbar",
     "rest_framework",
     "rest_framework_api_key",
     "corsheaders",
@@ -229,50 +228,85 @@ CENTROFAMILIA_CACHE_TIMEOUT = 300  # 5 minutos para centro de familia
 
 
 # Configuracion de logging
-# LOGGING = {
-#     "version": 1,
-#     "disable_existing_loggers": False,
-#     "formatters": {
-#         "verbose": {
-#             "format": "[{asctime}] {module} {levelname} {name}: {message}",
-#             "style": "{",
-#         },
-#         "simple": {
-#             "format": "[{asctime}] {levelname} {message}",
-#             "style": "{",
-#         },
-#     },
-#     "handlers": {
-#         "file_info": {
-#             "class": "core.utils.DailyFileHandler",
-#             "level": "INFO",
-#             "formatter": "verbose",
-#             "filename": str(BASE_DIR / "logs/info.log"),
-#         },
-#         "console": {
-#             "class": "logging.StreamHandler",
-#             "level": "WARNING",
-#             "formatter": "simple",
-#         },
-#     },
-#     "loggers": {
-#         "django": {
-#             "handlers": ["file_info", "console"],
-#             "level": "INFO",
-#             "propagate": False,
-#         },
-#         "django.request": {
-#             "handlers": ["console"],
-#             "level": "WARNING",
-#             "propagate": False,
-#         },
-#     },
-#     "root": {
-#         "handlers": ["console"],
-#         "level": "WARNING",
-#     },
-# }
-
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "filters": {
+        "info_only": {
+            "()": "django.utils.log.CallbackFilter",
+            "callback": lambda r: r.levelno == logging.INFO,
+        },
+        "error_only": {
+            "()": "django.utils.log.CallbackFilter",
+            "callback": lambda r: r.levelno == logging.ERROR,
+        },
+        "warning_only": {
+            "()": "django.utils.log.CallbackFilter",
+            "callback": lambda r: r.levelno == logging.WARNING,
+        },
+        "critical_only": {
+            "()": "django.utils.log.CallbackFilter",
+            "callback": lambda r: r.levelno == logging.CRITICAL,
+        },
+    },
+    "formatters": {
+        "verbose": {
+            "format": "[{asctime}] {module} {levelname} {name}: {message}",
+            "style": "{",
+        },
+        "simple": {
+            "format": "[{asctime}] {levelname} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "info_file": {
+            "level": "INFO",
+            "filters": ["info_only"],
+            "class": "core.utils.DailyFileHandler",
+            "filename": str(BASE_DIR / "logs/info.log"),
+            "formatter": "verbose",
+        },
+        "error_file": {
+            "level": "ERROR",
+            "filters": ["error_only"],
+            "class": "core.utils.DailyFileHandler",
+            "filename": str(BASE_DIR / "logs/error.log"),
+            "formatter": "verbose",
+        },
+        "warning_file": {
+            "level": "WARNING",
+            "filters": ["warning_only"],
+            "class": "core.utils.DailyFileHandler",
+            "filename": str(BASE_DIR / "logs/warning.log"),
+            "formatter": "verbose",
+        },
+        "critical_file": {
+            "level": "CRITICAL",
+            "filters": ["critical_only"],
+            "class": "core.utils.DailyFileHandler",
+            "filename": str(BASE_DIR / "logs/critical.log"),
+            "formatter": "verbose",
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": [
+                "info_file",
+                "error_file",
+                "warning_file",
+                "critical_file",
+            ],
+            "level": "DEBUG",
+            "propagate": True,
+        },
+        "django.request": {
+            "handlers": ["error_file"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+    },
+}
 
 # Configuración de validadores de contraseñas
 AUTH_PASSWORD_VALIDATORS = [
@@ -293,26 +327,37 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# Configuración de Django Debug Toolbar
+# Configuraciones de entornos
 if DEBUG:
-    DEBUG_TOOLBAR_CONFIG = {
-        "SHOW_TOOLBAR_CALLBACK": lambda request: True  # ✅ Esto es válido
-    }
-    MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
 
+    # Configuración de Django Debug Toolbar
+    INSTALLED_APPS += ["debug_toolbar"]
+    MIDDLEWARE += ["debug_toolbar.middleware.DebugToolbarMiddleware"]
+    DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda request: True}
 
-if DEBUG:
-    # Configuración para desarrollo
+    # Configuración de Silk fuera de DEBUG
+    INSTALLED_APPS += ["silk"]
+    MIDDLEWARE += ["silk.middleware.SilkyMiddleware"]
+    SILKY_PYTHON_PROFILER = True
+
+if ENVIRONMENT == "prd":
+    # Configuración para producción
+    STATICFILES_STORAGE = (
+        "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
+    )
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    USE_X_FORWARDED_HOST = True
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+else:
+    # Configuración para entornos bajos (no ssl)
+    STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
     SECURE_HSTS_SECONDS = 0
     SECURE_HSTS_INCLUDE_SUBDOMAINS = False
     SECURE_SSL_REDIRECT = False
-    SESSION_COOKIE_SECURE = False
-    CSRF_COOKIE_SECURE = False
-else:
-    # Configuración para producción
-    SECURE_HSTS_SECONDS = 0  # Cambiar a 31536000 cuando tengamos HTTPS
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
-    SECURE_SSL_REDIRECT = False  # Cambiar a True cuando tengamos HTTPS
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
 
@@ -325,39 +370,10 @@ REST_FRAMEWORK = {
 # Configuracion de CORS header
 CORS_ALLOW_ALL_ORIGINS = True
 
-# Dominio
+# Configuracion de dominio para API GESTIONAR
 DOMINIO = os.environ.get("DOMINIO", default="localhost:8001")
-
-
-# Configuración de Silk fuera de DEBUG
-if DEBUG:
-    SILKY_PYTHON_PROFILER = True
-    MIDDLEWARE.insert(0, "silk.middleware.SilkyMiddleware")
 
 # API RENAPER
 RENAPER_API_USERNAME = os.getenv("RENAPER_API_USERNAME")
 RENAPER_API_PASSWORD = os.getenv("RENAPER_API_PASSWORD")
 RENAPER_API_URL = os.getenv("RENAPER_API_URL")
-
-
-LOGGING = {
-  "version": 1,
-  "disable_existing_loggers": False,
-  "handlers": {
-    "console": {"class": "logging.StreamHandler"},
-  },
-  "loggers": {
-    "django": {
-      "handlers": ["console"],
-      "level": "ERROR",
-      "propagate": False
-    },
-    "django.request": {
-      "handlers": ["console"],
-      "level": "ERROR",
-      "propagate": False
-    },
-  },
-}
-
-
