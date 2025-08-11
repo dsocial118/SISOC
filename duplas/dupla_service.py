@@ -23,9 +23,10 @@ class DuplaService:
             return None
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en get_dupla_by_id", exc_info=True
+                f"Ocurrió un error inesperado en DuplaService.get_dupla_by_id para la dupla: {dupla_id} {e}",
+                exc_info=True,
             )
-            return None
+            raise
 
     @staticmethod
     def get_all_duplas():
@@ -37,8 +38,11 @@ class DuplaService:
         try:
             return Dupla.objects.all()
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en get_all_duplas", exc_info=True)
-            return Dupla.objects.none()
+            logger.error(
+                f"Ocurrió un error inesperado en DuplaService.get_all_duplas {e}",
+                exc_info=True,
+            )
+            raise
 
     @staticmethod
     def get_duplas_by_estado_activo():
@@ -51,10 +55,10 @@ class DuplaService:
             return Dupla.objects.filter(estado="Activo")
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en get_duplas_by_estado_activo",
+                f"Ocurrió un error inesperado en DuplaService.get_duplas_by_estado_activo {e}",
                 exc_info=True,
             )
-            return Dupla.objects.none()
+            raise
 
     @staticmethod
     def create_dupla(data):
@@ -73,8 +77,11 @@ class DuplaService:
             dupla = Dupla.objects.create(**data)
             return dupla
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en create_dupla", exc_info=True)
-            raise ValidationError(f"Error al crear la Dupla: {e}") from e
+            logger.error(
+                f"Ocurrió un error inesperado en DuplaService.create_dupla {data} {e}",
+                exc_info=True,
+            )
+            raise
 
     @staticmethod
     def update_dupla(dupla_id, data):
@@ -100,5 +107,8 @@ class DuplaService:
             logger.error("Dupla no encontrada en update_dupla", exc_info=True)
             raise ValidationError("Dupla no encontrada") from exc
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en update_dupla", exc_info=True)
-            raise ValidationError(f"Error al editar la Dupla: {e}") from e
+            logger.error(
+                f"Ocurrió un error inesperado en DuplaService.update_dupla {dupla_id} {e}",
+                exc_info=True,
+            )
+            raise
