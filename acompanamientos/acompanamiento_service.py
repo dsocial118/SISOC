@@ -36,9 +36,10 @@ class AcompanamientoService:
                 .first()
             )
 
-            if intervenciones.subintervencion is None:
-                intervenciones.subintervencion = SubIntervencion()
-                intervenciones.subintervencion.nombre = ""
+            if not intervenciones.subintervencion_id:
+                intervenciones.subintervencion = SubIntervencion.objects.create(
+                    nombre=""
+                )
 
             hitos_a_actualizar = HitosIntervenciones.objects.filter(
                 intervencion=intervenciones.tipo_intervencion.nombre,

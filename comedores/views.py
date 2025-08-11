@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.core.cache import cache
 from django.conf import settings
 from django.db.models.base import Model
-from django.forms import BaseModelForm
+from django.forms import BaseModelForm, ValidationError
 from django.http import HttpResponse, JsonResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
@@ -94,24 +94,16 @@ def relevamiento_crear_editar_ajax(request, pk):
             else:
                 messages.error(request, "Acción no reconocida.")
                 response = redirect("comedor_detalle", pk=pk)
-    except Exception as e:
-        logger.error(
-            "Error al procesar relevamiento para comedor %s: %s",
-            pk,
-            e,
-            exc_info=True,
+    except ValidationError as e:
+        return JsonResponse({"error": e.message}, status=400)
+    except Exception:
+        logger.exception(
+            f"Error procesando relevamiento {pk}",
         )
-        if is_ajax:
-            response = JsonResponse({"error": str(e)}, status=500)
-        else:
-            messages.error(
-                request, "Hubo un error al guardar el relevamiento. Intenta de nuevo."
-            )
-            response = redirect("comedor_detalle", pk=pk)
+        return JsonResponse({"error": "Error interno"}, status=500)
     return response
 
 
-@method_decorator(csrf_exempt, name="dispatch")
 class NominaDetailView(TemplateView):
     template_name = "comedor/nomina_detail.html"
 
@@ -156,10 +148,11 @@ class NominaCreateView(CreateView):
 
         response = super().form_valid(form)
 
-        created = CiudadanoPrograma.objects.get_or_create(
-            ciudadano=ciudadano, programas_id=2, defaults={"creado_por": user}
+        _ciudadano_programa, created = CiudadanoPrograma.objects.get_or_create(
+            ciudadano=ciudadano,
+            programas_id=2,
+            defaults={"creado_por": user},
         )
-
         if created:
             HistorialCiudadanoProgramas.objects.create(
                 programa_id=2, ciudadano=ciudadano, accion="agregado", usuario=user
