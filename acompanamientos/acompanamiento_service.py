@@ -14,7 +14,7 @@ from duplas.models import Dupla
 from intervenciones.models.intervenciones import Intervencion, SubIntervencion
 from comedores.models import Comedor
 
-logger = logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class AcompanamientoService:

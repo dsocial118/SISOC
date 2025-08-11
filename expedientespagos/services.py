@@ -1,13 +1,12 @@
 import logging
 from expedientespagos.models import ExpedientePago
 
-logger = logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class ExpedientesPagosService:
     @staticmethod
     def crear_expediente_pago(comedor, data):
-        # Crear un nuevo expediente de pago
         try:
             expediente_pago = ExpedientePago.objects.create(
                 expediente_pago=data.get("expediente_pago"),
@@ -32,7 +31,6 @@ class ExpedientesPagosService:
 
     @staticmethod
     def actualizar_expediente_pago(expediente_pago, data):
-        # Actualizar un expediente de pago existente
         try:
             expediente_pago.expediente_pago = data.get("expediente_pago")
             expediente_pago.resolucion_pago = data.get("resolucion_pago")
@@ -47,7 +45,6 @@ class ExpedientesPagosService:
             expediente_pago.fecha_acreditacion = data.get("fecha_acreditacion")
             expediente_pago.observaciones = data.get("observaciones")
             expediente_pago.save()
-
             return expediente_pago
         except Exception as e:
             logger.error(
@@ -58,7 +55,6 @@ class ExpedientesPagosService:
 
     @staticmethod
     def eliminar_expediente_pago(expediente_pago):
-        # Eliminar un expediente de pago
         try:
             expediente_pago.delete()
         except Exception as e:
@@ -70,7 +66,6 @@ class ExpedientesPagosService:
 
     @staticmethod
     def obtener_expedientes_pagos(comedor):
-        # Obtener todos los expedientes de pago para un comedor
         try:
             return ExpedientePago.objects.filter(comedor=comedor)
         except Exception as e:
