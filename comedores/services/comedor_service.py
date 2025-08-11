@@ -3,8 +3,6 @@ from typing import Union
 
 from django.db.models import Q, Count, Prefetch
 from django.core.paginator import Paginator
-from django.core.cache import cache
-from django.conf import settings
 from django.contrib import messages
 from django.shortcuts import redirect
 from django.urls import reverse
@@ -12,33 +10,26 @@ from django.urls import reverse
 from relevamientos.models import Relevamiento, ClasificacionComedor
 from relevamientos.service import RelevamientoService
 from comedores.forms.comedor_form import ImagenComedorForm
-from comedores.models import Comedor, Referente, ValorComida, Nomina, Observacion
+from comedores.models import Comedor, ImagenComedor, Nomina, Observacion, Referente
+from comedores.utils import (
+    get_object_by_filter,
+    get_id_by_nombre,
+    normalize_field,
+    preload_valores_comida_cache,
+)
+
 from admisiones.models.admisiones import Admision
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 from intervenciones.models.intervenciones import Intervencion
-from comedores.models import ImagenComedor
 
 
 class ComedorService:
-    @staticmethod
-    def _get_objeto_por_filtro(model, **kwargs):
-        return model.objects.filter(**kwargs).first()
-
-    @staticmethod
-    def _get_id_by_nombre(model, nombre):
-        obj = model.objects.filter(nombre__iexact=nombre).first()
-        return obj.id if obj else ""
-
-    @staticmethod
-    def _normalizar_campo(valor, quitar):
-        if valor:
-            for char in quitar:
-                valor = valor.replace(char, "")
-        return valor or None
+    """High-level operations related to comedores."""
 
     @staticmethod
     def get_comedor_by_dupla(id_dupla):
-        return ComedorService._get_objeto_por_filtro(Comedor, dupla=id_dupla)
+        """Return the first comedor associated with the given dupla."""
+        return get_object_by_filter(Comedor, dupla=id_dupla)
 
     @staticmethod
     def get_comedor(pk_send, as_dict=False):
@@ -113,7 +104,8 @@ class ComedorService:
 
     @staticmethod
     def get_comedor_detail_object(comedor_id: int):
-        ComedorService._preload_valores_comida_cache()
+        """Fetch a comedor with all related objects optimized for detail view."""
+        preload_valores_comida_cache()
         return (
             Comedor.objects.select_related(
                 "provincia",
@@ -166,40 +158,28 @@ class ComedorService:
         )
 
     @staticmethod
-    def _preload_valores_comida_cache():
-        valor_map = cache.get("valores_comida_map")
-        if not valor_map:
-            valores_comida = ValorComida.objects.filter(
-                tipo__in=["desayuno", "almuerzo", "merienda", "cena"]
-            ).values("tipo", "valor")
-            valor_map = {item["tipo"].lower(): item["valor"] for item in valores_comida}
-            cache.set("valores_comida_map", valor_map, settings.DEFAULT_CACHE_TIMEOUT)
-
-    @staticmethod
     def get_ubicaciones_ids(data):
-        from configuraciones.models import Provincia, Municipio, Localidad
+        """Convert location names to their corresponding IDs in ``data``."""
+        from configuraciones.models import (  # pylint: disable=import-outside-toplevel,no-name-in-module
+            Provincia,
+            Municipio,
+            Localidad,
+        )
 
         if "provincia" in data:
-            data["provincia"] = ComedorService._get_id_by_nombre(
-                Provincia, data["provincia"]
-            )
+            data["provincia"] = get_id_by_nombre(Provincia, data["provincia"])
         if "municipio" in data:
-            data["municipio"] = ComedorService._get_id_by_nombre(
-                Municipio, data["municipio"]
-            )
+            data["municipio"] = get_id_by_nombre(Municipio, data["municipio"])
         if "localidad" in data:
-            data["localidad"] = ComedorService._get_id_by_nombre(
-                Localidad, data["localidad"]
-            )
+            data["localidad"] = get_id_by_nombre(Localidad, data["localidad"])
         return data
 
     @staticmethod
     def create_or_update_referente(data, referente_instance=None):
+        """Create or update a ``Referente`` using the provided ``data``."""
         referente_data = data.get("referente", {})
-        referente_data["celular"] = ComedorService._normalizar_campo(
-            referente_data.get("celular"), "-"
-        )
-        referente_data["documento"] = ComedorService._normalizar_campo(
+        referente_data["celular"] = normalize_field(referente_data.get("celular"), "-")
+        referente_data["documento"] = normalize_field(
             referente_data.get("documento"), "."
         )
         if referente_instance is None:
@@ -223,13 +203,7 @@ class ComedorService:
 
     @staticmethod
     def get_presupuestos(comedor_id: int, relevamientos_prefetched=None):
-        valor_map = cache.get("valores_comida_map")
-        if not valor_map:
-            valores_comida = ValorComida.objects.filter(
-                tipo__in=["desayuno", "almuerzo", "merienda", "cena"]
-            ).values("tipo", "valor")
-            valor_map = {item["tipo"].lower(): item["valor"] for item in valores_comida}
-            cache.set("valores_comida_map", valor_map, settings.DEFAULT_CACHE_TIMEOUT)
+        valor_map = preload_valores_comida_cache()
         if relevamientos_prefetched:
             beneficiarios = (
                 relevamientos_prefetched[0] if relevamientos_prefetched else None
