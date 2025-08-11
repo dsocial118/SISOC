@@ -41,7 +41,7 @@ def puede_operar(centro):
         return True
     except Exception as e:
         logger.error(
-            f"Ocurrió un error inesperado en SexoNoPermitido.puede_operar para centro: {centro} {e}",
+            f"Error en SexoNoPermitido.puede_operar para centro: {centro} {e}",
             exc_info=True,
         )
         raise
@@ -52,7 +52,7 @@ def obtener_centros_adheridos_de_faro(faro):
         return Centro.objects.filter(faro_asociado=faro, activo=True)
     except Exception as e:
         logger.error(
-            f"Ocurrió un error inesperado en SexoNoPermitido.obtener_centros_adheridos_de_faro para faro: {faro} {e}",
+            f"Error en SexoNoPermitido.obtener_centros_adheridos_de_faro para faro: {faro} {e}",
             exc_info=True,
         )
         raise
@@ -64,7 +64,7 @@ def validar_cuit(cuit):
         return s.isdigit() and len(s) in (10, 11)
     except Exception as e:
         logger.error(
-            f"Ocurrió un error inesperado en SexoNoPermitido.validar_cuit para ciudadano: {cuit} {e}",
+            f"Error en SexoNoPermitido.validar_cuit para ciudadano: {cuit} {e}",
             exc_info=True,
         )
         raise
@@ -78,7 +78,7 @@ def validar_ciudadano_en_rango_para_actividad(ciudadano, actividad_centro):
             )
     except Exception as e:
         logger.error(
-            f"Ocurrió un error inesperado en SexoNoPermitido.validar_ciudadano_en_rango_para_actividad para ciudadano: {ciudadano} {e}",
+            f"Error en SexoNoPermitido.validar_ciudadano_en_rango_para_actividad para ciudadano: {ciudadano} {e}",
             exc_info=True,
         )
         raise
@@ -94,7 +94,7 @@ class ActividadService:
             return actividad
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en SexoNoPermitido.obtener_o_error para ciudadano: {actividad_id} {e}",
+                f"Error en SexoNoPermitido.obtener_o_error para ciudadano: {actividad_id} {e}",
                 exc_info=True,
             )
             raise
@@ -110,7 +110,7 @@ class ParticipanteService:
             ).count()
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en SexoNoPermitido.contar_inscritos para ciudadano: {actividad_centro} {e}",
+                f"Error en SexoNoPermitido.contar_inscritos para ciudadano: {actividad_centro} {e}",
                 exc_info=True,
             )
             raise
@@ -123,7 +123,7 @@ class ParticipanteService:
             ).select_related("ciudadano")
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en SexoNoPermitido.obtener_inscritos para ciudadano: {actividad_centro} {e}",
+                f"Error en SexoNoPermitido.obtener_inscritos para ciudadano: {actividad_centro} {e}",
                 exc_info=True,
             )
             raise
@@ -136,7 +136,7 @@ class ParticipanteService:
             ).select_related("ciudadano")
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en SexoNoPermitido.obtener_lista_espera para ciudadano: {actividad_centro} {e}",
+                f"Error en SexoNoPermitido.obtener_lista_espera para ciudadano: {actividad_centro} {e}",
                 exc_info=True,
             )
             raise
@@ -161,7 +161,7 @@ class ParticipanteService:
             return len(nuevos)
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en SexoNoPermitido.cargar_participantes_desde_lista para ciudadano: {actividad_centro} {e}",
+                f"Error en SexoNoPermitido.cargar_participantes_desde_lista para ciudadano: {actividad_centro} {e}",
                 exc_info=True,
             )
             raise
@@ -196,7 +196,7 @@ class ParticipanteService:
                 )
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en SexoNoPermitido.contar_inscrit_crear_dimensiones_y_programaos para ciudadano: {ciudadano} {e}",
+                f"Error en SexoNoPermitido.contar_inscrit_crear_dimensiones_y_programaos para ciudadano: {ciudadano} {e}",
                 exc_info=True,
             )
             raise
@@ -218,7 +218,7 @@ class ParticipanteService:
             return ciudadano
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en SexoNoPermitido.contar_inscrear_ciudadano_con_dimensionescritos para ciudadano: {usuario} {e}",
+                f"Error en SexoNoPermitido.contar_inscrear_ciudadano_con_dimensionescritos para ciudadano: {usuario} {e}",
                 exc_info=True,
             )
             raise
@@ -232,7 +232,7 @@ class ParticipanteService:
             )
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en SexoNoPermitido.crear_participante para ciudadano: {ciudadano} {e}",
+                f"Error en SexoNoPermitido.crear_participante para ciudadano: {ciudadano} {e}",
                 exc_info=True,
             )
             raise
@@ -298,7 +298,7 @@ class ParticipanteService:
             return estado, participante
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en SexoNoPermitido.procesar_creacion para ciudadano: {usuario} {e}",
+                f"Error en SexoNoPermitido.procesar_creacion para ciudadano: {usuario} {e}",
                 exc_info=True,
             )
             raise
@@ -326,7 +326,7 @@ class ParticipanteService:
             return participante
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en SexoNoPermitido.dar_de_baja para ciudadano: {usuario} {e}",
+                f"Error en SexoNoPermitido.dar_de_baja para ciudadano: {usuario} {e}",
                 exc_info=True,
             )
             raise
@@ -357,7 +357,7 @@ class ParticipanteService:
             return siguiente
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en SexoNoPermitido.promover_lista_espera para ciudadano: {actividad_centro} {e}",
+                f"Error en SexoNoPermitido.promover_lista_espera para ciudadano: {actividad_centro} {e}",
                 exc_info=True,
             )
             raise
@@ -375,7 +375,7 @@ class ParticipanteService:
             )
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en SexoNoPermitido.buscar_ciudadanos_por_documento: {e}",
+                f"Error en SexoNoPermitido.buscar_ciudadanos_por_documento: {e}",
                 exc_info=True,
             )
             raise

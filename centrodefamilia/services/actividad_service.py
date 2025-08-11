@@ -13,7 +13,7 @@ def actividades_disponibles_para_centro():
         return Actividad.objects.all()
     except Exception as e:
         logger.error(
-            f"Ocurrió un error inesperado en Actividad.actividades_disponibles_para_centro para comedor: {e}",
+            f"Error en Actividad.actividades_disponibles_para_centro para comedor: {e}",
             exc_info=True,
         )
         raise
