@@ -197,23 +197,13 @@ class LegalesService:
             else:
                 messages.error(request, "Error al guardar el formulario RESO.")
 
-            if url_has_allowed_host_and_scheme(
-                request.path_info, allowed_hosts={request.get_host()}
-            ):
-                return redirect(request.path_info)
-            else:
-                return redirect("admisiones_legales_ver", pk=admision.pk)
+            return redirect("admisiones_legales_ver", pk=admision.pk)
         except Exception as e:
             logger.error(
                 "Ocurrió un error inesperado en guardar_formulario_reso", exc_info=True
             )
             messages.error(request, "Error inesperado al guardar el formulario RESO.")
-            if url_has_allowed_host_and_scheme(
-                request.path_info, allowed_hosts={request.get_host()}
-            ):
-                return redirect(request.path_info)
-            else:
-                return redirect("admisiones_legales_ver", pk=admision.pk)
+            return redirect("admisiones_legales_ver", pk=admision.pk)
 
     @staticmethod
     def guardar_formulario_proyecto_convenio(request, admision):
