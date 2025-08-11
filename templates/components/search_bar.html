@@ -1,3 +1,4 @@
+{% load custom_filters %}
 {# Componente Search Bar #}
 {# Uso: {% include 'components/search_bar.html' with titulo='Mi Título' placeholder='Buscar...' help_text='Ayuda' reset_url=url add_url=url show_add_button=True query=query add_text='Agregar' %} #}
 
@@ -31,9 +32,21 @@
 </form>
 <div class="row mt-3">
     <div class="col-12 text-center">
-        <a href="{{ reset_url }}" class="btn btn-secondary btn-lg d-inline-block mt-2 me-3">Resetear</a>
+        {% if reset_url_full %}
+            <a href="{{ reset_url_full }}" class="btn btn-secondary btn-lg d-inline-block mt-2 me-3">Resetear</a>
+        {% elif reset_url|is_url %}
+            <a href="{{ reset_url }}" class="btn btn-secondary btn-lg d-inline-block mt-2 me-3">Resetear</a>
+        {% else %}
+            <a href="{% url reset_url %}" class="btn btn-secondary btn-lg d-inline-block mt-2 me-3">Resetear</a>
+        {% endif %}
         {% if add_url and show_add_button|default:True %}
-            <a href="{{ add_url }}" class="btn btn-primary btn-lg d-inline-block mt-2{% if button_append %} mr-2{% endif %}">{{ add_text|default:"Agregar" }}</a>
+            {% if add_url_full %}
+                <a href="{{ add_url_full }}" class="btn btn-primary btn-lg d-inline-block mt-2{% if button_append %} mr-2{% endif %}">{{ add_text|default:"Agregar" }}</a>
+            {% elif add_url|is_url %}
+                <a href="{{ add_url }}" class="btn btn-primary btn-lg d-inline-block mt-2{% if button_append %} mr-2{% endif %}">{{ add_text|default:"Agregar" }}</a>
+            {% else %}
+                <a href="{% url add_url %}" class="btn btn-primary btn-lg d-inline-block mt-2{% if button_append %} mr-2{% endif %}">{{ add_text|default:"Agregar" }}</a>
+            {% endif %}
         {% endif %}
     </div>
 </div>
