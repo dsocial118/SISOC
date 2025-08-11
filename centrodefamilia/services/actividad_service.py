@@ -1,7 +1,7 @@
 import logging
 from centrodefamilia.models import Actividad
 
-logger = logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def actividades_disponibles_para_centro():
