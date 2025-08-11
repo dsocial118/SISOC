@@ -58,17 +58,9 @@ def client_logged(db, django_user_model, client):
 
 
 @pytest.fixture
-def comedor(db):
-    """Crea un comedor para usar en los tests."""
-    # Crear comedor usando la factory con un nombre fijo para consistencia
-    comedor_obj = ComedorFactory(nombre="Comedor de Prueba")
-    return comedor_obj
-
-
-@pytest.fixture
-def relevamiento(comedor):
+def relevamiento(comedor_fixture):
     # Crear relevamiento con ese comedor
-    rel_instance = RelevamientoFactory(comedor=comedor)
+    rel_instance = RelevamientoFactory(comedor=comedor_fixture)
     rel_instance.responsable = mock.Mock()
     rel_instance.responsable.nombre = fake.first_name()
     rel_instance.responsable.apellido = fake.last_name()
