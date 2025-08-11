@@ -5,7 +5,7 @@ from config.middlewares.threadlocals import get_current_user
 from historial.models import Historial
 
 
-logger = logging.getLogger("django")
+logger = logging.getLogger(__name__)
 
 
 class HistorialService:
@@ -23,26 +23,25 @@ class HistorialService:
           - instancia: objeto Django; se usará para content_type y object_id.
           - diferencias: dict con diferencias a registrar.
         """
+        usuario = get_current_user()
+
+        if instancia is None:
+            raise ValueError("Debe especificar 'instancia'")
+
         try:
             usuario = get_current_user()
-
-            if instancia is not None:
-                content_type = ContentType.objects.get_for_model(instancia)
-                object_id = str(instancia.pk)
-
-                return Historial.objects.create(
-                    usuario=usuario,
-                    accion=accion,
-                    content_type=content_type,
-                    object_id=object_id,
-                    diferencias=diferencias,
-                )
-            else:
-                raise ValueError("Debe especificar 'instancia'")
+            content_type = ContentType.objects.get_for_model(instancia)
+            object_id = str(instancia.pk)
+            return Historial.objects.create(
+                usuario=usuario,
+                accion=accion,
+                content_type=content_type,
+                object_id=object_id,
+                diferencias=diferencias,
+            )
         except Exception as e:
-            logger.error(
-                f"Ocurrió un error inesperado en HistorialService.registrar_historial: {e}",
-                exc_info=True,
+            logger.exception(
+                f"Error en HistorialService.registrar_historial para instancia {instancia}: {e}",
             )
             raise
 
@@ -59,15 +58,16 @@ class HistorialService:
             content_type = ContentType.objects.get_for_model(DocumentoRendicionFinal)
             documentos_ids = rendicion_cuentas_final.documentos.values_list(
                 "pk", flat=True
-            )
+            ).iterator()
 
             return Historial.objects.filter(
                 content_type=content_type,
-                object_id__in=[str(pk) for pk in documentos_ids],
+                object_id__in=map(str, documentos_ids),
             ).order_by("-fecha")
+
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en HistorialService.get_historial_documentos_by_rendicion_cuentas_final: {e}",
+                f"Error en HistorialService.get_historial_documentos_by_rendicion_cuentas_final: {e}",
                 exc_info=True,
             )
             raise
