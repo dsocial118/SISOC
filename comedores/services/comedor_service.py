@@ -5,15 +5,17 @@ from django.db.models import Q, Count, Prefetch
 from django.core.paginator import Paginator
 from django.core.cache import cache
 from django.conf import settings
+from django.contrib import messages
+from django.shortcuts import redirect
+from django.urls import reverse
 
 from relevamientos.models import Relevamiento, ClasificacionComedor
+from relevamientos.service import RelevamientoService
 from comedores.forms.comedor_form import ImagenComedorForm
 from comedores.models import Comedor, Referente, ValorComida, Nomina, Observacion
 from admisiones.models.admisiones import Admision
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 from intervenciones.models.intervenciones import Intervencion
-from core.models import Municipio, Provincia
-from core.models import Localidad
 from comedores.models import ImagenComedor
 
 
@@ -256,7 +258,13 @@ class ComedorService:
                     "sabado",
                     "domingo",
                 ]
-                tipos = ["desayuno", "almuerzo", "merienda", "cena", merienda_reforzada]
+                tipos = [
+                    "desayuno",
+                    "almuerzo",
+                    "merienda",
+                    "cena",
+                    "merienda_reforzada",
+                ]
                 for tipo in tipos:
                     count[tipo] = sum(
                         getattr(prestacion, f"{dia}_{tipo}_actual", 0) or 0
@@ -307,50 +315,7 @@ class ComedorService:
         )
 
     @staticmethod
-    def detalle_de_comedor_ctx(comedor):
-        from rendicioncuentasmensual.services import RendicionCuentaMensualService
-        import os
-
-        (
-            count_beneficiarios,
-            valor_cena,
-            valor_desayuno,
-            valor_almuerzo,
-            valor_merienda,
-        ) = ComedorService.get_presupuestos(comedor.id)
-        rendiciones_mensuales = (
-            RendicionCuentaMensualService.cantidad_rendiciones_cuentas_mensuales(
-                comedor
-            )
-        )
-        relevamientos = comedor.relevamiento_set.order_by("-estado", "-id")[:1]
-        observaciones = comedor.observacion_set.order_by("-fecha_visita")[:3]
-        return {
-            "relevamientos": relevamientos,
-            "observaciones": observaciones,
-            "count_relevamientos": comedor.relevamiento_set.count(),
-            "count_beneficiarios": count_beneficiarios,
-            "presupuesto_desayuno": valor_desayuno,
-            "presupuesto_almuerzo": valor_almuerzo,
-            "presupuesto_merienda": valor_merienda,
-            "presupuesto_cena": valor_cena,
-            "imagenes": comedor.imagenes.values("imagen"),
-            "comedor_categoria": comedor.clasificacioncomedor_set.order_by(
-                "-fecha"
-            ).first(),
-            "rendicion_cuentas_final_activo": rendiciones_mensuales >= 5,
-            "GESTIONAR_API_KEY": os.getenv("GESTIONAR_API_KEY"),
-            "GESTIONAR_API_CREAR_COMEDOR": os.getenv("GESTIONAR_API_CREAR_COMEDOR"),
-            "admision": comedor.admision_set.first(),
-        }
-
-    @staticmethod
     def post_comedor_relevamiento(request, comedor):
-        from relevamientos.service import RelevamientoService
-        from django.contrib import messages
-        from django.shortcuts import redirect
-        from django.urls import reverse
-
         is_new_relevamiento = "territorial" in request.POST
         is_edit_relevamiento = "territorial_editar" in request.POST
         if is_new_relevamiento or is_edit_relevamiento:
