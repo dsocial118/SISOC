@@ -16,7 +16,7 @@ def puede_operar(centro):
         return True
     except Exception as e:
         logger.error(
-            f"Ocurrió un error inesperado en AcompanamientoService.puede_operar para comedor: {centro} {e}",
+            f"Error en AcompanamientoService.puede_operar para comedor: {centro} {e}",
             exc_info=True,
         )
         raise
@@ -30,7 +30,7 @@ def obtener_centros_adheridos_de_faro(faro):
         return Centro.objects.filter(faro_asociado=faro, activo=True)
     except Exception as e:
         logger.error(
-            f"Ocurrió un error inesperado en AcompanamientoService.obtener_centros_adheridos_de_faro para comedor: {faro} {e}",
+            f"Error en AcompanamientoService.obtener_centros_adheridos_de_faro para comedor: {faro} {e}",
             exc_info=True,
         )
         raise

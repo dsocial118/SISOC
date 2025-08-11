@@ -49,7 +49,7 @@ def procesar_informe(ruta_archivo: str) -> dict:
         }
     except Exception as e:
         logger.error(
-            f"Ocurrió un error inesperado en AcompanamientoService.obtener_hitos para comedor: {nombre} {e}",
+            f"Error en AcompanamientoService.obtener_hitos para comedor: {nombre} {e}",
             exc_info=True,
         )
         raise

@@ -25,7 +25,7 @@ class ExpedientesPagosService:
             return expediente_pago
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en ExpedientesPagosService.crear_expediente_pago para comedor: {comedor} {e}",
+                f"Error en ExpedientesPagosService.crear_expediente_pago para comedor: {comedor} {e}",
                 exc_info=True,
             )
             raise
@@ -51,7 +51,7 @@ class ExpedientesPagosService:
             return expediente_pago
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en ExpedientesPagosService.actualizar_expediente_pago para comedor: {expediente_pago} {e}",
+                f"Error en ExpedientesPagosService.actualizar_expediente_pago para comedor: {expediente_pago} {e}",
                 exc_info=True,
             )
             raise
@@ -63,7 +63,7 @@ class ExpedientesPagosService:
             expediente_pago.delete()
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en ExpedientesPagosService.eliminar_expediente_pago para comedor: {expediente_pago} {e}",
+                f"Error en ExpedientesPagosService.eliminar_expediente_pago para comedor: {expediente_pago} {e}",
                 exc_info=True,
             )
             raise
@@ -75,7 +75,7 @@ class ExpedientesPagosService:
             return ExpedientePago.objects.filter(comedor=comedor)
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en ExpedientesPagosService.obtener_expedientes_pagos para comedor: {comedor} {e}",
+                f"Error en ExpedientesPagosService.obtener_expedientes_pagos para comedor: {comedor} {e}",
                 exc_info=True,
             )
             raise
@@ -87,7 +87,7 @@ class ExpedientesPagosService:
             return ExpedientePago.objects.get(pk=id_enviado)
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en ExpedientesPagosService.obtener_expediente_pago para comedor: {id_enviado} {e}",
+                f"Error en ExpedientesPagosService.obtener_expediente_pago para comedor: {id_enviado} {e}",
                 exc_info=True,
             )
             raise

@@ -35,7 +35,7 @@ class CentroDesarrolloInfantilService:
             return queryset
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en CentroDesarrolloInfantilService.get_centros_filtrados para centro: {e}",
+                f"Error en CentroDesarrolloInfantilService.get_centros_filtrados para centro: {e}",
                 exc_info=True,
             )
             raise
@@ -56,7 +56,7 @@ class CentroDesarrolloInfantilService:
             )
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en CentroDesarrolloInfantilService.get_centro_detail_object para centro:{centro_id} {e}",
+                f"Error en CentroDesarrolloInfantilService.get_centro_detail_object para centro:{centro_id} {e}",
                 exc_info=True,
             )
             raise
@@ -78,7 +78,7 @@ class CentroDesarrolloInfantilService:
                 return imagen_centro.errors
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en CentroDesarrolloInfantilService.create_imagenes para centro:{centro_id} {e}",
+                f"Error en CentroDesarrolloInfantilService.create_imagenes para centro:{centro_id} {e}",
                 exc_info=True,
             )
             raise
@@ -104,7 +104,7 @@ class CentroDesarrolloInfantilService:
             return data
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en CentroDesarrolloInfantilService.get_mes_dia_turno_ids para centro:{data} {e}",
+                f"Error en CentroDesarrolloInfantilService.get_mes_dia_turno_ids para centro:{data} {e}",
                 exc_info=True,
             )
             raise
@@ -123,7 +123,7 @@ class CentroDesarrolloInfantilService:
             }
         except Exception as e:
             logger.error(
-                f"Ocurrió un error inesperado en CentroDesarrolloInfantilService.get_informacion_adicional para centro:{centro_id} {e}",
+                f"Error en CentroDesarrolloInfantilService.get_informacion_adicional para centro:{centro_id} {e}",
                 exc_info=True,
             )
             raise
