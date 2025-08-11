@@ -32,7 +32,7 @@
 /* mapa centrado con margen */
 .location-card .map-container {
   width: 420px;
-  height: 300;
+  height: 300px;
   padding: 1rem;
   flex-shrink: 0;
   background: transparent;
@@ -136,6 +136,7 @@
 .content-seccion {
   display: none;
   padding: 1rem;
+  margin-left: 60px;
 }
 .content-seccion.active {
   display: block;
