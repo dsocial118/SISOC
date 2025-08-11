@@ -1,6 +1,8 @@
 import logging
 from expedientespagos.models import ExpedientePago
+
 logger = logging.getLogger("django")
+
 
 class ExpedientesPagosService:
     @staticmethod
@@ -27,6 +29,7 @@ class ExpedientesPagosService:
                 exc_info=True,
             )
             raise
+
     @staticmethod
     def actualizar_expediente_pago(expediente_pago, data):
         # Actualizar un expediente de pago existente
