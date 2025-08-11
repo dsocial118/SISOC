@@ -19,7 +19,7 @@ from ciudadanos.models import (
     HistorialCiudadanoProgramas,
 )
 
-logger = logging.getLogger("django")
+logger = logger = logging.getLogger(__name__)
 
 
 class AlreadyRegistered(Exception):
@@ -182,18 +182,19 @@ class ParticipanteService:
             ):
                 Modelo.objects.update_or_create(ciudadano=ciudadano)
 
-                creado = CiudadanoPrograma.objects.update_or_create(
-                    ciudadano=ciudadano,
-                    programas_id=programa_id,
-                    defaults={"creado_por": usuario},
-                )
-            if creado:
+            obj, created = CiudadanoPrograma.objects.update_or_create(
+                ciudadano=ciudadano,
+                programas_id=programa_id,
+                defaults={"creado_por": usuario},
+            )
+            if created:
                 HistorialCiudadanoProgramas.objects.create(
                     programa_id=programa_id,
                     ciudadano=ciudadano,
                     accion="agregado",
                     usuario=usuario,
                 )
+
         except Exception as e:
             logger.error(
                 f"Error en SexoNoPermitido.contar_inscrit_crear_dimensiones_y_programaos para ciudadano: {ciudadano} {e}",

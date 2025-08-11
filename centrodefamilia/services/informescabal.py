@@ -3,7 +3,7 @@ import logging
 from datetime import datetime
 from django.core.exceptions import ValidationError
 
-logger = logging.getLogger("django")
+logger = logger = logging.getLogger(__name__)
 
 
 def procesar_informe(ruta_archivo: str) -> dict:
@@ -24,7 +24,7 @@ def procesar_informe(ruta_archivo: str) -> dict:
     """
     try:
         # Extraer solo el nombre del fichero
-        nombre = ruta_archivo.split("/")[-1]
+        nombre = (ruta_archivo or "").split("/")[-1]
 
         # Buscar la fecha en formato YYYYMMDD
         patron = r"^CABAL_(\d{8})_.*\.pdf$"
@@ -49,7 +49,7 @@ def procesar_informe(ruta_archivo: str) -> dict:
         }
     except Exception as e:
         logger.error(
-            f"Error en AcompanamientoService.obtener_hitos para comedor: {nombre} {e}",
+            f"Error en informescabal.procesar_informe para {nombre}: {e}",
             exc_info=True,
         )
         raise

@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404
 from cdi.models import CentroDesarrolloInfantil
 from core.models import Mes, Dia, Turno
 
-logger = logging.getLogger("django")
+logger = logger = logging.getLogger(__name__)
 
 
 class CentroDesarrolloInfantilService:
@@ -15,16 +15,10 @@ class CentroDesarrolloInfantilService:
         Filtra los centros de desarrollo infantil según la consulta.
         """
         try:
-            queryset = CentroDesarrolloInfantil.objects.prefetch_related(
-                "provincia", "municipio", "localidad"
-            ).values(
-                "id",
-                "nombre",
-                "provincia",
-                "municipio",
-                "localidad",
-                "direccion",
+            CentroDesarrolloInfantil.objects.values(
+                "id", "nombre", "provincia", "municipio", "localidad", "direccion"
             )
+
             if query:
                 queryset = queryset.filter(
                     Q(nombre__icontains=query)

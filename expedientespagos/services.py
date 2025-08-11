@@ -1,7 +1,7 @@
 import logging
 from expedientespagos.models import ExpedientePago
 
-logger = logging.getLogger("django")
+logger = logger = logging.getLogger(__name__)
 
 
 class ExpedientesPagosService:
