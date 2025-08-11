@@ -47,6 +47,8 @@ class Command(BaseCommand):
             "Grupos Ver",
             "ReferenteCentro",
             "CDF SSE",
+            "Dashboard Comedor",
+            "Dashboard Centrodefamilia",
         ]
         self.stdout.write(self.style.SUCCESS(f"Creando grupos de usuario..."))
         for group_name in groups:

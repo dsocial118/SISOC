@@ -2,14 +2,12 @@ from django.urls import path
 
 from configuraciones.decorators import group_required
 
-
 from centrodefamilia.views.informecabal import (
     ExpedienteCreateView,
     ExpedienteDetailView,
     ExpedienteListView,
     ExpedienteUpdateView,
 )
-
 
 from centrodefamilia.views.centro import (
     CentroCreateView,
@@ -28,12 +26,12 @@ from centrodefamilia.views.actividad import (
     cargar_actividades_por_categoria,
 )
 
-
 from centrodefamilia.views.participante import (
     ParticipanteActividadCreateView,
     ParticipanteActividadDeleteView,
+    ParticipanteActividadListEsperaView,
+    ParticipanteActividadPromoverView,
 )
-
 
 urlpatterns = [
     path(
@@ -109,6 +107,22 @@ urlpatterns = [
             ParticipanteActividadDeleteView.as_view()
         ),
         name="participanteactividad_delete",
+    ),
+    # Lista de espera de participantes
+    path(
+        "centros/<int:centro_id>/actividades/<int:actividad_id>/lista-espera/",
+        group_required(["ReferenteCentro", "CDF SSE"])(
+            ParticipanteActividadListEsperaView.as_view()
+        ),
+        name="actividadcentro_lista_espera",
+    ),
+    # Promover participante de lista de espera
+    path(
+        "centros/<int:centro_id>/actividades/<int:actividad_id>/lista-espera/<int:pk>/promover/",
+        group_required(["ReferenteCentro", "CDF SSE"])(
+            ParticipanteActividadPromoverView.as_view()
+        ),
+        name="participanteactividad_promover",
     ),
     path(
         "centro/<int:centro_id>/expedientes/",
