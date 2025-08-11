@@ -22,7 +22,6 @@ from django.views.generic import (
     UpdateView,
     TemplateView,
 )
-from django.contrib.auth import get_user_model
 
 from ciudadanos.models import CiudadanoPrograma, HistorialCiudadanoProgramas
 from comedores.forms.comedor_form import (
