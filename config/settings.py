@@ -96,7 +96,7 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 ROOT_URLCONF = "config.urls"
 
 # Configuración de hosts permitidos desde variables de entorno
-hosts = os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",")
+hosts = [h for h in os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",") if h]
 ALLOWED_HOSTS = hosts
 
 # Configuración de CSRF
@@ -368,7 +368,8 @@ REST_FRAMEWORK = {
 }
 
 # Configuracion de CORS header
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOWED_ORIGINS = [f"https://{h}" for h in ALLOWED_HOSTS if h]
 
 # Configuracion de dominio para API GESTIONAR
 DOMINIO = os.environ.get("DOMINIO", default="localhost:8001")
