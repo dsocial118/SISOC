@@ -1,6 +1,7 @@
 import logging
 
 from django.db.models import Q, Exists, OuterRef
+from django.db import transaction
 from admisiones.models.admisiones import (
     Admision,
     InformeTecnico,
@@ -114,9 +115,13 @@ class AcompanamientoService:
             None
         """
         try:
-            admision = Admision.objects.get(comedor=comedor)
-            if not admision:
-                raise ValueError("No se encontró una admisión para este comedor.")
+            try:
+                admision = Admision.objects.get(comedor=comedor)
+            except Admision.DoesNotExist as exc:
+                raise ValueError(
+                    "No se encontró una admisión para este comedor."
+                ) from exc
+
             InformacionRelevante.objects.update_or_create(
                 comedor=comedor,
                 defaults={
@@ -128,16 +133,17 @@ class AcompanamientoService:
             )
 
             prestaciones_admision = admision.prestaciones.all()
-            Prestacion.objects.filter(comedor=comedor).delete()
-            for prestacion in prestaciones_admision:
-                Prestacion.objects.create(
-                    comedor=comedor,
-                    dia=prestacion.dia,
-                    desayuno=prestacion.desayuno,
-                    almuerzo=prestacion.almuerzo,
-                    merienda=prestacion.merienda,
-                    cena=prestacion.cena,
-                )
+            with transaction.atomic():
+                Prestacion.objects.filter(comedor=comedor).delete()
+                for prestacion in prestaciones_admision:
+                    Prestacion.objects.create(
+                        comedor=comedor,
+                        dia=prestacion.dia,
+                        desayuno=prestacion.desayuno,
+                        almuerzo=prestacion.almuerzo,
+                        merienda=prestacion.merienda,
+                        cena=prestacion.cena,
+                    )
         except Exception as e:
             logger.error(
                 f"Ocurrió un error inesperado en AcompanamientoService.importar_datos_desde_admision para comedor: {comedor} {e}",
