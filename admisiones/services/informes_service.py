@@ -33,9 +33,7 @@ class InformeService:
                 else InformeTecnicoBaseForm
             )
         except Exception as e:
-            logger.error(
-                "Ocurrió un error inesperado en get_form_class_por_tipo", exc_info=True
-            )
+            logger.error("Error en get_form_class_por_tipo", exc_info=True)
             return InformeTecnicoBaseForm
 
     @staticmethod
@@ -43,9 +41,7 @@ class InformeService:
         try:
             return kwargs.get("tipo", "base")
         except Exception as e:
-            logger.error(
-                "Ocurrió un error inesperado en get_tipo_from_kwargs", exc_info=True
-            )
+            logger.error("Error en get_tipo_from_kwargs", exc_info=True)
             return "base"
 
     @staticmethod
@@ -54,7 +50,7 @@ class InformeService:
             return InformeTecnico.objects.filter(tipo=tipo)
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en get_queryset_informe_por_tipo",
+                "Error en get_queryset_informe_por_tipo",
                 exc_info=True,
             )
             return InformeTecnico.objects.none()
@@ -68,7 +64,7 @@ class InformeService:
             return admision, tipo
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en get_admision_y_tipo_from_kwargs",
+                "Error en get_admision_y_tipo_from_kwargs",
                 exc_info=True,
             )
             return None, "base"
@@ -82,7 +78,7 @@ class InformeService:
                 informe.estado = "Para revision"
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en verificar_estado_para_revision",
+                "Error en verificar_estado_para_revision",
                 exc_info=True,
             )
 
@@ -116,7 +112,7 @@ class InformeService:
             ]
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en get_campos_visibles_informe",
+                "Error en get_campos_visibles_informe",
                 exc_info=True,
             )
             return []
@@ -128,7 +124,7 @@ class InformeService:
             instance.estado = "Para revision"
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en preparar_informe_para_creacion",
+                "Error en preparar_informe_para_creacion",
                 exc_info=True,
             )
 
@@ -138,7 +134,7 @@ class InformeService:
             return get_object_or_404(InformeTecnico, tipo=tipo, pk=pk)
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en get_informe_por_tipo_y_pk",
+                "Error en get_informe_por_tipo_y_pk",
                 exc_info=True,
             )
             return None
@@ -153,7 +149,7 @@ class InformeService:
                 InformeService.generar_y_guardar_pdf(informe, tipo)
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en actualizar_estado_informe",
+                "Error en actualizar_estado_informe",
                 exc_info=True,
             )
 
@@ -182,9 +178,7 @@ class InformeService:
                 archivo=pdf_content,
             )
         except Exception as e:
-            logger.error(
-                "Ocurrió un error inesperado en generar_y_guardar_pdf", exc_info=True
-            )
+            logger.error("Error en generar_y_guardar_pdf", exc_info=True)
 
     @staticmethod
     def get_informe_create_context(admision_id, tipo):
@@ -197,7 +191,7 @@ class InformeService:
             }
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en get_informe_create_context",
+                "Error en get_informe_create_context",
                 exc_info=True,
             )
             return {}
@@ -224,7 +218,7 @@ class InformeService:
             }
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en get_informe_update_context",
+                "Error en get_informe_update_context",
                 exc_info=True,
             )
             return {}
@@ -242,7 +236,7 @@ class InformeService:
             }
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en get_context_informe_detail",
+                "Error en get_context_informe_detail",
                 exc_info=True,
             )
             return {}
@@ -275,7 +269,7 @@ class InformeService:
                 ObservacionGeneralInforme.objects.filter(informe=informe).delete()
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en procesar_revision_informe",
+                "Error en procesar_revision_informe",
                 exc_info=True,
             )
 
@@ -294,7 +288,7 @@ class InformeService:
             return informe
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en guardar_campos_complementarios",
+                "Error en guardar_campos_complementarios",
                 exc_info=True,
             )
             return None
@@ -317,6 +311,6 @@ class InformeService:
             )
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en generar_y_guardar_pdf_complementario",
+                "Error en generar_y_guardar_pdf_complementario",
                 exc_info=True,
             )
