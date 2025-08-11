@@ -3,7 +3,7 @@
 This module provides small reusable functions for common data
 transformations and cache handling used across comedor services."""
 
-from typing import Any, Type
+from typing import Any, Optional, Type
 
 from django.conf import settings
 from django.core.cache import cache
@@ -26,7 +26,7 @@ def get_id_by_nombre(model: Type[Model], nombre: str):
     return obj.id if obj else ""
 
 
-def normalize_field(valor: str | None, chars_to_remove: str) -> str | None:
+def normalize_field(valor: Optional[str], chars_to_remove: str) -> Optional[str]:
     """Remove any ``chars_to_remove`` from ``valor`` and normalize empty values."""
     if valor:
         for char in chars_to_remove:
