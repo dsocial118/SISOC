@@ -8,8 +8,6 @@ from django.conf import settings
 from django.db.models.base import Model
 from django.forms import BaseModelForm, ValidationError
 from django.http import HttpResponse, JsonResponse
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
