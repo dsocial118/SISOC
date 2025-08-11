@@ -1,7 +1,6 @@
 # pylint: disable=too-many-lines
 import json
 from django.shortcuts import get_object_or_404
-from django.db import transaction
 from django.utils import timezone
 
 from comedores.models import (

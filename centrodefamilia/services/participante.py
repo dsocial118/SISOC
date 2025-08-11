@@ -337,9 +337,8 @@ class ParticipanteService:
     def promover_lista_espera(cls, actividad_centro, usuario):
         try:
             siguiente = (
-                ParticipanteActividad.objects.filter(
-                    actividad_centro=actividad_centro, estado="lista_espera"
-                )
+                ParticipanteActividad.objects.select_for_update()
+                .filter(actividad_centro=actividad_centro, estado="lista_espera")
                 .order_by("fecha_registro")
                 .first()
             )
@@ -358,7 +357,7 @@ class ParticipanteService:
             return siguiente
         except Exception as e:
             logger.error(
-                f"Error en SexoNoPermitido.promover_lista_espera para ciudadano: {actividad_centro} {e}",
+                f"Error en ParticipanteService.promover_lista_espera para actividad {actividad_centro}: {e}",
                 exc_info=True,
             )
             raise
