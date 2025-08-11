@@ -1,9 +1,6 @@
-import os
 import re
-import logging
 from typing import Union
 
-from django.db import transaction
 from django.db.models import Q, Count, Prefetch
 from django.core.paginator import Paginator
 from django.core.cache import cache
@@ -15,12 +12,9 @@ from comedores.models import Comedor, Referente, ValorComida, Nomina, Observacio
 from admisiones.models.admisiones import Admision
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 from intervenciones.models.intervenciones import Intervencion
-from core.models import Municipio, Prestacion, Provincia
+from core.models import Municipio, Provincia
 from core.models import Localidad
 from comedores.models import ImagenComedor
-
-
-logger = logging.getLogger(__name__)
 
 
 class ComedorService:
@@ -70,39 +64,15 @@ class ComedorService:
 
     @staticmethod
     def borrar_imagenes(post):
-        """Remove images flagged for deletion in POST data."""
         pattern = re.compile(r"^imagen_ciudadano-borrar-(\d+)$")
         imagenes_ids = []
         for key in post:
             match = pattern.match(key)
             if match:
-                imagenes_ids.append(match.group(1))
+                imagen_id = match.group(1)
+                imagenes_ids.append(imagen_id)
 
-        if imagenes_ids:
-            deleted_count, _ = ImagenComedor.objects.filter(
-                id__in=imagenes_ids
-            ).delete()
-            logger.info("Deleted %s images", deleted_count)
-        else:
-            logger.debug("No images marked for deletion")
-
-    @staticmethod
-    def borrar_foto_legajo(post, comedor_instance):
-        """Eliminar la foto del legajo si está marcada para borrar"""
-        if "foto_legajo_borrar" in post and comedor_instance.foto_legajo:
-            file_path = comedor_instance.foto_legajo.path
-            with transaction.atomic():
-                try:
-                    if os.path.exists(file_path):
-                        os.remove(file_path)
-                except OSError as exc:
-                    logger.warning(
-                        "Could not delete legajo file %s: %s", file_path, exc
-                    )
-
-                comedor_instance.foto_legajo = None
-                comedor_instance.save(update_fields=["foto_legajo"])
-                logger.info("Legajo photo removed for comedor %s", comedor_instance.id)
+        ImagenComedor.objects.filter(id__in=imagenes_ids).delete()
 
     @staticmethod
     def get_comedores_filtrados(query: Union[str, None] = None):
@@ -157,21 +127,13 @@ class ComedorService:
                 "expedientes_pagos",
                 Prefetch(
                     "imagenes",
-                    queryset=ImagenComedor.objects.only("id", "imagen"),
+                    queryset=ImagenComedor.objects.only("imagen"),
                     to_attr="imagenes_optimized",
                 ),
                 Prefetch(
                     "relevamiento_set",
-                    queryset=(
-                        Relevamiento.objects.order_by(
-                            "-estado", "-id"
-                        ).prefetch_related(
-                            Prefetch(
-                                "prestaciones",
-                                queryset=Prestacion.objects.only("id"),
-                                to_attr="prestaciones_opt",
-                            )
-                        )
+                    queryset=Relevamiento.objects.select_related("prestacion").order_by(
+                        "-estado", "-id"
                     ),
                     to_attr="relevamientos_optimized",
                 ),
@@ -206,12 +168,7 @@ class ComedorService:
         valor_map = cache.get("valores_comida_map")
         if not valor_map:
             valores_comida = ValorComida.objects.filter(
-                tipo__in=[
-                    "desayuno",
-                    "almuerzo",
-                    "merienda",
-                    "cena",
-                ]
+                tipo__in=["desayuno", "almuerzo", "merienda", "cena"]
             ).values("tipo", "valor")
             valor_map = {item["tipo"].lower(): item["valor"] for item in valores_comida}
             cache.set("valores_comida_map", valor_map, settings.DEFAULT_CACHE_TIMEOUT)
@@ -277,9 +234,9 @@ class ComedorService:
             )
         else:
             beneficiarios = (
-                Relevamiento.objects.prefetch_related("prestaciones")
+                Relevamiento.objects.select_related("prestacion")
                 .filter(comedor=comedor_id)
-                .only("prestaciones")
+                .only("prestacion")
                 .first()
             )
         count = {
@@ -287,7 +244,6 @@ class ComedorService:
             "almuerzo": 0,
             "merienda": 0,
             "cena": 0,
-            "merienda_reforzada": 0,
         }
         if beneficiarios and beneficiarios.prestaciones:
             for prestacion in beneficiarios.prestaciones.all():
@@ -300,7 +256,7 @@ class ComedorService:
                     "sabado",
                     "domingo",
                 ]
-                tipos = ["desayuno", "almuerzo", "merienda", "cena"]
+                tipos = ["desayuno", "almuerzo", "merienda", "cena", merienda_reforzada]
                 for tipo in tipos:
                     count[tipo] = sum(
                         getattr(prestacion, f"{dia}_{tipo}_actual", 0) or 0
