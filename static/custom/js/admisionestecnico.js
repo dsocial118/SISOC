@@ -12,7 +12,7 @@ function subirArchivo(admisionId, documentoId) {
     let file = inputFile.files[0];
 
     if (!file) {
-        alert("Por favor, selecciona un archivo antes de archivar.");
+        alert("Por favor, selecciona un archivo antes de adjuntar.");
         return;
     }
 
@@ -62,19 +62,24 @@ function subirArchivo(admisionId, documentoId) {
 
                 inputFile.disabled = true; 
                 let button = inputFile.nextElementSibling;
-                button.innerText = "Archivado";
+                button.innerText = "Adjuntado";
                 button.disabled = true;
 
                 // Agregar botón de eliminar
                 let fila = document.getElementById(`fila-${documentoId}`);
-                let eliminarBtn = document.createElement("button");
-                eliminarBtn.className = "btn btn-sm btn-danger fw-bold px-3";
-                eliminarBtn.innerText = "X";
-                eliminarBtn.onclick = function () {
-                    confirmarEliminar(admisionId, documentoId);
-                };
-                fila.querySelector("td:last-child").appendChild(eliminarBtn);
-
+                // Verificá si ya existe el botón eliminar
+                let eliminarExistente = fila.querySelector(`button[data-eliminar-id="${documentoId}"]`);
+                
+                if (!eliminarExistente) {
+                    let eliminarBtn = document.createElement("button");
+                    eliminarBtn.className = "btn btn-sm btn-danger fw-bold px-3";
+                    eliminarBtn.innerText = "X";
+                    eliminarBtn.setAttribute("data-eliminar-id", documentoId);
+                    eliminarBtn.onclick = function () {
+                        confirmarEliminar(admisionId, documentoId);
+                    };
+                    fila.querySelector("td:last-child").appendChild(eliminarBtn);
+                }
                 // Ocultar la barra de progreso una vez completado
                 progressContainer.style.display = "none";
             } else {
@@ -124,7 +129,7 @@ function eliminarArchivo(admisionId, documentoId) {
                 <td class="px-3" id="estado-${documentoId}">Pendiente</td>
                 <td>
                     <input type="file" id="file-${documentoId}" />
-                    <button class="btn btn-primary btn-sm" onclick="subirArchivo(${admisionId}, ${documentoId})">Archivar</button>
+                    <button class="btn btn-primary btn-sm" onclick="subirArchivo(${admisionId}, ${documentoId})">Adjuntar</button>
                     <!-- Volver a agregar la barra de progreso -->
                     <div class="progress mt-2" style="display:none; height: 3px;" id="progress-container-${documentoId}">
                         <div class="progress-bar  progress-bar-striped" role="progressbar" id="progress-bar-${documentoId}" style="width: 0%;">0%</div>

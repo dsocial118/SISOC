@@ -183,12 +183,7 @@ class AcompanamientoService:
             "sabado",
             "domingo",
         ]
-        tipos_comida = [
-            "desayuno",
-            "almuerzo",
-            "merienda",
-            "cena",
-        ]
+        tipos_comida = ["desayuno", "almuerzo", "merienda", "cena"]
 
         prestaciones_por_dia = []
         prestaciones_totales = []

@@ -5,15 +5,12 @@ register = template.Library()
 
 @register.filter
 def has_group(user, group_name):
-    if not user or getattr(user, "is_anonymous", True):
+    try:
+        if not hasattr(user, "cached_groups"):
+            user.cached_groups = list(user.groups.values_list("name", flat=True))
+        return group_name in user.cached_groups or user.is_superuser
+    except Exception:
         return False
-
-    groups = getattr(user, "_cached_groups", None)
-    if groups is None:
-        groups = set(user.groups.values_list("name", flat=True))
-        setattr(user, "_cached_groups", groups)
-
-    return user.is_superuser or "Admin" in groups or group_name in groups
 
 
 @register.filter
