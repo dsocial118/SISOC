@@ -1,10 +1,11 @@
+import logging
 from django.contrib.contenttypes.models import ContentType
 from rendicioncuentasfinal.models import DocumentoRendicionFinal
 from config.middlewares.threadlocals import get_current_user
 from historial.models import Historial
-import logging
 
-logger = logging.getLogger(__name__)
+
+logger = logging.getLogger("django")
 
 
 class HistorialService:
@@ -40,7 +41,8 @@ class HistorialService:
                 raise ValueError("Debe especificar 'instancia'")
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en registrar_historial", exc_info=True
+                f"Ocurrió un error inesperado en HistorialService.registrar_historial: {e}",
+                exc_info=True,
             )
             raise
 
@@ -65,7 +67,7 @@ class HistorialService:
             ).order_by("-fecha")
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en get_historial_documentos_by_rendicion_cuentas_final",
+                f"Ocurrió un error inesperado en HistorialService.get_historial_documentos_by_rendicion_cuentas_final: {e}",
                 exc_info=True,
             )
-            return Historial.objects.none()
+            raise
