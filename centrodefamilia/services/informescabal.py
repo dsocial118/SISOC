@@ -5,6 +5,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def procesar_informe(ruta_archivo: str) -> dict:
     """
     Procesa el PDF enviado por CABAL, extrayendo la fecha de periodo y

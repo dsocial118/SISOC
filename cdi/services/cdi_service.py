@@ -7,6 +7,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class CentroDesarrolloInfantilService:
     @staticmethod
     def get_centros_filtrados(query: Union[str, None] = None):
@@ -33,7 +34,9 @@ class CentroDesarrolloInfantilService:
                 )
             return queryset
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en get_centros_filtrados", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en get_centros_filtrados", exc_info=True
+            )
             return CentroDesarrolloInfantil.objects.none()
 
     @staticmethod
@@ -51,7 +54,9 @@ class CentroDesarrolloInfantilService:
                 pk=centro_id,
             )
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en get_centro_detail_object", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en get_centro_detail_object", exc_info=True
+            )
             return None
 
     @staticmethod
@@ -70,7 +75,9 @@ class CentroDesarrolloInfantilService:
             else:
                 return imagen_centro.errors
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en create_imagenes", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en create_imagenes", exc_info=True
+            )
             return None
 
     @staticmethod
@@ -93,7 +100,9 @@ class CentroDesarrolloInfantilService:
 
             return data
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en get_mes_dia_turno_ids", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en get_mes_dia_turno_ids", exc_info=True
+            )
             return data
 
     @staticmethod
@@ -109,5 +118,8 @@ class CentroDesarrolloInfantilService:
                 "horario": f"{centro.horario_inicio} - {centro.horario_fin}",
             }
         except Exception as e:
-            logger.error("Ocurrió un error inesperado en get_informacion_adicional", exc_info=True)
+            logger.error(
+                "Ocurrió un error inesperado en get_informacion_adicional",
+                exc_info=True,
+            )
             return {}
