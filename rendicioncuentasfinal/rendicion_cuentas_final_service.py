@@ -1,6 +1,7 @@
 import logging
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.db import transaction
 from django.db.models import Q
 from rendicioncuentasfinal.models import (
     EstadoDocumentoRendicionFinal,
@@ -15,17 +16,17 @@ class RendicionCuentasFinalService:
     @staticmethod
     def actualizar_documento_con_archivo(documento, archivo):
         try:
-            documento.documento = archivo
-            documento.estado = EstadoDocumentoRendicionFinal.objects.get(
-                nombre="En análisis"
-            )
-            documento.fecha_modificacion = timezone.now()
-            documento.save()
-
-            HistorialService.registrar_historial(
-                accion="Adjuntar documento",
-                instancia=documento,
-            )
+            with transaction.atomic():
+                documento.documento = archivo
+                documento.estado = EstadoDocumentoRendicionFinal.objects.get(
+                    nombre="En análisis"
+                )
+                documento.fecha_modificacion = timezone.now()
+                documento.save()
+                HistorialService.registrar_historial(
+                    accion="Adjuntar documento",
+                    instancia=documento,
+                )
         except Exception as e:
             logger.error(
                 f"Ocurrió un error inesperado en RendicionCuentasFinalService.actualizar_documento_con_archivo para el documento: {documento} {e}",

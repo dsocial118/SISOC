@@ -1,4 +1,5 @@
 import logging
+from django.shortcuts import get_object_or_404
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 
 logger = logging.getLogger("django")
@@ -68,17 +69,10 @@ class RendicionCuentaMensualService:
     @staticmethod
     def obtener_rendicion_cuenta_mensual(id_enviado):
         try:
-            return RendicionCuentaMensual.objects.get(pk=id_enviado)
-        except RendicionCuentaMensual.DoesNotExist:
-            logger.error(
-                "RendicionCuentaMensual no encontrada en obtener_rendicion_cuenta_mensual",
-                exc_info=True,
-            )
-            return None
+            return get_object_or_404(RendicionCuentaMensual, pk=id_enviado)
         except Exception as e:
-            logger.error(
-                f"Ocurrió un error inesperado en RendicionCuentaMensualService.obtener_rendicion_cuenta_mensual para comedor: {id_enviado} {e}",
-                exc_info=True,
+            logger.exception(
+                f"Ocurrió un error inesperado en RendicionCuentaMensualService.obtener_rendicion_cuenta_mensual para {id_enviado}"
             )
             raise
 
