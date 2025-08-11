@@ -1,7 +1,7 @@
-from rendicioncuentasmensual.models import RendicionCuentaMensual
 import logging
+from rendicioncuentasmensual.models import RendicionCuentaMensual
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 class RendicionCuentaMensualService:
@@ -19,10 +19,10 @@ class RendicionCuentaMensualService:
             return rendicion
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en crear_rendicion_cuenta_mensual",
+                f"Ocurrió un error inesperado en RendicionCuentaMensualService.crear_rendicion_cuenta_mensual para comedor: {comedor} {e}",
                 exc_info=True,
             )
-            return None
+            raise
 
     @staticmethod
     def actualizar_rendicion_cuenta_mensual(rendicion, data):
@@ -36,10 +36,10 @@ class RendicionCuentaMensualService:
             return rendicion
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en actualizar_rendicion_cuenta_mensual",
+                f"Ocurrió un error inesperado en RendicionCuentaMensualService.actualizar_rendicion_cuenta_mensual para rendicion: {rendicion} {e}",
                 exc_info=True,
             )
-            return None
+            raise
 
     @staticmethod
     def eliminar_rendicion_cuenta_mensual(rendicion):
@@ -47,9 +47,10 @@ class RendicionCuentaMensualService:
             rendicion.delete()
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en eliminar_rendicion_cuenta_mensual",
+                f"Ocurrió un error inesperado en RendicionCuentaMensualService.eliminar_rendicion_cuenta_mensual para rendicion: {rendicion} {e}",
                 exc_info=True,
             )
+            raise
 
     @staticmethod
     def obtener_rendiciones_cuentas_mensuales(comedor):
@@ -59,10 +60,10 @@ class RendicionCuentaMensualService:
             ).prefetch_related("arvhios_adjuntos")
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en obtener_rendiciones_cuentas_mensuales",
+                f"Ocurrió un error inesperado en RendicionCuentaMensualService.obtener_rendiciones_cuentas_mensuales para comedor: {comedor} {e}",
                 exc_info=True,
             )
-            return RendicionCuentaMensual.objects.none()
+            raise
 
     @staticmethod
     def obtener_rendicion_cuenta_mensual(id_enviado):
@@ -76,10 +77,10 @@ class RendicionCuentaMensualService:
             return None
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en obtener_rendicion_cuenta_mensual",
+                f"Ocurrió un error inesperado en RendicionCuentaMensualService.obtener_rendicion_cuenta_mensual para comedor: {id_enviado} {e}",
                 exc_info=True,
             )
-            return None
+            raise
 
     # TODO: Cambiar nombre y añadir verbo
     @staticmethod
@@ -88,7 +89,7 @@ class RendicionCuentaMensualService:
             return RendicionCuentaMensual.objects.filter(comedor=comedor).count()
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en cantidad_rendiciones_cuentas_mensuales",
+                f"Ocurrió un error inesperado en RendicionCuentaMensualService.cantidad_rendiciones_cuentas_mensuales para comedor: {comedor} {e}",
                 exc_info=True,
             )
-            return 0
+            raise

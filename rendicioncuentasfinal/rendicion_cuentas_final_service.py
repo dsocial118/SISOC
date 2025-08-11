@@ -1,15 +1,14 @@
+import logging
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db.models import Q
-import logging
-
-logger = logging.getLogger(__name__)
-
 from rendicioncuentasfinal.models import (
     EstadoDocumentoRendicionFinal,
     DocumentoRendicionFinal,
 )
 from historial.services.historial_service import HistorialService
+
+logger = logging.getLogger("django")
 
 
 class RendicionCuentasFinalService:
@@ -29,9 +28,10 @@ class RendicionCuentasFinalService:
             )
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en actualizar_documento_con_archivo",
+                f"Ocurrió un error inesperado en RendicionCuentasFinalService.actualizar_documento_con_archivo para el documento: {documento} {e}",
                 exc_info=True,
             )
+            raise
 
     @staticmethod
     def adjuntar_archivo_a_documento(documento_id, archivo):
@@ -48,10 +48,10 @@ class RendicionCuentasFinalService:
             return True, documento
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en adjuntar_archivo_a_documento",
+                f"Ocurrió un error inesperado en RendicionCuentasFinalService.adjuntar_archivo_a_documento para el documento: {documento_id} {e}",
                 exc_info=True,
             )
-            return False, None
+            raise
 
     @staticmethod
     def get_documentos_rendicion_cuentas_final(rendicion_cuentas_final):
@@ -74,10 +74,10 @@ class RendicionCuentasFinalService:
             return documentos
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en get_documentos_rendicion_cuentas_final",
+                f"Ocurrió un error inesperado en RendicionCuentasFinalService.get_documentos_rendicion_cuentas_final para la rendicion: {rendicion_cuentas_final} {e}",
                 exc_info=True,
             )
-            return DocumentoRendicionFinal.objects.none()
+            raise
 
     @staticmethod
     def filter_documentos_por_area(user, query):
@@ -112,7 +112,7 @@ class RendicionCuentasFinalService:
             return qs
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en filter_documentos_por_area",
+                f"Ocurrió un error inesperado en RendicionCuentasFinalService.filter_documentos_por_area para el usuario: {user} {e}",
                 exc_info=True,
             )
-            return DocumentoRendicionFinal.objects.none()
+            raise
