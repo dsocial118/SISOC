@@ -60,9 +60,7 @@ class LegalesService:
                 messages.error(request, "Error al enviar a rectificar.")
             return redirect("admisiones_legales_ver", pk=admision.pk)
         except Exception as e:
-            logger.error(
-                "Ocurrió un error inesperado en enviar_a_rectificar", exc_info=True
-            )
+            logger.error("Error en enviar_a_rectificar", exc_info=True)
             messages.error(request, "Error inesperado al enviar a rectificar.")
             return redirect("admisiones_legales_ver", pk=admision.pk)
 
@@ -82,9 +80,7 @@ class LegalesService:
             else:
                 return redirect("admisiones_legales_ver", pk=admision.pk)
         except Exception as e:
-            logger.error(
-                "Ocurrió un error inesperado en guardar_legales_num_if", exc_info=True
-            )
+            logger.error("Error en guardar_legales_num_if", exc_info=True)
             messages.error(request, "Error inesperado al guardar el número de IF.")
             if url_has_allowed_host_and_scheme(
                 request.path_info, allowed_hosts={request.get_host()}
@@ -133,9 +129,7 @@ class LegalesService:
             else:
                 return redirect("admisiones_legales_ver", pk=admision.pk)
         except Exception as e:
-            logger.error(
-                "Ocurrió un error inesperado en validar_juridicos", exc_info=True
-            )
+            logger.error("Error en validar_juridicos", exc_info=True)
             messages.error(request, "Error inesperado al validar jurídicos.")
             if url_has_allowed_host_and_scheme(
                 request.path_info, allowed_hosts={request.get_host()}
@@ -199,9 +193,7 @@ class LegalesService:
 
             return redirect("admisiones_legales_ver", pk=admision.pk)
         except Exception as e:
-            logger.error(
-                "Ocurrió un error inesperado en guardar_formulario_reso", exc_info=True
-            )
+            logger.error("Error en guardar_formulario_reso", exc_info=True)
             messages.error(request, "Error inesperado al guardar el formulario RESO.")
             return redirect("admisiones_legales_ver", pk=admision.pk)
 
@@ -244,7 +236,7 @@ class LegalesService:
             return redirect(request.path_info)
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en guardar_formulario_proyecto_convenio",
+                "Error en guardar_formulario_proyecto_convenio",
                 exc_info=True,
             )
             messages.error(
@@ -286,7 +278,7 @@ class LegalesService:
             return redirect(request.path_info)
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en guardar_documento_expediente",
+                "Error en guardar_documento_expediente",
                 exc_info=True,
             )
             messages.error(
@@ -314,7 +306,7 @@ class LegalesService:
             return queryset
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en get_admisiones_legales_filtradas",
+                "Error en get_admisiones_legales_filtradas",
                 exc_info=True,
             )
             return Admision.objects.none()
@@ -345,9 +337,7 @@ class LegalesService:
             # Por defecto, recargar la misma página
             return redirect("admisiones_legales_ver", pk=admision.pk)
         except Exception as e:
-            logger.error(
-                "Ocurrió un error inesperado en procesar_post_legales", exc_info=True
-            )
+            logger.error("Error en procesar_post_legales", exc_info=True)
             messages.error(request, "Error inesperado al procesar el POST de legales.")
             return redirect("admisiones_legales_ver", pk=admision.pk)
 
@@ -426,9 +416,7 @@ class LegalesService:
                 "informes_complementarios": informes_complementarios,
             }
         except Exception as e:
-            logger.error(
-                "Ocurrió un error inesperado en get_legales_context", exc_info=True
-            )
+            logger.error("Error en get_legales_context", exc_info=True)
             return {}
 
     @staticmethod
@@ -440,7 +428,7 @@ class LegalesService:
             return InformeTecnico.objects.filter(admision=admision, tipo=tipo).first()
         except Exception as e:
             logger.error(
-                "Ocurrió un error inesperado en get_informe_por_tipo_convenio",
+                "Error en get_informe_por_tipo_convenio",
                 exc_info=True,
             )
             return None
