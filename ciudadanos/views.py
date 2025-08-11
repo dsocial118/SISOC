@@ -129,7 +129,7 @@ from .services.consulta_renaper import consultar_datos_renaper
 
 locale.setlocale(locale.LC_ALL, "es_AR.UTF-8")
 
-logger = logging.getLogger("django")
+logger = logging.getLogger(__name__)
 
 ROL_ADMIN = "usuarios.rol_admin"
 
@@ -2447,7 +2447,6 @@ class CiudadanosGrupoHogarCreateView(CreateView):
             for familiar in page_obj
             if familiar["ciudadano_2Hogar__id"] == int(pk)
         ]
-        logger.debug(f"hogar_1: {context['hogar_1']}, hogar_2: {context['hogar_2']}")
         context["hogares"] = page_obj
         context["count_hogar"] = hogares.count()
         context["ciudadano_principal"] = ciudadano_principal
