@@ -1,6 +1,7 @@
 # pylint: disable=too-many-lines
 import json
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 
 from comedores.models import (
     Comedor,
@@ -9,6 +10,13 @@ from comedores.models import (
 )
 from core.models import Localidad, Municipio, Provincia
 from core.utils import convert_string_to_int
+from relevamientos.utils import (
+    assign_values_to_instance,
+    convert_to_boolean,
+    get_object_or_none,
+    get_recursos,
+    populate_data,
+)
 from relevamientos.models import (
     Anexo,
     CantidadColaboradores,
@@ -46,64 +54,11 @@ from relevamientos.tasks import AsyncSendRelevamientoToGestionar
 
 # TODO: Refactorizar todo esto, pylint esta muriendo aca
 class RelevamientoService:  # pylint: disable=too-many-public-methods
-
-    # TODO: Mover metodos no genericos al utils.py
-
-    # Este metodo recibe el nombre del campo de la base, el array de datos y el modelo
-    # y devuelve un queryset de los recursos que existen en la base de datos
-    @staticmethod
-    def get_recursos(nombre, recursos_data, model):
-        recursos_str = recursos_data.pop(nombre, "")
-        if recursos_str:
-            recursos_arr = [n.strip() for n in recursos_str.split(",")]
-            return model.objects.filter(nombre__in=recursos_arr)
-        return model.objects.none()
-
-    # Convierte un valor de string a booleano
-    # Si el valor es "Y" devuelve True, si es "N" devuelve False
-    @staticmethod
-    def convert_to_boolean(value):
-        if value in {"Y", "N"}:
-            return value == "Y"
-        raise ValueError(f"Valor inesperado para booleano: {value}")
-
-    # Obtiene un objeto del modelo dado, filtrando por el nombre del campo y el valor
-    # Si el valor es None o una cadena vacía, devuelve None
-    @staticmethod
-    def get_object_or_none(model, field_name, value):
-        try:
-            return model.objects.get(**{field_name: value})
-        except model.DoesNotExist:
-            return None
-        except model.MultipleObjectsReturned:
-            return model.objects.filter(**{field_name: value}).first()
-
-    # Asigna los valores del diccionario data a los campos del instance
-    # y guarda el instance en la base de datos
-    @staticmethod
-    def assign_values_to_instance(instance, data):
-        for field, value in data.items():
-            setattr(instance, field, value)
-        instance.save()
-        return instance
-
-    @staticmethod
-    def populate_data(data, transformations):
-        for key, func in transformations.items():
-            if key in data:
-                data[key] = func(data[key])
-        return data
-
-    @staticmethod
-    def create_or_update_instance(model, data, instance=None):
-        if instance is None:
-            instance = model.objects.create(**data)
-        else:
-            instance = RelevamientoService.assign_values_to_instance(instance, data)
-        return instance
+    """Service layer for managing Relevamiento persistence and business rules."""
 
     @staticmethod
     def update_comedor(comedor_data, comedor_instance):
+        """Update basic fields of a ``Comedor`` from a data dictionary."""
         comedor_instance.numero = convert_string_to_int(
             comedor_data.get("numero", comedor_instance.numero)
         )
@@ -196,6 +151,50 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         relevamiento.save()
 
         AsyncSendRelevamientoToGestionar(relevamiento.id).start()
+
+        return relevamiento
+
+    @staticmethod
+    def populate_relevamiento(relevamiento_form, extra_forms):
+        relevamiento = relevamiento_form.save(commit=False)
+
+        funcionamiento = extra_forms["funcionamiento_form"].save()
+        relevamiento.funcionamiento = funcionamiento
+
+        espacio = extra_forms["espacio_form"].save(commit=False)
+        cocina = extra_forms["espacio_cocina_form"].save(commit=True)
+        espacio.cocina = cocina
+        prestacion = extra_forms["espacio_prestacion_form"].save(commit=True)
+        espacio.prestacion = prestacion
+        espacio.save()
+        relevamiento.espacio = espacio
+
+        colaboradores = extra_forms["colaboradores_form"].save()
+        relevamiento.colaboradores = colaboradores
+
+        recursos = extra_forms["recursos_form"].save()
+        relevamiento.recursos = recursos
+
+        anexo = extra_forms["anexo_form"].save()
+        relevamiento.anexo = anexo
+
+        compras = extra_forms["compras_form"].save()
+        relevamiento.compras = compras
+
+        prestacion = extra_forms["prestacion_form"].save()
+        relevamiento.prestacion = prestacion
+
+        referente = extra_forms["referente_form"].save()
+        relevamiento.responsable = referente
+        relevamiento.responsable_es_referente = (
+            relevamiento_form.cleaned_data["responsable_es_referente"] == "True"
+        )
+        punto_entregas = extra_forms["punto_entregas_form"].save()
+        relevamiento.punto_entregas = punto_entregas
+
+        relevamiento.fecha_visita = timezone.now()
+
+        relevamiento.save()
 
         return relevamiento
 
@@ -394,10 +393,8 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             )
 
         if "servicio_por_turnos" in funcionamiento_data:
-            funcionamiento_data["servicio_por_turnos"] = (
-                RelevamientoService.convert_to_boolean(
-                    funcionamiento_data["servicio_por_turnos"]
-                )
+            funcionamiento_data["servicio_por_turnos"] = convert_to_boolean(
+                funcionamiento_data["servicio_por_turnos"]
             )
 
         if "cantidad_turnos" in funcionamiento_data:
@@ -412,7 +409,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 **funcionamiento_data
             )
         else:
-            funcionamiento_instance = RelevamientoService.assign_values_to_instance(
+            funcionamiento_instance = assign_values_to_instance(
                 funcionamiento_instance, funcionamiento_data
             )
 
@@ -431,7 +428,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 **espacio_prestacion_data
             )
         else:
-            espacio_prestacion_instance = RelevamientoService.assign_values_to_instance(
+            espacio_prestacion_instance = assign_values_to_instance(
                 espacio_prestacion_instance, espacio_prestacion_data
             )
         return espacio_prestacion_instance
@@ -442,30 +439,28 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
     ):  # pylint: disable=too-many-statements,too-many-branches
         # Esto es una lista de metodos a ejecutar para cada item de la prestacion_data
         transformations = {
-            "espacio_equipado": RelevamientoService.convert_to_boolean,
-            "tiene_ventilacion": RelevamientoService.convert_to_boolean,
-            "tiene_salida_emergencia": RelevamientoService.convert_to_boolean,
-            "salida_emergencia_senializada": RelevamientoService.convert_to_boolean,
-            "tiene_equipacion_incendio": RelevamientoService.convert_to_boolean,
-            "tiene_botiquin": RelevamientoService.convert_to_boolean,
-            "tiene_buena_iluminacion": RelevamientoService.convert_to_boolean,
-            "tiene_sanitarios": RelevamientoService.convert_to_boolean,
-            "informacion_quejas": RelevamientoService.convert_to_boolean,
-            "desague_hinodoro": lambda x: RelevamientoService.get_object_or_none(
+            "espacio_equipado": convert_to_boolean,
+            "tiene_ventilacion": convert_to_boolean,
+            "tiene_salida_emergencia": convert_to_boolean,
+            "salida_emergencia_senializada": convert_to_boolean,
+            "tiene_equipacion_incendio": convert_to_boolean,
+            "tiene_botiquin": convert_to_boolean,
+            "tiene_buena_iluminacion": convert_to_boolean,
+            "tiene_sanitarios": convert_to_boolean,
+            "informacion_quejas": convert_to_boolean,
+            "desague_hinodoro": lambda x: get_object_or_none(
                 TipoDesague, "nombre__iexact", x
             ),
-            "gestion_quejas": lambda x: RelevamientoService.get_object_or_none(
+            "gestion_quejas": lambda x: get_object_or_none(
                 TipoGestionQuejas, "nombre__iexact", x
             ),
             "gestion_quejas_otro": lambda x: x,
-            "frecuencia_limpieza": lambda x: RelevamientoService.get_object_or_none(
+            "frecuencia_limpieza": lambda x: get_object_or_none(
                 FrecuenciaLimpieza, "nombre__iexact", x
             ),
         }
         # Se ejecuta el metodo populate_data que recorre la prestacion_data y aplica las transformaciones
-        prestacion_data = RelevamientoService.populate_data(
-            prestacion_data, transformations
-        )
+        prestacion_data = populate_data(prestacion_data, transformations)
 
         return prestacion_data
 
@@ -498,23 +493,21 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
     def populate_cocina_data(cocina_data):
         # Esto es una lista de metodos a ejecutar para cada item de la cocina_data
         transformations = {
-            "espacio_elaboracion_alimentos": RelevamientoService.convert_to_boolean,
-            "almacenamiento_alimentos_secos": RelevamientoService.convert_to_boolean,
-            "heladera": RelevamientoService.convert_to_boolean,
-            "freezer": RelevamientoService.convert_to_boolean,
-            "recipiente_residuos_organicos": RelevamientoService.convert_to_boolean,
-            "recipiente_residuos_reciclables": RelevamientoService.convert_to_boolean,
-            "otros_residuos": RelevamientoService.convert_to_boolean,
-            "recipiente_otros_residuos": RelevamientoService.convert_to_boolean,
+            "espacio_elaboracion_alimentos": convert_to_boolean,
+            "almacenamiento_alimentos_secos": convert_to_boolean,
+            "heladera": convert_to_boolean,
+            "freezer": convert_to_boolean,
+            "recipiente_residuos_organicos": convert_to_boolean,
+            "recipiente_residuos_reciclables": convert_to_boolean,
+            "otros_residuos": convert_to_boolean,
+            "recipiente_otros_residuos": convert_to_boolean,
             "abastecimiento_agua": lambda x: (
-                RelevamientoService.get_object_or_none(TipoAgua, "nombre__iexact", x)
-                if x
-                else None
+                get_object_or_none(TipoAgua, "nombre__iexact", x) if x else None
             ),
-            "instalacion_electrica": RelevamientoService.convert_to_boolean,
+            "instalacion_electrica": convert_to_boolean,
         }
         # Se ejecuta el metodo populate_data que recorre la cocina_data y aplica las transformaciones
-        cocina_data = RelevamientoService.populate_data(cocina_data, transformations)
+        cocina_data = populate_data(cocina_data, transformations)
         return cocina_data
 
     @staticmethod
@@ -546,9 +539,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         if espacio_instance is None:
             espacio_instance = Espacio.objects.create(**espacio_data)
         else:
-            espacio_instance = RelevamientoService.assign_values_to_instance(
-                espacio_instance, espacio_data
-            )
+            espacio_instance = assign_values_to_instance(espacio_instance, espacio_data)
 
         return espacio_instance
 
@@ -561,7 +552,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         if colaboradores_instance is None:
             colaboradores_instance = Colaboradores.objects.create(**colaboradores_data)
         else:
-            colaboradores_instance = RelevamientoService.assign_values_to_instance(
+            colaboradores_instance = assign_values_to_instance(
                 colaboradores_instance, colaboradores_data
             )
 
@@ -571,19 +562,17 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
     def populate_colaboradores_data(colaboradores_data):
         # Esto es una lista de metodos a ejecutar para cada item de la colaboradores_data
         transformations = {
-            "colaboradores_capacitados_alimentos": RelevamientoService.convert_to_boolean,
-            "colaboradores_recibieron_capacitacion_alimentos": RelevamientoService.convert_to_boolean,
-            "colaboradores_capacitados_salud_seguridad": RelevamientoService.convert_to_boolean,
-            "colaboradores_recibieron_capacitacion_emergencias": RelevamientoService.convert_to_boolean,
-            "colaboradores_recibieron_capacitacion_violencia": RelevamientoService.convert_to_boolean,
-            "cantidad_colaboradores": lambda x: RelevamientoService.get_object_or_none(
+            "colaboradores_capacitados_alimentos": convert_to_boolean,
+            "colaboradores_recibieron_capacitacion_alimentos": convert_to_boolean,
+            "colaboradores_capacitados_salud_seguridad": convert_to_boolean,
+            "colaboradores_recibieron_capacitacion_emergencias": convert_to_boolean,
+            "colaboradores_recibieron_capacitacion_violencia": convert_to_boolean,
+            "cantidad_colaboradores": lambda x: get_object_or_none(
                 CantidadColaboradores, "nombre__iexact", x
             ),
         }
         # Se ejecuta el metodo populate_data que recorre la colaboradores_data y aplica las transformaciones
-        colaboradores_data = RelevamientoService.populate_data(
-            colaboradores_data, transformations
-        )
+        colaboradores_data = populate_data(colaboradores_data, transformations)
         return colaboradores_data
 
     @staticmethod
@@ -636,46 +625,44 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
     ):  # pylint: disable=too-many-statements,too-many-branches
         # Esto es una lista de metodos a ejecutar para cada item de la recursos_data
         transformations = {
-            "recibe_donaciones_particulares": RelevamientoService.convert_to_boolean,
-            "frecuencia_donaciones_particulares": lambda x: RelevamientoService.get_object_or_none(
+            "recibe_donaciones_particulares": convert_to_boolean,
+            "frecuencia_donaciones_particulares": lambda x: get_object_or_none(
                 FrecuenciaRecepcionRecursos, "nombre__iexact", x
             ),
-            "recibe_estado_nacional": RelevamientoService.convert_to_boolean,
-            "frecuencia_estado_nacional": lambda x: RelevamientoService.get_object_or_none(
+            "recibe_estado_nacional": convert_to_boolean,
+            "frecuencia_estado_nacional": lambda x: get_object_or_none(
                 FrecuenciaRecepcionRecursos, "nombre__iexact", x
             ),
-            "recibe_estado_provincial": RelevamientoService.convert_to_boolean,
-            "frecuencia_estado_provincial": lambda x: RelevamientoService.get_object_or_none(
+            "recibe_estado_provincial": convert_to_boolean,
+            "frecuencia_estado_provincial": lambda x: get_object_or_none(
                 FrecuenciaRecepcionRecursos, "nombre__iexact", x
             ),
-            "recibe_estado_municipal": RelevamientoService.convert_to_boolean,
-            "frecuencia_estado_municipal": lambda x: RelevamientoService.get_object_or_none(
+            "recibe_estado_municipal": convert_to_boolean,
+            "frecuencia_estado_municipal": lambda x: get_object_or_none(
                 FrecuenciaRecepcionRecursos, "nombre__iexact", x
             ),
-            "recibe_otros": RelevamientoService.convert_to_boolean,
-            "frecuencia_otros": lambda x: RelevamientoService.get_object_or_none(
+            "recibe_otros": convert_to_boolean,
+            "frecuencia_otros": lambda x: get_object_or_none(
                 FrecuenciaRecepcionRecursos, "nombre__iexact", x
             ),
-            "recursos_donaciones_particulares": lambda x: RelevamientoService.get_recursos(
+            "recursos_donaciones_particulares": lambda x: get_recursos(
                 "recursos_donaciones_particulares", recursos_data, TipoRecurso
             ),
-            "recursos_estado_nacional": lambda x: RelevamientoService.get_recursos(
+            "recursos_estado_nacional": lambda x: get_recursos(
                 "recursos_estado_nacional", recursos_data, TipoRecurso
             ),
-            "recursos_estado_provincial": lambda x: RelevamientoService.get_recursos(
+            "recursos_estado_provincial": lambda x: get_recursos(
                 "recursos_estado_provincial", recursos_data, TipoRecurso
             ),
-            "recursos_estado_municipal": lambda x: RelevamientoService.get_recursos(
+            "recursos_estado_municipal": lambda x: get_recursos(
                 "recursos_estado_municipal", recursos_data, TipoRecurso
             ),
-            "recursos_otros": lambda x: RelevamientoService.get_recursos(
+            "recursos_otros": lambda x: get_recursos(
                 "recursos_otros", recursos_data, TipoRecurso
             ),
         }
         # Se ejecuta el metodo populate_data que recorre la recursos_data y aplica las transformaciones
-        recursos_data = RelevamientoService.populate_data(
-            recursos_data, transformations
-        )
+        recursos_data = populate_data(recursos_data, transformations)
         return recursos_data
 
     @staticmethod
@@ -685,9 +672,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         if compras_instance is None:
             compras_instance = FuenteCompras.objects.create(**compras_data)
         else:
-            compras_instance = RelevamientoService.assign_values_to_instance(
-                compras_instance, compras_data
-            )
+            compras_instance = assign_values_to_instance(compras_instance, compras_data)
         return compras_instance
 
     @staticmethod
@@ -697,9 +682,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         if anexo_instance is None:
             anexo_instance = Anexo.objects.create(**anexo_data)
         else:
-            anexo_instance = RelevamientoService.assign_values_to_instance(
-                anexo_instance, anexo_data
-            )
+            anexo_instance = assign_values_to_instance(anexo_instance, anexo_data)
         return anexo_instance
 
     @staticmethod
@@ -708,43 +691,43 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
     ):
         # Esto es una lista de metodos a ejecutar para cada item de la anexo_data
         transformations = {
-            "tipo_insumo": lambda x: RelevamientoService.get_object_or_none(
+            "tipo_insumo": lambda x: get_object_or_none(
                 TipoInsumos, "nombre__iexact", x
             ),
-            "frecuencia_insumo": lambda x: RelevamientoService.get_object_or_none(
+            "frecuencia_insumo": lambda x: get_object_or_none(
                 TipoFrecuenciaInsumos, "nombre__iexact", x
             ),
-            "tecnologia": lambda x: RelevamientoService.get_object_or_none(
+            "tecnologia": lambda x: get_object_or_none(
                 TipoTecnologia, "nombre__iexact", x
             ),
-            "acceso_comedor": lambda x: RelevamientoService.get_object_or_none(
+            "acceso_comedor": lambda x: get_object_or_none(
                 TipoAccesoComedor, "nombre__iexact", x
             ),
-            "distancia_transporte": lambda x: RelevamientoService.get_object_or_none(
+            "distancia_transporte": lambda x: get_object_or_none(
                 TipoDistanciaTransporte, "nombre__iexact", x
             ),
-            "comedor_merendero": RelevamientoService.convert_to_boolean,
-            "insumos_organizacion": RelevamientoService.convert_to_boolean,
-            "servicio_internet": RelevamientoService.convert_to_boolean,
-            "zona_inundable": RelevamientoService.convert_to_boolean,
-            "actividades_jardin_maternal": RelevamientoService.convert_to_boolean,
-            "actividades_jardin_infantes": RelevamientoService.convert_to_boolean,
-            "apoyo_escolar": RelevamientoService.convert_to_boolean,
-            "alfabetizacion_terminalidad": RelevamientoService.convert_to_boolean,
-            "capacitaciones_talleres": RelevamientoService.convert_to_boolean,
-            "promocion_salud": RelevamientoService.convert_to_boolean,
-            "actividades_discapacidad": RelevamientoService.convert_to_boolean,
-            "necesidades_alimentarias": RelevamientoService.convert_to_boolean,
-            "actividades_recreativas": RelevamientoService.convert_to_boolean,
-            "actividades_culturales": RelevamientoService.convert_to_boolean,
-            "emprendimientos_productivos": RelevamientoService.convert_to_boolean,
-            "actividades_religiosas": RelevamientoService.convert_to_boolean,
-            "actividades_huerta": RelevamientoService.convert_to_boolean,
-            "espacio_huerta": RelevamientoService.convert_to_boolean,
-            "otras_actividades": RelevamientoService.convert_to_boolean,
+            "comedor_merendero": convert_to_boolean,
+            "insumos_organizacion": convert_to_boolean,
+            "servicio_internet": convert_to_boolean,
+            "zona_inundable": convert_to_boolean,
+            "actividades_jardin_maternal": convert_to_boolean,
+            "actividades_jardin_infantes": convert_to_boolean,
+            "apoyo_escolar": convert_to_boolean,
+            "alfabetizacion_terminalidad": convert_to_boolean,
+            "capacitaciones_talleres": convert_to_boolean,
+            "promocion_salud": convert_to_boolean,
+            "actividades_discapacidad": convert_to_boolean,
+            "necesidades_alimentarias": convert_to_boolean,
+            "actividades_recreativas": convert_to_boolean,
+            "actividades_culturales": convert_to_boolean,
+            "emprendimientos_productivos": convert_to_boolean,
+            "actividades_religiosas": convert_to_boolean,
+            "actividades_huerta": convert_to_boolean,
+            "espacio_huerta": convert_to_boolean,
+            "otras_actividades": convert_to_boolean,
         }
         # Se ejecuta el metodo populate_data que recorre la anexo_data y aplica las transformaciones
-        anexo_data = RelevamientoService.populate_data(anexo_data, transformations)
+        anexo_data = populate_data(anexo_data, transformations)
 
         if "veces_recibio_insumos_2024" in anexo_data:
             anexo_data["veces_recibio_insumos_2024"] = convert_string_to_int(
@@ -797,27 +780,25 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
     def populate_punto_entregas_data(punto_entregas_data):
         # Esto es una lista de metodos a ejecutar para cada item de la punto_entregas_data
         transformations = {
-            "tipo_comedor": lambda x: RelevamientoService.get_object_or_none(
+            "tipo_comedor": lambda x: get_object_or_none(
                 TipoDeComedor, "nombre__iexact", x
             ),
-            "frecuencia_entrega_bolsones": lambda x: RelevamientoService.get_object_or_none(
+            "frecuencia_entrega_bolsones": lambda x: get_object_or_none(
                 TipoFrecuenciaBolsones, "nombre__iexact", x
             ),
-            "tipo_modulo_bolsones": lambda x: RelevamientoService.get_object_or_none(
+            "tipo_modulo_bolsones": lambda x: get_object_or_none(
                 TipoModuloBolsones, "nombre__iexact", x
             ),
-            "existe_punto_entregas": RelevamientoService.convert_to_boolean,
-            "funciona_punto_entregas": RelevamientoService.convert_to_boolean,
-            "observa_entregas": RelevamientoService.convert_to_boolean,
-            "retiran_mercaderias_distribucion": RelevamientoService.convert_to_boolean,
-            "retiran_mercaderias_comercio": RelevamientoService.convert_to_boolean,
-            "reciben_dinero": RelevamientoService.convert_to_boolean,
-            "registran_entrega_bolsones": RelevamientoService.convert_to_boolean,
+            "existe_punto_entregas": convert_to_boolean,
+            "funciona_punto_entregas": convert_to_boolean,
+            "observa_entregas": convert_to_boolean,
+            "retiran_mercaderias_distribucion": convert_to_boolean,
+            "retiran_mercaderias_comercio": convert_to_boolean,
+            "reciben_dinero": convert_to_boolean,
+            "registran_entrega_bolsones": convert_to_boolean,
         }
         # Se ejecuta el metodo populate_data que recorre la punto_entregas_data y aplica las transformaciones
-        punto_entregas_data = RelevamientoService.populate_data(
-            punto_entregas_data, transformations
-        )
+        punto_entregas_data = populate_data(punto_entregas_data, transformations)
 
         return punto_entregas_data
 
@@ -825,19 +806,19 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
     def populate_compras_data(compras_data):
         # Esto es una lista de metodos a ejecutar para cada item de la compras_data
         transformations = {
-            "almacen_cercano": RelevamientoService.convert_to_boolean,
-            "verduleria": RelevamientoService.convert_to_boolean,
-            "granja": RelevamientoService.convert_to_boolean,
-            "carniceria": RelevamientoService.convert_to_boolean,
-            "pescaderia": RelevamientoService.convert_to_boolean,
-            "supermercado": RelevamientoService.convert_to_boolean,
-            "mercado_central": RelevamientoService.convert_to_boolean,
-            "ferias_comunales": RelevamientoService.convert_to_boolean,
-            "mayoristas": RelevamientoService.convert_to_boolean,
-            "otro": RelevamientoService.convert_to_boolean,
+            "almacen_cercano": convert_to_boolean,
+            "verduleria": convert_to_boolean,
+            "granja": convert_to_boolean,
+            "carniceria": convert_to_boolean,
+            "pescaderia": convert_to_boolean,
+            "supermercado": convert_to_boolean,
+            "mercado_central": convert_to_boolean,
+            "ferias_comunales": convert_to_boolean,
+            "mayoristas": convert_to_boolean,
+            "otro": convert_to_boolean,
         }
         # Se ejecuta el metodo populate_data que recorre la compras_data y aplica las transformaciones
-        compras_data = RelevamientoService.populate_data(compras_data, transformations)
+        compras_data = populate_data(compras_data, transformations)
 
         return compras_data
 
@@ -848,7 +829,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         if prestacion_instance is None:
             prestacion_instance = Prestacion.objects.create(**prestacion_data)
         else:
-            prestacion_instance = RelevamientoService.assign_values_to_instance(
+            prestacion_instance = assign_values_to_instance(
                 prestacion_instance, prestacion_data
             )
         return prestacion_instance
@@ -950,7 +931,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         if excepcion_instance is None:
             excepcion_instance = Excepcion.objects.create(**excepcion_data)
         else:
-            excepcion_instance = RelevamientoService.assign_values_to_instance(
+            excepcion_instance = assign_values_to_instance(
                 excepcion_instance, excepcion_data
             )
         return excepcion_instance
@@ -958,7 +939,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
     @staticmethod
     def populate_excepcion_data(excepcion_data):
         if "motivo" in excepcion_data:
-            excepcion_data["motivo"] = RelevamientoService.get_object_or_none(
+            excepcion_data["motivo"] = get_object_or_none(
                 MotivoExcepcion, "nombre__iexact", excepcion_data["motivo"]
             )
         if "adjuntos" in excepcion_data:

@@ -1,12 +1,13 @@
-import pytest
-from django.contrib.auth.models import User
-from django.test import Client
+import django.urls
 import factory
+import pytest
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
+from django.test import Client
 from faker import Faker
 
-from .models import Comedor
-from .tasks import AsyncSendComedorToGestionar
-
+from comedores.models import Comedor
+from comedores.tasks import AsyncSendComedorToGestionar
 
 fake = Faker()
 
@@ -20,24 +21,56 @@ class ComedorFactory(factory.django.DjangoModelFactory):
 
 @pytest.fixture
 def client_logged_fixture(db):
-    """
-    Crea un usuario y un cliente autenticado.
-    """
-    user = User.objects.create_user(username="testuser", password="password")
+    user_model = get_user_model()
+    user_instance = user_model.objects.create_user(
+        username=fake.user_name(), password="testpass"
+    )
+    for group_name in [
+        "Comedores Ver",
+        "Comedores Relevamiento Ver",
+        "Comedores Relevamiento Crear",
+        "Comedores Relevamiento Detalle",
+        "Comedores Relevamiento Editar",
+    ]:
+        group, _ = Group.objects.get_or_create(name=group_name)
+        user_instance.groups.add(group)
+    user_instance.save()
+
     client = Client()
-    client.force_login(user)
+    client.login(username=user_instance.username, password="testpass")
     return client
 
 
-@pytest.fixture
-def comedor_fixture(db):
-    """
-    Crea un comedor para usar en los tests.
-    """
-    return ComedorFactory()
-
-
 @pytest.fixture(autouse=True)
+def comedor_fixture(monkeypatch, db):
+    comedor = ComedorFactory()
+    monkeypatch.setattr(
+        "comedores.services.comedor_service.ComedorService.get_comedor_detail_object",
+        lambda pk: comedor,
+    )
+    monkeypatch.setattr(
+        "comedores.services.comedor_service.ComedorService.get_presupuestos",
+        lambda pk: (10, 1, 2, 3, 4),
+    )
+    monkeypatch.setattr(
+        "rendicioncuentasmensual.services.RendicionCuentaMensualService.cantidad_rendiciones_cuentas_mensuales",
+        lambda obj: 5,
+    )
+    monkeypatch.setattr(comedor.relevamiento_set, "order_by", lambda *a, **kw: [])
+    monkeypatch.setattr(comedor.relevamiento_set, "count", lambda: 1)
+    monkeypatch.setattr(comedor.observacion_set, "order_by", lambda *a, **kw: [])
+    monkeypatch.setattr(comedor.imagenes, "values", lambda *a, **kw: [])
+    monkeypatch.setattr(
+        comedor.clasificacioncomedor_set.order_by(), "first", lambda: None
+    )
+    monkeypatch.setattr(comedor.admision_set, "first", lambda: None)
+    monkeypatch.setattr(
+        "comedores.tasks.AsyncSendComedorToGestionar.start", lambda self: None
+    )
+    return comedor
+
+
+@pytest.fixture
 def mock_async_tasks(monkeypatch):
     """
     Mockea la tarea AsyncSendComedorToGestionar para evitar errores en hilos.
@@ -51,7 +84,7 @@ def mock_async_tasks(monkeypatch):
 
     monkeypatch.setattr(AsyncSendComedorToGestionar, "__init__", mock_init)
 
-    # Reemplazar el método run para que no haga nada
+    # Reemplazar el método run para que no haga nadaGrac
     def mock_run(self):
         pass
 
@@ -62,3 +95,15 @@ def mock_async_tasks(monkeypatch):
         pass
 
     monkeypatch.setattr(AsyncSendComedorToGestionar, "start", mock_start)
+
+
+@pytest.fixture(autouse=True)
+def mock_djdt_reverse(monkeypatch):
+    original_reverse = django.urls.reverse
+
+    def fake_reverse(viewname, *args, **kwargs):
+        if isinstance(viewname, str) and viewname.startswith("djdt:"):
+            return "/djdt-mock-url/"
+        return original_reverse(viewname, *args, **kwargs)
+
+    monkeypatch.setattr(django.urls, "reverse", fake_reverse)
