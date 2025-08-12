@@ -12,6 +12,7 @@
   --clr-accent-01: #068782;
   --clr-accent-02: #06a29c;
   --clr-accent-03: #09b4ae;
+  --clr-accent-04: #07d8d1;
   --clr-positive: #28a745;
   --clr-border-light: rgba(255,255,255,0.4);
 }
@@ -122,8 +123,9 @@
 }
 
 /* 3b) contenedor del mapa */
-.location-card .map-container {
-  width: 350px;
+.map-container {
+  width: 100%;
+  height: 275px;
   padding: 1rem;
   flex-shrink: 0;
   border-radius: 0.5rem;
@@ -317,5 +319,110 @@ hr.border-secondary {
 
 .content-seccion.active {
   display: block;
+  /* margen para no quedar debajo de las tabs (4 tabs × 60px = 240px) */
+  margin-right: 240px;
+  overflow: auto;
+  transition: padding-left 0.3s ease;
 }
 
+
+/* Acordion  */
+.accordion-horizontal {
+    display: flex;
+    height: 300px;
+    width: 100%;
+    gap: 0;
+    overflow: hidden; 
+}
+
+.accordion-panel {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    width: 50px; 
+    height: 100%;
+    cursor: pointer;
+    overflow: visible;
+    transition: width 0.3s ease;
+    flex-shrink: 0;
+}
+:root[data-bs-theme="dark"] .accordion-panel{
+    background-color: #1e2d3f !important;
+}
+:root[data-bs-theme="light"] .accordion-panel{
+    background-color: #f4f6f9 !important;
+}
+
+.accordion-panel.open {
+    width: auto;
+}
+
+.accordion-header {
+    writing-mode: vertical-lr;
+    transform: rotate(180deg);
+    text-orientation: mixed;
+    color: white;
+    font-weight: 600;
+    padding: 0.5rem 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    min-width: 60px;
+    box-sizing: border-box;
+    border-left: 1px solid #13e9e2;
+}
+
+.bg-header-1 { background-color: var(--clr-accent-00); }
+.bg-header-2 { background-color: var(--clr-accent-01); }
+.bg-header-3 { background-color: var(--clr-accent-02); }
+.bg-header-4 { background-color: var(--clr-accent-03); }
+.bg-header-5 { background-color: var(--clr-accent-04); }
+
+.accordion-content {
+    position: absolute;
+    top: 0;
+    left: 60px;
+    bottom: 0;
+    right: 0;
+    padding: 0.75rem;
+    overflow-y: auto;
+    white-space: normal;
+    cursor: default;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+:root[data-bs-theme="dark"] .accordion-content{
+    background-color: #1e2d3f !important;
+}
+:root[data-bs-theme="light"] .accordion-content{
+    background-color: #f4f6f9 !important;
+}
+
+.accordion-panel.open .accordion-content {
+    position: relative;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    left: auto;
+    right: auto;
+    top: auto;
+    bottom: auto;
+    width: 100%;
+}
+.no-bullets {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+}
+.no-bullets li {
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+}
+.no-bullets li i {
+  min-width: 20px; /* ajusta según tamaño del ícono */
+  text-align: center;
+}

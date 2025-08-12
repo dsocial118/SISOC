@@ -47,12 +47,13 @@
                                 <td>{{ e.ciudadano.documento }}</td>
                                 <td>{{ e.estado.nombre }}</td>
                                 <td>
-                                    <a href="{% url 'nomina_editar' object.id e.id %}"
-                                       class="text-decoration-none">Editar</a>
+                                    <a href="#"
+                                       class="btn btn-sm btn-primary editar-nomina"
+                                       data-id="{{ e.id }}">Editar</a>
                                 </td>
                                 <td>
                                     <a href="{% url 'nomina_borrar' object.id e.id %}"
-                                       class="text-decoration-none text-danger">Eliminar</a>
+                                       class="btn btn-sm btn-danger">Eliminar</a>
                                 </td>
                             </tr>
                         {% empty %}
@@ -100,5 +101,36 @@
             </nav>
         </div>
     </div>
+    <!-- Modal Editar -->
+    <div class="modal fade"
+         id="editarNominaModal"
+         tabindex="-1"
+         aria-labelledby="editarNominaLabel"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="editarNominaForm" method="post">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editarNominaLabel">Editar Nómina</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Aquí se va a cargar el form con AJAX -->
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-sm btn-primary">Guardar</button>
+                        <button type="button"
+                                class="btn btn-sm btn-secondary"
+                                data-bs-dismiss="modal">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 {% endblock %}
-{% block customJS %}{% endblock %}
+{% block customJS %}
+    <script src="{% static 'custom/js/nomina_detail.js' %}"></script>
+{% endblock %}

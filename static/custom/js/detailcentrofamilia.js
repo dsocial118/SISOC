@@ -1,115 +1,57 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const locCard     = document.querySelector('.location-card');
-  const leftTab     = document.getElementById('tab-ubicacion');
-  const rightTabs   = locCard.querySelector('.right-tabs');
-  const tabs        = Array.from(rightTabs.children);
-  const mapCont     = document.getElementById('mapa-iframe');
-  const detailsCont = document.getElementById('detalles-ubicacion');
-  const sections    = Array.from(locCard.querySelectorAll('.content-seccion'));
+function ajustarAnchos() {
+    const allPanels = document.querySelectorAll('.accordion-panel');
+    const totalPanels = allPanels.length;
+    const closedWidth = 60; // ancho cerrado
 
-  function hideAllSections() {
-    sections.forEach(s => s.classList.remove('active'));
-  }
+    const openPanel = Array.from(allPanels).find(p => p.classList.contains('open'));
 
-  function showUbicacion() {
-    mapCont.style.display = '';
-    detailsCont.style.display = '';
-  }
-
-  leftTab.addEventListener('click', () => {
-    tabs.forEach(t => {
-      t.style.transform = '';
-      t.classList.remove('activa');
-    });
-    showUbicacion();
-    hideAllSections();
-  });
-
-  tabs.forEach((tab, idx) => {
-    tab.addEventListener('click', () => {
-      const baseRight = leftTab.getBoundingClientRect().right;
-      const tabW = tabs[0].offsetWidth;
-
-      if (tab.classList.contains('activa')) {
-        // Volver a la posición original desde esta pestaña hacia la derecha
-        for (let i = idx; i < tabs.length; i++) {
-          const t = tabs[i];
-          if (t.classList.contains('activa')) {
-            t.style.transform = '';
-            t.classList.remove('activa');
-          }
-        }
-
-        // Ocultar todo
-        hideAllSections();
-        mapCont.style.display = 'none';
-        detailsCont.style.display = 'none';
-
-        // Buscar la última pestaña activa anterior
-        let found = false;
-        for (let i = idx - 1; i >= 0; i--) {
-          if (tabs[i].classList.contains('activa')) {
-            const key = tabs[i].textContent.trim()
-              .normalize("NFD")
-              .replace(/[\u0300-\u036f]/g, "")
-              .toLowerCase()
-              .replace(/\s+/g, '-');
-
-            const sec = document.getElementById(`seccion-${key}`);
-            if (sec) {
-              sec.classList.add('active');
-              const activas = tabs.filter(t => t.classList.contains('activa')).length;
-              const espacioIzquierdo = (activas + 1) * 50;
-              sec.style.paddingLeft = `${espacioIzquierdo}px`;
-              found = true;
-              break;
-            }
-          }
-        }
-
-        // Si no hay ninguna activa a la izquierda, mostrar ubicación
-        if (!found) {
-          showUbicacion();
-        }
-
+    if (!openPanel) {
+        // Si ninguno está abierto, todos cerrados
+        allPanels.forEach(p => p.style.width = closedWidth + 'px');
         return;
-      }
+    }
 
-      // Activar pestañas hacia la izquierda
-      for (let i = 0; i <= idx; i++) {
-        const t = tabs[i];
-        if (t.classList.contains('activa')) continue;
+    const openWidth = `calc(100% - ${(totalPanels - 1) * closedWidth}px)`;
 
-        const originalLeft = t.getBoundingClientRect().left;
-        const targetX = baseRight + i * tabW;
-        const shiftX = targetX - originalLeft;
-
-        t.style.transform = `translateX(${shiftX}px)`;
-        t.classList.add('activa');
-      }
-
-      // ocultar mapa y detalles
-      mapCont.style.display     = 'none';
-      detailsCont.style.display = 'none';
-      hideAllSections();
-
-      // mostrar la sección correspondiente
-      const key = tab.textContent.trim()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase()
-        .replace(/\s+/g, '-');
-
-      const sec = document.getElementById(`seccion-${key}`);
-      if (sec) {
-        sec.classList.add('active');
-        const activas = tabs.filter(t => t.classList.contains('activa')).length;
-        const espacioIzquierdo = (activas + 1) * 50;
-        sec.style.paddingLeft = `${espacioIzquierdo}px`;
-      }
+    allPanels.forEach(p => {
+        if (p === openPanel) {
+            p.style.width = openWidth;
+        } else {
+            p.style.width = closedWidth + 'px';
+        }
     });
-  });
+}
 
-  // disparo inicial
-  leftTab.click();
-});
+// Ejecutar al cargar el DOM
+window.addEventListener('DOMContentLoaded', ajustarAnchos);
+
+function toggleAccordion(panel) {
+    const allPanels = document.querySelectorAll('.accordion-panel');
+    const totalPanels = allPanels.length;
+    const closedWidth = 60; // px
+
+    // Si el panel ya está abierto, cerrarlo y resetear anchos
+    if (panel.classList.contains('open')) {
+        panel.classList.remove('open');
+        allPanels.forEach(p => p.style.width = closedWidth + 'px');
+        return;
+    }
+
+    // Cerrar todos
+    allPanels.forEach(p => p.classList.remove('open'));
+
+    // Abrir el seleccionado
+    panel.classList.add('open');
+
+    // Calcular ancho para panel abierto
+    const openWidth = `calc(100% - ${(totalPanels - 1) * closedWidth}px)`;
+
+    // Asignar ancho a cada panel
+    allPanels.forEach(p => {
+        if (p.classList.contains('open')) {
+            p.style.width = openWidth;
+        } else {
+            p.style.width = closedWidth + 'px';
+        }
+    });
+}
