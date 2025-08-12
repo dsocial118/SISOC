@@ -1,29 +1,16 @@
 # centrodefamilia/services/informe_cabal_service.py
-"""
-[Informe Cabal - Service]
-- Lee Excel (.xlsx) con columnas fijas y fecha dd/mm/aaaa.
-- Previsualiza con paginación (25 por página) y detecta no-coincidentes por NroComercio→Centro.codigo.
-- Persiste CabalArchivo + InformeCabalRegistro (sin bloquear por no-coincidentes).
-- Si nombre de archivo ya existe, marca advertencia para preguntar “¿desea proseguir?”.
-"""
-# stdlib
 import logging
 from dataclasses import dataclass
 from typing import List, Dict, Any, Tuple, Optional
 from datetime import datetime
-
-# third-party
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
 from django.core.paginator import Paginator
 from openpyxl import load_workbook
-
-# local
 from centrodefamilia.models import Centro, CabalArchivo, InformeCabalRegistro
 
 logger = logging.getLogger(__name__)
 
-# Layout esperado (en este orden)
 EXPECTED_HEADERS = [
     "NroTarjeta",
     "NroAuto",
@@ -52,7 +39,6 @@ class PreviewRow:
 def _parse_date_ddmmyyyy(value: Any) -> Optional[datetime.date]:
     if value in (None, "", 0):
         return None
-    # Excel puede venir como fecha o como string
     if isinstance(value, datetime):
         return value.date()
     if isinstance(value, str):
@@ -61,7 +47,6 @@ def _parse_date_ddmmyyyy(value: Any) -> Optional[datetime.date]:
             return datetime.strptime(value, "%d/%m/%Y").date()
         except Exception:
             pass
-    # último intento: excel serial? (no lo forzamos)
     return None
 
 
@@ -73,27 +58,19 @@ def _get_cell(row, col_index):
 def read_excel_preview(
     file: UploadedFile, page: int = 1, per_page: int = 25
 ) -> Tuple[List[PreviewRow], List[int], int]:
-    # pylint: disable=too-many-locals
-    """
-    Lee el Excel y devuelve:
-      - rows de la página solicitada (PreviewRow)
-      - lista de índices de filas no coincidentes
-      - total de filas útiles
-    No persiste aún.
-    """
+
     wb = load_workbook(filename=file, data_only=True)
     ws = wb.active
 
-    # Validar headers exactos
     headers = [
         str(cell.value).strip() if cell.value is not None else "" for cell in ws[1]
     ]
     if headers[: len(EXPECTED_HEADERS)] != EXPECTED_HEADERS:
         raise ValueError("El encabezado del Excel no coincide con el esperado.")
 
-    # Construir filas
-    all_rows: List[PreviewRow] = []
-    not_matching: List[int] = []
+    rows_raw: List[Tuple[int, Dict[str, Any]]] = []
+    codigos_set = set()
+
     for i, row in enumerate(ws.iter_rows(min_row=2), start=2):
         data = {
             "NroTarjeta": _get_cell(row, 0),
@@ -112,17 +89,28 @@ def read_excel_preview(
             "Disponibles": _get_cell(row, 13),
         }
         codigo = str(data["NroComercio"]).strip()
-        match = Centro.objects.filter(codigo=codigo).only("id").exists()
-        no_coincidente = not match
+        if codigo:
+            codigos_set.add(codigo)
+        rows_raw.append((i - 1, data))
+
+    total_count = len(rows_raw)
+
+    valid_codes = set(
+        Centro.objects.filter(codigo__in=codigos_set).values_list("codigo", flat=True)
+    )
+
+    all_rows: List[PreviewRow] = []
+    not_matching: List[int] = []
+    for fila, data in rows_raw:
+        codigo = str(data["NroComercio"]).strip()
+        no_coincidente = codigo not in valid_codes
         if no_coincidente:
-            not_matching.append(i - 1)  # “registro (1,2,3...)” respecto a min_row=2
-        all_rows.append(
-            PreviewRow(fila=i - 1, data=data, no_coincidente=no_coincidente)
-        )
+            not_matching.append(fila)
+        all_rows.append(PreviewRow(fila=fila, data=data, no_coincidente=no_coincidente))
 
     paginator = Paginator(all_rows, per_page)
     page_obj = paginator.get_page(page)
-    return list(page_obj.object_list), not_matching, paginator.count
+    return list(page_obj.object_list), not_matching, total_count
 
 
 @transaction.atomic
@@ -131,24 +119,24 @@ def persist_file_and_rows(
     user,
     force_proceed: bool = False,
 ) -> Tuple[CabalArchivo, int, int, List[int]]:
-    # pylint: disable=too-many-locals
-    """
-    Persiste CabalArchivo + InformeCabalRegistro.
-    - Si nombre ya existe, marca advertencia y requiere confirmación (force_proceed True).
-    - No bloquea por no-coincidentes: los persiste con centro=None y no_coincidente=True.
-    Devuelve: (archivo, total, total_validas, no_coincidentes_indices)
-    """
+
     nombre = file.name
     nombre_duplicado = CabalArchivo.objects.filter(nombre_original=nombre).exists()
     advert = nombre_duplicado and not force_proceed
     if advert:
-        # solo registramos log y abortamos; la vista devuelve alerta “¿desea proseguir?”
         logger.info("Nombre de archivo duplicado detectado: %s", nombre)
         raise FileExistsError("DUPLICATE_NAME")
 
-    # Re-parseo completo para persistir todo
     preview_rows, not_matching, total_rows = read_excel_preview(
         file, page=1, per_page=10**9
+    )
+    codigos_unicos = {
+        str(pr.data["NroComercio"]).strip()
+        for pr in preview_rows
+        if str(pr.data["NroComercio"]).strip()
+    }
+    centros_map: Dict[str, int] = dict(
+        Centro.objects.filter(codigo__in=codigos_unicos).values_list("codigo", "id")
     )
 
     cabal_archivo = CabalArchivo.objects.create(
@@ -157,32 +145,34 @@ def persist_file_and_rows(
         usuario=user,
         advertencia_nombre_duplicado=nombre_duplicado,
         total_filas=total_rows,
-        total_validas=0,  # actualizamos luego
-        total_invalidas=0,  # actualizamos luego
+        total_validas=0,
+        total_invalidas=0,
     )
 
     total_validas = 0
     total_invalidas = 0
-    registros_bulk = []
+    registros_bulk: List[InformeCabalRegistro] = []
+
+    def _to_decimal(v):
+        if v in ("", None):
+            return None
+        try:
+            return float(str(v).replace(",", "."))
+        except Exception:
+            return None
+
     for pr in preview_rows:
         d = pr.data
-
-        # parseos numéricos/fecha
-        def _to_decimal(v):
-            if v in ("", None):
-                return None
-            try:
-                return float(str(v).replace(",", "."))
-            except Exception:
-                return None
+        codigo = str(d["NroComercio"]).strip()
+        centro_id = centros_map.get(codigo)
 
         reg = InformeCabalRegistro(
             archivo=cabal_archivo,
-            centro=Centro.objects.filter(codigo=str(d["NroComercio"]).strip()).first(),
+            centro_id=centro_id,
             nro_tarjeta=str(d["NroTarjeta"]),
             nro_auto=str(d["NroAuto"]),
             mti=str(d["MTI"]),
-            nro_comercio=str(d["NroComercio"]),
+            nro_comercio=codigo,
             razon_social=str(d["RazonSocial"]),
             importe=_to_decimal(d["Importe"]),
             fecha_trx=_parse_date_ddmmyyyy(d["FechaTRX"]),

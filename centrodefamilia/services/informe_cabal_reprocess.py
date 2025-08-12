@@ -7,19 +7,14 @@ from django.db.models import Count, F
 from centrodefamilia.models import Centro, InformeCabalRegistro, CabalArchivo
 
 
-class ReprocessError(Exception):
-    ...
+class ReprocessError(Exception): ...
 
 
 @transaction.atomic
 def reprocesar_registros_rechazados_por_codigo(
     codigo: str, *, dry_run: bool = False
 ) -> Dict[str, Any]:
-    """
-    Reprocesa todos los registros rechazados (no_coincidente=True) cuyo
-    nro_comercio == codigo. Setea centro, limpia no_coincidente y
-    actualiza contadores en CabalArchivo.
-    """
+
     codigo = (codigo or "").strip()
     if not codigo:
         raise ReprocessError("Código de centro vacío")
@@ -30,9 +25,8 @@ def reprocesar_registros_rechazados_por_codigo(
         raise ReprocessError(f"Código '{codigo}' no encontrado") from exc
 
     # Seleccionamos SOLO rechazados de ese código
-    qs = (
-        InformeCabalRegistro.objects.select_for_update()
-        .filter(nro_comercio=codigo, no_coincidente=True)
+    qs = InformeCabalRegistro.objects.select_for_update().filter(
+        nro_comercio=codigo, no_coincidente=True
     )
 
     procesados = qs.count()

@@ -1,56 +1,57 @@
 # centrodefamilia/management/commands/reprocess_cabal.py
 from django.core.management.base import BaseCommand, CommandError
 from centrodefamilia.services.informe_cabal_reprocess import (
-    reprocesar_registros_rechazados,
+    reprocesar_registros_rechazados_por_codigo,
 )
 
 
 class Command(BaseCommand):
-    help = "Reprocesa registros CABAL rechazados por no-coincidencia de centro."
+    help = (
+        "Reprocesa registros CABAL rechazados (no_coincidente=True) para un código de centro (NroComercio). "
+        "Por defecto corre en DRY-RUN; aplica cambios con --commit."
+    )
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--archivo", type=int, help="ID de CabalArchivo a reprocesar."
-        )
-        parser.add_argument(
-            "--centro", type=int, help="ID de Centro (opcional, filtra por ese código)."
-        )
-        parser.add_argument(
-            "--only-pago-rechazado",
-            action="store_true",
-            help="Solo registros con motivo_rechazo != '0'.",
+            "--codigo",
+            required=True,
+            help="Código de centro (NroComercio) a reprocesar.",
         )
         parser.add_argument(
             "--commit",
             action="store_true",
             help="Aplica cambios (por defecto hace dry-run).",
         )
-        parser.add_argument(
-            "--batch-size", type=int, default=500, help="Tamaño de lote."
-        )
 
     def handle(self, *args, **opts):
-        res = reprocesar_registros_rechazados(
-            archivo_id=opts.get("archivo"),
-            centro_id=opts.get("centro"),
-            only_pago_rechazado=opts.get("only_pago_rechazado") or False,
-            dry_run=not opts.get("commit"),
-            batch_size=opts.get("batch_size") or 500,
-        )
-        if not res.get("ok"):
-            raise CommandError(res.get("error") or "Error en reproceso.")
+        codigo = (opts.get("codigo") or "").strip()
+        dry_run = not opts.get("commit")
 
-        mode = "DRY-RUN" if res["dry_run"] else "COMMIT"
+        if not codigo:
+            raise CommandError("Debe indicar un código de centro con --codigo")
+
+        try:
+            res = reprocesar_registros_rechazados_por_codigo(
+                codigo=codigo, dry_run=dry_run
+            )
+        except Exception as exc:
+            raise CommandError(str(exc) or "Error en reproceso.") from exc
+
+        mode = "DRY-RUN" if dry_run else "COMMIT"
+        self.stdout.write(self.style.SUCCESS(f"[{mode}] Código: {codigo}"))
         self.stdout.write(
             self.style.SUCCESS(
-                f"[{mode}] Registros candidatos: {res['total_candidatos']}"
+                f"[{mode}] Registros detectados: {res.get('procesados', 0)}"
             )
         )
         self.stdout.write(
             self.style.SUCCESS(
-                f"[{mode}] Registros actualizados: {res['actualizados']}"
+                f"[{mode}] Registros impactados: {res.get('impactados', 0)}"
             )
         )
-        self.stdout.write(
-            self.style.SUCCESS(f"Archivos afectados: {res['archivos_afectados']}")
-        )
+
+        por_archivo = res.get("por_archivo", {})
+        if por_archivo:
+            self.stdout.write(
+                self.style.SUCCESS(f"[{mode}] Desglose por archivo: {por_archivo}")
+            )
