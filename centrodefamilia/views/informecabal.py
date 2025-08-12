@@ -161,6 +161,17 @@ class InformeCabalReprocessCenterAjaxView(LoginRequiredMixin, View):
             )
             return JsonResponse({"ok": True, **res})
         except ReprocessError as e:
-            return JsonResponse({"ok": False, "error": str(e)}, status=400)
+            logger.warning("ReprocessError al reprocesar CABAL (codigo=%s): %s",
+                           codigo, e, exc_info=True)
+            return JsonResponse(
+                {"ok": False, "error": "No se pudo reprocesar el centro. Revise los datos e intente nuevamente."},
+                status=400,
+            )
+
         except Exception as e:
-            return JsonResponse({"ok": False, "error": str(e)}, status=500)
+            logger.error("Error inesperado al reprocesar CABAL (codigo=%s): %s",
+                         codigo, e, exc_info=True)
+            return JsonResponse(
+                {"ok": False, "error": "Error inesperado al reprocesar el centro."},
+                status=500,
+            )
