@@ -101,8 +101,6 @@ class ExpedientesPagosCreateView(CreateView):
             or self.request.user.groups.filter(name="Tecnico Comedor").exists()
         )
         # URL de cancelación para el componente form_buttons
-        from django.urls import reverse
-
         context["expedientes_list_url"] = reverse(
             "expedientespagos_list", kwargs={"pk": comedor_id}
         )
@@ -150,8 +148,6 @@ class ExpedientesPagosUpdateView(UpdateView):
             or self.request.user.groups.filter(name="Tecnico Comedor").exists()
         )
         # URL de cancelación para el componente form_buttons
-        from django.urls import reverse
-
         context["expedientes_list_url"] = reverse(
             "expedientespagos_list", kwargs={"pk": expediente.comedor.id}
         )
