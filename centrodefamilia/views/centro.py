@@ -1,3 +1,4 @@
+# centrodefamilia/views/centro.py
 from django.views.generic import (
     ListView,
     DetailView,
@@ -11,6 +12,8 @@ from django.urls import reverse_lazy, reverse
 from django.db.models import Q, Count, F, ExpressionWrapper, IntegerField
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
+from django.shortcuts import get_object_or_404
+from django.http import Http404
 
 from centrodefamilia.models import (
     CabalArchivo,
@@ -234,22 +237,50 @@ class CentroDeleteView(LoginRequiredMixin, DeleteView):
         return super().delete(request, *args, **kwargs)
 
 
-class InformeCabalArchivoPorCentroDetailView(DetailView):
+class InformeCabalArchivoPorCentroDetailView(LoginRequiredMixin, DetailView):
     model = CabalArchivo
     template_name = "informecabal/archivo_por_centro.html"
     context_object_name = "archivo"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        centro_id = self.kwargs.get("centro_id")
+        centro_id_raw = self.kwargs.get("centro_id")
 
-        registros = InformeCabalRegistro.objects.filter(
-            archivo=self.object, centro_id=centro_id
-        ).order_by("fila_numero")
+        try:
+            centro_id = int(centro_id_raw)
+        except (TypeError, ValueError):
+            raise Http404("Parámetro 'centro_id' inválido.")
 
-        paginator = Paginator(registros, 50)
-        page = self.request.GET.get("page")
-        context["registros"] = paginator.get_page(page)
+        centro = get_object_or_404(Centro, id=centro_id)
 
-        context["centro"] = Centro.objects.get(id=centro_id)
+        registros_qs = (
+            InformeCabalRegistro.objects.filter(
+                archivo=self.object, centro_id=centro_id
+            )
+            .only(
+                "id",
+                "nro_comercio",
+                "razon_social",
+                "importe",
+                "fecha_trx",
+                "moneda_origen",
+                "importe_pesos",
+                "motivo_rechazo",
+                "desc_motivo_rechazo",
+                "no_coincidente",
+                "fila_numero",
+                "centro_id",
+            )
+            .order_by("fila_numero")
+        )
+
+        paginator = Paginator(registros_qs, 50)
+        page_param = self.request.GET.get("page") or 1
+        try:
+            page_obj = paginator.get_page(page_param)
+        except Exception:
+            page_obj = paginator.get_page(1)
+
+        context["registros"] = page_obj
+        context["centro"] = centro
         return context

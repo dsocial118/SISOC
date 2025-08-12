@@ -55,10 +55,6 @@
                     <dd class="col-sm-9 text-danger">
                         {{ archivo.total_invalidas }}
                     </dd>
-                    <dt class="col-sm-3">Creadas</dt>
-                    <dd class="col-sm-9 text-info">
-                        {{ archivo.total_creadas }}
-                    </dd>
                 </dl>
             </div>
         </div>
@@ -102,8 +98,6 @@
                                 <td>
                                     {% if r.centro_id %}
                                         <span class="badge badge-success">Impactado</span>
-                                    {% elif r.es_creado %}
-                                        <span class="badge badge-info">Creado</span>
                                     {% else %}
                                         <span class="badge badge-danger">Rechazado</span>
                                     {% endif %}

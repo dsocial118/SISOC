@@ -1,11 +1,5 @@
 # centrodefamilia/views/informecabal.py
-"""
-[Informe Cabal - Views]
-- Lista de historial (solo CDF SSE por URL).
-- Endpoints AJAX: preview (paginado 25) y process (persistencia completa).
-- Detail de un registro.
-Mensajería: usa messages y JSON con errores controlados. 
-"""
+
 from django.db.models import F
 import logging
 from django.views import View
@@ -13,7 +7,6 @@ from django.views.generic import ListView, DetailView, TemplateView
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
-from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.shortcuts import get_object_or_404, render
 from django.contrib import messages
@@ -46,12 +39,7 @@ class InformeCabalListView(LoginRequiredMixin, TemplateView):
         return ctx
 
 
-@method_decorator(csrf_exempt, name="dispatch")
 class InformeCabalPreviewAjaxView(LoginRequiredMixin, TemplateView):
-    """
-    POST con 'file' y 'page' para previsualizar 25 filas.
-    Retorna JSON: rows, not_matching, total
-    """
 
     def post(self, request, *args, **kwargs):
         f = request.FILES.get("file")
@@ -80,12 +68,7 @@ class InformeCabalPreviewAjaxView(LoginRequiredMixin, TemplateView):
             )
 
 
-@method_decorator(csrf_exempt, name="dispatch")
 class InformeCabalProcessAjaxView(LoginRequiredMixin, TemplateView):
-    """
-    POST con 'file' y 'force' (opcional) para persistir.
-    - Si nombre duplicado y no 'force', devuelve {duplicate_name: True}
-    """
 
     def post(self, request, *args, **kwargs):
         f = request.FILES.get("file")
@@ -114,11 +97,22 @@ class InformeCabalProcessAjaxView(LoginRequiredMixin, TemplateView):
                 {"ok": False, "error": "Archivo duplicado."}, status=409
             )
         except ValueError as ve:
-            return JsonResponse({"ok": False, "error": str(ve)}, status=400)
-        except Exception as e:
-            logger.error("Error al procesar CABAL: %s", e, exc_info=True)
+            # Entrada inválida (formato de Excel, headers, etc.)
+            logger.warning(
+                "ValueError al procesar CABAL (process): %s", ve, exc_info=True
+            )
             return JsonResponse(
-                {"ok": False, "error": "Error inesperado al procesar."}, status=500
+                {
+                    "ok": False,
+                    "error": "El archivo no tiene el formato esperado o está dañado.",
+                },
+                status=400,
+            )
+        except Exception as e:
+            logger.error("Error inesperado al procesar CABAL: %s", e, exc_info=True)
+            return JsonResponse(
+                {"ok": False, "error": "Error inesperado al procesar."},
+                status=500,
             )
 
 
@@ -131,9 +125,6 @@ class InformeCabalRegistroDetailView(LoginRequiredMixin, DetailView):
         ctx = super().get_context_data(**kwargs)
         registros = InformeCabalRegistro.objects.filter(archivo=self.object)
 
-        ctx["validos"] = registros.filter(estado="Impactado")
-        ctx["rechazados"] = registros.filter(estado="Rechazado")
-        ctx["creados"] = registros.filter(estado="Creado")
         ctx["total"] = registros.count()
         return ctx
 

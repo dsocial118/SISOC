@@ -34,8 +34,6 @@
                                     {% else %}
                                         <td class="text-success font-weight-bold">Pago aceptado</td>
                                     {% endif %}
-                                    {# Estado de nuestro proceso: verde si procesado, rojo si no #}
-                                    {% if reg.estado == "procesado" %}<td class="text-success font-weight-bold">Procesado</td>{% endif %}
                                 </tr>
                             {% endfor %}
                         </tbody>
