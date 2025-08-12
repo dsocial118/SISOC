@@ -19,7 +19,7 @@ jobs:
               id: python-version
               uses: actions/setup-python@v5.2.0
               with:
-                  python-version: '3.9.19'
+                  python-version: '3.11.9'
 
             - name: Install dependencies
               run: |

@@ -1,6 +1,7 @@
 from typing import Any
+
 from django.contrib import messages
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect
 from django.urls import reverse_lazy
 
 from comedores.forms.comedor_form import ReferenteForm
@@ -27,6 +28,60 @@ from django.views.generic import (
     ListView,
     UpdateView,
 )
+
+from comedores.models import Comedor
+from relevamientos.form import RelevamientoForm
+from relevamientos.helpers import RelevamientoFormManager
+from relevamientos.models import Relevamiento
+from relevamientos.service import RelevamientoService
+
+
+class RelevamientoCreateView(CreateView):
+    model = Relevamiento
+    form_class = RelevamientoForm
+    template_name = "relevamiento_form.html"
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["comedor_pk"] = self.kwargs["comedor_pk"]
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        data = super().get_context_data(**kwargs)
+        forms = RelevamientoFormManager.build_forms(
+            self.request.POST if self.request.method == "POST" else None
+        )
+        data.update(forms)
+        data["comedor"] = RelevamientoFormManager.get_comedor_context(
+            self.kwargs["comedor_pk"]
+        )
+        self._context_data = data
+        return data
+
+    def form_valid(self, form):
+        context = getattr(self, "_context_data", None)
+        if context is None:
+            context = self.get_context_data()
+        forms = {k: context[k] for k in RelevamientoFormManager.FORM_CLASSES}
+        validation_results = RelevamientoFormManager.validate_forms(forms)
+        if RelevamientoFormManager.all_valid(forms, validation_results):
+            self.object = RelevamientoService.populate_relevamiento(form, forms)
+            return redirect(
+                "relevamiento_detalle",
+                comedor_pk=int(self.object.comedor.id),
+                pk=int(self.object.id),
+            )
+        RelevamientoFormManager.show_form_errors(
+            self.request, forms, validation_results
+        )
+        return self.form_invalid(form)
+
+    def error_message(self, forms):
+        for form_name, form_instance in forms.items():
+            if not form_instance.is_valid():
+                messages.error(
+                    self.request, f"Errores en {form_name}: {form_instance.errors}"
+                )
 
 
 class RelevamientoCreateView(CreateView):
@@ -270,74 +325,47 @@ class RelevamientoUpdateView(UpdateView):
 
     def get_context_data(self, **kwargs):
         data = super().get_context_data(**kwargs)
-        forms = {
-            "funcionamiento_form": FuncionamientoPrestacionForm,
-            "espacio_form": EspacioForm,
-            "espacio_cocina_form": EspacioCocinaForm,
-            "espacio_prestacion_form": EspacioPrestacionForm,
-            "colaboradores_form": ColaboradoresForm,
-            "recursos_form": FuenteRecursosForm,
-            "compras_form": FuenteComprasForm,
-            "prestacion_form": PrestacionForm,
-            "referente_form": ReferenteForm,
-            "anexo_form": AnexoForm,
-        }
-
-        for form_name, form_class in forms.items():
-            data[form_name] = form_class(
-                self.request.POST if self.request.POST else None,
-                instance=getattr(
-                    self.object, form_name.split("_form", maxsplit=1)[0], None
-                ),
-            )
-
-        data["comedor"] = Comedor.objects.values(
-            "id",
-            "nombre",
-            "referente__nombre",
-            "referente__apellido",
-            "referente__mail",
-            "referente__celular",
-            "referente__documento",
-        ).get(pk=self.kwargs["comedor_pk"])
-        data["espacio_cocina_form"] = EspacioCocinaForm(
-            self.request.POST if self.request.POST else None,
-            instance=getattr(self.object.espacio, "cocina", None),
+        instance_map = {}
+        if hasattr(self, "object") and self.object:
+            for name in RelevamientoFormManager.FORM_CLASSES:
+                base_name = name.split("_form", maxsplit=1)[0]
+                instance_map[name] = getattr(self.object, base_name, None)
+            if self.object.espacio:
+                instance_map["espacio_cocina_form"] = getattr(
+                    self.object.espacio, "cocina", None
+                )
+                instance_map["espacio_prestacion_form"] = getattr(
+                    self.object.espacio, "prestacion", None
+                )
+        forms = RelevamientoFormManager.build_forms(
+            self.request.POST if self.request.method == "POST" else None,
+            instance_map=instance_map,
         )
-        data["espacio_prestacion_form"] = EspacioPrestacionForm(
-            self.request.POST if self.request.POST else None,
-            instance=getattr(self.object.espacio, "prestacion", None),
+        data.update(forms)
+        data["comedor"] = RelevamientoFormManager.get_comedor_context(
+            self.kwargs["comedor_pk"]
         )
-        data["responsable"] = self.object.responsable
-
+        data["responsable"] = getattr(self.object, "responsable", None)
+        self._context_data = data
         return data
 
     def form_valid(self, form):
-        context = self.get_context_data()
-        forms = {
-            "funcionamiento_form": context["funcionamiento_form"],
-            "espacio_form": context["espacio_form"],
-            "espacio_cocina_form": context["espacio_cocina_form"],
-            "espacio_prestacion_form": context["espacio_prestacion_form"],
-            "colaboradores_form": context["colaboradores_form"],
-            "recursos_form": context["recursos_form"],
-            "compras_form": context["compras_form"],
-            "prestacion_form": context["prestacion_form"],
-            "referente_form": context["referente_form"],
-            "anexo_form": context["anexo_form"],
-        }
-
-        if all(form.is_valid() for form in forms.values()):
+        context = getattr(self, "_context_data", None)
+        if context is None:
+            context = self.get_context_data()
+        forms = {k: context[k] for k in RelevamientoFormManager.FORM_CLASSES}
+        validation_results = RelevamientoFormManager.validate_forms(forms)
+        if RelevamientoFormManager.all_valid(forms, validation_results):
             self.object = RelevamientoService.populate_relevamiento(form, forms)
-
             return redirect(
                 "relevamiento_detalle",
                 comedor_pk=int(self.object.comedor.id),
                 pk=int(self.object.id),
             )
-        else:
-            self.error_message(forms)
-            return self.form_invalid(form)
+        RelevamientoFormManager.show_form_errors(
+            self.request, forms, validation_results
+        )
+        return self.form_invalid(form)
 
     def error_message(self, forms):
         for form_name, form_instance in forms.items():
@@ -356,6 +384,3 @@ class RelevamientoDeleteView(DeleteView):
         comedor = self.object.comedor
 
         return reverse_lazy("comedor_detalle", kwargs={"pk": comedor.id})
-
-
-# Create your views here.
