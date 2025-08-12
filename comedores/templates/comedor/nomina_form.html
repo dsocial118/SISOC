@@ -10,30 +10,164 @@
     </ol>
 {% endblock %}
 {% block content %}
-    <div class="card shadow-sm">
-        <div class="card-header">
-            <h5 class="mb-0">Agregar Persona a Nómina</h5>
-        </div>
-        <div class="card-body">
-            <form method="post">
-                {% csrf_token %}
-                <div class="row">
-                    <div class="col-md-6">{{ form.ciudadano|as_crispy_field }}</div>
-                    <div class="col-md-6">{{ form.estado|as_crispy_field }}</div>
-                </div>
-                {{ form.observaciones|as_crispy_field }}
-                <div class="mt-3">
-                    <button type="submit" class="btn btn-primary">Guardar</button>
-                    <a href="{% url 'nomina_ver' object.id %}" class="btn btn-secondary">Cancelar</a>
-                </div>
-            </form>
+    <div class="container  mb-3">
+        <div class="card shadow-sm">
+            <div class="card-header font-weight-bold">Agregar Ciudadano a Nómina</div>
+            <div class="card-body">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show"
+                             role="alert">
+                            {{ message }}
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                <form method="get" class="form-inline">
+                    <div class="form-group mr-2">
+                        <label for="busqueda-dni" class="visually-hidden">DNI</label>
+                        <input type="number"
+                               class="form-control col-4"
+                               name="query"
+                               id="busqueda-dni"
+                               placeholder="Ingrese DNI (mín 4 dígitos)"
+                               value="{{ request.GET.query }}"
+                               min="0"
+                               oninput="this.value = this.value.replace(/[^0-9]/g, '');" />
+                    </div>
+                    <button class="btn btn-sm btn-primary mt-3" type="submit">Buscar</button>
+                </form>
+            </div>
         </div>
     </div>
+    <!-- Resultados de Búsqueda -->
+    {% if ciudadanos %}
+        <div class="container mb-3">
+            <div class="card mb-3">
+                <div class="card-header fw-bold">Resultados de Búsqueda</div>
+                <div class="card-body table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead>
+                            <tr>
+                                <th>Apellido</th>
+                                <th>Nombre</th>
+                                <th>DNI</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in ciudadanos %}
+                                <tr>
+                                    <td>{{ c.apellido }}</td>
+                                    <td>{{ c.nombre }}</td>
+                                    <td>{{ c.documento }}</td>
+                                    <td>
+                                        <button type="button"
+                                                class="btn btn-sm btn-success btn-agregar"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modalNomina"
+                                                data-ciudadano-id="{{ c.id }}"
+                                                data-ciudadano-nombre="{{ c.apellido }} {{ c.nombre }}">
+                                            Agregar
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    <!-- Formulario Creación de Ciudadano -->
+    {% if request.GET.query and no_resultados %}
+        <div class="container">
+            <div class="alert alert-info mb-3 mx-3">
+                <i class="bi bi-exclamation-triangle-fill fs-4"></i> No se encontraron coincidencias.
+            </div>
+            <div class="card mb-3">
+                <div class="card-header font-weight-bold">Crear nuevo Ciudadano y agregarlo a la Nómina</div>
+                <div class="card-body">
+                    {% if form_ciudadano.non_field_errors %}
+                        <div class="alert alert-danger">{{ form_ciudadano.non_field_errors }}</div>
+                    {% endif %}
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form_ciudadano|crispy }}
+                        <div class="mx-5 mt-5 alert alert-light">
+                            <h5 class="mb-3">
+                                <i class="bi bi-exclamation-triangle-fill"></i> Estos campos pertenecen al estado y observaciones en la Nómina
+                            </h5>
+                            {{ form_nomina_extra|crispy }}
+                        </div>
+                        <button id="btn-crear"
+                                type="submit"
+                                class="btn btn-sm btn-success mt-3"
+                                onclick="this.disabled=true;this.innerHTML='<span class=&quot;spinner-border spinner-border-sm&quot; role=&quot;status&quot; aria-hidden=&quot;true&quot;></span> Procesando…'; this.form.submit();">
+                            Crear y agregarlo
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    <!-- MODAL AGREGAR CIUDADANO-->
+    <div class="modal fade"
+         id="modalNomina"
+         tabindex="-1"
+         aria-labelledby="modalNominaLabel"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" id="form-nomina">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalNominaLabel">Agregar a Nómina</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="ciudadano_id" id="ciudadano_id" />
+                        <div class="fs-6 fw-bold py-2 mb-3" id="ciudadano_nombre_display"></div>
+                        <div class="row">
+                            <div class="col-md-6">{{ form.estado|as_crispy_field }}</div>
+                            <div class="col-md-12">{{ form.observaciones|as_crispy_field }}</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-sm btn-success">Agregar</button>
+                        <button type="button"
+                                class="btn btn-sm btn-secondary"
+                                data-bs-dismiss="modal">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!--/MODAL AGREGAR CIUDADANO-->
 {% endblock %}
 {% block customJS %}
     <script>
   document.addEventListener('DOMContentLoaded', () => {
     $('.select2').select2({ theme: 'bootstrap5' });
   });
+    </script>
+    <script>
+document.addEventListener("DOMContentLoaded", function() {
+    document.querySelectorAll(".btn-agregar").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+            const ciudadanoId = this.dataset.ciudadanoId;
+            const ciudadanoNombre = this.dataset.ciudadanoNombre;
+
+            document.getElementById("ciudadano_id").value = ciudadanoId;
+            document.getElementById("ciudadano_nombre_display").textContent =
+                "Ciudadano seleccionado: " + ciudadanoNombre;
+        });
+    });
+});
     </script>
 {% endblock %}
