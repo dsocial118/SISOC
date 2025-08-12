@@ -1737,7 +1737,20 @@ class DerivacionDetailView(DetailView):
             },
             {
                 "label": "Estado",
-                "value": f'<span class="badge badge-{"warning" if derivacion.estado == "Pendiente" else "success" if derivacion.estado == "Aceptada" else "danger"}">{derivacion.estado}</span>',
+                "value": (
+                    '<span class="badge badge-{}">{}</span>'.format(
+                        (
+                            "warning"
+                            if derivacion.estado == "Pendiente"
+                            else (
+                                "success"
+                                if derivacion.estado == "Aceptada"
+                                else "danger"
+                            )
+                        ),
+                        derivacion.estado,
+                    )
+                ),
             },
             {
                 "label": "Importancia",
