@@ -8,7 +8,9 @@
 (function () {
   // ---------- Constantes ----------
   const PAGE_SIZE = 25;
-  const CSRF_COOKIE_NAME = window.CSRF_COOKIE_NAME || window.csrfCookieName || "csrftoken_v2";
+const CSRF_COOKIE_NAME =
+    (window && (window.CSRF_COOKIE_NAME || window.csrfCookieName)) || "csrftoken";
+  
 
   // ---------- Helpers ----------
   function getCookie(name) {
