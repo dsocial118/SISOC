@@ -38,7 +38,7 @@ class InformeCabalListView(LoginRequiredMixin, TemplateView):
         ctx["archivos"] = Paginator(archivos, 10).get_page(self.request.GET.get("page"))
         return ctx
 
-
+@method_decorator(csrf_protect, name="dispatch")
 class InformeCabalPreviewAjaxView(LoginRequiredMixin, TemplateView):
 
     def post(self, request, *args, **kwargs):
@@ -71,7 +71,7 @@ class InformeCabalPreviewAjaxView(LoginRequiredMixin, TemplateView):
                 {"ok": False, "error": "Error inesperado al previsualizar."}, status=500
             )
 
-
+@method_decorator(csrf_protect, name="dispatch")
 class InformeCabalProcessAjaxView(LoginRequiredMixin, TemplateView):
 
     def post(self, request, *args, **kwargs):
@@ -112,12 +112,9 @@ class InformeCabalProcessAjaxView(LoginRequiredMixin, TemplateView):
                 },
                 status=400,
             )
-        except ValueError as ve:
-            logger.error("ValueError al procesar archivo CABAL: %s", ve, exc_info=True)
-            return JsonResponse(
-                {"ok": False, "error": "Error de validación en el archivo."},
-                status=400
-            )
+        except Exception as e:
+                    logger.error("Error inesperado al procesar CABAL: %s", e, exc_info=True)
+                    return JsonResponse({"ok": False, "error": "Error inesperado al procesar."}, status=500)
 
 
 
