@@ -63,11 +63,11 @@ class DocumentosRendicionCuentasFinalListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
+
         # Agregar contexto para el search_bar.html
         context["query"] = self.request.GET.get("busqueda", "")
         context["reset_url"] = "rendicion_cuentas_final_listar"
-        
+
         return context
 
 

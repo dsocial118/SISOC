@@ -31,27 +31,34 @@ class ActividadCentroListView(ListView):
         if centro_id:
             queryset = queryset.filter(centro_id=centro_id)
         return queryset
-    
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx.update({
-            "breadcrumb_items": [
-                {"text": "Centro de Familia", "url": reverse("centro_list")},
-                {"text": "Actividades", "active": True}
-            ],
-            "page_title": "Listado de Actividades",
-            "action_buttons": [
-                {"url": reverse("actividadcentro_create"), "text": "Agregar Actividad", "type": "primary btn-lg", "class": "d-block d-sm-inline mt-2"}
-            ],
-            "table_headers": [
-                {"title": "Centro"},
-                {"title": "Actividad"}, 
-                {"title": "Días"},
-                {"title": "Horarios desde"},
-                {"title": "Horarios hasta"},
-                {"title": "Estado"}
-            ]
-        })
+        ctx.update(
+            {
+                "breadcrumb_items": [
+                    {"text": "Centro de Familia", "url": reverse("centro_list")},
+                    {"text": "Actividades", "active": True},
+                ],
+                "page_title": "Listado de Actividades",
+                "action_buttons": [
+                    {
+                        "url": reverse("actividadcentro_create"),
+                        "text": "Agregar Actividad",
+                        "type": "primary btn-lg",
+                        "class": "d-block d-sm-inline mt-2",
+                    }
+                ],
+                "table_headers": [
+                    {"title": "Centro"},
+                    {"title": "Actividad"},
+                    {"title": "Días"},
+                    {"title": "Horarios desde"},
+                    {"title": "Horarios hasta"},
+                    {"title": "Estado"},
+                ],
+            }
+        )
         return ctx
 
 
@@ -69,20 +76,22 @@ class ActividadCentroCreateView(CreateView):
         kwargs = super().get_form_kwargs()
         kwargs["centro"] = self.centro
         return kwargs
-    
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx.update({
-            "breadcrumb_items": [
-                {"text": "Centro de Familia", "url": reverse("centro_list")},
-                {"text": "Actividades", "url": reverse("actividadcentro_list")},
-                {"text": "Nueva", "active": True}
-            ],
-            "page_title": "Nueva Actividad",
-            "cancel_url": reverse("centro_detail", kwargs={"pk": self.centro_id}),
-            "submit_text": "Guardar",
-            "centro_id": self.centro_id
-        })
+        ctx.update(
+            {
+                "breadcrumb_items": [
+                    {"text": "Centro de Familia", "url": reverse("centro_list")},
+                    {"text": "Actividades", "url": reverse("actividadcentro_list")},
+                    {"text": "Nueva", "active": True},
+                ],
+                "page_title": "Nueva Actividad",
+                "cancel_url": reverse("centro_detail", kwargs={"pk": self.centro_id}),
+                "submit_text": "Guardar",
+                "centro_id": self.centro_id,
+            }
+        )
         return ctx
 
     def form_valid(self, form):

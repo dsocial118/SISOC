@@ -73,7 +73,7 @@ class OrganizacionListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['query'] = self.request.GET.get("busqueda", "")
+        context["query"] = self.request.GET.get("busqueda", "")
         return context
 
 
