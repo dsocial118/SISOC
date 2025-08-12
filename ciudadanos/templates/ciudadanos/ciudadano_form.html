@@ -1,154 +1,147 @@
 {% extends "includes/main.html" %}
 {% load crispy_forms_tags %}
 {% load static %}
-
 {% block head %}{% endblock %}
 {% block title %}Ciudadano{% endblock %}
 {% block titulo-pagina %}Ciudadano{% endblock %}
 {% block breadcrumb %}
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
-
 {% block menu-adicional %}{% endblock %}
 {% block content %}
     {% include 'components/alert_message.html' with show_django_messages=True %}
-    
     <div class="row">
         <div class="col-sm-12">
             <div class="card card-primary card-outline mb-4">
                 <div class="card-body">
                     {% include 'components/ciudadano_stepper.html' with is_edit_mode=is_edit_mode object=object %}
-                        <div class="row mt-5">
-                            <div class="col-12">
-                                <form action="#"
-                                      method="POST"
-                                      class="dropzone p-0 m-0"
-                                      name="upload"
-                                      id="upload"
-                                      novalidate
-                                      enctype="multipart/form-data"
-                                      autocomplete="off">
-                                    {% csrf_token %}
-                                    <div class="card">
-                                        <div class="card-body">
-                                            <div class="row justify-content-center mt-3">
-                                                <div class="card mx-auto border-0" style="max-width: 300px;">
-                                                    <div class="card-body">
-                                                        <div class="text-center">
-                                                            {% if object.foto %}
-                                                                <img src="{{ object.foto.url }}"
-                                                                     data-holder-rendered="true"
-                                                                     alt="avatar"
-                                                                     class="avatar p-1"
-                                                                     height="150"
-                                                                     id="blah" />
-                                                            {% else %}
-                                                                <img src="{% static 'custom/img/default.png' %}"
-                                                                     data-holder-rendered="true"
-                                                                     alt="avatar"
-                                                                     class="avatar p-1"
-                                                                     height="150"
-                                                                     id="blah" />
-                                                            {% endif %}
-                                                            {% if form.foto.errors %}
-                                                                <div class="error-message">
-                                                                    {% for error in form.foto.errors %}<span class="text-danger">{{ error }}</span>{% endfor %}
-                                                                </div>
-                                                            {% endif %}
-                                                        </div>
-                                                        <label for="id_foto" class="btn btn-primary w-100">
-                                                            <span>
-                                                                {% if request.resolver_match.url_name == "ciudadanos_editar" %}
-                                                                    Cambiar
-                                                                    foto
-                                                                {% else %}
-                                                                    Agregar foto
-                                                                {% endif %}
-                                                            </span>
-                                                        </label>
+                    <div class="row mt-5">
+                        <div class="col-12">
+                            <form action="#"
+                                  method="POST"
+                                  class="dropzone p-0 m-0"
+                                  name="upload"
+                                  id="upload"
+                                  novalidate
+                                  enctype="multipart/form-data"
+                                  autocomplete="off">
+                                {% csrf_token %}
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="row justify-content-center mt-3">
+                                            <div class="card mx-auto border-0" style="max-width: 300px;">
+                                                <div class="card-body">
+                                                    <div class="text-center">
+                                                        {% if object.foto %}
+                                                            <img src="{{ object.foto.url }}"
+                                                                 data-holder-rendered="true"
+                                                                 alt="avatar"
+                                                                 class="avatar p-1"
+                                                                 height="150"
+                                                                 id="blah" />
+                                                        {% else %}
+                                                            <img src="{% static 'custom/img/default.png' %}"
+                                                                 data-holder-rendered="true"
+                                                                 alt="avatar"
+                                                                 class="avatar p-1"
+                                                                 height="150"
+                                                                 id="blah" />
+                                                        {% endif %}
+                                                        {% if form.foto.errors %}
+                                                            <div class="error-message">
+                                                                {% for error in form.foto.errors %}<span class="text-danger">{{ error }}</span>{% endfor %}
+                                                            </div>
+                                                        {% endif %}
                                                     </div>
+                                                    <label for="id_foto" class="btn btn-primary w-100">
+                                                        <span>
+                                                            {% if request.resolver_match.url_name == "ciudadanos_editar" %}
+                                                                Cambiar
+                                                                foto
+                                                            {% else %}
+                                                                Agregar foto
+                                                            {% endif %}
+                                                        </span>
+                                                    </label>
                                                 </div>
                                             </div>
-                                            <div class="row mx-auto px-6 mt-3">
-                                                <div class="form-group col-md-6">{{ form.apellido|as_crispy_field }}</div>
-                                                <div class="form-group col-md-6">{{ form.nombre|as_crispy_field }}</div>
-                                                <div class="form-group col-md-6">{{ form.tipo_documento|as_crispy_field }}</div>
-                                                <div class="form-group col-md-6">{{ form.documento|as_crispy_field }}</div>
-                                                <div class="form-group col-md-6">{{ form.sexo|as_crispy_field }}</div>
-                                                <div class="form-group col-md-6">{{ form.fecha_nacimiento|as_crispy_field }}</div>
-                                                <div class="form-group col-md-6">{{ form.telefono|as_crispy_field }}</div>
-                                                <div class="form-group col-md-6">{{ form.telefono_alternativo|as_crispy_field }}</div>
-                                                <div class="form-group col-md-6">{{ form.email|as_crispy_field }}</div>
-                                                <div class="form-group col-md-6"></div>
-                                                <div class="form-group col-md-6">{{ form.estado_civil|as_crispy_field }}</div>
-                                                <div class="form-group col-md-6"></div>
-                                                <div class="form-group col-md-6">{{ form.calle|as_crispy_field }}</div>
-                                                <div class="form-group col-md-3">{{ form.altura|as_crispy_field }}</div>
-                                                <div class="form-group col-md-3">{{ form.piso_departamento|as_crispy_field }}</div>
-                                                <div class="form-group col-md-6">{{ form.torre_pasillo|as_crispy_field }}</div>
-                                                <div class="form-group col-md-6">{{ form.escalera_manzana|as_crispy_field }}</div>
-                                                <div class="form-group col-md-6">{{ form.provincia|as_crispy_field }}</div>
-                                                <div class="form-group col-md-6">{{ form.municipio|as_crispy_field }}</div>
-                                                <div class="form-group col-md-6">{{ form.localidad|as_crispy_field }}</div>
-                                                <div class="form-group col-md-6">{{ form.circuito|as_crispy_field }}</div>
-                                                <div class="form-group col-md-6">{{ form.codigo_postal|as_crispy_field }}</div>
-                                                <div class="form-group col-md-6"></div>
-                                                <div class="form-group col-md-6">{{ form.longitud|as_crispy_field }}</div>
-                                                <div class="form-group col-md-6">{{ form.latitud|as_crispy_field }}</div>
-                                                <div class="form-group col-md-6 {% if request.resolver_match.url_name != 'ciudadanos_editar' %}d-none{% endif %}">
-                                                    {{ form.estado|as_crispy_field }}
-                                                </div>
-                                                <div class="form-group col-12">{{ form.observaciones|as_crispy_field }}</div>
+                                        </div>
+                                        <div class="row mx-auto px-6 mt-3">
+                                            <div class="form-group col-md-6">{{ form.apellido|as_crispy_field }}</div>
+                                            <div class="form-group col-md-6">{{ form.nombre|as_crispy_field }}</div>
+                                            <div class="form-group col-md-6">{{ form.tipo_documento|as_crispy_field }}</div>
+                                            <div class="form-group col-md-6">{{ form.documento|as_crispy_field }}</div>
+                                            <div class="form-group col-md-6">{{ form.sexo|as_crispy_field }}</div>
+                                            <div class="form-group col-md-6">{{ form.fecha_nacimiento|as_crispy_field }}</div>
+                                            <div class="form-group col-md-6">{{ form.telefono|as_crispy_field }}</div>
+                                            <div class="form-group col-md-6">{{ form.telefono_alternativo|as_crispy_field }}</div>
+                                            <div class="form-group col-md-6">{{ form.email|as_crispy_field }}</div>
+                                            <div class="form-group col-md-6"></div>
+                                            <div class="form-group col-md-6">{{ form.estado_civil|as_crispy_field }}</div>
+                                            <div class="form-group col-md-6"></div>
+                                            <div class="form-group col-md-6">{{ form.calle|as_crispy_field }}</div>
+                                            <div class="form-group col-md-3">{{ form.altura|as_crispy_field }}</div>
+                                            <div class="form-group col-md-3">{{ form.piso_departamento|as_crispy_field }}</div>
+                                            <div class="form-group col-md-6">{{ form.torre_pasillo|as_crispy_field }}</div>
+                                            <div class="form-group col-md-6">{{ form.escalera_manzana|as_crispy_field }}</div>
+                                            <div class="form-group col-md-6">{{ form.provincia|as_crispy_field }}</div>
+                                            <div class="form-group col-md-6">{{ form.municipio|as_crispy_field }}</div>
+                                            <div class="form-group col-md-6">{{ form.localidad|as_crispy_field }}</div>
+                                            <div class="form-group col-md-6">{{ form.circuito|as_crispy_field }}</div>
+                                            <div class="form-group col-md-6">{{ form.codigo_postal|as_crispy_field }}</div>
+                                            <div class="form-group col-md-6"></div>
+                                            <div class="form-group col-md-6">{{ form.longitud|as_crispy_field }}</div>
+                                            <div class="form-group col-md-6">{{ form.latitud|as_crispy_field }}</div>
+                                            <div class="form-group col-md-6 {% if request.resolver_match.url_name != 'ciudadanos_editar' %}d-none{% endif %}">
+                                                {{ form.estado|as_crispy_field }}
                                             </div>
-                                            <input type="file"
-                                                   name="foto"
-                                                   id="id_foto"
-                                                   class="input-file"
-                                                   id="id_foto"
-                                                   accept="image/*"
-                                                   hidden />
+                                            <div class="form-group col-12">{{ form.observaciones|as_crispy_field }}</div>
+                                        </div>
+                                        <input type="file"
+                                               name="foto"
+                                               id="id_foto"
+                                               class="input-file"
+                                               id="id_foto"
+                                               accept="image/*"
+                                               hidden />
+                                    </div>
+                                </div>
+                                <!-- botones del pie -->
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="form-group mb-0 mt-3 d-flex justify-content-between">
+                                            {% if request.resolver_match.url_name == "ciudadanos_editar" %}
+                                                <a href="{% url 'ciudadanos_ver' object.id %}"
+                                                   class="btn btn-secondary mb-3">Cancelar</a>
+                                                <button type="submit"
+                                                        id="form_ciudadanos"
+                                                        name="form_ciudadanos"
+                                                        class="btn btn-primary mb-3 form_ciudadano">Guardar</button>
+                                                <button type="submit"
+                                                        id="form_step2"
+                                                        name="form_step2"
+                                                        class="btn btn-secondary mb-3 form_ciudadano">
+                                                    Continuar
+                                                </button>
+                                            {% else %}
+                                                <a href="{% url 'ciudadanos' %}" class="btn btn-secondary mb-3">Cancelar</a>
+                                                <button type="submit"
+                                                        id="form_step2"
+                                                        name="form_step2"
+                                                        class="btn btn-primary mb-3  form_ciudadano">Continuar</button>
+                                            {% endif %}
                                         </div>
                                     </div>
-                                    <!-- botones del pie -->
-                                    <div class="row">
-                                        <div class="col-md-12">
-                                            <div class="form-group mb-0 mt-3 d-flex justify-content-between">
-                                                {% if request.resolver_match.url_name == "ciudadanos_editar" %}
-                                                    <a href="{% url 'ciudadanos_ver' object.id %}"
-                                                       class="btn btn-secondary mb-3">Cancelar</a>
-                                                    <button type="submit"
-                                                            id="form_ciudadanos"
-                                                            name="form_ciudadanos"
-                                                            class="btn btn-primary mb-3 form_ciudadano">
-                                                        Guardar
-                                                    </button>
-                                                    <button type="submit"
-                                                            id="form_step2"
-                                                            name="form_step2"
-                                                            class="btn btn-secondary mb-3 form_ciudadano">
-                                                        Continuar
-                                                    </button>
-                                                {% else %}
-                                                    <a href="{% url 'ciudadanos' %}" class="btn btn-secondary mb-3">Cancelar</a>
-                                                    <button type="submit"
-                                                            id="form_step2"
-                                                            name="form_step2"
-                                                            class="btn btn-primary mb-3  form_ciudadano">
-                                                        Continuar
-                                                    </button>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <!-- /botones del pie -->
-                                </form>
-                            </div>
+                                </div>
+                                <!-- /botones del pie -->
+                            </form>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 {% endblock %}
 {% block customJS %}
     <script>

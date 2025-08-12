@@ -1,21 +1,15 @@
 {% extends "includes/main.html" %}
 {% load static %}
-
 {% block head %}{% endblock %}
 {% block title %}Derivaciones{% endblock %}
-
 {% block titulo-pagina %}Derivaciones{% endblock %}
-
 {% block menu-adicional %}{% endblock %}
-
 {% block content %}
     {% include 'components/alert_message.html' with show_django_messages=True %}
-    
     <div class="row">
         <!-- Sidebar con Carpetas -->
         <div class="col-md-3">
             <a href="{{ add_url }}" class="btn btn-primary btn-block mb-3">Derivar</a>
-            
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">Carpetas</h3>
@@ -29,7 +23,8 @@
                     <ul class="nav nav-pills flex-column">
                         {% for carpeta in sidebar_folders %}
                             <li class="nav-item {% if carpeta.id == 'pendientes' %}active{% endif %}">
-                                <a href="{{ carpeta.url }}" class="nav-link {% if carpeta.class %}{{ carpeta.class }}{% endif %}">
+                                <a href="{{ carpeta.url }}"
+                                   class="nav-link {% if carpeta.class %}{{ carpeta.class }}{% endif %}">
                                     <i class="{{ carpeta.icon }} pr-2"></i> {{ carpeta.title }}
                                     <span class="badge bg-{{ carpeta.badge_color }} float-right">{{ carpeta.count }}</span>
                                 </a>
@@ -39,7 +34,6 @@
                 </div>
             </div>
         </div>
-        
         <!-- Main Content -->
         <div class="col-md-9">
             <div class="card card-primary card-outline">
@@ -48,7 +42,12 @@
                     <div class="card-tools">
                         <form method="GET">
                             <div class="input-group input-group-sm">
-                                <input type="text" class="form-control" name="busqueda" value="{{ request.GET.busqueda }}" placeholder="Buscar" aria-label="Search" />
+                                <input type="text"
+                                       class="form-control"
+                                       name="busqueda"
+                                       value="{{ request.GET.busqueda }}"
+                                       placeholder="Buscar"
+                                       aria-label="Search" />
                                 <div class="input-group-append">
                                     <button class="btn btn-primary" type="submit">
                                         <i class="fas fa-search"></i>
@@ -58,18 +57,22 @@
                         </form>
                     </div>
                 </div>
-                
                 <div class="card-body p-0">
                     {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj query=request.GET.busqueda prev_text='Volver' next_text='Continuar' %}
-                    
                     <div class="table-responsive mailbox-messages mt-2">
                         <table class="table table-hover table-striped">
                             <tbody>
                                 {% for o in object_list %}
                                     <tr>
-                                        <td><span class="badge badge-gb-color">{{ o.estado }}</span></td>
-                                        <td><a href="{% url 'ciudadanosderivaciones_ver' o.id %}">{{ o.ciudadano }}</a></td>
-                                        <td><span class="badge badge-gb-color">{{ o.importancia }}</span></td>
+                                        <td>
+                                            <span class="badge badge-gb-color">{{ o.estado }}</span>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'ciudadanosderivaciones_ver' o.id %}">{{ o.ciudadano }}</a>
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-gb-color">{{ o.importancia }}</span>
+                                        </td>
                                         <td>
                                             {% if o.alertas.all.count == 1 %}
                                                 1 alerta
@@ -79,8 +82,12 @@
                                                 sin alertas
                                             {% endif %}
                                         </td>
-                                        <td>enviado por <a href="#">{{ o.usuario }}</a></td>
-                                        <td>{% if o.archivos %}<i class="fas fa-paperclip"></i>{% endif %}</td>
+                                        <td>
+                                            enviado por <a href="#">{{ o.usuario }}</a>
+                                        </td>
+                                        <td>
+                                            {% if o.archivos %}<i class="fas fa-paperclip"></i>{% endif %}
+                                        </td>
                                         <td>{{ o.fecha|date:"d/m/Y" }}</td>
                                     </tr>
                                 {% empty %}
@@ -91,7 +98,6 @@
                             </tbody>
                         </table>
                     </div>
-                    
                     {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj query=request.GET.busqueda prev_text='Volver' next_text='Continuar' %}
                 </div>
             </div>

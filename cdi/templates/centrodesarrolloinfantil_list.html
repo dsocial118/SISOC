@@ -1,12 +1,9 @@
 {% extends "includes/main.html" %}
 {% load static %}
-
 {% block title %}Centro Desarrollo Infantil{% endblock %}
-
 {% block breadcrumb %}
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
-
 {% block content %}
     {% include 'components/search_bar.html' with titulo='Buscar Centro Desarrollo Infantil' placeholder='Buscar por nombre, numero expediente, numero repi, organizacion, provincia, telefono o email' help_text='Ingresar nombre, CUIT, telefono o email.' reset_url='cdi' add_url='cdi_crear' query=query add_text='Agregar' %}
     {% include 'components/data_table.html' with headers=table_headers items=centrodesarrolloinfantiles fields=fields actions=actions show_actions=show_actions empty_message='No hay centros de desarrollo infantil registrados.' %}
@@ -14,5 +11,4 @@
         {% include 'components/pagination.html' %}
     {% endif %}
 {% endblock %}
-
 {% block customJS %}{% endblock %}

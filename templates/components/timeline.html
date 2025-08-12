@@ -1,6 +1,5 @@
 {# Componente Timeline #}
 {# Uso: {% include 'components/timeline.html' with events=timeline_events style='left' %} #}
-
 <div class="timeline {{ container_class|default:'' }} timeline-{{ style|default:'left' }}">
     {% for event in events %}
         <div class="timeline-item {% if event.class %}{{ event.class }}{% endif %}">
@@ -12,19 +11,9 @@
                 {% endif %}
             </div>
             <div class="timeline-content">
-                {% if event.time %}
-                    <div class="timeline-time text-muted small">
-                        {{ event.time }}
-                    </div>
-                {% endif %}
-                {% if event.title %}
-                    <h6 class="timeline-title">{{ event.title }}</h6>
-                {% endif %}
-                {% if event.content %}
-                    <div class="timeline-body">
-                        {{ event.content|safe }}
-                    </div>
-                {% endif %}
+                {% if event.time %}<div class="timeline-time text-muted small">{{ event.time }}</div>{% endif %}
+                {% if event.title %}<h6 class="timeline-title">{{ event.title }}</h6>{% endif %}
+                {% if event.content %}<div class="timeline-body">{{ event.content|safe }}</div>{% endif %}
                 {% if event.user %}
                     <div class="timeline-footer">
                         <small class="text-muted">por {{ event.user }}</small>
@@ -34,7 +23,6 @@
         </div>
     {% endfor %}
 </div>
-
 {# CSS personalizado #}
 <style>
     .timeline {

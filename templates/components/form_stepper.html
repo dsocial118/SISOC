@@ -1,6 +1,5 @@
 {# Componente Form Stepper #}
 {# Uso: {% include 'components/form_stepper.html' with steps=stepper_steps current_step=1 %} #}
-
 <div class="card card-primary card-outline mb-4">
     <div class="card-body">
         <div class="bs-stepper">
@@ -11,15 +10,15 @@
                     {% endif %}
                     <div class="step {% if step.active or step.number == current_step %}active{% endif %} {% if step.responsive_hide %}d-none d-sm-inline{% endif %}">
                         {% if step.url and not step.disabled %}
-                            <a href="{{ step.url }}" 
-                               class="step-trigger {% if step.active or step.number == current_step %}text-primary{% endif %}" 
+                            <a href="{{ step.url }}"
+                               class="step-trigger {% if step.active or step.number == current_step %}text-primary{% endif %}"
                                role="tab">
                                 <span class="bs-stepper-circle">{{ step.number }}</span>
                                 <span class="bs-stepper-label">{{ step.label }}</span>
                             </a>
                         {% else %}
-                            <button type="button" 
-                                    class="step-trigger {% if step.disabled %}disabled{% endif %} {% if step.active or step.number == current_step %}text-primary{% endif %}" 
+                            <button type="button"
+                                    class="step-trigger {% if step.disabled %}disabled{% endif %} {% if step.active or step.number == current_step %}text-primary{% endif %}"
                                     role="tab"
                                     {% if step.disabled %}disabled{% endif %}>
                                 <span class="bs-stepper-circle">{{ step.number }}</span>
@@ -29,13 +28,10 @@
                     </div>
                 {% endfor %}
             </div>
-            
             {% if show_content %}
                 <div class="row mt-5">
                     <div class="col-12">
-                        {% if content %}
-                            {{ content|safe }}
-                        {% endif %}
+                        {% if content %}{{ content|safe }}{% endif %}
                     </div>
                 </div>
             {% endif %}

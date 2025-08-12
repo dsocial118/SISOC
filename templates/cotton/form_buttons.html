@@ -2,15 +2,15 @@
     <div class="col-md-12">
         <div class="form-group mb-0 mt-3 d-flex justify-content-between">
             {% if cancel_button %}
-                <a href="{{ cancel_button.url }}" class="btn btn-{{ cancel_button.type|default:'secondary' }} mb-3">
+                <a href="{{ cancel_button.url }}"
+                   class="btn btn-{{ cancel_button.type|default:'secondary' }} mb-3">
                     {{ cancel_button.text|default:"Cancelar" }}
                 </a>
             {% endif %}
-            
             <div>
                 {% for button in buttons %}
-                    <button type="submit" 
-                            id="{{ button.id }}" 
+                    <button type="submit"
+                            id="{{ button.id }}"
                             name="{{ button.name|default:button.id }}"
                             class="btn btn-{{ button.type|default:'primary' }} mb-3 {% if button.class %}{{ button.class }}{% endif %}">
                         {{ button.text }}

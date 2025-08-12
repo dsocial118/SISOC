@@ -1,6 +1,5 @@
 {# Componente Tarjeta de Familiar #}
 {# Uso: {% include 'components/familiar_card.html' with familiar=f ciudadano_field='ciudadano_2' vinculo_field='vinculo' %} #}
-
 <div class="col-12 col-sm-6 col-md-4 d-flex align-items-stretch flex-column">
     <div class="card bg-solid d-flex flex-fill">
         <div class="card-header border-bottom-0">
@@ -54,9 +53,13 @@
                 <div class="col-5 text-center">
                     {% with ciudadano_obj=familiar|attr:ciudadano_field %}
                         {% if ciudadano_obj.foto %}
-                            <img src="{{ ciudadano_obj.foto.url }}" alt="user-avatar" class="img-circle img-fluid justify-content-center" />
+                            <img src="{{ ciudadano_obj.foto.url }}"
+                                 alt="user-avatar"
+                                 class="img-circle img-fluid justify-content-center" />
                         {% else %}
-                            <img src="{% load static %}{% static 'custom/img/default.png' %}" alt="user-avatar" class="img-circle img-fluid justify-content-center" />
+                            <img src="{% load static %}{% static 'custom/img/default.png' %}"
+                                 alt="user-avatar"
+                                 class="img-circle img-fluid justify-content-center" />
                         {% endif %}
                     {% endwith %}
                 </div>
@@ -64,9 +67,8 @@
         </div>
         <div class="card-footer">
             <div class="text-right">
-                <a href="{% url 'ciudadanos_ver' familiar|attr:ciudadano_id_field %}" class="btn btn-sm btn-primary d-print-none">
-                    Ver ciudadano
-                </a>
+                <a href="{% url 'ciudadanos_ver' familiar|attr:ciudadano_id_field %}"
+                   class="btn btn-sm btn-primary d-print-none">Ver ciudadano</a>
             </div>
         </div>
     </div>

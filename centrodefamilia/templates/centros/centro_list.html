@@ -50,7 +50,10 @@
                         <thead>
                             <tr>
                                 {% for header in table_headers %}
-                                    <th{% if header.class %} class="{{ header.class }}"{% endif %}{% if header.style %} style="{{ header.style }}"{% endif %}>{{ header.title }}</th>
+                                    <th {% if header.class %}class="{{ header.class }}"{% endif %}
+                                        {% if header.style %}style="{{ header.style }}"{% endif %}>
+                                        {{ header.title }}
+                                    </th>
                                 {% endfor %}
                             </tr>
                         </thead>

@@ -1,19 +1,19 @@
 {# Componente Tabs #}
 {# Uso: {% include 'components/tabs.html' with tabs=tab_items active_tab='tab1' tab_content=tab_contents %} #}
-
 <div class="tabs-container {{ container_class|default:'' }}">
     <!-- Nav tabs -->
-    <ul class="nav nav-{% if style == 'pills' %}pills{% else %}tabs{% endif %} {% if nav_class %}{{ nav_class }}{% endif %}" 
-        id="{{ tab_id|default:'myTab' }}" role="tablist">
+    <ul class="nav nav-{% if style == 'pills' %}pills{% else %}tabs{% endif %} {% if nav_class %}{{ nav_class }}{% endif %}"
+        id="{{ tab_id|default:'myTab' }}"
+        role="tablist">
         {% for tab in tabs %}
             <li class="nav-item" role="presentation">
-                <button class="nav-link {% if tab.id == active_tab or forloop.first and not active_tab %}active{% endif %} {% if tab.class %}{{ tab.class }}{% endif %}" 
-                        id="{{ tab.id }}-tab" 
-                        data-bs-toggle="tab" 
-                        data-bs-target="#{{ tab.id }}" 
-                        type="button" 
-                        role="tab" 
-                        aria-controls="{{ tab.id }}" 
+                <button class="nav-link {% if tab.id == active_tab or forloop.first and not active_tab %}active{% endif %} {% if tab.class %}{{ tab.class }}{% endif %}"
+                        id="{{ tab.id }}-tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#{{ tab.id }}"
+                        type="button"
+                        role="tab"
+                        aria-controls="{{ tab.id }}"
                         aria-selected="{% if tab.id == active_tab or forloop.first and not active_tab %}true{% else %}false{% endif %}">
                     {% if tab.icon %}<i class="{{ tab.icon }} me-1"></i>{% endif %}
                     {{ tab.title }}
@@ -24,14 +24,13 @@
             </li>
         {% endfor %}
     </ul>
-
     <!-- Tab panes -->
-    <div class="tab-content {% if content_class %}{{ content_class }}{% endif %}" 
+    <div class="tab-content {% if content_class %}{{ content_class }}{% endif %}"
          id="{{ tab_id|default:'myTab' }}Content">
         {% for tab in tabs %}
-            <div class="tab-pane fade {% if tab.id == active_tab or forloop.first and not active_tab %}show active{% endif %} {% if tab.pane_class %}{{ tab.pane_class }}{% endif %}" 
-                 id="{{ tab.id }}" 
-                 role="tabpanel" 
+            <div class="tab-pane fade {% if tab.id == active_tab or forloop.first and not active_tab %}show active{% endif %} {% if tab.pane_class %}{{ tab.pane_class }}{% endif %}"
+                 id="{{ tab.id }}"
+                 role="tabpanel"
                  aria-labelledby="{{ tab.id }}-tab">
                 {% if tab.content %}
                     {{ tab.content|safe }}
@@ -46,7 +45,6 @@
         {% endfor %}
     </div>
 </div>
-
 {# CSS personalizado #}
 <style>
     .tabs-container .nav-tabs .nav-link {

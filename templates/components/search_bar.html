@@ -1,7 +1,6 @@
 {% load custom_filters %}
 {# Componente Search Bar #}
 {# Uso: {% include 'components/search_bar.html' with titulo='Mi Título' placeholder='Buscar...' help_text='Ayuda' reset_url=url add_url=url show_add_button=True query=query add_text='Agregar' %} #}
-
 <h2 class="text-center display-4 mb-4">{{ titulo|default:"Buscar" }}</h2>
 <form method="GET">
     <div class="row">
@@ -33,19 +32,25 @@
 <div class="row mt-3">
     <div class="col-12 text-center">
         {% if reset_url_full %}
-            <a href="{{ reset_url_full }}" class="btn btn-secondary btn-lg d-inline-block mt-2 me-3">Resetear</a>
+            <a href="{{ reset_url_full }}"
+               class="btn btn-secondary btn-lg d-inline-block mt-2 me-3">Resetear</a>
         {% elif reset_url|is_url %}
-            <a href="{{ reset_url }}" class="btn btn-secondary btn-lg d-inline-block mt-2 me-3">Resetear</a>
+            <a href="{{ reset_url }}"
+               class="btn btn-secondary btn-lg d-inline-block mt-2 me-3">Resetear</a>
         {% else %}
-            <a href="{% url reset_url %}" class="btn btn-secondary btn-lg d-inline-block mt-2 me-3">Resetear</a>
+            <a href="{% url reset_url %}"
+               class="btn btn-secondary btn-lg d-inline-block mt-2 me-3">Resetear</a>
         {% endif %}
         {% if add_url and show_add_button|default:True %}
             {% if add_url_full %}
-                <a href="{{ add_url_full }}" class="btn btn-primary btn-lg d-inline-block mt-2{% if button_append %} mr-2{% endif %}">{{ add_text|default:"Agregar" }}</a>
+                <a href="{{ add_url_full }}"
+                   class="btn btn-primary btn-lg d-inline-block mt-2{% if button_append %} mr-2{% endif %}">{{ add_text|default:"Agregar" }}</a>
             {% elif add_url|is_url %}
-                <a href="{{ add_url }}" class="btn btn-primary btn-lg d-inline-block mt-2{% if button_append %} mr-2{% endif %}">{{ add_text|default:"Agregar" }}</a>
+                <a href="{{ add_url }}"
+                   class="btn btn-primary btn-lg d-inline-block mt-2{% if button_append %} mr-2{% endif %}">{{ add_text|default:"Agregar" }}</a>
             {% else %}
-                <a href="{% url add_url %}" class="btn btn-primary btn-lg d-inline-block mt-2{% if button_append %} mr-2{% endif %}">{{ add_text|default:"Agregar" }}</a>
+                <a href="{% url add_url %}"
+                   class="btn btn-primary btn-lg d-inline-block mt-2{% if button_append %} mr-2{% endif %}">{{ add_text|default:"Agregar" }}</a>
             {% endif %}
         {% endif %}
     </div>

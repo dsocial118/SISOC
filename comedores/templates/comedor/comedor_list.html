@@ -1,12 +1,9 @@
 {% extends "includes/main.html" %}
 {% load static %}
-
 {% block title %}Comedores{% endblock %}
-
 {% block breadcrumb %}
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
-
 {% block content %}
     {% include 'components/search_bar.html' with titulo="Buscar Comedor/Merendero" placeholder="Buscar por nombre, provincia, municipio, localidad, barrio o calle" help_text="Ingresar nombre, provincia, municipio, localidad, barrio o calle." reset_url=reset_url add_url=add_url query=query button_append=True %}
     {% include 'components/comedor_table.html' with comedores=comedores %}
