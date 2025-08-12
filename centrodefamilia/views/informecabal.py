@@ -112,12 +112,13 @@ class InformeCabalProcessAjaxView(LoginRequiredMixin, TemplateView):
                 },
                 status=400,
             )
-        except Exception as e:
-            logger.error("Error inesperado al procesar CABAL: %s", e, exc_info=True)
+        except ValueError as ve:
+            logger.error("ValueError al procesar archivo CABAL: %s", ve, exc_info=True)
             return JsonResponse(
-                {"ok": False, "error": "Error inesperado al procesar."},
-                status=500,
+                {"ok": False, "error": "Error de validación en el archivo."},
+                status=400
             )
+
 
 
 class InformeCabalRegistroDetailView(LoginRequiredMixin, DetailView):
