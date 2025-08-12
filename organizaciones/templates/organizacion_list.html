@@ -11,7 +11,6 @@
 {% endblock %}
 {% block content %}
     {% include 'components/search_bar.html' with titulo='Buscar Organizacion' placeholder='Buscar por nombre, CUIT, telefono o email' help_text='Ingresar nombre, CUIT, telefono o email.' reset_url='organizaciones' add_url='organizacion_crear' add_text='Agregar' button_append=True query=query %}
-    
     <div class="row mt-5">
         <div class="col-12">
             <div class="card">
@@ -50,9 +49,7 @@
                                 </tr>
                             {% empty %}
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted py-4">
-                                        No hay organizaciones disponibles.
-                                    </td>
+                                    <td colspan="5" class="text-center text-muted py-4">No hay organizaciones disponibles.</td>
                                 </tr>
                             {% endfor %}
                         </tbody>
@@ -61,7 +58,6 @@
             </div>
         </div>
     </div>
-    
     {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj query=query prev_text='Volver' next_text='Continuar' %}
 {% endblock %}
 {% block customJS %}{% endblock %}

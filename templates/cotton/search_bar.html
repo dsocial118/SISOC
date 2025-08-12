@@ -20,9 +20,11 @@
 </form>
 <div class="row mt-3">
     <div class="col-12 text-center">
-        <a href="{{ reset_url }}" class="btn btn-secondary btn-lg d-inline-block mt-2 me-3">Resetear</a>
+        <a href="{{ reset_url }}"
+           class="btn btn-secondary btn-lg d-inline-block mt-2 me-3">Resetear</a>
         {% if add_url and show_add_button|default:True %}
-            <a href="{{ add_url }}" class="btn btn-primary btn-lg d-inline-block mt-2">{{ add_text|default:"Agregar" }}</a>
+            <a href="{{ add_url }}"
+               class="btn btn-primary btn-lg d-inline-block mt-2">{{ add_text|default:"Agregar" }}</a>
         {% endif %}
     </div>
 </div>

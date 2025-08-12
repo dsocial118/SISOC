@@ -1,10 +1,8 @@
 {% extends "includes/main.html" %}
 {% load static custom_filters %}
 {% load crispy_forms_tags %}
-
 {% block title %}Grupos de usuarios{% endblock %}
 {% block titulo-pagina %}Grupos de usuarios{% endblock %}
-
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
         <li class="breadcrumb-item">Administración</li>
@@ -13,7 +11,6 @@
         </li>
     </ol>
 {% endblock %}
-
 {% block content %}
     {% include 'components/data_table.html' with headers=table_headers items=groups show_actions=False empty_message='No hay grupos disponibles.' fields=table_fields %}
 {% endblock content %}

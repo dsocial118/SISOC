@@ -12,7 +12,6 @@
                     <a href="#" class="page-link">{{ prev_text|default:"Volver" }}</a>
                 </li>
             {% endif %}
-
             <!-- Páginas -->
             {% if page_range %}
                 {% for i in page_range %}
@@ -51,7 +50,6 @@
                     {% endif %}
                 {% endfor %}
             {% endif %}
-
             <!-- Botón Siguiente -->
             {% if page_obj.has_next %}
                 <li class="page-item">

@@ -1,20 +1,14 @@
 {% extends "includes/main.html" %}
 {% load static %}
-
 {% block title %}Archivo{% endblock %}
-
 {% block titulo-pagina %}Archivo{% endblock %}
-
 {% block breadcrumb %}
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
-
 {% block menu-adicional %}{% endblock %}
 {% block content %}
     {% include 'components/alert_message.html' with show_django_messages=True %}
-    
     {% include 'components/action_buttons.html' with buttons=action_buttons %}
-    
     <div class="row">
         <div class="col-12">
             <div class="card">
@@ -23,7 +17,8 @@
                         <thead>
                             <tr>
                                 {% for header in table_headers %}
-                                    <th{% if header.style %} style="{{ header.style }}"{% endif %}{% if header.class %} class="{{ header.class }}"{% endif %}>
+                                    <th {% if header.style %}style="{{ header.style }}"{% endif %}
+                                        {% if header.class %}class="{{ header.class }}"{% endif %}>
                                         {{ header.title }}
                                     </th>
                                 {% endfor %}
@@ -38,9 +33,15 @@
                                     <td>{{ a.archivo.size|filesizeformat }}</td>
                                     <td class="project-actions text-right">
                                         <div class="btn-group" role="group">
-                                            <a href="{{ MEDIA_URL }}{{ a.archivo.url }}" target="_blank" class="btn btn-primary btn-sm">Ver</a>
-                                            <a href="{{ MEDIA_URL }}{{ a.archivo.url }}" download class="btn btn-primary btn-sm editar">Descargar</a>
-                                            <button onclick='deleteArchivo("{{ a.id }}")' type="button" class="btn btn-danger btn-sm">Eliminar</button>
+                                            <a href="{{ MEDIA_URL }}{{ a.archivo.url }}"
+                                               target="_blank"
+                                               class="btn btn-primary btn-sm">Ver</a>
+                                            <a href="{{ MEDIA_URL }}{{ a.archivo.url }}"
+                                               download
+                                               class="btn btn-primary btn-sm editar">Descargar</a>
+                                            <button onclick='deleteArchivo("{{ a.id }}")'
+                                                    type="button"
+                                                    class="btn btn-danger btn-sm">Eliminar</button>
                                         </div>
                                     </td>
                                 </tr>
@@ -55,7 +56,6 @@
             </div>
         </div>
     </div>
-    
     {% include 'components/action_buttons.html' with back_button=back_button %}
 {% endblock %}
 {% block customJS %}

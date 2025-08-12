@@ -1,20 +1,14 @@
 {% extends "includes/main.html" %}
 {% load static %}
-
 {% block title %}Historial de alertas{% endblock %}
-
 {% block titulo-pagina %}Historial de alertas{% endblock %}
-
 {% block breadcrumb %}
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
-
 {% block menu-adicional %}{% endblock %}
 {% block content %}
     {% include 'components/alert_message.html' with show_django_messages=True %}
-    
     {% include 'components/action_buttons.html' with buttons=action_buttons %}
-    
     <div class="row">
         <div class="col-12">
             <div class="card">
@@ -22,9 +16,7 @@
                     <table class="table table-striped table-bordered table-hover tabladt">
                         <thead>
                             <tr>
-                                {% for header in table_headers %}
-                                    <th>{{ header.title }}</th>
-                                {% endfor %}
+                                {% for header in table_headers %}<th>{{ header.title }}</th>{% endfor %}
                             </tr>
                         </thead>
                         <tbody>
@@ -55,7 +47,6 @@
             </div>
         </div>
     </div>
-    
     {% include 'components/action_buttons.html' with back_button=back_button %}
 {% endblock %}
 {% block customJS %}{% endblock %}

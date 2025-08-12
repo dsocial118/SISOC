@@ -7,7 +7,8 @@
                     <thead class="thead-light">
                         <tr>
                             {% for header in headers %}
-                                <th{% if header.class %} class="{{ header.class }}"{% endif %}{% if header.style %} style="{{ header.style }}"{% endif %}>{{ header.title }}</th>
+                                <th {% if header.class %}class="{{ header.class }}"{% endif %}
+                                    {% if header.style %}style="{{ header.style }}"{% endif %}>{{ header.title }}</th>
                             {% endfor %}
                         </tr>
                     </thead>
@@ -17,16 +18,16 @@
                                 <td>{{ actividad.centro.nombre }}</td>
                                 <td>
                                     {% if actividad.id %}
-                                        <a href="{% url 'actividadcentro_detail' centro_id=actividad.centro.id pk=actividad.id %}" class="text-decoration-none">
-                                            {{ actividad.actividad.nombre }}
-                                        </a>
+                                        <a href="{% url 'actividadcentro_detail' centro_id=actividad.centro.id pk=actividad.id %}"
+                                           class="text-decoration-none">{{ actividad.actividad.nombre }}</a>
                                     {% else %}
                                         {{ actividad.actividad.nombre }}
                                     {% endif %}
                                 </td>
                                 <td>
                                     {% for dia in actividad.dias.all %}
-                                        {{ dia.nombre }}{% if not forloop.last %}, {% endif %}
+                                        {{ dia.nombre }}
+                                        {% if not forloop.last %},{% endif %}
                                     {% empty %}
                                         {{ actividad.dias }}
                                     {% endfor %}
@@ -39,7 +40,9 @@
                             </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="{{ headers|length }}" class="text-center">{{ empty_message|default:"No hay actividades registradas." }}</td>
+                                <td colspan="{{ headers|length }}" class="text-center">
+                                    {{ empty_message|default:"No hay actividades registradas." }}
+                                </td>
                             </tr>
                         {% endfor %}
                     </tbody>

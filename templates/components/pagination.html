@@ -1,6 +1,5 @@
 {# Componente Pagination #}
 {# Uso: {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj page_range=page_range query=query prev_text='Anterior' next_text='Siguiente' %} #}
-
 {% if is_paginated %}
     <div class="mt-2">
         <ul class="pagination">
@@ -15,7 +14,6 @@
                     <a href="#" class="page-link">{{ prev_text|default:"Volver" }}</a>
                 </li>
             {% endif %}
-
             <!-- Páginas -->
             {% if page_range %}
                 {% for i in page_range %}
@@ -54,7 +52,6 @@
                     {% endif %}
                 {% endfor %}
             {% endif %}
-
             <!-- Botón Siguiente -->
             {% if page_obj.has_next %}
                 <li class="page-item">

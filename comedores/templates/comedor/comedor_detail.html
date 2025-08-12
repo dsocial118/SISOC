@@ -1,17 +1,14 @@
 {% extends "includes/main.html" %}
 {% load static %}
-
 {% block title %}Comedor: {{ comedor.nombre }}{% endblock %}
 {% block titulo-pagina %}
     {{ comedor.nombre }}
     <span class="ml-2 h5">| {{ comedor.provincia.nombre | default_if_none:"-" }}, {{ comedor.municipio.nombre | default_if_none:"-" }}, {{ comedor.localidad.nombre | default_if_none:"-" }}</span>
     <span class="ml-2 h5">- {{ comedor.programa.nombre }} - {{ comedor_categoria.categoria.nombre }}</span>
 {% endblock %}
-
 {% block breadcrumb %}
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
-
 {% load crispy_forms_tags %}
 {% block content %}
     <link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />

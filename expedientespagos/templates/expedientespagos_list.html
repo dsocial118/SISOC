@@ -1,9 +1,7 @@
 {% extends "includes/main.html" %}
 {% load static custom_filters %}
 {% load crispy_forms_tags %}
-
 {% block title %}Listado de Expedientes de pagos{% endblock %}
-
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
         <div class="breadcrumb-item active">
@@ -11,7 +9,6 @@
         </div>
     </ol>
 {% endblock %}
-
 {% block content %}
     <div class="container mt-4">
         <h1>Listado de Expedientes de Pagos</h1>
@@ -23,8 +20,6 @@
                 </a>
             </div>
         {% endif %}
-        
         {% include 'components/data_table.html' with headers=table_headers items=expedientes_pagos show_actions=True actions=table_actions empty_message='No hay expedientes de pagos registrados para este comedor.' fields=table_fields %}
-        
     </div>
 {% endblock %}

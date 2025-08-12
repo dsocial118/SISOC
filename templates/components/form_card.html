@@ -1,10 +1,11 @@
 <!-- Form Card Component -->
 {% load crispy_forms_tags %}
 <div class="card card-body shadow">
-    {% if title %}
-        <h2 class="text-center display-4 mb-4">{{ title }}</h2>
-    {% endif %}
-    <form method="post" enctype="multipart/form-data" {% if form_id %}id="{{ form_id }}"{% endif %} {% if novalidate %}novalidate{% endif %}>
+    {% if title %}<h2 class="text-center display-4 mb-4">{{ title }}</h2>{% endif %}
+    <form method="post"
+          enctype="multipart/form-data"
+          {% if form_id %}id="{{ form_id }}"{% endif %}
+          {% if novalidate %}novalidate{% endif %}>
         {% csrf_token %}
         {{ form|crispy }}
         <div class="text-center mt-4">
@@ -14,7 +15,8 @@
             {% endif %}
             {% if additional_buttons %}
                 {% for button in additional_buttons %}
-                    <a href="{{ button.url }}" class="btn btn-{{ button.type|default:'secondary' }} {{ button.class|default:'' }}">{{ button.text }}</a>
+                    <a href="{{ button.url }}"
+                       class="btn btn-{{ button.type|default:'secondary' }} {{ button.class|default:'' }}">{{ button.text }}</a>
                 {% endfor %}
             {% endif %}
         </div>

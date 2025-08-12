@@ -1,10 +1,9 @@
 {# Componente Modal #}
 {# Uso: {% include 'components/modal.html' with modal_id='myModal' title='Mi Modal' content='Contenido...' buttons=modal_buttons %} #}
-
-<div class="modal fade" 
-     id="{{ modal_id|default:'defaultModal' }}" 
-     tabindex="-1" 
-     aria-labelledby="{{ modal_id|default:'defaultModal' }}Label" 
+<div class="modal fade"
+     id="{{ modal_id|default:'defaultModal' }}"
+     tabindex="-1"
+     aria-labelledby="{{ modal_id|default:'defaultModal' }}Label"
      aria-hidden="true"
      {% if backdrop %}data-bs-backdrop="{{ backdrop }}"{% endif %}
      {% if keyboard %}data-bs-keyboard="{{ keyboard }}"{% endif %}>
@@ -19,21 +18,17 @@
                         </h5>
                     {% endif %}
                     {% if close_button|default:True %}
-                        <button type="button" 
-                                class="btn-close" 
-                                data-bs-dismiss="modal" 
-                                aria-label="Close">
-                        </button>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
                     {% endif %}
                 </div>
             {% endif %}
-            
             <div class="modal-body {% if body_class %}{{ body_class }}{% endif %}">
-                {% if content %}
-                    {{ content|safe }}
-                {% endif %}
+                {% if content %}{{ content|safe }}{% endif %}
                 {% if form %}
-                    <form {% if form_action %}action="{{ form_action }}"{% endif %} 
+                    <form {% if form_action %}action="{{ form_action }}"{% endif %}
                           {% if form_method %}method="{{ form_method }}"{% else %}method="POST"{% endif %}
                           {% if form_id %}id="{{ form_id }}"{% endif %}>
                         {% csrf_token %}
@@ -41,13 +36,12 @@
                     </form>
                 {% endif %}
             </div>
-            
             {% if buttons or show_default_buttons %}
                 <div class="modal-footer {% if footer_class %}{{ footer_class }}{% endif %}">
                     {% if buttons %}
                         {% for button in buttons %}
                             {% if button.type == 'button' %}
-                                <button type="button" 
+                                <button type="button"
                                         class="btn btn-{{ button.style|default:'secondary' }} {{ button.class|default:'' }}"
                                         {% if button.dismiss %}data-bs-dismiss="modal"{% endif %}
                                         {% if button.onclick %}onclick="{{ button.onclick }}"{% endif %}
@@ -56,7 +50,7 @@
                                     {{ button.text }}
                                 </button>
                             {% else %}
-                                <a href="{{ button.url }}" 
+                                <a href="{{ button.url }}"
                                    class="btn btn-{{ button.style|default:'primary' }} {{ button.class|default:'' }}">
                                     {% if button.icon %}<i class="{{ button.icon }} me-1"></i>{% endif %}
                                     {{ button.text }}
@@ -65,27 +59,19 @@
                         {% endfor %}
                     {% else %}
                         {# Botones por defecto #}
-                        <button type="button" 
-                                class="btn btn-secondary" 
-                                data-bs-dismiss="modal">
-                            Cerrar
-                        </button>
-                        <button type="button" 
-                                class="btn btn-primary">
-                            Confirmar
-                        </button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="button" class="btn btn-primary">Confirmar</button>
                     {% endif %}
                 </div>
             {% endif %}
         </div>
     </div>
 </div>
-
 {# Trigger button opcional #}
 {% if trigger_button %}
-    <button type="button" 
-            class="btn btn-{{ trigger_button.style|default:'primary' }} {{ trigger_button.class|default:'' }}" 
-            data-bs-toggle="modal" 
+    <button type="button"
+            class="btn btn-{{ trigger_button.style|default:'primary' }} {{ trigger_button.class|default:'' }}"
+            data-bs-toggle="modal"
             data-bs-target="#{{ modal_id|default:'defaultModal' }}">
         {% if trigger_button.icon %}<i class="{{ trigger_button.icon }} me-1"></i>{% endif %}
         {{ trigger_button.text }}

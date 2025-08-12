@@ -7,9 +7,7 @@
                         <tr>
                             {% for header in headers %}
                                 <th {% if header.width %}style="width: {{ header.width }}"{% endif %}
-                                    {% if header.class %}class="{{ header.class }}"{% endif %}>
-                                    {{ header.title }}
-                                </th>
+                                    {% if header.class %}class="{{ header.class }}"{% endif %}>{{ header.title }}</th>
                             {% endfor %}
                         </tr>
                     </thead>
@@ -46,7 +44,7 @@
                             </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="{% if show_actions %}{{ headers|length|add:1 }}{% else %}{{ headers|length }}{% endif %}" 
+                                <td colspan="{% if show_actions %}{{ headers|length|add:1 }}{% else %}{{ headers|length }}{% endif %}"
                                     class="text-center text-muted py-4">
                                     {{ empty_message|default:"No hay elementos para mostrar" }}
                                 </td>
@@ -54,9 +52,7 @@
                         {% endfor %}
                     </tbody>
                 </table>
-                {% if pagination %}
-                    {{ pagination }}
-                {% endif %}
+                {% if pagination %}{{ pagination }}{% endif %}
             </div>
         </div>
     </div>

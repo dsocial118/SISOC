@@ -1,12 +1,10 @@
 {# Componente Loading Spinner #}
 {# Uso: {% include 'components/loading_spinner.html' with type='border' message='Cargando...' size='sm' color='primary' %} #}
-
 <div class="d-flex {% if center %}justify-content-center{% endif %} {% if vertical_center %}align-items-center{% endif %} {{ container_class|default:'' }}"
      {% if id %}id="{{ id }}"{% endif %}
      {% if hidden %}style="display: none;"{% endif %}>
-     
     {% if type == 'grow' %}
-        <div class="spinner-grow {% if color %}text-{{ color }}{% endif %} {% if size %}spinner-grow-{{ size }}{% endif %}" 
+        <div class="spinner-grow {% if color %}text-{{ color }}{% endif %} {% if size %}spinner-grow-{{ size }}{% endif %}"
              role="status">
             <span class="visually-hidden">{{ sr_text|default:'Cargando...' }}</span>
         </div>
@@ -26,22 +24,18 @@
         </div>
     {% else %}
         {# Default: border spinner #}
-        <div class="spinner-border {% if color %}text-{{ color }}{% endif %} {% if size %}spinner-border-{{ size }}{% endif %}" 
+        <div class="spinner-border {% if color %}text-{{ color }}{% endif %} {% if size %}spinner-border-{{ size }}{% endif %}"
              role="status">
             <span class="visually-hidden">{{ sr_text|default:'Cargando...' }}</span>
         </div>
     {% endif %}
-    
     {% if message %}
-        <span class="{% if message_class %}{{ message_class }}{% else %}ms-2{% endif %}">
-            {{ message }}
-        </span>
+        <span class="{% if message_class %}{{ message_class }}{% else %}ms-2{% endif %}">{{ message }}</span>
     {% endif %}
 </div>
-
 {# CSS personalizado para spinners adicionales #}
 {% if type == 'dots' or type == 'pulse' %}
-<style>
+    <style>
     {% if type == 'dots' %}
     .spinner-dots {
         width: 70px;
@@ -89,22 +83,22 @@
         20% { transform: scaleY(1.0); }
     }
     {% endif %}
-</style>
+    </style>
 {% endif %}
-
 {# Overlay completo opcional #}
 {% if overlay %}
-<div class="loading-overlay" {% if id %}id="{{ id }}_overlay"{% endif %} {% if hidden %}style="display: none;"{% endif %}>
-    <div class="loading-overlay-content">
-        <div class="spinner-border text-{{ color|default:'primary' }}" role="status">
-            <span class="visually-hidden">{{ sr_text|default:'Cargando...' }}</span>
+    <div class="loading-overlay"
+         {% if id %}id="{{ id }}_overlay"{% endif %}
+         {% if hidden %}style="display: none;"{% endif %}>
+        <div class="loading-overlay-content">
+            <div class="spinner-border text-{{ color|default:'primary' }}"
+                 role="status">
+                <span class="visually-hidden">{{ sr_text|default:'Cargando...' }}</span>
+            </div>
+            {% if message %}<div class="mt-3 text-{{ color|default:'primary' }}">{{ message }}</div>{% endif %}
         </div>
-        {% if message %}
-            <div class="mt-3 text-{{ color|default:'primary' }}">{{ message }}</div>
-        {% endif %}
     </div>
-</div>
-<style>
+    <style>
     .loading-overlay {
         position: fixed;
         top: 0;
@@ -121,5 +115,5 @@
         text-align: center;
         color: white;
     }
-</style>
+    </style>
 {% endif %}

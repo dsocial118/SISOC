@@ -4,26 +4,22 @@
             <i class="fas fa-exclamation-triangle text-danger px-2"></i> {{ title|default:"Atención!" }}
         </h3>
         <p>
-            {{ message|default:"¿Estás seguro que deseas eliminar de manera permanente el registro" }} 
+            {{ message|default:"¿Estás seguro que deseas eliminar de manera permanente el registro" }}
             <span class="font-weight-bold">{{ object_name|upper }}</span>?
         </p>
         {% if warning_items %}
-            <p>{{ warning_message|default:"Si elimina este registro se borrarán también, de manera permanente, registros relacionados en los siguientes módulos:" }}</p>
+            <p>
+                {{ warning_message|default:"Si elimina este registro se borrarán también, de manera permanente, registros relacionados en los siguientes módulos:" }}
+            </p>
             <ul class="mb-4">
-                {% for item in warning_items %}
-                    <li>{{ item }}</li>
-                {% endfor %}
+                {% for item in warning_items %}<li>{{ item }}</li>{% endfor %}
             </ul>
         {% endif %}
         <div class="text-left">
             <form method="post">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-danger btn-sm">
-                    {{ confirm_text|default:"Eliminar" }}
-                </button>
-                <a href="{{ cancel_url }}" class="btn btn-secondary btn-sm">
-                    {{ cancel_text|default:"Cancelar" }}
-                </a>
+                <button type="submit" class="btn btn-danger btn-sm">{{ confirm_text|default:"Eliminar" }}</button>
+                <a href="{{ cancel_url }}" class="btn btn-secondary btn-sm">{{ cancel_text|default:"Cancelar" }}</a>
             </form>
         </div>
     </div>
