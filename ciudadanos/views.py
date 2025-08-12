@@ -1730,6 +1730,12 @@ class DerivacionDetailView(DetailView):
         derivacion = context["object"]
 
         # Preparar datos para info_card de derivación
+        estado_badge_class = (
+            "warning"
+            if derivacion.estado == "Pendiente"
+            else "success" if derivacion.estado == "Aceptada" else "danger"
+        )
+
         derivacion_data = [
             {
                 "label": "Fecha de solicitud",
@@ -1737,20 +1743,7 @@ class DerivacionDetailView(DetailView):
             },
             {
                 "label": "Estado",
-                "value": (
-                    '<span class="badge badge-{}">{}</span>'.format(
-                        (
-                            "warning"
-                            if derivacion.estado == "Pendiente"
-                            else (
-                                "success"
-                                if derivacion.estado == "Aceptada"
-                                else "danger"
-                            )
-                        ),
-                        derivacion.estado,
-                    )
-                ),
+                "value": f'<span class="badge badge-{estado_badge_class}">{derivacion.estado}</span>',
             },
             {
                 "label": "Importancia",
