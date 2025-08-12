@@ -60,7 +60,11 @@ class InformeCabalPreviewAjaxView(LoginRequiredMixin, TemplateView):
                 {"ok": True, "rows": data, "not_matching": not_matching, "total": total}
             )
         except ValueError as ve:
-            return JsonResponse({"ok": False, "error": str(ve)}, status=400)
+            logger.warning("ValueError en preview CABAL: %s", ve, exc_info=True)
+            return JsonResponse(
+                {"ok": False, "error": "El archivo no tiene el formato esperado o está dañado."},
+                status=400,
+            )
         except Exception as e:
             logger.error("Error en preview CABAL: %s", e, exc_info=True)
             return JsonResponse(
