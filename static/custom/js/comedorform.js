@@ -435,5 +435,159 @@ document.addEventListener("DOMContentLoaded", function () {
   // Cargar imágenes existentes
   loadExistingImages();
   
+  // Inicializar funcionalidad de foto de legajo
+  setupFotoLegajo();
+  
   console.log("Funcionalidad de imágenes inicializada correctamente");
 });
+
+// FUNCIONALIDAD PARA FOTO DE LEGAJO
+function setupFotoLegajo() {
+  console.log("Configurando funcionalidad de foto de legajo...");
+  
+  // Cargar foto de legajo existente
+  const fotoThumbnailContainer = document.querySelector('.foto-thumbnail-container');
+  if (fotoThumbnailContainer) {
+    cargarFotoLegajoExistente(fotoThumbnailContainer);
+  }
+  
+  // Configurar preview para nueva foto
+  const fotoLegajoInput = document.getElementById('id_foto_legajo');
+  if (fotoLegajoInput) {
+    fotoLegajoInput.addEventListener('change', function() {
+      console.log("Archivo de foto legajo seleccionado");
+      const file = this.files[0];
+      
+      if (file) {
+        mostrarPreviewFotoLegajo(file);
+      } else {
+        ocultarPreviewFotoLegajo();
+      }
+    });
+  }
+}
+
+function cargarFotoLegajoExistente(container) {
+  const imageUrl = container.getAttribute('data-image-url');
+  const placeholder = container.querySelector('.preview-placeholder');
+  
+  if (imageUrl && placeholder) {
+    console.log("Cargando foto de legajo existente:", imageUrl);
+    
+    placeholder.classList.add('loading');
+    
+    const img = document.createElement('img');
+    img.alt = 'Foto de legajo';
+    img.src = imageUrl;
+    
+    img.onload = function() {
+      console.log("Foto de legajo cargada exitosamente");
+      placeholder.replaceWith(img);
+    };
+    
+    img.onerror = function() {
+      console.error("Error al cargar foto de legajo:", imageUrl);
+      placeholder.classList.remove('loading');
+      placeholder.innerHTML = '<i class="fas fa-exclamation-triangle"></i><br><small>Error al cargar</small>';
+      placeholder.style.background = '#dc3545';
+    };
+    
+    setTimeout(() => {
+      if (placeholder.parentNode === container) {
+        placeholder.classList.remove('loading');
+        placeholder.innerHTML = '<i class="fas fa-clock"></i><br><small>Tiempo agotado</small>';
+        placeholder.style.background = '#ffc107';
+        placeholder.style.color = '#000';
+      }
+    }, 10000);
+  }
+}
+
+function mostrarPreviewFotoLegajo(file) {
+  console.log("Mostrando preview de foto legajo:", file.name);
+  
+  if (!file.type.startsWith('image/')) {
+    console.warn('El archivo seleccionado no es una imagen:', file.name);
+    alert('Por favor selecciona un archivo de imagen válido.');
+    return;
+  }
+  
+  const previewContainer = document.getElementById('fotoLegajoPreviewContainer');
+  const previewImg = document.getElementById('fotoLegajoPreview');
+  const nombreElement = document.getElementById('fotoLegajoNombre');
+  const sizeElement = document.getElementById('fotoLegajoSize');
+  
+  if (previewContainer && previewImg && nombreElement && sizeElement) {
+    const reader = new FileReader();
+    
+    reader.onload = function(e) {
+      console.log("Preview de foto legajo cargado exitosamente");
+      previewImg.src = e.target.result;
+      nombreElement.textContent = file.name;
+      sizeElement.textContent = formatFileSize(file.size);
+      previewContainer.classList.remove('d-none');
+    };
+    
+    reader.onerror = function() {
+      console.error('Error al leer el archivo de foto legajo:', file.name);
+      alert('Error al leer el archivo seleccionado.');
+    };
+    
+    reader.readAsDataURL(file);
+  }
+}
+
+function ocultarPreviewFotoLegajo() {
+  console.log("Ocultando preview de foto legajo");
+  const previewContainer = document.getElementById('fotoLegajoPreviewContainer');
+  if (previewContainer) {
+    previewContainer.classList.add('d-none');
+  }
+}
+
+function removerPreviewFotoLegajo() {
+  console.log("Removiendo preview de foto legajo");
+  const fotoLegajoInput = document.getElementById('id_foto_legajo');
+  if (fotoLegajoInput) {
+    fotoLegajoInput.value = '';
+  }
+  ocultarPreviewFotoLegajo();
+}
+
+function ampliarFotoLegajo(url, nombre) {
+  console.log("Ampliando foto de legajo:", nombre);
+  
+  const modalImg = document.getElementById('fotoLegajoPrincipal');
+  const nombreModal = document.getElementById('nombreArchivoLegajo');
+  
+  if (modalImg && nombreModal) {
+    modalImg.src = url;
+    nombreModal.textContent = nombre || 'foto_legajo.jpg';
+    
+    const modal = new bootstrap.Modal(document.getElementById('fotoLegajoModal'));
+    modal.show();
+  }
+}
+
+function descargarFotoLegajo() {
+  const modalImg = document.getElementById('fotoLegajoPrincipal');
+  const nombreModal = document.getElementById('nombreArchivoLegajo');
+  
+  if (modalImg && modalImg.src) {
+    const link = document.createElement('a');
+    link.href = modalImg.src;
+    link.download = nombreModal.textContent || 'foto_legajo.jpg';
+    link.style.display = 'none';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    console.log("Descargando foto de legajo:", link.download);
+  }
+}
+
+// Funciones globales para compatibilidad con HTML
+window.ampliarFotoLegajo = ampliarFotoLegajo;
+window.descargarFotoLegajo = descargarFotoLegajo;
+window.removerPreviewFotoLegajo = removerPreviewFotoLegajo;
