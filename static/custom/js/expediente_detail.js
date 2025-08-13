@@ -1,24 +1,39 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('btn-process-expediente');
-  if (btn) {
-    console.log('Process URL:', PROCESS_URL);
+/* static/custom/js/expediente_detail.js
+ * - Procesar expediente
+ * - Subir/editar archivo de legajo
+ * - Confirmar Envío
+ */
 
+document.addEventListener('DOMContentLoaded', () => {
+  function getCookie(name) {
+    const m = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+    return m ? m[2] : null;
+  }
+  function getCsrfToken() {
+    // Prioriza el token inyectado desde Django. Si no, cae al cookie.
+    return (typeof window !== 'undefined' && window.CSRF_TOKEN) || getCookie('csrftoken');
+  }
+
+  /* ===== PROCESAR EXPEDIENTE ===== */
+  const btnProcess = document.getElementById('btn-process-expediente');
+  if (btnProcess) {
     const msgContainer = document.createElement('div');
     msgContainer.id = 'process-msg';
     const previewCard = document.querySelector('.card.mb-4');
     if (previewCard) previewCard.parentNode.insertBefore(msgContainer, previewCard);
 
-    btn.addEventListener('click', async () => {
-      btn.disabled = true;
-      const origHTML = btn.innerHTML;
-      btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Procesando...';
+    btnProcess.addEventListener('click', async () => {
+      btnProcess.disabled = true;
+      const origHTML = btnProcess.innerHTML;
+      btnProcess.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Procesando...';
 
       try {
-        const resp = await fetch(PROCESS_URL, {
+        const resp = await fetch(window.PROCESS_URL, {
           method: 'POST',
           credentials: 'same-origin',
           headers: {
-            'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)[1],
+            'X-CSRFToken': getCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest',
             'Accept': 'application/json'
           }
         });
@@ -31,37 +46,29 @@ document.addEventListener('DOMContentLoaded', () => {
         msgContainer.innerHTML = `
           <div class="alert alert-success alert-dismissible fade show" role="alert">
             <strong>¡Listo!</strong> Se crearon ${data.creados} legajos.
-            El expediente ha pasado al estado <strong>EN ESPERA</strong>.
+            El expediente pasó a <strong>EN ESPERA</strong>.
             ${data.errores ? `<br><small class="text-danger">${data.errores} errores.</small>` : ''}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
           </div>
         `;
-        setTimeout(() => window.location.reload(), 2000);
+        setTimeout(() => window.location.reload(), 1200);
 
       } catch (err) {
         console.error('Error procesar expediente:', err);
         msgContainer.innerHTML = `
-          <div class="alert alert-danger" role="alert">
+          <div class="alert alert-danger alert-dismissible fade show" role="alert">
             Error al procesar expediente: ${err.message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
           </div>
         `;
-        btn.disabled = false;
-        btn.innerHTML = origHTML;
+        btnProcess.disabled = false;
+      } finally {
+        btnProcess.innerHTML = origHTML;
       }
     });
   }
-  //Actualizar archivo modal
-  const modal = document.getElementById('modalSubirArchivo');
-  modal.addEventListener('show.bs.modal', function (event) {
-    const button = event.relatedTarget;
-    const legajoId = button.getAttribute('data-legajo-id');
-    const expedienteId = button.getAttribute('data-expediente-id');
 
-    const form = modal.querySelector('#form-subir-archivo');
-    form.action = `/expedientes/${expedienteId}/legajo/${legajoId}/archivo/`;
-  });
-
-  // Modal de subida de archivo
+  /* ===== MODAL SUBIR/EDITAR ARCHIVO DE LEGAJO ===== */
   const modalArchivo = document.getElementById('modalSubirArchivo');
   if (modalArchivo) {
     modalArchivo.addEventListener('show.bs.modal', function (event) {
@@ -76,7 +83,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const inputArchivo = form.querySelector('input[type="file"]');
       if (inputArchivo) inputArchivo.value = '';
 
-      // Limpiar mensajes anteriores
       const alertas = modalArchivo.querySelector('#modal-alertas');
       if (alertas) alertas.innerHTML = '';
     });
@@ -99,7 +105,8 @@ document.addEventListener('DOMContentLoaded', () => {
           body: formData,
           credentials: 'same-origin',
           headers: {
-            'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)[1]
+            'X-CSRFToken': getCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest'
           }
         });
 
@@ -117,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const modal = bootstrap.Modal.getInstance(modalArchivo);
           modal.hide();
           window.location.reload();
-        }, 1500);
+        }, 1000);
 
       } catch (err) {
         alertas.innerHTML = `
@@ -130,6 +137,78 @@ document.addEventListener('DOMContentLoaded', () => {
       } finally {
         btnSubmit.disabled = false;
         btnSubmit.innerHTML = originalHTML;
+      }
+    });
+  }
+
+  /* ===== CONFIRMAR ENVÍO (EN_ESPERA → CONFIRMACION_DE_ENVIO) ===== */
+  const btnConfirm = document.getElementById('btn-confirm');
+  if (btnConfirm) {
+    let alertZone = document.getElementById('expediente-alerts');
+    if (!alertZone) {
+      alertZone = document.createElement('div');
+      alertZone.id = 'expediente-alerts';
+      const headerBlock = document.querySelector('.p-3.rounded.shadow.mb-4');
+      (headerBlock || document.body).prepend(alertZone);
+    }
+
+    btnConfirm.addEventListener('click', async () => {
+      if (!window.CONFIRM_URL) {
+        alertZone.innerHTML = `
+          <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            No se configuró la URL de confirmación.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>`;
+        return;
+      }
+
+      btnConfirm.disabled = true;
+      const original = btnConfirm.innerHTML;
+      btnConfirm.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Enviando…';
+
+      try {
+        const resp = await fetch(window.CONFIRM_URL, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'X-CSRFToken': getCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          }
+        });
+
+        let data = {};
+        const ct = resp.headers.get('Content-Type') || '';
+        if (ct.includes('application/json')) {
+          data = await resp.json();
+        } else {
+          const text = await resp.text();
+          if (!resp.ok) throw new Error(text || `HTTP ${resp.status}`);
+          data = { success: true, message: text };
+        }
+
+        if (!resp.ok || data.success === false) {
+          const msg = data.error || `HTTP ${resp.status}`;
+          throw new Error(msg);
+        }
+
+        alertZone.innerHTML = `
+          <div class="alert alert-success alert-dismissible fade show" role="alert">
+            ${data.message || 'Expediente enviado a Subsecretaría.'}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>`;
+
+        setTimeout(() => window.location.reload(), 700);
+
+      } catch (err) {
+        console.error('Error al confirmar envío:', err);
+        alertZone.innerHTML = `
+          <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            No se pudo confirmar el envío. ${err.message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>`;
+        btnConfirm.disabled = false;
+        btnConfirm.innerHTML = original;
       }
     });
   }

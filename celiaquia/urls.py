@@ -8,11 +8,15 @@ from celiaquia.views.expediente import (
     ExpedienteUpdateView,
     ExpedientePreviewExcelView,
     ExpedienteImportView,
-    ExpedienteConfirmView,
     AsignarTecnicoView,
     CrearLegajosView,
     ProcesarExpedienteView,
+    # ⬇️ NUEVO: importamos la vista de recepción (Coordinador)
+    RecepcionarExpedienteView,
 )
+# Esta vista de confirmación sigue viniendo del módulo dedicado
+from celiaquia.views.confirm_envio import ExpedienteConfirmView
+
 from celiaquia.views.legajo import LegajoArchivoUploadView
 
 
@@ -20,7 +24,9 @@ urlpatterns = [
     # ProvinciaCeliaquia: gestión básica de expedientes
     path(
         "expedientes/",
-        group_required(["ProvinciaCeliaquia","CoordinadorCeliaquia"])(ExpedienteListView.as_view()),
+        group_required(["ProvinciaCeliaquia", "CoordinadorCeliaquia"])(
+            ExpedienteListView.as_view()
+        ),
         name="expediente_list",
     ),
     path(
@@ -30,12 +36,16 @@ urlpatterns = [
     ),
     path(
         "expedientes/preview_excel/",
-        group_required(["ProvinciaCeliaquia"])(ExpedientePreviewExcelView.as_view()),
+        group_required(["ProvinciaCeliaquia"])(
+            ExpedientePreviewExcelView.as_view()
+        ),
         name="expediente_preview_excel",
     ),
     path(
         "expedientes/<int:pk>/",
-        group_required(["ProvinciaCeliaquia","CoordinadorCeliaquia"])(ExpedienteDetailView.as_view()),
+        group_required(["ProvinciaCeliaquia", "CoordinadorCeliaquia"])(
+            ExpedienteDetailView.as_view()
+        ),
         name="expediente_detail",
     ),
     path(
@@ -69,11 +79,15 @@ urlpatterns = [
         name="legajo_archivo_upload",
     ),
 
-
-    # Coordinador Celiaquia: asignación de técnicos
+    # Coordinador Celiaquia: recepción y asignación de técnicos
     path(
-        'expedientes/<int:pk>/asignar-tecnico/', 
+        "expedientes/<int:pk>/recepcionar/",
+        group_required(["CoordinadorCeliaquia"])(RecepcionarExpedienteView.as_view()),
+        name="expediente_recepcionar",
+    ),
+    path(
+        "expedientes/<int:pk>/asignar-tecnico/",
         group_required(["CoordinadorCeliaquia"])(AsignarTecnicoView.as_view()),
-        name='expediente_asignar_tecnico'
+        name="expediente_asignar_tecnico",
     ),
 ]
