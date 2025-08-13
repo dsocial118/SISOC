@@ -1,7 +1,13 @@
-// custom/js/centrodefamilia.js
+document.addEventListener("DOMContentLoaded", function () {
 
-document.addEventListener("DOMContentLoaded", function() {
-  // 1) FILTRO EN VIVO DE CENTROS ADHERIDOS
+  /* ==========================================================
+     1) ANIMACIÓN DE PESTAÑAS LATERALES Y SECCIONES
+  ========================================================== */
+  /* Cambio por acordion en detailcentrofamilia.js*/
+
+  /* ==========================================================
+     2) FILTRO EN VIVO DE CENTROS ADHERIDOS
+  ========================================================== */
   const filtroCentros = document.getElementById('filterCentros');
   const tablaCentros = document.querySelector('#tablaCentros tbody');
   if (filtroCentros && tablaCentros) {
@@ -14,7 +20,9 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
 
-  // 2) AJAX PARA PAGINACIÓN DE INFORMES CABAL
+  /* ==========================================================
+     3) AJAX PARA PAGINACIÓN DE INFORMES CABAL
+  ========================================================== */
   document.addEventListener('click', function(evento) {
     const enlace = evento.target.closest('#expedientes-container .pagination a');
     if (!enlace) return;
@@ -32,24 +40,27 @@ document.addEventListener("DOMContentLoaded", function() {
       });
   });
 
-  // 3) FILTRO POR QUERY STRING PARA ACTIVIDADES
+  /* ==========================================================
+     4) FILTROS POR QUERY STRING PARA ACTIVIDADES
+  ========================================================== */
+  function updateQueryParam(inputId, paramName) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    input.addEventListener('input', function () {
+      const url = new URL(window.location);
+      const value = this.value;
+      url.searchParams.set(paramName, value);
+      if (paramName === "search_actividades") {
+        url.searchParams.delete("page_act");
+      } else if (paramName === "search_actividades_curso") {
+        url.searchParams.delete("page");
+      }
+      window.location = url.toString();
+    });
+  }
   updateQueryParam("searchActividades", "search_actividades");
   updateQueryParam("searchCurso", "search_actividades_curso");
-});
 
-// Función para actualizar parámetros en la URL y recargar
-function updateQueryParam(inputId, paramName) {
-  const input = document.getElementById(inputId);
-  if (!input) return;
-  input.addEventListener('input', function () {
-    const url = new URL(window.location);
-    const value = this.value;
-    url.searchParams.set(paramName, value);
-    if (paramName === "search_actividades") {
-      url.searchParams.delete("page_act");
-    } else if (paramName === "search_actividades_curso") {
-      url.searchParams.delete("page");
-    }
-    window.location = url.toString();
-  });
-}
+  
+
+});
