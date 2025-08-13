@@ -68,6 +68,26 @@ class ComedorService:
         ImagenComedor.objects.filter(id__in=imagenes_ids).delete()
 
     @staticmethod
+    def borrar_foto_legajo(post, comedor_instance):
+        """Eliminar la foto del legajo si está marcada para borrar"""
+        if "foto_legajo_borrar" in post and comedor_instance.foto_legajo:
+            # Eliminar el archivo físico
+            if comedor_instance.foto_legajo:
+                try:
+                    import os
+
+                    file_path = comedor_instance.foto_legajo.path
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+
+                except Exception:
+                    pass
+
+            # Limpiar el campo en la base de datos
+            comedor_instance.foto_legajo = None
+            comedor_instance.save(update_fields=["foto_legajo"])
+
+    @staticmethod
     def get_comedores_filtrados(query: Union[str, None] = None):
         queryset = (
             Comedor.objects.select_related(
