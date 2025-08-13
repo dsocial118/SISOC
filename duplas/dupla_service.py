@@ -1,5 +1,8 @@
+import logging
 from django.forms import ValidationError
 from duplas.models import Dupla
+
+logger = logging.getLogger(__name__)
 
 
 class DuplaService:
@@ -18,6 +21,12 @@ class DuplaService:
             return Dupla.objects.get(pk=dupla_id)
         except Dupla.DoesNotExist:
             return None
+        except Exception as e:
+            logger.error(
+                f"Error en DuplaService.get_dupla_by_id para la dupla: {dupla_id} {e}",
+                exc_info=True,
+            )
+            raise
 
     @staticmethod
     def get_all_duplas():
@@ -26,7 +35,14 @@ class DuplaService:
         Returns:
             QuerySet: Colección completa de duplas.
         """
-        return Dupla.objects.all()
+        try:
+            return Dupla.objects.all()
+        except Exception as e:
+            logger.error(
+                f"Error en DuplaService.get_all_duplas {e}",
+                exc_info=True,
+            )
+            raise
 
     @staticmethod
     def get_duplas_by_estado_activo():
@@ -35,7 +51,14 @@ class DuplaService:
         Returns:
             QuerySet: Duplas activas.
         """
-        return Dupla.objects.filter(estado="Activo")
+        try:
+            return Dupla.objects.filter(estado="Activo")
+        except Exception as e:
+            logger.error(
+                f"Error en DuplaService.get_duplas_by_estado_activo {e}",
+                exc_info=True,
+            )
+            raise
 
     @staticmethod
     def create_dupla(data):
@@ -48,13 +71,17 @@ class DuplaService:
             Dupla: Instancia creada.
 
         Raises:
-            ValidationError: Si ocurre un error de validación.
+            Exception: Si ocurre un error de validación.
         """
         try:
             dupla = Dupla.objects.create(**data)
             return dupla
         except Exception as e:
-            raise ValidationError(f"Error al crear la Dupla: {e}") from e
+            logger.error(
+                f"Error en DuplaService.create_dupla {data}: {e}",
+                exc_info=True,
+            )
+            raise
 
     @staticmethod
     def update_dupla(dupla_id, data):
@@ -68,7 +95,7 @@ class DuplaService:
             Dupla: Instancia actualizada.
 
         Raises:
-            ValidationError: Si la dupla no existe o no puede editarse.
+            Exception: Si la dupla no existe o no puede editarse.
         """
         try:
             dupla = Dupla.objects.get(pk=dupla_id)
@@ -77,6 +104,11 @@ class DuplaService:
             dupla.save()
             return dupla
         except Dupla.DoesNotExist as exc:
+            logger.error("Dupla no encontrada en update_dupla", exc_info=True)
             raise ValidationError("Dupla no encontrada") from exc
         except Exception as e:
-            raise ValidationError(f"Error al editar la Dupla: {e}") from e
+            logger.error(
+                f"Error en DuplaService.update_dupla {dupla_id} {e}",
+                exc_info=True,
+            )
+            raise

@@ -3,8 +3,8 @@
 {% block title %}{{ centro.nombre }}{% endblock %}
 {% block content %}
     <link rel="stylesheet" href="{% static 'custom/css/centro_detail.css' %}" />
+    <!-- 1) HEADER -->
     <div class="card mb-4 page-header">
-        <!-- 1) HEADER -->
         <div class="card-body">
             <div class="header-bar"></div>
             <h1 class="header-title mb-0">
@@ -14,7 +14,7 @@
             </h1>
         </div>
     </div>
-    <!-- 2) BOTONES DEBAJO, ALINEADOS A LA DERECHA Y CON SEPARACIÓN ABAJO -->
+    <!-- 2) BOTONES DE ACCIÓN -->
     <div class="mt-4 mb-4 d-flex justify-content-end">
         <div class="btn-group btn-group-sm" role="group" aria-label="Acciones">
             <a href="{% url 'centro_update' centro.id %}"
@@ -28,14 +28,11 @@
             {% endif %}
         </div>
     </div>
-    <!-- 3) UBICACIÓN con barras laterales -->
+    <!-- 3) UBICACIÓN -->
     <div class="location-card mb-4">
-        <!-- resto -->
-        <!-- 1) pestaña izquierda “Ubicación” -->
         <div class="left-tab" id="tab-ubicacion">
             <span class="tab-text">Ubicación</span>
         </div>
-        <!-- 2) contenedor del mapa -->
         <div class="map-container" id="mapa-iframe">
             {% if centro.calle and centro.numero and centro.localidad and centro.municipio and centro.provincia %}
                 <iframe src="https://maps.google.com/maps?q={{ centro.calle|urlencode }}+{{ centro.numero }},+{{ centro.localidad.nombre|urlencode }},+{{ centro.municipio.nombre|urlencode }},+{{ centro.provincia.nombre|urlencode }}&output=embed"
@@ -50,7 +47,6 @@
                 <div class="h-100 d-flex align-items-center justify-content-center text-muted">Sin mapa disponible</div>
             {% endif %}
         </div>
-        <!-- 3) contenedor de detalles -->
         <div class="details-container" id="detalles-ubicacion">
             <h5>Ubicación</h5>
             <hr />
@@ -72,7 +68,6 @@
                 </li>
             </ul>
         </div>
-        <!-- 4) pestañas verticales DERECHA -->
         <div class="right-tabs">
             <div class="tab-item">
                 <span class="tab-text">Información Básica</span>
@@ -87,47 +82,47 @@
                 <span class="tab-text">Referente</span>
             </div>
         </div>
-        <!-- 5) secciones de contenido ocultas -->
+        <!-- Secciones dinámicas ocultas -->
         <div class="content-seccion" id="seccion-informacion-basica">
             <h5>Información Básica</h5>
             <div class="row g-3">
                 <div class="col-sm-6 d-flex">
-                    <i class="fas fa-user me-2 text-info mt-1" aria-hidden="true"></i>
+                    <i class="fas fa-user me-2 text-info mt-1"></i>
                     <div>
                         <div class="fw-bold">Nombre</div>
                         <div>{{ centro.nombre }}</div>
                     </div>
                 </div>
                 <div class="col-sm-6 d-flex">
-                    <i class="fas fa-layer-group me-2 text-info mt-1" aria-hidden="true"></i>
+                    <i class="fas fa-layer-group me-2 text-info mt-1"></i>
                     <div>
                         <div class="fw-bold">Tipo</div>
                         <div>{{ centro.get_tipo_display }}</div>
                     </div>
                 </div>
                 <div class="col-sm-6 d-flex">
-                    <i class="fas fa-barcode me-2 text-info mt-1" aria-hidden="true"></i>
+                    <i class="fas fa-barcode me-2 text-info mt-1"></i>
                     <div>
                         <div class="fw-bold">Código</div>
                         <div>{{ centro.codigo }}</div>
                     </div>
                 </div>
                 <div class="col-sm-6 d-flex">
-                    <i class="fas fa-flag me-2 text-info mt-1" aria-hidden="true"></i>
+                    <i class="fas fa-flag me-2 text-info mt-1"></i>
                     <div>
                         <div class="fw-bold">Provincia</div>
                         <div>{{ centro.provincia }}</div>
                     </div>
                 </div>
                 <div class="col-sm-6 d-flex">
-                    <i class="fas fa-city me-2 text-info mt-1" aria-hidden="true"></i>
+                    <i class="fas fa-city me-2 text-info mt-1"></i>
                     <div>
                         <div class="fw-bold">Municipio</div>
                         <div>{{ centro.municipio }}</div>
                     </div>
                 </div>
                 <div class="col-sm-6 d-flex">
-                    <i class="fas fa-map-marked-alt me-2 text-info mt-1" aria-hidden="true"></i>
+                    <i class="fas fa-map-marked-alt me-2 text-info mt-1"></i>
                     <div>
                         <div class="fw-bold">Localidad</div>
                         <div>{{ centro.localidad }}</div>
@@ -139,28 +134,28 @@
             <h5>Datos</h5>
             <div class="row g-3">
                 <div class="col-sm-6 d-flex">
-                    <i class="fas fa-envelope me-2 text-info mt-1" aria-hidden="true"></i>
+                    <i class="fas fa-envelope me-2 text-info mt-1"></i>
                     <div>
                         <div class="fw-bold">Correo electrónico</div>
                         <div>{{ centro.correo }}</div>
                     </div>
                 </div>
                 <div class="col-sm-6 d-flex">
-                    <i class="fas fa-globe me-2 text-info mt-1" aria-hidden="true"></i>
+                    <i class="fas fa-globe me-2 text-info mt-1"></i>
                     <div>
                         <div class="fw-bold">Sitio web</div>
                         <div>{{ centro.sitio_web }}</div>
                     </div>
                 </div>
                 <div class="col-sm-6 d-flex">
-                    <i class="fas fa-share-alt me-2 text-info mt-1" aria-hidden="true"></i>
+                    <i class="fas fa-share-alt me-2 text-info mt-1"></i>
                     <div>
                         <div class="fw-bold">Redes sociales</div>
                         <div>{{ centro.link_redes }}</div>
                     </div>
                 </div>
                 <div class="col-sm-6 d-flex">
-                    <i class="fas fa-building me-2 text-info mt-1" aria-hidden="true"></i>
+                    <i class="fas fa-building me-2 text-info mt-1"></i>
                     <div>
                         <div class="fw-bold">Organización</div>
                         <div>{{ centro.organizacion_asociada }}</div>
@@ -185,21 +180,21 @@
             <h5>Referente</h5>
             <div class="row g-3">
                 <div class="col-sm-6 d-flex">
-                    <i class="fas fa-user-tie me-2 text-info mt-1" aria-hidden="true"></i>
+                    <i class="fas fa-user-tie me-2 text-info mt-1"></i>
                     <div>
                         <div class="fw-bold">Responsable</div>
                         <div>{{ centro.nombre_referente }} {{ centro.apellido_referente }}</div>
                     </div>
                 </div>
                 <div class="col-sm-6 d-flex">
-                    <i class="fas fa-phone me-2 text-info mt-1" aria-hidden="true"></i>
+                    <i class="fas fa-phone me-2 text-info mt-1"></i>
                     <div>
                         <div class="fw-bold">Teléfono</div>
                         <div>{{ centro.telefono_referente }}</div>
                     </div>
                 </div>
                 <div class="col-sm-6 d-flex">
-                    <i class="fas fa-envelope me-2 text-info mt-1" aria-hidden="true"></i>
+                    <i class="fas fa-envelope me-2 text-info mt-1"></i>
                     <div>
                         <div class="fw-bold">Correo</div>
                         <div>{{ centro.correo_referente }}</div>
@@ -208,12 +203,12 @@
             </div>
         </div>
     </div>
-    <!-- ====== 4) MÉTRICAS RÁPIDAS ====== -->
+    <!-- 4) MÉTRICAS RÁPIDAS -->
     <div class="d-flex gap-3 mb-4">
         {% if centro.tipo == 'faro' %}
             <div class="flex-fill card bg-navy text-white text-center p-3">
                 <i class="fas fa-network-wired fa-2x mb-2 text-warning"></i>
-                <div>Centro Adheridos</div>
+                <div>Centros Adheridos</div>
                 <strong>{{ metricas.centros_faro }}</strong>
             </div>
         {% endif %}
@@ -240,7 +235,7 @@
             <strong>{{ metricas.inscriptos }}</strong>
         </div>
     </div>
-    <!-- ====== 5) CENTROS ADHERIDOS (solo FARO) ====== -->
+    <!-- 5) CENTROS ADHERIDOS -->
     {% if centro.tipo == 'faro' %}
         <div class="card bg-dark text-white mb-4">
             <div class="card-header bg-secondary d-flex align-items-center">
@@ -271,7 +266,7 @@
                                         {% if adh.activo %}
                                             <span class="badge bg-success">Sí</span>
                                         {% else %}
-                                            <span class="badge bg-danger">No</span>
+                                            <span class="badge	bg-danger">No</span>
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -288,7 +283,7 @@
                     <ul class="pagination justify-content-center mb-0">
                         {% if centros_adheridos_paginados.has_previous %}
                             <li class="page-item">
-                                <a class="page-link bg-secondary text-white"
+                                <a class="page-link	bg-secondary text-white"
                                    href="?page={{ centros_adheridos_paginados.previous_page_number }}">Anterior</a>
                             </li>
                         {% endif %}
@@ -308,7 +303,7 @@
             {% endif %}
         </div>
     {% endif %}
-    <!-- ====== 6) NÓMINA ASISTENTES ====== -->
+    <!-- 6) NÓMINA ASISTENTES & INFORMES CABAL -->
     <div class="row gx-3 mb-4">
         <div class="col-md-3">
             <div class="card bg-dark text-white h-100">
@@ -330,18 +325,17 @@
                         <div>
                             <i class="fas fa-female fa-lg me-2"></i>Mujeres
                         </div>
-                        <span class="badge rounded-pill bg-danger">{{ asistentes.mujeres }}</span>
+                        <span class="badge rounded-pill	bg-danger">{{ asistentes.mujeres }}</span>
                     </li>
                     <li class="list-group-item d-flex justify-content-between align-items-center bg-navy text-white">
                         <div>
-                            <i class="fas fa-list fa-lg me-2"></i>Lista de espera
+                            <i class="fas fa-list fa-lg	me-2"></i>Lista de espera
                         </div>
                         <span class="badge rounded-pill bg-danger">{{ asistentes.espera }}</span>
                     </li>
                 </ul>
             </div>
         </div>
-        <!-- REPORTE CABAL & DETALLES ADMISIÓN -->
         <div class="col-md-9">
             <div id="expedientes-container" class="card bg-dark text-white mb-4">
                 <div class="card-header bg-secondary">Informes CABAL</div>
@@ -406,51 +400,52 @@
             </div>
         </div>
     </div>
-    <!-- ====== 7) ACTIVIDADES CONFIGURADAS & OBSERVACIONES ====== -->
-    <div class="row gx-3 mb-4">
+    <!-- 7) ACTIVIDADES CONFIGURADAS -->
+    <div id="actividades-curso-container" class="row gx-3 mb-4">
         <div class="col-md-6">
             <div class="card bg-dark text-white actividades-card h-100">
-                <div class="card-header bg-secondary">Actividades en curso</div>
+                <div class="card-header bg-secondary d-flex align-items-center">
+                    <h5 class="mb-0">Actividades en curso</h5>
+                    <input id="searchCurso"
+                           value="{{ request.GET.search_actividades_curso }}"
+                           class="form-control form-control-sm bg-dark text-white border-secondary ms-auto"
+                           style="width:180px"
+                           placeholder="Buscar actividad…" />
+                </div>
                 <div class="card-body p-3">
-                    {% if actividades %}
-                        <div class="table-responsive">
-                            <table class="table table-dark table-striped mb-0">
-                                <thead>
+                    <div class="table-responsive">
+                        <table class="table table-dark table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Actividad</th>
+                                    <th>Categoría</th>
+                                    <th>Dias</th>
+                                    <th>Horario</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for act in actividades %}
                                     <tr>
-                                        <th>Actividad</th>
-                                        <th>Categoría</th>
-                                        <th>Dias</th>
-                                        <th>Horario</th>
-                                        <th>Estado</th>
+                                        <td>
+                                            <a href="{% url 'actividadcentro_detail' centro_id=centro.id pk=act.id %}"
+                                               class="text-info text-decoration-none">{{ act.actividad.nombre }}</a>
+                                        </td>
+                                        <td>{{ act.actividad.categoria.nombre }}</td>
+                                        <td>
+                                            {% for dia in act.dias.all %}
+                                                {{ dia.nombre }}
+                                                {% if not forloop.last %},{% endif %}
+                                            {% empty %}&mdash;
+                                            {% endfor %}
+                                        </td>
+                                        <td>{{ act.horariosdesde }} - {{ act.horarioshasta }}</td>
+                                        <td>{{ act.get_estado_display }}</td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    {% for act in actividades %}
-                                        <tr>
-                                            <td>
-                                                <a href="{% url 'actividadcentro_detail' centro_id=centro.id pk=act.id %}"
-                                                   class="text-info text-decoration-none">
-                                                    {{ act.actividad.nombre }}
-                                                </a>
-                                            </td>
-                                            <td>{{ act.actividad.categoria.nombre }}</td>
-                                            <td>
-                                                {% for dia in act.dias.all %}
-                                                    {{ dia.nombre }}
-                                                    {% if not forloop.last %},{% endif %}
-                                                {% empty %}—
-                                                {% endfor %}
-                                            </td>
-                                            <td>{{ act.horariosdesde }} - {{ act.horarioshasta }}</td>
-                                            <td>{{ act.get_estado_display }}</td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <p>No hay actividades registradas.</p>
-                    {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -474,11 +469,12 @@
             </div>
         </div>
     </div>
-    <!-- ====== 8) TABLA DE TODAS LAS ACTIVIDADES (con POPUP) ====== -->
-    <div class="card bg-dark text-white mb-4">
+    <!-- 8) TODAS LAS ACTIVIDADES -->
+    <div id="actividades-todas-container" class="card bg-dark text-white mb-4">
         <div class="card-header bg-secondary d-flex align-items-center">
             <h5 class="mb-0">Todas las Actividades</h5>
-            <input id="filterActividades"
+            <input id="searchActividades"
+                   value="{{ request.GET.search_actividades }}"
                    class="form-control form-control-sm bg-dark text-white border-secondary ms-auto"
                    style="width:180px"
                    placeholder="Buscar actividad…" />
@@ -520,25 +516,26 @@
                     {% if actividades_paginados.has_previous %}
                         <li class="page-item">
                             <a class="page-link bg-secondary text-white"
-                               href="?page_act={{ actividades_paginados.previous_page_number }}">Anterior</a>
+                               href="?page_act={{ actividades_paginados.previous_page_number }}&search_actividades={{ request.GET.search_actividades }}">Anterior</a>
                         </li>
                     {% endif %}
                     {% for i in actividades_paginados.paginator.page_range %}
                         <li class="page-item {% if actividades_paginados.number == i %}active{% endif %}">
-                            <a class="page-link bg-secondary text-white" href="?page_act={{ i }}">{{ i }}</a>
+                            <a class="page-link bg-secondary text-white"
+                               href="?page_act={{ i }}&search_actividades={{ request.GET.search_actividades }}">{{ i }}</a>
                         </li>
                     {% endfor %}
                     {% if actividades_paginados.has_next %}
                         <li class="page-item">
                             <a class="page-link bg-secondary text-white"
-                               href="?page_act={{ actividades_paginados.next_page_number }}">Siguiente</a>
+                               href="?page_act={{ actividades_paginados.next_page_number }}&search_actividades={{ request.GET.search_actividades }}">Siguiente</a>
                         </li>
                     {% endif %}
                 </ul>
             </div>
         {% endif %}
     </div>
-    <!-- ====== 9) MODALES “Detalles” PARA CADA ACTIVIDAD ====== -->
+    <!-- 9) MODALES DE DETALLES -->
     {% for ac in actividades_paginados %}
         <div class="modal fade"
              id="modalAct{{ ac.id }}"
@@ -593,7 +590,7 @@
             </div>
         </div>
     {% endfor %}
-    <!-- ====== 10) GAUGES POR CATEGORÍAS ====== -->
+    <!-- 10) GAUGES POR CATEGORÍAS -->
     <div class="row gx-3 mb-4">
         {% for cat in cat_metrics %}
             <div class="col-6 col-md-3 text-center">

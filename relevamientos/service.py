@@ -1,11 +1,21 @@
 # pylint: disable=too-many-lines
 import json
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 
 from comedores.models import (
     Comedor,
     Referente,
     TipoDeComedor,
+)
+from core.models import Localidad, Municipio, Provincia
+from core.utils import convert_string_to_int
+from relevamientos.utils import (
+    assign_values_to_instance,
+    convert_to_boolean,
+    get_object_or_none,
+    get_recursos,
+    populate_data,
 )
 from relevamientos.models import (
     Anexo,
@@ -40,13 +50,71 @@ from relevamientos.models import (
     TipoTecnologia,
 )
 from relevamientos.tasks import AsyncSendRelevamientoToGestionar
-from core.utils import convert_string_to_int
 
 
 # TODO: Refactorizar todo esto, pylint esta muriendo aca
 class RelevamientoService:  # pylint: disable=too-many-public-methods
+    """Service layer for managing Relevamiento persistence and business rules."""
 
-    # TODO: Mover metodos no genericos al utils.py
+    @staticmethod
+    def update_comedor(comedor_data, comedor_instance):
+        """Update basic fields of a ``Comedor`` from a data dictionary."""
+        comedor_instance.numero = convert_string_to_int(
+            comedor_data.get("numero", comedor_instance.numero)
+        )
+        comedor_instance.calle = comedor_data.get("calle", comedor_instance.calle)
+        comedor_instance.entre_calle_1 = comedor_data.get(
+            "entre_calle_1", comedor_instance.entre_calle_1
+        )
+        comedor_instance.entre_calle_2 = comedor_data.get(
+            "entre_calle_2", comedor_instance.entre_calle_2
+        )
+        comedor_instance.barrio = comedor_data.get("barrio", comedor_instance.barrio)
+        comedor_instance.codigo_postal = convert_string_to_int(
+            comedor_data.get("codigo_postal", comedor_instance.codigo_postal)
+        )
+        comedor_instance.provincia = (
+            Provincia.objects.get(nombre=comedor_data.get("provincia"))
+            if comedor_data.get("provincia")
+            else comedor_instance.provincia
+        )
+        comedor_instance.municipio = (
+            Municipio.objects.get(
+                nombre=comedor_data.get("municipio"),
+            )
+            if comedor_data.get("municipio")
+            else comedor_instance.municipio
+        )
+        comedor_instance.localidad = Localidad.objects.get(
+            nombre=comedor_data.get("localidad", comedor_instance.localidad),
+            municipio=(
+                Municipio.objects.get(
+                    nombre=comedor_data.get("municipio"),
+                    provincia=(
+                        Provincia.objects.get(nombre=comedor_data.get("provincia"))
+                        if comedor_data.get("provincia")
+                        else comedor_instance.provincia
+                    ),
+                )
+                if comedor_data.get("municipio")
+                else comedor_instance.municipio
+            ),
+        )
+        comedor_instance.partido = comedor_data.get("partido", comedor_instance.partido)
+        comedor_instance.manzana = comedor_data.get("manzana", comedor_instance.manzana)
+        comedor_instance.piso = comedor_data.get("piso", comedor_instance.piso)
+        comedor_instance.departamento = comedor_data.get(
+            "departamento", comedor_instance.departamento
+        )
+        comedor_instance.lote = comedor_data.get("lote", comedor_instance.lote)
+        comedor_instance.comienzo = (
+            convert_string_to_int(comedor_data.get("comienzo", "").split("/")[-1])
+            if comedor_data.get("comienzo")
+            else comedor_instance.comienzo
+        )
+        comedor_instance.save()
+
+        return comedor_instance.id
 
     @staticmethod
     def create_pendiente(request, comedor_id):
@@ -83,6 +151,50 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         relevamiento.save()
 
         AsyncSendRelevamientoToGestionar(relevamiento.id).start()
+
+        return relevamiento
+
+    @staticmethod
+    def populate_relevamiento(relevamiento_form, extra_forms):
+        relevamiento = relevamiento_form.save(commit=False)
+
+        funcionamiento = extra_forms["funcionamiento_form"].save()
+        relevamiento.funcionamiento = funcionamiento
+
+        espacio = extra_forms["espacio_form"].save(commit=False)
+        cocina = extra_forms["espacio_cocina_form"].save(commit=True)
+        espacio.cocina = cocina
+        prestacion = extra_forms["espacio_prestacion_form"].save(commit=True)
+        espacio.prestacion = prestacion
+        espacio.save()
+        relevamiento.espacio = espacio
+
+        colaboradores = extra_forms["colaboradores_form"].save()
+        relevamiento.colaboradores = colaboradores
+
+        recursos = extra_forms["recursos_form"].save()
+        relevamiento.recursos = recursos
+
+        anexo = extra_forms["anexo_form"].save()
+        relevamiento.anexo = anexo
+
+        compras = extra_forms["compras_form"].save()
+        relevamiento.compras = compras
+
+        prestacion = extra_forms["prestacion_form"].save()
+        relevamiento.prestacion = prestacion
+
+        referente = extra_forms["referente_form"].save()
+        relevamiento.responsable = referente
+        relevamiento.responsable_es_referente = (
+            relevamiento_form.cleaned_data["responsable_es_referente"] == "True"
+        )
+        punto_entregas = extra_forms["punto_entregas_form"].save()
+        relevamiento.punto_entregas = punto_entregas
+
+        relevamiento.fecha_visita = timezone.now()
+
+        relevamiento.save()
 
         return relevamiento
 
@@ -281,8 +393,8 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             )
 
         if "servicio_por_turnos" in funcionamiento_data:
-            funcionamiento_data["servicio_por_turnos"] = (
-                funcionamiento_data["servicio_por_turnos"] == "Y"
+            funcionamiento_data["servicio_por_turnos"] = convert_to_boolean(
+                funcionamiento_data["servicio_por_turnos"]
             )
 
         if "cantidad_turnos" in funcionamiento_data:
@@ -297,9 +409,9 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 **funcionamiento_data
             )
         else:
-            for field, value in funcionamiento_data.items():
-                setattr(funcionamiento_instance, field, value)
-            funcionamiento_instance.save()
+            funcionamiento_instance = assign_values_to_instance(
+                funcionamiento_instance, funcionamiento_data
+            )
 
         return funcionamiento_instance
 
@@ -316,76 +428,39 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 **espacio_prestacion_data
             )
         else:
-            for field, value in espacio_prestacion_data.items():
-                setattr(espacio_prestacion_instance, field, value)
-            espacio_prestacion_instance.save()
-
+            espacio_prestacion_instance = assign_values_to_instance(
+                espacio_prestacion_instance, espacio_prestacion_data
+            )
         return espacio_prestacion_instance
 
     @staticmethod
     def populate_espacio_prestacion_data(
         prestacion_data,
     ):  # pylint: disable=too-many-statements,too-many-branches
-        if "espacio_equipado" in prestacion_data:
-            prestacion_data["espacio_equipado"] = (
-                prestacion_data["espacio_equipado"] == "Y"
-            )
-        if "tiene_ventilacion" in prestacion_data:
-            prestacion_data["tiene_ventilacion"] = (
-                prestacion_data["tiene_ventilacion"] == "Y"
-            )
-        if "tiene_salida_emergencia" in prestacion_data:
-            prestacion_data["tiene_salida_emergencia"] = (
-                prestacion_data["tiene_salida_emergencia"] == "Y"
-            )
-        if "salida_emergencia_senializada" in prestacion_data:
-            prestacion_data["salida_emergencia_senializada"] = (
-                prestacion_data["salida_emergencia_senializada"] == "Y"
-            )
-        if "tiene_equipacion_incendio" in prestacion_data:
-            prestacion_data["tiene_equipacion_incendio"] = (
-                prestacion_data["tiene_equipacion_incendio"] == "Y"
-            )
-        if "tiene_botiquin" in prestacion_data:
-            prestacion_data["tiene_botiquin"] = prestacion_data["tiene_botiquin"] == "Y"
-        if "tiene_buena_iluminacion" in prestacion_data:
-            prestacion_data["tiene_buena_iluminacion"] = (
-                prestacion_data["tiene_buena_iluminacion"] == "Y"
-            )
-        if "tiene_sanitarios" in prestacion_data:
-            prestacion_data["tiene_sanitarios"] = (
-                prestacion_data["tiene_sanitarios"] == "Y"
-            )
-        if "desague_hinodoro" in prestacion_data:
-            prestacion_data["desague_hinodoro"] = (
-                TipoDesague.objects.get(
-                    nombre__iexact=prestacion_data["desague_hinodoro"]
-                )
-                if prestacion_data["desague_hinodoro"] != ""
-                else None
-            )
-        if "gestion_quejas" in prestacion_data:
-            prestacion_data["gestion_quejas"] = (
-                TipoGestionQuejas.objects.get(nombre=prestacion_data["gestion_quejas"])
-                if prestacion_data["gestion_quejas"] != ""
-                else None
-            )
-        if "gestion_quejas_otro" in prestacion_data:
-            prestacion_data["gestion_quejas_otro"] = prestacion_data[
-                "gestion_quejas_otro"
-            ]
-        if "informacion_quejas" in prestacion_data:
-            prestacion_data["informacion_quejas"] = (
-                prestacion_data["informacion_quejas"] == "Y"
-            )
-        if "frecuencia_limpieza" in prestacion_data:
-            prestacion_data["frecuencia_limpieza"] = (
-                FrecuenciaLimpieza.objects.get(
-                    nombre__iexact=prestacion_data["frecuencia_limpieza"]
-                )
-                if prestacion_data["frecuencia_limpieza"] != ""
-                else None
-            )
+        # Esto es una lista de metodos a ejecutar para cada item de la prestacion_data
+        transformations = {
+            "espacio_equipado": convert_to_boolean,
+            "tiene_ventilacion": convert_to_boolean,
+            "tiene_salida_emergencia": convert_to_boolean,
+            "salida_emergencia_senializada": convert_to_boolean,
+            "tiene_equipacion_incendio": convert_to_boolean,
+            "tiene_botiquin": convert_to_boolean,
+            "tiene_buena_iluminacion": convert_to_boolean,
+            "tiene_sanitarios": convert_to_boolean,
+            "informacion_quejas": convert_to_boolean,
+            "desague_hinodoro": lambda x: get_object_or_none(
+                TipoDesague, "nombre__iexact", x
+            ),
+            "gestion_quejas": lambda x: get_object_or_none(
+                TipoGestionQuejas, "nombre__iexact", x
+            ),
+            "gestion_quejas_otro": lambda x: x,
+            "frecuencia_limpieza": lambda x: get_object_or_none(
+                FrecuenciaLimpieza, "nombre__iexact", x
+            ),
+        }
+        # Se ejecuta el metodo populate_data que recorre la prestacion_data y aplica las transformaciones
+        prestacion_data = populate_data(prestacion_data, transformations)
 
         return prestacion_data
 
@@ -416,45 +491,23 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def populate_cocina_data(cocina_data):
-        if "espacio_elaboracion_alimentos" in cocina_data:
-            cocina_data["espacio_elaboracion_alimentos"] = (
-                cocina_data["espacio_elaboracion_alimentos"] == "Y"
-            )
-        if "almacenamiento_alimentos_secos" in cocina_data:
-            cocina_data["almacenamiento_alimentos_secos"] = (
-                cocina_data["almacenamiento_alimentos_secos"] == "Y"
-            )
-        if "heladera" in cocina_data:
-            cocina_data["heladera"] = cocina_data["heladera"] == "Y"
-        if "freezer" in cocina_data:
-            cocina_data["freezer"] = cocina_data["freezer"] == "Y"
-        if "recipiente_residuos_organicos" in cocina_data:
-            cocina_data["recipiente_residuos_organicos"] = (
-                cocina_data["recipiente_residuos_organicos"] == "Y"
-            )
-        if "recipiente_residuos_reciclables" in cocina_data:
-            cocina_data["recipiente_residuos_reciclables"] = (
-                cocina_data["recipiente_residuos_reciclables"] == "Y"
-            )
-        if "otros_residuos" in cocina_data:
-            cocina_data["otros_residuos"] = (
-                cocina_data["recipiente_otros_residuos"] == "Y"
-            )
-        if "recipiente_otros_residuos" in cocina_data:
-            cocina_data["recipiente_otros_residuos"] = (
-                cocina_data["recipiente_otros_residuos"] == "Y"
-            )
-        if "abastecimiento_agua" in cocina_data:
-            cocina_data["abastecimiento_agua"] = (
-                TipoAgua.objects.get(nombre__iexact=cocina_data["abastecimiento_agua"])
-                if cocina_data["abastecimiento_agua"] != ""
-                else None
-            )
-        if "instalacion_electrica" in cocina_data:
-            cocina_data["instalacion_electrica"] = (
-                cocina_data["instalacion_electrica"] == "Y"
-            )
-
+        # Esto es una lista de metodos a ejecutar para cada item de la cocina_data
+        transformations = {
+            "espacio_elaboracion_alimentos": convert_to_boolean,
+            "almacenamiento_alimentos_secos": convert_to_boolean,
+            "heladera": convert_to_boolean,
+            "freezer": convert_to_boolean,
+            "recipiente_residuos_organicos": convert_to_boolean,
+            "recipiente_residuos_reciclables": convert_to_boolean,
+            "otros_residuos": convert_to_boolean,
+            "recipiente_otros_residuos": convert_to_boolean,
+            "abastecimiento_agua": lambda x: (
+                get_object_or_none(TipoAgua, "nombre__iexact", x) if x else None
+            ),
+            "instalacion_electrica": convert_to_boolean,
+        }
+        # Se ejecuta el metodo populate_data que recorre la cocina_data y aplica las transformaciones
+        cocina_data = populate_data(cocina_data, transformations)
         return cocina_data
 
     @staticmethod
@@ -486,9 +539,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         if espacio_instance is None:
             espacio_instance = Espacio.objects.create(**espacio_data)
         else:
-            for field, value in espacio_data.items():
-                setattr(espacio_instance, field, value)
-            espacio_instance.save()
+            espacio_instance = assign_values_to_instance(espacio_instance, espacio_data)
 
         return espacio_instance
 
@@ -501,46 +552,27 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         if colaboradores_instance is None:
             colaboradores_instance = Colaboradores.objects.create(**colaboradores_data)
         else:
-            for field, value in colaboradores_data.items():
-                setattr(colaboradores_instance, field, value)
-            colaboradores_instance.save()
+            colaboradores_instance = assign_values_to_instance(
+                colaboradores_instance, colaboradores_data
+            )
 
         return colaboradores_instance
 
     @staticmethod
     def populate_colaboradores_data(colaboradores_data):
-        if "cantidad_colaboradores" in colaboradores_data:
-            colaboradores_data["cantidad_colaboradores"] = (
-                CantidadColaboradores.objects.get(
-                    nombre__iexact=colaboradores_data["cantidad_colaboradores"]
-                )
-                if colaboradores_data["cantidad_colaboradores"] != ""
-                else None
-            )
-        if "colaboradores_capacitados_alimentos" in colaboradores_data:
-            colaboradores_data["colaboradores_capacitados_alimentos"] = (
-                colaboradores_data["colaboradores_capacitados_alimentos"] == "Y"
-            )
-        if "colaboradores_recibieron_capacitacion_alimentos" in colaboradores_data:
-            colaboradores_data["colaboradores_recibieron_capacitacion_alimentos"] = (
-                colaboradores_data["colaboradores_recibieron_capacitacion_alimentos"]
-                == "Y"
-            )
-        if "colaboradores_capacitados_salud_seguridad" in colaboradores_data:
-            colaboradores_data["colaboradores_capacitados_salud_seguridad"] = (
-                colaboradores_data["colaboradores_capacitados_salud_seguridad"] == "Y"
-            )
-        if "colaboradores_recibieron_capacitacion_emergencias" in colaboradores_data:
-            colaboradores_data["colaboradores_recibieron_capacitacion_emergencias"] = (
-                colaboradores_data["colaboradores_recibieron_capacitacion_emergencias"]
-                == "Y"
-            )
-        if "colaboradores_recibieron_capacitacion_violencia" in colaboradores_data:
-            colaboradores_data["colaboradores_recibieron_capacitacion_violencia"] = (
-                colaboradores_data["colaboradores_recibieron_capacitacion_violencia"]
-                == "Y"
-            )
-
+        # Esto es una lista de metodos a ejecutar para cada item de la colaboradores_data
+        transformations = {
+            "colaboradores_capacitados_alimentos": convert_to_boolean,
+            "colaboradores_recibieron_capacitacion_alimentos": convert_to_boolean,
+            "colaboradores_capacitados_salud_seguridad": convert_to_boolean,
+            "colaboradores_recibieron_capacitacion_emergencias": convert_to_boolean,
+            "colaboradores_recibieron_capacitacion_violencia": convert_to_boolean,
+            "cantidad_colaboradores": lambda x: get_object_or_none(
+                CantidadColaboradores, "nombre__iexact", x
+            ),
+        }
+        # Se ejecuta el metodo populate_data que recorre la colaboradores_data y aplica las transformaciones
+        colaboradores_data = populate_data(colaboradores_data, transformations)
         return colaboradores_data
 
     @staticmethod
@@ -591,93 +623,46 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
     def populate_recursos_data(
         recursos_data,
     ):  # pylint: disable=too-many-statements,too-many-branches
-        def get_frecuencia_recepcion(nombre):
-            return (
-                FrecuenciaRecepcionRecursos.objects.get(
-                    nombre__iexact=recursos_data[f"{nombre}"]
-                )
-                if recursos_data[f"{nombre}"] != ""
-                else None
-            )
-
-        def get_recursos(nombre):
-            recursos_str = recursos_data.pop(nombre, "")
-            if recursos_str:
-                recursos_arr = [nombre.strip() for nombre in recursos_str.split(",")]
-                return TipoRecurso.objects.filter(nombre__in=recursos_arr)
-            return TipoRecurso.objects.none()
-
-        if "recibe_donaciones_particulares" in recursos_data:
-            recursos_data["recibe_donaciones_particulares"] = (
-                recursos_data["recibe_donaciones_particulares"] == "Y"
-            )
-
-        if "frecuencia_donaciones_particulares" in recursos_data:
-            recursos_data["frecuencia_donaciones_particulares"] = (
-                get_frecuencia_recepcion("frecuencia_donaciones_particulares")
-            )
-
-        if "recursos_donaciones_particulares" in recursos_data:
-            recursos_data["recursos_donaciones_particulares"] = get_recursos(
-                "recursos_donaciones_particulares"
-            )
-
-        if "recibe_estado_nacional" in recursos_data:
-            recursos_data["recibe_estado_nacional"] = (
-                recursos_data["recibe_estado_nacional"] == "Y"
-            )
-
-        if "frecuencia_estado_nacional" in recursos_data:
-            recursos_data["frecuencia_estado_nacional"] = get_frecuencia_recepcion(
-                "frecuencia_estado_nacional"
-            )
-
-        if "recursos_estado_nacional" in recursos_data:
-            recursos_data["recursos_estado_nacional"] = get_recursos(
-                "recursos_estado_nacional"
-            )
-
-        if "recibe_estado_provincial" in recursos_data:
-            recursos_data["recibe_estado_provincial"] = (
-                recursos_data["recibe_estado_provincial"] == "Y"
-            )
-
-        if "frecuencia_estado_provincial" in recursos_data:
-            recursos_data["frecuencia_estado_provincial"] = get_frecuencia_recepcion(
-                "frecuencia_estado_provincial"
-            )
-
-        if "recursos_estado_provincial" in recursos_data:
-            recursos_data["recursos_estado_provincial"] = get_recursos(
-                "recursos_estado_provincial"
-            )
-
-        if "recibe_estado_municipal" in recursos_data:
-            recursos_data["recibe_estado_municipal"] = (
-                recursos_data["recibe_estado_municipal"] == "Y"
-            )
-
-        if "frecuencia_estado_municipal" in recursos_data:
-            recursos_data["frecuencia_estado_municipal"] = get_frecuencia_recepcion(
-                "frecuencia_estado_municipal"
-            )
-
-        if "recursos_estado_municipal" in recursos_data:
-            recursos_data["recursos_estado_municipal"] = get_recursos(
-                "recursos_estado_municipal"
-            )
-
-        if "recibe_otros" in recursos_data:
-            recursos_data["recibe_otros"] = recursos_data["recibe_otros"] == "Y"
-
-        if "frecuencia_otros" in recursos_data:
-            recursos_data["frecuencia_otros"] = get_frecuencia_recepcion(
-                "frecuencia_otros"
-            )
-
-        if "recursos_otros" in recursos_data:
-            recursos_data["recursos_otros"] = get_recursos("recursos_otros")
-
+        # Esto es una lista de metodos a ejecutar para cada item de la recursos_data
+        transformations = {
+            "recibe_donaciones_particulares": convert_to_boolean,
+            "frecuencia_donaciones_particulares": lambda x: get_object_or_none(
+                FrecuenciaRecepcionRecursos, "nombre__iexact", x
+            ),
+            "recibe_estado_nacional": convert_to_boolean,
+            "frecuencia_estado_nacional": lambda x: get_object_or_none(
+                FrecuenciaRecepcionRecursos, "nombre__iexact", x
+            ),
+            "recibe_estado_provincial": convert_to_boolean,
+            "frecuencia_estado_provincial": lambda x: get_object_or_none(
+                FrecuenciaRecepcionRecursos, "nombre__iexact", x
+            ),
+            "recibe_estado_municipal": convert_to_boolean,
+            "frecuencia_estado_municipal": lambda x: get_object_or_none(
+                FrecuenciaRecepcionRecursos, "nombre__iexact", x
+            ),
+            "recibe_otros": convert_to_boolean,
+            "frecuencia_otros": lambda x: get_object_or_none(
+                FrecuenciaRecepcionRecursos, "nombre__iexact", x
+            ),
+            "recursos_donaciones_particulares": lambda x: get_recursos(
+                "recursos_donaciones_particulares", recursos_data, TipoRecurso
+            ),
+            "recursos_estado_nacional": lambda x: get_recursos(
+                "recursos_estado_nacional", recursos_data, TipoRecurso
+            ),
+            "recursos_estado_provincial": lambda x: get_recursos(
+                "recursos_estado_provincial", recursos_data, TipoRecurso
+            ),
+            "recursos_estado_municipal": lambda x: get_recursos(
+                "recursos_estado_municipal", recursos_data, TipoRecurso
+            ),
+            "recursos_otros": lambda x: get_recursos(
+                "recursos_otros", recursos_data, TipoRecurso
+            ),
+        }
+        # Se ejecuta el metodo populate_data que recorre la recursos_data y aplica las transformaciones
+        recursos_data = populate_data(recursos_data, transformations)
         return recursos_data
 
     @staticmethod
@@ -687,10 +672,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         if compras_instance is None:
             compras_instance = FuenteCompras.objects.create(**compras_data)
         else:
-            for field, value in compras_data.items():
-                setattr(compras_instance, field, value)
-            compras_instance.save()
-
+            compras_instance = assign_values_to_instance(compras_instance, compras_data)
         return compras_instance
 
     @staticmethod
@@ -700,155 +682,52 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         if anexo_instance is None:
             anexo_instance = Anexo.objects.create(**anexo_data)
         else:
-            for field, value in anexo_data.items():
-                setattr(anexo_instance, field, value)
-            anexo_instance.save()
-
+            anexo_instance = assign_values_to_instance(anexo_instance, anexo_data)
         return anexo_instance
 
     @staticmethod
     def populate_anexo_data(  # pylint: disable=too-many-statements,too-many-branches
         anexo_data,
     ):
-        if "tipo_insumo" in anexo_data and anexo_data["tipo_insumo"]:
-            try:
-                anexo_data["tipo_insumo"] = TipoInsumos.objects.get(
-                    nombre__iexact=anexo_data["tipo_insumo"]
-                )
-            except TipoInsumos.DoesNotExist:
-                anexo_data["tipo_insumo"] = None
-        else:
-            anexo_data["tipo_insumo"] = None
-        if "frecuencia_insumo" in anexo_data and anexo_data["frecuencia_insumo"]:
-            try:
-                anexo_data["frecuencia_insumo"] = TipoFrecuenciaInsumos.objects.get(
-                    nombre__iexact=anexo_data["frecuencia_insumo"]
-                )
-            except TipoFrecuenciaInsumos.DoesNotExist:
-                anexo_data["frecuencia_insumo"] = None
-        else:
-            anexo_data["frecuencia_insumo"] = None
-
-        if "tecnologia" in anexo_data and anexo_data["tecnologia"]:
-            try:
-                anexo_data["tecnologia"] = TipoTecnologia.objects.get(
-                    nombre__iexact=anexo_data["tecnologia"]
-                )
-            except TipoTecnologia.DoesNotExist:
-                anexo_data["tecnologia"] = None
-        else:
-            anexo_data["tecnologia"] = None
-
-        if "acceso_comedor" in anexo_data and anexo_data["acceso_comedor"]:
-            try:
-                anexo_data["acceso_comedor"] = TipoAccesoComedor.objects.get(
-                    nombre__iexact=anexo_data["acceso_comedor"]
-                )
-            except TipoAccesoComedor.DoesNotExist:
-                anexo_data["acceso_comedor"] = None
-        else:
-            anexo_data["acceso_comedor"] = None
-
-        if "distancia_transporte" in anexo_data and anexo_data["distancia_transporte"]:
-            try:
-                anexo_data["distancia_transporte"] = (
-                    TipoDistanciaTransporte.objects.get(
-                        nombre__iexact=anexo_data["distancia_transporte"]
-                    )
-                )
-            except TipoDistanciaTransporte.DoesNotExist:
-                anexo_data["distancia_transporte"] = None
-        else:
-            anexo_data["distancia_transporte"] = None
-        if "comedor_merendero" in anexo_data:
-            anexo_data["comedor_merendero"] = anexo_data["comedor_merendero"] == "Y"
-
-        if "insumos_organizacion" in anexo_data:
-            anexo_data["insumos_organizacion"] = (
-                anexo_data["insumos_organizacion"] == "Y"
-            )
-
-        if "servicio_internet" in anexo_data:
-            if (
-                anexo_data["servicio_internet"] != ""
-                and anexo_data["servicio_internet"] == "Y"
-            ):
-                anexo_data["servicio_internet"] = True
-            elif (
-                anexo_data["servicio_internet"] != ""
-                and anexo_data["servicio_internet"] == "N"
-            ):
-                anexo_data["servicio_internet"] = False
-            elif anexo_data["servicio_internet"] == "":
-                anexo_data["servicio_internet"] = None
-
-        if "zona_inundable" in anexo_data:
-            anexo_data["zona_inundable"] = anexo_data["zona_inundable"] == "Y"
-
-        if "actividades_jardin_maternal" in anexo_data:
-            anexo_data["actividades_jardin_maternal"] = (
-                anexo_data["actividades_jardin_maternal"] == "Y"
-            )
-
-        if "actividades_jardin_infantes" in anexo_data:
-            anexo_data["actividades_jardin_infantes"] = (
-                anexo_data["actividades_jardin_infantes"] == "Y"
-            )
-
-        if "apoyo_escolar" in anexo_data:
-            anexo_data["apoyo_escolar"] = anexo_data["apoyo_escolar"] == "Y"
-
-        if "alfabetizacion_terminalidad" in anexo_data:
-            anexo_data["alfabetizacion_terminalidad"] = (
-                anexo_data["alfabetizacion_terminalidad"] == "Y"
-            )
-
-        if "capacitaciones_talleres" in anexo_data:
-            anexo_data["capacitaciones_talleres"] = (
-                anexo_data["capacitaciones_talleres"] == "Y"
-            )
-
-        if "promocion_salud" in anexo_data:
-            anexo_data["promocion_salud"] = anexo_data["promocion_salud"] == "Y"
-
-        if "actividades_discapacidad" in anexo_data:
-            anexo_data["actividades_discapacidad"] = (
-                anexo_data["actividades_discapacidad"] == "Y"
-            )
-
-        if "necesidades_alimentarias" in anexo_data:
-            anexo_data["necesidades_alimentarias"] = (
-                anexo_data["necesidades_alimentarias"] == "Y"
-            )
-
-        if "actividades_recreativas" in anexo_data:
-            anexo_data["actividades_recreativas"] = (
-                anexo_data["actividades_recreativas"] == "Y"
-            )
-
-        if "actividades_culturales" in anexo_data:
-            anexo_data["actividades_culturales"] = (
-                anexo_data["actividades_culturales"] == "Y"
-            )
-
-        if "emprendimientos_productivos" in anexo_data:
-            anexo_data["emprendimientos_productivos"] = (
-                anexo_data["emprendimientos_productivos"] == "Y"
-            )
-
-        if "actividades_religiosas" in anexo_data:
-            anexo_data["actividades_religiosas"] = (
-                anexo_data["actividades_religiosas"] == "Y"
-            )
-
-        if "actividades_huerta" in anexo_data:
-            anexo_data["actividades_huerta"] = anexo_data["actividades_huerta"] == "Y"
-
-        if "espacio_huerta" in anexo_data:
-            anexo_data["espacio_huerta"] = anexo_data["espacio_huerta"] == "Y"
-
-        if "otras_actividades" in anexo_data:
-            anexo_data["otras_actividades"] = anexo_data["otras_actividades"] == "Y"
+        # Esto es una lista de metodos a ejecutar para cada item de la anexo_data
+        transformations = {
+            "tipo_insumo": lambda x: get_object_or_none(
+                TipoInsumos, "nombre__iexact", x
+            ),
+            "frecuencia_insumo": lambda x: get_object_or_none(
+                TipoFrecuenciaInsumos, "nombre__iexact", x
+            ),
+            "tecnologia": lambda x: get_object_or_none(
+                TipoTecnologia, "nombre__iexact", x
+            ),
+            "acceso_comedor": lambda x: get_object_or_none(
+                TipoAccesoComedor, "nombre__iexact", x
+            ),
+            "distancia_transporte": lambda x: get_object_or_none(
+                TipoDistanciaTransporte, "nombre__iexact", x
+            ),
+            "comedor_merendero": convert_to_boolean,
+            "insumos_organizacion": convert_to_boolean,
+            "servicio_internet": convert_to_boolean,
+            "zona_inundable": convert_to_boolean,
+            "actividades_jardin_maternal": convert_to_boolean,
+            "actividades_jardin_infantes": convert_to_boolean,
+            "apoyo_escolar": convert_to_boolean,
+            "alfabetizacion_terminalidad": convert_to_boolean,
+            "capacitaciones_talleres": convert_to_boolean,
+            "promocion_salud": convert_to_boolean,
+            "actividades_discapacidad": convert_to_boolean,
+            "necesidades_alimentarias": convert_to_boolean,
+            "actividades_recreativas": convert_to_boolean,
+            "actividades_culturales": convert_to_boolean,
+            "emprendimientos_productivos": convert_to_boolean,
+            "actividades_religiosas": convert_to_boolean,
+            "actividades_huerta": convert_to_boolean,
+            "espacio_huerta": convert_to_boolean,
+            "otras_actividades": convert_to_boolean,
+        }
+        # Se ejecuta el metodo populate_data que recorre la anexo_data y aplica las transformaciones
+        anexo_data = populate_data(anexo_data, transformations)
 
         if "veces_recibio_insumos_2024" in anexo_data:
             anexo_data["veces_recibio_insumos_2024"] = convert_string_to_int(
@@ -899,99 +778,47 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def populate_punto_entregas_data(punto_entregas_data):
-        def get_frecuencia_entrega(nombre):
-            return (
-                TipoFrecuenciaBolsones.objects.get(
-                    nombre__iexact=punto_entregas_data[f"{nombre}"]
-                )
-                if punto_entregas_data[f"{nombre}"] != ""
-                else None
-            )
-
-        if "tipo_comedor" in punto_entregas_data:
-            punto_entregas_data["tipo_comedor"] = (
-                TipoDeComedor.objects.get(
-                    nombre__iexact=punto_entregas_data["tipo_comedor"]
-                )
-                if punto_entregas_data["tipo_comedor"]
-                else None
-            )
-
-        if "frecuencia_entrega_bolsones" in punto_entregas_data:
-            punto_entregas_data["frecuencia_entrega_bolsones"] = get_frecuencia_entrega(
-                "frecuencia_entrega_bolsones"
-            )
-
-        if "tipo_modulo_bolsones" in punto_entregas_data:
-            punto_entregas_data["tipo_modulo_bolsones"] = (
-                TipoModuloBolsones.objects.get(
-                    nombre__iexact=punto_entregas_data["tipo_modulo_bolsones"]
-                )
-                if punto_entregas_data["tipo_modulo_bolsones"] != ""
-                else None
-            )
-        else:
-            punto_entregas_data["tipo_modulo_bolsones"] = None
-
-        if "existe_punto_entregas" in punto_entregas_data:
-            punto_entregas_data["existe_punto_entregas"] = (
-                punto_entregas_data["existe_punto_entregas"] == "Y"
-            )
-
-        if "funciona_punto_entregas" in punto_entregas_data:
-            punto_entregas_data["funciona_punto_entregas"] = (
-                punto_entregas_data["funciona_punto_entregas"] == "Y"
-            )
-
-        if "observa_entregas" in punto_entregas_data:
-            punto_entregas_data["observa_entregas"] = (
-                punto_entregas_data["observa_entregas"] == "Y"
-            )
-
-        if "retiran_mercaderias_distribucion" in punto_entregas_data:
-            punto_entregas_data["retiran_mercaderias_distribucion"] = (
-                punto_entregas_data["retiran_mercaderias_distribucion"] == "Y"
-            )
-
-        if "retiran_mercaderias_comercio" in punto_entregas_data:
-            punto_entregas_data["retiran_mercaderias_comercio"] = (
-                punto_entregas_data["retiran_mercaderias_comercio"] == "Y"
-            )
-
-        if "reciben_dinero" in punto_entregas_data:
-            punto_entregas_data["reciben_dinero"] = (
-                punto_entregas_data["reciben_dinero"] == "Y"
-            )
-
-        if "registran_entrega_bolsones" in punto_entregas_data:
-            punto_entregas_data["registran_entrega_bolsones"] = (
-                punto_entregas_data["registran_entrega_bolsones"] == "Y"
-            )
+        # Esto es una lista de metodos a ejecutar para cada item de la punto_entregas_data
+        transformations = {
+            "tipo_comedor": lambda x: get_object_or_none(
+                TipoDeComedor, "nombre__iexact", x
+            ),
+            "frecuencia_entrega_bolsones": lambda x: get_object_or_none(
+                TipoFrecuenciaBolsones, "nombre__iexact", x
+            ),
+            "tipo_modulo_bolsones": lambda x: get_object_or_none(
+                TipoModuloBolsones, "nombre__iexact", x
+            ),
+            "existe_punto_entregas": convert_to_boolean,
+            "funciona_punto_entregas": convert_to_boolean,
+            "observa_entregas": convert_to_boolean,
+            "retiran_mercaderias_distribucion": convert_to_boolean,
+            "retiran_mercaderias_comercio": convert_to_boolean,
+            "reciben_dinero": convert_to_boolean,
+            "registran_entrega_bolsones": convert_to_boolean,
+        }
+        # Se ejecuta el metodo populate_data que recorre la punto_entregas_data y aplica las transformaciones
+        punto_entregas_data = populate_data(punto_entregas_data, transformations)
 
         return punto_entregas_data
 
     @staticmethod
     def populate_compras_data(compras_data):
-        if "almacen_cercano" in compras_data:
-            compras_data["almacen_cercano"] = compras_data["almacen_cercano"] == "Y"
-        if "verduleria" in compras_data:
-            compras_data["verduleria"] = compras_data["verduleria"] == "Y"
-        if "granja" in compras_data:
-            compras_data["granja"] = compras_data["granja"] == "Y"
-        if "carniceria" in compras_data:
-            compras_data["carniceria"] = compras_data["carniceria"] == "Y"
-        if "pescaderia" in compras_data:
-            compras_data["pescaderia"] = compras_data["pescaderia"] == "Y"
-        if "supermercado" in compras_data:
-            compras_data["supermercado"] = compras_data["supermercado"] == "Y"
-        if "mercado_central" in compras_data:
-            compras_data["mercado_central"] = compras_data["mercado_central"] == "Y"
-        if "ferias_comunales" in compras_data:
-            compras_data["ferias_comunales"] = compras_data["ferias_comunales"] == "Y"
-        if "mayoristas" in compras_data:
-            compras_data["mayoristas"] = compras_data["mayoristas"] == "Y"
-        if "otro" in compras_data:
-            compras_data["otro"] = compras_data["otro"] == "Y"
+        # Esto es una lista de metodos a ejecutar para cada item de la compras_data
+        transformations = {
+            "almacen_cercano": convert_to_boolean,
+            "verduleria": convert_to_boolean,
+            "granja": convert_to_boolean,
+            "carniceria": convert_to_boolean,
+            "pescaderia": convert_to_boolean,
+            "supermercado": convert_to_boolean,
+            "mercado_central": convert_to_boolean,
+            "ferias_comunales": convert_to_boolean,
+            "mayoristas": convert_to_boolean,
+            "otro": convert_to_boolean,
+        }
+        # Se ejecuta el metodo populate_data que recorre la compras_data y aplica las transformaciones
+        compras_data = populate_data(compras_data, transformations)
 
         return compras_data
 
@@ -1002,241 +829,39 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         if prestacion_instance is None:
             prestacion_instance = Prestacion.objects.create(**prestacion_data)
         else:
-            for field, value in prestacion_data.items():
-                setattr(prestacion_instance, field, value)
-            prestacion_instance.save()
-
+            prestacion_instance = assign_values_to_instance(
+                prestacion_instance, prestacion_data
+            )
         return prestacion_instance
 
     @staticmethod
     def populate_prestacion_data(
         prestacion_data,
     ):  # pylint: disable=too-many-statements,too-many-branches
+        dias = [
+            "lunes",
+            "martes",
+            "miercoles",
+            "jueves",
+            "viernes",
+            "sabado",
+            "domingo",
+        ]
+        comidas = ["desayuno", "almuerzo", "merienda", "cena", "merienda_reforzada"]
+        aoe = [
+            "actual",
+            "espera",
+        ]
 
-        if "lunes_desayuno_actual" in prestacion_data:
-            prestacion_data["lunes_desayuno_actual"] = convert_string_to_int(
-                prestacion_data["lunes_desayuno_actual"]
-            )
-        if "lunes_desayuno_espera" in prestacion_data:
-            prestacion_data["lunes_desayuno_espera"] = convert_string_to_int(
-                prestacion_data["lunes_desayuno_espera"]
-            )
-        if "lunes_almuerzo_actual" in prestacion_data:
-            prestacion_data["lunes_almuerzo_actual"] = convert_string_to_int(
-                prestacion_data["lunes_almuerzo_actual"]
-            )
-        if "lunes_almuerzo_espera" in prestacion_data:
-            prestacion_data["lunes_almuerzo_espera"] = convert_string_to_int(
-                prestacion_data["lunes_almuerzo_espera"]
-            )
-        if "lunes_merienda_actual" in prestacion_data:
-            prestacion_data["lunes_merienda_actual"] = convert_string_to_int(
-                prestacion_data["lunes_merienda_actual"]
-            )
-        if "lunes_merienda_espera" in prestacion_data:
-            prestacion_data["lunes_merienda_espera"] = convert_string_to_int(
-                prestacion_data["lunes_merienda_espera"]
-            )
-        if "lunes_cena_actual" in prestacion_data:
-            prestacion_data["lunes_cena_actual"] = convert_string_to_int(
-                prestacion_data["lunes_cena_actual"]
-            )
-        if "lunes_cena_espera" in prestacion_data:
-            prestacion_data["lunes_cena_espera"] = convert_string_to_int(
-                prestacion_data["lunes_cena_espera"]
-            )
-        if "martes_desayuno_actual" in prestacion_data:
-            prestacion_data["martes_desayuno_actual"] = convert_string_to_int(
-                prestacion_data["martes_desayuno_actual"]
-            )
-        if "martes_desayuno_espera" in prestacion_data:
-            prestacion_data["martes_desayuno_espera"] = convert_string_to_int(
-                prestacion_data["martes_desayuno_espera"]
-            )
-        if "martes_almuerzo_actual" in prestacion_data:
-            prestacion_data["martes_almuerzo_actual"] = convert_string_to_int(
-                prestacion_data["martes_almuerzo_actual"]
-            )
-        if "martes_almuerzo_espera" in prestacion_data:
-            prestacion_data["martes_almuerzo_espera"] = convert_string_to_int(
-                prestacion_data["martes_almuerzo_espera"]
-            )
-        if "martes_merienda_actual" in prestacion_data:
-            prestacion_data["martes_merienda_actual"] = convert_string_to_int(
-                prestacion_data["martes_merienda_actual"]
-            )
-        if "martes_merienda_espera" in prestacion_data:
-            prestacion_data["martes_merienda_espera"] = convert_string_to_int(
-                prestacion_data["martes_merienda_espera"]
-            )
-        if "martes_cena_actual" in prestacion_data:
-            prestacion_data["martes_cena_actual"] = convert_string_to_int(
-                prestacion_data["martes_cena_actual"]
-            )
-        if "martes_cena_espera" in prestacion_data:
-            prestacion_data["martes_cena_espera"] = convert_string_to_int(
-                prestacion_data["martes_cena_espera"]
-            )
-        if "miercoles_desayuno_actual" in prestacion_data:
-            prestacion_data["miercoles_desayuno_actual"] = convert_string_to_int(
-                prestacion_data["miercoles_desayuno_actual"]
-            )
-        if "miercoles_desayuno_espera" in prestacion_data:
-            prestacion_data["miercoles_desayuno_espera"] = convert_string_to_int(
-                prestacion_data["miercoles_desayuno_espera"]
-            )
-        if "miercoles_almuerzo_actual" in prestacion_data:
-            prestacion_data["miercoles_almuerzo_actual"] = convert_string_to_int(
-                prestacion_data["miercoles_almuerzo_actual"]
-            )
-        if "miercoles_almuerzo_espera" in prestacion_data:
-            prestacion_data["miercoles_almuerzo_espera"] = convert_string_to_int(
-                prestacion_data["miercoles_almuerzo_espera"]
-            )
-        if "miercoles_merienda_actual" in prestacion_data:
-            prestacion_data["miercoles_merienda_actual"] = convert_string_to_int(
-                prestacion_data["miercoles_merienda_actual"]
-            )
-        if "miercoles_merienda_espera" in prestacion_data:
-            prestacion_data["miercoles_merienda_espera"] = convert_string_to_int(
-                prestacion_data["miercoles_merienda_espera"]
-            )
-        if "miercoles_cena_actual" in prestacion_data:
-            prestacion_data["miercoles_cena_actual"] = convert_string_to_int(
-                prestacion_data["miercoles_cena_actual"]
-            )
-        if "miercoles_cena_espera" in prestacion_data:
-            prestacion_data["miercoles_cena_espera"] = convert_string_to_int(
-                prestacion_data["miercoles_cena_espera"]
-            )
-        if "jueves_desayuno_actual" in prestacion_data:
-            prestacion_data["jueves_desayuno_actual"] = convert_string_to_int(
-                prestacion_data["jueves_desayuno_actual"]
-            )
-        if "jueves_desayuno_espera" in prestacion_data:
-            prestacion_data["jueves_desayuno_espera"] = convert_string_to_int(
-                prestacion_data["jueves_desayuno_espera"]
-            )
-        if "jueves_almuerzo_actual" in prestacion_data:
-            prestacion_data["jueves_almuerzo_actual"] = convert_string_to_int(
-                prestacion_data["jueves_almuerzo_actual"]
-            )
-        if "jueves_almuerzo_espera" in prestacion_data:
-            prestacion_data["jueves_almuerzo_espera"] = convert_string_to_int(
-                prestacion_data["jueves_almuerzo_espera"]
-            )
-        if "jueves_merienda_actual" in prestacion_data:
-            prestacion_data["jueves_merienda_actual"] = convert_string_to_int(
-                prestacion_data["jueves_merienda_actual"]
-            )
-        if "jueves_merienda_espera" in prestacion_data:
-            prestacion_data["jueves_merienda_espera"] = convert_string_to_int(
-                prestacion_data["jueves_merienda_espera"]
-            )
-        if "jueves_cena_actual" in prestacion_data:
-            prestacion_data["jueves_cena_actual"] = convert_string_to_int(
-                prestacion_data["jueves_cena_actual"]
-            )
-        if "jueves_cena_espera" in prestacion_data:
-            prestacion_data["jueves_cena_espera"] = convert_string_to_int(
-                prestacion_data["jueves_cena_espera"]
-            )
-        if "viernes_desayuno_actual" in prestacion_data:
-            prestacion_data["viernes_desayuno_actual"] = convert_string_to_int(
-                prestacion_data["viernes_desayuno_actual"]
-            )
-        if "viernes_desayuno_espera" in prestacion_data:
-            prestacion_data["viernes_desayuno_espera"] = convert_string_to_int(
-                prestacion_data["viernes_desayuno_espera"]
-            )
-        if "viernes_almuerzo_actual" in prestacion_data:
-            prestacion_data["viernes_almuerzo_actual"] = convert_string_to_int(
-                prestacion_data["viernes_almuerzo_actual"]
-            )
-        if "viernes_almuerzo_espera" in prestacion_data:
-            prestacion_data["viernes_almuerzo_espera"] = convert_string_to_int(
-                prestacion_data["viernes_almuerzo_espera"]
-            )
-        if "viernes_merienda_actual" in prestacion_data:
-            prestacion_data["viernes_merienda_actual"] = convert_string_to_int(
-                prestacion_data["viernes_merienda_actual"]
-            )
-        if "viernes_merienda_espera" in prestacion_data:
-            prestacion_data["viernes_merienda_espera"] = convert_string_to_int(
-                prestacion_data["viernes_merienda_espera"]
-            )
-        if "viernes_cena_actual" in prestacion_data:
-            prestacion_data["viernes_cena_actual"] = convert_string_to_int(
-                prestacion_data["viernes_cena_actual"]
-            )
-        if "viernes_cena_espera" in prestacion_data:
-            prestacion_data["viernes_cena_espera"] = convert_string_to_int(
-                prestacion_data["viernes_cena_espera"]
-            )
-        if "sabado_desayuno_actual" in prestacion_data:
-            prestacion_data["sabado_desayuno_actual"] = convert_string_to_int(
-                prestacion_data["sabado_desayuno_actual"]
-            )
-        if "sabado_desayuno_espera" in prestacion_data:
-            prestacion_data["sabado_desayuno_espera"] = convert_string_to_int(
-                prestacion_data["sabado_desayuno_espera"]
-            )
-        if "sabado_almuerzo_actual" in prestacion_data:
-            prestacion_data["sabado_almuerzo_actual"] = convert_string_to_int(
-                prestacion_data["sabado_almuerzo_actual"]
-            )
-        if "sabado_almuerzo_espera" in prestacion_data:
-            prestacion_data["sabado_almuerzo_espera"] = convert_string_to_int(
-                prestacion_data["sabado_almuerzo_espera"]
-            )
-        if "sabado_merienda_actual" in prestacion_data:
-            prestacion_data["sabado_merienda_actual"] = convert_string_to_int(
-                prestacion_data["sabado_merienda_actual"]
-            )
-        if "sabado_merienda_espera" in prestacion_data:
-            prestacion_data["sabado_merienda_espera"] = convert_string_to_int(
-                prestacion_data["sabado_merienda_espera"]
-            )
-        if "sabado_cena_actual" in prestacion_data:
-            prestacion_data["sabado_cena_actual"] = convert_string_to_int(
-                prestacion_data["sabado_cena_actual"]
-            )
-        if "sabado_cena_espera" in prestacion_data:
-            prestacion_data["sabado_cena_espera"] = convert_string_to_int(
-                prestacion_data["sabado_cena_espera"]
-            )
-        if "domingo_desayuno_actual" in prestacion_data:
-            prestacion_data["domingo_desayuno_actual"] = convert_string_to_int(
-                prestacion_data["domingo_desayuno_actual"]
-            )
-        if "domingo_desayuno_espera" in prestacion_data:
-            prestacion_data["domingo_desayuno_espera"] = convert_string_to_int(
-                prestacion_data["domingo_desayuno_espera"]
-            )
-        if "domingo_almuerzo_actual" in prestacion_data:
-            prestacion_data["domingo_almuerzo_actual"] = convert_string_to_int(
-                prestacion_data["domingo_almuerzo_actual"]
-            )
-        if "domingo_almuerzo_espera" in prestacion_data:
-            prestacion_data["domingo_almuerzo_espera"] = convert_string_to_int(
-                prestacion_data["domingo_almuerzo_espera"]
-            )
-        if "domingo_merienda_actual" in prestacion_data:
-            prestacion_data["domingo_merienda_actual"] = convert_string_to_int(
-                prestacion_data["domingo_merienda_actual"]
-            )
-        if "domingo_merienda_espera" in prestacion_data:
-            prestacion_data["domingo_merienda_espera"] = convert_string_to_int(
-                prestacion_data["domingo_merienda_espera"]
-            )
-        if "domingo_cena_actual" in prestacion_data:
-            prestacion_data["domingo_cena_actual"] = convert_string_to_int(
-                prestacion_data["domingo_cena_actual"]
-            )
-        if "domingo_cena_espera" in prestacion_data:
-            prestacion_data["domingo_cena_espera"] = convert_string_to_int(
-                prestacion_data["domingo_cena_espera"]
-            )
+        for dia in dias:
+            for comida in comidas:
+                for estado in aoe:
+                    key = f"{dia}_{comida}_{estado}"
+                    if key in prestacion_data:
+                        prestacion_data[key] = convert_string_to_int(
+                            prestacion_data[key]
+                        )
+
         return prestacion_data
 
     @staticmethod
@@ -1306,19 +931,16 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         if excepcion_instance is None:
             excepcion_instance = Excepcion.objects.create(**excepcion_data)
         else:
-            for field, value in excepcion_data.items():
-                setattr(excepcion_instance, field, value)
-            excepcion_instance.save()
-
+            excepcion_instance = assign_values_to_instance(
+                excepcion_instance, excepcion_data
+            )
         return excepcion_instance
 
     @staticmethod
     def populate_excepcion_data(excepcion_data):
         if "motivo" in excepcion_data:
-            excepcion_data["motivo"] = (
-                MotivoExcepcion.objects.get(nombre__iexact=excepcion_data["motivo"])
-                if excepcion_data["motivo"] != ""
-                else None
+            excepcion_data["motivo"] = get_object_or_none(
+                MotivoExcepcion, "nombre__iexact", excepcion_data["motivo"]
             )
         if "adjuntos" in excepcion_data:
             excepcion_data["adjuntos"] = [

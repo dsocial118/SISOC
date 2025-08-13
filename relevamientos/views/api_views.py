@@ -1,3 +1,4 @@
+import logging
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -5,6 +6,8 @@ from rest_framework_api_key.permissions import HasAPIKey
 from relevamientos.models import Relevamiento
 from relevamientos.serializer import RelevamientoSerializer
 from core.utils import format_serializer_errors
+
+logger = logging.getLogger(__name__)
 
 
 class RelevamientoApiView(APIView):
@@ -29,9 +32,20 @@ class RelevamientoApiView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            return Response((relevamiento).data, status=status.HTTP_200_OK)
+            logger.info(f"Relevamiento {relevamiento.id} actualizado correctamente")
+            return Response(
+                RelevamientoSerializer(relevamiento).data, status=status.HTTP_200_OK
+            )
         except Relevamiento.DoesNotExist:
             return Response(
                 f"Relevamiento {request.data['sisoc_id']} no encontrado",
                 status=status.HTTP_404_NOT_FOUND,
+            )
+        except Exception as e:
+            logger.error(
+                f"Error en PATCH al relevamiento {request.data.get('sisoc_id')}: {str(e)} | Datos: {request.data}",
+            )
+            return Response(
+                f"Error al actualizar el relevamiento {request.data['sisoc_id']}: {str(e)}",
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )

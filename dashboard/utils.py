@@ -11,7 +11,7 @@ from comedores.models import Comedor, ValorComida
 def table_exists(table_name):
 
     with connection.cursor() as cursor:
-        cursor.execute(f"SHOW TABLES LIKE '{table_name}'")
+        cursor.execute("SHOW TABLES LIKE %s", [table_name])
         return cursor.fetchone() is not None
 
 

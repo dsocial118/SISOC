@@ -5,11 +5,12 @@ register = template.Library()
 
 @register.filter
 def has_group(user, group_name):
-    if not user or not hasattr(user, "groups"):
+    try:
+        if not hasattr(user, "cached_groups"):
+            user.cached_groups = list(user.groups.values_list("name", flat=True))
+        return group_name in user.cached_groups or user.is_superuser
+    except Exception:
         return False
-    if not hasattr(user, "cached_groups"):
-        user.cached_groups = list(user.groups.values_list("name", flat=True))
-    return group_name in user.cached_groups
 
 
 @register.filter
