@@ -15,12 +15,7 @@
             <div class="card-header font-weight-bold">Agregar Ciudadano a Nómina</div>
             <div class="card-body">
                 {% if messages %}
-                    {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }}"
-                             role="alert">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
+                    {% for message in messages %}<div class="alert alert-{{ message.tags }}" role="alert">{{ message }}</div>{% endfor %}
                 {% endif %}
                 <form method="get" class="form-inline">
                     <div class="form-group mr-2">
