@@ -3,13 +3,13 @@ document.addEventListener("DOMContentLoaded", function () {
   /* ==========================================================
      1) ANIMACIÓN DE PESTAÑAS LATERALES Y SECCIONES
   ========================================================== */
-  const locCard     = document.querySelector('.location-card');
-  const leftTab     = document.getElementById('tab-ubicacion');
-  const rightTabs   = locCard.querySelector('.right-tabs');
-  const tabs        = Array.from(rightTabs.children);
-  const mapCont     = document.getElementById('mapa-iframe');
+  const locCard = document.querySelector('.location-card');
+  const leftTab = document.getElementById('tab-ubicacion');
+  const rightTabs = locCard.querySelector('.right-tabs');
+  const tabs = Array.from(rightTabs.children);
+  const mapCont = document.getElementById('mapa-iframe');
   const detailsCont = document.getElementById('detalles-ubicacion');
-  const sections    = Array.from(locCard.querySelectorAll('.content-seccion'));
+  const sections = Array.from(locCard.querySelectorAll('.content-seccion'));
 
   // Aumentar tamaño del mapa/detalles un 25%
   if (mapCont) mapCont.style.height = "125%";
@@ -87,7 +87,7 @@ document.addEventListener("DOMContentLoaded", function () {
         t.classList.add('activa');
       }
 
-      mapCont.style.display     = 'none';
+      mapCont.style.display = 'none';
       detailsCont.style.display = 'none';
       hideAllSections();
 
@@ -161,6 +161,6 @@ document.addEventListener("DOMContentLoaded", function () {
   updateQueryParam("searchActividades", "search_actividades");
   updateQueryParam("searchCurso", "search_actividades_curso");
 
-  
+
 
 });
