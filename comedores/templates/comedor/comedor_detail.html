@@ -27,8 +27,10 @@
 ;
 {% block content %}
     <link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
-    <link rel="stylesheet" href="{% static 'custom/css/comedorRelevamiento.css' %}" />
-    <link rel="stylesheet" href="{% static 'custom/css/galeria-imagenes.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorRelevamiento.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/galeria-imagenes.css' %}" />
     <div class="row justify-content-between d-print-none mx-1 mb-3">
         <div class="col-auto">
             <a href="{% url 'comedores' %}"
@@ -640,7 +642,9 @@
                                                 </div>
                                             </div>
                                             <div class="imagen-overlay">
-                                                <button type="button" class="btn-expandir" onclick="abrirModal({{ forloop.counter0 }})">
+                                                <button type="button"
+                                                        class="btn-expandir"
+                                                        onclick="abrirModal({{ forloop.counter0 }})">
                                                     <i class="fas fa-expand-alt"></i>
                                                 </button>
                                             </div>
@@ -708,54 +712,66 @@
                 </div>
             </div>
         {% endif %}
-
-    <!-- Modal para vista ampliada de imágenes -->
-    <div class="modal fade" id="imagenModal" tabindex="-1" aria-labelledby="imagenModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-centered">
-            <div class="modal-content modal-imagen">
-                <div class="modal-header border-0">
-                    <h5 class="modal-title" id="imagenModalLabel">
-                        <i class="fas fa-image mr-2"></i>
-                        Imagen del comedor
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="modal-body p-0">
-                    <div class="imagen-modal-container">
-                        <div class="imagen-principal">
-                            <img id="imagenPrincipal" src="" alt="Imagen ampliada" class="img-fluid">
-                            <div class="controles-navegacion">
-                                <button type="button" class="btn-nav btn-anterior" onclick="cambiarImagen(-1)">
-                                    <i class="fas fa-chevron-left"></i>
-                                </button>
-                                <button type="button" class="btn-nav btn-siguiente" onclick="cambiarImagen(1)">
-                                    <i class="fas fa-chevron-right"></i>
-                                </button>
+        <!-- Modal para vista ampliada de imágenes -->
+        <div class="modal fade"
+             id="imagenModal"
+             tabindex="-1"
+             aria-labelledby="imagenModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-centered">
+                <div class="modal-content modal-imagen">
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title" id="imagenModalLabel">
+                            <i class="fas fa-image mr-2"></i>
+                            Imagen del comedor
+                        </h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Cerrar">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body p-0">
+                        <div class="imagen-modal-container">
+                            <div class="imagen-principal">
+                                <img id="imagenPrincipal" src="" alt="Imagen ampliada" class="img-fluid" />
+                                <div class="controles-navegacion">
+                                    <button type="button"
+                                            class="btn-nav btn-anterior"
+                                            onclick="cambiarImagen(-1)">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </button>
+                                    <button type="button"
+                                            class="btn-nav btn-siguiente"
+                                            onclick="cambiarImagen(1)">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="modal-footer border-0 justify-content-between">
-                    <div class="info-imagen">
-                        <span class="nombre-archivo" id="nombreArchivo">imagen.jpg</span>
-                        <span class="contador-imagenes" id="contadorImagenes">1 de 5</span>
-                    </div>
-                    <div class="acciones-imagen">
-                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="descargarImagen()">
-                            <i class="fas fa-download mr-1"></i>Descargar
-                        </button>
-                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
-                            <i class="fas fa-times mr-1"></i>Cerrar
-                        </button>
+                    <div class="modal-footer border-0 justify-content-between">
+                        <div class="info-imagen">
+                            <span class="nombre-archivo" id="nombreArchivo">imagen.jpg</span>
+                            <span class="contador-imagenes" id="contadorImagenes">1 de 5</span>
+                        </div>
+                        <div class="acciones-imagen">
+                            <button type="button"
+                                    class="btn btn-outline-primary btn-sm"
+                                    onclick="descargarImagen()">
+                                <i class="fas fa-download mr-1"></i>Descargar
+                            </button>
+                            <button type="button"
+                                    class="btn btn-secondary btn-sm"
+                                    data-bs-dismiss="modal">
+                                <i class="fas fa-times mr-1"></i>Cerrar
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-
-
     {% endblock %}
     {% block customJS %}
         <script>
