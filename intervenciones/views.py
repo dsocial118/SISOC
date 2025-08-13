@@ -41,10 +41,14 @@ def sub_estados_intervenciones_ajax(request):
 
 
 class IntervencionDetailView(TemplateView):
+    """Mostrar el detalle de intervenciones asociadas a un comedor."""
+
     template_name = "intervencion_detail.html"
     model = Intervencion
 
     def get_context_data(self, **kwargs):
+        """Agregar al contexto las intervenciones filtradas y datos auxiliares."""
+
         context = super().get_context_data(**kwargs)
         comedor = ComedorService.get_comedor(self.kwargs["pk"])
         intervenciones, cantidad_intervenciones = (
@@ -78,11 +82,15 @@ class IntervencionDetailView(TemplateView):
 
 
 class IntervencionCreateView(CreateView):
+    """Crear una nueva intervención para un comedor."""
+
     model = Intervencion
     form_class = IntervencionForm
     template_name = "intervencion_form.html"
 
     def form_valid(self, form):
+        """Validar y guardar la intervención creada por el usuario."""
+
         form.instance.comedor_id = self.kwargs["pk"]
 
         tipo_intervencion = form.cleaned_data.get("tipo_intervencion")
@@ -125,26 +133,36 @@ class IntervencionCreateView(CreateView):
         )
 
     def get_context_data(self, **kwargs):
+        """Incluir el comedor asociado en el contexto."""
+
         context = super().get_context_data(**kwargs)
         comedor = ComedorService.get_comedor(self.kwargs["pk"])
         context["object"] = comedor
         return context
 
     def get_success_url(self):
+        """Redirigir al detalle del comedor una vez creada la intervención."""
+
         return reverse("comedor_intervencion_ver", kwargs={"pk": self.object.pk})
 
 
 class IntervencionUpdateView(UpdateView):
+    """Actualizar una intervención existente."""
+
     model = Intervencion
     form_class = IntervencionForm
     template_name = "intervencion_form.html"
 
     def form_valid(self, form):
+        """Guardar los cambios de la intervención seleccionada."""
+
         pk = self.kwargs["pk2"]
         form.save()
         return redirect("comedor_intervencion_ver", pk=pk)
 
     def get_context_data(self, **kwargs):
+        """Añadir el comedor y el formulario al contexto."""
+
         context = super().get_context_data(**kwargs)
         comedor = ComedorService.get_comedor(self.kwargs["pk2"])
         context["form"] = self.get_form()
@@ -153,13 +171,19 @@ class IntervencionUpdateView(UpdateView):
 
 
 class IntervencionDeleteView(DeleteView):
+    """Eliminar una intervención existente."""
+
     model = Intervencion
     template_name = "intervencion_confirm_delete.html"
 
     def get_object(self, queryset=None):
+        """Obtener la intervención a eliminar."""
+
         return get_object_or_404(Intervencion, id=self.kwargs["intervencion_id"])
 
     def get_success_url(self):
+        """Redirigir al listado de intervenciones del comedor."""
+
         return reverse(
             "comedor_intervencion_ver", kwargs={"pk": self.kwargs["comedor_id"]}
         )
@@ -212,9 +236,13 @@ def eliminar_archivo_intervencion(request, intervencion_id):
 
 
 class IntervencionDetailIndividualView(TemplateView):
+    """Mostrar el detalle de una intervención puntual."""
+
     template_name = "intervencion_detail_view.html"
 
     def get_context_data(self, **kwargs):
+        """Incluir la intervención solicitada en el contexto."""
+
         context = super().get_context_data(**kwargs)
         intervencion = get_object_or_404(Intervencion, id=self.kwargs["pk"])
         context["intervencion"] = intervencion

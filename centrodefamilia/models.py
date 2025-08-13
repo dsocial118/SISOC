@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-from django.db.models import Q, UniqueConstraint
+from django.contrib.postgres.indexes import GinIndex
 from ciudadanos.models import Ciudadano
 from core.models import Dia, Localidad, Municipio, Provincia, Sexo
 from organizaciones.models import Organizacion
@@ -37,7 +37,6 @@ class Centro(models.Model):
         blank=True,
         null=True,
     )
-    # datos sede
     provincia = models.ForeignKey(to=Provincia, on_delete=models.PROTECT, null=True)
     municipio = models.ForeignKey(
         to=Municipio, on_delete=models.SET_NULL, null=True, blank=True
@@ -59,7 +58,6 @@ class Centro(models.Model):
     link_redes = models.URLField(
         max_length=200, blank=True, null=True, verbose_name="Redes sociales"
     )
-    # referente
     nombre_referente = models.CharField(
         max_length=100, verbose_name="Nombre del responsable"
     )
@@ -74,18 +72,32 @@ class Centro(models.Model):
     )
 
     def __str__(self):
-        return str(self.nombre)
+        return self.nombre
+
+    class Meta:
+        indexes = [
+            GinIndex(
+                fields=["nombre"], name="centro_nombre_trgm", opclasses=["gin_trgm_ops"]
+            ),
+        ]
 
 
 class Categoria(models.Model):
     nombre = models.CharField(max_length=100, verbose_name="Nombre de la Categoría")
 
     def __str__(self):
-        return str(self.nombre)
+        return self.nombre
 
     class Meta:
         verbose_name = "Categoría"
         verbose_name_plural = "Categorías"
+        indexes = [
+            GinIndex(
+                fields=["nombre"],
+                name="categoria_nombre_trgm",
+                opclasses=["gin_trgm_ops"],
+            ),
+        ]
 
 
 class Actividad(models.Model):
@@ -95,7 +107,16 @@ class Actividad(models.Model):
     )
 
     def __str__(self):
-        return str(self.nombre)
+        return self.nombre
+
+    class Meta:
+        indexes = [
+            GinIndex(
+                fields=["nombre"],
+                name="actividad_nombre_trgm",
+                opclasses=["gin_trgm_ops"],
+            ),
+        ]
 
 
 class ActividadCentro(models.Model):
@@ -141,10 +162,17 @@ class ActividadCentro(models.Model):
     class Meta:
         verbose_name = "Actividad del Centro"
         verbose_name_plural = "Actividades por Centro"
+        indexes = [
+            models.Index(fields=["centro", "estado"]),
+            GinIndex(
+                fields=["estado"],
+                name="actividadcentro_estado_trgm",
+                opclasses=["gin_trgm_ops"],
+            ),
+        ]
 
 
 class ParticipanteActividad(models.Model):
-
     ESTADO_INSCRIPCION = [
         ("inscrito", "Inscrito"),
         ("lista_espera", "Lista de Espera"),
@@ -179,25 +207,17 @@ class ParticipanteActividad(models.Model):
     class Meta:
         verbose_name = "Participante"
         verbose_name_plural = "Participantes"
-        constraints = [
-            UniqueConstraint(
-                fields=["actividad_centro", "ciudadano"],
-                condition=Q(estado__in=["inscrito", "lista_espera"]),
-                name="unique_activo_inscripcion",
-            )
-        ]
         indexes = [
             models.Index(fields=["actividad_centro"]),
-            models.Index(fields=["estado"]),
+            GinIndex(
+                fields=["estado"],
+                name="participante_estado_trgm",
+                opclasses=["gin_trgm_ops"],
+            ),
         ]
 
 
 class ParticipanteActividadHistorial(models.Model):
-    """
-    Historial inmutable de cambios de estado de las inscripciones.
-    Registra quién y cuándo realizó cada transición.
-    """
-
     participante = models.ForeignKey(
         ParticipanteActividad, on_delete=models.CASCADE, related_name="historial"
     )
@@ -242,3 +262,10 @@ class Expediente(models.Model):
     usuario = models.ForeignKey(User, on_delete=models.PROTECT)
     procesado = models.BooleanField(default=False)
     errores = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name = "Expediente CABAL"
+        verbose_name_plural = "Expedientes CABAL"
+        indexes = [
+            models.Index(fields=["centro", "periodo"]),
+        ]

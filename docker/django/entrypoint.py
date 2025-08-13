@@ -19,7 +19,6 @@ def wait_for_mysql():
     wait_for_db = os.getenv("WAIT_FOR_DB", "true").lower() == "true"
 
     if not wait_for_db:
-        print("⏭️  Se omite la espera por MySQL (WAIT_FOR_DB=false)")
         return
 
     if not all([host, user, password]):
@@ -64,8 +63,9 @@ def run_server():
     Inicia el servidor de Django. Usa Gunicorn en producción o el servidor de desarrollo si no.
     """
     environment = os.getenv("ENVIRONMENT", "dev").lower()
+    deploy_gunicorn = environment in ("prd", "qa")
 
-    if environment == "prd":
+    if deploy_gunicorn:
         cache_busting()
         print("🚀 Iniciando Django en modo producción con Gunicorn...")
         subprocess.run(
@@ -97,7 +97,10 @@ def cache_busting():
         print(f"🧹 Eliminando carpeta de estáticos: {static_root}")
         shutil.rmtree(static_root)
     print("📦 Ejecutando collectstatic para cache busting...")
-    subprocess.run(["python", "manage.py", "collectstatic", "--noinput"])
+    subprocess.run(
+        ["python", "manage.py", "collectstatic", "--noinput"],
+        stdout=subprocess.DEVNULL,
+    )
 
 
 if __name__ == "__main__":
