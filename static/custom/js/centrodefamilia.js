@@ -3,63 +3,107 @@ document.addEventListener("DOMContentLoaded", function () {
   /* ==========================================================
      1) ANIMACIÓN DE PESTAÑAS LATERALES Y SECCIONES
   ========================================================== */
+  const locCard = document.querySelector('.location-card');
+  const leftTab = document.getElementById('tab-ubicacion');
+  const rightTabs = locCard.querySelector('.right-tabs');
+  const tabs = Array.from(rightTabs.children);
+  const mapCont = document.getElementById('mapa-iframe');
+  const detailsCont = document.getElementById('detalles-ubicacion');
+  const sections = Array.from(locCard.querySelectorAll('.content-seccion'));
 
-  // ---- ACCORDION LATERAL ----
-  function ajustarAnchos() {
-    const allPanels = document.querySelectorAll('.accordion-panel');
-    const totalPanels = allPanels.length;
-    const closedWidth = 60; // ancho cerrado
+  // Aumentar tamaño del mapa/detalles un 25%
+  if (mapCont) mapCont.style.height = "125%";
+  if (detailsCont) detailsCont.style.height = "125%";
 
-    const openPanel = Array.from(allPanels).find(p => p.classList.contains('open'));
-
-    if (!openPanel) {
-        // Si ninguno está abierto, todos cerrados
-        allPanels.forEach(p => p.style.width = closedWidth + 'px');
-        return;
-    }
-
-    const openWidth = `calc(100% - ${(totalPanels - 1) * closedWidth}px)`;
-
-    allPanels.forEach(p => {
-        if (p === openPanel) {
-            p.style.width = openWidth;
-        } else {
-            p.style.width = closedWidth + 'px';
-        }
-    });
-  }
-
-  function toggleAccordion(panel) {
-    const allPanels = document.querySelectorAll('.accordion-panel');
-    const totalPanels = allPanels.length;
-    const closedWidth = 60; // px
-
-    if (panel.classList.contains('open')) {
-        panel.classList.remove('open');
-        allPanels.forEach(p => p.style.width = closedWidth + 'px');
-        return;
-    }
-
-    // Cerrar todos
-    allPanels.forEach(p => p.classList.remove('open'));
-
-    // Abrir el seleccionado
-    panel.classList.add('open');
-
-    const openWidth = `calc(100% - ${(totalPanels - 1) * closedWidth}px)`;
-
-    allPanels.forEach(p => {
-        p.style.width = p.classList.contains('open') ? openWidth : closedWidth + 'px';
-    });
-  }
-
-  // Ejecutar al cargar
-  ajustarAnchos();
-
-  // Asignar click a cada panel
-  document.querySelectorAll('.accordion-panel').forEach(panel => {
-    panel.addEventListener('click', () => toggleAccordion(panel));
+  // Transición más suave para movimiento
+  tabs.forEach(t => {
+    t.style.transition = "transform 0.5s ease-in-out"; // más fluida
   });
+
+  function hideAllSections() {
+    sections.forEach(s => s.classList.remove('active'));
+  }
+
+  function showUbicacion() {
+    mapCont.style.display = '';
+    detailsCont.style.display = '';
+  }
+
+  leftTab.addEventListener('click', () => {
+    tabs.forEach(t => {
+      t.style.transform = '';
+      t.classList.remove('activa');
+    });
+    showUbicacion();
+    hideAllSections();
+  });
+
+  tabs.forEach((tab, idx) => {
+    tab.addEventListener('click', () => {
+      const baseRight = leftTab.getBoundingClientRect().right;
+      const tabW = tabs[0].offsetWidth;
+
+      if (tab.classList.contains('activa')) {
+        for (let i = idx; i < tabs.length; i++) {
+          const t = tabs[i];
+          if (t.classList.contains('activa')) {
+            t.style.transform = '';
+            t.classList.remove('activa');
+          }
+        }
+        hideAllSections();
+        mapCont.style.display = 'none';
+        detailsCont.style.display = 'none';
+
+        let found = false;
+        for (let i = idx - 1; i >= 0; i--) {
+          if (tabs[i].classList.contains('activa')) {
+            const key = tabs[i].textContent.trim()
+              .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+              .toLowerCase().replace(/\s+/g, '-');
+            const sec = document.getElementById(`seccion-${key}`);
+            if (sec) {
+              sec.classList.add('active');
+              const activas = tabs.filter(t => t.classList.contains('activa')).length;
+              sec.style.paddingLeft = `${(activas + 1) * 50}px`;
+              found = true;
+              break;
+            }
+          }
+        }
+        if (!found) {
+          showUbicacion();
+        }
+        return;
+      }
+
+      for (let i = 0; i <= idx; i++) {
+        const t = tabs[i];
+        if (t.classList.contains('activa')) continue;
+        const originalLeft = t.getBoundingClientRect().left;
+        const targetX = baseRight + i * tabW;
+        const shiftX = targetX - originalLeft;
+        t.style.transform = `translateX(${shiftX}px)`;
+        t.classList.add('activa');
+      }
+
+      mapCont.style.display = 'none';
+      detailsCont.style.display = 'none';
+      hideAllSections();
+
+      const key = tab.textContent.trim()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase().replace(/\s+/g, '-');
+      const sec = document.getElementById(`seccion-${key}`);
+      if (sec) {
+        sec.classList.add('active');
+        const activas = tabs.filter(t => t.classList.contains('activa')).length;
+        sec.style.paddingLeft = `${(activas + 1) * 50}px`;
+      }
+    });
+  });
+
+  leftTab.click(); // disparo inicial
 
   /* ==========================================================
      2) FILTRO EN VIVO DE CENTROS ADHERIDOS
@@ -116,5 +160,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
   updateQueryParam("searchActividades", "search_actividades");
   updateQueryParam("searchCurso", "search_actividades_curso");
+
+
 
 });
