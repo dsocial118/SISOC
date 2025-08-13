@@ -98,7 +98,14 @@
   display: flex;
   height: 380px;
   background: var(--clr-bg-secondary);
+  display: flex;
+  height: 380px;
+  background: var(--clr-bg-secondary);
   color: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0,0,0,.25);
+  align-items: center; /* centra verticalmente el contenido */
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(0,0,0,.25);
@@ -111,13 +118,21 @@
   background: linear-gradient(180deg,#0b756d,#0a5b57);
   border-top-left-radius: 16px;
   border-bottom-left-radius: 16px;
+  width: 74px;
+  background: linear-gradient(180deg,#0b756d,#0a5b57);
+  border-top-left-radius: 16px;
+  border-bottom-left-radius: 16px;
   position: relative;
+  z-index: 2;
   z-index: 2;
 }
 .location-card .left-tab .tab-text {
   position: absolute;
   top: 50%; left: 50%;
+  top: 50%; left: 50%;
   transform: translate(-50%,-50%) rotate(-90deg);
+  font-weight: 700;
+  font-size: .95rem;
   font-weight: 700;
   font-size: .95rem;
   white-space: nowrap;
@@ -157,30 +172,47 @@
   font-size: 1.15rem;
   color: #e8f1ff;
   margin: 0 0 .6rem;
+  flex: 1;
+  padding: 1.25rem 1.75rem;
+  background: #1b2a3c;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+}
+
+/* título + línea */
+.section-title {
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: #e8f1ff;
+  margin: 0 0 .6rem;
 }
 .section-divider {
   height: 2px;
   width: 100%;
   background: linear-gradient(90deg, rgba(255,255,255,.65), rgba(255,255,255,0));
   border: 0;
-  margin: 0 0 1rem;
 }
-
 /* lista en dos columnas */
 .location-card .details-container ul {
   list-style: none;
   margin: 0;
+  margin: 0;
   padding: 0;
   column-count: 2;
+  column-gap: 2.25rem;
   column-gap: 2.25rem;
 }
 .location-card .details-container li {
   display: flex;
   align-items: center;
   margin-bottom: .6rem;
+  margin-bottom: .6rem;
 }
 .location-card .details-container li i {
   width: 1.25rem;
+  margin-right: .5rem;
   margin-right: .5rem;
   color: var(--clr-contrast);
 }
@@ -192,8 +224,13 @@
   display: flex;
   width: 280px;
   z-index: 3;
+  width: 280px;
+  z-index: 3;
 }
 .location-card .right-tabs .tab-item {
+  width: 70px;
+  cursor: pointer;
+  border-left: 1px solid rgba(255,255,255,.25);
   width: 70px;
   cursor: pointer;
   border-left: 1px solid rgba(255,255,255,.25);

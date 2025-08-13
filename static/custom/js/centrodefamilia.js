@@ -3,7 +3,63 @@ document.addEventListener("DOMContentLoaded", function () {
   /* ==========================================================
      1) ANIMACIÓN DE PESTAÑAS LATERALES Y SECCIONES
   ========================================================== */
-  /* Cambio por acordion en detailcentrofamilia.js*/
+
+  // ---- ACCORDION LATERAL ----
+  function ajustarAnchos() {
+    const allPanels = document.querySelectorAll('.accordion-panel');
+    const totalPanels = allPanels.length;
+    const closedWidth = 60; // ancho cerrado
+
+    const openPanel = Array.from(allPanels).find(p => p.classList.contains('open'));
+
+    if (!openPanel) {
+        // Si ninguno está abierto, todos cerrados
+        allPanels.forEach(p => p.style.width = closedWidth + 'px');
+        return;
+    }
+
+    const openWidth = `calc(100% - ${(totalPanels - 1) * closedWidth}px)`;
+
+    allPanels.forEach(p => {
+        if (p === openPanel) {
+            p.style.width = openWidth;
+        } else {
+            p.style.width = closedWidth + 'px';
+        }
+    });
+  }
+
+  function toggleAccordion(panel) {
+    const allPanels = document.querySelectorAll('.accordion-panel');
+    const totalPanels = allPanels.length;
+    const closedWidth = 60; // px
+
+    if (panel.classList.contains('open')) {
+        panel.classList.remove('open');
+        allPanels.forEach(p => p.style.width = closedWidth + 'px');
+        return;
+    }
+
+    // Cerrar todos
+    allPanels.forEach(p => p.classList.remove('open'));
+
+    // Abrir el seleccionado
+    panel.classList.add('open');
+
+    const openWidth = `calc(100% - ${(totalPanels - 1) * closedWidth}px)`;
+
+    allPanels.forEach(p => {
+        p.style.width = p.classList.contains('open') ? openWidth : closedWidth + 'px';
+    });
+  }
+
+  // Ejecutar al cargar
+  ajustarAnchos();
+
+  // Asignar click a cada panel
+  document.querySelectorAll('.accordion-panel').forEach(panel => {
+    panel.addEventListener('click', () => toggleAccordion(panel));
+  });
 
   /* ==========================================================
      2) FILTRO EN VIVO DE CENTROS ADHERIDOS
@@ -60,7 +116,5 @@ document.addEventListener("DOMContentLoaded", function () {
   }
   updateQueryParam("searchActividades", "search_actividades");
   updateQueryParam("searchCurso", "search_actividades_curso");
-
-  
 
 });
