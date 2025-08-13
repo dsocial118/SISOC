@@ -3,7 +3,7 @@ import logging
 from datetime import datetime
 from django.core.exceptions import ValidationError
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 def procesar_informe(ruta_archivo: str) -> dict:
