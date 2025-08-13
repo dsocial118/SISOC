@@ -1,4 +1,7 @@
+import logging
 from centrodefamilia.models import Centro
+
+logger = logging.getLogger("django")
 
 
 def puede_operar(centro):

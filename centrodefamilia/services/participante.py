@@ -1,3 +1,4 @@
+import logging
 from django.db import transaction
 
 from centrodefamilia.models import (
@@ -17,6 +18,8 @@ from ciudadanos.models import (
     CiudadanoPrograma,
     HistorialCiudadanoProgramas,
 )
+
+logger = logging.getLogger("django")
 
 
 class AlreadyRegistered(Exception):
