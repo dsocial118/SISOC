@@ -24,7 +24,7 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 from acompanamientos.acompanamiento_service import AcompanamientoService
 
