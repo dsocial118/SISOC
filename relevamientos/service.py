@@ -54,6 +54,7 @@ from relevamientos.tasks import AsyncSendRelevamientoToGestionar
 
 logger = logging.getLogger("django")
 
+
 # TODO: Refactorizar todo esto, pylint esta muriendo aca
 class RelevamientoService:  # pylint: disable=too-many-public-methods
     """Service layer for managing Relevamiento persistence and business rules."""
@@ -72,7 +73,9 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             comedor_instance.entre_calle_2 = comedor_data.get(
                 "entre_calle_2", comedor_instance.entre_calle_2
             )
-            comedor_instance.barrio = comedor_data.get("barrio", comedor_instance.barrio)
+            comedor_instance.barrio = comedor_data.get(
+                "barrio", comedor_instance.barrio
+            )
             comedor_instance.codigo_postal = convert_string_to_int(
                 comedor_data.get("codigo_postal", comedor_instance.codigo_postal)
             )
@@ -103,8 +106,12 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                     else comedor_instance.municipio
                 ),
             )
-            comedor_instance.partido = comedor_data.get("partido", comedor_instance.partido)
-            comedor_instance.manzana = comedor_data.get("manzana", comedor_instance.manzana)
+            comedor_instance.partido = comedor_data.get(
+                "partido", comedor_instance.partido
+            )
+            comedor_instance.manzana = comedor_data.get(
+                "manzana", comedor_instance.manzana
+            )
             comedor_instance.piso = comedor_data.get("piso", comedor_instance.piso)
             comedor_instance.departamento = comedor_data.get(
                 "departamento", comedor_instance.departamento
@@ -475,8 +482,10 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         espacio_prestacion_data, espacio_prestacion_instance=None
     ):
         try:
-            espacio_prestacion_data = RelevamientoService.populate_espacio_prestacion_data(
-                espacio_prestacion_data
+            espacio_prestacion_data = (
+                RelevamientoService.populate_espacio_prestacion_data(
+                    espacio_prestacion_data
+                )
             )
 
             if espacio_prestacion_instance is None:
@@ -534,7 +543,9 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
             if "abastecimiento_combustible" in cocina_data:
                 combustible_str = cocina_data.pop("abastecimiento_combustible")
-                combustibles_arr = [nombre.strip() for nombre in combustible_str.split(",")]
+                combustibles_arr = [
+                    nombre.strip() for nombre in combustible_str.split(",")
+                ]
                 combustibles_queryset = TipoCombustible.objects.filter(
                     nombre__in=combustibles_arr
                 )
@@ -609,7 +620,9 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             if espacio_instance is None:
                 espacio_instance = Espacio.objects.create(**espacio_data)
             else:
-                espacio_instance = assign_values_to_instance(espacio_instance, espacio_data)
+                espacio_instance = assign_values_to_instance(
+                    espacio_instance, espacio_data
+                )
 
             return espacio_instance
         except Exception as e:
@@ -626,7 +639,9 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         )
         try:
             if colaboradores_instance is None:
-                colaboradores_instance = Colaboradores.objects.create(**colaboradores_data)
+                colaboradores_instance = Colaboradores.objects.create(
+                    **colaboradores_data
+                )
             else:
                 colaboradores_instance = assign_values_to_instance(
                     colaboradores_instance, colaboradores_data
@@ -634,7 +649,9 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
             return colaboradores_instance
         except Exception as e:
-            logger.error(f"Error en RelevamientoService.create_or_update_colaboradores: {e}")
+            logger.error(
+                f"Error en RelevamientoService.create_or_update_colaboradores: {e}"
+            )
             raise
 
     @staticmethod
@@ -759,7 +776,9 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             if compras_instance is None:
                 compras_instance = FuenteCompras.objects.create(**compras_data)
             else:
-                compras_instance = assign_values_to_instance(compras_instance, compras_data)
+                compras_instance = assign_values_to_instance(
+                    compras_instance, compras_data
+                )
             return compras_instance
         except Exception as e:
             logger.error(
@@ -852,7 +871,9 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 frecuencia_str = punto_entregas_data.pop(
                     "frecuencia_recepcion_mercaderias", ""
                 )
-                frecuencia_arr = [nombre.strip() for nombre in frecuencia_str.split(",")]
+                frecuencia_arr = [
+                    nombre.strip() for nombre in frecuencia_str.split(",")
+                ]
                 frecuencia_recepcion_mercaderias_queryset = (
                     TipoFrecuenciaBolsones.objects.filter(nombre__in=frecuencia_arr)
                 )
@@ -932,7 +953,9 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
     @staticmethod
     def create_or_update_prestacion(prestacion_data, prestacion_instance=None):
         try:
-            prestacion_data = RelevamientoService.populate_prestacion_data(prestacion_data)
+            prestacion_data = RelevamientoService.populate_prestacion_data(
+                prestacion_data
+            )
 
             if prestacion_instance is None:
                 prestacion_instance = Prestacion.objects.create(**prestacion_data)
@@ -1043,7 +1066,9 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 referente.id if referente else None
             )
         except Exception as e:
-            logger.error(f"Error en RelevamientoService.create_or_update_responsable_y_referente: {e}")
+            logger.error(
+                f"Error en RelevamientoService.create_or_update_responsable_y_referente: {e}"
+            )
             raise
 
     @staticmethod
@@ -1059,7 +1084,9 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 )
             return excepcion_instance
         except Exception as e:
-            logger.error(f"Error en RelevamientoService.create_or_update_excepcion: {e}")
+            logger.error(
+                f"Error en RelevamientoService.create_or_update_excepcion: {e}"
+            )
             raise
 
     @staticmethod
