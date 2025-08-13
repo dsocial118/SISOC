@@ -1,5 +1,6 @@
 # pylint: disable=too-many-lines
 import json
+import logging
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
@@ -51,6 +52,8 @@ from relevamientos.models import (
 )
 from relevamientos.tasks import AsyncSendRelevamientoToGestionar
 
+logger = logging.getLogger("django")
+
 
 # TODO: Refactorizar todo esto, pylint esta muriendo aca
 class RelevamientoService:  # pylint: disable=too-many-public-methods
@@ -58,158 +61,204 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def update_comedor(comedor_data, comedor_instance):
-        """Update basic fields of a ``Comedor`` from a data dictionary."""
-        comedor_instance.numero = convert_string_to_int(
-            comedor_data.get("numero", comedor_instance.numero)
-        )
-        comedor_instance.calle = comedor_data.get("calle", comedor_instance.calle)
-        comedor_instance.entre_calle_1 = comedor_data.get(
-            "entre_calle_1", comedor_instance.entre_calle_1
-        )
-        comedor_instance.entre_calle_2 = comedor_data.get(
-            "entre_calle_2", comedor_instance.entre_calle_2
-        )
-        comedor_instance.barrio = comedor_data.get("barrio", comedor_instance.barrio)
-        comedor_instance.codigo_postal = convert_string_to_int(
-            comedor_data.get("codigo_postal", comedor_instance.codigo_postal)
-        )
-        comedor_instance.provincia = (
-            Provincia.objects.get(nombre=comedor_data.get("provincia"))
-            if comedor_data.get("provincia")
-            else comedor_instance.provincia
-        )
-        comedor_instance.municipio = (
-            Municipio.objects.get(
-                nombre=comedor_data.get("municipio"),
+        """Actualiza los campos de un comedor que envia GESTIONAR via API."""
+        try:
+            comedor_instance.numero = convert_string_to_int(
+                comedor_data.get("numero", comedor_instance.numero)
             )
-            if comedor_data.get("municipio")
-            else comedor_instance.municipio
-        )
-        comedor_instance.localidad = Localidad.objects.get(
-            nombre=comedor_data.get("localidad", comedor_instance.localidad),
-            municipio=(
+            comedor_instance.calle = comedor_data.get("calle", comedor_instance.calle)
+            comedor_instance.entre_calle_1 = comedor_data.get(
+                "entre_calle_1", comedor_instance.entre_calle_1
+            )
+            comedor_instance.entre_calle_2 = comedor_data.get(
+                "entre_calle_2", comedor_instance.entre_calle_2
+            )
+            comedor_instance.barrio = comedor_data.get(
+                "barrio", comedor_instance.barrio
+            )
+            comedor_instance.codigo_postal = convert_string_to_int(
+                comedor_data.get("codigo_postal", comedor_instance.codigo_postal)
+            )
+            comedor_instance.provincia = (
+                Provincia.objects.get(nombre=comedor_data.get("provincia"))
+                if comedor_data.get("provincia")
+                else comedor_instance.provincia
+            )
+            comedor_instance.municipio = (
                 Municipio.objects.get(
                     nombre=comedor_data.get("municipio"),
-                    provincia=(
-                        Provincia.objects.get(nombre=comedor_data.get("provincia"))
-                        if comedor_data.get("provincia")
-                        else comedor_instance.provincia
-                    ),
                 )
                 if comedor_data.get("municipio")
                 else comedor_instance.municipio
-            ),
-        )
-        comedor_instance.partido = comedor_data.get("partido", comedor_instance.partido)
-        comedor_instance.manzana = comedor_data.get("manzana", comedor_instance.manzana)
-        comedor_instance.piso = comedor_data.get("piso", comedor_instance.piso)
-        comedor_instance.departamento = comedor_data.get(
-            "departamento", comedor_instance.departamento
-        )
-        comedor_instance.lote = comedor_data.get("lote", comedor_instance.lote)
-        comedor_instance.comienzo = (
-            convert_string_to_int(comedor_data.get("comienzo", "").split("/")[-1])
-            if comedor_data.get("comienzo")
-            else comedor_instance.comienzo
-        )
-        comedor_instance.save()
+            )
+            comedor_instance.localidad = Localidad.objects.get(
+                nombre=comedor_data.get("localidad", comedor_instance.localidad),
+                municipio=(
+                    Municipio.objects.get(
+                        nombre=comedor_data.get("municipio"),
+                        provincia=(
+                            Provincia.objects.get(nombre=comedor_data.get("provincia"))
+                            if comedor_data.get("provincia")
+                            else comedor_instance.provincia
+                        ),
+                    )
+                    if comedor_data.get("municipio")
+                    else comedor_instance.municipio
+                ),
+            )
+            comedor_instance.partido = comedor_data.get(
+                "partido", comedor_instance.partido
+            )
+            comedor_instance.manzana = comedor_data.get(
+                "manzana", comedor_instance.manzana
+            )
+            comedor_instance.piso = comedor_data.get("piso", comedor_instance.piso)
+            comedor_instance.departamento = comedor_data.get(
+                "departamento", comedor_instance.departamento
+            )
+            comedor_instance.lote = comedor_data.get("lote", comedor_instance.lote)
+            comedor_instance.comienzo = (
+                convert_string_to_int(comedor_data.get("comienzo", "").split("/")[-1])
+                if comedor_data.get("comienzo")
+                else comedor_instance.comienzo
+            )
+            comedor_instance.save()
 
-        return comedor_instance.id
+            return comedor_instance.id
+        except Exception as e:
+            logger.error(
+                f"Error en RelevamientoService.update_comedor para comedor: {comedor_data} {e}",
+                exc_info=True,
+            )
+            raise
 
     @staticmethod
     def create_pendiente(request, comedor_id):
-        comedor = get_object_or_404(Comedor, id=comedor_id)
-        relevamiento = Relevamiento(comedor=comedor, estado="Pendiente")
-        territorial_data = request.POST.get("territorial")
+        try:
+            comedor = get_object_or_404(Comedor, id=comedor_id)
+            relevamiento = Relevamiento(comedor=comedor, estado="Pendiente")
+            territorial_data = request.POST.get("territorial")
 
-        if territorial_data:
-            territorial_data = json.loads(territorial_data)
-            relevamiento.territorial_uid = territorial_data.get("gestionar_uid")
-            relevamiento.territorial_nombre = territorial_data.get("nombre")
-            relevamiento.estado = "Visita pendiente"
+            if territorial_data:
+                territorial_data = json.loads(territorial_data)
+                relevamiento.territorial_uid = territorial_data.get("gestionar_uid")
+                relevamiento.territorial_nombre = territorial_data.get("nombre")
+                relevamiento.estado = "Visita pendiente"
 
-        relevamiento.save()
+            relevamiento.save()
 
-        return relevamiento
+            return relevamiento
+        except Exception as e:
+            logger.error(
+                f"Error en RelevamientoService.create_pendiente para comedor: {comedor_id} {e}",
+                exc_info=True,
+            )
+            raise
 
     @staticmethod
     def update_territorial(request):
-        relevamiento_id = request.POST.get("relevamiento_id")
-        relevamiento = Relevamiento.objects.get(id=relevamiento_id)
-        territorial_data = request.POST.get("territorial_editar")
+        try:
+            relevamiento_id = request.POST.get("relevamiento_id")
+            relevamiento = Relevamiento.objects.get(id=relevamiento_id)
+            territorial_data = request.POST.get("territorial_editar")
 
-        if territorial_data:
-            territorial_data = json.loads(territorial_data)
-            relevamiento.territorial_uid = territorial_data.get("gestionar_uid")
-            relevamiento.territorial_nombre = territorial_data.get("nombre")
-            relevamiento.estado = "Visita pendiente"
-        else:
-            relevamiento.territorial_nombre = None
-            relevamiento.territorial_uid = None
-            relevamiento.estado = "Pendiente"
+            if territorial_data:
+                territorial_data = json.loads(territorial_data)
+                relevamiento.territorial_uid = territorial_data.get("gestionar_uid")
+                relevamiento.territorial_nombre = territorial_data.get("nombre")
+                relevamiento.estado = "Visita pendiente"
+            else:
+                relevamiento.territorial_nombre = None
+                relevamiento.territorial_uid = None
+                relevamiento.estado = "Pendiente"
 
-        relevamiento.save()
+            relevamiento.save()
 
-        AsyncSendRelevamientoToGestionar(relevamiento.id).start()
+            AsyncSendRelevamientoToGestionar(relevamiento.id).start()
 
-        return relevamiento
+            return relevamiento
+        except Relevamiento.DoesNotExist:
+            logger.error(
+                f"RelevamientoService.update_territorial: Relevamiento con ID {relevamiento_id} no encontrado."
+            )
+            return None
+        except Exception as e:
+            logger.error(
+                f"Error en RelevamientoService.update_territorial para relevamiento: {relevamiento_id} {e}",
+                exc_info=True,
+            )
+            raise
 
     @staticmethod
     def populate_relevamiento(relevamiento_form, extra_forms):
-        relevamiento = relevamiento_form.save(commit=False)
+        try:
+            relevamiento = relevamiento_form.save(commit=False)
 
-        funcionamiento = extra_forms["funcionamiento_form"].save()
-        relevamiento.funcionamiento = funcionamiento
+            funcionamiento = extra_forms["funcionamiento_form"].save()
+            relevamiento.funcionamiento = funcionamiento
 
-        espacio = extra_forms["espacio_form"].save(commit=False)
-        cocina = extra_forms["espacio_cocina_form"].save(commit=True)
-        espacio.cocina = cocina
-        prestacion = extra_forms["espacio_prestacion_form"].save(commit=True)
-        espacio.prestacion = prestacion
-        espacio.save()
-        relevamiento.espacio = espacio
+            espacio = extra_forms["espacio_form"].save(commit=False)
+            cocina = extra_forms["espacio_cocina_form"].save(commit=True)
+            espacio.cocina = cocina
+            prestacion = extra_forms["espacio_prestacion_form"].save(commit=True)
+            espacio.prestacion = prestacion
+            espacio.save()
+            relevamiento.espacio = espacio
 
-        colaboradores = extra_forms["colaboradores_form"].save()
-        relevamiento.colaboradores = colaboradores
+            colaboradores = extra_forms["colaboradores_form"].save()
+            relevamiento.colaboradores = colaboradores
 
-        recursos = extra_forms["recursos_form"].save()
-        relevamiento.recursos = recursos
+            recursos = extra_forms["recursos_form"].save()
+            relevamiento.recursos = recursos
 
-        anexo = extra_forms["anexo_form"].save()
-        relevamiento.anexo = anexo
+            anexo = extra_forms["anexo_form"].save()
+            relevamiento.anexo = anexo
 
-        compras = extra_forms["compras_form"].save()
-        relevamiento.compras = compras
+            compras = extra_forms["compras_form"].save()
+            relevamiento.compras = compras
 
-        prestacion = extra_forms["prestacion_form"].save()
-        relevamiento.prestacion = prestacion
+            prestacion = extra_forms["prestacion_form"].save()
+            relevamiento.prestacion = prestacion
 
-        referente = extra_forms["referente_form"].save()
-        relevamiento.responsable = referente
-        relevamiento.responsable_es_referente = (
-            relevamiento_form.cleaned_data["responsable_es_referente"] == "True"
-        )
-        punto_entregas = extra_forms["punto_entregas_form"].save()
-        relevamiento.punto_entregas = punto_entregas
+            referente = extra_forms["referente_form"].save()
+            relevamiento.responsable = referente
+            relevamiento.responsable_es_referente = (
+                relevamiento_form.cleaned_data["responsable_es_referente"] == "True"
+            )
+            punto_entregas = extra_forms["punto_entregas_form"].save()
+            relevamiento.punto_entregas = punto_entregas
 
-        relevamiento.fecha_visita = timezone.now()
+            relevamiento.fecha_visita = timezone.now()
 
-        relevamiento.save()
+            relevamiento.save()
 
-        return relevamiento
+            return relevamiento
+        except Exception as e:
+            logger.error(
+                f"Error en RelevamientoService.populate_relevamiento: {e}",
+                exc_info=True,
+            )
+            raise
 
     @staticmethod
     def separate_string(tipos):
-        tipos_list = [str(tipo) for tipo in tipos]
+        try:
+            tipos_list = [str(tipo) for tipo in tipos]
 
-        if len(tipos_list) == 0:
-            tipos_str = "-"
-        elif len(tipos_list) > 1:
-            tipos_str = ", ".join(tipos_list[:-1]) + " y " + tipos_list[-1]
-        else:
-            tipos_str = tipos_list[0]
+            if len(tipos_list) == 0:
+                tipos_str = "-"
+            elif len(tipos_list) > 1:
+                tipos_str = ", ".join(tipos_list[:-1]) + " y " + tipos_list[-1]
+            else:
+                tipos_str = tipos_list[0]
 
-        return tipos_str
+            return tipos_str
+        except Exception as e:
+            logger.error(
+                f"Error en RelevamientoService.separate_string: {e}",
+                exc_info=True,
+            )
+            raise
 
     @staticmethod
     def get_relevamiento_detail_object(relevamiento_id):
@@ -375,63 +424,85 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
         except Relevamiento.DoesNotExist:
             return None
+        except Exception as e:
+            logger.error(
+                f"Error en RelevamientoService.get_relevamiento_detail_object: {e}",
+                exc_info=True,
+            )
+            raise
 
     @staticmethod
     def create_or_update_funcionamiento(
         funcionamiento_data, funcionamiento_instance=None
     ):
-        if "modalidad_prestacion" in funcionamiento_data:
-            modalidad_prestacion = funcionamiento_data.get(
-                "modalidad_prestacion", ""
-            ).strip()
-            funcionamiento_data["modalidad_prestacion"] = (
-                TipoModalidadPrestacion.objects.filter(
-                    nombre__iexact=modalidad_prestacion
-                ).first()
-                if modalidad_prestacion
-                else None
-            )
+        try:
+            if "modalidad_prestacion" in funcionamiento_data:
+                modalidad_prestacion = funcionamiento_data.get(
+                    "modalidad_prestacion", ""
+                ).strip()
+                funcionamiento_data["modalidad_prestacion"] = (
+                    TipoModalidadPrestacion.objects.filter(
+                        nombre__iexact=modalidad_prestacion
+                    ).first()
+                    if modalidad_prestacion
+                    else None
+                )
 
-        if "servicio_por_turnos" in funcionamiento_data:
-            funcionamiento_data["servicio_por_turnos"] = convert_to_boolean(
-                funcionamiento_data["servicio_por_turnos"]
-            )
+            if "servicio_por_turnos" in funcionamiento_data:
+                funcionamiento_data["servicio_por_turnos"] = convert_to_boolean(
+                    funcionamiento_data["servicio_por_turnos"]
+                )
 
-        if "cantidad_turnos" in funcionamiento_data:
-            funcionamiento_data["cantidad_turnos"] = (
-                None
-                if funcionamiento_data["cantidad_turnos"] == ""
-                else int(funcionamiento_data["cantidad_turnos"])
-            )
+            if "cantidad_turnos" in funcionamiento_data:
+                funcionamiento_data["cantidad_turnos"] = (
+                    None
+                    if funcionamiento_data["cantidad_turnos"] == ""
+                    else int(funcionamiento_data["cantidad_turnos"])
+                )
 
-        if funcionamiento_instance is None:
-            funcionamiento_instance = FuncionamientoPrestacion.objects.create(
-                **funcionamiento_data
-            )
-        else:
-            funcionamiento_instance = assign_values_to_instance(
-                funcionamiento_instance, funcionamiento_data
-            )
+            if funcionamiento_instance is None:
+                funcionamiento_instance = FuncionamientoPrestacion.objects.create(
+                    **funcionamiento_data
+                )
+            else:
+                funcionamiento_instance = assign_values_to_instance(
+                    funcionamiento_instance, funcionamiento_data
+                )
 
-        return funcionamiento_instance
+            return funcionamiento_instance
+        except Exception as e:
+            logger.error(
+                f"Error en RelevamientoService.create_or_update_funcionamiento: {e}",
+                exc_info=True,
+            )
+            raise
 
     @staticmethod
     def create_or_update_espacio_prestacion(
         espacio_prestacion_data, espacio_prestacion_instance=None
     ):
-        espacio_prestacion_data = RelevamientoService.populate_espacio_prestacion_data(
-            espacio_prestacion_data
-        )
+        try:
+            espacio_prestacion_data = (
+                RelevamientoService.populate_espacio_prestacion_data(
+                    espacio_prestacion_data
+                )
+            )
 
-        if espacio_prestacion_instance is None:
-            espacio_prestacion_instance = EspacioPrestacion.objects.create(
-                **espacio_prestacion_data
+            if espacio_prestacion_instance is None:
+                espacio_prestacion_instance = EspacioPrestacion.objects.create(
+                    **espacio_prestacion_data
+                )
+            else:
+                espacio_prestacion_instance = assign_values_to_instance(
+                    espacio_prestacion_instance, espacio_prestacion_data
+                )
+            return espacio_prestacion_instance
+        except Exception as e:
+            logger.error(
+                f"Error en RelevamientoService.create_or_update_espacio_prestacion: {e}",
+                exc_info=True,
             )
-        else:
-            espacio_prestacion_instance = assign_values_to_instance(
-                espacio_prestacion_instance, espacio_prestacion_data
-            )
-        return espacio_prestacion_instance
+            raise
 
     @staticmethod
     def populate_espacio_prestacion_data(
@@ -466,28 +537,37 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def create_or_update_cocina(cocina_data, cocina_instance=None):
-        cocina_data = RelevamientoService.populate_cocina_data(cocina_data)
-        combustibles_queryset = TipoCombustible.objects.none()
+        try:
+            cocina_data = RelevamientoService.populate_cocina_data(cocina_data)
+            combustibles_queryset = TipoCombustible.objects.none()
 
-        if "abastecimiento_combustible" in cocina_data:
-            combustible_str = cocina_data.pop("abastecimiento_combustible")
-            combustibles_arr = [nombre.strip() for nombre in combustible_str.split(",")]
-            combustibles_queryset = TipoCombustible.objects.filter(
-                nombre__in=combustibles_arr
+            if "abastecimiento_combustible" in cocina_data:
+                combustible_str = cocina_data.pop("abastecimiento_combustible")
+                combustibles_arr = [
+                    nombre.strip() for nombre in combustible_str.split(",")
+                ]
+                combustibles_queryset = TipoCombustible.objects.filter(
+                    nombre__in=combustibles_arr
+                )
+
+            if cocina_instance is None:
+                cocina_instance = EspacioCocina.objects.create(**cocina_data)
+            else:
+                for field, value in cocina_data.items():
+                    setattr(cocina_instance, field, value)
+
+            if combustibles_queryset.exists():
+                cocina_instance.abastecimiento_combustible.set(combustibles_queryset)
+
+            cocina_instance.save()
+
+            return cocina_instance
+        except Exception as e:
+            logger.error(
+                f"Error en RelevamientoService.create_or_update_cocina: {e}",
+                exc_info=True,
             )
-
-        if cocina_instance is None:
-            cocina_instance = EspacioCocina.objects.create(**cocina_data)
-        else:
-            for field, value in cocina_data.items():
-                setattr(cocina_instance, field, value)
-
-        if combustibles_queryset.exists():
-            cocina_instance.abastecimiento_combustible.set(combustibles_queryset)
-
-        cocina_instance.save()
-
-        return cocina_instance
+            raise
 
     @staticmethod
     def populate_cocina_data(cocina_data):
@@ -512,51 +592,67 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def create_or_update_espacio(espacio_data, espacio_instance=None):
-        if "cocina" in espacio_data:
-            cocina_data = espacio_data["cocina"]
-            cocina_instance = RelevamientoService.create_or_update_cocina(
-                cocina_data, getattr(espacio_instance, "cocina", None)
-            )
-            espacio_data["cocina"] = cocina_instance
-        if "prestacion" in espacio_data:
-            prestacion_data = espacio_data["prestacion"]
-            prestacion_instance = (
-                RelevamientoService.create_or_update_espacio_prestacion(
-                    prestacion_data, getattr(espacio_instance, "prestacion", None)
+        try:
+            if "cocina" in espacio_data:
+                cocina_data = espacio_data["cocina"]
+                cocina_instance = RelevamientoService.create_or_update_cocina(
+                    cocina_data, getattr(espacio_instance, "cocina", None)
                 )
-            )
-            espacio_data["prestacion"] = prestacion_instance
-
-        if "tipo_espacio_fisico" in espacio_data:
-            espacio_data["tipo_espacio_fisico"] = (
-                TipoEspacio.objects.get(
-                    nombre__iexact=espacio_data["tipo_espacio_fisico"]
+                espacio_data["cocina"] = cocina_instance
+            if "prestacion" in espacio_data:
+                prestacion_data = espacio_data["prestacion"]
+                prestacion_instance = (
+                    RelevamientoService.create_or_update_espacio_prestacion(
+                        prestacion_data, getattr(espacio_instance, "prestacion", None)
+                    )
                 )
-                if espacio_data["tipo_espacio_fisico"] != ""
-                else None
+                espacio_data["prestacion"] = prestacion_instance
+
+            if "tipo_espacio_fisico" in espacio_data:
+                espacio_data["tipo_espacio_fisico"] = (
+                    TipoEspacio.objects.get(
+                        nombre__iexact=espacio_data["tipo_espacio_fisico"]
+                    )
+                    if espacio_data["tipo_espacio_fisico"] != ""
+                    else None
+                )
+
+            if espacio_instance is None:
+                espacio_instance = Espacio.objects.create(**espacio_data)
+            else:
+                espacio_instance = assign_values_to_instance(
+                    espacio_instance, espacio_data
+                )
+
+            return espacio_instance
+        except Exception as e:
+            logger.error(
+                f"Error en RelevamientoService.create_or_update_espacio: {e}",
+                exc_info=True,
             )
-
-        if espacio_instance is None:
-            espacio_instance = Espacio.objects.create(**espacio_data)
-        else:
-            espacio_instance = assign_values_to_instance(espacio_instance, espacio_data)
-
-        return espacio_instance
+            raise
 
     @staticmethod
     def create_or_update_colaboradores(colaboradores_data, colaboradores_instance=None):
         colaboradores_data = RelevamientoService.populate_colaboradores_data(
             colaboradores_data
         )
+        try:
+            if colaboradores_instance is None:
+                colaboradores_instance = Colaboradores.objects.create(
+                    **colaboradores_data
+                )
+            else:
+                colaboradores_instance = assign_values_to_instance(
+                    colaboradores_instance, colaboradores_data
+                )
 
-        if colaboradores_instance is None:
-            colaboradores_instance = Colaboradores.objects.create(**colaboradores_data)
-        else:
-            colaboradores_instance = assign_values_to_instance(
-                colaboradores_instance, colaboradores_data
+            return colaboradores_instance
+        except Exception as e:
+            logger.error(
+                f"Error en RelevamientoService.create_or_update_colaboradores: {e}"
             )
-
-        return colaboradores_instance
+            raise
 
     @staticmethod
     def populate_colaboradores_data(colaboradores_data):
@@ -577,47 +673,54 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def create_or_update_recursos(recursos_data, recursos_instance=None):
-        recursos_data = RelevamientoService.populate_recursos_data(recursos_data)
+        try:
+            recursos_data = RelevamientoService.populate_recursos_data(recursos_data)
 
-        if recursos_instance is None:
-            recursos_instance = FuenteRecursos.objects.create()
-        else:
-            for field, value in recursos_data.items():
-                if field not in [
-                    "recursos_donaciones_particulares",
-                    "recursos_estado_nacional",
-                    "recursos_estado_provincial",
-                    "recursos_estado_municipal",
-                    "recursos_otros",
-                ]:
-                    setattr(recursos_instance, field, value)
+            if recursos_instance is None:
+                recursos_instance = FuenteRecursos.objects.create()
+            else:
+                for field, value in recursos_data.items():
+                    if field not in [
+                        "recursos_donaciones_particulares",
+                        "recursos_estado_nacional",
+                        "recursos_estado_provincial",
+                        "recursos_estado_municipal",
+                        "recursos_otros",
+                    ]:
+                        setattr(recursos_instance, field, value)
 
-        if "recursos_donaciones_particulares" in recursos_data:
-            recursos_instance.recursos_donaciones_particulares.set(
-                recursos_data["recursos_donaciones_particulares"]
+            if "recursos_donaciones_particulares" in recursos_data:
+                recursos_instance.recursos_donaciones_particulares.set(
+                    recursos_data["recursos_donaciones_particulares"]
+                )
+
+            if "recursos_estado_nacional" in recursos_data:
+                recursos_instance.recursos_estado_nacional.set(
+                    recursos_data["recursos_estado_nacional"]
+                )
+
+            if "recursos_estado_provincial" in recursos_data:
+                recursos_instance.recursos_estado_provincial.set(
+                    recursos_data["recursos_estado_provincial"]
+                )
+
+            if "recursos_estado_municipal" in recursos_data:
+                recursos_instance.recursos_estado_municipal.set(
+                    recursos_data["recursos_estado_municipal"]
+                )
+
+            if "recursos_otros" in recursos_data:
+                recursos_instance.recursos_otros.set(recursos_data["recursos_otros"])
+
+            recursos_instance.save()
+
+            return recursos_instance
+        except Exception as e:
+            logger.error(
+                f"Error en RelevamientoService.create_or_update_recursos: {e}",
+                exc_info=True,
             )
-
-        if "recursos_estado_nacional" in recursos_data:
-            recursos_instance.recursos_estado_nacional.set(
-                recursos_data["recursos_estado_nacional"]
-            )
-
-        if "recursos_estado_provincial" in recursos_data:
-            recursos_instance.recursos_estado_provincial.set(
-                recursos_data["recursos_estado_provincial"]
-            )
-
-        if "recursos_estado_municipal" in recursos_data:
-            recursos_instance.recursos_estado_municipal.set(
-                recursos_data["recursos_estado_municipal"]
-            )
-
-        if "recursos_otros" in recursos_data:
-            recursos_instance.recursos_otros.set(recursos_data["recursos_otros"])
-
-        recursos_instance.save()
-
-        return recursos_instance
+            raise
 
     @staticmethod
     def populate_recursos_data(
@@ -667,23 +770,39 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def create_or_update_compras(compras_data, compras_instance=None):
-        compras_data = RelevamientoService.populate_compras_data(compras_data)
+        try:
+            compras_data = RelevamientoService.populate_compras_data(compras_data)
 
-        if compras_instance is None:
-            compras_instance = FuenteCompras.objects.create(**compras_data)
-        else:
-            compras_instance = assign_values_to_instance(compras_instance, compras_data)
-        return compras_instance
+            if compras_instance is None:
+                compras_instance = FuenteCompras.objects.create(**compras_data)
+            else:
+                compras_instance = assign_values_to_instance(
+                    compras_instance, compras_data
+                )
+            return compras_instance
+        except Exception as e:
+            logger.error(
+                f"Error en RelevamientoService.create_or_update_compras: {e}",
+                exc_info=True,
+            )
+            raise
 
     @staticmethod
     def create_or_update_anexo(anexo_data, anexo_instance=None):
-        anexo_data = RelevamientoService.populate_anexo_data(anexo_data)
+        try:
+            anexo_data = RelevamientoService.populate_anexo_data(anexo_data)
 
-        if anexo_instance is None:
-            anexo_instance = Anexo.objects.create(**anexo_data)
-        else:
-            anexo_instance = assign_values_to_instance(anexo_instance, anexo_data)
-        return anexo_instance
+            if anexo_instance is None:
+                anexo_instance = Anexo.objects.create(**anexo_data)
+            else:
+                anexo_instance = assign_values_to_instance(anexo_instance, anexo_data)
+            return anexo_instance
+        except Exception as e:
+            logger.error(
+                f"Error en RelevamientoService.create_or_update_anexo: {e}",
+                exc_info=True,
+            )
+            raise
 
     @staticmethod
     def populate_anexo_data(  # pylint: disable=too-many-statements,too-many-branches
@@ -740,41 +859,50 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
     def create_or_update_punto_entregas(
         punto_entregas_data, punto_entregas_instance=None
     ):
-        punto_entregas_data = RelevamientoService.populate_punto_entregas_data(
-            punto_entregas_data
-        )
-
-        frecuencia_recepcion_mercaderias_queryset = (
-            TipoFrecuenciaBolsones.objects.none()
-        )
-        if "frecuencia_recepcion_mercaderias" in punto_entregas_data:
-            frecuencia_str = punto_entregas_data.pop(
-                "frecuencia_recepcion_mercaderias", ""
+        try:
+            punto_entregas_data = RelevamientoService.populate_punto_entregas_data(
+                punto_entregas_data
             )
-            frecuencia_arr = [nombre.strip() for nombre in frecuencia_str.split(",")]
+
             frecuencia_recepcion_mercaderias_queryset = (
-                TipoFrecuenciaBolsones.objects.filter(nombre__in=frecuencia_arr)
+                TipoFrecuenciaBolsones.objects.none()
             )
+            if "frecuencia_recepcion_mercaderias" in punto_entregas_data:
+                frecuencia_str = punto_entregas_data.pop(
+                    "frecuencia_recepcion_mercaderias", ""
+                )
+                frecuencia_arr = [
+                    nombre.strip() for nombre in frecuencia_str.split(",")
+                ]
+                frecuencia_recepcion_mercaderias_queryset = (
+                    TipoFrecuenciaBolsones.objects.filter(nombre__in=frecuencia_arr)
+                )
 
-        if punto_entregas_instance is None:
-            punto_entregas_instance = PuntoEntregas.objects.create(
-                **punto_entregas_data
+            if punto_entregas_instance is None:
+                punto_entregas_instance = PuntoEntregas.objects.create(
+                    **punto_entregas_data
+                )
+            else:
+                for field, value in punto_entregas_data.items():
+                    if field not in [
+                        "frecuencia_recepcion_mercaderias",
+                    ]:
+                        setattr(punto_entregas_instance, field, value)
+
+            if frecuencia_recepcion_mercaderias_queryset.exists():
+                punto_entregas_instance.frecuencia_recepcion_mercaderias.set(
+                    frecuencia_recepcion_mercaderias_queryset
+                )
+
+            punto_entregas_instance.save()
+
+            return punto_entregas_instance
+        except Exception as e:
+            logger.error(
+                f"Error en RelevamientoService.create_or_update_punto_entregas: {e}",
+                exc_info=True,
             )
-        else:
-            for field, value in punto_entregas_data.items():
-                if field not in [
-                    "frecuencia_recepcion_mercaderias",
-                ]:
-                    setattr(punto_entregas_instance, field, value)
-
-        if frecuencia_recepcion_mercaderias_queryset.exists():
-            punto_entregas_instance.frecuencia_recepcion_mercaderias.set(
-                frecuencia_recepcion_mercaderias_queryset
-            )
-
-        punto_entregas_instance.save()
-
-        return punto_entregas_instance
+            raise
 
     @staticmethod
     def populate_punto_entregas_data(punto_entregas_data):
@@ -824,127 +952,156 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def create_or_update_prestacion(prestacion_data, prestacion_instance=None):
-        prestacion_data = RelevamientoService.populate_prestacion_data(prestacion_data)
-
-        if prestacion_instance is None:
-            prestacion_instance = Prestacion.objects.create(**prestacion_data)
-        else:
-            prestacion_instance = assign_values_to_instance(
-                prestacion_instance, prestacion_data
+        try:
+            prestacion_data = RelevamientoService.populate_prestacion_data(
+                prestacion_data
             )
-        return prestacion_instance
+
+            if prestacion_instance is None:
+                prestacion_instance = Prestacion.objects.create(**prestacion_data)
+            else:
+                prestacion_instance = assign_values_to_instance(
+                    prestacion_instance, prestacion_data
+                )
+            return prestacion_instance
+        except Exception as e:
+            logger.error(
+                f"Error en RelevamientoService.create_or_update_prestacion: {e}",
+                exc_info=True,
+            )
+            raise
 
     @staticmethod
     def populate_prestacion_data(
         prestacion_data,
     ):  # pylint: disable=too-many-statements,too-many-branches
-        dias = [
-            "lunes",
-            "martes",
-            "miercoles",
-            "jueves",
-            "viernes",
-            "sabado",
-            "domingo",
-        ]
-        comidas = ["desayuno", "almuerzo", "merienda", "cena", "merienda_reforzada"]
-        aoe = [
-            "actual",
-            "espera",
-        ]
+        try:
+            dias = [
+                "lunes",
+                "martes",
+                "miercoles",
+                "jueves",
+                "viernes",
+                "sabado",
+                "domingo",
+            ]
+            comidas = ["desayuno", "almuerzo", "merienda", "cena", "merienda_reforzada"]
+            aoe = [
+                "actual",
+                "espera",
+            ]
 
-        for dia in dias:
-            for comida in comidas:
-                for estado in aoe:
-                    key = f"{dia}_{comida}_{estado}"
-                    if key in prestacion_data:
-                        prestacion_data[key] = convert_string_to_int(
-                            prestacion_data[key]
-                        )
+            for dia in dias:
+                for comida in comidas:
+                    for estado in aoe:
+                        key = f"{dia}_{comida}_{estado}"
+                        if key in prestacion_data:
+                            prestacion_data[key] = convert_string_to_int(
+                                prestacion_data[key]
+                            )
 
-        return prestacion_data
+            return prestacion_data
+        except Exception as e:
+            logger.error(f"Error en RelevamientoService.populate_prestacion_data: {e}")
+            raise
 
     @staticmethod
     def create_or_update_responsable_y_referente(
         responsable_es_referente, responsable_data, referente_data, sisoc_id
     ):
-        responsable = None
-        referente = None
+        try:
+            responsable = None
+            referente = None
 
-        if responsable_data and any(responsable_data.values()):
-            responsable = Referente.objects.filter(
-                documento=responsable_data.get("documento")
-            ).last()
+            if responsable_data and any(responsable_data.values()):
+                responsable = Referente.objects.filter(
+                    documento=responsable_data.get("documento")
+                ).last()
 
-            if responsable:
-                for key, value in responsable_data.items():
-                    setattr(responsable, key, value)
-                responsable.save()
-            else:
-                responsable = Referente.objects.create(
-                    nombre=responsable_data.get("nombre", None),
-                    apellido=responsable_data.get("apellido", None),
-                    mail=responsable_data.get("mail", None),
-                    celular=responsable_data.get("celular", None),
-                    documento=responsable_data.get("documento", None),
-                    funcion=responsable_data.get("funcion", None),
-                )
+                if responsable:
+                    for key, value in responsable_data.items():
+                        setattr(responsable, key, value)
+                    responsable.save()
+                else:
+                    responsable = Referente.objects.create(
+                        nombre=responsable_data.get("nombre", None),
+                        apellido=responsable_data.get("apellido", None),
+                        mail=responsable_data.get("mail", None),
+                        celular=responsable_data.get("celular", None),
+                        documento=responsable_data.get("documento", None),
+                        funcion=responsable_data.get("funcion", None),
+                    )
 
-        if responsable_es_referente:
-            referente = responsable  # Referente y Responsable son el mismo
-        elif referente_data and any(referente_data.values()):
-            referente = Referente.objects.filter(
-                documento=referente_data.get("documento")
-            ).last()
+            if responsable_es_referente:
+                referente = responsable  # Referente y Responsable son el mismo
+            elif referente_data and any(referente_data.values()):
+                referente = Referente.objects.filter(
+                    documento=referente_data.get("documento")
+                ).last()
 
-            if referente:
-                for key, value in referente_data.items():
-                    setattr(
-                        referente, key, value
-                    )  # Asignar incluso si el valor es None
-                referente.save()
+                if referente:
+                    for key, value in referente_data.items():
+                        setattr(
+                            referente, key, value
+                        )  # Asignar incluso si el valor es None
+                    referente.save()
 
-            else:
-                referente = Referente.objects.create(
-                    nombre=referente_data.get("nombre", None),
-                    apellido=referente_data.get("apellido", None),
-                    mail=referente_data.get("mail", None),
-                    celular=referente_data.get("celular", None),
-                    documento=referente_data.get("documento", None),
-                    funcion=referente_data.get("funcion", None),
-                )
+                else:
+                    referente = Referente.objects.create(
+                        nombre=referente_data.get("nombre", None),
+                        apellido=referente_data.get("apellido", None),
+                        mail=referente_data.get("mail", None),
+                        celular=referente_data.get("celular", None),
+                        documento=referente_data.get("documento", None),
+                        funcion=referente_data.get("funcion", None),
+                    )
 
-        if sisoc_id and referente:
-            com_rel = Relevamiento.objects.get(pk=sisoc_id)
-            comedor = com_rel.comedor
-            comedor.referente = referente
-            comedor.save()
+            if sisoc_id and referente:
+                com_rel = Relevamiento.objects.get(pk=sisoc_id)
+                comedor = com_rel.comedor
+                comedor.referente = referente
+                comedor.save()
 
-        return responsable.id if responsable else None, (
-            referente.id if referente else None
-        )
+            return responsable.id if responsable else None, (
+                referente.id if referente else None
+            )
+        except Exception as e:
+            logger.error(
+                f"Error en RelevamientoService.create_or_update_responsable_y_referente: {e}"
+            )
+            raise
 
     @staticmethod
     def create_or_update_excepcion(excepcion_data, excepcion_instance=None):
-        excepcion_data = RelevamientoService.populate_excepcion_data(excepcion_data)
+        try:
+            excepcion_data = RelevamientoService.populate_excepcion_data(excepcion_data)
 
-        if excepcion_instance is None:
-            excepcion_instance = Excepcion.objects.create(**excepcion_data)
-        else:
-            excepcion_instance = assign_values_to_instance(
-                excepcion_instance, excepcion_data
+            if excepcion_instance is None:
+                excepcion_instance = Excepcion.objects.create(**excepcion_data)
+            else:
+                excepcion_instance = assign_values_to_instance(
+                    excepcion_instance, excepcion_data
+                )
+            return excepcion_instance
+        except Exception as e:
+            logger.error(
+                f"Error en RelevamientoService.create_or_update_excepcion: {e}"
             )
-        return excepcion_instance
+            raise
 
     @staticmethod
     def populate_excepcion_data(excepcion_data):
-        if "motivo" in excepcion_data:
-            excepcion_data["motivo"] = get_object_or_none(
-                MotivoExcepcion, "nombre__iexact", excepcion_data["motivo"]
-            )
-        if "adjuntos" in excepcion_data:
-            excepcion_data["adjuntos"] = [
-                url.strip() for url in excepcion_data["adjuntos"].split(",")
-            ]
+        try:
+            if "motivo" in excepcion_data:
+                excepcion_data["motivo"] = get_object_or_none(
+                    MotivoExcepcion, "nombre__iexact", excepcion_data["motivo"]
+                )
+            if "adjuntos" in excepcion_data:
+                excepcion_data["adjuntos"] = [
+                    url.strip() for url in excepcion_data["adjuntos"].split(",")
+                ]
 
-        return excepcion_data
+            return excepcion_data
+        except Exception as e:
+            logger.error(f"Error en RelevamientoService.populate_excepcion_data: {e}")
+            raise
