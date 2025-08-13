@@ -190,9 +190,11 @@
 {% endblock %}
 
 {% block customJS %}
-  <script>
-    const PROCESS_URL = "{% url 'expediente_procesar' expediente.pk %}";
-    const CONFIRM_URL = "{% url 'expediente_confirm' expediente.pk %}";
-  </script>
-  <script src="{% static 'custom/js/expediente_detail.js' %}"></script>
+<script>
+  window.PROCESS_URL = "{% url 'expediente_procesar' expediente.pk %}";
+  window.CONFIRM_URL = "{% url 'expediente_confirm' expediente.pk %}";
+  window.CSRF_TOKEN = "{{ csrf_token }}";
+</script>
+<script src="{% static 'custom/js/expediente_detail.js' %}"></script>
 {% endblock %}
+
