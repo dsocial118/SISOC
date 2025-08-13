@@ -148,7 +148,7 @@ urlpatterns = [
     ),
     path(
         "comedores/editar-nomina/<int:pk>/",
-        nomina_editar_ajax,
+        group_required(["Comedores Nomina Editar"])(nomina_editar_ajax),
         name="nomina_editar_ajax",
     ),
     path(

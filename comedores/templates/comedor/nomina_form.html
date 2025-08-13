@@ -16,12 +16,9 @@
             <div class="card-body">
                 {% if messages %}
                     {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show"
+                        <div class="alert alert-{{ message.tags }}"
                              role="alert">
                             {{ message }}
-                            <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
                         </div>
                     {% endfor %}
                 {% endif %}
@@ -131,7 +128,7 @@
                                 aria-label="Cerrar"></button>
                     </div>
                     <div class="modal-body">
-                        <input type="hidden" name="ciudadano_id" id="ciudadano_id" />
+                        <input type="hidden" name="ciudadano" id="ciudadano_id" />
                         <div class="fs-6 fw-bold py-2 mb-3" id="ciudadano_nombre_display"></div>
                         <div class="row">
                             <div class="col-md-6">{{ form.estado|as_crispy_field }}</div>

@@ -8,6 +8,7 @@ from django.core.paginator import Paginator
 from django.contrib import messages
 from django.shortcuts import redirect
 from django.urls import reverse
+from django.shortcuts import get_object_or_404
 
 from relevamientos.models import Relevamiento, ClasificacionComedor
 from relevamientos.service import RelevamientoService
@@ -333,38 +334,45 @@ class ComedorService:
         if len(cleaned) < 4 or not cleaned.isdigit():
             return []
         return list(
-            Ciudadano.objects.filter(documento__startswith=cleaned).order_by(
-                "documento"
-            )[:max_results]
+            Ciudadano.objects.filter(documento__startswith=cleaned)
+                .only("id", "nombre", "apellido", "documento")
+                .order_by("documento")[:max_results]
         )
 
     @staticmethod
     def agregar_ciudadano_a_nomina(
         comedor_id, ciudadano_id, user, estado_id=None, observaciones=None
     ):
-        ciudadano = Ciudadano.objects.get(pk=ciudadano_id)
+        ciudadano = get_object_or_404(Ciudadano, pk=ciudadano_id)
 
         if Nomina.objects.filter(ciudadano=ciudadano, comedor_id=comedor_id).exists():
             return False, "Esta persona ya está en la nómina."
 
-        Nomina.objects.create(
-            ciudadano=ciudadano,
-            comedor_id=comedor_id,
-            estado_id=estado_id if estado_id else None,
-            observaciones=observaciones,
-        )
+        try:
+            with transaction.atomic():
+                Nomina.objects.create(
+                    ciudadano=ciudadano,
+                    comedor_id=comedor_id,
+                    estado_id=estado_id or None,
+                    observaciones=observaciones,
+                )
 
-        _ciudadano_programa, created = CiudadanoPrograma.objects.get_or_create(
-            ciudadano=ciudadano,
-            programas_id=2,
-            defaults={"creado_por": user},
-        )
-        if created:
-            HistorialCiudadanoProgramas.objects.create(
-                programa_id=2, ciudadano=ciudadano, accion="agregado", usuario=user
-            )
+                _ciudadano_programa, created = CiudadanoPrograma.objects.get_or_create(
+                    ciudadano=ciudadano,
+                    programas_id=2,
+                    defaults={"creado_por": user},
+                )
+                if created:
+                    HistorialCiudadanoProgramas.objects.create(
+                        programa_id=2,
+                        ciudadano=ciudadano,
+                        accion="agregado",
+                        usuario=user
+                    )
 
-        return True, "Persona añadida correctamente a la nómina."
+            return True, "Persona añadida correctamente a la nómina."
+        except Exception as e:
+            return False, f"Ocurrió un error al agregar a la nómina: {e}"
 
     @staticmethod
     @transaction.atomic
@@ -385,6 +393,5 @@ class ComedorService:
             observaciones=observaciones,
         )
         if not ok:
-            # Si falla por duplicado (muy raro al crear nuevo), borrar ciudadano creado para no dejar inconsistencia
             ciudadano.delete()
         return ok, msg
