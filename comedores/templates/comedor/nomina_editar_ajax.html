@@ -1,9 +1,0 @@
-{% csrf_token %}
-<h5 class="mt-3">Ciudadano: {{ form.instance.ciudadano }}</h5>
-<input type="hidden"
-       name="ciudadano"
-       value="{{ form.instance.ciudadano.id }}" />
-<p class="mt-3">Estado:</p>
-{{ form.estado }}
-<p class="mt-3">Observaciones:</p>
-{{ form.observaciones }}
