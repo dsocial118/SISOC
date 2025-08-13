@@ -2,12 +2,7 @@ from django.urls import path
 
 from configuraciones.decorators import group_required
 
-from centrodefamilia.views.informecabal import (
-    ExpedienteCreateView,
-    ExpedienteDetailView,
-    ExpedienteListView,
-    ExpedienteUpdateView,
-)
+
 
 from centrodefamilia.views.centro import (
     CentroCreateView,
@@ -123,26 +118,6 @@ urlpatterns = [
             ParticipanteActividadPromoverView.as_view()
         ),
         name="participanteactividad_promover",
-    ),
-    path(
-        "centro/<int:centro_id>/expedientes/",
-        group_required(["ReferenteCentro", "CDF SSE"])(ExpedienteListView.as_view()),
-        name="expediente_list",
-    ),
-    path(
-        "centro/<int:centro_id>/expedientes/nuevo/",
-        group_required(["ReferenteCentro", "CDF SSE"])(ExpedienteCreateView.as_view()),
-        name="expediente_create",
-    ),
-    path(
-        "centro/<int:centro_id>/expedientes/<int:pk>/",
-        group_required(["ReferenteCentro", "CDF SSE"])(ExpedienteDetailView.as_view()),
-        name="expediente_detail",
-    ),
-    path(
-        "centro/<int:centro_id>/expedientes/<int:pk>/editar/",
-        group_required(["ReferenteCentro", "CDF SSE"])(ExpedienteUpdateView.as_view()),
-        name="expediente_update",
     ),
     path(
         "actividades/nueva/",

@@ -24,7 +24,7 @@ urlpatterns = [
     # ProvinciaCeliaquia: gestión básica de expedientes
     path(
         "expedientes/",
-        group_required(["ProvinciaCeliaquia", "CoordinadorCeliaquia"])(
+        group_required(["ProvinciaCeliaquia", "CoordinadorCeliaquia", "TecnicoCeliaquia"])(
             ExpedienteListView.as_view()
         ),
         name="expediente_list",
