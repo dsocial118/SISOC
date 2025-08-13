@@ -4,15 +4,19 @@ celiaquia/views/expediente.py
 Breve descripción del cambio:
 - Centraliza ExpedienteListView para que una única lista sirva a Provincia, Subsecretaría (Coordinador) y Técnico.
 - Provincia: ve sólo sus expedientes.
-- CoordinadorCeliaquia: ve CONFIRMACION_DE_ENVIO y ASIGNADO.
-- TecnicoCeliaquia: ve los expedientes donde es técnico asignado (ASIGNADO, EN_REVISION, VALIDADO_TECNICO, CERRADO si aplica).
+- CoordinadorCeliaquia: ve CONFIRMACION_DE_ENVIO, RECEPCIONADO y ASIGNADO (bandeja completa).
+- TecnicoCeliaquia: ve los expedientes donde es técnico asignado (ASIGNADO, y futuros estados técnicos).
 
 Estados y flujos impactados:
-- Navegación y gestión desde una única lista por rol.
+- Provincia: CREADO -> PROCESADO -> EN_ESPERA -> CONFIRMACION_DE_ENVIO (sin cambios)
+- Subsecretaría:
+    * Recepcionar: CONFIRMACION_DE_ENVIO -> RECEPCIONADO
+    * Asignar técnico: RECEPCIONADO -> ASIGNADO (o cambiar técnico manteniendo ASIGNADO)
 
 Dependencias con otros archivos:
-- templates/celiaquia/expediente_list.html (ya existente; la vista entrega 'expedientes')
-- services/* para acciones puntuales (procesar, confirmar, recepcionar, asignar), no modificados aquí.
+- templates/celiaquia/expediente_list.html (acciones por rol/estado; badges para RECEPCIONADO)
+- static/custom/js/celiaquia_list.js (handlers para recepcionar/asignar)
+- services/* para acciones puntuales (procesar, confirmar)
 """
 
 import json
@@ -29,7 +33,7 @@ from django.contrib import messages
 from django.core.exceptions import ValidationError, PermissionDenied
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import User
 
 from celiaquia.forms import ExpedienteForm, ConfirmarEnvioForm
 from celiaquia.models import (
@@ -56,11 +60,11 @@ class ExpedienteListView(ListView):
     Descripción:
       - Única lista para todos los roles.
         * ProvinciaCeliaquia: lista sólo sus expedientes.
-        * CoordinadorCeliaquia: lista expedientes en CONFIRMACION_DE_ENVIO o ASIGNADO.
+        * CoordinadorCeliaquia: lista expedientes en CONFIRMACION_DE_ENVIO, RECEPCIONADO o ASIGNADO.
         * TecnicoCeliaquia: lista expedientes donde es técnico asignado.
       - Orden descendente por fecha_creacion.
 
-    Nota: el template ya existente consume 'expedientes'.
+    Nota: el template consume 'expedientes' y, para Coordinador, 'tecnicos'.
     """
 
     model = Expediente
@@ -87,7 +91,9 @@ class ExpedienteListView(ListView):
 
         # Coordinador: bandeja de entrada y seguimiento
         if _user_in_group(user, "CoordinadorCeliaquia"):
-            return qs.filter(estado__nombre__in=["CONFIRMACION_DE_ENVIO", "ASIGNADO"]).order_by("-fecha_creacion")
+            return qs.filter(
+                estado__nombre__in=["CONFIRMACION_DE_ENVIO", "RECEPCIONADO", "ASIGNADO"]
+            ).order_by("-fecha_creacion")
 
         # Técnico: sus expedientes asignados (incluye distintos estados del ciclo técnico)
         if _user_in_group(user, "TecnicoCeliaquia"):
@@ -95,6 +101,17 @@ class ExpedienteListView(ListView):
 
         # Provincia (default): sólo los suyos
         return qs.filter(usuario_provincia=user).order_by("-fecha_creacion")
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        user = self.request.user
+        # Para el selector inline de técnico en la lista del Coordinador
+        ctx["tecnicos"] = []
+        if _user_in_group(user, "CoordinadorCeliaquia"):
+            ctx["tecnicos"] = User.objects.filter(
+                groups__name="TecnicoCeliaquia"
+            ).order_by("last_name", "first_name")
+        return ctx
 
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -299,8 +316,8 @@ class ExpedienteUpdateView(UpdateView):
 class RecepcionarExpedienteView(View):
     """
     Descripción:
-      - Subsecretaría (Coordinador) marca recepción del expediente.
-      - No cambia estado aquí (ASIGNADO se setea al asignar técnico).
+      - Subsecretaría (Coordinador) recepciona el expediente.
+      - Cambia estado: CONFIRMACION_DE_ENVIO -> RECEPCIONADO.
       - Registra usuario_modificador y muestra mensaje.
     """
 
@@ -312,8 +329,11 @@ class RecepcionarExpedienteView(View):
             messages.warning(request, "El expediente no está pendiente de recepción.")
             return redirect("expediente_detail", pk=pk)
 
+        estado_recep, _ = EstadoExpediente.objects.get_or_create(nombre="RECEPCIONADO")
+        expediente.estado = estado_recep
         expediente.usuario_modificador = request.user
-        expediente.save(update_fields=["usuario_modificador"])
+        expediente.save(update_fields=["estado", "usuario_modificador"])
+
         messages.success(request, "Expediente recepcionado correctamente. Ahora puede asignar un técnico.")
         return redirect("expediente_detail", pk=pk)
 
@@ -326,7 +346,7 @@ class AsignarTecnicoView(View):
     Descripción:
       - Subsecretaría (Coordinador) asigna un técnico. Al asignar, el expediente pasa a ASIGNADO.
     Reglas:
-      - Solo desde CONFIRMACION_DE_ENVIO o si ya estaba ASIGNADO (cambio de técnico).
+      - Solo desde RECEPCIONADO o si ya estaba ASIGNADO (cambio de técnico).
       - Técnico debe pertenecer al grupo TecnicoCeliaquia.
     """
 
@@ -345,8 +365,8 @@ class AsignarTecnicoView(View):
         tecnico = get_object_or_404(tecnico_qs, pk=tecnico_id)
 
         estado_actual = expediente.estado.nombre
-        if estado_actual not in ("CONFIRMACION_DE_ENVIO", "ASIGNADO"):
-            messages.error(request, "El expediente no puede asignarse en su estado actual.")
+        if estado_actual not in ("RECEPCIONADO", "ASIGNADO"):
+            messages.error(request, "Primero debe recepcionar el expediente.")
             return redirect("expediente_detail", pk=pk)
 
         AsignacionTecnico.objects.update_or_create(
@@ -364,4 +384,3 @@ class AsignarTecnicoView(View):
             f"Técnico {tecnico.get_full_name() or tecnico.username} asignado correctamente. Estado: ASIGNADO.",
         )
         return redirect("expediente_detail", pk=pk)
-

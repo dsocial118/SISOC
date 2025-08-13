@@ -3,12 +3,13 @@
  * Breve descripción:
  *   Acciones inline desde la lista de Expedientes según rol:
  *   - Provincia: Procesar (CREADO) y Confirmar Envío (EN_ESPERA).
- *   - Coordinador: Recepcionar (CONFIRMACION_DE_ENVIO).
+ *   - Coordinador: Recepcionar (CONFIRMACION_DE_ENVIO -> RECEPCIONADO) y Asignar técnico (RECEPCIONADO|ASIGNADO -> ASIGNADO).
  *
  * Estados y flujos impactados:
  *   CREADO → (procesar) → PROCESADO → EN_ESPERA
  *   EN_ESPERA → (confirmar) → CONFIRMACION_DE_ENVIO
- *   CONFIRMACION_DE_ENVIO → (recepcionar) → (sin cambio de estado; asignación pone ASIGNADO)
+ *   CONFIRMACION_DE_ENVIO → (recepcionar) → RECEPCIONADO
+ *   RECEPCIONADO|ASIGNADO → (asignar técnico) → ASIGNADO
  *
  * Dependencias:
  *   - Plantilla 'celiaquia/expediente_list.html' inyecta window.CSRF_TOKEN.
@@ -16,10 +17,14 @@
  *       name='expediente_procesar'        (POST)
  *       name='expediente_confirm'         (POST)
  *       name='expediente_recepcionar'     (POST)
+ *       name='expediente_asignar_tecnico' (POST)
  *   - Botones con data-atributos:
  *       .js-process       data-process-url="..."
  *       .js-confirm       data-confirm-url="..."
  *       .js-recepcionar   data-recepcionar-url="..."
+ *       .js-assign        data-assign-url="..."
+ *   - Select del técnico en la fila (solo Coordinador):
+ *       <select class="form-select form-select-sm js-tecnico">...</select>
  *   - Bootstrap (alertas y estilos)
  * -------------------------------------------------------------------------
  */
@@ -52,8 +57,8 @@
       </div>`;
   }
 
-  async function postJson(url) {
-    const resp = await fetch(url, {
+  async function postJson(url, body=null) {
+    const opts = {
       method: 'POST',
       credentials: 'same-origin',
       headers: {
@@ -61,9 +66,16 @@
         'X-Requested-With': 'XMLHttpRequest',
         'Accept': 'application/json'
       }
-    });
+    };
+    if (body && typeof body === 'object') {
+      // Usamos x-www-form-urlencoded cuando enviamos datos
+      const params = new URLSearchParams();
+      Object.entries(body).forEach(([k, v]) => params.append(k, v));
+      opts.headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8';
+      opts.body = params.toString();
+    }
 
-    // Intentamos JSON; si no, devolvemos texto
+    const resp = await fetch(url, opts);
     const ct = resp.headers.get('Content-Type') || '';
     if (ct.includes('application/json')) {
       const data = await resp.json();
@@ -172,11 +184,47 @@
             const msg = (data && data.error) || text || `HTTP ${status}`;
             throw new Error(msg);
           }
-          showAlert('success', 'Expediente recepcionado. Ahora podés asignar un técnico.');
+          // Ahora explicamos que pasó a RECEPCIONADO
+          showAlert('success', 'Expediente recepcionado (estado: RECEPCIONADO). Ahora podés asignar un técnico.');
           setTimeout(() => window.location.reload(), 700);
         } catch (err) {
           console.error('Recepcionar expediente:', err);
           showAlert('danger', 'No se pudo recepcionar el expediente. ' + err.message);
+        }
+      })();
+    });
+  }
+
+  function attachAssignHandlers() {
+    const table = document.querySelector('table');
+    if (!table) return;
+
+    delegate(table, '.js-assign', 'click', (e, btn) => {
+      const url = btn.getAttribute('data-assign-url');
+      if (!url) {
+        showAlert('danger', 'No se configuró la URL de asignación.');
+        return;
+      }
+      const row = btn.closest('tr');
+      const select = row && row.querySelector('.js-tecnico');
+      const tecnicoId = select && select.value;
+      if (!tecnicoId) {
+        showAlert('warning', 'Seleccioná un técnico antes de asignar.');
+        return;
+      }
+
+      withSpinner(btn, 'Asignando…', async () => {
+        try {
+          const { ok, data, text, status } = await postJson(url, { tecnico_id: tecnicoId });
+          if (!ok) {
+            const msg = (data && data.error) || text || `HTTP ${status}`;
+            throw new Error(msg);
+          }
+          showAlert('success', 'Técnico asignado correctamente. El expediente está en ASIGNADO.');
+          setTimeout(() => window.location.reload(), 700);
+        } catch (err) {
+          console.error('Asignar técnico:', err);
+          showAlert('danger', 'No se pudo asignar el técnico. ' + err.message);
         }
       })();
     });
@@ -187,5 +235,6 @@
     attachProcessHandlers();
     attachConfirmHandlers();
     attachRecepcionarHandlers();
+    attachAssignHandlers();
   });
 })();
