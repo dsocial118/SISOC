@@ -335,8 +335,8 @@ class ComedorService:
             return []
         return list(
             Ciudadano.objects.filter(documento__startswith=cleaned)
-                .only("id", "nombre", "apellido", "documento")
-                .order_by("documento")[:max_results]
+            .only("id", "nombre", "apellido", "documento")
+            .order_by("documento")[:max_results]
         )
 
     @staticmethod
@@ -367,7 +367,7 @@ class ComedorService:
                         programa_id=2,
                         ciudadano=ciudadano,
                         accion="agregado",
-                        usuario=user
+                        usuario=user,
                     )
 
             return True, "Persona añadida correctamente a la nómina."

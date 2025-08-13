@@ -109,7 +109,9 @@ def nomina_editar_ajax(request, pk):
         form = NominaForm(request.POST, instance=nomina)
         if form.is_valid():
             form.save()
-            return JsonResponse({"success": True, "message": "Datos modificados con éxito."})
+            return JsonResponse(
+                {"success": True, "message": "Datos modificados con éxito."}
+            )
         else:
             return JsonResponse({"success": False, "errors": form.errors})
     else:  # GET
@@ -207,7 +209,9 @@ class NominaCreateView(CreateView):
                     messages.warning(request, msg)
                 return redirect(self.get_success_url())
             else:
-                messages.error(request, "Datos inválidos para agregar ciudadano a la nómina.")
+                messages.error(
+                    request, "Datos inválidos para agregar ciudadano a la nómina."
+                )
                 context = self.get_context_data(form=form)
                 return self.render_to_response(context)
         else:
