@@ -1,12 +1,14 @@
+# centrodefamilia/urls.py
 from django.urls import path
-
 from configuraciones.decorators import group_required
 
 from centrodefamilia.views.informecabal import (
-    ExpedienteCreateView,
-    ExpedienteDetailView,
-    ExpedienteListView,
-    ExpedienteUpdateView,
+    InformeCabalArchivoDetailView,
+    InformeCabalListView,
+    InformeCabalPreviewAjaxView,
+    InformeCabalProcessAjaxView,
+    InformeCabalRegistroDetailView,
+    InformeCabalReprocessCenterAjaxView,
 )
 
 from centrodefamilia.views.centro import (
@@ -15,6 +17,7 @@ from centrodefamilia.views.centro import (
     CentroDetailView,
     CentroListView,
     CentroUpdateView,
+    InformeCabalArchivoPorCentroDetailView,
 )
 
 from centrodefamilia.views.actividad import (
@@ -34,6 +37,11 @@ from centrodefamilia.views.participante import (
 )
 
 urlpatterns = [
+    path(
+        "centros/<int:centro_id>/informecabal/<int:pk>/",
+        group_required(["CDF SSE"])(InformeCabalArchivoPorCentroDetailView.as_view()),
+        name="informecabal_archivo_centro_detail",
+    ),
     path(
         "centros/",
         group_required(["ReferenteCentro", "CDF SSE"])(CentroListView.as_view()),
@@ -108,7 +116,6 @@ urlpatterns = [
         ),
         name="participanteactividad_delete",
     ),
-    # Lista de espera de participantes
     path(
         "centros/<int:centro_id>/actividades/<int:actividad_id>/lista-espera/",
         group_required(["ReferenteCentro", "CDF SSE"])(
@@ -116,7 +123,6 @@ urlpatterns = [
         ),
         name="actividadcentro_lista_espera",
     ),
-    # Promover participante de lista de espera
     path(
         "centros/<int:centro_id>/actividades/<int:actividad_id>/lista-espera/<int:pk>/promover/",
         group_required(["ReferenteCentro", "CDF SSE"])(
@@ -124,29 +130,42 @@ urlpatterns = [
         ),
         name="participanteactividad_promover",
     ),
+    # ——— NUEVO: Informe CABAL ———
     path(
-        "centro/<int:centro_id>/expedientes/",
-        group_required(["ReferenteCentro", "CDF SSE"])(ExpedienteListView.as_view()),
-        name="expediente_list",
+        "informecabal/",
+        group_required(["CDF SSE"])(InformeCabalListView.as_view()),
+        name="informecabal_list",
     ),
     path(
-        "centro/<int:centro_id>/expedientes/nuevo/",
-        group_required(["ReferenteCentro", "CDF SSE"])(ExpedienteCreateView.as_view()),
-        name="expediente_create",
+        "informecabal/preview/",
+        group_required(["CDF SSE"])(InformeCabalPreviewAjaxView.as_view()),
+        name="informecabal_preview",
     ),
     path(
-        "centro/<int:centro_id>/expedientes/<int:pk>/",
-        group_required(["ReferenteCentro", "CDF SSE"])(ExpedienteDetailView.as_view()),
-        name="expediente_detail",
+        "informecabal/<int:pk>/",
+        group_required(["CDF SSE"])(InformeCabalArchivoDetailView.as_view()),
+        name="informecabal_archivo_detail",
     ),
     path(
-        "centro/<int:centro_id>/expedientes/<int:pk>/editar/",
-        group_required(["ReferenteCentro", "CDF SSE"])(ExpedienteUpdateView.as_view()),
-        name="expediente_update",
+        "informecabal/process/",
+        group_required(["CDF SSE"])(InformeCabalProcessAjaxView.as_view()),
+        name="informecabal_process",
     ),
+    path(
+        "informecabal/registro/<int:pk>/",
+        group_required(["CDF SSE"])(InformeCabalRegistroDetailView.as_view()),
+        name="informecabal_registro_detail",
+    ),
+    # (Dejamos tus rutas previas de “expedientes” intactas, aunque NO se usan en este flujo)
     path(
         "actividades/nueva/",
         group_required(["CDF SSE"])(ActividadCreateView.as_view()),
         name="actividad_create_sola",
+    ),
+    # repro
+    path(
+        "informecabal/reprocess/",
+        group_required(["CDF SSE"])(InformeCabalReprocessCenterAjaxView.as_view()),
+        name="informecabal_reprocess_center",
     ),
 ]
