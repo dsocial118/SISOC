@@ -10,7 +10,7 @@ from django.conf import settings
 from django.db.models import Q
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 from admisiones.models.admisiones import (
     FormularioProyectoDisposicion,
