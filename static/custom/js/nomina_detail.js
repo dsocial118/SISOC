@@ -3,13 +3,11 @@ document.addEventListener("DOMContentLoaded", function() {
   const modalBody = document.querySelector("#editarNominaModal .modal-body");
   const modalForm = document.getElementById("editarNominaForm");
 
-  // Cuando se clickea en editar
   document.querySelectorAll(".editar-nomina").forEach(function(btn) {
     btn.addEventListener("click", function(e) {
       e.preventDefault();
       const id = this.dataset.id;
 
-      // Cargar el formulario via AJAX
       fetch(`/comedores/editar-nomina/${id}/`)
         .then(response => response.text())
         .then(html => {
@@ -20,7 +18,6 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   });
 
-  // Enviar el form con AJAX
   modalForm.addEventListener("submit", function(e) {
     e.preventDefault();
 
@@ -41,7 +38,10 @@ document.addEventListener("DOMContentLoaded", function() {
       } else {
         modalBody.innerHTML = "";
         for (const field in data.errors) {
-          modalBody.innerHTML += `<div class="text-danger">${field}: ${data.errors[field].join(", ")}</div>`;
+          const div = document.createElement("div");
+          div.classList.add("text-danger");
+          div.textContent = `${field}: ${data.errors[field].join(", ")}`;
+          modalBody.appendChild(div);
         }
       }
     });

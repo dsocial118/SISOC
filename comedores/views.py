@@ -109,7 +109,7 @@ def nomina_editar_ajax(request, pk):
         form = NominaForm(request.POST, instance=nomina)
         if form.is_valid():
             form.save()
-            return JsonResponse({"success": True})
+            return JsonResponse({"success": True, "message": "Datos modificados con éxito."})
         else:
             return JsonResponse({"success": False, "errors": form.errors})
     else:  # GET
@@ -185,26 +185,31 @@ class NominaCreateView(CreateView):
         return context
 
     def post(self, request, *args, **kwargs):
-        if "ciudadano_id" in request.POST:
+        if "ciudadano" in request.POST:
             # Agregar ciudadano existente a nómina
-            ciudadano_id = request.POST.get("ciudadano_id")
-            estado_id = request.POST.get("estado")
-            observaciones = request.POST.get("observaciones")
+            form = NominaForm(request.POST)
+            if form.is_valid():
+                ciudadano_id = form.cleaned_data["ciudadano"].id
+                estado_id = form.cleaned_data["estado"].id
+                observaciones = form.cleaned_data.get("observaciones")
 
-            ok, msg = ComedorService.agregar_ciudadano_a_nomina(
-                comedor_id=self.kwargs["pk"],
-                ciudadano_id=ciudadano_id,
-                user=request.user,
-                estado_id=estado_id,
-                observaciones=observaciones,
-            )
-            if ok:
-                messages.success(request, msg)
+                ok, msg = ComedorService.agregar_ciudadano_a_nomina(
+                    comedor_id=self.kwargs["pk"],
+                    ciudadano_id=ciudadano_id,
+                    user=request.user,
+                    estado_id=estado_id,
+                    observaciones=observaciones,
+                )
+
+                if ok:
+                    messages.success(request, msg)
+                else:
+                    messages.warning(request, msg)
+                return redirect(self.get_success_url())
             else:
-                messages.warning(request, msg)
-
-            return redirect(self.get_success_url())
-
+                messages.error(request, "Datos inválidos para agregar ciudadano a la nómina.")
+                context = self.get_context_data(form=form)
+                return self.render_to_response(context)
         else:
             # Crear ciudadano nuevo y agregar a nómina
             form_ciudadano = CiudadanoFormParaNomina(request.POST)
