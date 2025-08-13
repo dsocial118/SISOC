@@ -1,20 +1,16 @@
 import re
-import logging
 from typing import Union
 
 from django.db.models import Q, Count, Prefetch
-from django.db import transaction
 from django.core.paginator import Paginator
 from django.contrib import messages
 from django.shortcuts import redirect
 from django.urls import reverse
-from django.shortcuts import get_object_or_404
 
 from relevamientos.models import Relevamiento, ClasificacionComedor
 from relevamientos.service import RelevamientoService
 from comedores.forms.comedor_form import ImagenComedorForm
 from comedores.models import Comedor, ImagenComedor, Nomina, Observacion, Referente
-from ciudadanos.models import Ciudadano, HistorialCiudadanoProgramas, CiudadanoPrograma
 from comedores.utils import (
     get_object_by_filter,
     get_id_by_nombre,
@@ -25,8 +21,6 @@ from comedores.utils import (
 from admisiones.models.admisiones import Admision
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 from intervenciones.models.intervenciones import Intervencion
-
-logger = logging.getLogger(__name__)
 
 
 class ComedorService:
@@ -327,71 +321,3 @@ class ComedorService:
                 return redirect("comedor_detalle", pk=comedor.id)
         else:
             return redirect("comedor_detalle", pk=comedor.id)
-
-    @staticmethod
-    def buscar_ciudadanos_por_documento(query, max_results=10):
-        cleaned = (query or "").strip()
-        if len(cleaned) < 4 or not cleaned.isdigit():
-            return []
-        return list(
-            Ciudadano.objects.filter(documento__startswith=cleaned)
-            .only("id", "nombre", "apellido", "documento")
-            .order_by("documento")[:max_results]
-        )
-
-    @staticmethod
-    def agregar_ciudadano_a_nomina(
-        comedor_id, ciudadano_id, user, estado_id=None, observaciones=None
-    ):
-        ciudadano = get_object_or_404(Ciudadano, pk=ciudadano_id)
-
-        if Nomina.objects.filter(ciudadano=ciudadano, comedor_id=comedor_id).exists():
-            return False, "Esta persona ya está en la nómina."
-
-        try:
-            with transaction.atomic():
-                Nomina.objects.create(
-                    ciudadano=ciudadano,
-                    comedor_id=comedor_id,
-                    estado_id=estado_id or None,
-                    observaciones=observaciones,
-                )
-
-                _ciudadano_programa, created = CiudadanoPrograma.objects.get_or_create(
-                    ciudadano=ciudadano,
-                    programas_id=2,
-                    defaults={"creado_por": user},
-                )
-                if created:
-                    HistorialCiudadanoProgramas.objects.create(
-                        programa_id=2,
-                        ciudadano=ciudadano,
-                        accion="agregado",
-                        usuario=user,
-                    )
-
-            return True, "Persona añadida correctamente a la nómina."
-        except Exception as e:
-            return False, f"Ocurrió un error al agregar a la nómina: {e}"
-
-    @staticmethod
-    @transaction.atomic
-    def crear_ciudadano_y_agregar_a_nomina(
-        ciudadano_data, comedor_id, user, estado_id, observaciones
-    ):
-        """
-        Crea un ciudadano nuevo y lo agrega a la nómina con estado y observaciones.
-        ciudadano_data: dict con datos para crear ciudadano (ej: datos validados del form).
-        """
-        ciudadano = Ciudadano.objects.create(**ciudadano_data)
-
-        ok, msg = ComedorService.agregar_ciudadano_a_nomina(
-            comedor_id=comedor_id,
-            ciudadano_id=ciudadano.id,
-            user=user,
-            estado_id=estado_id,
-            observaciones=observaciones,
-        )
-        if not ok:
-            ciudadano.delete()
-        return ok, msg

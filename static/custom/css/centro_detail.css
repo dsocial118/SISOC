@@ -1,111 +1,10 @@
-/* -------------------------------------- */
-/* centro_detail.css (versión final FIX)  */
-/* unifica todos tus estilos             */
-/* -------------------------------------- */
-
-/* 0) Variables de color */
-:root {
-  --clr-bg-primary: #132c47;
-  --clr-bg-secondary: #1e2d3f;
-  --clr-contrast: #004a7c;
-  --clr-accent-00: #056c68;
-  --clr-accent-01: #068782;
-  --clr-accent-02: #06a29c;
-  --clr-accent-03: #09b4ae;
-  --clr-accent-04: #07d8d1;
-  --clr-positive: #28a745;
-  --clr-border-light: rgba(255,255,255,0.4);
-}
-
-/* 0b) Transiciones suaves globales */
-* {
-  transition: background-color .2s ease, color .2s ease, border-color .2s ease;
-}
-
-/* 1) Reset márgenes/paddings */
-.no-gutters {
-  margin: 0;
-  padding: 0;
-}
-
-/* 1b) Acciones “Volver” / “Imprimir” */
-.header-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-.header-actions .btn {
-  color: #fff;
-  border: 1px solid rgba(255,255,255,0.7);
-  background: transparent;
-  border-radius: 1.5rem;
-  padding: 0.25rem 1rem;
-  font-weight: 600;
-  font-size: 0.875rem;
-}
-.header-actions .btn:hover {
-  background-color: rgba(255,255,255,0.1);
-}
-
-/* 2) ENCABEZADO full-width, esquinas redondeadas */
-.page-header {
-  border-radius: 0.75rem;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-}
-.page-header .card-body {
-  background-color: var(--clr-bg-primary);
-  height: 100px;
-  padding: 0;
-  display: flex;
-  align-items: center;
-}
-.header-bar {
-  width: 8px;
-  height: 100%;
-  background-color: var(--clr-contrast);
-}
-.header-title {
-  font-family: 'Playfair Display', serif;
-  font-weight: 700;
-  font-size: 2rem;
-  color: #fff;
-  margin: 0;
-  padding: 0 1rem;
-  display: flex;
-  align-items: center;
-}
-.separator {
-  font-size: 1.5rem;
-  color: #fff;
-  margin: 0 0.5rem;
-}
-.header-badge {
-  font-size: 1rem;
-  font-weight: 600;
-  padding: 0.5rem 1rem;
-  color: var(--clr-positive);
-  background-color: rgba(40,167,69,0.15);
-  border: 1px solid var(--clr-positive);
-  border-radius: 0.375rem;
-  text-transform: none;
-}
-
-/* 3) TARJETA DE UBICACIÓN */
+/* === Ajuste de bloque principal === */
 .location-card {
   position: relative;
   display: flex;
   height: 380px;
   background: var(--clr-bg-secondary);
-  display: flex;
-  height: 380px;
-  background: var(--clr-bg-secondary);
   color: #fff;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 8px 24px rgba(0,0,0,.25);
-  align-items: center; /* centra verticalmente el contenido */
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(0,0,0,.25);
@@ -118,37 +17,32 @@
   background: linear-gradient(180deg,#0b756d,#0a5b57);
   border-top-left-radius: 16px;
   border-bottom-left-radius: 16px;
-  width: 74px;
-  background: linear-gradient(180deg,#0b756d,#0a5b57);
-  border-top-left-radius: 16px;
-  border-bottom-left-radius: 16px;
   position: relative;
-  z-index: 2;
   z-index: 2;
 }
 .location-card .left-tab .tab-text {
   position: absolute;
   top: 50%; left: 50%;
-  top: 50%; left: 50%;
   transform: translate(-50%,-50%) rotate(-90deg);
-  font-weight: 700;
-  font-size: .95rem;
   font-weight: 700;
   font-size: .95rem;
   white-space: nowrap;
 }
 
-/* 3b) contenedor del mapa */
-.map-container {
-  width: 100%;
-  height: 275px !important;
+/* mapa centrado con margen */
+.location-card .map-container {
+  width: 420px;
+  height: 300px;
+  padding: 1rem;
   flex-shrink: 0;
   background: transparent;
   display: flex;
   align-items: center; /* centra verticalmente el iframe */
   justify-content: center;
+  height: calc(100% - 2rem); /* deja margen superior e inferior */
+  margin: 1rem 0; /* margen arriba y abajo */
 }
-.map-container iframe {
+.location-card .map-container iframe {
   border-radius: 12px;
   display: block;
   width: 100%;
@@ -172,47 +66,30 @@
   font-size: 1.15rem;
   color: #e8f1ff;
   margin: 0 0 .6rem;
-  flex: 1;
-  padding: 1.25rem 1.75rem;
-  background: #1b2a3c;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  height: 100%;
-}
-
-/* título + línea */
-.section-title {
-  font-weight: 800;
-  font-size: 1.15rem;
-  color: #e8f1ff;
-  margin: 0 0 .6rem;
 }
 .section-divider {
   height: 2px;
   width: 100%;
   background: linear-gradient(90deg, rgba(255,255,255,.65), rgba(255,255,255,0));
   border: 0;
+  margin: 0 0 1rem;
 }
+
 /* lista en dos columnas */
 .location-card .details-container ul {
   list-style: none;
   margin: 0;
-  margin: 0;
   padding: 0;
   column-count: 2;
-  column-gap: 2.25rem;
   column-gap: 2.25rem;
 }
 .location-card .details-container li {
   display: flex;
   align-items: center;
   margin-bottom: .6rem;
-  margin-bottom: .6rem;
 }
 .location-card .details-container li i {
   width: 1.25rem;
-  margin-right: .5rem;
   margin-right: .5rem;
   color: var(--clr-contrast);
 }
@@ -224,13 +101,8 @@
   display: flex;
   width: 280px;
   z-index: 3;
-  width: 280px;
-  z-index: 3;
 }
 .location-card .right-tabs .tab-item {
-  width: 70px;
-  cursor: pointer;
-  border-left: 1px solid rgba(255,255,255,.25);
   width: 70px;
   cursor: pointer;
   border-left: 1px solid rgba(255,255,255,.25);
@@ -268,111 +140,6 @@
 }
 .content-seccion.active {
   display: block;
-  /* margen para no quedar debajo de las tabs (4 tabs × 60px = 240px) */
-  margin-right: 240px;
-  overflow: auto;
-  transition: padding-left 0.3s ease;
-}
-
-/* Acordion  */
-.accordion-horizontal {
-    display: flex;
-    height: 300px;
-    width: 100%;
-    gap: 0;
-    overflow: hidden; 
-}
-
-.accordion-panel {
-    position: relative;
-    display: flex;
-    flex-direction: row;
-    width: 50px; 
-    height: 100%;
-    cursor: pointer;
-    overflow: visible;
-    transition: width 0.3s ease;
-    flex-shrink: 0;
-}
-:root[data-bs-theme="dark"] .accordion-panel{
-    background-color: #1e2d3f !important;
-}
-:root[data-bs-theme="light"] .accordion-panel{
-    background-color: #f4f6f9 !important;
-}
-
-.accordion-panel.open {
-    width: auto;
-}
-
-.accordion-header {
-    writing-mode: vertical-lr;
-    transform: rotate(180deg);
-    text-orientation: mixed;
-    color: white;
-    font-weight: 600;
-    padding: 0.5rem 0.75rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    user-select: none;
-    min-width: 60px;
-    box-sizing: border-box;
-    border-left: 1px solid #13e9e2;
-}
-
-.bg-header-1 { background-color: var(--clr-accent-00); }
-.bg-header-2 { background-color: var(--clr-accent-01); }
-.bg-header-3 { background-color: var(--clr-accent-02); }
-.bg-header-4 { background-color: var(--clr-accent-03); }
-.bg-header-5 { background-color: var(--clr-accent-04); }
-
-.accordion-content {
-    position: absolute;
-    top: 0;
-    left: 60px;
-    bottom: 0;
-    right: 0;
-    padding: 0.75rem;
-    overflow-y: auto;
-    white-space: normal;
-    cursor: default;
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
-}
-:root[data-bs-theme="dark"] .accordion-content{
-    background-color: #1e2d3f !important;
-}
-:root[data-bs-theme="light"] .accordion-content{
-    background-color: #f4f6f9 !important;
-}
-
-.accordion-panel.open .accordion-content {
-    position: relative;
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-    left: auto;
-    right: auto;
-    top: auto;
-    bottom: auto;
-    width: 100%;
-}
-.no-bullets {
-    list-style: none;
-    padding-left: 0;
-    margin: 0;
-}
-.no-bullets li {
-  margin-bottom: 5px;
-  display: flex;
-  align-items: center;
-}
-.no-bullets li i {
-  min-width: 20px; /* ajusta según tamaño del ícono */
-  text-align: center;
 }
 
 /* responsive */
