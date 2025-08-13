@@ -5,7 +5,7 @@ from config.middlewares.threadlocals import get_current_user
 from historial.models import Historial
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 class HistorialService:

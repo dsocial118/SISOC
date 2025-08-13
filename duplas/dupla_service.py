@@ -2,7 +2,7 @@ import logging
 from django.forms import ValidationError
 from duplas.models import Dupla
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 class DuplaService:
