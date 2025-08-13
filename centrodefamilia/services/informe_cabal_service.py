@@ -129,7 +129,7 @@ def persist_file_and_rows(
 
     preview_rows, not_matching, total_rows = read_excel_preview(
         file, page=1, per_page=10**9
-    )
+    ) # TODO: Esto explota si el archivo es muy grande. Modificar a streaming en lugar de memoria 
     codigos_unicos = {
         str(pr.data["NroComercio"]).strip()
         for pr in preview_rows
