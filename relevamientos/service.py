@@ -61,8 +61,8 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def update_comedor(comedor_data, comedor_instance):
+        """Actualiza los campos de un comedor que envia GESTIONAR via API."""
         try:
-            """Update basic fields of a ``Comedor`` from a data dictionary."""
             comedor_instance.numero = convert_string_to_int(
                 comedor_data.get("numero", comedor_instance.numero)
             )
