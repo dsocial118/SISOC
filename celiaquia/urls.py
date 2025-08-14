@@ -96,4 +96,9 @@ urlpatterns = [
     group_required(["TecnicoCeliaquia"])(SubirCruceExcelView.as_view()),
     name="expediente_cruce_cuit",
 ),
+    path(
+        "expedientes/<int:pk>/cruce/",
+        SubirCruceExcelView.as_view(),
+        name="expediente_subir_cruce",
+    ),
 ]

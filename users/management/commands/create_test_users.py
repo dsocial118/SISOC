@@ -155,6 +155,20 @@ class Command(BaseCommand):
                     "grupos": ["TecnicoCeliaquia", "Ciudadanos"],
                 },
                 {
+                    "username": "TecnicoCeliaquia2",
+                    "email": "natashabraga@example.com",
+                    "password": "1",
+                    "is_superuser": False,
+                    "grupos": ["TecnicoCeliaquia", "Ciudadanos"],
+                },
+                {
+                    "username": "TecnicoCeliaquia3",
+                    "email": "natashabraga@example.com",
+                    "password": "1",
+                    "is_superuser": False,
+                    "grupos": ["TecnicoCeliaquia", "Ciudadanos"],
+                },
+                {
                     "username": "CoordinadorCeliaquia",
                     "email": "natashabraga@example.com",
                     "password": "1",
