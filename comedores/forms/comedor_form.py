@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 
 
 from ciudadanos.models import Ciudadano
+from ciudadanos.forms import CiudadanoForm
 from comedores.models import (
     Comedor,
     Referente,
@@ -48,19 +49,38 @@ class ReferenteForm(forms.ModelForm):
 
 
 class NominaForm(forms.ModelForm):
-    ciudadano = forms.ModelChoiceField(
-        queryset=Ciudadano.objects.all(),
-        label="Ciudadano",
-        widget=forms.Select(attrs={"class": "form-control"}),
-        help_text="Selecciona un ciudadano del legajo",
-    )
-
     class Meta:
         model = Nomina
         fields = ["ciudadano", "estado", "observaciones"]
         widgets = {
             "estado": forms.Select(attrs={"class": "form-control"}),
             "observaciones": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+        }
+
+
+class NominaExtraForm(forms.ModelForm):
+    class Meta:
+        model = Nomina
+        fields = ["estado", "observaciones"]
+        widgets = {
+            "estado": forms.Select(attrs={"class": "form-control"}),
+            "observaciones": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+        }
+
+
+class CiudadanoFormParaNomina(forms.ModelForm):
+    class Meta:
+        model = Ciudadano
+        fields = [
+            "apellido",
+            "nombre",
+            "fecha_nacimiento",
+            "tipo_documento",
+            "documento",
+            "sexo",
+        ]
+        widgets = {
+            "fecha_nacimiento": forms.DateInput(attrs={"type": "date"}),
         }
 
 
