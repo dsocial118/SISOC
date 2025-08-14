@@ -2,7 +2,7 @@
  * - Procesar expediente
  * - Subir/editar archivo de legajo
  * - Confirmar Envío
- * - Subir archivo de CUITs y ejecutar cruce (técnico)
+ * - Subir/Reprocesar Excel de CUITs y ejecutar cruce (técnico)
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -11,7 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return m ? m[2] : null;
   }
   function getCsrfToken() {
-    // Prioriza el token inyectado desde Django. Si no, cae al cookie.
     return (typeof window !== 'undefined' && window.CSRF_TOKEN) || getCookie('csrftoken');
   }
   function ensureAlertsZone() {
@@ -152,7 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  /* ===== CONFIRMAR ENVÍO (EN_ESPERA → CONFIRMACION_DE_ENVIO) ===== */
+  /* ===== CONFIRMAR ENVÍO ===== */
   const btnConfirm = document.getElementById('btn-confirm');
   if (btnConfirm) {
     let alertZone = ensureAlertsZone();
@@ -218,11 +217,38 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  /* ===== CRUCE CUIT (Técnico) ===== */
+  /* ===== CRUCE CUIT (Nuevo/Reprocesar) ===== */
   const modalCruce = document.getElementById('modalCruceCuit');
   if (modalCruce) {
     const formCruce = document.getElementById('form-cruce-cuit');
     const alertasCruce = document.getElementById('cruce-alertas');
+    const titleEl = document.getElementById('modalCruceCuitLabel');
+    const helpEl  = document.getElementById('cruce-help');
+    const btnSubmit = document.getElementById('btn-cruce-submit');
+
+    // Cambiamos el título/ayuda según el botón que abre el modal
+    modalCruce.addEventListener('show.bs.modal', (e) => {
+      const trigger = e.relatedTarget;
+      const mode = (trigger && trigger.getAttribute('data-mode')) || 'new';
+
+      if (mode === 'reprocess') {
+        titleEl.textContent = 'Reprocesar Cruce (sobrescribe el archivo anterior)';
+        helpEl.innerHTML = 'Esta acción <b>sobrescribirá</b> el archivo previo. Columnas válidas: <strong>cuit</strong> o <strong>dni</strong>.';
+        btnSubmit.textContent = 'Reprocesar';
+        btnSubmit.classList.remove('btn-success');
+        btnSubmit.classList.add('btn-warning');
+      } else {
+        titleEl.textContent = 'Subir Excel de CUITs/DNIs (con encabezado)';
+        helpEl.textContent = 'Debe incluir encabezado; columnas válidas: cuit o dni.';
+        btnSubmit.textContent = 'Ejecutar Cruce';
+        btnSubmit.classList.remove('btn-warning');
+        btnSubmit.classList.add('btn-success');
+      }
+
+      alertasCruce.innerHTML = '';
+      const input = document.getElementById('id_excel_cuit');
+      if (input) input.value = '';
+    });
 
     formCruce.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -240,24 +266,22 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!input || !input.files || !input.files.length) {
         alertasCruce.innerHTML = `
           <div class="alert alert-warning alert-dismissible fade show" role="alert">
-            Seleccioná un archivo (.xlsx, .xls o .csv) con la columna <strong>cuit</strong>.
+            Seleccioná un archivo con columna <strong>cuit</strong> o <strong>dni</strong>.
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
           </div>`;
         return;
       }
 
-      const btnSubmit = formCruce.querySelector('button[type="submit"]');
       const originalHTML = btnSubmit.innerHTML;
       btnSubmit.disabled = true;
-      btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Ejecutando…';
-
+      btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Enviando…';
       alertasCruce.innerHTML = '';
 
       try {
         const fd = new FormData(formCruce);
-        // IMPORTANTE: el backend espera el campo "archivo".
-        // Ya viene incluido por el input name="archivo", pero reforzamos:
-        fd.set('archivo', input.files[0]);
+        // Backend espera "excel_cuit" o "archivo"? — usamos "archivo" porque tu view lee request.FILES["archivo"]
+        fd.delete('excel_cuit'); // por si quedó
+        fd.append('archivo', input.files[0]);
 
         const resp = await fetch(window.CRUCE_URL, {
           method: 'POST',

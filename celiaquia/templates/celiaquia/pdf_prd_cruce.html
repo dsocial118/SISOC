@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  {% load math_extras %}
+  <style>
+    /* --- Página y tipografía --- */
+    @page {
+      size: A4;
+      margin: 3.5cm 2cm 2.5cm 2cm;
+      @top-center { content: element(header); }
+      @bottom-center {
+        content: "Página " counter(page) " de " counter(pages);
+        font-size: 10pt; color: #666;
+      }
+    }
+    body { font-family: Arial, sans-serif; font-size: 10pt; margin: 0; color: #222; }
+
+    /* --- Encabezado --- */
+    #header {
+      position: running(header);
+      height: 3cm;
+      padding: 0.5cm 1cm;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #ddd;
+    }
+    .header-left {
+      font-weight: bold;
+      padding-top: 6px;
+      padding-right: 30px;
+      font-size: 10pt;
+      text-align: left;
+      line-height: 1.3;
+      letter-spacing: .3px;
+    }
+    .header-right {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 9pt;
+      text-align: center;
+      line-height: 1.1;
+      padding-left: 30px;
+    }
+    .header-right img {
+      max-height: 42px; height: auto; width: auto; margin-bottom: 4px;
+      filter: grayscale(100%);
+    }
+
+    /* --- Títulos y secciones --- */
+    h1, h2, h3, h4 { margin: 0; }
+    h4 { text-align: center; margin-top: 12px; margin-bottom: 6px; }
+    .title {
+      text-align: center;
+      font-weight: bold;
+      font-size: 14pt;
+      margin: 16px 0 8px 0;
+      letter-spacing: .2px;
+    }
+    .subtle { color: #555; }
+
+    /* --- Meta y datos principales --- */
+    .meta {
+      margin: 10px 0 16px 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 18px;
+    }
+    .meta .item { line-height: 1.5; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 9pt;
+      border-radius: 10px;
+      background: #f1f1f1;
+      border: 1px solid #e1e1e1;
+      color: #333;
+    }
+
+    /* --- Cards/Paneles --- */
+    .cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 8px 0 10px 0;
+    }
+    .card {
+      border: 1px solid #e6e6e6;
+      border-radius: 6px;
+      padding: 12px;
+      background: #fafafa;
+    }
+    .card h5 {
+      margin: 0 0 8px 0;
+      font-size: 11pt;
+      color: #333;
+    }
+    .kpi {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 14px;
+    }
+    .kpi .kv { line-height: 1.4; }
+    .kpi .kv b { font-size: 11pt; }
+
+    /* --- Barras de progreso --- */
+    .progress {
+      height: 10px;
+      background: #eee;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-top: 6px;
+      border: 1px solid #e2e2e2;
+    }
+    .bar {
+      height: 10px;
+      display: block;
+      border-radius: 6px;
+    }
+    .bar--ok  { background-color: #22c55e; } /* verde sólido */
+    .bar--bad { background-color: #ef4444; } /* rojo sólido  */
+
+    /* --- Tablas y listas --- */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      border: 1px solid #ddd;
+    }
+    th, td {
+      padding: 6px 8px;
+      border: 1px solid #e5e5e5;
+      vertical-align: top;
+    }
+    th { background: #f3f6fb; color: #333; font-weight: 600; text-align: left; }
+    .muted { color: #777; }
+    ul { margin: 6px 0 0 18px; padding: 0; }
+    li { line-height: 1.7; margin-bottom: 4px; }
+
+    .section { margin-top: 14px; }
+    .small { font-size: 9pt; }
+    .avoid-break { page-break-inside: avoid; }
+  </style>
+</head>
+<body>
+  <!-- Header fijo -->
+  <div id="header">
+    <div class="header-left">
+      PROGRAMA ALIMENTAR<br/>COMUNIDAD
+    </div>
+    <div class="header-right">
+      <img
+        src="https://www.casarosada.gob.ar/images/escudo_nacional_argentino.png"
+        alt="Escudo Nacional" />
+      Secretaría de Niñez, Adolescencia y Familia<br/>
+      Ministerio de Capital Humano
+    </div>
+  </div>
+
+  <main>
+    <div class="title">PRD — Resultado de Cruce por CUIT/DNI</div>
+
+    <!-- Meta -->
+    <div class="meta">
+      <div class="item">
+        <b>Expediente:</b> {{ expediente.codigo }}
+      </div>
+      <div class="item">
+        <b>Fecha:</b> {{ ahora }}
+      </div>
+      <div class="item">
+        <b>Técnico asignado:</b>
+        {% if tecnico %}
+          <span class="badge">{{ tecnico }}</span>
+        {% else %}
+          <span class="muted">—</span>
+        {% endif %}
+      </div>
+
+      <!-- Usuario de la provincia que envía -->
+      <div class="item">
+        <b>Usuario provincial:</b>
+        {% if expediente.usuario_provincia %}
+          <span class="badge">
+            {{ expediente.usuario_provincia.get_full_name|default:expediente.usuario_provincia.username }}
+          </span>
+        {% else %}
+          <span class="muted">—</span>
+        {% endif %}
+      </div>
+
+      <div class="item">
+        <b>Legajos en nómina:</b> {{ resumen.total_legajos }}
+      </div>
+    </div>
+
+    <!-- KPIs y barras -->
+    <div class="cards">
+      <div class="card">
+        <h5>Resumen de archivo</h5>
+        <div class="kpi">
+          <div class="kv" style="grid-column: span 2;">
+            <span class="muted">Identificadores leídos (archivo)</span><br>
+            <b>
+              {{ resumen.total_cuits_archivo|default_if_none:0|sum2:resumen.total_dnis_archivo|default_if_none:0 }}
+            </b>
+            <div class="small muted">
+              CUITs: {{ resumen.total_cuits_archivo|default_if_none:0 }}
+              · DNIs: {{ resumen.total_dnis_archivo|default_if_none:0 }}
+            </div>
+          </div>
+          <div class="kv"><span class="muted">Matcheados</span><br><b>{{ resumen.matcheados }}</b></div>
+          <div class="kv"><span class="muted">No matcheados</span><br><b>{{ resumen.no_matcheados }}</b></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h5>Porcentajes</h5>
+        {% with
+            pm=resumen.matcheados|pct:resumen.total_legajos|clamp:"0,100"
+            pn=resumen.no_matcheados|pct:resumen.total_legajos|clamp:"0,100"
+        %}
+          <div class="small">Matcheados ({{ pm|floatformat:1 }}%)</div>
+          <div class="progress">
+            <span class="bar bar--ok" style="width: {{ pm|floatformat:1 }}%;"></span>
+          </div>
+
+          <div class="small" style="margin-top:8px;">No matcheados ({{ pn|floatformat:1 }}%)</div>
+          <div class="progress">
+            <span class="bar bar--bad" style="width: {{ pn|floatformat:1 }}%;"></span>
+          </div>
+        {% endwith %}
+      </div>
+    </div>
+
+    <!-- Detalle de matcheados -->
+    {% if resumen.detalle_match and resumen.detalle_match|length > 0 %}
+      <div class="section avoid-break">
+        <h4>Detalle de matcheados (primeros 30)</h4>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 36px;">#</th>
+              <th>DNI / CUIT</th>
+              <th class="muted">Comentario</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for fila in resumen.detalle_match|slice:":30" %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ fila }}</td>
+                <td class="muted">Coincidencia por CUIT/DNI</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <div class="small muted" style="margin-top:6px;">
+          Listado limitado a 30 filas para compacidad del documento.
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Detalle de no matcheados -->
+    <div class="section avoid-break">
+      <h4>Detalle de no matcheados (primeros 30)</h4>
+      {% if resumen.detalle_no_match and resumen.detalle_no_match|length > 0 %}
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 36px;">#</th>
+              <th>DNI / CUIT esperado</th>
+              <th>Observación</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for fila in resumen.detalle_no_match|slice:":30" %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ fila }}</td>
+                <td class="muted">No coincide por CUIT ni por DNI</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <div class="small muted" style="margin-top:6px;">
+          Listado limitado a 30 filas para compacidad del documento.
+        </div>
+      {% else %}
+        <p class="muted">No se registran casos sin match en las primeras 30 posiciones.</p>
+      {% endif %}
+    </div>
+
+    <!-- Notas -->
+    <div class="section">
+      <h4>Notas</h4>
+      <ul>
+        <li>Las coincidencias se determinan por CUIT exacto (11 dígitos) o por DNI normalizado (sin ceros a la izquierda).</li>
+        <li>En columnas con rótulo “cuit” que contengan valores de 8 dígitos, se interpretan como DNI.</li>
+      </ul>
+    </div>
+  </main>
+</body>
+</html>
