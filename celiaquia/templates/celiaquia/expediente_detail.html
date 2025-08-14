@@ -21,19 +21,31 @@
     {% endif %}
   </div>
 
-{# Botón de Cruce de CUITs: visible solo para Técnicos cuando el estado es ASIGNADO o PROCESO_DE_CRUCE #}
-{% if request.user|has_group:"TecnicoCeliaquia" %}
-  {% if expediente.estado.nombre == 'ASIGNADO' or expediente.estado.nombre == 'PROCESO_DE_CRUCE' %}
-    <button
-      type="button"
-      class="btn btn-success btn-sm"
-      data-bs-toggle="modal"
-      data-bs-target="#modalCruceCuit">
-      Subir archivo de CUITs (Cruce)
-    </button>
-  {% endif %}
-{% endif %}
+  {# Botones de Cruce: visibles para Técnico (o admin si lo dejaste) #}
+  <div class="d-flex gap-2">
+    {% if request.user|has_group:"TecnicoCeliaquia" and expediente.estado.nombre in 'ASIGNADO PROCESO_DE_CRUCE' %}
+      <button
+        type="button"
+        class="btn btn-success btn-sm me-2"
+        data-bs-toggle="modal"
+        data-bs-target="#modalCruceCuit"
+        data-mode="new">
+        Subir Excel de CUITs (Cruce)
+      </button>
+    {% endif %}
 
+    {# Reprocesar: si ya existe un archivo cargado de cruce #}
+    {% if request.user|has_group:"TecnicoCeliaquia" and expediente.cruce_excel %}
+      <button
+        type="button"
+        class="btn btn-warning btn-sm"
+        data-bs-toggle="modal"
+        data-bs-target="#modalCruceCuit"
+        data-mode="reprocess">
+        Reprocesar cruce
+      </button>
+    {% endif %}
+  </div>
 </div>
 
 <div id="expediente-alerts"></div>
@@ -45,11 +57,7 @@
       <p><strong>Código:</strong> {{ expediente.codigo }}</p>
       <p><strong>Estado:</strong> {{ expediente.estado.display_name }}</p>
       <p><strong>Fecha de creación:</strong> {{ expediente.fecha_creacion|date:"d/m/Y" }}</p>
-      {% if expediente.documento %}
-        <p class="mb-0"><strong>PRD generado:</strong>
-          <a href="{{ expediente.documento.url }}" target="_blank" class="text-decoration-underline">ver documento</a>
-        </p>
-      {% endif %}
+      {% if expediente.documento %} <p class="mb-0"><strong>PRD generado:</strong> <a href="{{ expediente.documento.url }}" target="_blank" class="text-decoration-underline">ver documento</a> </p> {% endif %}
     </div>
     <div class="col-md-6">
       <p><strong>Provincia:</strong> {{ expediente.provincia }}</p>
@@ -117,9 +125,7 @@
             {% endif %}
           </div>
           <div class="col-md-4">
-      
             {% if leg.archivo %}
-            <strong>Archivo Adjunto:</strong><br>
               <a href="{{ leg.archivo.url }}" target="_blank" class="text-success text-decoration-underline">✅ {{ leg.archivo.name}}</a>
             {% else %}
               <span class="text-warning">⚠ Archivo pendiente</span>
@@ -210,30 +216,29 @@
   </div>
 </div>
 
-{# Modal para CRUCE de CUITs (solo técnico) #}
+{# Modal para CRUCE de CUITs (técnico). Sirve tanto para “nuevo” como para “reprocesar”. #}
 <div class="modal fade" id="modalCruceCuit" tabindex="-1" aria-labelledby="modalCruceCuitLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <form id="form-cruce-cuit" method="post" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="modal-header">
-          <h5 class="modal-title" id="modalCruceCuitLabel">Subir archivo de CUITs (con encabezado)</h5>
+          <h5 class="modal-title" id="modalCruceCuitLabel">Subir Excel de CUITs (con encabezado)</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
         </div>
         <div class="modal-body">
           <div id="cruce-alertas" class="mb-2"></div>
           <div class="form-group">
-            <label for="id_excel_cuit">Archivo (.xlsx, .xls o .csv) con columna <code>cuit</code></label>
-            {# IMPORTANTE: el backend espera el campo "archivo" #}
-            <input type="file" name="archivo" id="id_excel_cuit" class="form-control" required accept=".xlsx,.xls,.csv">
-            <small class="text-muted">
-              Debe incluir encabezado; se acepta <strong>cuit</strong> y variantes (ej. c.u.i.t, numero_cuit).
+            <label for="id_excel_cuit">Archivo Excel (.xlsx) con columna <code>cuit</code> o <code>dni</code></label>
+            <input type="file" name="excel_cuit" id="id_excel_cuit" class="form-control" required accept=".xlsx,.xls,.csv">
+            <small id="cruce-help" class="text-muted">
+              Debe incluir encabezado; columnas válidas: <strong>cuit</strong> o <strong>dni</strong>.
             </small>
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-success">Ejecutar Cruce</button>
+          <button type="submit" class="btn btn-success" id="btn-cruce-submit">Ejecutar Cruce</button>
         </div>
       </form>
     </div>
