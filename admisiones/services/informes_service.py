@@ -5,7 +5,7 @@ from django.core.files.base import ContentFile
 from admisiones.utils import generar_texto_comidas
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 from admisiones.models.admisiones import (
     InformeTecnico,
