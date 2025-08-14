@@ -1,22 +1,5 @@
 """
 celiaquia/views/expediente.py
-
-Breve descripción del cambio:
-- Centraliza ExpedienteListView para que una única lista sirva a Provincia, Subsecretaría (Coordinador) y Técnico.
-- Provincia: ve sólo sus expedientes.
-- CoordinadorCeliaquia: ve CONFIRMACION_DE_ENVIO, RECEPCIONADO y ASIGNADO (bandeja completa).
-- TecnicoCeliaquia: ve los expedientes donde es técnico asignado (ASIGNADO, y futuros estados técnicos).
-
-Estados y flujos impactados:
-- Provincia: CREADO -> PROCESADO -> EN_ESPERA -> CONFIRMACION_DE_ENVIO (sin cambios)
-- Subsecretaría:
-    * Recepcionar: CONFIRMACION_DE_ENVIO -> RECEPCIONADO
-    * Asignar técnico: RECEPCIONADO -> ASIGNADO (o cambiar técnico manteniendo ASIGNADO)
-
-Dependencias con otros archivos:
-- templates/celiaquia/expediente_list.html (acciones por rol/estado; badges para RECEPCIONADO)
-- static/custom/js/celiaquia_list.js (handlers para recepcionar/asignar)
-- services/* para acciones puntuales (procesar, confirmar)
 """
 
 import json
@@ -28,7 +11,11 @@ from django.views import View
 from django.views.generic import ListView, CreateView, DetailView, UpdateView
 from django.urls import reverse_lazy
 from django.shortcuts import get_object_or_404, redirect
-from django.http import JsonResponse, HttpResponseBadRequest, HttpResponseNotAllowed
+from django.http import (
+    JsonResponse,
+    HttpResponseBadRequest,
+    HttpResponseNotAllowed,
+)
 from django.contrib import messages
 from django.core.exceptions import ValidationError, PermissionDenied
 from django.views.decorators.csrf import csrf_exempt
@@ -46,25 +33,32 @@ from celiaquia.models import (
 from celiaquia.services.ciudadano_service import CiudadanoService
 from celiaquia.services.expediente_service import ExpedienteService
 from celiaquia.services.importacion_service import ImportacionService
+from celiaquia.services.cruce_service import CruceService
 
 logger = logging.getLogger(__name__)
 
 
-# ===== utilidades de permiso locales =====
+# ===== utilidades locales =====
 def _user_in_group(user, group_name: str) -> bool:
     return user.is_authenticated and user.groups.filter(name=group_name).exists()
+
+def _is_admin(user) -> bool:
+    # “Admin de Django”: superusuario con pase libre
+    return user.is_authenticated and user.is_superuser
+
+def _is_ajax(request) -> bool:
+    return request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
 
 class ExpedienteListView(ListView):
     """
     Descripción:
       - Única lista para todos los roles.
+        * Admin (superuser): ve todos.
         * ProvinciaCeliaquia: lista sólo sus expedientes.
-        * CoordinadorCeliaquia: lista expedientes en CONFIRMACION_DE_ENVIO, RECEPCIONADO o ASIGNADO.
-        * TecnicoCeliaquia: lista expedientes donde es técnico asignado.
+        * CoordinadorCeliaquia: lista CONFIRMACION_DE_ENVIO, RECEPCIONADO, ASIGNADO.
+        * TecnicoCeliaquia: lista asignados a él.
       - Orden descendente por fecha_creacion.
-
-    Nota: el template consume 'expedientes' y, para Coordinador, 'tecnicos'.
     """
 
     model = Expediente
@@ -74,11 +68,8 @@ class ExpedienteListView(ListView):
 
     def get_queryset(self):
         user = self.request.user
-
-        # Base con joins necesarios para no pegar en N+1 cuando mostremos técnico/estado
         qs = (
-            Expediente.objects
-            .select_related("estado", "asignacion_tecnico__tecnico")
+            Expediente.objects.select_related("estado", "asignacion_tecnico__tecnico")
             .only(
                 "id",
                 "codigo",
@@ -89,13 +80,17 @@ class ExpedienteListView(ListView):
             )
         )
 
-        # Coordinador: bandeja de entrada y seguimiento
+        # Admin ve todo
+        if _is_admin(user):
+            return qs.order_by("-fecha_creacion")
+
+        # Coordinador: bandeja
         if _user_in_group(user, "CoordinadorCeliaquia"):
             return qs.filter(
                 estado__nombre__in=["CONFIRMACION_DE_ENVIO", "RECEPCIONADO", "ASIGNADO"]
             ).order_by("-fecha_creacion")
 
-        # Técnico: sus expedientes asignados (incluye distintos estados del ciclo técnico)
+        # Técnico: sus expedientes asignados
         if _user_in_group(user, "TecnicoCeliaquia"):
             return qs.filter(asignacion_tecnico__tecnico=user).order_by("-fecha_creacion")
 
@@ -105,9 +100,9 @@ class ExpedienteListView(ListView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         user = self.request.user
-        # Para el selector inline de técnico en la lista del Coordinador
         ctx["tecnicos"] = []
-        if _user_in_group(user, "CoordinadorCeliaquia"):
+        # Admin y Coordinador ven el selector de técnicos
+        if _is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia"):
             ctx["tecnicos"] = User.objects.filter(
                 groups__name="TecnicoCeliaquia"
             ).order_by("last_name", "first_name")
@@ -117,20 +112,23 @@ class ExpedienteListView(ListView):
 @method_decorator(csrf_exempt, name="dispatch")
 class ProcesarExpedienteView(View):
     """
-    Descripción:
-      - Procesa el Excel masivo del expediente y crea/relaciona legajos.
-      - Cambia estado a PROCESADO y luego EN_ESPERA (lo hace el service).
-    Estados impactados:
-      CREADO -> PROCESADO -> EN_ESPERA
-    Dependencias:
-      ExpedienteService.procesar_expediente
+    Procesa Excel de nómina y crea/relaciona legajos.
+    Cambia estados: CREADO -> PROCESADO -> EN_ESPERA (en service).
+    Respuesta JSON (para botón en lista).
     """
 
     def post(self, request, pk):
-        expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=request.user)
+        user = request.user
+        if _is_admin(user):
+            expediente = get_object_or_404(Expediente, pk=pk)
+        else:
+            expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=user)
+
         try:
-            result = ExpedienteService.procesar_expediente(expediente, request.user)
-            return JsonResponse({"success": True, "creados": result["creados"], "errores": result["errores"]})
+            result = ExpedienteService.procesar_expediente(expediente, user)
+            return JsonResponse(
+                {"success": True, "creados": result["creados"], "errores": result["errores"]}
+            )
         except ValidationError as ve:
             return JsonResponse({"success": False, "error": ve.message}, status=400)
         except Exception:
@@ -141,22 +139,27 @@ class ProcesarExpedienteView(View):
 
 class CrearLegajosView(View):
     """
-    Descripción:
-      - Crea legajos (ExpedienteCiudadano) a partir de filas JSON.
+    Crea legajos (ExpedienteCiudadano) a partir de filas JSON.
     """
 
     def post(self, request, pk):
-        expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=request.user)
+        user = request.user
+        if _is_admin(user):
+            expediente = get_object_or_404(Expediente, pk=pk)
+        else:
+            expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=user)
+
         try:
             payload = json.loads(request.body)
             rows = payload.get("rows", [])
         except json.JSONDecodeError:
             return HttpResponseBadRequest("JSON inválido.")
+
         estado_inicial, _ = EstadoLegajo.objects.get_or_create(nombre="DOCUMENTO_PENDIENTE")
         creados = existentes = 0
         for datos in rows:
-            ciudadano = CiudadanoService.get_or_create_ciudadano(datos, request.user)
-            obj, was_created = ExpedienteCiudadano.objects.get_or_create(
+            ciudadano = CiudadanoService.get_or_create_ciudadano(datos, user)
+            _, was_created = ExpedienteCiudadano.objects.get_or_create(
                 expediente=expediente,
                 ciudadano=ciudadano,
                 defaults={"estado": estado_inicial},
@@ -171,8 +174,7 @@ class CrearLegajosView(View):
 @method_decorator(csrf_exempt, name="dispatch")
 class ExpedientePreviewExcelView(View):
     """
-    Descripción:
-      - Devuelve headers y primeras filas del Excel para preview.
+    Devuelve headers y primeras filas del Excel de nómina (preview).
     """
 
     def post(self, request, *args, **kwargs):
@@ -208,10 +210,10 @@ class ExpedienteCreateView(CreateView):
 
 class ExpedienteDetailView(DetailView):
     """
-    Descripción:
-      - Provincia: puede ver su expediente.
-      - Coordinador: puede ver expedientes para recepción/asignación.
-      - Técnico: puede ver expedientes propios asignados.
+    Provincia: ve sus expedientes.
+    Coordinador: ve todos para recepcionar/asignar.
+    Técnico: ve los asignados a él.
+    Admin: ve todo.
     """
 
     model = Expediente
@@ -224,7 +226,7 @@ class ExpedienteDetailView(DetailView):
             Expediente.objects.select_related("estado", "usuario_modificador", "asignacion_tecnico")
             .prefetch_related("expediente_ciudadanos__ciudadano", "expediente_ciudadanos__estado")
         )
-        if _user_in_group(user, "CoordinadorCeliaquia"):
+        if _is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia"):
             return base
         if _user_in_group(user, "TecnicoCeliaquia"):
             return base.filter(asignacion_tecnico__tecnico=user)
@@ -243,8 +245,10 @@ class ExpedienteDetailView(DetailView):
                 preview_error = str(e)
 
         tecnicos = []
-        if _user_in_group(user, "CoordinadorCeliaquia"):
-            tecnicos = User.objects.filter(groups__name="TecnicoCeliaquia").order_by("last_name", "first_name")
+        if _is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia"):
+            tecnicos = User.objects.filter(groups__name="TecnicoCeliaquia").order_by(
+                "last_name", "first_name"
+            )
 
         faltan_archivos = expediente.expediente_ciudadanos.filter(archivo__isnull=True).exists()
 
@@ -263,11 +267,16 @@ class ExpedienteDetailView(DetailView):
 
 class ExpedienteImportView(View):
     def post(self, request, pk):
-        expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=request.user)
+        user = request.user
+        if _is_admin(user):
+            expediente = get_object_or_404(Expediente, pk=pk)
+        else:
+            expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=user)
+
         start = time.time()
         try:
             result = ImportacionService.importar_legajos_desde_excel(
-                expediente, expediente.excel_masivo, request.user
+                expediente, expediente.excel_masivo, user
             )
             elapsed = time.time() - start
             messages.success(
@@ -283,23 +292,42 @@ class ExpedienteImportView(View):
 
 class ExpedienteConfirmView(View):
     """
-    Descripción:
-      - Provincia confirma envío (EN_ESPERA → CONFIRMACION_DE_ENVIO) con validación en servidor.
+    Provincia confirma envío (EN_ESPERA → CONFIRMACION_DE_ENVIO) con validación servidor.
+    - Si es AJAX, responde JSON (para lista).
+    - Si no, redirige con messages.
+    Admin también puede confirmar.
     """
 
     def post(self, request, pk):
-        expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=request.user)
+        user = request.user
+        if _is_admin(user):
+            expediente = get_object_or_404(Expediente, pk=pk)
+        else:
+            expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=user)
+
         try:
             result = ExpedienteService.confirmar_envio(expediente)
+            if _is_ajax(request):
+                return JsonResponse(
+                    {
+                        "success": True,
+                        "message": "Expediente enviado a Subsecretaría.",
+                        "validos": result["validos"],
+                        "errores": result["errores"],
+                    }
+                )
             messages.success(
                 request,
                 f"Expediente enviado a Subsecretaría. Legajos: {result['validos']} (sin errores).",
             )
         except ValidationError as ve:
-            logger.warning("Error al confirmar: %s", ve)
+            if _is_ajax(request):
+                return JsonResponse({"success": False, "error": ve.message}, status=400)
             messages.error(request, f"Error al confirmar: {ve.message}")
         except Exception as e:
             logger.error("Error inesperado al confirmar envío: %s", e, exc_info=True)
+            if _is_ajax(request):
+                return JsonResponse({"success": False, "error": str(e)}, status=500)
             messages.error(request, f"Error inesperado: {e}")
         return redirect("expediente_detail", pk=pk)
 
@@ -315,25 +343,34 @@ class ExpedienteUpdateView(UpdateView):
 
 class RecepcionarExpedienteView(View):
     """
-    Descripción:
-      - Subsecretaría (Coordinador) recepciona el expediente.
-      - Cambia estado: CONFIRMACION_DE_ENVIO -> RECEPCIONADO.
-      - Registra usuario_modificador y muestra mensaje.
+    Subsecretaría recepciona:
+    CONFIRMACION_DE_ENVIO -> RECEPCIONADO.
+    Responde JSON si es AJAX; si no, redirect con messages.
+    Admin también puede recepcionar.
     """
 
     def post(self, request, pk):
-        if not _user_in_group(request.user, "CoordinadorCeliaquia"):
+        user = request.user
+        if not (_is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia")):
+            if _is_ajax(request):
+                return JsonResponse({"success": False, "error": "Permiso denegado."}, status=403)
             raise PermissionDenied("No tiene permisos para recepcionar este expediente.")
+
         expediente = get_object_or_404(Expediente, pk=pk)
         if expediente.estado.nombre != "CONFIRMACION_DE_ENVIO":
-            messages.warning(request, "El expediente no está pendiente de recepción.")
+            msg = "El expediente no está pendiente de recepción."
+            if _is_ajax(request):
+                return JsonResponse({"success": False, "error": msg}, status=400)
+            messages.warning(request, msg)
             return redirect("expediente_detail", pk=pk)
 
         estado_recep, _ = EstadoExpediente.objects.get_or_create(nombre="RECEPCIONADO")
         expediente.estado = estado_recep
-        expediente.usuario_modificador = request.user
+        expediente.usuario_modificador = user
         expediente.save(update_fields=["estado", "usuario_modificador"])
 
+        if _is_ajax(request):
+            return JsonResponse({"success": True, "message": "Recepcionado correctamente."})
         messages.success(request, "Expediente recepcionado correctamente. Ahora puede asignar un técnico.")
         return redirect("expediente_detail", pk=pk)
 
@@ -343,22 +380,27 @@ class RecepcionarExpedienteView(View):
 
 class AsignarTecnicoView(View):
     """
-    Descripción:
-      - Subsecretaría (Coordinador) asigna un técnico. Al asignar, el expediente pasa a ASIGNADO.
-    Reglas:
-      - Solo desde RECEPCIONADO o si ya estaba ASIGNADO (cambio de técnico).
-      - Técnico debe pertenecer al grupo TecnicoCeliaquia.
+    Subsecretaría asigna técnico:
+    RECEPCIONADO -> ASIGNADO (o cambio de técnico manteniendo ASIGNADO).
+    Responde JSON si es AJAX; si no, redirect con messages.
+    Admin también puede asignar.
     """
 
     def post(self, request, pk):
-        if not _user_in_group(request.user, "CoordinadorCeliaquia"):
+        user = request.user
+        if not (_is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia")):
+            if _is_ajax(request):
+                return JsonResponse({"success": False, "error": "Permiso denegado."}, status=403)
             raise PermissionDenied("No tiene permisos para asignar técnico.")
 
         expediente = get_object_or_404(Expediente, pk=pk)
 
         tecnico_id = request.POST.get("tecnico_id")
         if not tecnico_id:
-            messages.error(request, "No se seleccionó ningún técnico.")
+            msg = "No se seleccionó ningún técnico."
+            if _is_ajax(request):
+                return JsonResponse({"success": False, "error": msg}, status=400)
+            messages.error(request, msg)
             return redirect("expediente_detail", pk=pk)
 
         tecnico_qs = User.objects.filter(groups__name="TecnicoCeliaquia")
@@ -366,7 +408,10 @@ class AsignarTecnicoView(View):
 
         estado_actual = expediente.estado.nombre
         if estado_actual not in ("RECEPCIONADO", "ASIGNADO"):
-            messages.error(request, "Primero debe recepcionar el expediente.")
+            msg = "Primero debe recepcionar el expediente."
+            if _is_ajax(request):
+                return JsonResponse({"success": False, "error": msg}, status=400)
+            messages.error(request, msg)
             return redirect("expediente_detail", pk=pk)
 
         AsignacionTecnico.objects.update_or_create(
@@ -376,11 +421,64 @@ class AsignarTecnicoView(View):
 
         estado_asignado, _ = EstadoExpediente.objects.get_or_create(nombre="ASIGNADO")
         expediente.estado = estado_asignado
-        expediente.usuario_modificador = request.user
+        expediente.usuario_modificador = user
         expediente.save(update_fields=["estado", "usuario_modificador"])
 
+        if _is_ajax(request):
+            return JsonResponse(
+                {
+                    "success": True,
+                    "message": "Técnico asignado correctamente. Estado: ASIGNADO.",
+                }
+            )
         messages.success(
             request,
             f"Técnico {tecnico.get_full_name() or tecnico.username} asignado correctamente. Estado: ASIGNADO.",
         )
         return redirect("expediente_detail", pk=pk)
+
+
+class SubirCruceExcelView(View):
+    """
+    Técnico sube el Excel con columna 'cuit' y ejecuta el cruce.
+    Cambia estados: ASIGNADO -> PROCESO_DE_CRUCE -> CRUCE_FINALIZADO (en service) y genera PRD.
+    Solo puede ejecutarlo el técnico asignado al expediente… o el admin.
+    Responde JSON (para la lista o modal).
+    """
+
+    def post(self, request, pk):
+        user = request.user
+
+        # Permisos: técnico asignado o admin
+        if not (_is_admin(user) or _user_in_group(user, "TecnicoCeliaquia")):
+            return JsonResponse({"success": False, "error": "Permiso denegado."}, status=403)
+
+        expediente = get_object_or_404(Expediente, pk=pk)
+
+        # Si no es admin, debe ser el técnico asignado
+        if not _is_admin(user):
+            asignacion = getattr(expediente, "asignacion_tecnico", None)
+            if not asignacion or asignacion.tecnico_id != user.id:
+                return JsonResponse({"success": False, "error": "No sos el técnico asignado a este expediente."}, status=403)
+
+        archivo = request.FILES.get("archivo")
+        if not archivo:
+            return JsonResponse({"success": False, "error": "Debe adjuntar un Excel con columna 'cuit'."}, status=400)
+
+        try:
+            resumen = CruceService.procesar_cruce_por_cuit(expediente, archivo, user)
+            return JsonResponse(
+                {
+                    "success": True,
+                    "message": "Cruce finalizado. Se generó el PRD del expediente.",
+                    "resumen": resumen,
+                }
+            )
+        except ValidationError as ve:
+            return JsonResponse({"success": False, "error": ve.message}, status=400)
+        except Exception as e:
+            logger.error("Error en cruce por CUIT: %s", e, exc_info=True)
+            return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+    def get(self, *_a, **_k):
+        return HttpResponseNotAllowed(["POST"])

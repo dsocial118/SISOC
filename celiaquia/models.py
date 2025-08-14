@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from ciudadanos.models import Ciudadano
 
-from django.contrib.auth.models import User
+User = get_user_model()
 
 
 # Estados dinámicos del Expediente
@@ -77,8 +77,17 @@ class Expediente(models.Model):
         EstadoExpediente, on_delete=models.PROTECT, related_name="expedientes"
     )
     observaciones = models.TextField(blank=True, null=True)
+
+
     excel_masivo = models.FileField(
         upload_to="expedientes/masivos/", null=True, blank=True
+    )
+
+    cruce_excel = models.FileField(
+        upload_to="expedientes/cruces/", null=True, blank=True
+    )
+    documento = models.FileField(
+        upload_to="expedientes/prd/", null=True, blank=True
     )
 
     class Meta:
@@ -89,7 +98,7 @@ class Expediente(models.Model):
         return f"{self.codigo} - {self.usuario_provincia.username}"
 
 
-# Relación entre Expediente y Ciudadano (Legajo)
+
 class ExpedienteCiudadano(models.Model):
     expediente = models.ForeignKey(
         Expediente, on_delete=models.CASCADE, related_name="expediente_ciudadanos"
@@ -101,6 +110,12 @@ class ExpedienteCiudadano(models.Model):
         EstadoLegajo, on_delete=models.PROTECT, related_name="expediente_ciudadanos"
     )
     archivo = models.FileField(upload_to="legajos/archivos/", null=True, blank=True)
+
+
+    cruce_ok = models.BooleanField(null=True, blank=True)
+
+    observacion_cruce = models.CharField(max_length=255, null=True, blank=True)
+
     creado_en = models.DateTimeField(auto_now_add=True)
     modificado_en = models.DateTimeField(auto_now=True)
 
@@ -129,4 +144,3 @@ class AsignacionTecnico(models.Model):
 
     def __str__(self):
         return f"{self.expediente.codigo} -> {self.tecnico.username}"
-

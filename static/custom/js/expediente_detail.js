@@ -2,6 +2,7 @@
  * - Procesar expediente
  * - Subir/editar archivo de legajo
  * - Confirmar Envío
+ * - Subir Excel de CUITs y ejecutar cruce (técnico)
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -12,6 +13,16 @@ document.addEventListener('DOMContentLoaded', () => {
   function getCsrfToken() {
     // Prioriza el token inyectado desde Django. Si no, cae al cookie.
     return (typeof window !== 'undefined' && window.CSRF_TOKEN) || getCookie('csrftoken');
+  }
+  function ensureAlertsZone() {
+    let zone = document.getElementById('expediente-alerts');
+    if (!zone) {
+      zone = document.createElement('div');
+      zone.id = 'expediente-alerts';
+      const headerBlock = document.querySelector('.p-3.rounded.shadow.mb-4');
+      (headerBlock || document.body).prepend(zone);
+    }
+    return zone;
   }
 
   /* ===== PROCESAR EXPEDIENTE ===== */
@@ -144,13 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ===== CONFIRMAR ENVÍO (EN_ESPERA → CONFIRMACION_DE_ENVIO) ===== */
   const btnConfirm = document.getElementById('btn-confirm');
   if (btnConfirm) {
-    let alertZone = document.getElementById('expediente-alerts');
-    if (!alertZone) {
-      alertZone = document.createElement('div');
-      alertZone.id = 'expediente-alerts';
-      const headerBlock = document.querySelector('.p-3.rounded.shadow.mb-4');
-      (headerBlock || document.body).prepend(alertZone);
-    }
+    let alertZone = ensureAlertsZone();
 
     btnConfirm.addEventListener('click', async () => {
       if (!window.CONFIRM_URL) {
@@ -209,6 +214,116 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>`;
         btnConfirm.disabled = false;
         btnConfirm.innerHTML = original;
+      }
+    });
+  }
+
+  /* ===== CRUCE CUIT (Técnico) ===== */
+  const modalCruce = document.getElementById('modalCruceCuit');
+  if (modalCruce) {
+    const formCruce = document.getElementById('form-cruce-cuit');
+    const alertasCruce = document.getElementById('cruce-alertas');
+
+    formCruce.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      if (!window.CRUCE_URL) {
+        alertasCruce.innerHTML = `
+          <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            No se configuró la URL de cruce.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>`;
+        return;
+      }
+
+      const input = document.getElementById('id_excel_cuit');
+      if (!input || !input.files || !input.files.length) {
+        alertasCruce.innerHTML = `
+          <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            Seleccioná un archivo .xlsx con la columna <strong>cuit</strong>.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>`;
+        return;
+      }
+
+      const btnSubmit = formCruce.querySelector('button[type="submit"]');
+      const originalHTML = btnSubmit.innerHTML;
+      btnSubmit.disabled = true;
+      btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Ejecutando…';
+
+      alertasCruce.innerHTML = '';
+
+      try {
+        const fd = new FormData(formCruce);
+        // El backend espera el campo "excel_cuit"
+        fd.append('excel_cuit', input.files[0]);
+
+        const resp = await fetch(window.CRUCE_URL, {
+          method: 'POST',
+          body: fd,
+          credentials: 'same-origin',
+          headers: {
+            'X-CSRFToken': getCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          }
+        });
+
+        const ct = resp.headers.get('Content-Type') || '';
+        let data = {};
+        if (ct.includes('application/json')) {
+          data = await resp.json();
+        } else {
+          const text = await resp.text();
+          if (!resp.ok) throw new Error(text || `HTTP ${resp.status}`);
+          // Fallback genérico
+          data = { success: true, message: text };
+        }
+
+        if (!resp.ok || data.success === false) {
+          const msg = data.error || `HTTP ${resp.status}`;
+          throw new Error(msg);
+        }
+
+        const detalle = (data.detalle && `
+          <ul class="mb-0">
+            <li><strong>Leídos:</strong> ${data.detalle.leidos ?? '-'}</li>
+            <li><strong>Match:</strong> ${data.detalle.match ?? '-'}</li>
+            <li><strong>No encontrados:</strong> ${data.detalle.no_encontrados ?? '-'}</li>
+          </ul>
+        `) || '';
+
+        const prdLink = (data.prd_url && `
+          <div class="mt-2">
+            <a href="${data.prd_url}" target="_blank" class="btn btn-sm btn-outline-light">Ver PRD generado</a>
+          </div>
+        `) || '';
+
+        alertasCruce.innerHTML = `
+          <div class="alert alert-success alert-dismissible fade show" role="alert">
+            ${data.message || 'Cruce ejecutado correctamente.'}
+            ${detalle}
+            ${prdLink}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>`;
+
+        // Refrescamos para reflejar cambio de estado (p.ej. PROCESO_DE_CRUCE → CRUCE_FINALIZADO)
+        setTimeout(() => {
+          const modal = bootstrap.Modal.getInstance(modalCruce);
+          modal.hide();
+          window.location.reload();
+        }, 1200);
+
+      } catch (err) {
+        console.error('Cruce CUIT:', err);
+        alertasCruce.innerHTML = `
+          <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            No se pudo ejecutar el cruce. ${err.message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>`;
+      } finally {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = originalHTML;
       }
     });
   }
