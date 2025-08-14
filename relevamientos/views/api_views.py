@@ -7,7 +7,7 @@ from relevamientos.models import Relevamiento
 from relevamientos.serializer import RelevamientoSerializer
 from core.utils import format_serializer_errors
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 class RelevamientoApiView(APIView):
