@@ -2,7 +2,7 @@
  * - Procesar expediente
  * - Subir/editar archivo de legajo
  * - Confirmar Envío
- * - Subir Excel de CUITs y ejecutar cruce (técnico)
+ * - Subir archivo de CUITs y ejecutar cruce (técnico)
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -240,7 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!input || !input.files || !input.files.length) {
         alertasCruce.innerHTML = `
           <div class="alert alert-warning alert-dismissible fade show" role="alert">
-            Seleccioná un archivo .xlsx con la columna <strong>cuit</strong>.
+            Seleccioná un archivo (.xlsx, .xls o .csv) con la columna <strong>cuit</strong>.
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
           </div>`;
         return;
@@ -255,8 +255,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       try {
         const fd = new FormData(formCruce);
-        // El backend espera el campo "excel_cuit"
-        fd.append('excel_cuit', input.files[0]);
+        // IMPORTANTE: el backend espera el campo "archivo".
+        // Ya viene incluido por el input name="archivo", pero reforzamos:
+        fd.set('archivo', input.files[0]);
 
         const resp = await fetch(window.CRUCE_URL, {
           method: 'POST',
@@ -276,7 +277,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
           const text = await resp.text();
           if (!resp.ok) throw new Error(text || `HTTP ${resp.status}`);
-          // Fallback genérico
           data = { success: true, message: text };
         }
 
@@ -307,7 +307,6 @@ document.addEventListener('DOMContentLoaded', () => {
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
           </div>`;
 
-        // Refrescamos para reflejar cambio de estado (p.ej. PROCESO_DE_CRUCE → CRUCE_FINALIZADO)
         setTimeout(() => {
           const modal = bootstrap.Modal.getInstance(modalCruce);
           modal.hide();
