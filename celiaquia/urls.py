@@ -13,6 +13,7 @@ from celiaquia.views.expediente import (
     ProcesarExpedienteView,
     # ⬇️ NUEVO: importamos la vista de recepción (Coordinador)
     RecepcionarExpedienteView,
+    SubirCruceExcelView,
 )
 # Esta vista de confirmación sigue viniendo del módulo dedicado
 from celiaquia.views.confirm_envio import ExpedienteConfirmView
@@ -43,7 +44,7 @@ urlpatterns = [
     ),
     path(
         "expedientes/<int:pk>/",
-        group_required(["ProvinciaCeliaquia", "CoordinadorCeliaquia"])(
+        group_required(["ProvinciaCeliaquia", "CoordinadorCeliaquia", "TecnicoCeliaquia"])(
             ExpedienteDetailView.as_view()
         ),
         name="expediente_detail",
@@ -90,4 +91,9 @@ urlpatterns = [
         group_required(["CoordinadorCeliaquia"])(AsignarTecnicoView.as_view()),
         name="expediente_asignar_tecnico",
     ),
+    path(
+    "expedientes/<int:pk>/cruce-cuit/",
+    group_required(["TecnicoCeliaquia"])(SubirCruceExcelView.as_view()),
+    name="expediente_cruce_cuit",
+),
 ]

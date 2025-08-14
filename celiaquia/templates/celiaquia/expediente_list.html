@@ -79,17 +79,24 @@
               {% if request.user|has_group:"CoordinadorCeliaquia" or request.user|has_group:"TecnicoCeliaquia" %}
                 <td>
                   {% if request.user|has_group:"CoordinadorCeliaquia" %}
-                    <div class="d-flex gap-2 align-items-center">
-                      <select class="form-select form-select-sm js-tecnico" style="min-width: 200px;">
-                        <option value="">— Seleccionar técnico —</option>
-                        {% for t in tecnicos %}
-                          <option value="{{ t.id }}"
-                            {% if exp.asignacion_tecnico and exp.asignacion_tecnico.tecnico_id == t.id %}selected{% endif %}>
-                            {{ t.get_full_name|default:t.username }}
-                          </option>
-                        {% endfor %}
-                      </select>
-                    </div>
+                    {# SOLO mostrar selector cuando el estado ya es RECEPCIONADO o ASIGNADO #}
+                    {% if exp.estado.nombre == 'RECEPCIONADO' or exp.estado.nombre == 'ASIGNADO' %}
+                      <div class="d-flex gap-2 align-items-center">
+                        <select class="form-select form-select-sm js-tecnico" style="min-width: 200px;">
+                          <option value="">— Seleccionar técnico —</option>
+                          {% for t in tecnicos %}
+                            <option value="{{ t.id }}"
+                              {% if exp.asignacion_tecnico and exp.asignacion_tecnico.tecnico_id == t.id %}selected{% endif %}>
+                              {{ t.get_full_name|default:t.username }}
+                            </option>
+                          {% empty %}
+                            {# Si no hay técnicos en el grupo #}
+                          {% endfor %}
+                        </select>
+                      </div>
+                    {% else %}
+                      <span class="text-muted">—</span>
+                    {% endif %}
                   {% else %}
                     {% if exp.asignacion_tecnico %}
                       {{ exp.asignacion_tecnico.tecnico.get_full_name|default:exp.asignacion_tecnico.tecnico.username }}
@@ -135,7 +142,8 @@
                     </button>
                   {% endif %}
 
-                  {% if exp.estado.nombre in 'RECEPCIONADO ASIGNADO' %}
+                  {# Mostrar Asignar solo si RECEPCIONADO o ASIGNADO #}
+                  {% if exp.estado.nombre == 'RECEPCIONADO' or exp.estado.nombre == 'ASIGNADO' %}
                     <button
                       type="button"
                       class="btn btn-sm btn-primary js-assign"

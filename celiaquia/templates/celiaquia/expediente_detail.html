@@ -20,7 +20,20 @@
       </a>
     {% endif %}
   </div>
+
+  {# Botón de Cruce de CUITs: visible para Técnico cuando está ASIGNADO (y opcional PROCESO_DE_CRUCE) #}
+  {% if request.user|has_group:"TecnicoCeliaquia" and expediente.estado.nombre in 'ASIGNADO PROCESO_DE_CRUCE' %}
+    <button
+      type="button"
+      class="btn btn-success btn-sm"
+      data-bs-toggle="modal"
+      data-bs-target="#modalCruceCuit">
+      Subir Excel de CUITs (Cruce)
+    </button>
+  {% endif %}
 </div>
+
+<div id="expediente-alerts"></div>
 
 <div class="p-3 rounded shadow mb-4" style="background-color: #1c2a3a; color: #e0e0e0;">
   <h5 class="mb-3">Detalle del Expediente</h5>
@@ -162,7 +175,7 @@
   </div>
 {% endif %}
 
-<!-- Modal único para subir archivo -->
+<!-- Modal único para subir archivo de LEGAJO -->
 <div class="modal fade" id="modalSubirArchivo" tabindex="-1" aria-labelledby="modalSubirArchivoLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -187,14 +200,41 @@
     </div>
   </div>
 </div>
+
+{# Modal para CRUCE de CUITs (solo técnico) #}
+<div class="modal fade" id="modalCruceCuit" tabindex="-1" aria-labelledby="modalCruceCuitLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form id="form-cruce-cuit" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalCruceCuitLabel">Subir Excel de CUITs (con encabezado)</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <div id="cruce-alertas" class="mb-2"></div>
+          <div class="form-group">
+            <label for="id_excel_cuit">Archivo Excel (.xlsx) con columna <code>cuit</code></label>
+            <input type="file" name="excel_cuit" id="id_excel_cuit" class="form-control" required accept=".xlsx">
+            <small class="text-muted">Debe incluir encabezado; la columna requerida es <strong>cuit</strong> (sin guiones).</small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success">Ejecutar Cruce</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block customJS %}
 <script>
   window.PROCESS_URL = "{% url 'expediente_procesar' expediente.pk %}";
   window.CONFIRM_URL = "{% url 'expediente_confirm' expediente.pk %}";
-  window.CSRF_TOKEN = "{{ csrf_token }}";
+  window.CRUCE_URL   = "{% url 'expediente_cruce_cuit' expediente.pk %}";
+  window.CSRF_TOKEN  = "{{ csrf_token }}";
 </script>
 <script src="{% static 'custom/js/expediente_detail.js' %}"></script>
 {% endblock %}
-

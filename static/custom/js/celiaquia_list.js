@@ -24,7 +24,9 @@
  *       .js-recepcionar   data-recepcionar-url="..."
  *       .js-assign        data-assign-url="..."
  *   - Select del técnico en la fila (solo Coordinador):
- *       <select class="form-select form-select-sm js-tecnico">...</select>
+ *       <select class="form-select form-select-sm js-tecnico" ... data-visible-when="recepcionado" class="d-none"></select>
+ *   - Botón Asignar oculto hasta recepcionar:
+ *       <button class="btn btn-sm btn-primary js-assign d-none" data-visible-when="recepcionado" ...>Asignar</button>
  *   - Bootstrap (alertas y estilos)
  * -------------------------------------------------------------------------
  */
@@ -68,7 +70,6 @@
       }
     };
     if (body && typeof body === 'object') {
-      // Usamos x-www-form-urlencoded cuando enviamos datos
       const params = new URLSearchParams();
       Object.entries(body).forEach(([k, v]) => params.append(k, v));
       opts.headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8';
@@ -107,6 +108,33 @@
         handler(e, target);
       }
     });
+  }
+
+  // ---------- Helpers de UI ----------
+  function markRowRecepcionado(row) {
+    // 1) Actualizar badge de estado (3ra columna)
+    const estadoCell = row.querySelector('td:nth-child(3) .badge');
+    if (estadoCell) {
+      estadoCell.textContent = 'Recepcionado';
+      estadoCell.className = estadoCell.className
+        .replace(/\bbg-\w+\b/g, '')  // limpia cualquier bg-*
+        .trim() + ' bg-secondary';
+    }
+
+    // 2) Ocultar botón "Recepcionar" de esa fila
+    const recepBtn = row.querySelector('.js-recepcionar');
+    if (recepBtn) recepBtn.classList.add('d-none');
+
+    // 3) Mostrar selector y botón Asignar si ya están renderizados ocultos
+    const revealables = row.querySelectorAll('[data-visible-when="recepcionado"].d-none');
+    let revealed = false;
+    revealables.forEach(el => {
+      el.classList.remove('d-none');
+      if (el.matches('select, button')) el.disabled = false;
+      revealed = true;
+    });
+
+    return revealed; // si false, necesitaremos recargar
   }
 
   // ---------- Handlers por acción ----------
@@ -177,6 +205,8 @@
         showAlert('danger', 'No se configuró la URL de recepción.');
         return;
       }
+      const row = btn.closest('tr');
+
       withSpinner(btn, 'Recepcionando…', async () => {
         try {
           const { ok, data, text, status } = await postJson(url);
@@ -184,9 +214,15 @@
             const msg = (data && data.error) || text || `HTTP ${status}`;
             throw new Error(msg);
           }
-          // Ahora explicamos que pasó a RECEPCIONADO
+
+          // Intento actualizar la fila inline (si el template dejó los elementos ocultos)
+          const didReveal = markRowRecepcionado(row);
+
           showAlert('success', 'Expediente recepcionado (estado: RECEPCIONADO). Ahora podés asignar un técnico.');
-          setTimeout(() => window.location.reload(), 700);
+          if (!didReveal) {
+            // Si no había elementos ocultos que revelar, recargamos para que el template los pinte
+            setTimeout(() => window.location.reload(), 600);
+          }
         } catch (err) {
           console.error('Recepcionar expediente:', err);
           showAlert('danger', 'No se pudo recepcionar el expediente. ' + err.message);
@@ -221,7 +257,12 @@
             throw new Error(msg);
           }
           showAlert('success', 'Técnico asignado correctamente. El expediente está en ASIGNADO.');
-          setTimeout(() => window.location.reload(), 700);
+          // Actualizamos badge a ASIGNADO sin recargar
+          const estadoCell = row.querySelector('td:nth-child(3) .badge');
+          if (estadoCell) {
+            estadoCell.textContent = 'Asignado';
+            estadoCell.className = estadoCell.className.replace(/\bbg-\w+\b/g, '').trim() + ' bg-primary';
+          }
         } catch (err) {
           console.error('Asignar técnico:', err);
           showAlert('danger', 'No se pudo asignar el técnico. ' + err.message);
