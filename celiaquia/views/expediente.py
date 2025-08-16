@@ -50,6 +50,27 @@ def _is_ajax(request) -> bool:
     return request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
 
+def _parse_limit(value, default=5, max_cap=5000):
+    """
+    Interpreta un parámetro de límite de filas para preview.
+    - 'all', 'ALL', '0' o 0 -> None (sin tope)
+    - número > 0 -> min(número, max_cap)
+    - inválido -> default
+    """
+    if value is None:
+        return default
+    txt = str(value).strip().lower()
+    if txt in ("all", "todos", "0", "none"):
+        return None  # sin tope
+    try:
+        n = int(txt)
+        if n <= 0:
+            return None
+        return min(n, max_cap)
+    except Exception:
+        return default
+
+
 class ExpedienteListView(ListView):
     """
     Descripción:
@@ -118,7 +139,7 @@ class ProcesarExpedienteView(View):
     """
 
     def post(self, request, pk):
-        user = request.user
+        user = self.request.user
         if _is_admin(user):
             expediente = get_object_or_404(Expediente, pk=pk)
         else:
@@ -143,7 +164,7 @@ class CrearLegajosView(View):
     """
 
     def post(self, request, pk):
-        user = request.user
+        user = self.request.user
         if _is_admin(user):
             expediente = get_object_or_404(Expediente, pk=pk)
         else:
@@ -175,6 +196,10 @@ class CrearLegajosView(View):
 class ExpedientePreviewExcelView(View):
     """
     Devuelve headers y primeras filas del Excel de nómina (preview).
+    Permite controlar la cantidad de filas con el parámetro 'limit' (GET o POST):
+      - limit=all / 0 / none => todas las filas
+      - limit=<número>        => n primeras filas (clamp al máximo)
+      - omitido               => 5 filas por defecto
     """
 
     def post(self, request, *args, **kwargs):
@@ -182,8 +207,13 @@ class ExpedientePreviewExcelView(View):
         archivo = request.FILES.get("excel_masivo")
         if not archivo:
             return JsonResponse({"error": "No se recibió ningún archivo."}, status=400)
+
+        # Lee límite desde GET o POST (por si lo envías junto al FormData)
+        raw_limit = request.POST.get("limit") or request.GET.get("limit")
+        max_rows = _parse_limit(raw_limit, default=5, max_cap=5000)
+
         try:
-            preview = ImportacionService.preview_excel(archivo)
+            preview = ImportacionService.preview_excel(archivo, max_rows=max_rows)
             return JsonResponse(preview)
         except ValidationError as e:
             return JsonResponse({"error": str(e)}, status=400)
@@ -239,8 +269,11 @@ class ExpedienteDetailView(DetailView):
 
         preview = preview_error = None
         if expediente.estado.nombre == "CREADO" and expediente.excel_masivo:
+            # Permitir controlar filas de preview también desde detail:
+            raw_limit = self.request.GET.get("preview_limit")
+            max_rows = _parse_limit(raw_limit, default=5, max_cap=5000)
             try:
-                preview = ImportacionService.preview_excel(expediente.excel_masivo)
+                preview = ImportacionService.preview_excel(expediente.excel_masivo, max_rows=max_rows)
             except Exception as e:
                 preview_error = str(e)
 
@@ -267,7 +300,7 @@ class ExpedienteDetailView(DetailView):
 
 class ExpedienteImportView(View):
     def post(self, request, pk):
-        user = request.user
+        user = self.request.user
         if _is_admin(user):
             expediente = get_object_or_404(Expediente, pk=pk)
         else:
@@ -299,7 +332,7 @@ class ExpedienteConfirmView(View):
     """
 
     def post(self, request, pk):
-        user = request.user
+        user = self.request.user
         if _is_admin(user):
             expediente = get_object_or_404(Expediente, pk=pk)
         else:
@@ -350,7 +383,7 @@ class RecepcionarExpedienteView(View):
     """
 
     def post(self, request, pk):
-        user = request.user
+        user = self.request.user
         if not (_is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia")):
             if _is_ajax(request):
                 return JsonResponse({"success": False, "error": "Permiso denegado."}, status=403)
@@ -387,7 +420,7 @@ class AsignarTecnicoView(View):
     """
 
     def post(self, request, pk):
-        user = request.user
+        user = self.request.user
         if not (_is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia")):
             if _is_ajax(request):
                 return JsonResponse({"success": False, "error": "Permiso denegado."}, status=403)
@@ -447,7 +480,7 @@ class SubirCruceExcelView(View):
     """
 
     def post(self, request, pk):
-        user = request.user
+        user = self.request.user
 
         # Permisos: técnico asignado o admin
         if not (_is_admin(user) or _user_in_group(user, "TecnicoCeliaquia")):
