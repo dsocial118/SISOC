@@ -283,7 +283,13 @@ LOGGING = {
     },
     "loggers": {
         "django": {
-            "handlers": ["info_file", "error_file", "warning_file", "critical_file","data_file"],
+            "handlers": [
+                "info_file",
+                "error_file",
+                "warning_file",
+                "critical_file",
+                "data_file",
+            ],
             "level": "DEBUG" if DEBUG else "INFO",
             "propagate": True,
         },
