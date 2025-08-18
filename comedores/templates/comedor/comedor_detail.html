@@ -29,6 +29,8 @@
     <link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
     <link rel="stylesheet"
           href="{% static 'custom/css/comedorRelevamiento.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/galeria-imagenes.css' %}" />
     <div class="row justify-content-between d-print-none mx-1 mb-3">
         <div class="col-auto">
             <a href="{% url 'comedores' %}"
@@ -614,23 +616,60 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title font-weight-bold mr-3 pt-1">Imagenes</h3>
+                        <h3 class="card-title font-weight-bold mr-3 pt-1">
+                            <i class="fas fa-images mr-2"></i>
+                            Galería de Imágenes
+                        </h3>
                         <div class="card-tools">
+                            <span class="badge badge-primary mr-2">{{ imagenes|length }} imagen{{ imagenes|length|pluralize:"es" }}</span>
                             <button type="button" class="btn btn-tool" data-card-widget="collapse">
                                 <i class="fas fa-minus"></i>
                             </button>
                         </div>
                     </div>
-                    <div class="card-body row card-comments p-0 pb-1">
-                        <div class="nav nav-pills row col-10 my-3 mx-auto">
-                            {% for imagen in imagenes %}
-                                <div class="col-2 d-flex">
-                                    <img src="/media/{{ imagen.imagen }}"
-                                         alt="Imagen del comedor"
-                                         class="img-fluid my-1 rounded object-fit-contain" />
+                    <div class="card-body p-3">
+                        {% if imagenes %}
+                            <div class="galeria-imagenes">
+                                {% for imagen in imagenes %}
+                                    <div class="imagen-item" data-index="{{ forloop.counter0 }}">
+                                        <div class="imagen-container" data-image-url="{{ imagen.imagen.url }}">
+                                            <div class="placeholder-imagen">
+                                                <i class="fas fa-image"></i>
+                                                <div class="loader">
+                                                    <div class="spinner-border spinner-border-sm" role="status">
+                                                        <span class="sr-only">Cargando...</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="imagen-overlay">
+                                                <button type="button"
+                                                        class="btn-expandir"
+                                                        onclick="abrirModal({{ forloop.counter0 }})">
+                                                    <i class="fas fa-expand-alt"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="imagen-info">
+                                            <div class="imagen-nombre">
+                                                {% if "comedor/" in imagen.imagen.name %}
+                                                    {{ imagen.imagen.name|slice:"8:" }}
+                                                {% else %}
+                                                    {{ imagen.imagen.name }}
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="sin-imagenes">
+                                <div class="text-center py-5">
+                                    <i class="fas fa-image fa-3x text-muted mb-3"></i>
+                                    <h5 class="text-muted">No hay imágenes disponibles</h5>
+                                    <p class="text-muted">Las imágenes del comedor aparecerán aquí una vez que sean cargadas.</p>
                                 </div>
-                            {% endfor %}
-                        </div>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -673,6 +712,66 @@
                 </div>
             </div>
         {% endif %}
+        <!-- Modal para vista ampliada de imágenes -->
+        <div class="modal fade"
+             id="imagenModal"
+             tabindex="-1"
+             aria-labelledby="imagenModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-centered">
+                <div class="modal-content modal-imagen">
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title" id="imagenModalLabel">
+                            <i class="fas fa-image mr-2"></i>
+                            Imagen del comedor
+                        </h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Cerrar">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body p-0">
+                        <div class="imagen-modal-container">
+                            <div class="imagen-principal">
+                                <img id="imagenPrincipal" src="" alt="Imagen ampliada" class="img-fluid" />
+                                <div class="controles-navegacion">
+                                    <button type="button"
+                                            class="btn-nav btn-anterior"
+                                            onclick="cambiarImagen(-1)">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </button>
+                                    <button type="button"
+                                            class="btn-nav btn-siguiente"
+                                            onclick="cambiarImagen(1)">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 justify-content-between">
+                        <div class="info-imagen">
+                            <span class="nombre-archivo" id="nombreArchivo">imagen.jpg</span>
+                            <span class="contador-imagenes" id="contadorImagenes">1 de 5</span>
+                        </div>
+                        <div class="acciones-imagen">
+                            <button type="button"
+                                    class="btn btn-outline-primary btn-sm"
+                                    onclick="descargarImagen()">
+                                <i class="fas fa-download mr-1"></i>Descargar
+                            </button>
+                            <button type="button"
+                                    class="btn btn-secondary btn-sm"
+                                    data-bs-dismiss="modal">
+                                <i class="fas fa-times mr-1"></i>Cerrar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     {% endblock %}
     {% block customJS %}
         <script>
@@ -680,5 +779,6 @@
         const GESTIONAR_API_KEY = "{{ GESTIONAR_API_KEY }}";
         const GESTIONAR_API_CREAR_COMEDOR = "{{ GESTIONAR_API_CREAR_COMEDOR }}";
         </script>
+        <script src="{% static 'custom/js/galeria-imagenes.js' %}"></script>
         <script src="{% static 'custom/js/comedordetail.js' %}"></script>
     {% endblock %}

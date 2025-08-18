@@ -477,7 +477,7 @@ class ComedorUpdateView(UpdateView):
         )
         data["imagenes_borrar"] = ImagenComedor.objects.filter(
             comedor=self.object.pk
-        ).values("id", "imagen")
+        ).only("id", "imagen")
         return data
 
     def form_valid(self, form):
@@ -493,6 +493,7 @@ class ComedorUpdateView(UpdateView):
             self.object.save()
 
             ComedorService.borrar_imagenes(self.request.POST)
+            ComedorService.borrar_foto_legajo(self.request.POST, self.object)
 
             for imagen in imagenes:
                 try:
