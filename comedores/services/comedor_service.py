@@ -13,6 +13,7 @@ from django.shortcuts import get_object_or_404
 
 from relevamientos.models import Relevamiento, ClasificacionComedor
 from relevamientos.service import RelevamientoService
+from ciudadanos.models import Ciudadano, HistorialCiudadanoProgramas, CiudadanoPrograma
 from comedores.forms.comedor_form import ImagenComedorForm
 from comedores.models import Comedor, ImagenComedor, Nomina, Observacion, Referente
 from comedores.utils import (
@@ -78,14 +79,14 @@ class ComedorService:
     def borrar_foto_legajo(post, comedor_instance):
         """Eliminar la foto del legajo si está marcada para borrar"""
         if "foto_legajo_borrar" in post and comedor_instance.foto_legajo:
-            # Eliminar el archivo físico
             if comedor_instance.foto_legajo:
-                try:
-                    default_storage.delete(comedor_instance.foto_legajo.name)
-                except Exception:  # pragma: no cover - registro de errores
-                    logger.exception("Error al eliminar foto de legajo")
-
-            # Limpiar el campo en la base de datos
+              try:
+                  comedor_instance.foto_legajo.delete(save=False)
+              except Exception:
+                  logger.exception(
+                      "Error al eliminar la foto de legajo del comedor %s",
+                      comedor_instance.pk,
+                  )
             comedor_instance.foto_legajo = None
             comedor_instance.save(update_fields=["foto_legajo"])
 
