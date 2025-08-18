@@ -222,7 +222,7 @@ def eliminar_programa(request):
             )
 
         except Exception as exc:
-            logger.exception("Error al eliminar programa", exc_info=exc)
+            logger.exception("Error al eliminar programa", extra={"body": request.POST})
             return JsonResponse(
                 {
                     "success": False,
@@ -962,35 +962,28 @@ class CiudadanosCreateView(CreateView):
             with transaction.atomic():
                 ciudadano.save()
 
-                # Crear las dimensiones
                 dimensionfamilia = DimensionFamilia.objects.create(
                     ciudadano_id=ciudadano.id
                 )
 
-                logger.info(f"dimensionfamilia {dimensionfamilia}")
                 dimensionvivienda = DimensionVivienda.objects.create(
                     ciudadano_id=ciudadano.id
                 )
 
-                logger.info(f"dimensionvivienda {dimensionvivienda}")
                 dimensiosalud = DimensionSalud.objects.create(ciudadano_id=ciudadano.id)
 
-                logger.info(f"dimensiosalud {dimensiosalud}")
 
                 dimensioneconomia = DimensionEconomia.objects.create(
                     ciudadano_id=ciudadano.id
                 )
-                logger.info(f"dimensioneconomia {dimensioneconomia}")
 
                 dimensioneducacion = DimensionEducacion.objects.create(
                     ciudadano_id=ciudadano.id
                 )
-                logger.info(f"dimensioneducacion {dimensioneducacion}")
 
                 dimensiontrabajo = DimensionTrabajo.objects.create(
                     ciudadano_id=ciudadano.id
                 )
-                logger.info(f"dimensiontrabajo {dimensiontrabajo}")
 
             # Redireccionar según el botón presionado
             if "form_ciudadanos" in self.request.POST:
@@ -1162,9 +1155,9 @@ class CiudadanosGrupoFamiliarCreateView(CreateView):
                 cuidador_principal=cuidador_principal,
             )
 
-        except Exception as exc:
-            logger.exception("Error al crear el familiar", exc_info=exc)
-            messages.error(self.request, f"Error al crear el familiar: {exc}")
+        except Exception:
+            logger.exception(f"Error al crear el familiar {pk}", extra={"form": form})
+            messages.error(self.request, f"Error al crear el familiar")
             return redirect(self.request.path_info)
 
         messages.success(self.request, "Familiar agregado correctamente.")
