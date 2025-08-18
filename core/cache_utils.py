@@ -34,7 +34,7 @@ def invalidate_cache_pattern(pattern):
     # Nota: Django cache no soporta wildcard deletion por defecto
     # Para implementación completa necesitaríamos usar Redis con scan
     # Por ahora, usaremos claves específicas
-    logger = __import__("logging").getLogger(__name__)
+    logger = __import__("logging").getLogger("django")
     logger.warning(f"Pattern invalidation not implemented for pattern: {pattern}")
 
 

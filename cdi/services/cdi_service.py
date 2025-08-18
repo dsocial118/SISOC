@@ -30,7 +30,6 @@ class CentroDesarrolloInfantilService:
         except Exception as e:
             logger.error(
                 f"Error en CentroDesarrolloInfantilService.get_centros_filtrados para centro: {e}",
-                exc_info=True,
             )
             raise
 
@@ -51,7 +50,6 @@ class CentroDesarrolloInfantilService:
         except Exception as e:
             logger.error(
                 f"Error en CentroDesarrolloInfantilService.get_centro_detail_object para centro:{centro_id} {e}",
-                exc_info=True,
             )
             raise
 
@@ -73,7 +71,6 @@ class CentroDesarrolloInfantilService:
         except Exception as e:
             logger.error(
                 f"Error en CentroDesarrolloInfantilService.create_imagenes para centro:{centro_id} {e}",
-                exc_info=True,
             )
             raise
 
@@ -99,7 +96,6 @@ class CentroDesarrolloInfantilService:
         except Exception as e:
             logger.error(
                 f"Error en CentroDesarrolloInfantilService.get_mes_dia_turno_ids para centro:{data} {e}",
-                exc_info=True,
             )
             raise
 
@@ -118,6 +114,5 @@ class CentroDesarrolloInfantilService:
         except Exception as e:
             logger.error(
                 f"Error en CentroDesarrolloInfantilService.get_informacion_adicional para centro:{centro_id} {e}",
-                exc_info=True,
             )
             raise

@@ -26,7 +26,7 @@ from admisiones.models.admisiones import Admision
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 from intervenciones.models.intervenciones import Intervencion
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 class ComedorService:

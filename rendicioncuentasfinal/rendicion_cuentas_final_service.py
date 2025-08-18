@@ -30,7 +30,6 @@ class RendicionCuentasFinalService:
         except Exception as e:
             logger.error(
                 f"Error en RendicionCuentasFinalService.actualizar_documento_con_archivo para el documento: {documento} {e}",
-                exc_info=True,
             )
             raise
 
@@ -50,7 +49,6 @@ class RendicionCuentasFinalService:
         except Exception as e:
             logger.error(
                 f"Error en RendicionCuentasFinalService.adjuntar_archivo_a_documento para el documento: {documento_id} {e}",
-                exc_info=True,
             )
             raise
 
@@ -76,7 +74,6 @@ class RendicionCuentasFinalService:
         except Exception as e:
             logger.error(
                 f"Error en RendicionCuentasFinalService.get_documentos_rendicion_cuentas_final: {rendicion_cuentas_final} {e}",
-                exc_info=True,
             )
 
             raise
@@ -115,6 +112,5 @@ class RendicionCuentasFinalService:
         except Exception as e:
             logger.error(
                 f"Error en RendicionCuentasFinalService.filter_documentos_por_area para el usuario: {user} {e}",
-                exc_info=True,
             )
             raise

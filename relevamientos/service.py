@@ -128,7 +128,6 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         except Exception as e:
             logger.error(
                 f"Error en RelevamientoService.update_comedor para comedor: {comedor_data} {e}",
-                exc_info=True,
             )
             raise
 
@@ -151,7 +150,6 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         except Exception as e:
             logger.error(
                 f"Error en RelevamientoService.create_pendiente para comedor: {comedor_id} {e}",
-                exc_info=True,
             )
             raise
 
@@ -185,7 +183,6 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         except Exception as e:
             logger.error(
                 f"Error en RelevamientoService.update_territorial para relevamiento: {relevamiento_id} {e}",
-                exc_info=True,
             )
             raise
 
@@ -236,7 +233,6 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         except Exception as e:
             logger.error(
                 f"Error en RelevamientoService.populate_relevamiento: {e}",
-                exc_info=True,
             )
             raise
 
@@ -256,7 +252,6 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         except Exception as e:
             logger.error(
                 f"Error en RelevamientoService.separate_string: {e}",
-                exc_info=True,
             )
             raise
 
@@ -427,7 +422,6 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         except Exception as e:
             logger.error(
                 f"Error en RelevamientoService.get_relevamiento_detail_object: {e}",
-                exc_info=True,
             )
             raise
 
@@ -473,7 +467,6 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         except Exception as e:
             logger.error(
                 f"Error en RelevamientoService.create_or_update_funcionamiento: {e}",
-                exc_info=True,
             )
             raise
 
@@ -500,7 +493,6 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         except Exception as e:
             logger.error(
                 f"Error en RelevamientoService.create_or_update_espacio_prestacion: {e}",
-                exc_info=True,
             )
             raise
 
@@ -565,7 +557,6 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         except Exception as e:
             logger.error(
                 f"Error en RelevamientoService.create_or_update_cocina: {e}",
-                exc_info=True,
             )
             raise
 
@@ -628,7 +619,6 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         except Exception as e:
             logger.error(
                 f"Error en RelevamientoService.create_or_update_espacio: {e}",
-                exc_info=True,
             )
             raise
 
@@ -718,7 +708,6 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         except Exception as e:
             logger.error(
                 f"Error en RelevamientoService.create_or_update_recursos: {e}",
-                exc_info=True,
             )
             raise
 
@@ -783,7 +772,6 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         except Exception as e:
             logger.error(
                 f"Error en RelevamientoService.create_or_update_compras: {e}",
-                exc_info=True,
             )
             raise
 
@@ -800,7 +788,6 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         except Exception as e:
             logger.error(
                 f"Error en RelevamientoService.create_or_update_anexo: {e}",
-                exc_info=True,
             )
             raise
 
@@ -900,7 +887,6 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         except Exception as e:
             logger.error(
                 f"Error en RelevamientoService.create_or_update_punto_entregas: {e}",
-                exc_info=True,
             )
             raise
 
@@ -967,7 +953,6 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         except Exception as e:
             logger.error(
                 f"Error en RelevamientoService.create_or_update_prestacion: {e}",
-                exc_info=True,
             )
             raise
 
