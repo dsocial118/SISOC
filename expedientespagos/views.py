@@ -32,6 +32,35 @@ class ExpedientesPagosListView(ListView):
         )
         context["comedorid"] = comedor_id
 
+        # Configuración para el componente data_table
+        context["table_headers"] = [
+            {"title": "Número de Expediente"},
+            {"title": "Resolución de Pago"},
+            {"title": "Monto"},
+            {"title": "Anexo"},
+            {"title": "Número de Orden de Pago"},
+            {"title": "Fecha de pago al banco"},
+            {"title": "Fecha de acreditación"},
+            {"title": "Observaciones"},
+            {"title": "Fecha de creación"},
+        ]
+
+        context["table_fields"] = [
+            {"name": "expediente_pago"},
+            {"name": "resolucion_pago"},
+            {"name": "monto"},
+            {"name": "anexo"},
+            {"name": "numero_orden_pago"},
+            {"name": "fecha_pago_al_banco"},
+            {"name": "fecha_acreditacion"},
+            {"name": "observaciones"},
+            {"name": "fecha_creacion"},
+        ]
+
+        context["table_actions"] = [
+            {"label": "Ver", "url_name": "expedientespagos_detail", "type": "info"}
+        ]
+
         return context
 
 
@@ -70,6 +99,10 @@ class ExpedientesPagosCreateView(CreateView):
         context["es_tecnico_comedor"] = (
             self.request.user.is_superuser
             or self.request.user.groups.filter(name="Tecnico Comedor").exists()
+        )
+        # URL de cancelación para el componente form_buttons
+        context["expedientes_list_url"] = reverse(
+            "expedientespagos_list", kwargs={"pk": comedor_id}
         )
         return context
 
@@ -113,6 +146,10 @@ class ExpedientesPagosUpdateView(UpdateView):
         context["es_tecnico_comedor"] = (
             self.request.user.is_superuser
             or self.request.user.groups.filter(name="Tecnico Comedor").exists()
+        )
+        # URL de cancelación para el componente form_buttons
+        context["expedientes_list_url"] = reverse(
+            "expedientespagos_list", kwargs={"pk": expediente.comedor.id}
         )
         return context
 

@@ -14,6 +14,7 @@ from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404
 from django.http import Http404
+from django.utils.html import format_html
 
 from centrodefamilia.models import (
     CabalArchivo,
@@ -54,9 +55,52 @@ class CentroListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         user = self.request.user
-        ctx["can_add"] = (
-            user.is_superuser or user.groups.filter(name="CDF SSE").exists()
+        can_add = user.is_superuser or user.groups.filter(name="CDF SSE").exists()
+        ctx["can_add"] = can_add
+
+        # Datos para componentes
+        action_buttons = []
+        if can_add:
+            action_buttons.extend(
+                [
+                    {
+                        "url": reverse("centro_create"),
+                        "text": "Agregar",
+                        "type": "primary btn-lg",
+                        "class": "d-block d-sm-inline mt-2",
+                    },
+                    {
+                        "url": reverse("actividad_create_sola"),
+                        "text": "Agregar Actividad",
+                        "type": "primary btn-lg",
+                        "class": "d-block d-sm-inline mt-2",
+                    },
+                ]
+            )
+
+        ctx.update(
+            {
+                # Breadcrumb
+                "breadcrumb_items": [
+                    {"text": "Centro de Familia", "url": reverse("centro_list")},
+                    {"text": "Listar", "active": True},
+                ],
+                # Search bar
+                "reset_url": reverse("centro_list"),
+                # Action buttons
+                "action_buttons": action_buttons,
+                # Table headers
+                "table_headers": [
+                    {"title": "Nombre"},
+                    {"title": "Tipo"},
+                    {"title": "Dirección"},
+                    {"title": "Teléfono / Celular"},
+                    {"title": "Estado"},
+                    {"title": "Acciones", "class": "notexport", "style": "width: 15%"},
+                ],
+            }
         )
+
         return ctx
 
 
@@ -82,6 +126,52 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         centro = self.object
+
+        # Breadcrumb data
+        ctx["breadcrumb_items"] = [
+            {"text": "Centro de Familia", "url": reverse("centro_list")},
+            {"text": centro.nombre, "active": True},
+        ]
+
+        # Action buttons
+        action_buttons = [
+            {
+                "url": reverse("centro_update", args=[centro.id]),
+                "text": "Editar",
+                "type": "outline-primary",
+                "size": "sm",
+            },
+            {
+                "url": reverse("centro_list"),
+                "text": "Volver",
+                "type": "outline-secondary",
+                "size": "sm",
+            },
+            {
+                "url": reverse(
+                    "actividadcentro_create", kwargs={"centro_id": centro.id}
+                ),
+                "text": "Agregar Actividad",
+                "type": "outline-success",
+                "size": "sm",
+            },
+        ]
+        if centro.tipo == "faro":
+            action_buttons.append(
+                {
+                    "url": f"{reverse('centro_create')}?faro={centro.id}",
+                    "text": "Agregar Centro Adherido",
+                    "type": "outline-info",
+                    "size": "sm",
+                }
+            )
+        ctx["action_buttons"] = action_buttons
+
+        # 1) Expedientes
+        qs_exp = Expediente.objects.filter(centro=centro).order_by("-fecha_subida")
+        ctx["expedientes_cabal"] = Paginator(qs_exp, 3).get_page(
+            self.request.GET.get("page_exp")
+        )
 
         # 2) Actividades en curso
         search_curso = (
@@ -109,9 +199,11 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
 
         # 3) Actividades de otros centros
         search_otras = self.request.GET.get("search_actividades", "").strip().lower()
-        otras = ActividadCentro.objects.exclude(centro=centro).select_related(
-            "actividad", "actividad__categoria", "centro"
-        )
+        otras = (
+            ActividadCentro.objects.exclude(centro=centro)
+            .select_related("actividad", "actividad__categoria", "centro")
+            .order_by("-id")
+        )  # Add ordering to prevent UnorderedObjectListWarning
         if search_otras:
             otras = otras.filter(
                 Q(actividad__nombre__icontains=search_otras)
@@ -179,6 +271,21 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
     template_name = "centros/centro_form.html"
     success_url = reverse_lazy("centro_list")
 
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx.update(
+            {
+                "breadcrumb_items": [
+                    {"text": "Centro de Familia", "url": reverse("centro_list")},
+                    {"text": "Nuevo", "active": True},
+                ],
+                "page_title": "Nuevo Centro",
+                "cancel_url": reverse("centro_list"),
+                "submit_text": "Guardar",
+            }
+        )
+        return ctx
+
     def get_initial(self):
         initial = super().get_initial()
         faro_id = self.request.GET.get("faro")
@@ -205,6 +312,25 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
     form_class = CentroForm
     template_name = "centros/centro_form.html"
 
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx.update(
+            {
+                "breadcrumb_items": [
+                    {"text": "Centro de Familia", "url": reverse("centro_list")},
+                    {
+                        "text": self.object.nombre,
+                        "url": reverse("centro_detail", args=[self.object.pk]),
+                    },
+                    {"text": "Editar", "active": True},
+                ],
+                "page_title": f"Editar Centro: {self.object.nombre}",
+                "cancel_url": reverse("centro_detail", args=[self.object.pk]),
+                "submit_text": "Actualizar",
+            }
+        )
+        return ctx
+
     def dispatch(self, request, *args, **kwargs):
         centro = self.get_object()
         user = request.user
@@ -223,7 +349,35 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
 class CentroDeleteView(LoginRequiredMixin, DeleteView):
     model = Centro
     success_url = reverse_lazy("centro_list")
-    template_name = "includes/confirm_delete.html"
+    template_name = "centros/centro_confirm_delete.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        centro = self.object
+        ctx.update(
+            {
+                "breadcrumb_items": [
+                    {"text": "Centro de Familia", "url": reverse("centro_list")},
+                    {
+                        "text": centro.nombre,
+                        "url": reverse("centro_detail", args=[centro.pk]),
+                    },
+                    {"text": "Eliminar", "active": True},
+                ],
+                "object_title": centro.nombre,
+                "delete_message": format_html(
+                    "¿Estás seguro que querés eliminar este centro?"
+                    " <br><strong>Nombre:</strong> {}"
+                    " <br><strong>Dirección:</strong> {}"
+                    " <br><strong>Tipo:</strong> {}",
+                    centro.nombre,
+                    centro.calle,
+                    centro.get_tipo_display(),
+                ),
+                "cancel_url": reverse("centro_list"),
+            }
+        )
+        return ctx
 
     def dispatch(self, request, *args, **kwargs):
         centro = self.get_object()
