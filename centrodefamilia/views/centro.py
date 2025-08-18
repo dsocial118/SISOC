@@ -14,6 +14,7 @@ from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404
 from django.http import Http404
+from django.utils.html import format_html
 
 from centrodefamilia.models import (
     CabalArchivo,
@@ -364,7 +365,15 @@ class CentroDeleteView(LoginRequiredMixin, DeleteView):
                     {"text": "Eliminar", "active": True},
                 ],
                 "object_title": centro.nombre,
-                "delete_message": f"¿Estás seguro que querés eliminar este centro? <br><strong>Nombre:</strong> {centro.nombre}<br><strong>Dirección:</strong> {centro.calle}<br><strong>Tipo:</strong> {centro.get_tipo_display}",
+                "delete_message": format_html(
+                    "¿Estás seguro que querés eliminar este centro?"
+                    " <br><strong>Nombre:</strong> {}"
+                    " <br><strong>Dirección:</strong> {}"
+                    " <br><strong>Tipo:</strong> {}",
+                    centro.nombre,
+                    centro.calle,
+                    centro.get_tipo_display(),
+                ),
                 "cancel_url": reverse("centro_list"),
             }
         )
