@@ -19,188 +19,208 @@
     </div>
     <!-- 2) BOTONES DE ACCIÓN -->
     {% include 'components/action_buttons.html' with buttons=action_buttons class="mt-4 mb-4 d-flex justify-content-end" %}
-    <!-- 3) UBICACIÓN -->
-    <div class="location-card mb-4">
-        <div class="left-tab" id="tab-ubicacion">
-            <span class="tab-text">Ubicación</span>
-        </div>
-        <div class="map-container" id="mapa-iframe">
-            {% if centro.calle and centro.numero and centro.localidad and centro.municipio and centro.provincia %}
-                <iframe src="https://maps.google.com/maps?q={{ centro.calle|urlencode }}+{{ centro.numero }},+{{ centro.localidad.nombre|urlencode }},+{{ centro.municipio.nombre|urlencode }},+{{ centro.provincia.nombre|urlencode }}&output=embed"
-                        width="100%"
-                        height="100%"
-                        frameborder="0"
-                        style="border:0;
-                               border-radius:8px"
-                        allowfullscreen>
-                </iframe>
-            {% else %}
-                <div class="h-100 d-flex align-items-center justify-content-center text-muted">Sin mapa disponible</div>
-            {% endif %}
-        </div>
-        <div class="details-container" id="detalles-ubicacion">
-            <div class="section-title">Ubicación</div>
-            <hr class="section-divider" />
-            <ul>
-                <li>
-                    <i class="fas fa-road me-2 text-info"></i>Calle: {{ centro.calle }} {{ centro.numero }}
-                </li>
-                <li>
-                    <i class="fas fa-globe-americas me-2 text-info"></i>{{ centro.localidad }}, {{ centro.provincia }}
-                </li>
-                <li>
-                    <i class="fas fa-map-pin me-2 text-info"></i>Domicilio de Actividades: {{ centro.domicilio_actividad }}
-                </li>
-                <li>
-                    <i class="fas fa-phone me-2 text-info"></i>Teléfono: {{ centro.telefono }}
-                </li>
-                <li>
-                    <i class="fas fa-mobile-alt me-2 text-info"></i>Celular: {{ centro.celular }}
-                </li>
-            </ul>
-        </div>
-        <div class="right-tabs">
-            <div class="tab-item">
-                <span class="tab-text">Información Básica</span>
-            </div>
-            <div class="tab-item">
-                <span class="tab-text">Datos</span>
-            </div>
-            <div class="tab-item">
-                <span class="tab-text">Asistencia</span>
-            </div>
-            <div class="tab-item">
-                <span class="tab-text">Referente</span>
-            </div>
-        </div>
-        <!-- Secciones dinámicas ocultas -->
-        <div class="content-seccion" id="seccion-informacion-basica">
-            <div class="section-title">Información Básica</div>
-            <hr class="section-divider" />
-            <div class="row g-3">
-                <div class="col-sm-6 d-flex">
-                    <i class="fas fa-user me-2 text-info mt-1"></i>
-                    <div>
-                        <div class="fw-bold">Nombre</div>
-                        <div>{{ centro.nombre }}</div>
+    <!-- 3) Acordion -->
+    <div class="accordion-horizontal rounded mb-4">
+        <!-- panel 1 -->
+        <div class="accordion-panel open">
+            <div class="accordion-header bg-panel1 rounded-end h6">Ubicación</div>
+            <div class="accordion-content">
+                <div class="row">
+                    <div class="col-12 col-lg-5">
+                        <div class="map-container" id="mapa-iframe">
+                            {% if centro.calle and centro.numero and centro.localidad and centro.municipio and centro.provincia %}
+                                <iframe src="https://maps.google.com/maps?q={{ centro.calle|urlencode }}+{{ centro.numero }},+{{ centro.localidad.nombre|urlencode }},+{{ centro.municipio.nombre|urlencode }},+{{ centro.provincia.nombre|urlencode }}&output=embed"
+                                        width="100%"
+                                        height="100%"
+                                        frameborder="0"
+                                        style="border:0;
+                                               border-radius:8px"
+                                        allowfullscreen>
+                                </iframe>
+                            {% else %}
+                                <div class="h-100 d-flex align-items-center justify-content-center text-muted">Sin mapa disponible</div>
+                            {% endif %}
+                        </div>
                     </div>
-                </div>
-                <div class="col-sm-6 d-flex">
-                    <i class="fas fa-layer-group me-2 text-info mt-1"></i>
-                    <div>
-                        <div class="fw-bold">Tipo</div>
-                        <div>{{ centro.get_tipo_display }}</div>
-                    </div>
-                </div>
-                <div class="col-sm-6 d-flex">
-                    <i class="fas fa-barcode me-2 text-info mt-1"></i>
-                    <div>
-                        <div class="fw-bold">Código</div>
-                        <div>{{ centro.codigo }}</div>
-                    </div>
-                </div>
-                <div class="col-sm-6 d-flex">
-                    <i class="fas fa-flag me-2 text-info mt-1"></i>
-                    <div>
-                        <div class="fw-bold">Provincia</div>
-                        <div>{{ centro.provincia }}</div>
-                    </div>
-                </div>
-                <div class="col-sm-6 d-flex">
-                    <i class="fas fa-city me-2 text-info mt-1"></i>
-                    <div>
-                        <div class="fw-bold">Municipio</div>
-                        <div>{{ centro.municipio }}</div>
-                    </div>
-                </div>
-                <div class="col-sm-6 d-flex">
-                    <i class="fas fa-map-marked-alt me-2 text-info mt-1"></i>
-                    <div>
-                        <div class="fw-bold">Localidad</div>
-                        <div>{{ centro.localidad }}</div>
+                    <div class="col-12 col-lg-7">
+                        <div class="details-container" id="detalles-ubicacion">
+                            <div class="section-title">Ubicación</div>
+                            <hr class="section-divider" />
+                            <ul class="no-bullets">
+                                <li>
+                                    <i class="fas fa-road me-2 text-info"></i>Calle: {{ centro.calle }} {{ centro.numero }}
+                                </li>
+                                <li>
+                                    <i class="fas fa-globe-americas me-2 text-info"></i>{{ centro.localidad }}, {{ centro.provincia }}
+                                </li>
+                                <li>
+                                    <i class="fas fa-map-pin me-2 text-info"></i>Domicilio de Actividades: {{ centro.domicilio_actividad }}
+                                </li>
+                                <li>
+                                    <i class="fas fa-phone me-2 text-info"></i>Teléfono: {{ centro.telefono }}
+                                </li>
+                                <li>
+                                    <i class="fas fa-mobile-alt me-2 text-info"></i>Celular: {{ centro.celular }}
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="content-seccion" id="seccion-datos">
-            <div class="section-title">Datos</div>
-            <hr class="section-divider" />
-            <div class="row g-3">
-                <div class="col-sm-6 d-flex">
-                    <i class="fas fa-envelope me-2 text-info mt-1"></i>
-                    <div>
-                        <div class="fw-bold">Correo electrónico</div>
-                        <div>{{ centro.correo }}</div>
-                    </div>
-                </div>
-                <div class="col-sm-6 d-flex">
-                    <i class="fas fa-globe me-2 text-info mt-1"></i>
-                    <div>
-                        <div class="fw-bold">Sitio web</div>
-                        <div>{{ centro.sitio_web }}</div>
-                    </div>
-                </div>
-                <div class="col-sm-6 d-flex">
-                    <i class="fas fa-share-alt me-2 text-info mt-1"></i>
-                    <div>
-                        <div class="fw-bold">Redes sociales</div>
-                        <div>{{ centro.link_redes }}</div>
-                    </div>
-                </div>
-                <div class="col-sm-6 d-flex">
-                    <i class="fas fa-building me-2 text-info mt-1"></i>
-                    <div>
-                        <div class="fw-bold">Organización</div>
-                        <div>{{ centro.organizacion_asociada }}</div>
+        <!-- panel 2 -->
+        <div class="accordion-panel">
+            <div class="accordion-header bg-panel2 h6">Información Basica</div>
+            <div class="accordion-content">
+                <div class="row">
+                    <div class="section-title">Información Básica</div>
+                    <hr class="section-divider" />
+                    <div class="row g-3 px-3">
+                        <div class="col-sm-6 d-flex">
+                            <i class="fas fa-user me-2 text-info mt-1"></i>
+                            <div>
+                                <div class="fw-bold">Nombre</div>
+                                <div>{{ centro.nombre }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 d-flex">
+                            <i class="fas fa-layer-group me-2 text-info mt-1"></i>
+                            <div>
+                                <div class="fw-bold">Tipo</div>
+                                <div>{{ centro.get_tipo_display }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 d-flex">
+                            <i class="fas fa-barcode me-2 text-info mt-1"></i>
+                            <div>
+                                <div class="fw-bold">Código</div>
+                                <div>{{ centro.codigo }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 d-flex">
+                            <i class="fas fa-flag me-2 text-info mt-1"></i>
+                            <div>
+                                <div class="fw-bold">Provincia</div>
+                                <div>{{ centro.provincia }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 d-flex">
+                            <i class="fas fa-city me-2 text-info mt-1"></i>
+                            <div>
+                                <div class="fw-bold">Municipio</div>
+                                <div>{{ centro.municipio }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 d-flex">
+                            <i class="fas fa-map-marked-alt me-2 text-info mt-1"></i>
+                            <div>
+                                <div class="fw-bold">Localidad</div>
+                                <div>{{ centro.localidad }}</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        <!-- Reemplazo de la sección ASISTENCIA para usar CABAL -->
-        <div class="content-seccion" id="seccion-asistencia">
-            <div class="section-title">Asistencia</div>
-            <hr class="section-divider" />
-            {% with ultimo=archivos_cabal_centro|first %}
-                {% if ultimo %}
-                    <p>
-                        <strong>Último informe CABAL:</strong> {{ ultimo.fecha_subida|date:"d/m/Y H:i" }}
-                    </p>
-                    <p>
-                        <strong>Subido por:</strong> {{ ultimo.usuario.get_full_name|default:ultimo.usuario.username }}
-                    </p>
-                {% else %}
-                    <p>No hay informes CABAL vinculados aún.</p>
-                {% endif %}
-            {% endwith %}
+        <!-- panel 3 -->
+        <div class="accordion-panel">
+            <div class="accordion-header bg-panel3 h6">Datos</div>
+            <div class="accordion-content">
+                <div class="row">
+                    <div class="section-title">Datos</div>
+                    <hr class="section-divider" />
+                    <div class="row g-3 px-3">
+                        <div class="col-sm-6 d-flex">
+                            <i class="fas fa-envelope me-2 text-info mt-1"></i>
+                            <div>
+                                <div class="fw-bold">Correo electrónico</div>
+                                <div>{{ centro.correo }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 d-flex">
+                            <i class="fas fa-globe me-2 text-info mt-1"></i>
+                            <div>
+                                <div class="fw-bold">Sitio web</div>
+                                <div>{{ centro.sitio_web }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 d-flex">
+                            <i class="fas fa-share-alt me-2 text-info mt-1"></i>
+                            <div>
+                                <div class="fw-bold">Redes sociales</div>
+                                <div>{{ centro.link_redes }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 d-flex">
+                            <i class="fas fa-building me-2 text-info mt-1"></i>
+                            <div>
+                                <div class="fw-bold">Organización</div>
+                                <div>{{ centro.organizacion_asociada }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="content-seccion" id="seccion-referente">
-            <div class="section-title">Referente</div>
-            <hr class="section-divider" />
-            <div class="row g-3">
-                <div class="col-sm-6 d-flex">
-                    <i class="fas fa-user-tie me-2 text-info mt-1"></i>
-                    <div>
-                        <div class="fw-bold">Responsable</div>
-                        <div>{{ centro.nombre_referente }} {{ centro.apellido_referente }}</div>
+        <!-- panel 4 -->
+        <div class="accordion-panel">
+            <div class="accordion-header bg-panel4 h6">Asistencia</div>
+            <div class="accordion-content">
+                <div class="row">
+                    <div class="section-title">Asistencia</div>
+                    <hr class="section-divider" />
+                    <div class="row g-3 px-3">
+                        {% with ultimo=archivos_cabal_centro|first %}
+                            {% if ultimo %}
+                                <p>
+                                    <strong>Último informe CABAL:</strong> {{ ultimo.fecha_subida|date:"d/m/Y H:i" }}
+                                </p>
+                                <p>
+                                    <strong>Subido por:</strong> {{ ultimo.usuario.get_full_name|default:ultimo.usuario.username }}
+                                </p>
+                            {% else %}
+                                <p>No hay informes CABAL vinculados aún.</p>
+                            {% endif %}
+                        {% endwith %}
                     </div>
                 </div>
-                <div class="col-sm-6 d-flex">
-                    <i class="fas fa-phone me-2 text-info mt-1"></i>
-                    <div>
-                        <div class="fw-bold">Teléfono</div>
-                        <div>{{ centro.telefono_referente }}</div>
-                    </div>
-                </div>
-                <div class="col-sm-6 d-flex">
-                    <i class="fas fa-envelope me-2 text-info mt-1"></i>
-                    <div>
-                        <div class="fw-bold">Correo</div>
-                        <div>{{ centro.correo_referente }}</div>
+            </div>
+        </div>
+        <!-- panel 5 -->
+        <div class="accordion-panel">
+            <div class="accordion-header bg-panel5 h6">Referente</div>
+            <div class="accordion-content">
+                <div class="row">
+                    <div class="section-title">Referente</div>
+                    <hr class="section-divider" />
+                    <div class="row g-3 px-3">
+                        <div class="col-sm-6 d-flex">
+                            <i class="fas fa-user-tie me-2 text-info mt-1"></i>
+                            <div>
+                                <div class="fw-bold">Responsable</div>
+                                <div>{{ centro.nombre_referente }} {{ centro.apellido_referente }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 d-flex">
+                            <i class="fas fa-phone me-2 text-info mt-1"></i>
+                            <div>
+                                <div class="fw-bold">Teléfono</div>
+                                <div>{{ centro.telefono_referente }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 d-flex">
+                            <i class="fas fa-envelope me-2 text-info mt-1"></i>
+                            <div>
+                                <div class="fw-bold">Correo</div>
+                                <div>{{ centro.correo_referente }}</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    <!-- /Acordion -->
     <!-- 4) MÉTRICAS RÁPIDAS -->
     <div class="d-flex gap-3 mb-4">
         {% if centro.tipo == 'faro' %}

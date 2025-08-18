@@ -53,10 +53,10 @@ class AcompanamientoService:
             else:
                 nuevo_hito = Hitos.objects.create(comedor=intervenciones.comedor)
                 AcompanamientoService._actualizar_hitos(nuevo_hito, hitos_a_actualizar)
-        except Exception as e:
-            logger.error(
-                f"Error en AcomanamientoService.crear_hitos {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                "Error en AcomanamientoService.crear_hitos",
+                extra={"intervenciones": intervenciones},
             )
             raise
 
@@ -78,9 +78,12 @@ class AcompanamientoService:
                         setattr(hitos_objeto, field.name, True)
             hitos_objeto.save()
         except Exception:
-            logger.error(
+            logger.exception(
                 "Error en AcompanamientoService.crear_hitos",
-                exc_info=True,
+                extra={
+                    "hitos_objeto": hitos_objeto,
+                    "hitos_a_actualizar": hitos_a_actualizar,
+                },
             )
             raise
 
@@ -98,10 +101,9 @@ class AcompanamientoService:
             return (
                 Hitos.objects.select_related("comedor").filter(comedor=comedor).first()
             )
-        except Exception as e:
-            logger.error(
-                f"Error en AcompanamientoService.obtener_hitos para comedor: {comedor} {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                f"Error en AcompanamientoService.obtener_hitos para comedor: {comedor.pk}"
             )
             raise
 
@@ -145,10 +147,9 @@ class AcompanamientoService:
                         merienda=prestacion.merienda,
                         cena=prestacion.cena,
                     )
-        except Exception as e:
-            logger.error(
-                f"Error en AcompanamientoService.importar_datos_desde_admision para comedor: {comedor} {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                f"Error en AcompanamientoService.importar_datos_desde_admision para comedor: {comedor.pk}",
             )
             raise
 
@@ -202,10 +203,9 @@ class AcompanamientoService:
                 "numero_if": admision.legales_num_if if admision else None,
                 "numero_disposicion": resolucion,
             }
-        except Exception as e:
-            logger.error(
-                f"Error en AcompanamientoService.obtener_datos_admision para comedor: {comedor} {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                f"Error en AcompanamientoService.obtener_datos_admision para comedor: {comedor.pk}",
             )
             raise
 
@@ -266,10 +266,9 @@ class AcompanamientoService:
                 "prestaciones_dias": prestaciones_totales,
                 "dias_semana": [dia.capitalize() for dia in dias],
             }
-        except Exception as e:
-            logger.error(
-                f"Error en AcompanamientoService.ontener_prestaciones_detalladas para anexo: {anexo} {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                f"Error en AcompanamientoService.ontener_prestaciones_detalladas para anexo: {anexo.pk}",
             )
             raise
 
@@ -336,10 +335,9 @@ class AcompanamientoService:
                 )
 
             return qs
-        except Exception as e:
-            logger.error(
-                f"Error en AcompanamientoService.obtener_comedores_acompanamiento para user: {user} {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                f"Error en AcompanamientoService.obtener_comedores_acompanamiento para user: {user.pk}",
             )
             raise
 
@@ -357,9 +355,8 @@ class AcompanamientoService:
             return (
                 user.is_superuser or user.groups.filter(name="Tecnico Comedor").exists()
             )
-        except Exception as e:
-            logger.error(
-                f"Error en Acompanamiento.verificar_permisos_tecnico_comedor para user: {user} {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                f"Error en Acompanamiento.verificar_permisos_tecnico_comedor para user: {user.pk}",
             )
             raise

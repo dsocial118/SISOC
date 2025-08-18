@@ -18,10 +18,10 @@ class RendicionCuentaMensualService:
                 arvhios_adjuntos=data.get("arvhios_adjuntos"),
             )
             return rendicion
-        except Exception as e:
-            logger.error(
-                f"Error en RendicionCuentaMensualService.crear_rendicion_cuenta_mensual para comedor: {comedor} {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                "Error en RendicionCuentaMensualService.crear_rendicion_cuenta_mensual",
+                extra={"comedor_pk": getattr(comedor, "pk", None)},
             )
             raise
 
@@ -35,10 +35,10 @@ class RendicionCuentaMensualService:
             rendicion.arvhios_adjuntos = data.get("arvhios_adjuntos")
             rendicion.save()
             return rendicion
-        except Exception as e:
-            logger.error(
-                f"Error en RendicionCuentaMensualService.actualizar_rendicion_cuenta_mensual para rendicion: {rendicion} {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                "Error en RendicionCuentaMensualService.actualizar_rendicion_cuenta_mensual",
+                extra={"rendicion_pk": getattr(rendicion, "pk", None)},
             )
             raise
 
@@ -46,10 +46,10 @@ class RendicionCuentaMensualService:
     def eliminar_rendicion_cuenta_mensual(rendicion):
         try:
             rendicion.delete()
-        except Exception as e:
-            logger.error(
-                f"Error en RendicionCuentaMensualService.eliminar_rendicion_cuenta_mensual para rendicion: {rendicion} {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                "Error en RendicionCuentaMensualService.eliminar_rendicion_cuenta_mensual",
+                extra={"rendicion_pk": getattr(rendicion, "pk", None)},
             )
             raise
 
@@ -59,10 +59,10 @@ class RendicionCuentaMensualService:
             return RendicionCuentaMensual.objects.filter(
                 comedor=comedor
             ).prefetch_related("arvhios_adjuntos")
-        except Exception as e:
-            logger.error(
-                f"Error en RendicionCuentaMensualService.obtener_rendiciones_cuentas_mensuales para comedor: {comedor} {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                "Error en RendicionCuentaMensualService.obtener_rendiciones_cuentas_mensuales",
+                extra={"comedor_pk": getattr(comedor, "pk", None)},
             )
             raise
 
@@ -70,9 +70,9 @@ class RendicionCuentaMensualService:
     def obtener_rendicion_cuenta_mensual(id_enviado):
         try:
             return get_object_or_404(RendicionCuentaMensual, pk=id_enviado)
-        except Exception as e:
+        except Exception:
             logger.exception(
-                f"Error en RendicionCuentaMensualService.obtener_rendicion_cuenta_mensual para {id_enviado}: {e}"
+                f"Error en RendicionCuentaMensualService.obtener_rendicion_cuenta_mensual para {id_enviado}"
             )
             raise
 
@@ -81,9 +81,9 @@ class RendicionCuentaMensualService:
     def cantidad_rendiciones_cuentas_mensuales(comedor):
         try:
             return RendicionCuentaMensual.objects.filter(comedor=comedor).count()
-        except Exception as e:
-            logger.error(
-                f"Error en RendicionCuentaMensualService.cantidad_rendiciones_cuentas_mensuales para comedor: {comedor} {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                "Error en RendicionCuentaMensualService.cantidad_rendiciones_cuentas_mensuales",
+                extra={"comedor_pk": getattr(comedor, "pk", None)},
             )
             raise
