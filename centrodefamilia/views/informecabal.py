@@ -69,8 +69,11 @@ class InformeCabalPreviewAjaxView(LoginRequiredMixin, TemplateView):
                 },
                 status=400,
             )
-        except Exception as e:
-            logger.error("Error en preview CABAL: %s", e, exc_info=True)
+        except Exception:
+            logger.exception(
+                "Error en preview CABAL",
+                extra={"filename": getattr(f, "name", None)},
+            )
             return JsonResponse(
                 {"ok": False, "error": "Error inesperado al previsualizar."}, status=500
             )
@@ -117,8 +120,14 @@ class InformeCabalProcessAjaxView(LoginRequiredMixin, TemplateView):
                 },
                 status=400,
             )
-        except Exception as e:
-            logger.error("Error inesperado al procesar CABAL: %s", e, exc_info=True)
+        except Exception:
+            logger.exception(
+                "Error inesperado al procesar CABAL",
+                extra={
+                    "filename": getattr(f, "name", None),
+                    "user_pk": getattr(request.user, "pk", None),
+                },
+            )
             return JsonResponse(
                 {"ok": False, "error": "Error inesperado al procesar."}, status=500
             )
@@ -177,11 +186,10 @@ class InformeCabalReprocessCenterAjaxView(LoginRequiredMixin, View):
                 status=400,
             )
 
-        except Exception as e:
-            logger.error(
-                "Error inesperado al reprocesar CABAL (codigo=%s): %s",
-                codigo,
-                e,
+        except Exception:
+            logger.exception(
+                "Error inesperado al reprocesar CABAL",
+                extra={"codigo": codigo},
             )
             return JsonResponse(
                 {"ok": False, "error": "Error inesperado al reprocesar el centro."},
