@@ -7,25 +7,12 @@
           href="{% static 'custom/css/duplasSelect2.min.css' %}" />
 {% endblock %}
 {% block breadcrumb %}
-    <ol class="breadcrumb float-sm-right">
-        <li class="breadcrumb-item">
-            <a href="{% url 'actividadcentro_list' %}">Actividades</a>
-        </li>
-        <li class="breadcrumb-item active">Nueva</li>
-    </ol>
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
 {% block content %}
+    {% include 'components/alert_message.html' with show_django_messages=True %}
     <div class="container">
-        <h2 class="text-center display-4 mb-4">Nueva Actividad</h2>
-        <form method="post" novalidate>
-            {% csrf_token %}
-            {{ form|crispy }}
-            <div class="text-center mt-4">
-                <button type="submit" class="btn btn-primary">Guardar</button>
-                <a href="{% url 'centro_detail' pk=centro_id %}"
-                   class="btn btn-secondary ml-2">Cancelar</a>
-            </div>
-        </form>
+        {% include 'components/form_card.html' with title=page_title form=form cancel_url=cancel_url submit_text=submit_text %}
     </div>
 {% endblock %}
 {% block customJS %}

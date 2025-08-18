@@ -1,104 +1,12 @@
-{% extends "includes/main.html" %};
+{% extends "includes/main.html" %}
 {% load static %}
-;
 {% block title %}Comedores{% endblock %}
-;
 {% block breadcrumb %}
-    <ol class="breadcrumb float-sm-right">
-        <li class="breadcrumb-item">
-            <a href="{% url 'comedores' %}">Rendicion de Cuentas Final</a>
-        </li>
-        <li class="breadcrumb-item active">Documentos</li>
-        <li class="breadcrumb-item active">Listar</li>
-    </ol>
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
-;
 {% block content %}
-    <h2 class="text-center display-4 mb-4">Buscar Documento</h2>
-    <form method="GET">
-        <div class="row">
-            <div class="col-md-10 offset-md-1">
-                <div class="form-group">
-                    <div class="input-group input-group-lg">
-                        <input type="search"
-                               class="form-control form-control-lg"
-                               placeholder="Buscar por comedor o tipo de documento"
-                               title="Ingresar comedor o tipo de documento."
-                               name="busqueda" />
-                        <div class="input-group-append">
-                            <button type="submit" class="btn btn-lg btn-primary">
-                                <i class="fa fa-search"></i>
-                            </button>
-                            <button type="button"
-                                    id="toggle-validados"
-                                    class="btn btn-outline-secondary btn-sm">Ocultar analizados</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </form>
-    <div class="row mt-5">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body">
-                    <table class="table table-bordered table-striped projects">
-                        <thead>
-                            <tr>
-                                <th>Nombre</th>
-                                <th>Comedor</th>
-                                <th>Fecha de modificacion</th>
-                                <th>Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for documento in documentos %}
-                                <tr class="documento-row estado-{{ documento.estado.nombre|lower|slugify }}">
-                                    <td>{{ documento.tipo.nombre }}</td>
-                                    <td>{{ documento.rendicion_final.comedor.nombre }}</td>
-                                    <td>{{ documento.fecha_modificacion|date:"d/m/Y H:i"|default:"-" }}</td>
-                                    <td>{{ documento.estado.nombre }}</td>
-                                    <td>
-                                        {% if documento.documento %}
-                                            <a href="{{ documento.documento.url }}"
-                                               target="_blank"
-                                               class="btn btn-primary btn-sm">Visualizar</a>
-                                        {% else %}
-                                            <button class="btn btn-sm btn-secondary" disabled>Visualizar</button>
-                                        {% endif %}
-                                    </td>
-                                    {% if documento.estado.nombre == "En análisis" %}
-                                        <td>
-                                            <form method="post"
-                                                  action="{% url 'validar_documento_rendicion_cuentas_final' documento.id %}"
-                                                  onsubmit="return confirm('¿Estás seguro de que querés validar este documento?');">
-                                                {% csrf_token %}
-                                                <button type="submit" class="btn btn-warning btn-sm">Validar</button>
-                                            </form>
-                                        </td>
-                                        <td>
-                                            <button type="button"
-                                                    class="btn btn-danger btn-sm"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#modalSubsanar"
-                                                    data-documento-id="{{ documento.id }}">Subsanar</button>
-                                        </td>
-                                    {% else %}
-                                        <td>
-                                            <button class="btn btn-sm btn-secondary" disabled>Validar</button>
-                                        </td>
-                                        <td>
-                                            <button class="btn btn-sm btn-secondary" disabled>Subsanar</button>
-                                        </td>
-                                    {% endif %}
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
+    {% include 'components/search_bar.html' with titulo="Buscar Documento" placeholder="Buscar por comedor o tipo de documento" help_text="Ingresar comedor o tipo de documento." additional_buttons=additional_search_buttons query=query %}
+    {% include 'components/rendicion_cuentas_table.html' with documentos=documentos %}
     <div class="modal fade"
          id="modalSubsanar"
          tabindex="-1"

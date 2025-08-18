@@ -53,11 +53,7 @@
                 {% endif %}
             </div>
             <!-- Botones de acción -->
-            <div class="mt-4 text-center">
-                <button type="submit" class="btn btn-success">Guardar</button>
-                <a href="{% url 'expedientespagos_list' comedorid %}"
-                   class="btn btn-secondary">Cancelar</a>
-            </div>
+            {% include 'components/form_buttons.html' with cancel_url_full=expedientes_list_url default_save=True save_text='Guardar' layout='center' %}
         </form>
     </div>
 {% endblock %}

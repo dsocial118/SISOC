@@ -80,6 +80,13 @@ class AdmisionesTecnicosListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["query"] = self.request.GET.get("busqueda", "")
+
+        # Breadcrumb items
+        context["breadcrumb_items"] = [
+            {"name": "Admisiones", "url": "admisiones_tecnicos_listar"},
+            {"name": "Listar", "active": True},
+        ]
+
         return context
 
 
@@ -230,6 +237,13 @@ class AdmisionesLegalesListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["query"] = self.request.GET.get("busqueda", "")
+
+        # Breadcrumb items
+        context["breadcrumb_items"] = [
+            {"name": "Expedientes", "url": "admisiones_legales_listar"},
+            {"name": "Listar", "active": True},
+        ]
+
         return context
 
 

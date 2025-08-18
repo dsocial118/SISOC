@@ -21,7 +21,11 @@ class CDIListView(ListView):
 
     def get_queryset(self):
         query = self.request.GET.get("busqueda")
-        queryset = CentroDesarrolloInfantil.objects.all()
+        queryset = CentroDesarrolloInfantil.objects.select_related(
+            "organizacion", "provincia"
+        ).order_by(
+            "nombre"
+        )  # Add ordering to prevent UnorderedObjectListWarning
 
         if query:
             queryset = queryset.filter(
@@ -35,6 +39,47 @@ class CDIListView(ListView):
             )
 
         return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Breadcrumb items
+        context["breadcrumb_items"] = [
+            {"text": "Centro Desarrollo Infantil", "url": reverse("cdi")},
+            {"text": "Listar", "active": True},
+        ]
+
+        # Search bar context
+        context["query"] = self.request.GET.get("busqueda", "")
+
+        # Data table headers (formato compatible con data_table.html)
+        context["table_headers"] = [
+            {"title": "Nombre"},
+            {"title": "Número Expediente"},
+            {"title": "Número Repi"},
+            {"title": "Organización"},
+            {"title": "Provincia"},
+        ]
+
+        # Fields para el componente data_table.html
+        context["fields"] = [
+            {"name": "nombre", "link_url": "cdi_detalle", "link_field": True},
+            {"name": "numexpe"},
+            {"name": "numrepo"},
+            {"name": "organizacion"},
+            {"name": "provincia"},
+        ]
+
+        # Actions para el componente data_table.html
+        context["actions"] = [
+            {"url_name": "cdi_detalle", "label": "Ver", "type": "info"},
+            {"url_name": "cdi_editar", "label": "Editar", "type": "primary"},
+            {"url_name": "cdi_eliminar", "label": "Eliminar", "type": "danger"},
+        ]
+
+        context["show_actions"] = True
+
+        return context
 
 
 class CDICreateView(CreateView):
