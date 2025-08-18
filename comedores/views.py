@@ -41,7 +41,7 @@ from duplas.dupla_service import DuplaService
 from rendicioncuentasmensual.services import RendicionCuentaMensualService
 from relevamientos.service import RelevamientoService
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 @require_POST
@@ -98,6 +98,9 @@ def relevamiento_crear_editar_ajax(request, pk):
     except Exception:
         logger.exception(
             f"Error procesando relevamiento {pk}",
+            extra={
+                "body": dict(request.POST),
+            },
         )
         return JsonResponse({"error": "Error interno"}, status=500)
     return response
@@ -113,6 +116,7 @@ def nomina_editar_ajax(request, pk):
                 {"success": True, "message": "Datos modificados con éxito."}
             )
         else:
+
             return JsonResponse({"success": False, "errors": form.errors})
     else:  # GET
         form = NominaForm(instance=nomina)
@@ -268,6 +272,27 @@ class ComedorListView(ListView):
     def get_queryset(self):
         query = self.request.GET.get("busqueda")
         return ComedorService.get_comedores_filtrados(query)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        query = self.request.GET.get("busqueda")
+
+        # Datos para componentes Cotton
+        context.update(
+            {
+                "query": query,
+                # Breadcrumb
+                "breadcrumb_items": [
+                    {"text": "Comedores", "url": reverse("comedores")},
+                    {"text": "Listar", "active": True},
+                ],
+                # Search bar
+                "reset_url": reverse("comedores"),
+                "add_url": reverse("comedor_crear"),
+            }
+        )
+
+        return context
 
 
 class ComedorCreateView(CreateView):
@@ -477,7 +502,7 @@ class ComedorUpdateView(UpdateView):
         )
         data["imagenes_borrar"] = ImagenComedor.objects.filter(
             comedor=self.object.pk
-        ).values("id", "imagen")
+        ).only("id", "imagen")
         return data
 
     def form_valid(self, form):
@@ -493,6 +518,7 @@ class ComedorUpdateView(UpdateView):
             self.object.save()
 
             ComedorService.borrar_imagenes(self.request.POST)
+            ComedorService.borrar_foto_legajo(self.request.POST, self.object)
 
             for imagen in imagenes:
                 try:

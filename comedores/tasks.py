@@ -1,9 +1,12 @@
 import os
+import logging
 import threading
 import requests
 from comedores.models import Comedor, Observacion, Referente
 
 TIMEOUT = 360  # Segundos máximos de espera por respuesta
+
+logger = logging.getLogger("django")
 
 
 def build_comedor_payload(comedor):
@@ -66,9 +69,12 @@ class AsyncSendComedorToGestionar(threading.Thread):
         try:
             r = requests.post(url, json=self.payload, headers=headers, timeout=TIMEOUT)
             r.raise_for_status()
-            print("COMEDOR sync OK")
-        except Exception as e:
-            print("!!! Error sync COMEDOR:", e, "\nBody:", self.payload)
+            logger.info(f"COMEDOR {r.Rows[0].ComedorID} sincronizado con exito")
+        except Exception:
+            logger.exception(
+                "Error al sincronizar COMEDOR con GESTIONAR",
+                extra={"body": self.payload},
+            )
 
 
 class AsyncRemoveComedorToGestionar(threading.Thread):
@@ -98,12 +104,12 @@ class AsyncRemoveComedorToGestionar(threading.Thread):
                 timeout=TIMEOUT,
             )
             response.raise_for_status()
-            print(f"COMEDOR {comedor.id} sincronizado con exito")
-        except requests.exceptions.RequestException as e:
-            print("!!! Error al sincronizar eliminacion de COMEDOR con GESTIONAR:")
-            print(e)
-            print("!!! Con el body:")
-            print(data)
+            logger.info(f"COMEDOR {comedor.id} sincronizado con exito")
+        except Exception:
+            logger.exception(
+                "Error al sincronizar eliminacion de COMEDOR con GESTIONAR",
+                extra={"body": data},
+            )
 
 
 class AsyncSendReferenteToGestionar(threading.Thread):
@@ -144,13 +150,15 @@ class AsyncSendReferenteToGestionar(threading.Thread):
                 )
                 response.raise_for_status()
                 response = response.json()
-                print(f"REFERENTE {referente.id} sincronizado con GESTIONAR con exito")
+                logger.info(
+                    f"REFERENTE {referente.id} sincronizado con GESTIONAR con exito"
+                )
 
-        except Exception as e:
-            print("!!! Error al sincronizar REFERENTE con GESTIONAR:")
-            print(e)
-            print("!!! Con el body:")
-            print(data)
+        except Exception:
+            logger.exception(
+                "Error al sincronizar REFERENTE con GESTIONAR",
+                extra={"body": data},
+            )
 
 
 class AsyncSendObservacionToGestionar(threading.Thread):
@@ -190,9 +198,8 @@ class AsyncSendObservacionToGestionar(threading.Thread):
             )
             response.raise_for_status()
             response = response.json()
-            print(f"OBSERVACION {observacion.id} sincronizada con exito")
-        except Exception as e:
-            print("!!! Error al sincronizar OBSERVACION con GESTIONAR:")
-            print(e)
-            print("!!! Con el body:")
-            print(data)
+            logger.info(f"OBSERVACION {observacion.id} sincronizada con exito")
+        except Exception:
+            logger.exception(
+                "Error al sincronizar OBSERVACION con GESTIONAR", extra={"body": data}
+            )
