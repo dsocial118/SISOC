@@ -221,7 +221,7 @@ def eliminar_programa(request):
                 {"success": False, "message": "No se encontró el programa."}, status=404
             )
 
-        except Exception as exc:
+        except Exception:
             logger.exception("Error al eliminar programa", extra={"body": request.POST})
             return JsonResponse(
                 {
@@ -962,28 +962,17 @@ class CiudadanosCreateView(CreateView):
             with transaction.atomic():
                 ciudadano.save()
 
-                dimensionfamilia = DimensionFamilia.objects.create(
-                    ciudadano_id=ciudadano.id
-                )
+                DimensionFamilia.objects.create(ciudadano_id=ciudadano.id)
 
-                dimensionvivienda = DimensionVivienda.objects.create(
-                    ciudadano_id=ciudadano.id
-                )
+                DimensionVivienda.objects.create(ciudadano_id=ciudadano.id)
 
-                dimensiosalud = DimensionSalud.objects.create(ciudadano_id=ciudadano.id)
+                DimensionSalud.objects.create(ciudadano_id=ciudadano.id)
 
+                DimensionEconomia.objects.create(ciudadano_id=ciudadano.id)
 
-                dimensioneconomia = DimensionEconomia.objects.create(
-                    ciudadano_id=ciudadano.id
-                )
+                DimensionEducacion.objects.create(ciudadano_id=ciudadano.id)
 
-                dimensioneducacion = DimensionEducacion.objects.create(
-                    ciudadano_id=ciudadano.id
-                )
-
-                dimensiontrabajo = DimensionTrabajo.objects.create(
-                    ciudadano_id=ciudadano.id
-                )
+                DimensionTrabajo.objects.create(ciudadano_id=ciudadano.id)
 
             # Redireccionar según el botón presionado
             if "form_ciudadanos" in self.request.POST:
@@ -1157,7 +1146,7 @@ class CiudadanosGrupoFamiliarCreateView(CreateView):
 
         except Exception:
             logger.exception(f"Error al crear el familiar {pk}", extra={"form": form})
-            messages.error(self.request, f"Error al crear el familiar")
+            messages.error(self.request, "Error al crear el familiar")
             return redirect(self.request.path_info)
 
         messages.success(self.request, "Familiar agregado correctamente.")
