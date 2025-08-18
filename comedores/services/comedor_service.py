@@ -227,8 +227,8 @@ class ComedorService:
             "merienda": 0,
             "cena": 0,
         }
-        if beneficiarios and beneficiarios.prestaciones:
-            for prestacion in beneficiarios.prestaciones.all():
+        if beneficiarios and beneficiarios.prestacion:
+            for prestacion in beneficiarios.prestacion.all():
                 dias = [
                     "lunes",
                     "martes",
