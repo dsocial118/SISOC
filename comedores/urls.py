@@ -18,6 +18,13 @@ from comedores.views import (
     nomina_editar_ajax,
 )
 
+from comedores.views_territorial import (
+    obtener_territoriales_api,
+    sincronizar_territoriales_api,
+    estadisticas_cache_territoriales,
+)
+# Views de prueba eliminadas
+
 from intervenciones.views import (
     sub_estados_intervenciones_ajax,
     IntervencionCreateView,
@@ -166,4 +173,21 @@ urlpatterns = [
         relevamiento_crear_editar_ajax,
         name="relevamiento_create_edit_ajax",
     ),
+    # URLs para cache de territoriales
+    path(
+        "comedores/<int:comedor_id>/territoriales/",
+        obtener_territoriales_api,
+        name="api_obtener_territoriales",
+    ),
+    path(
+        "comedores/<int:comedor_id>/territoriales/sincronizar/",
+        sincronizar_territoriales_api,
+        name="api_sincronizar_territoriales",
+    ),
+    path(
+        "comedores/territoriales/estadisticas/",
+        estadisticas_cache_territoriales,
+        name="api_estadisticas_territoriales",
+    ),
+    # Endpoints de prueba eliminados
 ]
