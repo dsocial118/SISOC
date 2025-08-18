@@ -21,9 +21,10 @@ class DuplaService:
             return Dupla.objects.get(pk=dupla_id)
         except Dupla.DoesNotExist:
             return None
-        except Exception as e:
-            logger.error(
-                f"Error en DuplaService.get_dupla_by_id para la dupla: {dupla_id} {e}",
+        except Exception:
+            logger.exception(
+                "Error en DuplaService.get_dupla_by_id",
+                extra={"dupla_pk": dupla_id},
             )
             raise
 
@@ -36,10 +37,8 @@ class DuplaService:
         """
         try:
             return Dupla.objects.all()
-        except Exception as e:
-            logger.error(
-                f"Error en DuplaService.get_all_duplas {e}",
-            )
+        except Exception:
+            logger.exception("Error en DuplaService.get_all_duplas")
             raise
 
     @staticmethod
@@ -51,10 +50,8 @@ class DuplaService:
         """
         try:
             return Dupla.objects.filter(estado="Activo")
-        except Exception as e:
-            logger.error(
-                f"Error en DuplaService.get_duplas_by_estado_activo {e}",
-            )
+        except Exception:
+            logger.exception("Error en DuplaService.get_duplas_by_estado_activo")
             raise
 
     @staticmethod
@@ -73,9 +70,10 @@ class DuplaService:
         try:
             dupla = Dupla.objects.create(**data)
             return dupla
-        except Exception as e:
-            logger.error(
-                f"Error en DuplaService.create_dupla {data}: {e}",
+        except Exception:
+            logger.exception(
+                "Error en DuplaService.create_dupla",
+                extra={"data": data},
             )
             raise
 
@@ -100,10 +98,14 @@ class DuplaService:
             dupla.save()
             return dupla
         except Dupla.DoesNotExist as exc:
-            logger.error("Dupla no encontrada en update_dupla", exc_info=True)
+            logger.exception(
+                "Dupla no encontrada en update_dupla",
+                extra={"dupla_pk": dupla_id},
+            )
             raise ValidationError("Dupla no encontrada") from exc
-        except Exception as e:
-            logger.error(
-                f"Error en DuplaService.update_dupla {dupla_id} {e}",
+        except Exception:
+            logger.exception(
+                "Error en DuplaService.update_dupla",
+                extra={"dupla_pk": dupla_id, "data": data},
             )
             raise
