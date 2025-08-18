@@ -229,6 +229,10 @@ LOGGING = {
             "()": "django.utils.log.CallbackFilter",
             "callback": lambda r: r.levelno == logging.CRITICAL,
         },
+        "data_only": {
+            "()": "django.utils.log.CallbackFilter",
+            "callback": lambda r: hasattr(r, "data"),
+        },
     },
     "formatters": {
         "verbose": {
@@ -236,6 +240,9 @@ LOGGING = {
             "style": "{",
         },
         "simple": {"format": "[{asctime}] {levelname} {message}", "style": "{"},
+        "json_data": {
+            "()": "core.utils.JSONDataFormatter",
+        },
     },
     "handlers": {
         "info_file": {
@@ -266,10 +273,17 @@ LOGGING = {
             "filename": str(LOG_DIR / "critical.log"),
             "formatter": "verbose",
         },
+        "data_file": {
+            "level": "INFO",
+            "filters": ["data_only"],
+            "class": "core.utils.DailyFileHandler",
+            "filename": str(LOG_DIR / "data.log"),
+            "formatter": "json_data",
+        },
     },
     "loggers": {
         "django": {
-            "handlers": ["info_file", "error_file", "warning_file", "critical_file"],
+            "handlers": ["info_file", "error_file", "warning_file", "critical_file","data_file"],
             "level": "DEBUG" if DEBUG else "INFO",
             "propagate": True,
         },
