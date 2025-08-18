@@ -48,7 +48,7 @@ class JSONDataFormatter(logging.Formatter):
             "level": record.levelname,
             "data": getattr(record, "data", None),
         }
-        return json.dumps(payload, ensure_ascii=False)
+        return json.dumps(payload, ensure_ascii=False, default=str)
 
 
 def convert_string_to_int(value: str | int | None) -> int | None:
