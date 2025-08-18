@@ -473,6 +473,8 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 "Error en RelevamientoService.create_or_update_funcionamiento",
                 extra={"funcionamiento_data": funcionamiento_data},
             )
+            payload = {"metodo": "create_or_update_funcionamiento", "body": {"excepcion": funcionamiento_data}}
+            logger.info("payload", extra={"data": payload})
             raise
 
     @staticmethod
@@ -500,6 +502,8 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 "Error en RelevamientoService.create_or_update_espacio_prestacion",
                 extra={"espacio_prestacion_data": espacio_prestacion_data},
             )
+            payload = {"metodo": "create_or_update_espacio_prestacion", "body": {"excepcion": espacio_prestacion_data}}
+            logger.info("payload", extra={"data": payload})
             raise
 
     @staticmethod
@@ -565,6 +569,8 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 "Error en RelevamientoService.create_or_update_cocina",
                 extra={"cocina_data": cocina_data},
             )
+            payload = {"metodo": "create_or_update_cocina", "body": {"excepcion": cocina_data}}
+            logger.info("payload", extra={"data": payload})
             raise
 
     @staticmethod
@@ -628,6 +634,8 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 "Error en RelevamientoService.create_or_update_espacio",
                 extra={"espacio_data": espacio_data},
             )
+            payload = {"metodo": "create_or_update_espacio", "body": {"excepcion": espacio_data}}
+            logger.info("payload", extra={"data": payload})
             raise
 
     @staticmethod
@@ -651,6 +659,8 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 "Error en RelevamientoService.create_or_update_colaboradores",
                 extra={"colaboradores_data": colaboradores_data},
             )
+            payload = {"metodo": "create_or_update_colaboradores", "body": {"excepcion": colaboradores_data}}
+            logger.info("payload", extra={"data": payload})
             raise
 
     @staticmethod
@@ -719,6 +729,8 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 "Error en RelevamientoService.create_or_update_recursos",
                 extra={"recursos_data": recursos_data},
             )
+            payload = {"metodo": "create_or_update_recursos", "body": {"excepcion": recursos_data}}
+            logger.info("payload", extra={"data": payload})
             raise
 
     @staticmethod
@@ -784,6 +796,8 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 "Error en RelevamientoService.create_or_update_compras",
                 extra={"compras_data": compras_data},
             )
+            payload = {"metodo": "create_or_update_compras", "body": {"excepcion": compras_data}}
+            logger.info("payload", extra={"data": payload})
             raise
 
     @staticmethod
@@ -801,7 +815,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 "Error en RelevamientoService.create_or_update_anexo",
                 extra={"anexo_data": anexo_data},
             )
-            payload = {"endpoint": "/api/x", "user_id": 123, "body": {"x": anexo_data}}
+            payload = {"metodo": "create_or_update_anexo", "body": {"anexo": anexo_data}}
             logger.info("payload", extra={"data": payload})
             raise
 
@@ -903,6 +917,8 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 "Error en RelevamientoService.create_or_update_punto_entregas",
                 extra={"punto_entregas_data": punto_entregas_data},
             )
+            payload = {"metodo": "create_or_update_punto_entregas", "body": {"punto_entregas": punto_entregas_data}}
+            logger.info("payload", extra={"data": payload})
             raise
 
     @staticmethod
@@ -970,6 +986,8 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 "Error en RelevamientoService.create_or_update_prestacion",
                 extra={"prestacion_data": prestacion_data},
             )
+            payload = {"metodo": "create_or_update_prestacion", "body": {"prestacion": prestacion_data}}
+            logger.info("payload", extra={"data": payload})
             raise
 
     @staticmethod
@@ -1078,6 +1096,10 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                     "sisoc_id": sisoc_id,
                 },
             )
+            payload = {"metodo": "create_or_update_responsable_y_referente", "body": {"responsable": responsable_data,"sisoc_id": sisoc_id}}
+            logger.info("payload", extra={"data": payload})
+            payload2 = {"metodo": "create_or_update_responsable_y_referente", "body": {"referente": referente_data,"sisoc_id": sisoc_id}}
+            logger.info("payload", extra={"data": payload2})
             raise
 
     @staticmethod
@@ -1097,6 +1119,8 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 "Error en RelevamientoService.create_or_update_excepcion",
                 extra={"excepcion_data": excepcion_data},
             )
+            payload = {"metodo": "create_or_update_excepcion", "body": {"excepcion": excepcion_data}}
+            logger.info("payload", extra={"data": payload})
             raise
 
     @staticmethod
