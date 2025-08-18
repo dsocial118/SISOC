@@ -237,7 +237,6 @@ class LegalesService:
         except Exception as e:
             logger.error(
                 "Error en guardar_formulario_proyecto_convenio",
-                exc_info=True,
             )
             messages.error(
                 request,
@@ -279,7 +278,6 @@ class LegalesService:
         except Exception as e:
             logger.error(
                 "Error en guardar_documento_expediente",
-                exc_info=True,
             )
             messages.error(
                 request, "Error inesperado al guardar el documento de expediente."
@@ -307,7 +305,6 @@ class LegalesService:
         except Exception as e:
             logger.error(
                 "Error en get_admisiones_legales_filtradas",
-                exc_info=True,
             )
             return Admision.objects.none()
 
@@ -429,6 +426,5 @@ class LegalesService:
         except Exception as e:
             logger.error(
                 "Error en get_informe_por_tipo_convenio",
-                exc_info=True,
             )
             return None

@@ -25,7 +25,6 @@ class ExpedientesPagosService:
         except Exception as e:
             logger.error(
                 f"Error en ExpedientesPagosService.crear_expediente_pago para comedor: {comedor} {e}",
-                exc_info=True,
             )
             raise
 
@@ -49,7 +48,6 @@ class ExpedientesPagosService:
         except Exception as e:
             logger.error(
                 f"Error en ExpedientesPagosService.actualizar_expediente_pago para comedor: {expediente_pago} {e}",
-                exc_info=True,
             )
             raise
 
@@ -60,7 +58,6 @@ class ExpedientesPagosService:
         except Exception as e:
             logger.error(
                 f"Error en ExpedientesPagosService.eliminar_expediente_pago para comedor: {expediente_pago} {e}",
-                exc_info=True,
             )
             raise
 
@@ -71,7 +68,6 @@ class ExpedientesPagosService:
         except Exception as e:
             logger.error(
                 f"Error en ExpedientesPagosService.obtener_expedientes_pagos para comedor: {comedor} {e}",
-                exc_info=True,
             )
             raise
 
@@ -83,6 +79,5 @@ class ExpedientesPagosService:
         except Exception as e:
             logger.error(
                 f"Error en ExpedientesPagosService.obtener_expediente_pago para comedor: {id_enviado} {e}",
-                exc_info=True,
             )
             raise

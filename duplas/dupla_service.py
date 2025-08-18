@@ -24,7 +24,6 @@ class DuplaService:
         except Exception as e:
             logger.error(
                 f"Error en DuplaService.get_dupla_by_id para la dupla: {dupla_id} {e}",
-                exc_info=True,
             )
             raise
 
@@ -40,7 +39,6 @@ class DuplaService:
         except Exception as e:
             logger.error(
                 f"Error en DuplaService.get_all_duplas {e}",
-                exc_info=True,
             )
             raise
 
@@ -56,7 +54,6 @@ class DuplaService:
         except Exception as e:
             logger.error(
                 f"Error en DuplaService.get_duplas_by_estado_activo {e}",
-                exc_info=True,
             )
             raise
 
@@ -79,7 +76,6 @@ class DuplaService:
         except Exception as e:
             logger.error(
                 f"Error en DuplaService.create_dupla {data}: {e}",
-                exc_info=True,
             )
             raise
 
@@ -109,6 +105,5 @@ class DuplaService:
         except Exception as e:
             logger.error(
                 f"Error en DuplaService.update_dupla {dupla_id} {e}",
-                exc_info=True,
             )
             raise

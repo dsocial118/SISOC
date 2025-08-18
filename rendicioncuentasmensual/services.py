@@ -21,7 +21,6 @@ class RendicionCuentaMensualService:
         except Exception as e:
             logger.error(
                 f"Error en RendicionCuentaMensualService.crear_rendicion_cuenta_mensual para comedor: {comedor} {e}",
-                exc_info=True,
             )
             raise
 
@@ -38,7 +37,6 @@ class RendicionCuentaMensualService:
         except Exception as e:
             logger.error(
                 f"Error en RendicionCuentaMensualService.actualizar_rendicion_cuenta_mensual para rendicion: {rendicion} {e}",
-                exc_info=True,
             )
             raise
 
@@ -49,7 +47,6 @@ class RendicionCuentaMensualService:
         except Exception as e:
             logger.error(
                 f"Error en RendicionCuentaMensualService.eliminar_rendicion_cuenta_mensual para rendicion: {rendicion} {e}",
-                exc_info=True,
             )
             raise
 
@@ -62,7 +59,6 @@ class RendicionCuentaMensualService:
         except Exception as e:
             logger.error(
                 f"Error en RendicionCuentaMensualService.obtener_rendiciones_cuentas_mensuales para comedor: {comedor} {e}",
-                exc_info=True,
             )
             raise
 
@@ -70,9 +66,9 @@ class RendicionCuentaMensualService:
     def obtener_rendicion_cuenta_mensual(id_enviado):
         try:
             return get_object_or_404(RendicionCuentaMensual, pk=id_enviado)
-        except Exception as e:
+        except Exception:
             logger.exception(
-                f"Error en RendicionCuentaMensualService.obtener_rendicion_cuenta_mensual para {id_enviado}: {e}"
+                f"Error en RendicionCuentaMensualService.obtener_rendicion_cuenta_mensual para {id_enviado}"
             )
             raise
 
@@ -84,6 +80,5 @@ class RendicionCuentaMensualService:
         except Exception as e:
             logger.error(
                 f"Error en RendicionCuentaMensualService.cantidad_rendiciones_cuentas_mensuales para comedor: {comedor} {e}",
-                exc_info=True,
             )
             raise

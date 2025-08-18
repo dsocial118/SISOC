@@ -23,7 +23,7 @@ from centrodefamilia.services.informe_cabal_service import (
     persist_file_and_rows,
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
@@ -168,7 +168,6 @@ class InformeCabalReprocessCenterAjaxView(LoginRequiredMixin, View):
                 "ReprocessError al reprocesar CABAL (codigo=%s): %s",
                 codigo,
                 e,
-                exc_info=True,
             )
             return JsonResponse(
                 {
@@ -183,7 +182,6 @@ class InformeCabalReprocessCenterAjaxView(LoginRequiredMixin, View):
                 "Error inesperado al reprocesar CABAL (codigo=%s): %s",
                 codigo,
                 e,
-                exc_info=True,
             )
             return JsonResponse(
                 {"ok": False, "error": "Error inesperado al reprocesar el centro."},

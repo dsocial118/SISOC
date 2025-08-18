@@ -57,7 +57,6 @@ class AdmisionService:
         except Exception as e:
             logger.error(
                 "Error en get_comedores_with_admision",
-                exc_info=True,
             )
             return Comedor.objects.none()
 
@@ -93,7 +92,6 @@ class AdmisionService:
         except Exception as e:
             logger.error(
                 "Error en get_admision_create_context",
-                exc_info=True,
             )
             return {}
 
@@ -165,7 +163,6 @@ class AdmisionService:
         except Exception as e:
             logger.error(
                 "Error en get_admision_update_context",
-                exc_info=True,
             )
             return {}
 
@@ -315,7 +312,6 @@ class AdmisionService:
         except Exception as e:
             logger.error(
                 "Error en verificar_estado_admision",
-                exc_info=True,
             )
 
     @staticmethod
@@ -330,7 +326,6 @@ class AdmisionService:
         except Exception as e:
             logger.error(
                 "Error en get_dupla_grupo_por_usuario",
-                exc_info=True,
             )
             return "Otro"
 
@@ -353,7 +348,6 @@ class AdmisionService:
         except Exception as e:
             logger.error(
                 "Error en marcar_como_enviado_a_legales",
-                exc_info=True,
             )
             return False
 
@@ -368,7 +362,6 @@ class AdmisionService:
         except Exception as e:
             logger.error(
                 "Error en marcar_como_enviado_a_acompaniamiento",
-                exc_info=True,
             )
             return False
 
@@ -401,7 +394,6 @@ class AdmisionService:
         except Exception as e:
             logger.error(
                 "Error en marcar_como_documentacion_rectificada",
-                exc_info=True,
             )
             return False
 

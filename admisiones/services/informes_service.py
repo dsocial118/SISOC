@@ -51,7 +51,6 @@ class InformeService:
         except Exception as e:
             logger.error(
                 "Error en get_queryset_informe_por_tipo",
-                exc_info=True,
             )
             return InformeTecnico.objects.none()
 
@@ -65,7 +64,6 @@ class InformeService:
         except Exception as e:
             logger.error(
                 "Error en get_admision_y_tipo_from_kwargs",
-                exc_info=True,
             )
             return None, "base"
 
@@ -79,7 +77,6 @@ class InformeService:
         except Exception as e:
             logger.error(
                 "Error en verificar_estado_para_revision",
-                exc_info=True,
             )
 
     @staticmethod
@@ -113,7 +110,6 @@ class InformeService:
         except Exception as e:
             logger.error(
                 "Error en get_campos_visibles_informe",
-                exc_info=True,
             )
             return []
 
@@ -125,7 +121,6 @@ class InformeService:
         except Exception as e:
             logger.error(
                 "Error en preparar_informe_para_creacion",
-                exc_info=True,
             )
 
     @staticmethod
@@ -135,7 +130,6 @@ class InformeService:
         except Exception as e:
             logger.error(
                 "Error en get_informe_por_tipo_y_pk",
-                exc_info=True,
             )
             return None
 
@@ -150,7 +144,6 @@ class InformeService:
         except Exception as e:
             logger.error(
                 "Error en actualizar_estado_informe",
-                exc_info=True,
             )
 
     @staticmethod
@@ -192,7 +185,6 @@ class InformeService:
         except Exception as e:
             logger.error(
                 "Error en get_informe_create_context",
-                exc_info=True,
             )
             return {}
 
@@ -219,7 +211,6 @@ class InformeService:
         except Exception as e:
             logger.error(
                 "Error en get_informe_update_context",
-                exc_info=True,
             )
             return {}
 
@@ -237,7 +228,6 @@ class InformeService:
         except Exception as e:
             logger.error(
                 "Error en get_context_informe_detail",
-                exc_info=True,
             )
             return {}
 
@@ -270,7 +260,6 @@ class InformeService:
         except Exception as e:
             logger.error(
                 "Error en procesar_revision_informe",
-                exc_info=True,
             )
 
     @staticmethod
@@ -289,7 +278,6 @@ class InformeService:
         except Exception as e:
             logger.error(
                 "Error en guardar_campos_complementarios",
-                exc_info=True,
             )
             return None
 
@@ -312,5 +300,4 @@ class InformeService:
         except Exception as e:
             logger.error(
                 "Error en generar_y_guardar_pdf_complementario",
-                exc_info=True,
             )
