@@ -30,14 +30,18 @@ function inicializarGaleria() {
         };
     });
     
-    console.log('Galería inicializada con', imagenesData.length, 'imágenes');
+    if (window.DEBUG) {
+        console.log('Galería inicializada con', imagenesData.length, 'imágenes');
+    }
 }
 
 /**
  * Carga las imágenes existentes con manejo de errores y estados
  */
 function cargarImagenesExistentes() {
-    console.log('Cargando imágenes de la galería...');
+    if (window.DEBUG) {
+        console.log('Cargando imágenes de la galería...');
+    }
     
     const imageContainers = document.querySelectorAll('.imagen-container');
     
@@ -54,12 +58,16 @@ function cargarImagenesExistentes() {
             img.src = imageUrl;
             
             img.onload = function() {
-                console.log(`Imagen ${index} cargada: ${imageUrl}`);
+                if (window.DEBUG) {
+                    console.log(`Imagen ${index} cargada: ${imageUrl}`);
+                }
                 placeholder.replaceWith(img);
             };
-            
+
             img.onerror = function() {
-                console.error(`Error al cargar imagen ${index}: ${imageUrl}`);
+                if (window.DEBUG) {
+                    console.error(`Error al cargar imagen ${index}: ${imageUrl}`);
+                }
                 placeholder.classList.remove('loading');
                 placeholder.innerHTML = '<i class="fas fa-exclamation-triangle"></i><br><small>Error al cargar</small>';
                 placeholder.style.background = '#dc3545';
@@ -75,7 +83,9 @@ function cargarImagenesExistentes() {
                 }
             }, 15000);
         } else {
-            console.warn(`Contenedor ${index} sin URL válida`);
+            if (window.DEBUG) {
+                console.warn(`Contenedor ${index} sin URL válida`);
+            }
             if (placeholder) {
                 placeholder.innerHTML = '<i class="fas fa-question-circle"></i><br><small>Sin imagen</small>';
                 placeholder.style.background = '#6c757d';
@@ -90,7 +100,9 @@ function cargarImagenesExistentes() {
  */
 function abrirModal(index) {
     if (index < 0 || index >= imagenesData.length) {
-        console.error('Índice de imagen inválido:', index);
+        if (window.DEBUG) {
+            console.error('Índice de imagen inválido:', index);
+        }
         return;
     }
 
@@ -113,7 +125,9 @@ function abrirModal(index) {
     const modal = new bootstrap.Modal(document.getElementById('imagenModal'));
     modal.show();
     
-    console.log(`Modal abierto para imagen ${index + 1}: ${imagen.nombre}`);
+    if (window.DEBUG) {
+        console.log(`Modal abierto para imagen ${index + 1}: ${imagen.nombre}`);
+    }
 }
 
 /**
@@ -145,7 +159,9 @@ function cambiarImagen(direccion) {
             imagenActualIndex = nuevoIndex;
         }, 150);
         
-        console.log(`Cambiando a imagen ${nuevoIndex + 1}`);
+        if (window.DEBUG) {
+            console.log(`Cambiando a imagen ${nuevoIndex + 1}`);
+        }
     }
 }
 
@@ -166,7 +182,9 @@ function descargarImagen() {
         link.click();
         document.body.removeChild(link);
         
-        console.log(`Descargando imagen: ${imagen.nombre}`);
+        if (window.DEBUG) {
+            console.log(`Descargando imagen: ${imagen.nombre}`);
+        }
     }
 }
 
