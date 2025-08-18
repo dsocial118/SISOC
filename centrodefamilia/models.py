@@ -1,10 +1,3 @@
-# centrodefamilia/models.py
-"""
-[Informe Cabal] 
-- Agrega modelos: CabalArchivo e InformeCabalRegistro para auditoría y registros históricos.
-- Flujos impactados: carga y procesamiento de Excel CABAL desde centro_list → vista historial → modal.
-- Dependencias: views/informecabal.py, services/informe_cabal_service.py, templates/informecabal/*.html, static/js/informecabal.js
-"""
 from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.postgres.indexes import GinIndex
