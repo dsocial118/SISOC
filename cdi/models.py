@@ -128,3 +128,10 @@ class CentroDesarrolloInfantil(models.Model):
         null=True,
     )
     foto_legajo = models.ImageField(upload_to="cdi/", blank=True, null=True)
+
+    def __str__(self):
+        return self.nombre
+
+    class Meta:
+        verbose_name = "Centro de Desarrollo Infantil"
+        verbose_name_plural = "Centros de Desarrollo Infantil"
