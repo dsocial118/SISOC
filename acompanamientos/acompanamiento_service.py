@@ -55,7 +55,7 @@ class AcompanamientoService:
                 AcompanamientoService._actualizar_hitos(nuevo_hito, hitos_a_actualizar)
         except Exception:
             logger.exception(
-                f"Error en AcomanamientoService.crear_hitos",
+                "Error en AcomanamientoService.crear_hitos",
                 extra={"intervenciones": intervenciones},
             )
             raise
@@ -101,7 +101,7 @@ class AcompanamientoService:
             return (
                 Hitos.objects.select_related("comedor").filter(comedor=comedor).first()
             )
-        except Exception as e:
+        except Exception:
             logger.exception(
                 f"Error en AcompanamientoService.obtener_hitos para comedor: {comedor.pk}"
             )

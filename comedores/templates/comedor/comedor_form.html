@@ -1,12 +1,7 @@
 {% extends "includes/main.html" %}
 {% load static crispy_forms_tags %}
-
 {% block title %}Comedores{% endblock %}
-
-{% block titulo-pagina %}
-    Comedores
-{% endblock %}
-
+{% block titulo-pagina %}Comedores{% endblock %}
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right px-3">
         <li class="breadcrumb-item">
@@ -22,11 +17,10 @@
         {% endif %}
     </ol>
 {% endblock %}
-
 {% block content %}
-        <link rel="stylesheet"
-              href="{% static 'custom/css/comedorRelevamiento.css' %}" />
-        <style>
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorRelevamiento.css' %}" />
+    <style>
   /* Estilos para replicar el diseño de la imagen original */
   .imagenes-existentes-section {
     margin-bottom: 30px;
@@ -505,155 +499,154 @@
       flex: 0 0 100%;
     }
   }
-        </style>
-        <div class="d-flex justify-content-between mb-3">
-            <div>
-                {% if comedor.id %}
-                    <a href="{% url 'comedor_detalle' comedor.id %}"
-                       class="btn btn-secondary">Volver</a>
-                {% else %}
-                    <a href="{% url 'comedores' %}" class="btn btn-secondary">Volver</a>
-                {% endif %}
-            </div>
-            <div>
-                <a class="btn btn-secondary print mr-1 d-none d-sm-inline">Imprimir</a>
-                <a href="#" onclick="window.history.back();" class="btn btn-secondary">Cancelar</a>
-            </div>
+    </style>
+    <div class="d-flex justify-content-between mb-3">
+        <div>
+            {% if comedor.id %}
+                <a href="{% url 'comedor_detalle' comedor.id %}"
+                   class="btn btn-secondary">Volver</a>
+            {% else %}
+                <a href="{% url 'comedores' %}" class="btn btn-secondary">Volver</a>
+            {% endif %}
         </div>
-        <div class="row comedor-form">
-            <div class="col-12">
-                <form method="post"
-                      id="comedorForm"
-                      class="w-100"
-                      enctype="multipart/form-data"
-                      onsubmit="return confirmSubmit()">
-                    <div class="card card-primary card-outline">
-                        <div class="bs-stepper">
-                            <div class="card-header mb-3">
-                                <h3 class="card-title">Agregar Comedor/Merendero</h3>
-                            </div>
-                            <div class="card-body">
-                                <div class="form-row justify-content-center">
-                                    {% csrf_token %}
-                                    <div class="form-group row">
-                                        <div class="col-2">{{ form.nombre|as_crispy_field }}</div>
-                                        <div class="col-2">{{ form.id_externo|as_crispy_field }}</div>
-                                        <div class="col-2">{{ form.tipocomedor|as_crispy_field }}</div>
-                                        <div class="col-3">{{ form.organizacion|as_crispy_field }}</div>
-                                        <div class="col-3">{{ form.programa|as_crispy_field }}</div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <div class="col-2">{{ form.codigo_de_proyecto|as_crispy_field }}</div>
-                                        <div class="col-1">{{ form.comienzo|as_crispy_field }}</div>
-                                        <div class="col-3">{{ form.provincia|as_crispy_field }}</div>
-                                        <div class="col-3">{{ form.municipio|as_crispy_field }}</div>
-                                        <div class="col-3">{{ form.localidad|as_crispy_field }}</div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <div class="col-4">{{ form.partido|as_crispy_field }}</div>
-                                        <div class="col-4">{{ form.barrio|as_crispy_field }}</div>
-                                        <div class="col-4">{{ form.codigo_postal|as_crispy_field }}</div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <div class="col-2">{{ form.calle|as_crispy_field }}</div>
-                                        <div class="col-2">{{ form.numero|as_crispy_field }}</div>
-                                        <div class="col-2">{{ form.piso|as_crispy_field }}</div>
-                                        <div class="col-2">{{ form.departamento|as_crispy_field }}</div>
-                                        <div class="col-2">{{ form.manzana|as_crispy_field }}</div>
-                                        <div class="col-2">{{ form.lote|as_crispy_field }}</div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <div class="col-3">{{ form.entre_calle_1|as_crispy_field }}</div>
-                                        <div class="col-3">{{ form.entre_calle_2|as_crispy_field }}</div>
-                                        <div class="col-3">{{ form.latitud|as_crispy_field }}</div>
-                                        <div class="col-3">{{ form.longitud|as_crispy_field }}</div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <div class="col-12">
-                                            <label for="{{ form.foto_legajo.id_for_label }}"
-                                                   class="form-label text-dark font-weight-bold">
-                                                <i class="fas fa-camera mr-2"></i>
-                                                Foto de Legajo
-                                            </label>
-                                            <!-- Foto existente -->
-                                            {% if form.instance.foto_legajo %}
-                                                <div class="foto-legajo-existente mb-3">
-                                                    <h6 class="text-light mb-2">
-                                                        <i class="fas fa-image mr-1"></i>
-                                                        Foto actual:
-                                                    </h6>
-                                                    <div class="foto-existente-container">
-                                                        <div class="foto-thumbnail-container"
-                                                             data-image-url="{{ form.instance.foto_legajo.url }}">
-                                                            <div class="preview-placeholder">
-                                                                <i class="fas fa-image"></i>
-                                                                <div class="loader">
-                                                                    <div class="spinner-border spinner-border-sm" role="status">
-                                                                        <span class="sr-only">Cargando...</span>
-                                                                    </div>
+        <div>
+            <a class="btn btn-secondary print mr-1 d-none d-sm-inline">Imprimir</a>
+            <a href="#" onclick="window.history.back();" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </div>
+    <div class="row comedor-form">
+        <div class="col-12">
+            <form method="post"
+                  id="comedorForm"
+                  class="w-100"
+                  enctype="multipart/form-data"
+                  onsubmit="return confirmSubmit()">
+                <div class="card card-primary card-outline">
+                    <div class="bs-stepper">
+                        <div class="card-header mb-3">
+                            <h3 class="card-title">Agregar Comedor/Merendero</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-row justify-content-center">
+                                {% csrf_token %}
+                                <div class="form-group row">
+                                    <div class="col-2">{{ form.nombre|as_crispy_field }}</div>
+                                    <div class="col-2">{{ form.id_externo|as_crispy_field }}</div>
+                                    <div class="col-2">{{ form.tipocomedor|as_crispy_field }}</div>
+                                    <div class="col-3">{{ form.organizacion|as_crispy_field }}</div>
+                                    <div class="col-3">{{ form.programa|as_crispy_field }}</div>
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col-2">{{ form.codigo_de_proyecto|as_crispy_field }}</div>
+                                    <div class="col-1">{{ form.comienzo|as_crispy_field }}</div>
+                                    <div class="col-3">{{ form.provincia|as_crispy_field }}</div>
+                                    <div class="col-3">{{ form.municipio|as_crispy_field }}</div>
+                                    <div class="col-3">{{ form.localidad|as_crispy_field }}</div>
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col-4">{{ form.partido|as_crispy_field }}</div>
+                                    <div class="col-4">{{ form.barrio|as_crispy_field }}</div>
+                                    <div class="col-4">{{ form.codigo_postal|as_crispy_field }}</div>
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col-2">{{ form.calle|as_crispy_field }}</div>
+                                    <div class="col-2">{{ form.numero|as_crispy_field }}</div>
+                                    <div class="col-2">{{ form.piso|as_crispy_field }}</div>
+                                    <div class="col-2">{{ form.departamento|as_crispy_field }}</div>
+                                    <div class="col-2">{{ form.manzana|as_crispy_field }}</div>
+                                    <div class="col-2">{{ form.lote|as_crispy_field }}</div>
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col-3">{{ form.entre_calle_1|as_crispy_field }}</div>
+                                    <div class="col-3">{{ form.entre_calle_2|as_crispy_field }}</div>
+                                    <div class="col-3">{{ form.latitud|as_crispy_field }}</div>
+                                    <div class="col-3">{{ form.longitud|as_crispy_field }}</div>
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col-12">
+                                        <label for="{{ form.foto_legajo.id_for_label }}"
+                                               class="form-label text-dark font-weight-bold">
+                                            <i class="fas fa-camera mr-2"></i>
+                                            Foto de Legajo
+                                        </label>
+                                        <!-- Foto existente -->
+                                        {% if form.instance.foto_legajo %}
+                                            <div class="foto-legajo-existente mb-3">
+                                                <h6 class="text-light mb-2">
+                                                    <i class="fas fa-image mr-1"></i>
+                                                    Foto actual:
+                                                </h6>
+                                                <div class="foto-existente-container">
+                                                    <div class="foto-thumbnail-container"
+                                                         data-image-url="{{ form.instance.foto_legajo.url }}">
+                                                        <div class="preview-placeholder">
+                                                            <i class="fas fa-image"></i>
+                                                            <div class="loader">
+                                                                <div class="spinner-border spinner-border-sm" role="status">
+                                                                    <span class="sr-only">Cargando...</span>
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                        <div class="foto-info">
-                                                            <div class="foto-nombre">
-                                                                {% if "comedor/" in form.instance.foto_legajo.name %}
-                                                                    {{ form.instance.foto_legajo.name|slice:"8:" }}
-                                                                {% else %}
-                                                                    {{ form.instance.foto_legajo.name }}
-                                                                {% endif %}
-                                                            </div>
-                                                            <div class="foto-status">
-                                                                <i class="fas fa-check-circle text-success"></i>
-                                                                <span class="text-success">Guardada</span>
-                                                            </div>
-                                                        </div>
-                                                        <button type="button"
-                                                                class="btn btn-outline-primary btn-sm"
-                                                                onclick="ampliarFotoLegajo('{{ form.instance.foto_legajo.url|escapejs }}', '{{ form.instance.foto_legajo.name|escapejs }}')">
-                                                            <i class="fas fa-expand-alt mr-1"></i>
-                                                            Ver completa
-                                                        </button>
                                                     </div>
+                                                    <div class="foto-info">
+                                                        <div class="foto-nombre">
+                                                            {% if "comedor/" in form.instance.foto_legajo.name %}
+                                                                {{ form.instance.foto_legajo.name|slice:"8:" }}
+                                                            {% else %}
+                                                                {{ form.instance.foto_legajo.name }}
+                                                            {% endif %}
+                                                        </div>
+                                                        <div class="foto-status">
+                                                            <i class="fas fa-check-circle text-success"></i>
+                                                            <span class="text-success">Guardada</span>
+                                                        </div>
+                                                    </div>
+                                                    <button type="button"
+                                                            class="btn btn-outline-primary btn-sm"
+                                                            onclick="ampliarFotoLegajo('{{ form.instance.foto_legajo.url|escapejs }}', '{{ form.instance.foto_legajo.name|escapejs }}')">
+                                                        <i class="fas fa-expand-alt mr-1"></i>
+                                                        Ver completa
+                                                    </button>
                                                 </div>
-                                            {% endif %}
-                                            <!-- Input para nueva foto -->
-                                            <div class="nueva-foto-section">
-                                                <h6 class="text-light mb-2">
-                                                    <i class="fas fa-upload mr-1"></i>
-                                                    {% if form.instance.foto_legajo %}
-                                                        Cambiar foto:
-                                                    {% else %}
-                                                        Seleccionar foto:
-                                                    {% endif %}
-                                                </h6>
-                                                {{ form.foto_legajo }}
                                             </div>
-                                            <!-- Previsualización de nueva foto -->
-                                            <div id="fotoLegajoPreviewContainer"
-                                                 class="nueva-foto-preview mt-3 d-none">
-                                                <h6 class="text-light mb-2">
-                                                    <i class="fas fa-eye mr-1"></i>
-                                                    Vista previa:
-                                                </h6>
-                                                <div class="nueva-foto-container">
-                                                    <div class="foto-preview-wrapper">
-                                                        <img id="fotoLegajoPreview"
-                                                             src=""
-                                                             alt="Vista previa de foto legajo"
-                                                             class="foto-preview-img" />
-                                                        <button type="button"
-                                                                class="btn-remover-preview"
-                                                                onclick="removerPreviewFotoLegajo()">
-                                                            <i class="fas fa-times"></i>
-                                                        </button>
-                                                    </div>
-                                                    <div class="foto-preview-info">
-                                                        <div class="preview-nombre" id="fotoLegajoNombre">imagen.jpg</div>
-                                                        <div class="preview-size" id="fotoLegajoSize">0 KB</div>
-                                                        <div class="preview-status">
-                                                            <i class="fas fa-clock text-warning"></i>
-                                                            <span class="text-warning">Pendiente de guardar</span>
-                                                        </div>
+                                        {% endif %}
+                                        <!-- Input para nueva foto -->
+                                        <div class="nueva-foto-section">
+                                            <h6 class="text-light mb-2">
+                                                <i class="fas fa-upload mr-1"></i>
+                                                {% if form.instance.foto_legajo %}
+                                                    Cambiar foto:
+                                                {% else %}
+                                                    Seleccionar foto:
+                                                {% endif %}
+                                            </h6>
+                                            {{ form.foto_legajo }}
+                                        </div>
+                                        <!-- Previsualización de nueva foto -->
+                                        <div id="fotoLegajoPreviewContainer"
+                                             class="nueva-foto-preview mt-3 d-none">
+                                            <h6 class="text-light mb-2">
+                                                <i class="fas fa-eye mr-1"></i>
+                                                Vista previa:
+                                            </h6>
+                                            <div class="nueva-foto-container">
+                                                <div class="foto-preview-wrapper">
+                                                    <img id="fotoLegajoPreview"
+                                                         src=""
+                                                         alt="Vista previa de foto legajo"
+                                                         class="foto-preview-img" />
+                                                    <button type="button"
+                                                            class="btn-remover-preview"
+                                                            onclick="removerPreviewFotoLegajo()">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </div>
+                                                <div class="foto-preview-info">
+                                                    <div class="preview-nombre" id="fotoLegajoNombre">imagen.jpg</div>
+                                                    <div class="preview-size" id="fotoLegajoSize">0 KB</div>
+                                                    <div class="preview-status">
+                                                        <i class="fas fa-clock text-warning"></i>
+                                                        <span class="text-warning">Pendiente de guardar</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -663,170 +656,171 @@
                             </div>
                         </div>
                     </div>
-                    <div class="card card-primary card-outline">
-                        <div class="bs-stepper">
-                            <div class="card-header mb-3">
-                                <h3 class="card-title">Datos del referente del comedor/merendero</h3>
+                </div>
+                <div class="card card-primary card-outline">
+                    <div class="bs-stepper">
+                        <div class="card-header mb-3">
+                            <h3 class="card-title">Datos del referente del comedor/merendero</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group row">
+                                <div class="col-4">{{ referente_form.nombre|as_crispy_field }}</div>
+                                <div class="col-4">{{ referente_form.apellido|as_crispy_field }}</div>
+                                <div class="col-4">{{ referente_form.mail|as_crispy_field }}</div>
                             </div>
-                            <div class="card-body">
-                                <div class="form-group row">
-                                    <div class="col-4">{{ referente_form.nombre|as_crispy_field }}</div>
-                                    <div class="col-4">{{ referente_form.apellido|as_crispy_field }}</div>
-                                    <div class="col-4">{{ referente_form.mail|as_crispy_field }}</div>
-                                </div>
-                                <div class="form-group row">
-                                    <div class="col-4">{{ referente_form.celular|as_crispy_field }}</div>
-                                    <div class="col-4">{{ referente_form.documento|as_crispy_field }}</div>
-                                    <div class="col-4">{{ referente_form.funcion|as_crispy_field }}</div>
-                                </div>
+                            <div class="form-group row">
+                                <div class="col-4">{{ referente_form.celular|as_crispy_field }}</div>
+                                <div class="col-4">{{ referente_form.documento|as_crispy_field }}</div>
+                                <div class="col-4">{{ referente_form.funcion|as_crispy_field }}</div>
                             </div>
                         </div>
                     </div>
-                    <div class="card card-primary card-outline">
-                        <div class="bs-stepper">
-                            <div class="card-header mb-3">
-                                <h3 class="card-title">
-                                    <i class="fas fa-images mr-2"></i>
-                                    Galería de Imágenes
-                                </h3>
-                            </div>
-                            <div class="card-body">
-                                <!-- Sección: Imágenes Existentes -->
-                                <div class="imagenes-existentes-section">
-                                    <h5 class="imagen-header">Imágenes Existentes:</h5>
-                                    <div class="imagenes-container">
-                                        {% for imagen in imagenes_borrar %}
-                                            <div class="imagen-existente imagen-item" data-image-id="{{ imagen.id }}">
-                                                <div class="imagen-card-content">
-                                                    <div class="imagen-thumbnail-container"
-                                                         data-image-url="{{ imagen.imagen.url }}">
-                                                        <div class="preview-placeholder">
-                                                            <i class="fas fa-image"></i>
-                                                        </div>
-                                                    </div>
-                                                    <div class="imagen-info-content">
-                                                        <div class="imagen-filename-display">
-                                                            {% if "comedor/" in imagen.imagen.name %}
-                                                                {{ imagen.imagen.name|slice:"8:" }}
-                                                            {% else %}
-                                                                {{ imagen.imagen.name }}
-                                                            {% endif %}
-                                                        </div>
-                                                        <div class="imagen-status">
-                                                            <i class="fas fa-check-circle"></i>
-                                                            Guardada
-                                                        </div>
-                                                    </div>
-                                                    <div class="imagen-actions">
-                                                        <input type="checkbox"
-                                                               name="imagen_ciudadano-borrar-{{ imagen.id }}"
-                                                               id="imagen_borrar_{{ imagen.id }}"
-                                                               class="checkbox-eliminar-custom"
-                                                               data-image-id="{{ imagen.id }}" />
-                                                        <button type="button" class="btn-eliminar-custom">
-                                                            <i class="fas fa-trash-alt"></i>
-                                                        </button>
+                </div>
+                <div class="card card-primary card-outline">
+                    <div class="bs-stepper">
+                        <div class="card-header mb-3">
+                            <h3 class="card-title">
+                                <i class="fas fa-images mr-2"></i>
+                                Galería de Imágenes
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <!-- Sección: Imágenes Existentes -->
+                            <div class="imagenes-existentes-section">
+                                <h5 class="imagen-header">Imágenes Existentes:</h5>
+                                <div class="imagenes-container">
+                                    {% for imagen in imagenes_borrar %}
+                                        <div class="imagen-existente imagen-item" data-image-id="{{ imagen.id }}">
+                                            <div class="imagen-card-content">
+                                                <div class="imagen-thumbnail-container"
+                                                     data-image-url="{{ imagen.imagen.url }}">
+                                                    <div class="preview-placeholder">
+                                                        <i class="fas fa-image"></i>
                                                     </div>
                                                 </div>
-                                                <div class="overlay-eliminar d-none">
-                                                    <div class="overlay-text">
-                                                        <i class="fas fa-trash-alt"></i>
-                                                        <br />
-                                                        MARCADA PARA ELIMINAR
+                                                <div class="imagen-info-content">
+                                                    <div class="imagen-filename-display">
+                                                        {% if "comedor/" in imagen.imagen.name %}
+                                                            {{ imagen.imagen.name|slice:"8:" }}
+                                                        {% else %}
+                                                            {{ imagen.imagen.name }}
+                                                        {% endif %}
                                                     </div>
+                                                    <div class="imagen-status">
+                                                        <i class="fas fa-check-circle"></i>
+                                                        Guardada
+                                                    </div>
+                                                </div>
+                                                <div class="imagen-actions">
+                                                    <input type="checkbox"
+                                                           name="imagen_ciudadano-borrar-{{ imagen.id }}"
+                                                           id="imagen_borrar_{{ imagen.id }}"
+                                                           class="checkbox-eliminar-custom"
+                                                           data-image-id="{{ imagen.id }}" />
+                                                    <button type="button" class="btn-eliminar-custom">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </button>
                                                 </div>
                                             </div>
-                                        {% endfor %}
-                                    </div>
+                                            <div class="overlay-eliminar d-none">
+                                                <div class="overlay-text">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                    <br />
+                                                    MARCADA PARA ELIMINAR
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
                                 </div>
-                                <!-- Sección: Agregar Nuevas Imágenes -->
-                                <div class="seccion-nuevas">
-                                    <h5 class="nuevas-header">Agregar Nuevas Imágenes:</h5>
-                                    <input type="file"
-                                           name="imagenes"
-                                           id="imagenesInput"
-                                           class="d-none"
-                                           multiple
-                                           accept="image/*" />
-                                    <button type="button" id="addImagesBtn" class="btn-seleccionar">
-                                        <i class="fas fa-plus"></i>
-                                        Seleccionar Imágenes
-                                    </button>
-                                    <div id="selectedImagesInfo" class="contador-imagenes d-none">
-                                        <span id="imageCount">0</span> imagen(es) seleccionada(s)
-                                    </div>
-                                    <!-- Contenedor para mostrar las imágenes seleccionadas -->
-                                    <div id="imagePreviewContainer" class="nuevas-imagenes-container"></div>
+                            </div>
+                            <!-- Sección: Agregar Nuevas Imágenes -->
+                            <div class="seccion-nuevas">
+                                <h5 class="nuevas-header">Agregar Nuevas Imágenes:</h5>
+                                <input type="file"
+                                       name="imagenes"
+                                       id="imagenesInput"
+                                       class="d-none"
+                                       multiple
+                                       accept="image/*" />
+                                <button type="button" id="addImagesBtn" class="btn-seleccionar">
+                                    <i class="fas fa-plus"></i>
+                                    Seleccionar Imágenes
+                                </button>
+                                <div id="selectedImagesInfo" class="contador-imagenes d-none">
+                                    <span id="imageCount">0</span> imagen(es) seleccionada(s)
                                 </div>
-                                <div class="d-flex justify-content-end">
-                                    <div class="card-tools d-flex align-items-start my-3">
-                                        <button type="button" class="btn btn-tool" data-card-widget="collapse"></button>
-                                    </div>
+                                <!-- Contenedor para mostrar las imágenes seleccionadas -->
+                                <div id="imagePreviewContainer" class="nuevas-imagenes-container"></div>
+                            </div>
+                            <div class="d-flex justify-content-end">
+                                <div class="card-tools d-flex align-items-start my-3">
+                                    <button type="button" class="btn btn-tool" data-card-widget="collapse"></button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="d-flex justify-content-end">
-                        <button class="btn btn-success mx-1" type="submit">Guardar comedor</button>
-                    </div>
-                </form>
-            </div>
+                </div>
+                <div class="d-flex justify-content-end">
+                    <button class="btn btn-success mx-1" type="submit">Guardar comedor</button>
+                </div>
+            </form>
         </div>
-        <!-- Modal para vista ampliada de foto de legajo -->
-        <div class="modal fade"
-             id="fotoLegajoModal"
-             tabindex="-1"
-             aria-labelledby="fotoLegajoModalLabel"
-             aria-hidden="true">
-            <div class="modal-dialog modal-lg modal-dialog-centered">
-                <div class="modal-content modal-foto-legajo">
-                    <div class="modal-header border-0">
-                        <h5 class="modal-title" id="fotoLegajoModalLabel">
-                            <i class="fas fa-camera mr-2"></i>
-                            Foto de Legajo
-                        </h5>
+    </div>
+    <!-- Modal para vista ampliada de foto de legajo -->
+    <div class="modal fade"
+         id="fotoLegajoModal"
+         tabindex="-1"
+         aria-labelledby="fotoLegajoModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content modal-foto-legajo">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title" id="fotoLegajoModalLabel">
+                        <i class="fas fa-camera mr-2"></i>
+                        Foto de Legajo
+                    </h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Cerrar">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="foto-legajo-modal-container">
+                        <div class="foto-legajo-principal">
+                            <img id="fotoLegajoPrincipal"
+                                 src=""
+                                 alt="Foto de legajo ampliada"
+                                 class="img-fluid" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 justify-content-between">
+                    <div class="info-foto">
+                        <span class="nombre-archivo" id="nombreArchivoLegajo">foto_legajo.jpg</span>
+                    </div>
+                    <div class="acciones-foto">
                         <button type="button"
-                                class="btn-close"
-                                data-bs-dismiss="modal"
-                                aria-label="Cerrar">
-                            <i class="fas fa-times"></i>
+                                class="btn btn-outline-success btn-sm"
+                                onclick="descargarFotoLegajo()">
+                            <i class="fas fa-download mr-1"></i>Descargar
                         </button>
-                    </div>
-                    <div class="modal-body p-0">
-                        <div class="foto-legajo-modal-container">
-                            <div class="foto-legajo-principal">
-                                <img id="fotoLegajoPrincipal"
-                                     src=""
-                                     alt="Foto de legajo ampliada"
-                                     class="img-fluid" />
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer border-0 justify-content-between">
-                        <div class="info-foto">
-                            <span class="nombre-archivo" id="nombreArchivoLegajo">foto_legajo.jpg</span>
-                        </div>
-                        <div class="acciones-foto">
-                            <button type="button"
-                                    class="btn btn-outline-success btn-sm"
-                                    onclick="descargarFotoLegajo()">
-                                <i class="fas fa-download mr-1"></i>Descargar
-                            </button>
-                            <button type="button"
-                                    class="btn btn-secondary btn-sm"
-                                    data-bs-dismiss="modal">
-                                <i class="fas fa-times mr-1"></i>Cerrar
-                            </button>
-                        </div>
+                        <button type="button"
+                                class="btn btn-secondary btn-sm"
+                                data-bs-dismiss="modal">
+                            <i class="fas fa-times mr-1"></i>Cerrar
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
-    {% endblock %}
-    {% block customJS %}
-        <script>
+    </div>
+{% endblock %}
+{% block customJS %}
+    <script>
   var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
   var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
-        </script>
-        <script src="{% static 'custom/js/comedorform.js' %}"></script>
-    {% endblock %}
+    </script>
+    <script src="{% static 'custom/js/comedorform.js' %}"></script>
+{% endblock %}
