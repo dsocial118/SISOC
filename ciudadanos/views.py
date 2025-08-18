@@ -129,7 +129,7 @@ from .services.consulta_renaper import consultar_datos_renaper
 
 locale.setlocale(locale.LC_ALL, "es_AR.UTF-8")
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 ROL_ADMIN = "usuarios.rol_admin"
 

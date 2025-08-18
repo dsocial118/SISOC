@@ -32,26 +32,32 @@ class InformeService:
                 if tipo == "juridico"
                 else InformeTecnicoBaseForm
             )
-        except Exception as e:
-            logger.error("Error en get_form_class_por_tipo", exc_info=True)
+        except Exception:
+            logger.exception(
+                "Error en get_form_class_por_tipo",
+                extra={"tipo": tipo},
+            )
             return InformeTecnicoBaseForm
 
     @staticmethod
     def get_tipo_from_kwargs(kwargs):
         try:
             return kwargs.get("tipo", "base")
-        except Exception as e:
-            logger.error("Error en get_tipo_from_kwargs", exc_info=True)
+        except Exception:
+            logger.exception(
+                "Error en get_tipo_from_kwargs",
+                extra={"kwargs": kwargs},
+            )
             return "base"
 
     @staticmethod
     def get_queryset_informe_por_tipo(tipo):
         try:
             return InformeTecnico.objects.filter(tipo=tipo)
-        except Exception as e:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "Error en get_queryset_informe_por_tipo",
-                exc_info=True,
+                extra={"tipo": tipo},
             )
             return InformeTecnico.objects.none()
 
@@ -62,10 +68,10 @@ class InformeService:
             admision_id = kwargs.get("admision_id")
             admision = get_object_or_404(Admision, pk=admision_id)
             return admision, tipo
-        except Exception as e:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "Error en get_admision_y_tipo_from_kwargs",
-                exc_info=True,
+                extra={"kwargs": kwargs},
             )
             return None, "base"
 
@@ -76,10 +82,10 @@ class InformeService:
                 CampoASubsanar.objects.filter(informe=informe).delete()
                 ObservacionGeneralInforme.objects.filter(informe=informe).delete()
                 informe.estado = "Para revision"
-        except Exception as e:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "Error en verificar_estado_para_revision",
-                exc_info=True,
+                extra={"informe_pk": getattr(informe, "pk", None)},
             )
 
     @staticmethod
@@ -110,10 +116,10 @@ class InformeService:
                 for field in informe._meta.fields
                 if field.name not in campos_excluidos
             ]
-        except Exception as e:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "Error en get_campos_visibles_informe",
-                exc_info=True,
+                extra={"informe_pk": getattr(informe, "pk", None)},
             )
             return []
 
@@ -122,20 +128,20 @@ class InformeService:
         try:
             instance.admision_id = admision_id
             instance.estado = "Para revision"
-        except Exception as e:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "Error en preparar_informe_para_creacion",
-                exc_info=True,
+                extra={"admision_pk": admision_id},
             )
 
     @staticmethod
     def get_informe_por_tipo_y_pk(tipo, pk):
         try:
             return get_object_or_404(InformeTecnico, tipo=tipo, pk=pk)
-        except Exception as e:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "Error en get_informe_por_tipo_y_pk",
-                exc_info=True,
+                extra={"tipo": tipo, "informe_pk": pk},
             )
             return None
 
@@ -147,10 +153,10 @@ class InformeService:
 
             if nuevo_estado == "Validado":
                 InformeService.generar_y_guardar_pdf(informe, tipo)
-        except Exception as e:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "Error en actualizar_estado_informe",
-                exc_info=True,
+                extra={"informe_pk": getattr(informe, "pk", None), "tipo": tipo},
             )
 
     @staticmethod
@@ -177,8 +183,11 @@ class InformeService:
                 informe_id=informe.id,
                 archivo=pdf_content,
             )
-        except Exception as e:
-            logger.error("Error en generar_y_guardar_pdf", exc_info=True)
+        except Exception:
+            logger.exception(
+                "Error en generar_y_guardar_pdf",
+                extra={"informe_pk": getattr(informe, "pk", None), "tipo": tipo},
+            )
 
     @staticmethod
     def get_informe_create_context(admision_id, tipo):
@@ -189,10 +198,10 @@ class InformeService:
                 "admision": admision,
                 "anexo": Anexo.objects.filter(admision=admision).last(),
             }
-        except Exception as e:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "Error en get_informe_create_context",
-                exc_info=True,
+                extra={"admision_pk": admision_id, "tipo": tipo},
             )
             return {}
 
@@ -216,10 +225,13 @@ class InformeService:
                 "campos_a_subsanar": list(campos_a_subsanar),
                 "observacion": observacion,
             }
-        except Exception as e:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "Error en get_informe_update_context",
-                exc_info=True,
+                extra={
+                    "informe_pk": getattr(informe, "pk", None),
+                    "tipo": tipo,
+                },
             )
             return {}
 
@@ -234,10 +246,13 @@ class InformeService:
                     admision=informe.admision, tipo=tipo, informe_id=informe.id
                 ).first(),
             }
-        except Exception as e:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "Error en get_context_informe_detail",
-                exc_info=True,
+                extra={
+                    "informe_pk": getattr(informe, "pk", None),
+                    "tipo": tipo,
+                },
             )
             return {}
 
@@ -267,10 +282,13 @@ class InformeService:
             else:
                 CampoASubsanar.objects.filter(informe=informe).delete()
                 ObservacionGeneralInforme.objects.filter(informe=informe).delete()
-        except Exception as e:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "Error en procesar_revision_informe",
-                exc_info=True,
+                extra={
+                    "informe_pk": getattr(informe, "pk", None),
+                    "tipo": tipo,
+                },
             )
 
     @staticmethod
@@ -286,10 +304,10 @@ class InformeService:
                     campo=campo, value=valor, informe_complementario=informe
                 )
             return informe
-        except Exception as e:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "Error en guardar_campos_complementarios",
-                exc_info=True,
+                extra={"informe_tecnico_pk": getattr(informe_tecnico, "pk", None)},
             )
             return None
 
@@ -309,8 +327,12 @@ class InformeService:
             informe_complementario.pdf.save(
                 nombre_archivo, ContentFile(pdf_bytes), save=True
             )
-        except Exception as e:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "Error en generar_y_guardar_pdf_complementario",
-                exc_info=True,
+                extra={
+                    "informe_complementario_pk": getattr(
+                        informe_complementario, "pk", None
+                    )
+                },
             )
