@@ -24,7 +24,6 @@ from django.db.models.functions import Cast
 from django.http import HttpResponseRedirect, JsonResponse, Http404
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy, reverse
-from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 from django.conf import settings
 from django.contrib.messages import get_messages
@@ -143,26 +142,30 @@ def actualizar_programas(request, ciudadano_id):
         programas_duplicados = []
         nuevos_programas = []
 
-        for programa_id in programas_ids:
-            programa = Programa.objects.get(id=programa_id)
-            if CiudadanoPrograma.objects.filter(
-                ciudadano=ciudadano, programas=programa
-            ).exists():
+        programas = Programa.objects.filter(id__in=programas_ids)
+        existentes = set(
+            CiudadanoPrograma.objects.filter(
+                ciudadano=ciudadano, programas_id__in=programas_ids
+            ).values_list("programas_id", flat=True)
+        )
+
+        for programa in programas:
+            if programa.id in existentes:
                 programas_duplicados.append(programa.nombre)
-            else:
-                ciudadano_programa = CiudadanoPrograma.objects.create(
-                    ciudadano=ciudadano,
-                    programas=programa,
-                    creado_por=request.user,
-                )
-                nuevos_programas.append(
-                    {
-                        "id": ciudadano_programa.id,
-                        "programa_id": programa.id,
-                        "nombre": programa.nombre,
-                        "ciudadano_id": ciudadano.id,
-                    }
-                )
+                continue
+            ciudadano_programa = CiudadanoPrograma.objects.create(
+                ciudadano=ciudadano,
+                programas=programa,
+                creado_por=request.user,
+            )
+            nuevos_programas.append(
+                {
+                    "id": ciudadano_programa.id,
+                    "programa_id": programa.id,
+                    "nombre": programa.nombre,
+                    "ciudadano_id": ciudadano.id,
+                }
+            )
 
         # Enviar mensajes en caso de programas duplicados
         if programas_duplicados:
@@ -218,8 +221,8 @@ def eliminar_programa(request):
                 {"success": False, "message": "No se encontró el programa."}, status=404
             )
 
-        except Exception as e:
-            logging.error(f"An error occurred: {str(e)}")
+        except Exception as exc:
+            logger.exception("Error al eliminar programa", exc_info=exc)
             return JsonResponse(
                 {
                     "success": False,
@@ -1159,14 +1162,10 @@ class CiudadanosGrupoFamiliarCreateView(CreateView):
                 cuidador_principal=cuidador_principal,
             )
 
-        except Exception as e:
-            messages.error(self.request, f"Error al crear el familiar. Error: {e}")
-            allowed_hosts = ["example.com", "another-trusted-site.com"]
-            full_url = self.request.build_absolute_uri(self.request.path_info)
-            if url_has_allowed_host_and_scheme(full_url, allowed_hosts=allowed_hosts):
-                return redirect(full_url)
-            else:
-                return redirect("/")
+        except Exception as exc:
+            logger.exception("Error al crear el familiar", exc_info=exc)
+            messages.error(self.request, f"Error al crear el familiar: {exc}")
+            return redirect(self.request.path_info)
 
         messages.success(self.request, "Familiar agregado correctamente.")
         return HttpResponseRedirect(self.request.path_info)
