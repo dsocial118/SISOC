@@ -475,7 +475,9 @@ class ComedorUpdateView(UpdateView):
             instance=self.object.referente,
             prefix="referente",
         )
-        data["imagenes_borrar"] = ImagenComedor.objects.filter(comedor=self.object.pk)
+        data["imagenes_borrar"] = ImagenComedor.objects.filter(
+            comedor=self.object.pk
+        ).only("id", "imagen")
         return data
 
     def form_valid(self, form):
