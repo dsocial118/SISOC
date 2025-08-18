@@ -1,24 +1,10 @@
 {% extends "includes/main.html" %}
 {% load static crispy_forms_tags %}
-;
 {% block title %}Organizaciones{% endblock %}
 {% block titulo-pagina %}Organizaciones{% endblock %}
 {% block breadcrumb %}
-    <ol class="breadcrumb float-sm-right px-3">
-        <li class="breadcrumb-item">
-            <a href="{% url 'organizaciones' %}">Organizaciones</a>
-        </li>
-        {% if request.resolver_match.url_name == "organizacion_editar" %}
-            <li class="breadcrumb-item">
-                <a href="{% url 'organizacion_detalle' organizacion.id %}">{{ organizacion.nombre }}</a>
-            </li>
-            <li class="breadcrumb-item active">Editar</li>
-        {% else %}
-            <li class="breadcrumb-item active">Agregar</li>
-        {% endif %}
-    </ol>
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
-;
 {% block content %}
     {% if request.resolver_match.url_name == "organizacion_crear" %}
         <style>
@@ -115,9 +101,7 @@
                         <button type="button" class="btn btn-primary" id="add-firmante">Agregar Firmante</button>
                     </div>
                 </div>
-                <div class="mt-3">
-                    <button type="submit" class="btn btn-success">Guardar Organización</button>
-                </div>
+                {% include 'components/form_buttons.html' with default_save=True save_text='Guardar Organización' layout='end' %}
             </form>
         </div>
     </div>
