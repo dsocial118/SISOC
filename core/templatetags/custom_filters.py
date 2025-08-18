@@ -29,7 +29,7 @@ def is_url(value):
     """
     try:
         return str(value).startswith("/")
-    except:
+    except AttributeError:
         return False
 
 
