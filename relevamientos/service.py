@@ -801,6 +801,8 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 "Error en RelevamientoService.create_or_update_anexo",
                 extra={"anexo_data": anexo_data},
             )
+            payload = {"endpoint": "/api/x", "user_id": 123, "body": {"x": anexo_data}}
+            logger.info("payload", extra={"data": payload})
             raise
 
     @staticmethod
