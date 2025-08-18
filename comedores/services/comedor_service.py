@@ -2,6 +2,7 @@ import re
 import logging
 from typing import Union
 
+from django.core.files.storage import default_storage
 from django.db.models import Q, Count, Prefetch
 from django.db import transaction
 from django.core.paginator import Paginator
@@ -14,13 +15,13 @@ from relevamientos.models import Relevamiento, ClasificacionComedor
 from relevamientos.service import RelevamientoService
 from comedores.forms.comedor_form import ImagenComedorForm
 from comedores.models import Comedor, ImagenComedor, Nomina, Observacion, Referente
-from ciudadanos.models import Ciudadano, HistorialCiudadanoProgramas, CiudadanoPrograma
 from comedores.utils import (
     get_object_by_filter,
     get_id_by_nombre,
     normalize_field,
     preload_valores_comida_cache,
 )
+from ciudadanos.models import Ciudadano, HistorialCiudadanoProgramas, CiudadanoPrograma
 
 from admisiones.models.admisiones import Admision
 from rendicioncuentasmensual.models import RendicionCuentaMensual
@@ -80,14 +81,9 @@ class ComedorService:
             # Eliminar el archivo físico
             if comedor_instance.foto_legajo:
                 try:
-                    import os
-
-                    file_path = comedor_instance.foto_legajo.path
-                    if os.path.exists(file_path):
-                        os.remove(file_path)
-
-                except Exception:
-                    pass
+                    default_storage.delete(comedor_instance.foto_legajo.name)
+                except Exception:  # pragma: no cover - registro de errores
+                    logger.exception("Error al eliminar foto de legajo")
 
             # Limpiar el campo en la base de datos
             comedor_instance.foto_legajo = None
