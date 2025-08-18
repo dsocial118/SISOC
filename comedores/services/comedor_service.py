@@ -80,13 +80,13 @@ class ComedorService:
         """Eliminar la foto del legajo si está marcada para borrar"""
         if "foto_legajo_borrar" in post and comedor_instance.foto_legajo:
             if comedor_instance.foto_legajo:
-              try:
-                  comedor_instance.foto_legajo.delete(save=False)
-              except Exception:
-                  logger.exception(
-                      "Error al eliminar la foto de legajo del comedor %s",
-                      comedor_instance.pk,
-                  )
+                try:
+                    comedor_instance.foto_legajo.delete(save=False)
+                except Exception:
+                    logger.exception(
+                        "Error al eliminar la foto de legajo del comedor %s",
+                        comedor_instance.pk,
+                    )
             comedor_instance.foto_legajo = None
             comedor_instance.save(update_fields=["foto_legajo"])
 
