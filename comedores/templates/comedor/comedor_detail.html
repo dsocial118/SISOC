@@ -632,7 +632,7 @@
                             <div class="galeria-imagenes">
                                 {% for imagen in imagenes %}
                                     <div class="imagen-item" data-index="{{ forloop.counter0 }}">
-                                        <div class="imagen-container" data-image-url="/media/{{ imagen.imagen }}">
+                                        <div class="imagen-container" data-image-url="{{ imagen.imagen.url }}">
                                             <div class="placeholder-imagen">
                                                 <i class="fas fa-image"></i>
                                                 <div class="loader">
