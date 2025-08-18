@@ -46,7 +46,6 @@ class TerritorialService:
                         'fuente': 'cache_django'
                     }
             
-            # 2. Intentar obtener de base de datos local
             territoriales_db = cls._obtener_desde_db()
             if territoriales_db['territoriales'] and not forzar_sync:
                 # Cachear en Django cache
@@ -58,14 +57,12 @@ class TerritorialService:
                     'fuente': 'db_local'
                 }
             
-            # 3. Verificar si GESTIONAR está configurado y disponible
             api_key = os.getenv("GESTIONAR_API_KEY", "")
             api_url = os.getenv("GESTIONAR_API_CREAR_COMEDOR", "")
             
             gestionar_disponible = bool(api_key and api_url and 
                                       api_url not in ['localhost:8001', 'http://localhost:8001/', ''])
             
-            # 4. Sincronizar con GESTIONAR si es necesario, está disponible y configurado
             if gestionar_disponible and (forzar_sync or cls._necesita_sincronizacion()):
                 sync_result = cls._sincronizar_con_gestionar(comedor_id)
                 if sync_result['exitoso']:
@@ -78,7 +75,6 @@ class TerritorialService:
                         'fuente': 'gestionar_sync'
                     }
             
-            # 5. Fallback: usar datos locales aunque estén desactualizados
             if territoriales_db['territoriales']:
                 mensaje = "Usando territoriales desactualizados como fallback"
                 if not gestionar_disponible:
@@ -90,7 +86,6 @@ class TerritorialService:
                     'fuente': 'fallback_desactualizado'
                 }
             
-            # 6. Si no hay datos y GESTIONAR no está disponible, crear datos de ejemplo
             if not gestionar_disponible:
                 logger.info("GESTIONAR no disponible, usando datos de ejemplo para desarrollo")
                 cls._crear_datos_ejemplo()
@@ -102,7 +97,6 @@ class TerritorialService:
                         'fuente': 'datos_ejemplo'
                     }
             
-            # 7. Último recurso: lista vacía
             logger.error("No se pudieron obtener territoriales de ninguna fuente")
             return {
                 'territoriales': [],
@@ -143,7 +137,6 @@ class TerritorialService:
                 fecha_ultimo_sync__lt=tiempo_limite
             ).count()
             
-            # Verificar último sync exitoso (evitar syncs muy frecuentes)
             ultimo_sync = TerritorialSyncLog.objects.filter(
                 exitoso=True
             ).order_by('-fecha').first()
@@ -170,14 +163,12 @@ class TerritorialService:
         sync_log = TerritorialSyncLog(comedor_id=comedor_id)
         
         try:
-            # Payload para GESTIONAR
             payload = {
                 "Action": "Find",
                 "Properties": {"Locale": "es-ES"},
                 "Rows": [{"ComedorID": comedor_id}]
             }
             
-            # Obtener configuración de variables de entorno
             api_key = os.getenv("GESTIONAR_API_KEY", "")
             api_url = os.getenv("GESTIONAR_API_CREAR_COMEDOR", "")
             
@@ -189,7 +180,6 @@ class TerritorialService:
             if not api_url or not api_key:
                 raise ValueError("Configuración de GESTIONAR incompleta")
             
-            # Realizar petición
             response = requests.post(
                 api_url,
                 json=payload,
@@ -198,20 +188,15 @@ class TerritorialService:
             )
             response.raise_for_status()
             
-            # Procesar respuesta
             data = response.json()
             raw_territoriales = data[0].get('ListadoRelevadoresDisponibles', '') if data else ''
             
-            # Parsear territoriales
             territoriales_data = cls._parse_territoriales_string(raw_territoriales)
             
-            # Actualizar cache en DB
             territoriales_sincronizados = cls._actualizar_cache_db(territoriales_data)
             
-            # Invalidar cache Django
             cache.delete(cls.CACHE_KEY_TERRITORIALES)
             
-            # Log exitoso
             sync_log.exitoso = True
             sync_log.territoriales_sincronizados = territoriales_sincronizados
             sync_log.save()
