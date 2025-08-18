@@ -99,6 +99,15 @@ def invalidate_intervenciones_cache():
     invalidate_cache_keys(*keys_to_invalidate)
 
 
+def invalidate_territoriales_cache():
+    """Invalida cache de territoriales."""
+    keys_to_invalidate = [
+        "territoriales_list",
+    ]
+
+    invalidate_cache_keys(*keys_to_invalidate)
+
+
 def invalidate_centrodefamilia_cache(user_id=None):
     """Invalida cache relacionado con centro de familia."""
     if user_id:
@@ -149,6 +158,12 @@ def invalidate_destinatario_cache_on_change(sender, instance, **kwargs):
 def invalidate_valor_comida_cache_on_change(sender, **kwargs):
     """Invalida cache cuando cambian valores de comida."""
     invalidate_cache_keys("valores_comida_map")
+
+
+@receiver([post_save, post_delete], sender="comedores.TerritorialCache")
+def invalidate_territorial_cache_on_change(sender, **kwargs):
+    """Invalida cache cuando cambian datos de territoriales."""
+    invalidate_territoriales_cache()
 
 
 # Funciones helper para uso en vistas
