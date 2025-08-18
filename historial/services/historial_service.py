@@ -65,8 +65,13 @@ class HistorialService:
                 object_id__in=map(str, documentos_ids),
             ).order_by("-fecha")
 
-        except Exception as e:
-            logger.error(
-                f"Error en HistorialService.get_historial_documentos_by_rendicion_cuentas_final: {e}",
+        except Exception:
+            logger.exception(
+                "Error en HistorialService.get_historial_documentos_by_rendicion_cuentas_final",
+                extra={
+                    "rendicion_cuentas_final_pk": getattr(
+                        rendicion_cuentas_final, "pk", None
+                    )
+                },
             )
             raise
