@@ -2,48 +2,11 @@
 {% load static %}
 {% block title %}Participantes{% endblock %}
 {% block breadcrumb %}
-    <ol class="breadcrumb float-sm-right">
-        <li class="breadcrumb-item">
-            <a href="{% url 'centro_list' %}">Centro de Familia</a>
-        </li>
-        <li class="breadcrumb-item">
-            <a href="{% url 'actividadcentro_list' %}">Actividades</a>
-        </li>
-        <li class="breadcrumb-item active">Participantes</li>
-    </ol>
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
 {% block content %}
     <div class="container">
-        <h2 class="text-center display-4 mb-4">Participantes</h2>
-        <div class="card">
-            <div class="card-body">
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Nombre</th>
-                            <th>Apellido</th>
-                            <th>DNI</th>
-                            <th>Edad</th>
-                            <th>Género</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for p in participantes %}
-                            <tr>
-                                <td>{{ p.nombre }}</td>
-                                <td>{{ p.apellido }}</td>
-                                <td>{{ p.dni }}</td>
-                                <td>{{ p.edad }}</td>
-                                <td>{{ p.genero }}</td>
-                            </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="5">No hay participantes registrados.</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+        <h2 class="text-center display-4 mb-4">{{ page_title|default:'Participantes' }}</h2>
+        {% include 'components/data_table.html' with headers=table_headers objects=participantes object_name='participante' empty_message='No hay participantes registrados.' %}
     </div>
 {% endblock %}
