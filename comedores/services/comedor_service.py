@@ -2,6 +2,7 @@ import re
 import logging
 from typing import Union
 
+from django.core.files.storage import default_storage
 from django.db.models import Q, Count, Prefetch
 from django.db import transaction
 from django.core.paginator import Paginator
@@ -21,6 +22,7 @@ from comedores.utils import (
     normalize_field,
     preload_valores_comida_cache,
 )
+from ciudadanos.models import Ciudadano, HistorialCiudadanoProgramas, CiudadanoPrograma
 
 from admisiones.models.admisiones import Admision
 from rendicioncuentasmensual.models import RendicionCuentaMensual
@@ -77,13 +79,14 @@ class ComedorService:
     def borrar_foto_legajo(post, comedor_instance):
         """Eliminar la foto del legajo si está marcada para borrar"""
         if "foto_legajo_borrar" in post and comedor_instance.foto_legajo:
-            try:
-                comedor_instance.foto_legajo.delete(save=False)
-            except Exception:
-                logger.exception(
-                    "Error al eliminar la foto de legajo del comedor %s",
-                    comedor_instance.pk,
-                )
+            if comedor_instance.foto_legajo:
+              try:
+                  comedor_instance.foto_legajo.delete(save=False)
+              except Exception:
+                  logger.exception(
+                      "Error al eliminar la foto de legajo del comedor %s",
+                      comedor_instance.pk,
+                  )
             comedor_instance.foto_legajo = None
             comedor_instance.save(update_fields=["foto_legajo"])
 

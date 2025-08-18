@@ -2,6 +2,12 @@ from unittest import mock
 
 import pytest
 from django.urls import reverse
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings
+from django.core.files.storage import FileSystemStorage
+
+from comedores.models import Comedor
+from comedores.services.comedor_service import ComedorService
 
 
 # Tests for ComedorDetailView (HTML)
@@ -229,3 +235,22 @@ def test_relevamiento_create_edit_ajax_error(
     json_response = response.json()
     assert "error" in json_response
     assert "Error inesperado" in json_response["error"]
+
+
+@pytest.mark.django_db
+def test_borrar_foto_legajo_elimina_archivo_y_campo(tmp_path, monkeypatch):
+    fs = FileSystemStorage(location=tmp_path)
+    with override_settings(MEDIA_ROOT=tmp_path):
+        monkeypatch.setattr("comedores.services.comedor_service.default_storage", fs)
+        archivo = SimpleUploadedFile(
+            "test.jpg", b"contenido", content_type="image/jpeg"
+        )
+        comedor = Comedor.objects.create(nombre="Prueba", foto_legajo=archivo)
+        ruta = comedor.foto_legajo.name
+        assert fs.exists(ruta)
+
+        ComedorService.borrar_foto_legajo({"foto_legajo_borrar": "1"}, comedor)
+        comedor.refresh_from_db()
+
+        assert comedor.foto_legajo is None
+        assert not fs.exists(ruta)

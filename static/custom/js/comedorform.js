@@ -8,7 +8,6 @@ function confirmSubmit() {
 
 if (provinciaSelect) {
   provinciaSelect.addEventListener("change", async function () {
-    console.log("Provincia:", this.value);
     await cargarOpciones(
       `${ajaxLoadMunicipiosUrl}?provincia_id=${this.value}`,
       "municipio"
@@ -45,7 +44,6 @@ async function cargarOpciones(url, select) {
       data.forEach((item) => crearOpcion(item, localidadSelect));
     }
   } catch (error) {
-    console.error("Error al cargar opciones:", error);
   }
 }
 
@@ -58,40 +56,26 @@ function crearOpcion({ id, nombre, nombre_region }, select) {
 
 // FUNCIONALIDAD DE IMÁGENES
 document.addEventListener("DOMContentLoaded", function () {
-  console.log("Iniciando funcionalidad de imágenes...");
   
   // Array para almacenar todos los archivos seleccionados
   let selectedFiles = [];
 
-  const addImagesBtn = document.getElementById("addImagesBtn");
-  const imagenesInput = document.getElementById("imagenesInput");
-  const selectedImagesInfo = document.getElementById("selectedImagesInfo");
-  const imageCount = document.getElementById("imageCount");
-  const imagePreviewContainer = document.getElementById("imagePreviewContainer");
-
-  console.log("Elementos encontrados:", {
-    addImagesBtn: !!addImagesBtn,
-    imagenesInput: !!imagenesInput,
-    selectedImagesInfo: !!selectedImagesInfo,
-    imageCount: !!imageCount,
-    imagePreviewContainer: !!imagePreviewContainer
-  });
+    const addImagesBtn = document.getElementById("addImagesBtn");
+    const imagenesInput = document.getElementById("imagenesInput");
+    const selectedImagesInfo = document.getElementById("selectedImagesInfo");
+    const imageCount = document.getElementById("imageCount");
+    const imagePreviewContainer = document.getElementById("imagePreviewContainer");
 
   // FUNCIONALIDAD PARA IMÁGENES EXISTENTES
   function setupExistingImages() {
-    console.log("Configurando imágenes existentes...");
     
     const checkboxes = document.querySelectorAll(".checkbox-eliminar-custom");
     const deleteButtons = document.querySelectorAll(".btn-eliminar-custom");
 
-    console.log(`Encontrados ${checkboxes.length} checkboxes y ${deleteButtons.length} botones`);
-
     // Configurar checkboxes
     checkboxes.forEach((checkbox, index) => {
-      console.log(`Configurando checkbox ${index}:`, checkbox.id);
       
       checkbox.addEventListener("change", function () {
-        console.log("Checkbox cambiado:", this.id, "Checked:", this.checked);
         
         const imageId = this.getAttribute("data-image-id");
         const imageItem = this.closest('.imagen-existente') || document.querySelector(`[data-image-id="${imageId}"]`);
@@ -99,42 +83,33 @@ document.addEventListener("DOMContentLoaded", function () {
         if (imageItem) {
           toggleImageElimination(imageItem, this.checked);
           updateDeleteButtonText(imageItem, this.checked);
-        } else {
-          console.error("No se encontró el elemento imagen con ID:", imageId);
         }
       });
     });
 
     // Configurar botones de eliminar
     deleteButtons.forEach((button, index) => {
-      console.log(`Configurando botón ${index}`);
       
       button.addEventListener("click", function (e) {
         e.preventDefault();
-        console.log("Botón de eliminar clickeado");
         
         const imageItem = this.closest(".imagen-existente");
         const checkbox = imageItem ? imageItem.querySelector(".checkbox-eliminar-custom") : null;
 
         if (checkbox) {
-          console.log("Cambiando estado del checkbox desde:", checkbox.checked, "a:", !checkbox.checked);
           checkbox.checked = !checkbox.checked;
-          
+
           // Disparar evento change manualmente
           const event = new Event('change', { bubbles: true });
           checkbox.dispatchEvent(event);
-        } else {
-          console.error("No se encontró el checkbox asociado al botón");
         }
       });
     });
   }
 
   function toggleImageElimination(imageItem, isMarked) {
-    console.log("Toggle eliminación:", isMarked);
     
     if (!imageItem) {
-      console.error("imageItem es null");
       return;
     }
 
@@ -145,14 +120,12 @@ document.addEventListener("DOMContentLoaded", function () {
       imageItem.classList.add("imagen-eliminada");
       if (overlay) {
         overlay.classList.remove("d-none");
-        console.log("Overlay mostrado");
       }
     } else {
       // Desmarcar
       imageItem.classList.remove("imagen-eliminada");
       if (overlay) {
         overlay.classList.add("d-none");
-        console.log("Overlay ocultado");
       }
     }
   }
@@ -165,31 +138,24 @@ document.addEventListener("DOMContentLoaded", function () {
         deleteButton.innerHTML = '<i class="fas fa-undo"></i>';
         deleteButton.style.backgroundColor = '#27ae60'; // Verde
         deleteButton.title = 'Desmarcar para eliminar';
-        console.log("Botón cambiado a verde (deshacer)");
       } else {
         deleteButton.innerHTML = '<i class="fas fa-trash-alt"></i>';
         deleteButton.style.backgroundColor = '#e74c3c'; // Rojo
         deleteButton.title = 'Marcar para eliminar';
-        console.log("Botón cambiado a rojo (eliminar)");
       }
     }
   }
 
   // FUNCIONALIDAD PARA CARGAR IMÁGENES EXISTENTES
   function loadExistingImages() {
-    console.log("Cargando imágenes existentes...");
     
     const imageContainers = document.querySelectorAll('.imagen-thumbnail-container');
-    console.log(`Encontrados ${imageContainers.length} contenedores de imágenes existentes`);
     
     imageContainers.forEach((container, index) => {
       const imageUrl = container.getAttribute('data-image-url');
       const placeholder = container.querySelector('.preview-placeholder');
       
       if (imageUrl && placeholder) {
-        console.log(`Cargando imagen ${index}:`);
-        console.log(`  - URL: ${imageUrl}`);
-        console.log(`  - URL absoluta: ${window.location.origin}${imageUrl}`);
         
         // Crear elemento img
         const img = document.createElement('img');
@@ -198,12 +164,10 @@ document.addEventListener("DOMContentLoaded", function () {
         img.src = imageUrl;
         
         img.onload = function() {
-          console.log(`Imagen ${index} cargada exitosamente`);
           placeholder.replaceWith(img);
         };
         
         img.onerror = function() {
-          console.error(`Error al cargar imagen ${index}: ${imageUrl}`);
           placeholder.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
           placeholder.style.color = '#e74c3c';
           placeholder.title = 'Error al cargar imagen';
@@ -212,7 +176,6 @@ document.addEventListener("DOMContentLoaded", function () {
         // Timeout de seguridad (10 segundos)
         setTimeout(() => {
           if (placeholder.parentNode === container) {
-            console.warn(`Timeout cargando imagen ${index}: ${imageUrl}`);
             placeholder.innerHTML = '<i class="fas fa-clock"></i>';
             placeholder.style.color = '#f39c12';
             placeholder.title = 'Imagen no disponible';
@@ -220,7 +183,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }, 10000);
         
       } else {
-        console.warn(`Contenedor ${index} sin URL de imagen o placeholder`);
         if (placeholder) {
           placeholder.innerHTML = '<i class="fas fa-question-circle"></i>';
           placeholder.style.color = '#95a5a6';
@@ -232,24 +194,19 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // FUNCIONALIDAD PARA NUEVAS IMÁGENES
   if (addImagesBtn && imagenesInput) {
-    console.log("Configurando funcionalidad de nuevas imágenes...");
     
     // Event listener para el botón de agregar imágenes
     addImagesBtn.addEventListener("click", function () {
-      console.log("Botón de agregar imágenes clickeado");
       imagenesInput.click();
     });
 
     // Event listener para cuando se seleccionan archivos
     imagenesInput.addEventListener("change", function () {
-      console.log("Archivos seleccionados:", this.files.length);
       
       const files = Array.from(this.files);
       
       // IMPORTANTE: Concatenar archivos en lugar de reemplazar
       selectedFiles = selectedFiles.concat(files);
-      
-      console.log("Total de archivos después de agregar:", selectedFiles.length);
       
       // Actualizar la vista
       updateImageDisplay();
@@ -257,7 +214,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     function updateImageDisplay() {
-      console.log("Actualizando display de imágenes, archivos:", selectedFiles.length);
       
       // Mostrar contador
       if (selectedFiles.length > 0) {
@@ -273,11 +229,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Mostrar vista previa de cada imagen
         selectedFiles.forEach((file, index) => {
-          console.log(`Procesando archivo ${index}: ${file.name}, tipo: ${file.type}`);
           
           // Verificar que el archivo sea una imagen válida
           if (!file.type.startsWith('image/')) {
-            console.warn('Archivo no es una imagen:', file.name);
             return;
           }
 
@@ -311,7 +265,6 @@ document.addEventListener("DOMContentLoaded", function () {
           btnEliminar.innerHTML = '<i class="fas fa-times"></i>';
           btnEliminar.title = 'Eliminar imagen';
           btnEliminar.onclick = function() {
-            console.log("Eliminando imagen en índice:", index);
             removeFileByIndex(index);
           };
 
@@ -328,7 +281,6 @@ document.addEventListener("DOMContentLoaded", function () {
             const reader = new FileReader();
             
             reader.onload = function(e) {
-              console.log(`Imagen ${index} cargada exitosamente`);
               
               // Crear elemento img
               const img = document.createElement('img');
@@ -342,14 +294,12 @@ document.addEventListener("DOMContentLoaded", function () {
               };
               
               img.onerror = function() {
-                console.warn('Error al mostrar la imagen:', file.name);
                 placeholder.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
                 placeholder.style.color = '#dc3545';
               };
             };
             
             reader.onerror = function() {
-              console.error('Error al leer el archivo:', file.name);
               placeholder.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
               placeholder.style.color = '#dc3545';
             };
@@ -357,7 +307,6 @@ document.addEventListener("DOMContentLoaded", function () {
             try {
               reader.readAsDataURL(file);
             } catch (error) {
-              console.error('Error al procesar archivo:', error);
               placeholder.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
               placeholder.style.color = '#dc3545';
             }
@@ -384,14 +333,11 @@ document.addEventListener("DOMContentLoaded", function () {
           }
         });
         imagenesInput.files = dt.files;
-        console.log('Input file actualizado con', dt.files.length, 'archivos');
       } catch (error) {
-        console.error('Error al actualizar input file:', error);
       }
     }
 
     function removeFileByIndex(index) {
-      console.log("Eliminando imagen en índice:", index, "Total archivos:", selectedFiles.length);
       
       // Encontrar el archivo por nombre para mayor seguridad
       const previewElement = document.querySelector(`[data-index="${index}"]`);
@@ -403,7 +349,6 @@ document.addEventListener("DOMContentLoaded", function () {
           const fileIndex = selectedFiles.findIndex(file => file.name === fileName);
           if (fileIndex !== -1) {
             selectedFiles.splice(fileIndex, 1);
-            console.log(`Archivo ${fileName} eliminado. Archivos restantes:`, selectedFiles.length);
             updateImageDisplay();
             updateFileInput();
             return;
@@ -416,8 +361,6 @@ document.addEventListener("DOMContentLoaded", function () {
         selectedFiles.splice(index, 1);
         updateImageDisplay();
         updateFileInput();
-      } else {
-        console.error('Índice inválido:', index, 'Archivos disponibles:', selectedFiles.length);
       }
     }
 
@@ -425,8 +368,6 @@ document.addEventListener("DOMContentLoaded", function () {
     window.removeImage = function (index) {
       removeFileByIndex(index);
     };
-  } else {
-    console.error("No se encontraron los elementos necesarios para nuevas imágenes");
   }
 
   // Inicializar funcionalidad de imágenes existentes
@@ -437,13 +378,10 @@ document.addEventListener("DOMContentLoaded", function () {
   
   // Inicializar funcionalidad de foto de legajo
   setupFotoLegajo();
-  
-  console.log("Funcionalidad de imágenes inicializada correctamente");
 });
 
 // FUNCIONALIDAD PARA FOTO DE LEGAJO
 function setupFotoLegajo() {
-  console.log("Configurando funcionalidad de foto de legajo...");
   
   // Cargar foto de legajo existente
   const fotoThumbnailContainer = document.querySelector('.foto-thumbnail-container');
@@ -455,7 +393,6 @@ function setupFotoLegajo() {
   const fotoLegajoInput = document.getElementById('id_foto_legajo');
   if (fotoLegajoInput) {
     fotoLegajoInput.addEventListener('change', function() {
-      console.log("Archivo de foto legajo seleccionado");
       const file = this.files[0];
       
       if (file) {
@@ -472,7 +409,6 @@ function cargarFotoLegajoExistente(container) {
   const placeholder = container.querySelector('.preview-placeholder');
   
   if (imageUrl && placeholder) {
-    console.log("Cargando foto de legajo existente:", imageUrl);
     
     placeholder.classList.add('loading');
     
@@ -481,12 +417,10 @@ function cargarFotoLegajoExistente(container) {
     img.src = imageUrl;
     
     img.onload = function() {
-      console.log("Foto de legajo cargada exitosamente");
       placeholder.replaceWith(img);
     };
     
     img.onerror = function() {
-      console.error("Error al cargar foto de legajo:", imageUrl);
       placeholder.classList.remove('loading');
       placeholder.innerHTML = '<i class="fas fa-exclamation-triangle"></i><br><small>Error al cargar</small>';
       placeholder.style.background = '#dc3545';
@@ -504,10 +438,8 @@ function cargarFotoLegajoExistente(container) {
 }
 
 function mostrarPreviewFotoLegajo(file) {
-  console.log("Mostrando preview de foto legajo:", file.name);
   
   if (!file.type.startsWith('image/')) {
-    console.warn('El archivo seleccionado no es una imagen:', file.name);
     alert('Por favor selecciona un archivo de imagen válido.');
     return;
   }
@@ -521,7 +453,6 @@ function mostrarPreviewFotoLegajo(file) {
     const reader = new FileReader();
     
     reader.onload = function(e) {
-      console.log("Preview de foto legajo cargado exitosamente");
       previewImg.src = e.target.result;
       nombreElement.textContent = file.name;
       sizeElement.textContent = formatFileSize(file.size);
@@ -529,7 +460,6 @@ function mostrarPreviewFotoLegajo(file) {
     };
     
     reader.onerror = function() {
-      console.error('Error al leer el archivo de foto legajo:', file.name);
       alert('Error al leer el archivo seleccionado.');
     };
     
@@ -538,7 +468,6 @@ function mostrarPreviewFotoLegajo(file) {
 }
 
 function ocultarPreviewFotoLegajo() {
-  console.log("Ocultando preview de foto legajo");
   const previewContainer = document.getElementById('fotoLegajoPreviewContainer');
   if (previewContainer) {
     previewContainer.classList.add('d-none');
@@ -546,7 +475,6 @@ function ocultarPreviewFotoLegajo() {
 }
 
 function removerPreviewFotoLegajo() {
-  console.log("Removiendo preview de foto legajo");
   const fotoLegajoInput = document.getElementById('id_foto_legajo');
   if (fotoLegajoInput) {
     fotoLegajoInput.value = '';
@@ -555,7 +483,6 @@ function removerPreviewFotoLegajo() {
 }
 
 function ampliarFotoLegajo(url, nombre) {
-  console.log("Ampliando foto de legajo:", nombre);
   
   const modalImg = document.getElementById('fotoLegajoPrincipal');
   const nombreModal = document.getElementById('nombreArchivoLegajo');
@@ -582,8 +509,6 @@ function descargarFotoLegajo() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
-    console.log("Descargando foto de legajo:", link.download);
   }
 }
 
