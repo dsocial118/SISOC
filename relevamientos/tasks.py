@@ -7,7 +7,7 @@ from django.utils import timezone
 from relevamientos.models import Relevamiento
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 TIMEOUT = 360  # Segundos máximos de espera por respuesta
 
 
@@ -68,11 +68,11 @@ class AsyncSendRelevamientoToGestionar(threading.Thread):
                     docPDF=gestionar_pdf
                 )
 
-        except Exception as e:
-            logger.error(
-                f"Error al sincronizar RELEVAMIENTO {relevamiento.id} con GESTIONAR: {e}"
+        except Exception:
+            logger.exception(
+                "Error al sincronizar RELEVAMIENTO con GESTIONAR",
+                extra={"relevamiento_pk": relevamiento.id, "body": data},
             )
-            logger.error(f"Con el body: {data}")
 
 
 class AsyncRemoveRelevamientoToGestionar(threading.Thread):
@@ -106,8 +106,8 @@ class AsyncRemoveRelevamientoToGestionar(threading.Thread):
             logger.info(
                 f"RELEVAMIENTO {relevamiento.id} sincronizado con GESTIONAR con exito"
             )
-        except Exception as e:
-            logger.error(
-                f"Error al sincronizar RELEVAMIENTO {relevamiento.id} con GESTIONAR: {e}"
+        except Exception:
+            logger.exception(
+                "Error al sincronizar RELEVAMIENTO con GESTIONAR",
+                extra={"relevamiento_pk": relevamiento.id, "body": data},
             )
-            logger.error(f"Con el body: {data}")

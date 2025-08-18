@@ -27,10 +27,10 @@ class RendicionCuentasFinalService:
                     accion="Adjuntar documento",
                     instancia=documento,
                 )
-        except Exception as e:
-            logger.error(
-                f"Error en RendicionCuentasFinalService.actualizar_documento_con_archivo para el documento: {documento} {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                "Error en RendicionCuentasFinalService.actualizar_documento_con_archivo",
+                extra={"documento_pk": getattr(documento, "pk", None)},
             )
             raise
 
@@ -47,10 +47,10 @@ class RendicionCuentasFinalService:
             )
 
             return True, documento
-        except Exception as e:
-            logger.error(
-                f"Error en RendicionCuentasFinalService.adjuntar_archivo_a_documento para el documento: {documento_id} {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                "Error en RendicionCuentasFinalService.adjuntar_archivo_a_documento",
+                extra={"documento_id": documento_id},
             )
             raise
 
@@ -73,10 +73,14 @@ class RendicionCuentasFinalService:
             )
 
             return documentos
-        except Exception as e:
-            logger.error(
-                f"Error en RendicionCuentasFinalService.get_documentos_rendicion_cuentas_final: {rendicion_cuentas_final} {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                "Error en RendicionCuentasFinalService.get_documentos_rendicion_cuentas_final",
+                extra={
+                    "rendicion_cuentas_final_pk": getattr(
+                        rendicion_cuentas_final, "pk", None
+                    )
+                },
             )
 
             raise
@@ -112,9 +116,9 @@ class RendicionCuentasFinalService:
             )
 
             return qs
-        except Exception as e:
-            logger.error(
-                f"Error en RendicionCuentasFinalService.filter_documentos_por_area para el usuario: {user} {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                "Error en RendicionCuentasFinalService.filter_documentos_por_area",
+                extra={"user_pk": getattr(user, "pk", None), "query": query},
             )
             raise
