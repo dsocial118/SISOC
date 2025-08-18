@@ -1,109 +1,83 @@
 document.addEventListener("DOMContentLoaded", function () {
 
   /* ==========================================================
-     1) ANIMACIÓN DE PESTAÑAS LATERALES Y SECCIONES
+     1) FUNCIONES DE ACORDEÓN RESPONSIVE
   ========================================================== */
-  const locCard = document.querySelector('.location-card');
-  const leftTab = document.getElementById('tab-ubicacion');
-  const rightTabs = locCard.querySelector('.right-tabs');
-  const tabs = Array.from(rightTabs.children);
-  const mapCont = document.getElementById('mapa-iframe');
-  const detailsCont = document.getElementById('detalles-ubicacion');
-  const sections = Array.from(locCard.querySelectorAll('.content-seccion'));
-
-  // Aumentar tamaño del mapa/detalles un 25%
-  if (mapCont) mapCont.style.height = "125%";
-  if (detailsCont) detailsCont.style.height = "125%";
-
-  // Transición más suave para movimiento
-  tabs.forEach(t => {
-    t.style.transition = "transform 0.5s ease-in-out"; // más fluida
-  });
-
-  function hideAllSections() {
-    sections.forEach(s => s.classList.remove('active'));
+  function isMobile() {
+    return window.innerWidth <= 768;
   }
 
-  function showUbicacion() {
-    mapCont.style.display = '';
-    detailsCont.style.display = '';
-  }
+  function ajustarAnchos() {
+    const allPanels = document.querySelectorAll('.accordion-panel');
+    const totalPanels = allPanels.length;
+    const closedWidth = 70;
 
-  leftTab.addEventListener('click', () => {
-    tabs.forEach(t => {
-      t.style.transform = '';
-      t.classList.remove('activa');
+    if (isMobile()) {
+      // En móvil, todos los paneles ocupan 100% y se apilan
+      allPanels.forEach(p => p.style.width = '100%');
+      return;
+    }
+
+    // Desktop: calcular ancho horizontal
+    const openPanel = Array.from(allPanels).find(p => p.classList.contains('open'));
+    if (!openPanel) {
+      allPanels.forEach(p => p.style.width = closedWidth + 'px');
+      return;
+    }
+
+    const openWidth = `calc(100% - ${(totalPanels - 1) * closedWidth}px)`;
+    allPanels.forEach(p => {
+      if (p === openPanel) {
+        p.style.width = openWidth;
+      } else {
+        p.style.width = closedWidth + 'px';
+      }
     });
-    showUbicacion();
-    hideAllSections();
-  });
+  }
 
-  tabs.forEach((tab, idx) => {
-    tab.addEventListener('click', () => {
-      const baseRight = leftTab.getBoundingClientRect().right;
-      const tabW = tabs[0].offsetWidth;
+  function toggleAccordion(panel) {
+    const allPanels = document.querySelectorAll('.accordion-panel');
+    const totalPanels = allPanels.length;
+    const closedWidth = 70;
+  
+    if (isMobile()) {
+      // móvil: abrir/cerrar contenido
+      panel.classList.toggle('open');
+      return;
+    }
+  
+    const index = Array.from(allPanels).indexOf(panel);
+    const esPrimero = index === 0;
+    const esUltimo = index === totalPanels - 1;
+  
+    // Si ya está abierto, no hacemos nada (no cerrar)
+    if (panel.classList.contains('open')) {
+      return; 
+    }
+  
+    // Cerrar todos los demás
+    allPanels.forEach(p => p.classList.remove('open'));
+    panel.classList.add('open');
+  
+    const openWidth = `calc(100% - ${(totalPanels - 1) * closedWidth}px)`;
+    allPanels.forEach(p => {
+      p.style.width = p.classList.contains('open') ? openWidth : closedWidth + 'px';
+    });
+  }
 
-      if (tab.classList.contains('activa')) {
-        for (let i = idx; i < tabs.length; i++) {
-          const t = tabs[i];
-          if (t.classList.contains('activa')) {
-            t.style.transform = '';
-            t.classList.remove('activa');
-          }
-        }
-        hideAllSections();
-        mapCont.style.display = 'none';
-        detailsCont.style.display = 'none';
+  // Inicializar acordeón al cargar
+  ajustarAnchos();
 
-        let found = false;
-        for (let i = idx - 1; i >= 0; i--) {
-          if (tabs[i].classList.contains('activa')) {
-            const key = tabs[i].textContent.trim()
-              .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-              .toLowerCase().replace(/\s+/g, '-');
-            const sec = document.getElementById(`seccion-${key}`);
-            if (sec) {
-              sec.classList.add('active');
-              const activas = tabs.filter(t => t.classList.contains('activa')).length;
-              sec.style.paddingLeft = `${(activas + 1) * 50}px`;
-              found = true;
-              break;
-            }
-          }
-        }
-        if (!found) {
-          showUbicacion();
-        }
-        return;
-      }
-
-      for (let i = 0; i <= idx; i++) {
-        const t = tabs[i];
-        if (t.classList.contains('activa')) continue;
-        const originalLeft = t.getBoundingClientRect().left;
-        const targetX = baseRight + i * tabW;
-        const shiftX = targetX - originalLeft;
-        t.style.transform = `translateX(${shiftX}px)`;
-        t.classList.add('activa');
-      }
-
-      mapCont.style.display = 'none';
-      detailsCont.style.display = 'none';
-      hideAllSections();
-
-      const key = tab.textContent.trim()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase().replace(/\s+/g, '-');
-      const sec = document.getElementById(`seccion-${key}`);
-      if (sec) {
-        sec.classList.add('active');
-        const activas = tabs.filter(t => t.classList.contains('activa')).length;
-        sec.style.paddingLeft = `${(activas + 1) * 50}px`;
-      }
+  // Evento para hacer clic solo en headers
+  document.querySelectorAll('.accordion-panel .accordion-header').forEach(header => {
+    header.addEventListener('click', (e) => {
+      const panel = e.currentTarget.parentElement;
+      toggleAccordion(panel);
     });
   });
 
-  leftTab.click(); // disparo inicial
+  // Recalcular anchos al cambiar tamaño de ventana
+  window.addEventListener('resize', ajustarAnchos);
 
   /* ==========================================================
      2) FILTRO EN VIVO DE CENTROS ADHERIDOS
@@ -160,7 +134,5 @@ document.addEventListener("DOMContentLoaded", function () {
   }
   updateQueryParam("searchActividades", "search_actividades");
   updateQueryParam("searchCurso", "search_actividades_curso");
-
-
 
 });
