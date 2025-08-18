@@ -27,9 +27,10 @@ class CentroDesarrolloInfantilService:
                     | Q(localidad__icontains=query)
                 )
             return queryset
-        except Exception as e:
-            logger.error(
-                f"Error en CentroDesarrolloInfantilService.get_centros_filtrados para centro: {e}",
+        except Exception:
+            logger.exception(
+                "Error en CentroDesarrolloInfantilService.get_centros_filtrados",
+                extra={"query": query},
             )
             raise
 
@@ -47,9 +48,10 @@ class CentroDesarrolloInfantilService:
                 ),
                 pk=centro_id,
             )
-        except Exception as e:
-            logger.error(
-                f"Error en CentroDesarrolloInfantilService.get_centro_detail_object para centro:{centro_id} {e}",
+        except Exception:
+            logger.exception(
+                "Error en CentroDesarrolloInfantilService.get_centro_detail_object",
+                extra={"centro_pk": centro_id},
             )
             raise
 
@@ -68,9 +70,10 @@ class CentroDesarrolloInfantilService:
                 return imagen_centro.save()
             else:
                 return imagen_centro.errors
-        except Exception as e:
-            logger.error(
-                f"Error en CentroDesarrolloInfantilService.create_imagenes para centro:{centro_id} {e}",
+        except Exception:
+            logger.exception(
+                "Error en CentroDesarrolloInfantilService.create_imagenes",
+                extra={"centro_pk": centro_id},
             )
             raise
 
@@ -93,9 +96,10 @@ class CentroDesarrolloInfantilService:
                 data["turnos_funcionamiento"] = turnos
 
             return data
-        except Exception as e:
-            logger.error(
-                f"Error en CentroDesarrolloInfantilService.get_mes_dia_turno_ids para centro:{data} {e}",
+        except Exception:
+            logger.exception(
+                "Error en CentroDesarrolloInfantilService.get_mes_dia_turno_ids",
+                extra={"data": data},
             )
             raise
 
@@ -111,8 +115,9 @@ class CentroDesarrolloInfantilService:
                 "total_trabajadores": centro.cantidad_trabajadores,
                 "horario": f"{centro.horario_inicio} - {centro.horario_fin}",
             }
-        except Exception as e:
-            logger.error(
-                f"Error en CentroDesarrolloInfantilService.get_informacion_adicional para centro:{centro_id} {e}",
+        except Exception:
+            logger.exception(
+                "Error en CentroDesarrolloInfantilService.get_informacion_adicional",
+                extra={"centro_pk": centro_id},
             )
             raise
