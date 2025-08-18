@@ -54,10 +54,8 @@ class AdmisionService:
                 .distinct()
                 .order_by("-id")
             )
-        except Exception as e:
-            logger.error(
-                "Error en get_comedores_with_admision",
-            )
+        except Exception:
+            logger.exception("Error en get_comedores_with_admision")
             return Comedor.objects.none()
 
     @staticmethod
@@ -79,8 +77,11 @@ class AdmisionService:
                 )
 
             return comedores
-        except Exception as e:
-            logger.error("Error en get_comedores_filtrados", exc_info=True)
+        except Exception:
+            logger.exception(
+                "Error en get_comedores_filtrados",
+                extra={"query": query},
+            )
             return Comedor.objects.none()
 
     @staticmethod
@@ -89,9 +90,10 @@ class AdmisionService:
             comedor = get_object_or_404(Comedor, pk=pk)
             convenios = TipoConvenio.objects.all()
             return {"comedor": comedor, "convenios": convenios, "es_crear": True}
-        except Exception as e:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "Error en get_admision_create_context",
+                extra={"comedor_pk": pk},
             )
             return {}
 
@@ -105,8 +107,11 @@ class AdmisionService:
             return Admision.objects.create(
                 comedor=comedor, tipo_convenio=tipo_convenio, estado_id=estado
             )
-        except Exception as e:
-            logger.error("Error en create_admision", exc_info=True)
+        except Exception:
+            logger.exception(
+                "Error en create_admision",
+                extra={"comedor_pk": comedor_pk, "tipo_convenio_id": tipo_convenio_id},
+            )
             return None
 
     @staticmethod
@@ -160,9 +165,10 @@ class AdmisionService:
                 "pdf": pdf,
                 "informes_complementarios": informes_complementarios,
             }
-        except Exception as e:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "Error en get_admision_update_context",
+                extra={"admision_pk": admision.pk},
             )
             return {}
 
@@ -204,8 +210,11 @@ class AdmisionService:
                     return True, "Tipo de convenio actualizado correctamente."
 
             return None, None
-        except Exception as e:
-            logger.error("Error en procesar_post_update", exc_info=True)
+        except Exception:
+            logger.exception(
+                "Error en procesar_post_update",
+                extra={"admision_pk": admision.pk},
+            )
             return None, "Error inesperado."
 
     @staticmethod
@@ -220,8 +229,14 @@ class AdmisionService:
 
             ArchivoAdmision.objects.filter(admision=admision).delete()
             return True
-        except Exception as e:
-            logger.error("Error en update_convenio", exc_info=True)
+        except Exception:
+            logger.exception(
+                "Error en update_convenio",
+                extra={
+                    "admision_pk": admision.pk,
+                    "nuevo_convenio_id": nuevo_convenio_id,
+                },
+            )
             return False
 
     @staticmethod
@@ -235,8 +250,14 @@ class AdmisionService:
                 documentacion=documentacion,
                 defaults={"archivo": archivo, "estado": "A Validar"},
             )
-        except Exception as e:
-            logger.error("Error en handle_file_upload", exc_info=True)
+        except Exception:
+            logger.exception(
+                "Error en handle_file_upload",
+                extra={
+                    "admision_id": admision_id,
+                    "documentacion_id": documentacion_id,
+                },
+            )
             return None, False
 
     @staticmethod
@@ -248,8 +269,11 @@ class AdmisionService:
                     os.remove(file_path)
 
             archivo.delete()
-        except Exception as e:
-            logger.error("Error en delete_admision_file", exc_info=True)
+        except Exception:
+            logger.exception(
+                "Error en delete_admision_file",
+                extra={"archivo_pk": getattr(archivo, "pk", None)},
+            )
 
     @staticmethod
     def actualizar_estado_ajax(request):
@@ -279,7 +303,10 @@ class AdmisionService:
             }
 
         except Exception as e:
-            logger.error("Error en actualizar_estado_ajax", exc_info=True)
+            logger.exception(
+                "Error en actualizar_estado_ajax",
+                extra={"admision_id": admision_id, "documento_id": documento_id},
+            )
             return {"success": False, "error": str(e)}
 
     @staticmethod
@@ -293,8 +320,14 @@ class AdmisionService:
 
             AdmisionService.verificar_estado_admision(archivo.admision)
             return True
-        except Exception as e:
-            logger.error("Error en update_estado_archivo", exc_info=True)
+        except Exception:
+            logger.exception(
+                "Error en update_estado_archivo",
+                extra={
+                    "archivo_pk": getattr(archivo, "pk", None),
+                    "nuevo_estado": nuevo_estado,
+                },
+            )
             return False
 
     @staticmethod
@@ -309,9 +342,10 @@ class AdmisionService:
                     if admision.estado_id != 2:
                         admision.estado_id = 2
                         admision.save()
-        except Exception as e:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "Error en verificar_estado_admision",
+                extra={"admision_pk": getattr(admision, "pk", None)},
             )
 
     @staticmethod
@@ -323,9 +357,10 @@ class AdmisionService:
                 return "Tecnico Comedor"
             else:
                 return "Otro"
-        except Exception as e:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "Error en get_dupla_grupo_por_usuario",
+                extra={"user_pk": getattr(user, "pk", None)},
             )
             return "Otro"
 
@@ -333,8 +368,11 @@ class AdmisionService:
     def get_admision(admision_id):
         try:
             return get_object_or_404(Admision, pk=admision_id)
-        except Exception as e:
-            logger.error("Error en get_admision", exc_info=True)
+        except Exception:
+            logger.exception(
+                "Error en get_admision",
+                extra={"admision_id": admision_id},
+            )
             return None
 
     @staticmethod
@@ -345,9 +383,10 @@ class AdmisionService:
                 admision.save()
                 return True
             return False
-        except Exception as e:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "Error en marcar_como_enviado_a_legales",
+                extra={"admision_pk": admision.pk},
             )
             return False
 
@@ -359,9 +398,10 @@ class AdmisionService:
                 admision.save()
                 return True
             return False
-        except Exception as e:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "Error en marcar_como_enviado_a_acompaniamiento",
+                extra={"admision_pk": admision.pk},
             )
             return False
 
@@ -391,9 +431,10 @@ class AdmisionService:
                 return True
 
             return False
-        except Exception as e:
-            logger.error(
+        except Exception:
+            logger.exception(
                 "Error en marcar_como_documentacion_rectificada",
+                extra={"admision_pk": admision.pk},
             )
             return False
 
@@ -410,8 +451,11 @@ class AdmisionService:
             AcompanamientoService.importar_datos_desde_admision(admision.comedor)
 
             return admision
-        except Exception as e:
-            logger.error("Error en comenzar_acompanamiento", exc_info=True)
+        except Exception:
+            logger.exception(
+                "Error en comenzar_acompanamiento",
+                extra={"admision_id": admision_id},
+            )
             return None
 
     @staticmethod
@@ -419,14 +463,20 @@ class AdmisionService:
         try:
             admision = get_object_or_404(Admision, id=admision_id)
             return {"admision": admision}
-        except Exception as e:
-            logger.error("Error en get_admision_context", exc_info=True)
+        except Exception:
+            logger.exception(
+                "Error en get_admision_context",
+                extra={"admision_id": admision_id},
+            )
             return {}
 
     @staticmethod
     def get_admision_instance(admision_id):
         try:
             return get_object_or_404(Admision, id=admision_id)
-        except Exception as e:
-            logger.error("Error en get_admision_instance", exc_info=True)
+        except Exception:
+            logger.exception(
+                "Error en get_admision_instance",
+                extra={"admision_id": admision_id},
+            )
             return None
