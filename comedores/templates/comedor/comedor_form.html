@@ -609,7 +609,7 @@
                                                         </div>
                                                         <button type="button"
                                                                 class="btn btn-outline-primary btn-sm"
-                                                                onclick="ampliarFotoLegajo('{{ form.instance.foto_legajo.url }}', '{{ form.instance.foto_legajo.name }}')">
+                                                                onclick="ampliarFotoLegajo('{{ form.instance.foto_legajo.url|escapejs }}', '{{ form.instance.foto_legajo.name|escapejs }}')">
                                                             <i class="fas fa-expand-alt mr-1"></i>
                                                             Ver completa
                                                         </button>
