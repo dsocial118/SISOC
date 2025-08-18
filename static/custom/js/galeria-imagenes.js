@@ -30,15 +30,13 @@ function inicializarGaleria() {
         };
     });
     
-    console.log('Galería inicializada con', imagenesData.length, 'imágenes');
+    
 }
 
 /**
  * Carga las imágenes existentes con manejo de errores y estados
  */
 function cargarImagenesExistentes() {
-    console.log('Cargando imágenes de la galería...');
-    
     const imageContainers = document.querySelectorAll('.imagen-container');
     
     imageContainers.forEach((container, index) => {
@@ -54,10 +52,9 @@ function cargarImagenesExistentes() {
             img.src = imageUrl;
             
             img.onload = function() {
-                console.log(`Imagen ${index} cargada: ${imageUrl}`);
                 placeholder.replaceWith(img);
             };
-            
+
             img.onerror = function() {
                 console.error(`Error al cargar imagen ${index}: ${imageUrl}`);
                 placeholder.classList.remove('loading');
@@ -75,7 +72,6 @@ function cargarImagenesExistentes() {
                 }
             }, 15000);
         } else {
-            console.warn(`Contenedor ${index} sin URL válida`);
             if (placeholder) {
                 placeholder.innerHTML = '<i class="fas fa-question-circle"></i><br><small>Sin imagen</small>';
                 placeholder.style.background = '#6c757d';
@@ -112,8 +108,6 @@ function abrirModal(index) {
     // Mostrar modal
     const modal = new bootstrap.Modal(document.getElementById('imagenModal'));
     modal.show();
-    
-    console.log(`Modal abierto para imagen ${index + 1}: ${imagen.nombre}`);
 }
 
 /**
@@ -133,19 +127,17 @@ function cambiarImagen(direccion) {
         setTimeout(() => {
             imgElement.src = imagen.url;
             imgElement.style.opacity = '1';
-            
+
             // Actualizar información
             document.getElementById('nombreArchivo').textContent = imagen.nombre;
             document.getElementById('contadorImagenes').textContent = `${nuevoIndex + 1} de ${imagenesData.length}`;
-            
+
             // Actualizar botones
             document.querySelector('.btn-anterior').disabled = (nuevoIndex === 0);
             document.querySelector('.btn-siguiente').disabled = (nuevoIndex === imagenesData.length - 1);
-            
+
             imagenActualIndex = nuevoIndex;
         }, 150);
-        
-        console.log(`Cambiando a imagen ${nuevoIndex + 1}`);
     }
 }
 
@@ -165,8 +157,6 @@ function descargarImagen() {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        
-        console.log(`Descargando imagen: ${imagen.nombre}`);
     }
 }
 
