@@ -14,7 +14,7 @@ from django.db.models import Q
 from comedores.models import Comedor
 from comedores.tasks import build_comedor_payload
 
-LOG = logging.getLogger(__name__)
+LOG = logging.getLogger("django")
 TIMEOUT = 30
 MAX_WORKERS = 5
 BATCH_SIZE = 100

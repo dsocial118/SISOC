@@ -28,7 +28,7 @@ from admisiones.models.admisiones import Admision
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 from intervenciones.models.intervenciones import Intervencion
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 class ComedorService:
@@ -80,13 +80,13 @@ class ComedorService:
         """Eliminar la foto del legajo si está marcada para borrar"""
         if "foto_legajo_borrar" in post and comedor_instance.foto_legajo:
             if comedor_instance.foto_legajo:
-              try:
-                  comedor_instance.foto_legajo.delete(save=False)
-              except Exception:
-                  logger.exception(
-                      "Error al eliminar la foto de legajo del comedor %s",
-                      comedor_instance.pk,
-                  )
+                try:
+                    comedor_instance.foto_legajo.delete(save=False)
+                except Exception:
+                    logger.exception(
+                        "Error al eliminar la foto de legajo del comedor %s",
+                        comedor_instance.pk,
+                    )
             comedor_instance.foto_legajo = None
             comedor_instance.save(update_fields=["foto_legajo"])
 
@@ -244,8 +244,8 @@ class ComedorService:
             "merienda": 0,
             "cena": 0,
         }
-        if beneficiarios and beneficiarios.prestaciones:
-            for prestacion in beneficiarios.prestaciones.all():
+        if beneficiarios and beneficiarios.prestacion:
+            for prestacion in beneficiarios.prestacion.all():
                 dias = [
                     "lunes",
                     "martes",
