@@ -265,8 +265,7 @@ class ComedorService:
             ]
             for tipo in tipos:
                 count[tipo] = sum(
-                    getattr(prestacion, f"{dia}_{tipo}_actual", 0) or 0
-                    for dia in dias
+                    getattr(prestacion, f"{dia}_{tipo}_actual", 0) or 0 for dia in dias
                 )
         count_beneficiarios = sum(count.values())
         valor_cena = count["cena"] * valor_map.get("cena", 0)
