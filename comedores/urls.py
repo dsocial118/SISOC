@@ -23,6 +23,7 @@ from comedores.views_territorial import (
     sincronizar_territoriales_api,
     estadisticas_cache_territoriales,
 )
+
 # Views de prueba eliminadas
 
 from intervenciones.views import (
@@ -181,7 +182,6 @@ urlpatterns = [
         ),
         name="nuevo_comedor_detalle",
     ),
-
     path(
         "comedores/<int:comedor_id>/territoriales/",
         obtener_territoriales_api,
