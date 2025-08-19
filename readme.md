@@ -10,6 +10,7 @@
 6. [Ejecutar tests automaticos](#ejecutar-tests-automaticos)
 7. [Buenas practicas a seguir](#buenas-practicas-a-seguir)
 8. [Tecnologías utilizadas](#tecnologías-utilizadas)
+9. [Releases](#releases)
 
 ## Arquitectura general
 
@@ -99,3 +100,26 @@ DOMINIO=
 ![Django](http://img.shields.io/badge/-Django-025922?style=flat-square&logo=django&logoColor=025922&labelColor=DAD031)
 ![MySQL](https://img.shields.io/badge/-MySQL-ffffff?style=flat-square&logo=mysql)
 ![Github](https://img.shields.io/badge/Github-000?style=flat-square&logo=Github)
+
+
+# Releases
+## Ciclo quincenal de releases.
+Jueves semana 0 (post-deploy): se abre la branch development. Se pueden mergear tareas nuevas hasta el freeze.
+Lunes semana 2 (freeze): se congela la branch development. Se taggea el último commit como YY.MM.DD-rc1 (primer release candidate).
+A partir del freeze, solo se aceptan fixes sobre esa versión. Cada fix genera un nuevo tag rcX, sobre development.
+El objetivo de esta etapa es que se pruebe TODO lo que se va a subir a PRD.
+Miércoles semana 2 (post horario laboral): se despliega el último tag (rcX) solo si está aprobado explícitamente por QA y todos los checks fueron completados.
+
+## Checks para el deploy:
+[] La branch development fue congelada el lunes previo al deploy (sin nuevos features).
+[] Se realizó un backup completo y válido de la base de datos.
+[] Se creó el tag final a desplegar sobre development.
+[] Se probó el tag final con una base similar a PRD.
+[] Se testeó en QA exactamente ese tag final.
+[] QA aprobó explícitamente ese tag final como estable para PRD.
+[] Merge limpio de ese tag a main, sin commits adicionales ni conflictos.
+[] Changelog de cambios.
+[] Las migraciones del tag final son reversibles o su impacto fue controlado.
+[] Se notificó al equipo sobre el despliegue y la posible ventana de mantenimiento.
+[] Se guardó el último tag estable de producción para rollback rápido
+[] Squash de migraciones estables

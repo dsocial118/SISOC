@@ -173,7 +173,15 @@ urlpatterns = [
         relevamiento_crear_editar_ajax,
         name="relevamiento_create_edit_ajax",
     ),
-    # URLs para cache de territoriales
+    # esto es prueba de nuevo front para el comedor
+    path(
+        "comedores_nuevo/<int:pk>",
+        group_required(["Comedores Ver", "Tecnico Comedor", "Abogado Dupla"])(
+            ComedorDetailView.as_view(template_name="comedor/new_comedor_detail.html")
+        ),
+        name="nuevo_comedor_detalle",
+    ),
+
     path(
         "comedores/<int:comedor_id>/territoriales/",
         obtener_territoriales_api,
@@ -189,5 +197,4 @@ urlpatterns = [
         estadisticas_cache_territoriales,
         name="api_estadisticas_territoriales",
     ),
-    # Endpoints de prueba eliminados
 ]
