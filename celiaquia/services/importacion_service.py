@@ -1,6 +1,7 @@
 # services/importacion_service.py
 import logging
 from io import BytesIO
+import re
 
 import pandas as pd
 from django.core.exceptions import ValidationError
@@ -15,15 +16,11 @@ class ImportacionService:
     @staticmethod
     def preview_excel(archivo_excel, max_rows=5):
         """
-        Lee el Excel subido y devuelve:
-          - headers: lista de columnas normalizadas
-          - rows: primeras N filas (N = max_rows)
-          - total_rows: cantidad total de filas en el archivo
-          - shown_rows: cuántas filas se están mostrando en 'rows'
-
-        Notas:
-        - Si max_rows es None o "none", se devuelven todas las filas (¡ojo con archivos grandes!).
-        - Mantiene la conversión de fechas de 'fecha_nacimiento' si existe.
+        Lee el archivo subido (XLSX/XLS/CSV) y devuelve:
+        - headers: lista de columnas normalizadas (snake_case)
+        - rows: primeras N filas (N = max_rows) o todas si max_rows es None/"all"/"none"/0
+        - total_rows: cantidad total de filas en el archivo
+        - shown_rows: cuántas filas se están mostrando en 'rows'
         """
         # Asegurar lectura desde el inicio
         try:
@@ -31,38 +28,71 @@ class ImportacionService:
         except Exception:
             pass
         archivo_excel.seek(0)
-        data = archivo_excel.read()
+        raw = archivo_excel.read()
 
-        # Leer como Excel (openpyxl), igual que en tu versión estable
+        # Heurística por extensión
+        name = (getattr(archivo_excel, "name", "") or "").lower()
+
+        df = None
+        # 1) Intento como Excel (prioritario para .xlsx/.xls, pero tolerante si no hay extensión)
         try:
-            df = pd.read_excel(BytesIO(data), engine="openpyxl")
-        except Exception as e:
-            raise ValidationError(f"Error al leer Excel: {e}")
+            if name.endswith((".xlsx", ".xls")) or True:
+                df = pd.read_excel(BytesIO(raw), engine="openpyxl")
+        except Exception:
+            df = None
 
-        # Normalizar encabezados
-        df.columns = [str(col).strip().lower().replace(" ", "_") for col in df.columns]
+        # 2) Fallback como CSV (coma y luego punto y coma)
+        if df is None:
+            try:
+                df = pd.read_csv(BytesIO(raw), dtype=str, encoding="utf-8-sig")
+            except Exception:
+                try:
+                    df = pd.read_csv(BytesIO(raw), dtype=str, sep=";", encoding="utf-8-sig")
+                except Exception as e:
+                    raise ValidationError(f"Error al leer el archivo (XLSX/XLS/CSV): {e}")
+
+        # Normalizar encabezados -> snake_case simple
+        def _norm_col(col: str) -> str:
+            s = str(col).strip().lower()
+            s = re.sub(r"\s+", "_", s)            # espacios -> _
+            s = re.sub(r"[^a-z0-9_]", "_", s)     # otros símbolos -> _
+            s = re.sub(r"_+", "_", s).strip("_")  # colapsar múltiples _
+            return s or "columna"
+
+        df.columns = [_norm_col(c) for c in df.columns]
+
+        # Reemplazar NaN por vacío para la vista previa
         df = df.fillna("")
 
-        # Convertir fechas si aplica
-        if "fecha_nacimiento" in df.columns:
-            df["fecha_nacimiento"] = df["fecha_nacimiento"].apply(
-                lambda x: x.date() if hasattr(x, "date") else x
-            )
+        # Convertir columnas de tipo datetime a date (y mantener compatibilidad con 'fecha_nacimiento')
+        # Si vienen como strings, se las deja como están; si pandas detectó datetime, se pasa a date
+        for c in df.columns:
+            # Intento seguro: si la serie tiene dt accessor (datetime64), convierto a date
+            try:
+                if hasattr(df[c], "dt"):
+                    # Esto no rompe si la columna no es datetime (raise AttributeError)
+                    df[c] = df[c].apply(lambda x: x.date() if hasattr(x, "date") else x)
+            except Exception:
+                # Si falla el .dt por ser string/mixto, lo dejamos como está
+                pass
 
-        total_rows = len(df)
+        total_rows = int(len(df))
 
         # Determinar límite
-        show_all = max_rows is None or (isinstance(max_rows, str) and str(max_rows).lower() == "none")
-        if show_all:
-            sample_df = df
-        else:
+        def _parse_max_rows(v):
+            if v is None:
+                return 5
+            txt = str(v).strip().lower()
+            if txt in ("all", "none", "0", "todos"):
+                return None
             try:
-                n = int(max_rows)
-            except (TypeError, ValueError):
-                n = 5  # default
-            if n <= 0:
-                n = 5
-            sample_df = df.head(n)
+                n = int(txt)
+                return n if n > 0 else None
+            except Exception:
+                return 5
+
+        limit = _parse_max_rows(max_rows)
+        sample_df = df if limit is None else df.head(limit)
 
         sample = sample_df.to_dict(orient="records")
         return {

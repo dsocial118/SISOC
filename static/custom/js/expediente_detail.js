@@ -3,9 +3,11 @@
  * - Subir/editar archivo de legajo
  * - Confirmar Envío
  * - Subir/Reprocesar Excel de CUITs y ejecutar cruce (técnico)
+ * - Paginación client-side para Preview y Legajos (con selector de tamaño de página)
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+  /* ===== Helpers básicos ===== */
   function getCookie(name) {
     const m = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
     return m ? m[2] : null;
@@ -22,6 +24,103 @@ document.addEventListener('DOMContentLoaded', () => {
       (headerBlock || document.body).prepend(zone);
     }
     return zone;
+  }
+
+  /* ====== Paginación genérica client-side ====== */
+  function paginate({
+    items,                   // NodeList/Array de elementos a paginar
+    pageSizeSelect,          // <select> para tamaño de página
+    paginationUl,            // <ul> .pagination para los botones
+    onPageChange,            // callback opcional cuando cambia de página
+    hideIfSinglePage = true, // oculta la barra si hay 0/1 páginas
+  }) {
+    const nodes = Array.from(items);
+    if (!nodes.length || !pageSizeSelect || !paginationUl) return;
+
+    let page = 1;
+    const readPageSize = () => parseInt(pageSizeSelect.value || '10', 10) || 10;
+
+    function render() {
+      const pageSize = readPageSize();
+      const total = nodes.length;
+      const totalPages = Math.max(1, Math.ceil(total / pageSize));
+      if (page > totalPages) page = totalPages;
+
+      // Mostrar/ocultar items
+      const start = (page - 1) * pageSize;
+      const end = start + pageSize;
+      nodes.forEach((el, i) => {
+        el.style.display = (i >= start && i < end) ? '' : 'none';
+      });
+
+      // Render paginador
+      paginationUl.innerHTML = '';
+      if (hideIfSinglePage && totalPages <= 1) {
+        paginationUl.style.display = 'none';
+      } else {
+        paginationUl.style.display = '';
+        const liPrev = document.createElement('li');
+        liPrev.className = `page-item${page === 1 ? ' disabled' : ''}`;
+        liPrev.innerHTML = `<a class="page-link" href="#" aria-label="Anterior">&laquo;</a>`;
+        liPrev.addEventListener('click', (e) => { e.preventDefault(); if (page > 1) { page--; render(); }});
+        paginationUl.appendChild(liPrev);
+
+        // Máx 7 botones (compacto)
+        const maxBtns = 7;
+        let startPage = Math.max(1, page - 3);
+        let endPage = Math.min(totalPages, startPage + maxBtns - 1);
+        if (endPage - startPage + 1 < maxBtns) startPage = Math.max(1, endPage - maxBtns + 1);
+
+        if (startPage > 1) {
+          const liFirst = document.createElement('li');
+          liFirst.className = 'page-item';
+          liFirst.innerHTML = `<a class="page-link" href="#">1</a>`;
+          liFirst.addEventListener('click', (e) => { e.preventDefault(); page = 1; render(); });
+          paginationUl.appendChild(liFirst);
+
+          if (startPage > 2) {
+            const liDots = document.createElement('li');
+            liDots.className = 'page-item disabled';
+            liDots.innerHTML = `<a class="page-link" href="#">…</a>`;
+            paginationUl.appendChild(liDots);
+          }
+        }
+
+        for (let p = startPage; p <= endPage; p++) {
+          const li = document.createElement('li');
+          li.className = `page-item${p === page ? ' active' : ''}`;
+          li.innerHTML = `<a class="page-link" href="#">${p}</a>`;
+          li.addEventListener('click', (e) => { e.preventDefault(); page = p; render(); });
+          paginationUl.appendChild(li);
+        }
+
+        if (endPage < totalPages) {
+          if (endPage < totalPages - 1) {
+            const liDots2 = document.createElement('li');
+            liDots2.className = 'page-item disabled';
+            liDots2.innerHTML = `<a class="page-link" href="#">…</a>`;
+            paginationUl.appendChild(liDots2);
+          }
+          const liLast = document.createElement('li');
+          liLast.className = 'page-item';
+          liLast.innerHTML = `<a class="page-link" href="#">${totalPages}</a>`;
+          liLast.addEventListener('click', (e) => { e.preventDefault(); page = totalPages; render(); });
+          paginationUl.appendChild(liLast);
+        }
+
+        const liNext = document.createElement('li');
+        liNext.className = `page-item${page === totalPages ? ' disabled' : ''}`;
+        liNext.innerHTML = `<a class="page-link" href="#" aria-label="Siguiente">&raquo;</a>`;
+        liNext.addEventListener('click', (e) => { e.preventDefault(); if (page < totalPages) { page++; render(); }});
+        paginationUl.appendChild(liNext);
+      }
+
+      if (typeof onPageChange === 'function') onPageChange({ page, pageSize: readPageSize(), total: nodes.length });
+    }
+
+    pageSizeSelect.addEventListener('change', () => { page = 1; render(); });
+    render();
+    return { goto: (p) => { page = p; render(); } };
   }
 
   /* ===== PROCESAR EXPEDIENTE ===== */
@@ -279,8 +378,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       try {
         const fd = new FormData(formCruce);
-        // Backend espera "excel_cuit" o "archivo"? — usamos "archivo" porque tu view lee request.FILES["archivo"]
-        fd.delete('excel_cuit'); // por si quedó
+        // La view espera 'archivo':
+        fd.delete('excel_cuit');
         fd.append('archivo', input.files[0]);
 
         const resp = await fetch(window.CRUCE_URL, {
@@ -309,6 +408,7 @@ document.addEventListener('DOMContentLoaded', () => {
           throw new Error(msg);
         }
 
+        // Detalle/PRD opcionales (si el backend los envía)
         const detalle = (data.detalle && `
           <ul class="mb-0">
             <li><strong>Leídos:</strong> ${data.detalle.leidos ?? '-'}</li>
@@ -350,4 +450,34 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  /* ===== Inicializar paginación para PREVIEW ===== */
+  (function initPreviewPagination(){
+    const tbody = document.getElementById('preview-tbody');
+    const pageSizeSel = document.getElementById('preview-page-size');
+    const pagUl = document.getElementById('preview-pagination');
+    if (!tbody || !pageSizeSel || !pagUl) return;
+
+    paginate({
+      items: tbody.querySelectorAll('.preview-row'),
+      pageSizeSelect: pageSizeSel,
+      paginationUl: pagUl,
+      onPageChange: null,
+    });
+  })();
+
+  /* ===== Inicializar paginación para LEGAJOS ===== */
+  (function initLegajosPagination(){
+    const list = document.getElementById('legajos-list');
+    const pageSizeSel = document.getElementById('legajos-page-size');
+    const pagUl = document.getElementById('legajos-pagination');
+    if (!list || !pageSizeSel || !pagUl) return;
+
+    paginate({
+      items: list.querySelectorAll('.legajo-item'),
+      pageSizeSelect: pageSizeSel,
+      paginationUl: pagUl,
+      onPageChange: null,
+    });
+  })();
 });
