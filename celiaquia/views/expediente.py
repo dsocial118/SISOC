@@ -267,21 +267,32 @@ class ExpedienteDetailView(DetailView):
         expediente = self.object
         user = self.request.user
 
+        # --- Vista previa del Excel en estado CREADO ---
         preview = preview_error = None
+        preview_limit_actual = None  # lo que vamos a mostrar como seleccionado en el dropdown
+
         if expediente.estado.nombre == "CREADO" and expediente.excel_masivo:
-            # Permitir controlar filas de preview también desde detail:
+            # Permite controlar la cantidad desde ?preview_limit= (ej: 5,10,20,50,100,all)
             raw_limit = self.request.GET.get("preview_limit")
             max_rows = _parse_limit(raw_limit, default=5, max_cap=5000)
+            preview_limit_actual = raw_limit if raw_limit is not None else "5"
+
             try:
                 preview = ImportacionService.preview_excel(expediente.excel_masivo, max_rows=max_rows)
+                # Si el back devolvió shown_rows/total_rows, ya quedan en preview
             except Exception as e:
                 preview_error = str(e)
 
+        # --- Opciones de tamaño para el desplegable de preview ---
+        # Podés ajustar estos valores a gusto.
+        preview_limit_opciones = ["5", "10", "20", "50", "100", "all"]
+
+        # --- Técnicos visibles para admin/coordinador ---
         tecnicos = []
         if _is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia"):
-            tecnicos = User.objects.filter(groups__name="TecnicoCeliaquia").order_by(
-                "last_name", "first_name"
-            )
+            tecnicos = User.objects.filter(
+                groups__name="TecnicoCeliaquia"
+            ).order_by("last_name", "first_name")
 
         faltan_archivos = expediente.expediente_ciudadanos.filter(archivo__isnull=True).exists()
 
@@ -289,13 +300,16 @@ class ExpedienteDetailView(DetailView):
             {
                 "legajos": expediente.expediente_ciudadanos.all(),
                 "confirm_form": ConfirmarEnvioForm(),
-                "preview": preview,
-                "preview_error": preview_error,
+                "preview": preview,                     # dict con headers, rows, total_rows, shown_rows
+                "preview_error": preview_error,         # string si falló
+                "preview_limit_actual": str(preview_limit_actual or "5").lower(),
+                "preview_limit_opciones": preview_limit_opciones,
                 "tecnicos": tecnicos,
                 "faltan_archivos": faltan_archivos,
             }
         )
         return ctx
+
 
 
 class ExpedienteImportView(View):
