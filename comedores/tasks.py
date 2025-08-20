@@ -69,7 +69,10 @@ class AsyncSendComedorToGestionar(threading.Thread):
         try:
             r = requests.post(url, json=self.payload, headers=headers, timeout=TIMEOUT)
             r.raise_for_status()
-            logger.info(f"COMEDOR {r.Rows[0].ComedorID} sincronizado con exito")
+            data = r.json()
+            logger.info(
+                f"COMEDOR {data['Rows'][0]['ComedorID']} sincronizado con exito"
+            )
         except Exception:
             logger.exception(
                 "Error al sincronizar COMEDOR con GESTIONAR",
