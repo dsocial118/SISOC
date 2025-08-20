@@ -1,8 +1,11 @@
+import logging
 from django.contrib.contenttypes.models import ContentType
-
 from rendicioncuentasfinal.models import DocumentoRendicionFinal
 from config.middlewares.threadlocals import get_current_user
 from historial.models import Historial
+
+
+logger = logging.getLogger("django")
 
 
 class HistorialService:
@@ -22,10 +25,13 @@ class HistorialService:
         """
         usuario = get_current_user()
 
-        if instancia is not None:
+        if instancia is None:
+            raise ValueError("Debe especificar 'instancia'")
+
+        try:
+            usuario = get_current_user()
             content_type = ContentType.objects.get_for_model(instancia)
             object_id = str(instancia.pk)
-
             return Historial.objects.create(
                 usuario=usuario,
                 accion=accion,
@@ -33,8 +39,11 @@ class HistorialService:
                 object_id=object_id,
                 diferencias=diferencias,
             )
-        else:
-            raise ValueError("Debe especificar 'instancia'")
+        except Exception:
+            logger.exception(
+                f"Error en HistorialService.registrar_historial para instancia {instancia}",
+            )
+            raise
 
     @staticmethod
     def get_historial_documentos_by_rendicion_cuentas_final(
@@ -45,10 +54,24 @@ class HistorialService:
         Args:
             rendicion_cuentas_final: Una instancia de RendicionCuentasFinal
         """
+        try:
+            content_type = ContentType.objects.get_for_model(DocumentoRendicionFinal)
+            documentos_ids = rendicion_cuentas_final.documentos.values_list(
+                "pk", flat=True
+            ).iterator()
 
-        content_type = ContentType.objects.get_for_model(DocumentoRendicionFinal)
-        documentos_ids = rendicion_cuentas_final.documentos.values_list("pk", flat=True)
+            return Historial.objects.filter(
+                content_type=content_type,
+                object_id__in=map(str, documentos_ids),
+            ).order_by("-fecha")
 
-        return Historial.objects.filter(
-            content_type=content_type, object_id__in=[str(pk) for pk in documentos_ids]
-        ).order_by("-fecha")
+        except Exception:
+            logger.exception(
+                "Error en HistorialService.get_historial_documentos_by_rendicion_cuentas_final",
+                extra={
+                    "rendicion_cuentas_final_pk": getattr(
+                        rendicion_cuentas_final, "pk", None
+                    )
+                },
+            )
+            raise

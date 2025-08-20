@@ -5,6 +5,7 @@ from django.apps import apps
 from django.core import serializers
 from django.db import transaction
 
+
 class Command(BaseCommand):
     help = "Carga fixtures sin borrar: actualiza por PK si existe, crea si no. Nunca borra."
 
@@ -113,5 +114,3 @@ class Command(BaseCommand):
         for fx in fixtures:
             if self.should_load_fixture(fx):
                 self.upsert_fixture(fx)
-            else:
-                self.stdout.write(f"⏭️  Omitido (modelos no vacíos y sin --force): {fx}")

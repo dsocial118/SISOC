@@ -125,7 +125,6 @@ class ActividadCentro(models.Model):
         ("en_curso", "En curso"),
         ("finalizada", "Finalizada"),
     ]
-
     centro = models.ForeignKey(Centro, on_delete=models.CASCADE, verbose_name="Centro")
     actividad = models.ForeignKey(
         Actividad, on_delete=models.CASCADE, verbose_name="Actividad"
@@ -252,20 +251,78 @@ class ParticipanteActividadHistorial(models.Model):
         ordering = ["-fecha_cambio"]
 
 
-class Expediente(models.Model):
-    centro = models.ForeignKey(
-        Centro, on_delete=models.CASCADE, related_name="expedientes_cabal"
-    )
+# ——— NUEVO MÓDULO INFORME CABAL ———
+
+
+class CabalArchivo(models.Model):
+    """
+    Archivo subido para Informe Cabal con auditoría y totales.
+    """
+
     archivo = models.FileField(upload_to="informes_cabal/")
-    periodo = models.DateField(help_text="Fecha del informe")
-    fecha_subida = models.DateTimeField(auto_now_add=True)
+    nombre_original = models.CharField(max_length=255)
     usuario = models.ForeignKey(User, on_delete=models.PROTECT)
-    procesado = models.BooleanField(default=False)
-    errores = models.TextField(blank=True)
+    fecha_subida = models.DateTimeField(auto_now_add=True)
+    advertencia_nombre_duplicado = models.BooleanField(default=False)
+    total_filas = models.PositiveIntegerField(default=0)
+    total_validas = models.PositiveIntegerField(default=0)
+    total_invalidas = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.nombre_original} ({self.fecha_subida:%Y-%m-%d %H:%M})"
 
     class Meta:
-        verbose_name = "Expediente CABAL"
-        verbose_name_plural = "Expedientes CABAL"
+        verbose_name = "Archivo CABAL"
+        verbose_name_plural = "Archivos CABAL"
         indexes = [
-            models.Index(fields=["centro", "periodo"]),
+            models.Index(fields=["fecha_subida"]),
+            models.Index(fields=["nombre_original"]),
+        ]
+
+
+class InformeCabalRegistro(models.Model):
+    """
+    Registro histórico: una fila por línea del Excel.
+    Si no hay match de NroComercio → Centro.codigo, centro queda NULL y se marca no_coincidente=True.
+    """
+
+    archivo = models.ForeignKey(
+        CabalArchivo, on_delete=models.CASCADE, related_name="registros"
+    )
+    centro = models.ForeignKey(Centro, null=True, blank=True, on_delete=models.SET_NULL)
+
+    # Campos del Excel
+    nro_tarjeta = models.CharField(max_length=50)
+    nro_auto = models.CharField(max_length=50)
+    mti = models.CharField(max_length=20)
+    nro_comercio = models.CharField(max_length=50)
+    razon_social = models.CharField(max_length=255, blank=True)
+    importe = models.DecimalField(
+        max_digits=14, decimal_places=2, null=True, blank=True
+    )
+    fecha_trx = models.DateField(null=True, blank=True)
+    moneda_origen = models.CharField(max_length=10, blank=True)
+    importe_mon_origen = models.DecimalField(
+        max_digits=14, decimal_places=2, null=True, blank=True
+    )
+    importe_pesos = models.DecimalField(
+        max_digits=14, decimal_places=2, null=True, blank=True
+    )
+    cant_cuotas = models.IntegerField(null=True, blank=True)
+    motivo_rechazo = models.CharField(max_length=50, blank=True)
+    desc_motivo_rechazo = models.CharField(max_length=255, blank=True)
+    disponibles = models.CharField(max_length=50, blank=True)
+
+    # Flags / meta
+    no_coincidente = models.BooleanField(default=False)
+    fila_numero = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        verbose_name = "Registro CABAL"
+        verbose_name_plural = "Registros CABAL"
+        indexes = [
+            models.Index(fields=["archivo"]),
+            models.Index(fields=["centro"]),
+            models.Index(fields=["nro_comercio"]),
+            models.Index(fields=["fecha_trx"]),
         ]
