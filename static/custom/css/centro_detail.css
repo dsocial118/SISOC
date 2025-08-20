@@ -1,321 +1,337 @@
-/* -------------------------------------- */
-/* centro_detail.css (versión final FIX)  */
-/* unifica todos tus estilos             */
-/* -------------------------------------- */
-
-/* 0) Variables de color */
-:root {
-  --clr-bg-primary: #132c47;
-  --clr-bg-secondary: #1e2d3f;
-  --clr-contrast: #004a7c;
-  --clr-accent-00: #056c68;
-  --clr-accent-01: #068782;
-  --clr-accent-02: #06a29c;
-  --clr-accent-03: #09b4ae;
-  --clr-positive: #28a745;
-  --clr-border-light: rgba(255,255,255,0.4);
-}
-
-/* 0b) Transiciones suaves globales */
-* {
-  transition: background-color .2s ease, color .2s ease, border-color .2s ease;
-}
-
-/* 1) Reset márgenes/paddings */
-.no-gutters {
-  margin: 0;
-  padding: 0;
-}
-
-/* 1b) Acciones “Volver” / “Imprimir” */
-.header-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-.header-actions .btn {
-  color: #fff;
-  border: 1px solid rgba(255,255,255,0.7);
-  background: transparent;
-  border-radius: 1.5rem;
-  padding: 0.25rem 1rem;
-  font-weight: 600;
-  font-size: 0.875rem;
-}
-.header-actions .btn:hover {
-  background-color: rgba(255,255,255,0.1);
-}
-
-/* 2) ENCABEZADO full-width, esquinas redondeadas */
-.page-header {
-  border-radius: 0.75rem;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-}
-.page-header .card-body {
-  background-color: var(--clr-bg-primary);
-  height: 100px;
-  padding: 0;
-  display: flex;
-  align-items: center;
-}
-.header-bar {
-  width: 8px;
-  height: 100%;
-  background-color: var(--clr-contrast);
-}
-.header-title {
-  font-family: 'Playfair Display', serif;
-  font-weight: 700;
-  font-size: 2rem;
-  color: #fff;
-  margin: 0;
-  padding: 0 1rem;
-  display: flex;
-  align-items: center;
-}
-.separator {
-  font-size: 1.5rem;
-  color: #fff;
-  margin: 0 0.5rem;
-}
-.header-badge {
-  font-size: 1rem;
-  font-weight: 600;
-  padding: 0.5rem 1rem;
-  color: var(--clr-positive);
-  background-color: rgba(40,167,69,0.15);
-  border: 1px solid var(--clr-positive);
-  border-radius: 0.375rem;
-  text-transform: none;
-}
-
-/* 3) TARJETA DE UBICACIÓN */
+/* === Ajuste de bloque principal === */
 .location-card {
   position: relative;
-  border-radius: 0.5rem;
-  background-color: var(--clr-bg-secondary);
+  display: flex;
+  height: 380px;
+  background: var(--clr-bg-secondary);
   color: #fff;
-  display: flex !important;
-  height: 300px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0,0,0,.25);
+  align-items: center; /* centra verticalmente el contenido */
 }
 
-/* 3a) pestaña izquierda “Ubicación” – TEXTO ROTADO IGUAL QUE DERECHA */
+/* pestaña izquierda */
 .location-card .left-tab {
+  width: 74px;
+  background: linear-gradient(180deg,#0b756d,#0a5b57);
+  border-top-left-radius: 16px;
+  border-bottom-left-radius: 16px;
   position: relative;
-  width: 60px;
-  background-color: var(--clr-accent-00);
-  /* NO writing-mode ni flex aquí */
+  z-index: 2;
 }
 .location-card .left-tab .tab-text {
   position: absolute;
-  top: 50%;
-  left: 50%;
+  top: 50%; left: 50%;
   transform: translate(-50%,-50%) rotate(-90deg);
-  transform-origin: center;
+  font-weight: 700;
+  font-size: .95rem;
   white-space: nowrap;
-  font-weight: bold;
-  font-size: 0.875rem;
-  color: #fff;
 }
 
-/* 3b) contenedor del mapa */
-.location-card .map-container {
-  width: 350px;
-  padding: 1rem;
+/* mapa centrado con margen */
+.map-container {
+  width: 100%;
+  height: 325px;
   flex-shrink: 0;
-  border-radius: 0.5rem;
-  overflow: hidden;
   background: transparent;
+  display: flex;
+  align-items: center; /* centra verticalmente el iframe */
+  justify-content: center;
+}
+.map-container iframe {
+  border-radius: 12px;
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
-/* 3c) contenedor de detalles */
+/* detalles */
 .location-card .details-container {
-  flex-grow: 1;
-  padding: 1rem 1.5rem;
+  flex: 1;
+  padding: 1.25rem 1.75rem;
+  background: #1b2a3c;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
 }
-.location-card .details-container h5 {
-  font-size: 1.25rem;
-  margin-bottom: 0.5rem;
+
+/* título + línea */
+.section-title {
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: #e8f1ff;
+  margin: 0 0 .6rem;
 }
-.location-card .details-container h5 + hr {
-  border-top: 1px solid rgba(255,255,255,0.5);
+.section-divider {
+  height: 2px;
+  width: 100%;
+  background: linear-gradient(90deg, rgba(255,255,255,.65), rgba(255,255,255,0));
+  border: 0;
   margin: 0 0 1rem;
 }
+
+/* lista en dos columnas */
 .location-card .details-container ul {
   list-style: none;
-  padding: 0;
   margin: 0;
+  padding: 0;
   column-count: 2;
-  column-gap: 2rem;
+  column-gap: 2.25rem;
 }
-.location-card .details-container ul li {
+.location-card .details-container li {
   display: flex;
   align-items: center;
-  margin-bottom: 0.5rem;
+  margin-bottom: .6rem;
 }
-.location-card .details-container ul li i {
+.location-card .details-container li i {
   width: 1.25rem;
-  margin-right: 0.5rem;
+  margin-right: .5rem;
   color: var(--clr-contrast);
 }
 
-/* 4) Pestañas verticales DERECHA (4 franjas escalonadas) */
+/* pestañas derechas */
 .location-card .right-tabs {
   position: absolute;
   top: 0; right: 0; bottom: 0;
   display: flex;
-  width: 240px;  /* 4×60px */
-  z-index: 1;
+  width: 280px;
+  z-index: 3;
 }
 .location-card .right-tabs .tab-item {
-  position: relative;
-  width: 60px;
-  border-left: 1px solid var(--clr-border-light);
-  box-sizing: border-box;
-}
-.location-card .right-tabs .tab-item:first-child {
-  border-left: none;
-}
-.location-card .right-tabs .tab-item:nth-child(1) { background-color: var(--clr-accent-00); }
-.location-card .right-tabs .tab-item:nth-child(2) { background-color: var(--clr-accent-01); }
-.location-card .right-tabs .tab-item:nth-child(3) { background-color: var(--clr-accent-02); }
-.location-card .right-tabs .tab-item:nth-child(4) { background-color: var(--clr-accent-03); }
-.location-card .right-tabs .tab-item .tab-text {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%,-50%) rotate(-90deg);
-  transform-origin: center;
-  white-space: nowrap;
-  font-weight: bold;
-  font-size: 0.875rem;
-  color: #fff;
-}
-
-/* 5) Scroll interno en Observaciones */
-.observaciones-card .card-body {
-  max-height: 200px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.3) transparent;
-}
-.observaciones-card .card-body::-webkit-scrollbar {
-  width: 6px;
-}
-.observaciones-card .card-body::-webkit-scrollbar-thumb {
-  background-color: rgba(255,255,255,0.3);
-  border-radius: 3px;
-}
-
-/* 6) Scroll interno en Actividades */
-.actividades-card .table-responsive {
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-/* 7) Tonos secundarios unificados */
-.bg-secondary,
-.card-header.bg-secondary,
-.list-group-item.bg-secondary,
-.table thead.bg-secondary th {
-  background-color: var(--clr-contrast) !important;
-  border-color: darken(var(--clr-contrast),10%) !important;
-  color: #fff !important;
-}
-
-/* 8) Bordes redondeados en cards y tablas */
-.card-header.bg-secondary {
-  border-top-left-radius: 0.375rem;
-  border-top-right-radius: 0.375rem;
-}
-.card.bg-dark {
-  border-radius: 0.5rem;
-}
-
-/* 9) Borde tablas oscuras */
-.table-dark th,
-.table-dark td {
-  border-color: rgba(255,255,255,0.1);
-}
-
-/* 10) Acentos en enlaces y badges */
-.table a.text-info { color: var(--clr-accent-02); }
-.badge.bg-success { background-color: var(--clr-positive) !important; }
-.badge.bg-danger  { background-color: #dc3545 !important; }
-.badge.bg-warning { background-color: #ffc107 !important; }
-.badge.bg-info    { background-color: #17a2b8 !important; }
-
-/* 11) Botones outline personalizados */
-.btn-outline-secondary {
-  border-color: var(--clr-contrast);
-  color: var(--clr-contrast);
-}
-.btn-outline-secondary:hover {
-  background-color: var(--clr-contrast);
-  color: #fff;
-}
-
-/* 12) Hr personalizado */
-hr.border-secondary {
-  border-top-color: var(--clr-contrast) !important;
-}
-
-/* 13) Ajustes métricas */
-.card.bg-navy {
-  background-color: var(--clr-bg-primary);
-  border: none;
-}/* -------------------------------------- */
-/* 4) Pestañas verticales DERECHA          */
-/* -------------------------------------- */
-.location-card .right-tabs {
-  position: absolute;
-  top: 0; right: 0; bottom: 0;
-  display: flex;
-  width: 240px;             /* 4 × 60px */
-  z-index: 1;
-  overflow: visible;        /* para que la pestaña no se recorte al deslizarse */
-}
-
-/* Cada pestaña ahora animará su propio transform */
-.location-card .right-tabs .tab-item {
-  position: relative;       /* para aplicar transform con respecto a su posición */
-  width: 60px;
-  border-left: 1px solid var(--clr-border-light);
-  box-sizing: border-box;
+  width: 70px;
   cursor: pointer;
-  transition: transform .4s ease;
+  border-left: 1px solid rgba(255,255,255,.25);
+  position: relative;
+  transition: transform .5s ease;
+  will-change: transform;
+}
+.location-card .right-tabs .tab-item:first-child { border-left: none; }
+.location-card .right-tabs .tab-item:last-child {
+  border-top-right-radius: 16px;
+  border-bottom-right-radius: 16px;
+  overflow: hidden;
 }
 
-.location-card .right-tabs .tab-item:first-child {
-  border-left: none;
-}
-.location-card .right-tabs .tab-item:nth-child(1) { background-color: var(--clr-accent-00); }
-.location-card .right-tabs .tab-item:nth-child(2) { background-color: var(--clr-accent-01); }
-.location-card .right-tabs .tab-item:nth-child(3) { background-color: var(--clr-accent-02); }
-.location-card .right-tabs .tab-item:nth-child(4) { background-color: var(--clr-accent-03); }
+/* colores tabs */
+.location-card .right-tabs .tab-item:nth-child(1){ background:#0b756d; }
+.location-card .right-tabs .tab-item:nth-child(2){ background:#0a6b7c; }
+.location-card .right-tabs .tab-item:nth-child(3){ background:#0a5b96; }
+.location-card .right-tabs .tab-item:nth-child(4){ background:#0a4ea5; }
 
 .location-card .right-tabs .tab-item .tab-text {
   position: absolute;
-  top: 50%;
-  left: 50%;
+  top: 50%; left: 50%;
   transform: translate(-50%,-50%) rotate(-90deg);
-  transform-origin: center;
+  font-weight: 700;
+  font-size: .95rem;
   white-space: nowrap;
-  font-weight: bold;
-  font-size: 0.875rem;
   color: #fff;
 }
 
+/* contenido activo */
 .content-seccion {
   display: none;
   padding: 1rem;
-  transition: padding-left 0.3s ease;
+  margin-left: 60px;
+  transition: all 0.3s ease;
+  transition: opacity .25s ease;
+  opacity: 0;
 }
-
 .content-seccion.active {
   display: block;
+  opacity: 1;
 }
 
+/* responsive */
+@media (max-width: 1200px) {
+  .location-card { height: 340px; }
+  .map-container { width: 360px; }
+  .location-card .right-tabs { width: 240px; }
+  .location-card .right-tabs .tab-item { width: 60px; }
+}
+@media (max-width: 768px) {
+  .location-card { align-items: stretch; height: auto; flex-wrap: wrap; }
+  .map-container,
+  .location-card .details-container { height: auto; }
+  .map-container { width: 100%; height: 220px; margin: 0 0 10px 0;}
+  .location-card .right-tabs { position: static; width: 100%; height: 70px; }
+  .location-card .right-tabs .tab-item { transform: none !important; width: 25%; }
+  .location-card .right-tabs .tab-item .tab-text { transform: translate(-50%,-50%); }
+}
+
+/* badge y título */
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+.header-badge {
+  font-size: 1.05rem;
+  font-weight: 700;
+  padding: .55rem 1rem;
+  border-radius: .5rem;
+  color: #e9fff4;
+  background-color: #0f3a2e;
+  border: 1px solid #1f6f50;
+  line-height: 1;
+  margin-top: 0;
+  transform: translateY(-1px);
+}
+
+/* ==========================
+   ACORDEÓN HORIZONTAL (DESKTOP)
+========================== */
+.accordion-horizontal {
+    display: flex;
+    height: 350px;
+    width: 100%;
+    gap: 0;
+    overflow: hidden;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.25);
+    background: var(--clr-bg-secondary);
+}
+
+.accordion-panel {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    width: 60px; 
+    height: 100%;
+    cursor: pointer;
+    overflow: visible;
+    transition: width 0.3s ease;
+    flex-shrink: 0;
+}
+
+:root[data-bs-theme="dark"] .accordion-panel {
+    background-color: #1b2a3c !important;
+}
+
+:root[data-bs-theme="light"] .accordion-panel {
+    background-color: #f4f6f9 !important;
+}
+
+.accordion-panel.open {
+    width: auto;
+}
+
+.accordion-header {
+    writing-mode: vertical-lr;
+    transform: rotate(180deg);
+    text-orientation: mixed;
+    color: white;
+    font-weight: 600;
+    padding: 0.5rem 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    min-width: 70px;
+    box-sizing: border-box;
+    border-left: 1px solid rgba(255,255,255,.25);
+}
+
+.accordion-content {
+    position: absolute;
+    top: 0;
+    left: 70px;
+    bottom: 0;
+    right: 0;
+    padding: 0.75rem;
+    overflow-y: auto;
+    white-space: normal;
+    cursor: default;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+:root[data-bs-theme="dark"] .accordion-content {
+    background-color: #1b2a3c !important;
+}
+
+:root[data-bs-theme="light"] .accordion-content {
+    background-color: #f4f6f9 !important;
+}
+
+.accordion-panel.open .accordion-content {
+    position: relative;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    left: auto;
+    right: auto;
+    top: auto;
+    bottom: auto;
+    width: 100%;
+}
+
+/* Fondos de paneles */
+.bg-panel1{ background:#142a41; }
+.bg-panel2{ background:#0b756d; }
+.bg-panel3{ background:#0a6b7c; }
+.bg-panel4{ background:#0a5b96; }
+.bg-panel5{ background:#0a4ea5; }
+
+/* Listas sin bullets */
+.no-bullets {
+  padding-left: 0px !important;
+}
+.no-bullets li {
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+}
+.no-bullets li i {
+  min-width: 20px;
+  text-align: center;
+}
+
+/* ==========================
+   ACORDEÓN VERTICAL (MÓVIL)
+========================== */
+@media (max-width: 768px) {
+  .accordion-horizontal {
+    flex-direction: column;
+    height: auto; /* dejar crecer según contenido */
+  }
+
+  .accordion-panel {
+    width: 100% !important;
+    height: auto;
+    flex-direction: column;
+    margin-bottom: 5px;
+  }
+
+  .accordion-header {
+    writing-mode: horizontal-tb;
+    transform: none;
+    min-width: auto;
+    padding: 0.5rem 1rem;
+    border-left: none;
+    border-bottom: 1px solid rgba(0,0,0,.1);
+    justify-content: flex-start;
+  }
+
+  .accordion-content {
+    position: relative;
+    left: auto;
+    right: auto;
+    top: auto;
+    bottom: auto;
+    width: 100%;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    max-height: none;
+    display: none; /* solo mostrar si open */
+  }
+
+  .accordion-panel.open .accordion-content {
+    display: block;
+  }
+}

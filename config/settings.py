@@ -1,116 +1,47 @@
+# settings.py
 import os
+import sys
 import logging
 from pathlib import Path
-import sys
 from django.contrib.messages import constants as messages
 from dotenv import load_dotenv
 
-# Cargar variables de entorno desde el archivo .env
+# Cargar variables de entorno
 load_dotenv()
 
-# Definición de entorno
-DEBUG = os.environ.get("DJANGO_DEBUG", default=False) == "True"
-ENVIRONMENT = os.environ.get("ENVIRONMENT", default="dev")
-
-# Definición del directorio base del proyecto
+# Entorno
+DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
+ENVIRONMENT = os.environ.get("ENVIRONMENT", "dev")  # dev|qa|prd
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Configuración de rutas de estaticos y  media
-STATIC_URL = "/static/"
-STATICFILES_DIRS = [BASE_DIR / "static"]
-STATIC_ROOT = BASE_DIR / "static_root"
-STATICFILES_STORAGE = "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
+# Secret Key
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 
-
-MEDIA_URL = "media/"
-MEDIA_ROOT = os.path.join(BASE_DIR, "media/")
-
-
-# Configuración de URLs para autenticación
-LOGIN_URL = "/"
-LOGIN_REDIRECT_URL = "dashboard/"
-LOGOUT_REDIRECT_URL = "/"
-
-# Formularios personalizados para cuentas de usuario
-ACCOUNT_FORMS = {"login": "user.forms.UserLoginForm"}
-
-# Configuración de backend de correo electrónico
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-
-# Configuración de etiquetas de mensajes
-MESSAGE_TAGS = {
-    messages.DEBUG: "alert-dark",
-    messages.INFO: "info",
-    messages.SUCCESS: "success",
-    messages.WARNING: "warning",
-    messages.ERROR: "error",
-}
-
-
-# Configuración de clases CSS para formularios Crispy
-CRISPY_CLASS_CONVERTERS = {
-    "textinput": "form-control",
-    "passwordinput": "form-control",
-    "select": "form-control custom-select",
-    "selectmultiple": "form-control select2 w-100",
-    "numberinput": "form-control",
-    "emailinput": "form-control",
-    "dateinput": "form-control",
-    "fileinput": "custom-file-input",
-}
-
-# Definición de variables de programas
-PROG_MILD = 24
-PROG_CDIF = 23
-PROG_CDLE = 25
-PROG_PDV = 26
-PROG_MA = 30
-PROG_SL = 21
-
-# Definición de IPs internas para depuración
-INTERNAL_IPS = [
-    "127.0.0.1",
-    "::1",
-]
-
-# Configuración de la aplicación WSGI
-WSGI_APPLICATION = "config.wsgi.application"
-
-# Configuración de localización
+# Internacionalización / Zona horaria
 LANGUAGE_CODE = "es-ar"
 TIME_ZONE = "America/Argentina/Buenos_Aires"
 USE_I18N = True
 USE_TZ = True
-
-# Configuración de campo auto por defecto
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# Obtención de la clave secreta desde variables de entorno
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
-
-# Configuración del paquete de plantillas Crispy
-CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
-CRISPY_TEMPLATE_PACK = "bootstrap5"
-
-# Configuración de la URLs
-ROOT_URLCONF = "config.urls"
-
-# Configuración de hosts permitidos desde variables de entorno
-hosts = os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",")
+# Hosts / Orígenes
+hosts = [
+    h.strip() for h in os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",") if h.strip()
+]
 ALLOWED_HOSTS = hosts
 
-# Configuración de CSRF
-CSRF_TRUSTED_ORIGINS = [f"https://{h}" for h in hosts]
-CSRF_COOKIE_NAME = (
-    "csrftoken_v2"  # Cambiar en caso de conflicto con formularios cacheados
-)
+DEFAULT_SCHEME = "https" if ENVIRONMENT == "prd" else "http"
 
-# Configuración para cerrar la sesión al cerrar el navegador
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
-# Definición de aplicaciones instaladas
+def _to_origin(h: str) -> str:
+    return h if h.startswith(("http://", "https://")) else f"{DEFAULT_SCHEME}://{h}"
+
+
+CSRF_TRUSTED_ORIGINS = [_to_origin(h) for h in ALLOWED_HOSTS]
+
+# Apps
 INSTALLED_APPS = [
-    # Aplicaciones de Django
+    # Django
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -118,7 +49,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.admindocs",
-    # Librerias
+    # Libs
     "django_cotton",
     "crispy_forms",
     "crispy_bootstrap5",
@@ -128,7 +59,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_api_key",
     "corsheaders",
-    # Aplicaciones propias
+    # Apps propias
     "users",
     "core",
     "configuraciones",
@@ -150,23 +81,26 @@ INSTALLED_APPS = [
     "centrodefamilia",
 ]
 
-# Definición del middleware utilizado por el proyecto
+# Middleware (orden CORS correcto)
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.contrib.admindocs.middleware.XViewMiddleware",
-    "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "config.middlewares.xss_protection.XSSProtectionMiddleware",
     "config.middlewares.threadlocals.ThreadLocalMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
 ]
 
-# Configuración de plantillas
+# URLs / WSGI
+ROOT_URLCONF = "config.urls"
+WSGI_APPLICATION = "config.wsgi.application"
+
+# Templates
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -183,7 +117,38 @@ TEMPLATES = [
     },
 ]
 
-# Configuración de la base de datos
+# Archivos estáticos y media
+STATIC_URL = "/static/"
+STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_ROOT = BASE_DIR / "static_root"
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+# Autenticación / Redirecciones
+LOGIN_URL = "login"
+LOGIN_REDIRECT_URL = "dashboard"
+LOGOUT_REDIRECT_URL = "login"
+ACCOUNT_FORMS = {"login": "users.forms.UserLoginForm"}
+
+# Email
+if ENVIRONMENT == "prd":
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+# Mensajes / Crispy
+MESSAGE_TAGS = {
+    messages.DEBUG: "alert-dark",
+    messages.INFO: "info",
+    messages.SUCCESS: "success",
+    messages.WARNING: "warning",
+    messages.ERROR: "error",
+}
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_TEMPLATE_PACK = "bootstrap5"
+
+# DB
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
@@ -199,16 +164,13 @@ DATABASES = {
         "CONN_MAX_AGE": 60,
     }
 }
+
 if "pytest" in sys.argv:  # DB para testing
     DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": ":memory:",
-        }
+        "default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}
     }
 
-
-# Configuración de Cache
+# Cache
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
@@ -216,18 +178,37 @@ CACHES = {
     }
 }
 
-# Configuración global de tiempos de cache (en segundos)
-DEFAULT_CACHE_TIMEOUT = 300  # 5 minutos por defecto
-DASHBOARD_CACHE_TIMEOUT = 300  # 5 minutos para dashboard
-COMEDOR_CACHE_TIMEOUT = 300  # 5 minutos para comedores
-CIUDADANO_CACHE_TIMEOUT = 300  # 5 minutos para ciudadanos
-INTERVENCIONES_CACHE_TIMEOUT = (
-    1800  # 30 minutos para tipos de intervención (cambian poco)
-)
-CENTROFAMILIA_CACHE_TIMEOUT = 300  # 5 minutos para centro de familia
+# TTLs (segundos)
+DEFAULT_CACHE_TIMEOUT = 300
+DASHBOARD_CACHE_TIMEOUT = 300
+COMEDOR_CACHE_TIMEOUT = 300
+CIUDADANO_CACHE_TIMEOUT = 300
+INTERVENCIONES_CACHE_TIMEOUT = 1800
+CENTROFAMILIA_CACHE_TIMEOUT = 300
 
+# CORS
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOWED_ORIGINS = CSRF_TRUSTED_ORIGINS
 
-# Configuracion de logging
+# REST Framework
+REST_FRAMEWORK = {
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 10,
+}
+
+# Dominios / Integraciones
+DOMINIO = os.environ.get("DOMINIO", "localhost:8001")
+RENAPER_API_USERNAME = os.getenv("RENAPER_API_USERNAME")
+RENAPER_API_PASSWORD = os.getenv("RENAPER_API_PASSWORD")
+RENAPER_API_URL = os.getenv("RENAPER_API_URL")
+
+# IPs internas
+INTERNAL_IPS = ["127.0.0.1", "::1"]
+
+# Logging (asegurar directorio)
+LOG_DIR = BASE_DIR / "logs"
+os.makedirs(LOG_DIR, exist_ok=True)
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -248,15 +229,19 @@ LOGGING = {
             "()": "django.utils.log.CallbackFilter",
             "callback": lambda r: r.levelno == logging.CRITICAL,
         },
+        "data_only": {
+            "()": "django.utils.log.CallbackFilter",
+            "callback": lambda r: hasattr(r, "data"),
+        },
     },
     "formatters": {
         "verbose": {
             "format": "[{asctime}] {module} {levelname} {name}: {message}",
             "style": "{",
         },
-        "simple": {
-            "format": "[{asctime}] {levelname} {message}",
-            "style": "{",
+        "simple": {"format": "[{asctime}] {levelname} {message}", "style": "{"},
+        "json_data": {
+            "()": "core.utils.JSONDataFormatter",
         },
     },
     "handlers": {
@@ -264,29 +249,36 @@ LOGGING = {
             "level": "INFO",
             "filters": ["info_only"],
             "class": "core.utils.DailyFileHandler",
-            "filename": str(BASE_DIR / "logs/info.log"),
+            "filename": str(LOG_DIR / "info.log"),
             "formatter": "verbose",
         },
         "error_file": {
             "level": "ERROR",
             "filters": ["error_only"],
             "class": "core.utils.DailyFileHandler",
-            "filename": str(BASE_DIR / "logs/error.log"),
+            "filename": str(LOG_DIR / "error.log"),
             "formatter": "verbose",
         },
         "warning_file": {
             "level": "WARNING",
             "filters": ["warning_only"],
             "class": "core.utils.DailyFileHandler",
-            "filename": str(BASE_DIR / "logs/warning.log"),
+            "filename": str(LOG_DIR / "warning.log"),
             "formatter": "verbose",
         },
         "critical_file": {
             "level": "CRITICAL",
             "filters": ["critical_only"],
             "class": "core.utils.DailyFileHandler",
-            "filename": str(BASE_DIR / "logs/critical.log"),
+            "filename": str(LOG_DIR / "critical.log"),
             "formatter": "verbose",
+        },
+        "data_file": {
+            "level": "INFO",
+            "filters": ["data_only"],
+            "class": "core.utils.DailyFileHandler",
+            "filename": str(LOG_DIR / "data.log"),
+            "formatter": "json_data",
         },
     },
     "loggers": {
@@ -296,8 +288,9 @@ LOGGING = {
                 "error_file",
                 "warning_file",
                 "critical_file",
+                "data_file",
             ],
-            "level": "DEBUG",
+            "level": "DEBUG" if DEBUG else "INFO",
             "propagate": True,
         },
         "django.request": {
@@ -308,52 +301,42 @@ LOGGING = {
     },
 }
 
-# Configuración de validadores de contraseñas
+# Validadores de contraseña
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
     },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
-        "OPTIONS": {
-            "min_length": 8,
-        },
+        "OPTIONS": {"min_length": 8},
     },
-    {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
-    },
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-# Configuraciones de entornos
+# Herramientas debug/perf en desarrollo
 if DEBUG:
-
-    # Configuración de Django Debug Toolbar
-    INSTALLED_APPS += ["debug_toolbar"]
-    MIDDLEWARE += ["debug_toolbar.middleware.DebugToolbarMiddleware"]
-    DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda request: True}
-
-    # Configuración de Silk fuera de DEBUG
-    INSTALLED_APPS += ["silk"]
+    INSTALLED_APPS += ["debug_toolbar", "silk"]
+    MIDDLEWARE.insert(
+        3, "debug_toolbar.middleware.DebugToolbarMiddleware"
+    )  # index tras Cors/Common
     MIDDLEWARE += ["silk.middleware.SilkyMiddleware"]
+    DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda request: True}
     SILKY_PYTHON_PROFILER = True
 
+# Seguridad por entorno
 if ENVIRONMENT == "prd":
-    # Configuración para producción
     STATICFILES_STORAGE = (
         "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
     )
     SECURE_HSTS_SECONDS = 31536000
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     USE_X_FORWARDED_HOST = True
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 else:
-    # Configuración para entornos bajos (no ssl)
     STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
     SECURE_HSTS_SECONDS = 0
     SECURE_HSTS_INCLUDE_SUBDOMAINS = False
@@ -361,19 +344,10 @@ else:
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
 
-# Configuracion de Django Rest Framework
-REST_FRAMEWORK = {
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 10,
-}
-
-# Configuracion de CORS header
-CORS_ALLOW_ALL_ORIGINS = True
-
-# Configuracion de dominio para API GESTIONAR
-DOMINIO = os.environ.get("DOMINIO", default="localhost:8001")
-
-# API RENAPER
-RENAPER_API_USERNAME = os.getenv("RENAPER_API_USERNAME")
-RENAPER_API_PASSWORD = os.getenv("RENAPER_API_PASSWORD")
-RENAPER_API_URL = os.getenv("RENAPER_API_URL")
+# Config propia (constantes)
+PROG_MILD = 24
+PROG_CDIF = 23
+PROG_CDLE = 25
+PROG_PDV = 26
+PROG_MA = 30
+PROG_SL = 21
