@@ -1,0 +1,833 @@
+/* =============================================================================
+   SISTEMA DE TIPOGRAFÍAS - SISOC BACKOFFICE
+   =============================================================================
+   
+   TÍTULOS (usar Lora):
+   - Display 1: 64px, peso 700
+   - Display 2: 48px, peso 600  
+   - H1: 36px, peso 600
+   - H2: 30px, peso 600
+   - H3: 24px, peso 500
+   - H4: 18px, peso 500
+   - H5: 14px, peso 500
+
+   TEXTO CUERPO (usar Montserrat):
+   - Párrafo: 18px, peso 400
+   - Negrita: 18px, peso 700
+   - Cursiva: 18px, peso 400, italic
+   - Small: 12px, peso 400
+   - Lead: 18px, peso 500
+   ============================================================================= */
+
+/* VARIABLES CSS PARA TIPOGRAFÍAS */
+:root {
+  /* Familias de fuentes */
+  --font-family-titles: 'Lora', serif;
+  --font-family-body: 'Montserrat', sans-serif;
+  
+  /* Tamaños de fuente */
+  --font-size-display-1: 4rem;     /* 64px */
+  --font-size-display-2: 3rem;     /* 48px */
+  --font-size-h1: 2.25rem;         /* 36px */
+  --font-size-h2: 1.875rem;        /* 30px */
+  --font-size-h3: 1.5rem;          /* 24px */
+  --font-size-h4: 1.125rem;        /* 18px */
+  --font-size-h5: 0.875rem;        /* 14px */
+  --font-size-body: 1.125rem;      /* 18px */
+  --font-size-small: 0.75rem;      /* 12px */
+  
+  /* Pesos de fuente */
+  --font-weight-display-1: 700;
+  --font-weight-display-2: 600;
+  --font-weight-h1: 600;
+  --font-weight-h2: 600;
+  --font-weight-h3: 500;
+  --font-weight-h4: 500;
+  --font-weight-h5: 500;
+  --font-weight-body: 400;
+  --font-weight-bold: 700;
+  --font-weight-lead: 500;
+  
+  /* Line heights para mejor legibilidad */
+  --line-height-display: 1.1;
+  --line-height-heading: 1.2;
+  --line-height-body: 1.6;
+}
+
+/* =============================================================================
+   TÍTULOS - FAMILIA LORA
+   ============================================================================= */
+
+.display-1 {
+  font-family: var(--font-family-titles);
+  font-size: var(--font-size-display-1);
+  font-weight: var(--font-weight-display-1);
+  line-height: var(--line-height-display);
+  margin-bottom: 1rem;
+}
+
+.display-2 {
+  font-family: var(--font-family-titles);
+  font-size: var(--font-size-display-2);
+  font-weight: var(--font-weight-display-2);
+  line-height: var(--line-height-display);
+  margin-bottom: 0.875rem;
+}
+
+h1, .h1 {
+  font-family: var(--font-family-titles) !important;
+  font-size: var(--font-size-h1) !important;
+  font-weight: var(--font-weight-h1) !important;
+  line-height: var(--line-height-heading) !important;
+  margin-bottom: 0.75rem !important;
+}
+
+h2, .h2 {
+  font-family: var(--font-family-titles) !important;
+  font-size: var(--font-size-h2) !important;
+  font-weight: var(--font-weight-h2) !important;
+  line-height: var(--line-height-heading) !important;
+  margin-bottom: 0.625rem !important;
+}
+
+h3 {
+  font-family: var(--font-family-titles) !important;
+  font-size: var(--font-size-h3) !important;
+  font-weight: var(--font-weight-h3) !important;
+  line-height: var(--line-height-heading) !important;
+  margin-bottom: 0.5rem !important;
+}
+
+h4 {
+  font-family: var(--font-family-titles) !important;
+  font-size: var(--font-size-h4) !important;
+  font-weight: var(--font-weight-h4) !important;
+  line-height: var(--line-height-heading) !important;
+  margin-bottom: 0.5rem !important;
+}
+
+h5 {
+  font-family: var(--font-family-titles) !important;
+  font-size: var(--font-size-h5) !important;
+  font-weight: var(--font-weight-h5) !important;
+  line-height: var(--line-height-heading) !important;
+  margin-bottom: 0.375rem !important;
+}
+
+h6 {
+  font-family: var(--font-family-titles) !important;
+  font-size: var(--font-size-h5) !important;
+  font-weight: var(--font-weight-h5) !important;
+  line-height: var(--line-height-heading) !important;
+  margin-bottom: 0.375rem !important;
+}
+
+/* =============================================================================
+   TEXTO CUERPO - FAMILIA MONTSERRAT (SOLO CONTENIDO PRINCIPAL)
+   ============================================================================= */
+
+/* Aplicar solo al contenido principal, no a componentes específicos */
+.app-content p,
+.app-content .paragraph,
+.main-content p,
+.main-content .paragraph,
+.content-wrapper p:not(.card-text):not(.table p):not(.btn p),
+.content-wrapper .paragraph:not(.card-text):not(.table .paragraph) {
+  font-family: var(--font-family-body) !important;
+  font-size: var(--font-size-body) !important;
+  font-weight: var(--font-weight-body) !important;
+  line-height: var(--line-height-body) !important;
+}
+
+.lead {
+  font-family: var(--font-family-body) !important;
+  font-size: var(--font-size-body) !important;
+  font-weight: var(--font-weight-lead) !important;
+  line-height: var(--line-height-body) !important;
+}
+
+strong, b, .bold {
+  font-family: var(--font-family-body) !important;
+  font-size: var(--font-size-body) !important;
+  font-weight: var(--font-weight-bold) !important;
+}
+
+em, i, .italic {
+  font-family: var(--font-family-body) !important;
+  font-size: var(--font-size-body) !important;
+  font-weight: var(--font-weight-body) !important;
+  font-style: italic !important;
+}
+
+small, .small {
+  font-family: var(--font-family-body) !important;
+  font-size: var(--font-size-small) !important;
+  font-weight: var(--font-weight-body) !important;
+  line-height: var(--line-height-body) !important;
+}
+
+/* =============================================================================
+   ELEMENTOS DE FORMULARIOS Y UI (ESPECÍFICOS)
+   ============================================================================= */
+
+/* Inputs y formularios - solo tamaños estándar */
+.form-control:not(.form-control-sm):not(.form-control-lg):not(.form-control-sidebar) {
+  font-family: var(--font-family-body) !important;
+  font-size: 1rem !important; /* 16px para mantener layout */
+  font-weight: var(--font-weight-body) !important;
+}
+
+/* Labels de formularios - tamaño estándar */
+.form-label, 
+.col-form-label {
+  font-family: var(--font-family-body) !important;
+  font-size: 0.9rem !important; /* 14.4px para mantener layout */
+  font-weight: var(--font-weight-lead) !important;
+}
+
+/* Botones - mantener tamaño original para layout */
+.btn:not(.btn-sm):not(.btn-lg) {
+  font-family: var(--font-family-body) !important;
+  font-size: 0.9rem !important; /* 14.4px para mantener layout */
+  font-weight: var(--font-weight-lead) !important;
+}
+
+/* =============================================================================
+   NAVEGACIÓN Y MENÚS ESPECÍFICOS
+   ============================================================================= */
+
+/* LOGO "SiSOC" en el header del menú */
+.brand-text {
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 2rem !important; /* 32px */
+  font-weight: 700 !important; /* Bold */
+  color: white !important;
+}
+
+/* NOMBRE USUARIO "Alberto Flores" */
+.user-name {
+  font-family: 'Lora', serif !important;
+  font-size: 1.5rem !important; /* 24px */
+  font-weight: 600 !important; /* Semi-bold */
+  color: white !important;
+}
+
+/* CAMPO DE BÚSQUEDA - Placeholder */
+.form-control-sidebar {
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 1rem !important; /* 16px */
+  font-weight: 400 !important; /* Regular */
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+}
+
+.form-control-sidebar::placeholder {
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 1rem !important; /* 16px */
+  font-weight: 400 !important; /* Regular */
+  color: #adb5bd !important; /* Gris claro */
+}
+
+.form-control-sidebar:focus {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  color: white !important;
+  box-shadow: none !important;
+}
+
+/* Botón de búsqueda */
+.btn-sidebar {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #adb5bd !important;
+}
+
+.btn-sidebar:hover {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+}
+
+/* ELEMENTOS PRINCIPALES DEL MENÚ NIVEL 1 */
+/* "Dashboard", "Administración", "Legajos" */
+.sidebar-menu > .nav-item > .nav-link > p {
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 1.125rem !important; /* 18px */
+  font-weight: 500 !important; /* Medium */
+  color: white !important;
+  margin: 0 !important;
+}
+
+/* SUBELEMENTOS DEL MENÚ NIVEL 2 */
+/* "Usuarios", "Grupos", "Duplas", "Ciudadanos", "Comedores", etc. */
+.sidebar-menu .nav-treeview > .nav-item > .nav-link > p {
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 0.875rem !important; /* 14px */
+  font-weight: 400 !important; /* Regular */
+  color: white !important;
+  margin: 0 !important;
+}
+
+/* SUBELEMENTOS NIVEL 3 */
+/* "Búsqueda", "Ver Comedores", "Admisión - Comedores" */
+.sidebar-menu .nav-treeview .nav-treeview > .nav-item > .nav-link > p {
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 0.75rem !important; /* 12px */
+  font-weight: 400 !important; /* Regular */
+  color: #adb5bd !important; /* Gris claro */
+  margin: 0 !important;
+}
+
+/* SUBELEMENTOS NIVEL 4 (más profundos) */
+/* "Técnicos", "Legales" */
+.sidebar-menu .nav-treeview .nav-treeview .nav-treeview > .nav-item > .nav-link > p {
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 0.6875rem !important; /* 11px */
+  font-weight: 400 !important; /* Regular */
+  color: #adb5bd !important; /* Gris claro */
+  margin: 0 !important;
+}
+
+/* ESTADO ACTIVO - Mantener peso bold para elementos activos */
+.sidebar-menu .nav-link.active p {
+  font-weight: 600 !important; /* Semi-bold para activos */
+  color: white !important;
+}
+
+/* ICONOS DEL MENÚ - Asegurar que mantengan su tamaño */
+.sidebar-menu .nav-icon {
+  font-size: 1.125rem !important; /* 18px */
+  margin-right: 0.5rem !important;
+  width: 1.6rem !important;
+  text-align: center !important;
+}
+
+/* FLECHAS DE DESPLIEGUE */
+.sidebar-menu .nav-arrow {
+  font-size: 0.75rem !important; /* 12px */
+  margin-left: auto !important;
+  transition: transform 0.3s ease !important;
+}
+
+/* MENÚ EXPANDIDO - Flechas rotadas */
+.sidebar-menu .nav-item.menu-open > .nav-link .nav-arrow {
+  transform: rotate(90deg) !important;
+}
+
+/* =============================================================================
+   COMPONENTES ESPECÍFICOS
+   ============================================================================= */
+
+/* Cards - Mantener layout pero aplicar tipografías */
+.card-title {
+  font-family: var(--font-family-titles) !important;
+  font-size: 1.25rem !important; /* 20px - reducido para mantener layout */
+  font-weight: var(--font-weight-h3) !important;
+  line-height: 1.3 !important;
+  margin-bottom: 0.75rem !important;
+}
+
+.card-subtitle {
+  font-family: var(--font-family-titles) !important;
+  font-size: 1rem !important; /* 16px - reducido para mantener layout */
+  font-weight: var(--font-weight-h4) !important;
+  line-height: 1.3 !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.card-text {
+  font-family: var(--font-family-body) !important;
+  font-size: 0.9rem !important; /* 14.4px - reducido para mantener layout */
+  font-weight: var(--font-weight-body) !important;
+  line-height: 1.5 !important;
+}
+
+/* Breadcrumbs */
+.breadcrumb {
+  font-family: var(--font-family-body) !important;
+  font-size: var(--font-size-body) !important;
+  font-weight: var(--font-weight-body) !important;
+}
+
+/* Badges y labels */
+.badge {
+  font-family: var(--font-family-body) !important;
+  font-size: var(--font-size-small) !important;
+  font-weight: var(--font-weight-bold) !important;
+}
+
+/* Tablas - Mantener legibilidad pero conservar layout */
+.table th {
+  font-family: var(--font-family-body) !important;
+  font-size: 0.875rem !important; /* 14px - reducido para mantener layout */
+  font-weight: var(--font-weight-bold) !important;
+  line-height: 1.4 !important;
+}
+
+.table td {
+  font-family: var(--font-family-body) !important;
+  font-size: 0.875rem !important; /* 14px - reducido para mantener layout */
+  font-weight: var(--font-weight-body) !important;
+  line-height: 1.4 !important;
+}
+
+/* Enlaces dentro de tablas */
+.table td a {
+  font-family: var(--font-family-body) !important;
+  font-size: 0.875rem !important;
+  line-height: 1.4 !important;
+}
+
+/* =============================================================================
+   CORRECCIONES ESPECÍFICAS PARA LAYOUT
+   ============================================================================= */
+
+/* Botones en tablas - mantener tamaño original */
+.table .btn {
+  font-size: 0.75rem !important; /* 12px para botones pequeños */
+  padding: 0.25rem 0.5rem !important;
+  line-height: 1.2 !important;
+}
+
+/* Cards específicas del dashboard */
+.custom-card .card-title {
+  font-size: 0.9rem !important; /* 14.4px para cards de dashboard */
+  line-height: 1.2 !important;
+  margin-bottom: 0.25rem !important;
+}
+
+.custom-card .card-amount {
+  font-family: var(--font-family-titles) !important;
+  font-size: 1.75rem !important; /* 28px para números grandes */
+  font-weight: 600 !important;
+  line-height: 1 !important;
+}
+
+/* Espaciado específico para cards */
+.card .card-body {
+  padding: 1rem !important; /* Mantener padding estándar */
+}
+
+/* Formularios en cards - espaciado adecuado */
+.card .form-group {
+  margin-bottom: 1rem !important;
+}
+
+/* Breadcrumbs - tamaño pequeño */
+.breadcrumb-item {
+  font-size: 0.875rem !important;
+}
+
+/* Paginación */
+.pagination .page-link {
+  font-family: var(--font-family-body) !important;
+  font-size: 0.875rem !important;
+  line-height: 1.25 !important;
+}
+
+/* =============================================================================
+   ESTRUCTURA DE LISTAS TIPO TABLA (Bootstrap Grid)
+   ============================================================================= */
+
+/* Contenedor de lista que simula tabla */
+.comedores-list {
+  border: 1px solid #dee2e6;
+  border-top: none; /* Se conecta con el header */
+}
+
+/* Filas de la lista tipo tabla */
+.comedores-list .row {
+  margin: 0;
+  border-left: 1px solid #dee2e6;
+  border-right: 1px solid #dee2e6;
+  transition: background-color 0.15s ease-in-out;
+}
+
+/* Filas alternas para crear efecto rayado */
+.comedores-list .comedor-row-even {
+  background-color: #22303d !important; /* Fila par - blanca */
+}
+
+.comedores-list .comedor-row-odd {
+  background-color: rgba(0, 0, 0, 0.05) !important; /* Fila impar - gris muy claro */
+}
+
+.comedores-list .row:hover {
+  background-color: rgba(0, 123, 255, 0.075) !important; /* Hover azul Bootstrap estándar */
+}
+
+/* Columnas con padding consistente */
+.comedores-list .row > [class*="col-"] {
+  padding: 0.75rem;
+  border-right: 1px solid #dee2e6;
+}
+
+.comedores-list .row > [class*="col-"]:last-child {
+  border-right: none;
+}
+
+/* Header tipo tabla */
+.row.border-bottom.bg-light {
+  margin: 0;
+  border: 1px solid #dee2e6 !important;
+  background-color: #f8f9fa !important; /* Fondo gris claro Bootstrap estándar */
+}
+
+.row.border-bottom.bg-light > [class*="col-"] {
+  padding: 0.75rem;
+  border-right: 1px solid #dee2e6;
+  font-weight: 600 !important;
+}
+
+.row.border-bottom.bg-light > [class*="col-"]:last-child {
+  border-right: none;
+}
+
+/* Estilos específicos para nombres de comedores */
+.comedor-nombre {
+  font-family: var(--font-family-body) !important;
+  font-size: 0.875rem !important;
+  font-weight: 400 !important;
+  color: #495057; /* Color de texto estándar Bootstrap */
+}
+
+/* Botones en la estructura tipo tabla */
+.comedores-list .btn {
+  font-size: 0.75rem !important;
+  padding: 0.25rem 0.5rem !important;
+}
+
+/* Estado vacío mejorado */
+.comedores-list .row:has(.text-center.text-muted) {
+  border: none;
+  background-color: #f8f9fa;
+}
+
+/* Responsividad para la estructura tipo tabla */
+@media (max-width: 768px) {
+  .comedores-list .row > [class*="col-"] {
+    padding: 0.5rem;
+  }
+  
+  .row.border-bottom.bg-light > [class*="col-"] {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
+  
+  .comedor-nombre {
+    font-size: 0.8rem !important;
+  }
+  
+  .comedores-list .btn {
+    font-size: 0.7rem !important;
+    padding: 0.2rem 0.4rem !important;
+  }
+}
+
+/* Modo oscuro para estructura tipo tabla */
+.dark-mode .comedores-list {
+  border-color: #454d55;
+}
+
+.dark-mode .comedores-list .row {
+  border-color: #454d55;
+}
+
+.dark-mode .row.border-bottom.bg-light {
+  background-color: #343a40 !important;
+  border-color: #454d55 !important;
+  color: #fff;
+}
+
+.dark-mode .row.border-bottom.bg-light > [class*="col-"] {
+  border-color: #454d55;
+}
+
+.dark-mode .comedores-list .row > [class*="col-"] {
+  border-color: #454d55;
+}
+
+.dark-mode .comedores-list .row.bg-light {
+  background-color: #495057 !important;
+}
+
+.dark-mode .comedores-list .row.bg-white {
+  background-color: #343a40 !important;
+}
+
+.dark-mode .comedor-nombre {
+  color: #e9ecef !important;
+}
+
+/* =============================================================================
+   RESPONSIVE - AJUSTES PARA DIFERENTES PANTALLAS
+   ============================================================================= */
+
+/* Tablets y pantallas medianas */
+@media (max-width: 992px) {
+  .display-1 {
+    font-size: 3.5rem; /* 56px */
+  }
+  
+  .display-2 {
+    font-size: 2.75rem; /* 44px */
+  }
+  
+  h1, .h1 {
+    font-size: 2rem !important; /* 32px */
+  }
+  
+  h2, .h2 {
+    font-size: 1.75rem !important; /* 28px */
+  }
+  
+  h3, .h3 {
+    font-size: 1.375rem !important; /* 22px */
+  }
+}
+
+/* Móviles */
+@media (max-width: 768px) {
+  .display-1 {
+    font-size: 2.75rem; /* 44px */
+  }
+  
+  .display-2 {
+    font-size: 2.25rem; /* 36px */
+  }
+  
+  h1, .h1 {
+    font-size: 1.75rem !important; /* 28px */
+  }
+  
+  h2, .h2 {
+    font-size: 1.5rem !important; /* 24px */
+  }
+  
+  h3, .h3 {
+    font-size: 1.25rem !important; /* 20px */
+  }
+  
+  h4, .h4 {
+    font-size: 1rem !important; /* 16px */
+  }
+  
+  body, p, .paragraph {
+    font-size: 1rem !important; /* 16px */
+  }
+  
+  .lead {
+    font-size: 1rem !important; /* 16px */
+  }
+  
+  strong, b, .bold {
+    font-size: 1rem !important; /* 16px */
+  }
+  
+  em, i, .italic {
+    font-size: 1rem !important; /* 16px */
+  }
+}
+
+/* Pantallas muy pequeñas */
+@media (max-width: 480px) {
+  .display-1 {
+    font-size: 2.25rem; /* 36px */
+  }
+  
+  .display-2 {
+    font-size: 1.875rem; /* 30px */
+  }
+  
+  h1, .h1 {
+    font-size: 1.5rem !important; /* 24px */
+  }
+  
+  h2, .h2 {
+    font-size: 1.375rem !important; /* 22px */
+  }
+}
+
+/* =============================================================================
+   SOPORTE PARA MODO OSCURO
+   ============================================================================= */
+
+.dark-mode h1, .dark-mode .h1,
+.dark-mode h2, .dark-mode .h2,
+.dark-mode h3, .dark-mode .h3,
+.dark-mode h4, .dark-mode .h4,
+.dark-mode h5, .dark-mode .h5,
+.dark-mode h6, .dark-mode .h6,
+.dark-mode .display-1,
+.dark-mode .display-2 {
+  color: #fff !important;
+}
+
+.dark-mode .app-content p,
+.dark-mode .app-content .paragraph,
+.dark-mode .main-content p,
+.dark-mode .main-content .paragraph,
+.dark-mode .content-wrapper p:not(.card-text):not(.table p):not(.btn p),
+.dark-mode .content-wrapper .paragraph:not(.card-text):not(.table .paragraph),
+.dark-mode .lead {
+  color: #e9ecef !important;
+}
+
+.dark-mode small,
+.dark-mode .small {
+  color: #adb5bd !important;
+}
+
+.dark-mode .nav-link {
+  color: #e9ecef !important;
+}
+
+.dark-mode .nav-link.active {
+  color: #fff !important;
+}
+
+.dark-mode .card-title,
+.dark-mode .card-subtitle {
+  color: #fff !important;
+}
+
+.dark-mode .card-text {
+  color: #e9ecef !important;
+}
+
+.dark-mode .breadcrumb {
+  color: #adb5bd !important;
+}
+
+.dark-mode .table th,
+.dark-mode .table td {
+  color: #e9ecef !important;
+}
+
+.dark-mode label,
+.dark-mode .form-label {
+  color: #e9ecef !important;
+}
+
+/* =============================================================================
+   PRESERVACIÓN DE ICONOS
+   ============================================================================= */
+
+/* Asegurar que los iconos de Font Awesome no se vean afectados */
+.fas, .far, .fab, .fa {
+  font-family: "Font Awesome 5 Free" !important;
+  font-weight: 900 !important;
+  font-style: normal !important;
+  line-height: 1 !important;
+  text-rendering: auto !important;
+  display: inline-block !important;
+  -webkit-font-smoothing: antialiased !important;
+}
+
+.far {
+  font-weight: 400 !important;
+}
+
+.fab {
+  font-family: "Font Awesome 5 Brands" !important;
+  font-weight: 400 !important;
+}
+
+/* Iconos específicos por selector de clase */
+i[class*="fa-"] {
+  font-family: "Font Awesome 5 Free" !important;
+  font-weight: 900 !important;
+  font-style: normal !important;
+  line-height: 1 !important;
+  text-rendering: auto !important;
+  display: inline-block !important;
+}
+
+/* Bootstrap Icons */
+i[class*="bi-"],
+.bi {
+  font-family: "bootstrap-icons" !important;
+  font-style: normal !important;
+  font-variant: normal !important;
+  text-transform: none !important;
+  line-height: 1 !important;
+  -webkit-font-smoothing: antialiased !important;
+}
+
+/* Iconos específicos del menú lateral */
+.nav-icon {
+  display: inline-block !important;
+  font-style: normal !important;
+  font-variant: normal !important;
+  text-rendering: auto !important;
+  line-height: 1 !important;
+  margin-right: 0.5rem !important;
+}
+
+.nav-icon.fas,
+.nav-icon.far,
+.nav-icon.fab,
+.nav-icon[class*="fa-"] {
+  font-family: "Font Awesome 5 Free" !important;
+  font-weight: 900 !important;
+}
+
+.nav-icon.far {
+  font-weight: 400 !important;
+}
+
+.nav-icon.bi,
+.nav-icon[class*="bi-"] {
+  font-family: "bootstrap-icons" !important;
+}
+
+/* Flechas de navegación */
+.nav-arrow {
+  font-family: "bootstrap-icons" !important;
+  font-style: normal !important;
+  font-weight: normal !important;
+}
+
+/* Bootstrap Icons específicos */
+.bi::before,
+[class^="bi-"]::before,
+[class*=" bi-"]::before {
+  font-family: "bootstrap-icons" !important;
+  font-style: normal !important;
+  font-variant: normal !important;
+  text-transform: none !important;
+  line-height: 1 !important;
+}
+
+/* =============================================================================
+   UTILIDADES ADICIONALES
+   ============================================================================= */
+
+/* Clases de utilidad para combinaciones específicas */
+.text-title {
+  font-family: var(--font-family-titles) !important;
+}
+
+.text-body {
+  font-family: var(--font-family-body) !important;
+}
+
+.fs-display-1 {
+  font-size: var(--font-size-display-1) !important;
+}
+
+.fs-display-2 {
+  font-size: var(--font-size-display-2) !important;
+}
+
+.fw-title-bold {
+  font-weight: var(--font-weight-display-1) !important;
+}
+
+.fw-title-semibold {
+  font-weight: var(--font-weight-h1) !important;
+}
+
+.fw-body-medium {
+  font-weight: var(--font-weight-lead) !important;
+}
