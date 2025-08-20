@@ -1,125 +1,192 @@
 # SISOC
 
+Sistema de gestión basado en **Django** y **MySQL**, desplegable mediante **Docker** y **Docker Compose**.  
+Cada aplicación del repositorio representa un módulo funcional (ej. `comedores`, `relevamientos`, `users`).
+
+---
+
 ## Tabla de Contenidos
 
-1. [Arquitectura general](#arquitectura-general)
-2. [Despliegue local](#despliegue-local)
-3. [Estructura de carpetas](#estructura-de-carpetas)
-4. [Formateo y parseo de codigo previo al pull request](#formateo-y-parseo-de-codigo-previo-al-pull-request)
-5. [Variables de entorno](#variables-de-entorno)
-6. [Ejecutar tests automaticos](#ejecutar-tests-automaticos)
-7. [Buenas practicas a seguir](#buenas-practicas-a-seguir)
-8. [Tecnologías utilizadas](#tecnologías-utilizadas)
-9. [Releases](#releases)
+1. [Arquitectura General](#arquitectura-general)  
+2. [Requisitos Previos](#requisitos-previos)  
+3. [Despliegue Local](#despliegue-local)  
+4. [Estructura de Carpetas](#estructura-de-carpetas)  
+5. [Formateo y Estilo de Código](#formateo-y-estilo-de-código)  
+6. [Variables de Entorno](#variables-de-entorno)  
+7. [Tests Automáticos](#tests-automáticos)  
+8. [Buenas Prácticas](#buenas-prácticas)  
+9. [API](#api)  
+10. [Tecnologías Utilizadas](#tecnologías-utilizadas)  
+11. [Despliegues](#despliegues)  
+12. [Changelog](#changelog)  
+13. [Contribución](#contribución)
 
-## Arquitectura general
+---
 
-El proyecto esta basado en **Django** y utiliza **MySQL** como motor de base de datos. Para facilitar la puesta en marcha se provee un entorno con **Docker** y **Docker Compose**. Cada aplicación dentro del repositorio representa un módulo funcional (por ejemplo `comedores`, `relevamientos` o `users`).
+## Arquitectura General
 
-Las dependencias de Python se encuentran definidas en [`requirements.txt`](requirements.txt).
+- **Backend**: Django  
+- **Base de datos**: MySQL  
+- **Contenedores**: Docker + Docker Compose  
+- **Front-end**: HTML, CSS, JS, Bootstrap  
+- **Tests**: pytest  
 
-## Despliegue local
+---
 
-1. Clonar el repositorio e ingresar en el
-2. Solicitar al DevOps un dump de la DB y colocarlo en `./docker/mysql/local-dump.sql` para que se cargue en el MySQL **(opcional)**
-3. Ejecutar `docker-compose up` y esperar a que los servicios se levanten (si se aplico un dump, va a tardar unos minutos)
-4. Utilizar el usuario predeterminado. Username: 1. Password: 1 **(opcional)**
+## Requisitos Previos
 
-## Estructura de carpetas
+- [Docker](https://www.docker.com/) y [Docker Compose](https://docs.docker.com/compose/) instalados.  
+- Python 3.11+ (solo si se ejecuta fuera de contenedores).  
+- VSCode recomendado con extensión **Python** y **Docker**.  
 
-- **`config/`**: configuración global de Django
-- **`docker/`**: archivos de los contenedores para desarrollo
-- **`comedores/`, `relevamientos/`, `users/`, etc.**: aplicaciones de Django
-- **`templates/`**: plantillas HTML
-- **`static/`**: archivos estáticos (CSS, JS, imágenes)
-- **`**/tests/`**: pruebas automáticas con `pytest`
+---
 
-## Formateo y parseo de codigo previo al pull request
-### PyLint (se debe arreglar el codigo manualmente):
-`pylint **/*.py --rcfile=.pylintrc`
-### Black (automatico):
-`black .`
-### DJlint (automatico en la mayoria de los casos):
-`djlint . --configuration=.djlintrc --reformat`
+## Despliegue Local
 
-### Levantar nueva DB a MySQL (Cuando el servicio de MySQL ya fue levantado pero se quiere cambiar la DB)
-1. Detener los serviicos con `docker-compose down`
-2. Borrar volumen de la DB ejecutando `docker volume rm sisoc_mysql_data`
-3. Colocar dump en `./docker/mysql/local-dump.sql`
-4. Correr nuevamente `docker-compose up`
+1. Clonar el repositorio:
+   ```bash
+   git clone https://github.com/ORGANIZACION/SISOC.git
+   cd SISOC
+   ```
+2. (Opcional) Colocar un dump en `./docker/mysql/local-dump.sql`.  
+3. Levantar servicios:
+   ```bash
+   docker-compose up
+   ```
+4. Acceder a la app en [http://localhost:8000](http://localhost:8000).
 
-### Debug en docker-compose
-1. Ejecutar nuestra app con `docker-compose up` y esperar al output: `Starting development server at http://0.0.0.0:8000/`
-2. En la pestaña del debugger de VSCode, seleccionar la opcoin `Djangp in Docker` e iniciar debugging
-3. Utilizarlo como cualquier otro debugger, recordando que depende del proceso principal de docker-compose
+## Reiniciar base de datos con nuevo dump
+```bash
+docker-compose down
+docker volume rm sisoc_mysql_data
+# colocar nuevo dump en ./docker/mysql/local-dump.sql
+docker-compose up
+```
+
+## Debug con VSCode
+- Iniciar servicios con `docker-compose up`.  
+- Seleccionar la configuración `Django in Docker` en el panel de debugging.  
+
+---
+
+## Estructura de Carpetas
+
+- **`config/`** → configuración global de Django  
+- **`docker/`** → archivos de contenedores  
+- **`apps/`** (`comedores/`, `relevamientos/`, `users/`, …) → aplicaciones Django  
+- **`templates/`** y **`**/templates/`** → plantillas HTML  
+- **`templates/components`** → Componentes HTML  
+- **`static/`** → archivos estáticos (CSS, JS, imágenes)  
+- **`**/tests/`** → pruebas automáticas  
+
+---
+
+## Formateo y Estilo de Código
+
+Antes de un **Pull Request**, ejecutar:
+
+```bash
+# Linter (Se debe resolver a mano)
+pylint **/*.py --rcfile=.pylintrc
+
+# Formateo Python (Automagico)
+black .
+
+# Formateo Django Templates (Aveces automagico, a veces no)
+djlint . --configuration=.djlintrc --reformat
+```
+
+---
+
+## Variables de Entorno
+
+Ejemplo en [.env.example](https://github.com/dsocial118/BACKOFFICE/blob/development/.env.example):
+
+---
+
+## Tests Automáticos
+
+Ejecutar:
+```bash
+docker compose exec django pytest -n auto
+```
+
+---
+
+## Buenas Prácticas
+
+1. **Estilo de código**  
+   - Python → `snake_case`  
+   - JavaScript → `CamelCase`  
+
+2. **Arquitectura Django**  
+   - **Modelo**: docstring + `verbose_name` → evitar redundancia.  
+   - **Vista**: usar **Class Based Views**, sin lógica de negocio.  
+   - **Template**: evitar consultas y mantener simple.  
+
+3. **Organización interna**  
+   - Archivos ordenados por módulo.  
+   - Servicios en `services/` por modelo.  
+   - Templates separados por entidad.  
+
+4. **Commits**  
+   Usar formato consistente:  
+   ```
+   feat: nueva funcionalidad en comedores
+   fix: corregido bug en relevamientos
+   refactor: limpieza en servicios de users
+   ```
+
+---
 
 ## API
 
-https://documenter.getpostman.com/view/14921866/2sAXxMfDXf#01ac9db5-a6b5-4b20-9e8c-973e38884f17
-(No es la mejor doc... pero sirve. Cualquier duda consultar a Juani o Andy)
+Documentación Postman:  
+[API SISOC](https://documenter.getpostman.com/view/14921866/2sAXxMfDXf#01ac9db5-a6b5-4b20-9e8c-973e38884f17)
+No es la mejor documentacion. En caso de dudas, consultar con Juani (Tech lead de SISOC) o Andy (Dueño de GESCOM)
 
-## Variables de entorno
-
-Existe un archivo `.env.example` con estos mismos nombres. Puede copiarse a `.env` y completar los valores para iniciar la aplicacion localmente.
-
-```
-DJANGO_DEBUG=
-DJANGO_SECRET_KEY=
-DJANGO_ALLOWED_HOSTS=
-DATABASE_HOST=
-DATABASE_USER=
-DATABASE_PASSWORD=
-DATABASE_NAME=
-GESTIONAR_API_KEY=
-GESTIONAR_API_CREAR_RELEVAMIENTO=
-GESTIONAR_API_CREAR_COMEDOR=
-GESTIONAR_API_CREAR_OBSERVACION=
-GESTIONAR_API_CREAR_REFERENTE=
-DOMINIO=
+Ejemplo de request:
+```bash
+curl -X GET http://localhost:8000/api/comedores/      -H "Authorization: Bearer <API_KEY>"
 ```
 
-# Ejecutar tests automaticos
-`docker compose exec django pytest -n auto`
+---
 
-# Buenas practicas a seguir
-1. Utilizar SNAKE CASE en todo el codigo Python. Utilizar CamelCase en todo el codigo JavaScript.
-2. Respetar el modelo "Modelo - Template - Vista" que propone Django.
-    - Modelo: Representa a la tabla de la DB. Cada clase debe tener su docstring para saber que hace cada campo. Cada campo debe tener su verbose_name si se va a usar en un formulario. Los campos deben ser los justos y necesarios, evitar redundancia. De aca salen las migraciones, revisar las que mandan a git. El nombre de los modelos debe ser en singular. Cada modelo debe ser registrado en el admin.
-    - Vista: Responsable de manejar las peticiones HTTP, interactuar con la logica de negocio (Dentro de servicios, no de la vista) y devolver una respuesta. Siempre usar vistas basadas en clase (para aprovechar las vistas genericas de Django como ListView). Manejar correctamente las excepciones con mensajes de error
-    - Template: El HTML de la presentacion. Evitar importaciones innecesarias. Mantener archivos pequeños aprovechando la herencia de plantillas. Evitar consultas en plantillas. Separar el CSS y el JS del HTML. 
-3. Mantener el orden en los archivos. Por ejemplo: Dentro de la aplicacion "comedores", dentro de la carpeta "templates", se deben separar los .html del modelo "Relevamiento" de los del modelo "Observacion". Lo mismo para la logica de negocio del modelo "Comedor", que se encuentra en la carpeta "services" dentro de la clase "ComedorService"
-4. Antes de pushear el codigo y hacer el pull request (o cuando los actions de github mencionen algun error), se deben ejecutar los comandos para formatear y parsear el codigo (mencionados en el readme.md)
+## Despliegues
 
-## TECNOLOGÍAS UTILIZADAS
+##Ciclo quincenal de releases
+- **Semana 0 (jueves)** → abrir branch `development`.  
+- **Semana 2 (lunes, freeze)** → congelar `development`, crear tag `YY.MM.DD-rc1`.  
+- **Semana 2 (miércoles noche)** → deploy a PRD si QA aprueba último `rcX`.  
 
-![HTML5](https://img.shields.io/badge/-HTML5-%23F11423?style=flat-square&logo=html5&logoColor=ffffff)
-![CSS3](https://img.shields.io/badge/-CSS3-%231572B6?style=flat-square&logo=css3)
-![JavaScript](https://img.shields.io/badge/-JavaScript-%23F7DF1C?style=flat-square&logo=javascript&logoColor=000000&labelColor=%23F7DF1C&color=%23FFCE5A)
-![Bootstrap](https://img.shields.io/badge/-Bootstrap-BE85C6?style=flat-square&logo=Bootstrap)
-![Python](http://img.shields.io/badge/-Python-DAD031?style=flat-square&logo=python)
-![Django](http://img.shields.io/badge/-Django-025922?style=flat-square&logo=django&logoColor=025922&labelColor=DAD031)
-![MySQL](https://img.shields.io/badge/-MySQL-ffffff?style=flat-square&logo=mysql)
-![Github](https://img.shields.io/badge/Github-000?style=flat-square&logo=Github)
+##Checklist
+- [ ] Branch `development` congelada sin features nuevos  
+- [ ] Backup válido de DB  
+- [ ] Tag final creado en `development`  
+- [ ] Probado con base similar a PRD  
+- [ ] Testeado en QA ese mismo tag  
+- [ ] QA aprobó el tag  
+- [ ] Merge limpio a `main`  
+- [ ] Changelog actualizado  
+- [ ] Migraciones reversibles/controladas  
+- [ ] Equipo notificado  
+- [ ] Último tag estable guardado para rollback  
+- [ ] Squash de migraciones estables  
 
+---
 
-# Releases
-## Ciclo quincenal de releases.
-Jueves semana 0 (post-deploy): se abre la branch development. Se pueden mergear tareas nuevas hasta el freeze.
-Lunes semana 2 (freeze): se congela la branch development. Se taggea el último commit como YY.MM.DD-rc1 (primer release candidate).
-A partir del freeze, solo se aceptan fixes sobre esa versión. Cada fix genera un nuevo tag rcX, sobre development.
-El objetivo de esta etapa es que se pruebe TODO lo que se va a subir a PRD.
-Miércoles semana 2 (post horario laboral): se despliega el último tag (rcX) solo si está aprobado explícitamente por QA y todos los checks fueron completados.
+## Changelog
 
-## Checks para el deploy:
-[] La branch development fue congelada el lunes previo al deploy (sin nuevos features).
-[] Se realizó un backup completo y válido de la base de datos.
-[] Se creó el tag final a desplegar sobre development.
-[] Se probó el tag final con una base similar a PRD.
-[] Se testeó en QA exactamente ese tag final.
-[] QA aprobó explícitamente ese tag final como estable para PRD.
-[] Merge limpio de ese tag a main, sin commits adicionales ni conflictos.
-[] Changelog de cambios.
-[] Las migraciones del tag final son reversibles o su impacto fue controlado.
-[] Se notificó al equipo sobre el despliegue y la posible ventana de mantenimiento.
-[] Se guardó el último tag estable de producción para rollback rápido
-[] Squash de migraciones estables
+[CHANGELOG.md](https://github.com/dsocial118/BACKOFFICE/blob/development/CHANGELOG.md)
+
+---
+
+## Contribución
+
+1. Crear una branch desde `development`.  
+2. Commit siguiendo el estándar definido.  
+3. Abrir **Pull Request** a `development`.  
+4. Pasar linters y tests antes del PR.  
+5. Revisión de al menos otro dev antes del merge.  
+
+---
