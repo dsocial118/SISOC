@@ -228,50 +228,46 @@ class ComedorService:
     def get_presupuestos(comedor_id: int, relevamientos_prefetched=None):
         valor_map = preload_valores_comida_cache()
         if relevamientos_prefetched:
-            beneficiarios = (
-                relevamientos_prefetched[0] if relevamientos_prefetched else None
-            )
+            relevamiento = relevamientos_prefetched[0]
         else:
-            beneficiarios = (
+            relevamiento = (
                 Relevamiento.objects.select_related("prestacion")
                 .filter(comedor=comedor_id)
-                .only("prestacion")
+                .order_by("-fecha_visita")
+                .only("prestacion", "fecha_visita")
                 .first()
             )
-        count = {
-            "desayuno": 0,
-            "almuerzo": 0,
-            "merienda": 0,
-            "cena": 0,
-        }
-        if beneficiarios and beneficiarios.prestacion:
-            for prestacion in beneficiarios.prestacion.all():
-                dias = [
-                    "lunes",
-                    "martes",
-                    "miercoles",
-                    "jueves",
-                    "viernes",
-                    "sabado",
-                    "domingo",
-                ]
-                tipos = [
-                    "desayuno",
-                    "almuerzo",
-                    "merienda",
-                    "cena",
-                    "merienda_reforzada",
-                ]
-                for tipo in tipos:
-                    count[tipo] = sum(
-                        getattr(prestacion, f"{dia}_{tipo}_actual", 0) or 0
-                        for dia in dias
-                    )
+
+        count = {"desayuno": 0, "almuerzo": 0, "merienda": 0, "cena": 0}
+
+        if relevamiento and relevamiento.prestacion:
+            prestacion = relevamiento.prestacion
+            dias = [
+                "lunes",
+                "martes",
+                "miercoles",
+                "jueves",
+                "viernes",
+                "sabado",
+                "domingo",
+            ]
+            for tipo in [
+                "desayuno",
+                "almuerzo",
+                "merienda",
+                "cena",
+            ]:
+                count[tipo] = sum(
+                    (getattr(prestacion, f"{dia}_{tipo}_actual", 0) or 0)
+                    for dia in dias
+                )
+
         count_beneficiarios = sum(count.values())
         valor_cena = count["cena"] * valor_map.get("cena", 0)
         valor_desayuno = count["desayuno"] * valor_map.get("desayuno", 0)
         valor_almuerzo = count["almuerzo"] * valor_map.get("almuerzo", 0)
         valor_merienda = count["merienda"] * valor_map.get("merienda", 0)
+
         return (
             count_beneficiarios,
             valor_cena,
