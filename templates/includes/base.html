@@ -9,8 +9,10 @@
         <link rel="shortcut icon"
               type="image/png"
               href="{% static 'custom/img/sisoc_logo.ico' %}" />
-        <link rel="stylesheet"
-              href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&amp;display=fallback" />
+        <!-- Google Fonts - Tipografías del sistema -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
         <!--Chart-->
         <link rel="stylesheet"
               href="https://cdn.jsdelivr.net/npm/charts.css/dist/charts.min.css" />
@@ -85,6 +87,10 @@
         <link rel="stylesheet" href="{% static 'custom/css/utils.css' %}" />
         {% comment %} <link rel="stylesheet" href="{% static 'custom/css/nuevoColorPrimary.css' %}" /> {% endcomment %}
         {% comment %} <link rel="stylesheet" href="{% static 'custom/css/nuevoColorInfo.css' %}" /> {% endcomment %}
+        
+        <!-- Typography System - Cargar al final para evitar conflictos con iconos -->
+        <link rel="stylesheet" href="{% static 'custom/css/typography.css' %}" />
+        
         <!-- Estilos adicionales por pagina-->
         {% block head %}{% endblock %}
         <!-- Bloque titulo -->
