@@ -1,7 +1,7 @@
 <!-- Form Card Component -->
 {% load crispy_forms_tags %}
 <div class="card card-body shadow">
-    {% if title %}<h2 class="text-center display-4 mb-4">{{ title }}</h2>{% endif %}
+    {% if title %}<h1 class="text-center h1 mb-4">{{ title }}</h1>{% endif %}
     <form method="post"
           enctype="multipart/form-data"
           {% if form_id %}id="{{ form_id }}"{% endif %}
