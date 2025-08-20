@@ -5,6 +5,7 @@ from django.apps import apps
 from django.core import serializers
 from django.db import transaction
 
+
 class Command(BaseCommand):
     help = "Carga fixtures sin borrar: actualiza por PK si existe, crea si no. Nunca borra."
 
