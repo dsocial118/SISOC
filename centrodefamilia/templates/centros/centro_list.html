@@ -34,13 +34,13 @@
     <div class="row mt-3">
         <div class="col-12 text-center">
             <a href="{% url 'centro_list' %}"
-               class="btn btn-secondary btn-lg d-block d-sm-inline mt-2">Resetear</a>
+               class="btn btn-secondary d-inline-block mt-2 me-3">Resetear</a>
             {% if can_add %}
-                <a href="{% url 'centro_create' %}" class="btn btn-primary btn-lg mt-2">Agregar</a>
+                <a href="{% url 'centro_create' %}" class="btn btn-primary d-inline-block mt-2 me-3">Agregar</a>
                 <a href="{% url 'actividad_create_sola' %}"
-                   class="btn btn-primary btn-lg mt-2">Agregar Actividad</a>
+                   class="btn btn-primary d-inline-block mt-2 me-3">Agregar Actividad</a>
                 <a href="{% url 'informecabal_list' %}"
-                   class="btn btn-info btn-lg mt-2"
+                   class="btn btn-info d-inline-block mt-2 me-3"
                    id="btn-cabal">Procesar Informe Cabal</a>
             {% endif %}
         </div>
