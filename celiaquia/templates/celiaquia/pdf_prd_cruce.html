@@ -3,8 +3,152 @@
 <head>
   <meta charset="UTF-8" />
   {% load math_extras %}
+  <style>
+   
+    @page {
+      size: A4;
+      margin: 3.5cm 2cm 2.5cm 2cm;
+      @top-center { content: element(header); }
+      @bottom-center {
+        content: "Página " counter(page) " de " counter(pages);
+        font-size: 10pt; color: #666;
+      }
+    }
+    body { font-family: Arial, sans-serif; font-size: 10pt; margin: 0; color: #222; }
+
+    
+    #header {
+      position: running(header);
+      height: 3cm;
+      padding: 0.5cm 1cm;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #ddd;
+    }
+    .header-left {
+      font-weight: bold;
+      padding-top: 6px;
+      padding-right: 30px;
+      font-size: 10pt;
+      text-align: left;
+      line-height: 1.3;
+      letter-spacing: .3px;
+    }
+    .header-right {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 9pt;
+      text-align: center;
+      line-height: 1.1;
+      padding-left: 30px;
+    }
+    .header-right img {
+      max-height: 42px; height: auto; width: auto; margin-bottom: 4px;
+      filter: grayscale(100%);
+    }
+
+    
+    h1, h2, h3, h4 { margin: 0; }
+    h4 { text-align: center; margin-top: 12px; margin-bottom: 6px; }
+    .title {
+      text-align: center;
+      font-weight: bold;
+      font-size: 14pt;
+      margin: 16px 0 8px 0;
+      letter-spacing: .2px;
+    }
+    .subtle { color: #555; }
+
+    
+    .meta {
+      margin: 10px 0 16px 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 18px;
+    }
+    .meta .item { line-height: 1.5; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 9pt;
+      border-radius: 10px;
+      background: #f1f1f1;
+      border: 1px solid #e1e1e1;
+      color: #333;
+    }
+
+   
+    .cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 8px 0 10px 0;
+    }
+    .card {
+      border: 1px solid #e6e6e6;
+      border-radius: 6px;
+      padding: 12px;
+      background: #fafafa;
+    }
+    .card h5 {
+      margin: 0 0 8px 0;
+      font-size: 11pt;
+      color: #333;
+    }
+    .kpi {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 14px;
+    }
+    .kpi .kv { line-height: 1.4; }
+    .kpi .kv b { font-size: 11pt; }
+
+   
+    .progress {
+      height: 10px;
+      background: #eee;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-top: 6px;
+      border: 1px solid #e2e2e2;
+    }
+    .bar {
+      height: 10px;
+      display: block;
+      border-radius: 6px;
+    }
+    .bar--ok  { background-color: #22c55e; }
+    .bar--bad { background-color: #ef4444; }
+
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      border: 1px solid #ddd;
+      page-break-inside: auto;
+    }
+    th, td {
+      padding: 6px 8px;
+      border: 1px solid #e5e5e5;
+      vertical-align: top;
+    }
+    th { background: #f3f6fb; color: #333; font-weight: 600; text-align: left; }
+    .muted { color: #777; }
+    ul { margin: 6px 0 0 18px; padding: 0; }
+    li { line-height: 1.7; margin-bottom: 4px; }
+
+    .section { margin-top: 14px; }
+    .small { font-size: 9pt; }
+    .avoid-break { page-break-inside: avoid; }
+    .page-break { page-break-before: always; }
+  </style>
 </head>
 <body>
+  <!-- Header fijo -->
   <div id="header">
     <div class="header-left">
       PROGRAMA CELIAQUIA<br/>
@@ -19,7 +163,9 @@
   </div>
 
   <main>
-    <div class="title">Resultado de Cruce</div>
+    <div class="title">PRD — Resultado de Cruce por CUIT/DNI</div>
+
+    <!-- Meta -->
     <div class="meta">
       <div class="item">
         <b>Expediente:</b> {{ expediente.codigo }}
@@ -51,6 +197,8 @@
         <b>Legajos en nómina (aprobados por técnico):</b> {{ resumen.total_legajos }}
       </div>
     </div>
+
+    <!-- KPIs y barras -->
     <div class="cards">
       <div class="card">
         <h5>Resumen de archivo</h5>
@@ -116,7 +264,11 @@
         </table>
       </div>
     {% endif %}
+
+    <!-- Salto de página antes de los no matcheados, si hay muchos matcheados -->
     <div class="page-break"></div>
+
+    <!-- Detalle de no matcheados -->
     <div class="section">
       <h4>Detalle de no aprobado</h4>
       <table>
@@ -149,6 +301,8 @@
       </table>
     </div>
 
+
+    <!-- Notas -->
     <div class="section">
       <h4>Notas</h4>
       <ul>
@@ -161,6 +315,3 @@
   </main>
 </body>
 </html>
-{% block customJS %}
-  <script src="{% static 'custom/js/pdfceliaquia.css' %}"></script>
-{% endblock %}
