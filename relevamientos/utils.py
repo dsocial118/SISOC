@@ -29,20 +29,10 @@ def get_recursos(nombre: str, recursos_data: Dict[str, str], model: Type[models.
 
 
 def convert_to_boolean(value: str) -> bool:
-    """Convertir cadenas ``Y``/``N`` a valores booleanos.
-
-    Args:
-        value: Cadena que contiene ``"Y"`` o ``"N"``.
-
-    Returns:
-        ``True`` si el valor es ``"Y"`` o ``False`` si es ``"N"``.
-
-    Raises:
-        ValueError: Si el valor no es ``"Y"`` ni ``"N"``.
-    """
-    if value in {"Y", "N"}:
-        return value == "Y"
-    raise ValueError(f"Valor inesperado para booleano: {value}")
+    try:
+        return {"Y": True, "N": False, "": False}[value]
+    except KeyError as exc:
+        raise ValueError(f"Valor inesperado para booleano: {value}") from exc
 
 
 def get_object_or_none(
