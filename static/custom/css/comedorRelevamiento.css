@@ -114,3 +114,33 @@
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0,123,255,0.3);
 }
+
+/* Estilos para footers de modales - mantener color azul */
+.modal-footer {
+    background-color: #0e2033 !important;
+    color: white !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.modal-footer .btn-secondary {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    color: white !important;
+}
+
+.modal-footer .btn-secondary:hover {
+    background-color: rgba(255, 255, 255, 0.3) !important;
+    border-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.modal-footer .btn-primary {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    border-color: rgba(255, 255, 255, 0.9) !important;
+    color: #333 !important;
+}
+
+.modal-footer .btn-primary:hover {
+    background-color: white !important;
+    border-color: white !important;
+    color: #333 !important;
+}
