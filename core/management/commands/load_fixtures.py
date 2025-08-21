@@ -114,5 +114,3 @@ class Command(BaseCommand):
         for fx in fixtures:
             if self.should_load_fixture(fx):
                 self.upsert_fixture(fx)
-            else:
-                self.stdout.write(f"⏭️  Omitido (modelos no vacíos y sin --force): {fx}")

@@ -11,7 +11,7 @@ from .models import (
 )
 
 # guardado de log de usuarios
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 @receiver(post_save, sender=Alerta)

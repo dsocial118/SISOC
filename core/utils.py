@@ -1,6 +1,7 @@
 """Utilidades generales usadas en diferentes módulos del proyecto."""
 
 import logging
+import json
 from datetime import datetime
 from pathlib import Path
 
@@ -29,6 +30,25 @@ class DailyFileHandler(logging.FileHandler):
         daily_folder.mkdir(parents=True, exist_ok=True)
         daily_filename = daily_folder / Path(filename).name
         super().__init__(daily_filename, mode, encoding, delay)
+
+
+class JSONDataFormatter(logging.Formatter):
+    """
+    Serializa record.data a JSON (una línea por registro).
+    Estructura: {"ts": "...", "name": "...", "level": "...", "data": {...}}
+    """
+
+    def __init__(self, fmt=None, datefmt=None, style="%", **kwargs):
+        super().__init__(fmt=fmt, datefmt=datefmt, style=style)
+
+    def format(self, record: logging.LogRecord) -> str:
+        payload = {
+            "ts": self.formatTime(record, self.datefmt),
+            "name": record.name,
+            "level": record.levelname,
+            "data": getattr(record, "data", None),
+        }
+        return json.dumps(payload, ensure_ascii=False, default=str)
 
 
 def convert_string_to_int(value: str | int | None) -> int | None:

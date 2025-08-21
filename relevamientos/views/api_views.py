@@ -41,11 +41,15 @@ class RelevamientoApiView(APIView):
                 f"Relevamiento {request.data['sisoc_id']} no encontrado",
                 status=status.HTTP_404_NOT_FOUND,
             )
-        except Exception as e:
-            logger.error(
-                f"Error en PATCH al relevamiento {request.data.get('sisoc_id')}: {str(e)} | Datos: {request.data}",
+        except Exception:
+            logger.exception(
+                "Error en PATCH al relevamiento",
+                extra={
+                    "sisoc_id": request.data.get("sisoc_id"),
+                    "data": request.data,
+                },
             )
             return Response(
-                f"Error al actualizar el relevamiento {request.data['sisoc_id']}: {str(e)}",
+                f"Error al actualizar el relevamiento {request.data['sisoc_id']}",
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )

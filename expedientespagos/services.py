@@ -22,10 +22,10 @@ class ExpedientesPagosService:
                 comedor=comedor,
             )
             return expediente_pago
-        except Exception as e:
-            logger.error(
-                f"Error en ExpedientesPagosService.crear_expediente_pago para comedor: {comedor} {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                "Error en ExpedientesPagosService.crear_expediente_pago",
+                extra={"comedor_pk": getattr(comedor, "pk", None)},
             )
             raise
 
@@ -46,10 +46,10 @@ class ExpedientesPagosService:
             expediente_pago.observaciones = data.get("observaciones")
             expediente_pago.save()
             return expediente_pago
-        except Exception as e:
-            logger.error(
-                f"Error en ExpedientesPagosService.actualizar_expediente_pago para comedor: {expediente_pago} {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                "Error en ExpedientesPagosService.actualizar_expediente_pago",
+                extra={"expediente_pago_pk": getattr(expediente_pago, "pk", None)},
             )
             raise
 
@@ -57,10 +57,10 @@ class ExpedientesPagosService:
     def eliminar_expediente_pago(expediente_pago):
         try:
             expediente_pago.delete()
-        except Exception as e:
-            logger.error(
-                f"Error en ExpedientesPagosService.eliminar_expediente_pago para comedor: {expediente_pago} {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                "Error en ExpedientesPagosService.eliminar_expediente_pago",
+                extra={"expediente_pago_pk": getattr(expediente_pago, "pk", None)},
             )
             raise
 
@@ -68,10 +68,10 @@ class ExpedientesPagosService:
     def obtener_expedientes_pagos(comedor):
         try:
             return ExpedientePago.objects.filter(comedor=comedor)
-        except Exception as e:
-            logger.error(
-                f"Error en ExpedientesPagosService.obtener_expedientes_pagos para comedor: {comedor} {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                "Error en ExpedientesPagosService.obtener_expedientes_pagos",
+                extra={"comedor_pk": getattr(comedor, "pk", None)},
             )
             raise
 
@@ -80,9 +80,9 @@ class ExpedientesPagosService:
         # Obtener un expediente de pago
         try:
             return ExpedientePago.objects.get(pk=id_enviado)
-        except Exception as e:
-            logger.error(
-                f"Error en ExpedientesPagosService.obtener_expediente_pago para comedor: {id_enviado} {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                "Error en ExpedientesPagosService.obtener_expediente_pago",
+                extra={"expediente_pago_pk": id_enviado},
             )
             raise

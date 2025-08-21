@@ -1,6 +1,9 @@
 {% extends "includes/main.html" %}
 {% load static %}
 {% block title %}{{ centro.nombre }}{% endblock %}
+{% block breadcrumb %}
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
+{% endblock %}
 {% block content %}
     <link rel="stylesheet" href="{% static 'custom/css/centro_detail.css' %}" />
     <!-- 1) HEADER -->
@@ -28,188 +31,193 @@
             {% endif %}
         </div>
     </div>
-    <!-- 3) UBICACIÓN -->
-    <div class="location-card mb-4">
-        <div class="left-tab" id="tab-ubicacion">
-            <span class="tab-text">Ubicación</span>
-        </div>
-        <div class="map-container" id="mapa-iframe">
-            {% if centro.calle and centro.numero and centro.localidad and centro.municipio and centro.provincia %}
-                <iframe src="https://maps.google.com/maps?q={{ centro.calle|urlencode }}+{{ centro.numero }},+{{ centro.localidad.nombre|urlencode }},+{{ centro.municipio.nombre|urlencode }},+{{ centro.provincia.nombre|urlencode }}&output=embed"
-                        width="100%"
-                        height="100%"
-                        frameborder="0"
-                        style="border:0;
-                               border-radius:8px"
-                        allowfullscreen>
-                </iframe>
-            {% else %}
-                <div class="h-100 d-flex align-items-center justify-content-center text-muted">Sin mapa disponible</div>
-            {% endif %}
-        </div>
-        <div class="details-container" id="detalles-ubicacion">
-            <div class="section-title">Ubicación</div>
-            <hr class="section-divider" />
-            <ul>
-                <li>
-                    <i class="fas fa-road me-2 text-info"></i>Calle: {{ centro.calle }} {{ centro.numero }}
-                </li>
-                <li>
-                    <i class="fas fa-globe-americas me-2 text-info"></i>{{ centro.localidad }}, {{ centro.provincia }}
-                </li>
-                <li>
-                    <i class="fas fa-map-pin me-2 text-info"></i>Domicilio de Actividades: {{ centro.domicilio_actividad }}
-                </li>
-                <li>
-                    <i class="fas fa-phone me-2 text-info"></i>Teléfono: {{ centro.telefono }}
-                </li>
-                <li>
-                    <i class="fas fa-mobile-alt me-2 text-info"></i>Celular: {{ centro.celular }}
-                </li>
-            </ul>
-        </div>
-        <div class="right-tabs">
-            <div class="tab-item">
-                <span class="tab-text">Información Básica</span>
-            </div>
-            <div class="tab-item">
-                <span class="tab-text">Datos</span>
-            </div>
-            <div class="tab-item">
-                <span class="tab-text">Asistencia</span>
-            </div>
-            <div class="tab-item">
-                <span class="tab-text">Referente</span>
-            </div>
-        </div>
-        <!-- Secciones dinámicas ocultas -->
-        <div class="content-seccion" id="seccion-informacion-basica">
-            <div class="section-title">Información Básica</div>
-            <hr class="section-divider" />
-            <div class="row g-3">
-                <div class="col-sm-6 d-flex">
-                    <i class="fas fa-user me-2 text-info mt-1"></i>
-                    <div>
-                        <div class="fw-bold">Nombre</div>
-                        <div>{{ centro.nombre }}</div>
+    <!-- 3) Acordion -->
+    <div class="accordion-horizontal rounded mb-4">
+        <!-- panel 1 -->
+        <div class="accordion-panel open">
+            <div class="accordion-header bg-panel1 rounded-end h6">Ubicación</div>
+            <div class="accordion-content">
+                <div class="row">
+                    <div class="col-12 col-lg-5">
+                        <div class="map-container" id="mapa-iframe">
+                            {% if centro.calle and centro.numero and centro.localidad and centro.municipio and centro.provincia %}
+                                <iframe src="https://maps.google.com/maps?q={{ centro.calle|urlencode }}+{{ centro.numero }},+{{ centro.localidad.nombre|urlencode }},+{{ centro.municipio.nombre|urlencode }},+{{ centro.provincia.nombre|urlencode }}&output=embed"
+                                        width="100%"
+                                        height="100%"
+                                        frameborder="0"
+                                        style="border:0; border-radius:8px"
+                                        allowfullscreen>
+                                </iframe>
+                            {% else %}
+                                <div class="h-100 d-flex align-items-center justify-content-center text-muted">Sin mapa disponible</div>
+                            {% endif %}
+                        </div>
                     </div>
-                </div>
-                <div class="col-sm-6 d-flex">
-                    <i class="fas fa-layer-group me-2 text-info mt-1"></i>
-                    <div>
-                        <div class="fw-bold">Tipo</div>
-                        <div>{{ centro.get_tipo_display }}</div>
-                    </div>
-                </div>
-                <div class="col-sm-6 d-flex">
-                    <i class="fas fa-barcode me-2 text-info mt-1"></i>
-                    <div>
-                        <div class="fw-bold">Código</div>
-                        <div>{{ centro.codigo }}</div>
-                    </div>
-                </div>
-                <div class="col-sm-6 d-flex">
-                    <i class="fas fa-flag me-2 text-info mt-1"></i>
-                    <div>
-                        <div class="fw-bold">Provincia</div>
-                        <div>{{ centro.provincia }}</div>
-                    </div>
-                </div>
-                <div class="col-sm-6 d-flex">
-                    <i class="fas fa-city me-2 text-info mt-1"></i>
-                    <div>
-                        <div class="fw-bold">Municipio</div>
-                        <div>{{ centro.municipio }}</div>
-                    </div>
-                </div>
-                <div class="col-sm-6 d-flex">
-                    <i class="fas fa-map-marked-alt me-2 text-info mt-1"></i>
-                    <div>
-                        <div class="fw-bold">Localidad</div>
-                        <div>{{ centro.localidad }}</div>
+                    <div class="col-12 col-lg-7">
+                        <div class="details-container" id="detalles-ubicacion">
+                            <div class="section-title">Ubicación</div>
+                            <hr class="section-divider" />
+                            <ul class="no-bullets">
+                                <li><i class="fas fa-road me-2 text-info"></i>Calle: {{ centro.calle }} {{ centro.numero }}</li>
+                                <li><i class="fas fa-globe-americas me-2 text-info"></i>{{ centro.localidad }}, {{ centro.provincia }}</li>
+                                <li><i class="fas fa-map-pin me-2 text-info"></i>Domicilio de Actividades: {{ centro.domicilio_actividad }}</li>
+                                <li><i class="fas fa-phone me-2 text-info"></i>Teléfono: {{ centro.telefono }}</li>
+                                <li><i class="fas fa-mobile-alt me-2 text-info"></i>Celular: {{ centro.celular }}</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="content-seccion" id="seccion-datos">
-            <div class="section-title">Datos</div>
-            <hr class="section-divider" />
-            <div class="row g-3">
-                <div class="col-sm-6 d-flex">
-                    <i class="fas fa-envelope me-2 text-info mt-1"></i>
-                    <div>
-                        <div class="fw-bold">Correo electrónico</div>
-                        <div>{{ centro.correo }}</div>
-                    </div>
-                </div>
-                <div class="col-sm-6 d-flex">
-                    <i class="fas fa-globe me-2 text-info mt-1"></i>
-                    <div>
-                        <div class="fw-bold">Sitio web</div>
-                        <div>{{ centro.sitio_web }}</div>
-                    </div>
-                </div>
-                <div class="col-sm-6 d-flex">
-                    <i class="fas fa-share-alt me-2 text-info mt-1"></i>
-                    <div>
-                        <div class="fw-bold">Redes sociales</div>
-                        <div>{{ centro.link_redes }}</div>
-                    </div>
-                </div>
-                <div class="col-sm-6 d-flex">
-                    <i class="fas fa-building me-2 text-info mt-1"></i>
-                    <div>
-                        <div class="fw-bold">Organización</div>
-                        <div>{{ centro.organizacion_asociada }}</div>
+        <!-- panel 2 -->
+        <div class="accordion-panel">
+            <div class="accordion-header bg-panel2 h6">Información Basica</div>
+            <div class="accordion-content">
+                <div class="row">
+                    <div class="section-title">Información Básica</div>
+                    <hr class="section-divider" />
+                    <div class="row g-3 px-3">
+                        <div class="col-sm-6 d-flex">
+                            <i class="fas fa-user me-2 text-info mt-1"></i>
+                            <div>
+                                <div class="fw-bold">Nombre</div>
+                                <div>{{ centro.nombre }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 d-flex">
+                            <i class="fas fa-layer-group me-2 text-info mt-1"></i>
+                            <div>
+                                <div class="fw-bold">Tipo</div>
+                                <div>{{ centro.get_tipo_display }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 d-flex">
+                            <i class="fas fa-barcode me-2 text-info mt-1"></i>
+                            <div>
+                                <div class="fw-bold">Código</div>
+                                <div>{{ centro.codigo }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 d-flex">
+                            <i class="fas fa-flag me-2 text-info mt-1"></i>
+                            <div>
+                                <div class="fw-bold">Provincia</div>
+                                <div>{{ centro.provincia }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 d-flex">
+                            <i class="fas fa-city me-2 text-info mt-1"></i>
+                            <div>
+                                <div class="fw-bold">Municipio</div>
+                                <div>{{ centro.municipio }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 d-flex">
+                            <i class="fas fa-map-marked-alt me-2 text-info mt-1"></i>
+                            <div>
+                                <div class="fw-bold">Localidad</div>
+                                <div>{{ centro.localidad }}</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        <!-- Reemplazo de la sección ASISTENCIA para usar CABAL -->
-        <div class="content-seccion" id="seccion-asistencia">
-            <div class="section-title">Asistencia</div>
-            <hr class="section-divider" />
-            {% with ultimo=archivos_cabal_centro|first %}
-                {% if ultimo %}
-                    <p>
-                        <strong>Último informe CABAL:</strong> {{ ultimo.fecha_subida|date:"d/m/Y H:i" }}
-                    </p>
-                    <p>
-                        <strong>Subido por:</strong> {{ ultimo.usuario.get_full_name|default:ultimo.usuario.username }}
-                    </p>
-                {% else %}
-                    <p>No hay informes CABAL vinculados aún.</p>
-                {% endif %}
-            {% endwith %}
+        <!-- panel 3 -->
+        <div class="accordion-panel">
+            <div class="accordion-header bg-panel3 h6">Datos</div>
+            <div class="accordion-content">
+                <div class="row">
+                    <div class="section-title">Datos</div>
+                    <hr class="section-divider" />
+                    <div class="row g-3 px-3">
+                        <div class="col-sm-6 d-flex">
+                            <i class="fas fa-envelope me-2 text-info mt-1"></i>
+                            <div>
+                                <div class="fw-bold">Correo electrónico</div>
+                                <div>{{ centro.correo }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 d-flex">
+                            <i class="fas fa-globe me-2 text-info mt-1"></i>
+                            <div>
+                                <div class="fw-bold">Sitio web</div>
+                                <div>{{ centro.sitio_web }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 d-flex">
+                            <i class="fas fa-share-alt me-2 text-info mt-1"></i>
+                            <div>
+                                <div class="fw-bold">Redes sociales</div>
+                                <div>{{ centro.link_redes }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 d-flex">
+                            <i class="fas fa-building me-2 text-info mt-1"></i>
+                            <div>
+                                <div class="fw-bold">Organización</div>
+                                <div>{{ centro.organizacion_asociada }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="content-seccion" id="seccion-referente">
-            <div class="section-title">Referente</div>
-            <hr class="section-divider" />
-            <div class="row g-3">
-                <div class="col-sm-6 d-flex">
-                    <i class="fas fa-user-tie me-2 text-info mt-1"></i>
-                    <div>
-                        <div class="fw-bold">Responsable</div>
-                        <div>{{ centro.nombre_referente }} {{ centro.apellido_referente }}</div>
+        <!-- panel 4 -->
+        <div class="accordion-panel">
+            <div class="accordion-header bg-panel4 h6">Asistencia</div>
+            <div class="accordion-content">
+                <div class="row">
+                    <div class="section-title">Asistencia</div>
+                    <hr class="section-divider" />
+                    <div class="row g-3 px-3">
+                        {% with ultimo=archivos_cabal_centro|first %}
+                            {% if ultimo %}
+                                <p><strong>Último informe CABAL:</strong> {{ ultimo.fecha_subida|date:"d/m/Y H:i" }}</p>
+                                <p><strong>Subido por:</strong> {{ ultimo.usuario.get_full_name|default:ultimo.usuario.username }}</p>
+                            {% else %}
+                                <p>No hay informes CABAL vinculados aún.</p>
+                            {% endif %}
+                        {% endwith %}
                     </div>
                 </div>
-                <div class="col-sm-6 d-flex">
-                    <i class="fas fa-phone me-2 text-info mt-1"></i>
-                    <div>
-                        <div class="fw-bold">Teléfono</div>
-                        <div>{{ centro.telefono_referente }}</div>
-                    </div>
-                </div>
-                <div class="col-sm-6 d-flex">
-                    <i class="fas fa-envelope me-2 text-info mt-1"></i>
-                    <div>
-                        <div class="fw-bold">Correo</div>
-                        <div>{{ centro.correo_referente }}</div>
+            </div>
+        </div>
+        <!-- panel 5 -->
+        <div class="accordion-panel">
+            <div class="accordion-header bg-panel5 h6">Referente</div>
+            <div class="accordion-content">
+                <div class="row">
+                    <div class="section-title">Referente</div>
+                    <hr class="section-divider" />
+                    <div class="row g-3 px-3">
+                        <div class="col-sm-6 d-flex">
+                            <i class="fas fa-user-tie me-2 text-info mt-1"></i>
+                            <div>
+                                <div class="fw-bold">Responsable</div>
+                                <div>{{ centro.nombre_referente }} {{ centro.apellido_referente }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 d-flex">
+                            <i class="fas fa-phone me-2 text-info mt-1"></i>
+                            <div>
+                                <div class="fw-bold">Teléfono</div>
+                                <div>{{ centro.telefono_referente }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 d-flex">
+                            <i class="fas fa-envelope me-2 text-info mt-1"></i>
+                            <div>
+                                <div class="fw-bold">Correo</div>
+                                <div>{{ centro.correo_referente }}</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    <!-- /Acordion -->
     <!-- 4) MÉTRICAS RÁPIDAS -->
     <div class="d-flex gap-3 mb-4">
         {% if centro.tipo == 'faro' %}
@@ -256,26 +264,14 @@
                 <div class="table-responsive">
                     <table id="tablaCentros" class="table table-dark table-striped mb-0">
                         <thead>
-                            <tr>
-                                <th>Nombre</th>
-                                <th>Tipo</th>
-                                <th>Activo</th>
-                            </tr>
+                            <tr><th>Nombre</th><th>Tipo</th><th>Activo</th></tr>
                         </thead>
                         <tbody>
                             {% for adh in centros_adheridos_paginados %}
                                 <tr>
-                                    <td>
-                                        <a class="text-info">{{ adh.nombre }}</a>
-                                    </td>
+                                    <td><a class="text-info">{{ adh.nombre }}</a></td>
                                     <td>{{ adh.get_tipo_display }}</td>
-                                    <td>
-                                        {% if adh.activo %}
-                                            <span class="badge bg-success">Sí</span>
-                                        {% else %}
-                                            <span class="badge bg-danger">No</span>
-                                        {% endif %}
-                                    </td>
+                                    <td>{% if adh.activo %}<span class="badge bg-success">Sí</span>{% else %}<span class="badge bg-danger">No</span>{% endif %}</td>
                                 </tr>
                             {% endfor %}
                         </tbody>
@@ -285,29 +281,30 @@
                     <div class="p-3 text-center text-muted">No hay centros adheridos.</div>
                 {% endif %}
             </div>
-            {% if centros_adheridos_paginados.has_other_pages %}
-                <div class="card-footer bg-dark text-center">
-                    <ul class="pagination justify-content-center mb-0">
+            <!-- SIEMPRE MOSTRAR PAGINADOR (sin invocar prev/next fuera de rango) -->
+            <div class="card-footer bg-dark text-center">
+                <ul class="pagination justify-content-center mb-0">
+                    <li class="page-item {% if not centros_adheridos_paginados.has_previous %}disabled{% endif %}">
                         {% if centros_adheridos_paginados.has_previous %}
-                            <li class="page-item">
-                                <a class="page-link bg-secondary text-white"
-                                   href="?page={{ centros_adheridos_paginados.previous_page_number }}">Anterior</a>
-                            </li>
+                            <a class="page-link bg-secondary text-white" href="?page={{ centros_adheridos_paginados.previous_page_number }}">Anterior</a>
+                        {% else %}
+                            <a class="page-link bg-secondary text-white disabled" href="#" tabindex="-1" aria-disabled="true">Anterior</a>
                         {% endif %}
-                        {% for i in centros_adheridos_paginados.paginator.page_range %}
-                            <li class="page-item {% if centros_adheridos_paginados.number == i %}active{% endif %}">
-                                <a class="page-link bg-secondary text-white" href="?page={{ i }}">{{ i }}</a>
-                            </li>
-                        {% endfor %}
+                    </li>
+                    {% for i in centros_adheridos_paginados.paginator.page_range %}
+                        <li class="page-item {% if centros_adheridos_paginados.number == i %}active{% endif %}">
+                            <a class="page-link bg-secondary text-white" href="?page={{ i }}">{{ i }}</a>
+                        </li>
+                    {% endfor %}
+                    <li class="page-item {% if not centros_adheridos_paginados.has_next %}disabled{% endif %}">
                         {% if centros_adheridos_paginados.has_next %}
-                            <li class="page-item">
-                                <a class="page-link bg-secondary text-white"
-                                   href="?page={{ centros_adheridos_paginados.next_page_number }}">Siguiente</a>
-                            </li>
+                            <a class="page-link bg-secondary text-white" href="?page={{ centros_adheridos_paginados.next_page_number }}">Siguiente</a>
+                        {% else %}
+                            <a class="page-link bg-secondary text-white disabled" href="#" tabindex="-1" aria-disabled="true">Siguiente</a>
                         {% endif %}
-                    </ul>
-                </div>
-            {% endif %}
+                    </li>
+                </ul>
+            </div>
         </div>
     {% endif %}
     <!-- 6) NÓMINA ASISTENTES & INFORMES CABAL -->
@@ -317,27 +314,19 @@
                 <div class="card-header bg-secondary">Nómina Asistentes</div>
                 <ul class="list-group list-group-flush">
                     <li class="list-group-item d-flex justify-content-between align-items-center bg-navy text-white">
-                        <div>
-                            <i class="fas fa-users fa-lg me-2"></i>Asistentes
-                        </div>
+                        <div><i class="fas fa-users fa-lg me-2"></i>Asistentes</div>
                         <span class="badge rounded-pill bg-warning">{{ asistentes.total }}</span>
                     </li>
                     <li class="list-group-item d-flex justify-content-between align-items-center bg-navy text-white">
-                        <div>
-                            <i class="fas fa-male fa-lg me-2"></i>Hombres
-                        </div>
+                        <div><i class="fas fa-male fa-lg me-2"></i>Hombres</div>
                         <span class="badge rounded-pill bg-info">{{ asistentes.hombres }}</span>
                     </li>
                     <li class="list-group-item d-flex justify-content-between align-items-center bg-navy text-white">
-                        <div>
-                            <i class="fas fa-female fa-lg me-2"></i>Mujeres
-                        </div>
+                        <div><i class="fas fa-female fa-lg me-2"></i>Mujeres</div>
                         <span class="badge rounded-pill bg-danger">{{ asistentes.mujeres }}</span>
                     </li>
                     <li class="list-group-item d-flex justify-content-between align-items-center bg-navy text-white">
-                        <div>
-                            <i class="fas fa-list fa-lg me-2"></i>Lista de espera
-                        </div>
+                        <div><i class="fas fa-list fa-lg me-2"></i>Lista de espera</div>
                         <span class="badge rounded-pill bg-danger">{{ asistentes.espera }}</span>
                     </li>
                 </ul>
@@ -351,35 +340,25 @@
                     <div class="table-responsive">
                         <table class="table table-dark table-striped mb-0">
                             <thead>
-                                <tr>
-                                    <th>Archivo</th>
-                                    <th>Fecha de carga</th>
-                                    <th class="text-end">Acción</th>
-                                </tr>
+                                <tr><th>Archivo</th><th>Fecha de carga</th><th class="text-end">Acción</th></tr>
                             </thead>
                             <tbody>
                                 {% for a in archivos_cabal_centro %}
                                     <tr>
-                                        <td>
-                                            <a href="{% url 'informecabal_archivo_centro_detail' centro.id a.id %}"
-                                               class="text-info text-decoration-none">{{ a.nombre_original }}</a>
-                                        </td>
+                                        <td><a href="{% url 'informecabal_archivo_centro_detail' centro.id a.id %}" class="text-info text-decoration-none">{{ a.nombre_original }}</a></td>
                                         <td>{{ a.fecha_subida|date:"d/m/Y H:i" }}</td>
                                         <td class="text-end">
-                                            <a href="{% url 'informecabal_archivo_centro_detail' centro.id a.id %}"
-                                               class="btn btn-sm btn-outline-info">Ver registros</a>
+                                            <a href="{% url 'informecabal_archivo_centro_detail' centro.id a.id %}" class="btn btn-sm btn-outline-info">Ver registros</a>
                                         </td>
                                     </tr>
                                 {% empty %}
-                                    <tr>
-                                        <td colspan="3" class="text-center text-muted py-3">No hay informes CABAL con registros vinculados a este centro.</td>
-                                    </tr>
+                                    <tr><td colspan="3" class="text-center text-muted py-3">No hay informes CABAL con registros vinculados a este centro.</td></tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
                 </div>
-                <!-- (Si querés paginar archivos_cabal_centro, armamos paginado en la vista y lo renderizamos acá) -->
+                <!-- Si querés paginar archivos_cabal_centro, paginar por backend y replicar footer -->
             </div>
         </div>
     </div>
@@ -399,36 +378,61 @@
                     <div class="table-responsive">
                         <table class="table table-dark table-striped mb-0">
                             <thead>
-                                <tr>
-                                    <th>Actividad</th>
-                                    <th>Categoría</th>
-                                    <th>Dias</th>
-                                    <th>Horario</th>
-                                    <th>Estado</th>
-                                </tr>
+                                <tr><th>Actividad</th><th>Categoría</th><th>Dias</th><th>Horario</th><th>Estado</th></tr>
                             </thead>
                             <tbody>
-                                {% for act in actividades %}
+                                {% for act in actividades_curso_paginadas %}
                                     <tr>
                                         <td>
                                             <a href="{% url 'actividadcentro_detail' centro_id=centro.id pk=act.id %}"
-                                               class="text-info text-decoration-none">{{ act.actividad.nombre }}</a>
+                                            class="text-info text-decoration-none">{{ act.actividad.nombre }}</a>
                                         </td>
                                         <td>{{ act.actividad.categoria.nombre }}</td>
                                         <td>
                                             {% for dia in act.dias.all %}
-                                                {{ dia.nombre }}
-                                                {% if not forloop.last %},{% endif %}
-                                            {% empty %}&mdash;
-                                            {% endfor %}
+                                                {{ dia.nombre }}{% if not forloop.last %},{% endif %}
+                                            {% empty %}&mdash;{% endfor %}
                                         </td>
                                         <td>{{ act.horariosdesde }} - {{ act.horarioshasta }}</td>
                                         <td>{{ act.get_estado_display }}</td>
                                     </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted p-3">No hay actividades.</td>
+                                    </tr>
                                 {% endfor %}
                             </tbody>
+
                         </table>
                     </div>
+                </div>
+
+                <!-- SIEMPRE MOSTRAR PAGINADOR (sin llamar prev/next si no aplica) -->
+                <div class="card-footer bg-dark text-center">
+                    <ul class="pagination justify-content-center mb-0">
+                        <li class="page-item {% if not actividades_curso_paginadas.has_previous %}disabled{% endif %}">
+                            {% if actividades_curso_paginadas.has_previous %}
+                                <a class="page-link bg-secondary text-white"
+                                   href="?search_actividades_curso={{ request.GET.search_actividades_curso|urlencode }}&page_actividades_curso={{ actividades_curso_paginadas.previous_page_number }}#actividades-curso-container">Anterior</a>
+                            {% else %}
+                                <a class="page-link bg-secondary text-white disabled" href="#" tabindex="-1" aria-disabled="true">Anterior</a>
+                            {% endif %}
+                        </li>
+                        {% for i in actividades_curso_paginadas.paginator.page_range %}
+                            <li class="page-item {% if actividades_curso_paginadas.number == i %}active{% endif %}">
+                                <a class="page-link bg-secondary text-white"
+                                   href="?search_actividades_curso={{ request.GET.search_actividades_curso|urlencode }}&page_actividades_curso={{ i }}#actividades-curso-container">{{ i }}</a>
+                            </li>
+                        {% endfor %}
+                        <li class="page-item {% if not actividades_curso_paginadas.has_next %}disabled{% endif %}">
+                            {% if actividades_curso_paginadas.has_next %}
+                                <a class="page-link bg-secondary text-white"
+                                   href="?search_actividades_curso={{ request.GET.search_actividades_curso|urlencode }}&page_actividades_curso={{ actividades_curso_paginadas.next_page_number }}#actividades-curso-container">Siguiente</a>
+                            {% else %}
+                                <a class="page-link bg-secondary text-white disabled" href="#" tabindex="-1" aria-disabled="true">Siguiente</a>
+                            {% endif %}
+                        </li>
+                    </ul>
                 </div>
             </div>
         </div>
@@ -466,13 +470,7 @@
             <div class="table-responsive">
                 <table id="tablaActividades" class="table table-dark table-striped mb-0">
                     <thead>
-                        <tr>
-                            <th>Centro</th>
-                            <th>Actividad</th>
-                            <th>Categoría</th>
-                            <th>Estado</th>
-                            <th class="text-end">Acción</th>
-                        </tr>
+                        <tr><th>Centro</th><th>Actividad</th><th>Categoría</th><th>Estado</th><th class="text-end">Acción</th></tr>
                     </thead>
                     <tbody>
                         {% for ac in actividades_paginados %}
@@ -482,63 +480,57 @@
                                 <td>{{ ac.actividad.categoria.nombre }}</td>
                                 <td>{{ ac.get_estado_display }}</td>
                                 <td class="text-end">
-                                    <button class="btn btn-outline-info btn-sm"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#modalAct{{ ac.id }}">Detalles</button>
+                                    <button class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#modalAct{{ ac.id }}">Detalles</button>
                                 </td>
                             </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
-            {% if not actividades_paginados %}<div class="p-3 text-center text-muted">No hay actividades.</div>{% endif %}
+            {% if not actividades_paginados %}
+                <div class="p-3 text-center text-muted">No hay actividades.</div>
+            {% endif %}
         </div>
-        {% if actividades_paginados.has_other_pages %}
-            <div class="card-footer bg-dark text-center">
-                <ul class="pagination justify-content-center mb-0">
+        <!-- SIEMPRE MOSTRAR PAGINADOR (seguro) -->
+        <div class="card-footer bg-dark text-center">
+            <ul class="pagination justify-content-center mb-0">
+                <li class="page-item {% if not actividades_paginados.has_previous %}disabled{% endif %}">
                     {% if actividades_paginados.has_previous %}
-                        <li class="page-item">
-                            <a class="page-link bg-secondary text-white"
-                               href="?page_act={{ actividades_paginados.previous_page_number }}&search_actividades={{ request.GET.search_actividades }}">Anterior</a>
-                        </li>
+                        <a class="page-link bg-secondary text-white"
+                           href="?page_act={{ actividades_paginados.previous_page_number }}&search_actividades={{ request.GET.search_actividades }}">Anterior</a>
+                    {% else %}
+                        <a class="page-link bg-secondary text-white disabled" href="#" tabindex="-1" aria-disabled="true">Anterior</a>
                     {% endif %}
-                    {% for i in actividades_paginados.paginator.page_range %}
-                        <li class="page-item {% if actividades_paginados.number == i %}active{% endif %}">
-                            <a class="page-link bg-secondary text-white"
-                               href="?page_act={{ i }}&search_actividades={{ request.GET.search_actividades }}">{{ i }}</a>
-                        </li>
-                    {% endfor %}
+                </li>
+                {% for i in actividades_paginados.paginator.page_range %}
+                    <li class="page-item {% if actividades_paginados.number == i %}active{% endif %}">
+                        <a class="page-link bg-secondary text-white"
+                           href="?page_act={{ i }}&search_actividades={{ request.GET.search_actividades }}">{{ i }}</a>
+                    </li>
+                {% endfor %}
+                <li class="page-item {% if not actividades_paginados.has_next %}disabled{% endif %}">
                     {% if actividades_paginados.has_next %}
-                        <li class="page-item">
-                            <a class="page-link bg-secondary text-white"
-                               href="?page_act={{ actividades_paginados.next_page_number }}&search_actividades={{ request.GET.search_actividades }}">Siguiente</a>
-                        </li>
+                        <a class="page-link bg-secondary text-white"
+                           href="?page_act={{ actividades_paginados.next_page_number }}&search_actividades={{ request.GET.search_actividades }}">Siguiente</a>
+                    {% else %}
+                        <a class="page-link bg-secondary text-white disabled" href="#" tabindex="-1" aria-disabled="true">Siguiente</a>
                     {% endif %}
-                </ul>
-            </div>
-        {% endif %}
+                </li>
+            </ul>
+        </div>
     </div>
     <!-- 9) MODALES DE DETALLES -->
     {% for ac in actividades_paginados %}
-        <div class="modal fade"
-             id="modalAct{{ ac.id }}"
-             tabindex="-1"
-             aria-labelledby="modalActLabel{{ ac.id }}"
-             aria-hidden="true">
+        <div class="modal fade" id="modalAct{{ ac.id }}" tabindex="-1" aria-labelledby="modalActLabel{{ ac.id }}" aria-hidden="true">
             <div class="modal-dialog modal-dialog-scrollable modal-lg">
                 <div class="modal-content bg-dark text-white">
                     <div class="modal-header">
                         <h5 class="modal-title" id="modalActLabel{{ ac.id }}">{{ ac.actividad.nombre }} – {{ ac.centro.nombre }}</h5>
-                        <button type="button"
-                                class="btn-close btn-close-white"
-                                data-bs-dismiss="modal"></button>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
                         <dl class="row text-white">
-                            <dt class="col-5">Cupo Total</dt>
-                            <dd class="col-7">
-                                {{ ac.cantidad_personas }}
-                            </dd>
+                            <dt class="col-5">Cupo Total</dt><dd class="col-7">{{ ac.cantidad_personas }}</dd>
                             <dt class="col-5">Días</dt>
                             <dd class="col-7">
                                 {% for d in ac.dias.all %}
@@ -546,26 +538,11 @@
                                     {% empty %}<span class="text-muted">No especificado</span>
                                 {% endfor %}
                             </dd>
-                            <dt class="col-5">Horario desde</dt>
-                            <dd class="col-7">
-                                {{ ac.horariosdesde }}
-                            </dd>
-                            <dt class="col-5">Horario hasta</dt>
-                            <dd class="col-7">
-                                {{ ac.horarioshasta }}
-                            </dd>
+                            <dt class="col-5">Horario desde</dt><dd class="col-7">{{ ac.horariosdesde }}</dd>
+                            <dt class="col-5">Horario hasta</dt><dd class="col-7">{{ ac.horarioshasta }}</dd>
                             <dt class="col-5">Precio</dt>
-                            <dd class="col-7">
-                                {% if ac.precio %}
-                                    ${{ ac.precio }}
-                                {% else %}
-                                    <span class="text-muted">Gratuita</span>
-                                {% endif %}
-                            </dd>
-                            <dt class="col-5">Estado</dt>
-                            <dd class="col-7">
-                                {{ ac.get_estado_display }}
-                            </dd>
+                            <dd class="col-7">{% if ac.precio %}${{ ac.precio }}{% else %}<span class="text-muted">Gratuita</span>{% endif %}</dd>
+                            <dt class="col-5">Estado</dt><dd class="col-7">{{ ac.get_estado_display }}</dd>
                         </dl>
                     </div>
                 </div>
@@ -576,10 +553,7 @@
     <div class="row gx-3 mb-4">
         {% for cat in cat_metrics %}
             <div class="col-6 col-md-3 text-center">
-                <div id="gauge-container-{{ forloop.counter }}"
-                     style="width:150px;
-                            height:100px;
-                            margin:0 auto"></div>
+                <div id="gauge-container-{{ forloop.counter }}" style="width:150px; height:100px; margin:0 auto"></div>
                 <div class="mt-2 text-white fw-bold">{{ cat.label }}</div>
             </div>
         {% endfor %}
