@@ -203,10 +203,6 @@ class CruceService:
 
     @staticmethod
     def _generar_prd_pdf_reportlab(expediente: Expediente, resumen: dict) -> bytes:
-        """
-        Fallback en caso de no contar con WeasyPrint. Genera un PDF con ReportLab
-        mostrando resumen, tabla de matcheados y tabla de no matcheados.
-        """
         from reportlab.lib.pagesizes import A4
         from reportlab.pdfgen import canvas
 
@@ -269,6 +265,7 @@ class CruceService:
             c.drawString(margin_x + 10, y, f"- {label}: {value}")
             y -= 14
 
+        # ---- Matcheados (aprobados con MATCH) ----
         detalle_ok = resumen.get("detalle_match", []) or []
         ensure_space(90)
         c.setFont("Helvetica-Bold", 12)
@@ -281,7 +278,8 @@ class CruceService:
             y -= 12
         else:
             c.drawString(margin_x + 10, y, "#")
-            c.drawString(margin_x + 30, y, "documento")
+            c.drawString(margin_x + 30, y, "DNI")
+            c.drawString(margin_x + 120, y, "CUIT")
             c.drawString(margin_x + 220, y, "Nombre")
             c.drawString(margin_x + 340, y, "Apellido")
             c.drawString(margin_x + 460, y, "Por")
@@ -289,10 +287,11 @@ class CruceService:
 
             for i, fila in enumerate(detalle_ok, start=1):
                 ensure_space()
-                dni = (fila.get("documento") or "")
-                nom = (fila.get("nombre") or "")
-                ape = (fila.get("apellido") or "")
-                por = (fila.get("por") or "")
+                dni = str(fila.get("dni") or "")
+                cuit = str(fila.get("cuit") or "")
+                nom = str(fila.get("nombre") or "")
+                ape = str(fila.get("apellido") or "")
+                por = str(fila.get("por") or "")
                 c.drawString(margin_x + 10, y, str(i))
                 c.drawString(margin_x + 30, y, dni[:15])
                 c.drawString(margin_x + 120, y, cuit[:20])
@@ -301,6 +300,7 @@ class CruceService:
                 c.drawString(margin_x + 460, y, por[:20])
                 y -= 12
 
+        # ---- No matcheados (aprobados sin match + rechazados) ----
         detalle_bad = resumen.get("detalle_no_match", []) or []
         ensure_space(120)
         c.setFont("Helvetica-Bold", 12)
@@ -323,9 +323,9 @@ class CruceService:
 
             for i, fila in enumerate(detalle_bad, start=1):
                 ensure_space()
-                dni = (fila.get("dni") or "")
-                cuit = (fila.get("cuit") or "")
-                obs = (fila.get("observacion") or "No coincide por CUIT ni por DNI.")
+                dni = str(fila.get("dni") or "")
+                cuit = str(fila.get("cuit") or "")
+                obs = str(fila.get("observacion") or "No coincide por CUIT ni por DNI.")
                 c.drawString(margin_x + 10, y, str(i))
                 c.drawString(margin_x + 30, y, dni[:15])
                 c.drawString(margin_x + 120, y, cuit[:20])
@@ -337,6 +337,7 @@ class CruceService:
         pdf_bytes = buffer.getvalue()
         buffer.close()
         return pdf_bytes
+
 
     @staticmethod
     def _generar_prd_pdf(expediente: Expediente, resumen: dict) -> bytes:
