@@ -120,8 +120,8 @@
       display: block;
       border-radius: 6px;
     }
-    .bar--ok  { background-color: #22c55e; } /* verde sólido */
-    .bar--bad { background-color: #ef4444; } /* rojo sólido  */
+    .bar--ok  { background-color: #22c55e; }
+    .bar--bad { background-color: #ef4444; }
 
     /* --- Tablas y listas --- */
     table {
@@ -129,6 +129,7 @@
       border-collapse: collapse;
       margin-top: 10px;
       border: 1px solid #ddd;
+      page-break-inside: auto;
     }
     th, td {
       padding: 6px 8px;
@@ -143,6 +144,7 @@
     .section { margin-top: 14px; }
     .small { font-size: 9pt; }
     .avoid-break { page-break-inside: avoid; }
+    .page-break { page-break-before: always; }
   </style>
 </head>
 <body>
@@ -180,7 +182,6 @@
         {% endif %}
       </div>
 
-      <!-- Usuario de la provincia que envía -->
       <div class="item">
         <b>Usuario provincial:</b>
         {% if expediente.usuario_provincia %}
@@ -193,7 +194,7 @@
       </div>
 
       <div class="item">
-        <b>Legajos en nómina:</b> {{ resumen.total_legajos }}
+        <b>Legajos en nómina (aprobados por técnico):</b> {{ resumen.total_legajos }}
       </div>
     </div>
 
@@ -236,61 +237,68 @@
       </div>
     </div>
 
-    <!-- Detalle de matcheados -->
+    <!-- Detalle de matcheados (TODOS) -->
     {% if resumen.detalle_match and resumen.detalle_match|length > 0 %}
-      <div class="section avoid-break">
-        <h4>Detalle de matcheados (primeros 30)</h4>
+      <div class="section">
+        <h4>Detalle de matcheados</h4>
         <table>
           <thead>
             <tr>
-              <th style="width: 36px;">#</th>
-              <th>DNI / CUIT</th>
-              <th class="muted">Comentario</th>
+              <th style="width: 32px;">#</th>
+              <th>DNI</th>
+              <th>CUIT</th>
+              <th>Nombre</th>
+              <th>Apellido</th>
+              <th>Coincidencia por</th>
             </tr>
           </thead>
           <tbody>
-            {% for fila in resumen.detalle_match|slice:":30" %}
+            {% for fila in resumen.detalle_match %}
               <tr>
                 <td>{{ forloop.counter }}</td>
-                <td>{{ fila }}</td>
-                <td class="muted">Coincidencia por CUIT/DNI</td>
+                <td>{{ fila.dni|default_if_none:"" }}</td>
+                <td>{{ fila.cuit|default_if_none:"" }}</td>
+                <td>{{ fila.nombre|default_if_none:"" }}</td>
+                <td>{{ fila.apellido|default_if_none:"" }}</td>
+                <td class="muted">{{ fila.por|default_if_none:"" }}</td>
               </tr>
             {% endfor %}
           </tbody>
         </table>
-        <div class="small muted" style="margin-top:6px;">
-          Listado limitado a 30 filas para compacidad del documento.
-        </div>
       </div>
     {% endif %}
 
-    <!-- Detalle de no matcheados -->
-    <div class="section avoid-break">
-      <h4>Detalle de no matcheados (primeros 30)</h4>
+    <!-- Salto de página antes de los no matcheados, si hay muchos matcheados -->
+    <div class="page-break"></div>
+
+    <!-- Detalle de no matcheados (TODOS) -->
+    <div class="section">
+      <h4>Detalle de no matcheados</h4>
       {% if resumen.detalle_no_match and resumen.detalle_no_match|length > 0 %}
         <table>
           <thead>
             <tr>
-              <th style="width: 36px;">#</th>
-              <th>DNI / CUIT esperado</th>
+              <th style="width: 32px;">#</th>
+              <th>DNI</th>
+              <th>CUIT esperado</th>
               <th>Observación</th>
             </tr>
           </thead>
           <tbody>
-            {% for fila in resumen.detalle_no_match|slice:":30" %}
+            {% for fila in resumen.detalle_no_match %}
               <tr>
                 <td>{{ forloop.counter }}</td>
-                <td>{{ fila }}</td>
-                <td class="muted">No coincide por CUIT ni por DNI</td>
+                <td>{{ fila.dni|default_if_none:"" }}</td>
+                <td>{{ fila.cuit|default_if_none:"" }}</td>
+                <td class="muted">
+                  {{ fila.observacion|default:"No coincide por CUIT ni por DNI." }}
+                </td>
               </tr>
             {% endfor %}
           </tbody>
         </table>
-        <div class="small muted" style="margin-top:6px;">
-          Listado limitado a 30 filas para compacidad del documento.
-        </div>
       {% else %}
-        <p class="muted">No se registran casos sin match en las primeras 30 posiciones.</p>
+        <p class="muted">No se registran casos sin match.</p>
       {% endif %}
     </div>
 
@@ -300,6 +308,8 @@
       <ul>
         <li>Las coincidencias se determinan por CUIT exacto (11 dígitos) o por DNI normalizado (sin ceros a la izquierda).</li>
         <li>En columnas con rótulo “cuit” que contengan valores de 8 dígitos, se interpretan como DNI.</li>
+        <li>Regla aplicada: sólo se cruzan legajos con revisión del técnico en estado “APROBADO”.</li>
+        <li>En “Observación” puede aparecer “No está en archivo de Syntys” o “No coincide por CUIT/DNI”. Si el legajo fue rechazado por el técnico, no se cruza y no aparece en esta lista.</li>
       </ul>
     </div>
   </main>

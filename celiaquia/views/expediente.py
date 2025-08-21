@@ -38,12 +38,11 @@ from celiaquia.services.cruce_service import CruceService
 logger = logging.getLogger(__name__)
 
 
-# ===== utilidades locales =====
 def _user_in_group(user, group_name: str) -> bool:
     return user.is_authenticated and user.groups.filter(name=group_name).exists()
 
 def _is_admin(user) -> bool:
-    # “Admin de Django”: superusuario con pase libre
+
     return user.is_authenticated and user.is_superuser
 
 def _is_ajax(request) -> bool:
@@ -61,7 +60,7 @@ def _parse_limit(value, default=5, max_cap=5000):
         return default
     txt = str(value).strip().lower()
     if txt in ("all", "todos", "0", "none"):
-        return None  # sin tope
+        return None 
     try:
         n = int(txt)
         if n <= 0:
@@ -101,28 +100,28 @@ class ExpedienteListView(ListView):
             )
         )
 
-        # Admin ve todo
+
         if _is_admin(user):
             return qs.order_by("-fecha_creacion")
 
-        # Coordinador: bandeja
+    
         if _user_in_group(user, "CoordinadorCeliaquia"):
             return qs.filter(
                 estado__nombre__in=["CONFIRMACION_DE_ENVIO", "RECEPCIONADO", "ASIGNADO"]
             ).order_by("-fecha_creacion")
 
-        # Técnico: sus expedientes asignados
+
         if _user_in_group(user, "TecnicoCeliaquia"):
             return qs.filter(asignacion_tecnico__tecnico=user).order_by("-fecha_creacion")
 
-        # Provincia (default): sólo los suyos
+       
         return qs.filter(usuario_provincia=user).order_by("-fecha_creacion")
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         user = self.request.user
         ctx["tecnicos"] = []
-        # Admin y Coordinador ven el selector de técnicos
+       
         if _is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia"):
             ctx["tecnicos"] = User.objects.filter(
                 groups__name="TecnicoCeliaquia"
@@ -208,7 +207,6 @@ class ExpedientePreviewExcelView(View):
         if not archivo:
             return JsonResponse({"error": "No se recibió ningún archivo."}, status=400)
 
-        # Lee límite desde GET o POST (por si lo envías junto al FormData)
         raw_limit = request.POST.get("limit") or request.GET.get("limit")
         max_rows = _parse_limit(raw_limit, default=5, max_cap=5000)
 
@@ -239,12 +237,6 @@ class ExpedienteCreateView(CreateView):
 
 
 class ExpedienteDetailView(DetailView):
-    """
-    Provincia: ve sus expedientes.
-    Coordinador: ve todos para recepcionar/asignar.
-    Técnico: ve los asignados a él.
-    Admin: ve todo.
-    """
 
     model = Expediente
     template_name = "celiaquia/expediente_detail.html"
@@ -267,27 +259,32 @@ class ExpedienteDetailView(DetailView):
         expediente = self.object
         user = self.request.user
 
-        # --- Vista previa del Excel en estado CREADO ---
         preview = preview_error = None
-        preview_limit_actual = None  # lo que vamos a mostrar como seleccionado en el dropdown
+        preview_limit_actual = None  
+
+        q = expediente.expediente_ciudadanos.select_related("ciudadano")
+        ctx["legajos_aceptados"] = q.filter(revision_tecnico="APROBADO", resultado_sintys="MATCH")
+        ctx["legajos_rech_tecnico"] = q.filter(revision_tecnico="RECHAZADO")
+        ctx["legajos_rech_sintys"] = q.filter(revision_tecnico="APROBADO", resultado_sintys="NO_MATCH")
+
+        ctx["c_aceptados"] = ctx["legajos_aceptados"].count()
+        ctx["c_rech_tecnico"] = ctx["legajos_rech_tecnico"].count()
+        ctx["c_rech_sintys"] = ctx["legajos_rech_sintys"].count()
 
         if expediente.estado.nombre == "CREADO" and expediente.excel_masivo:
-            # Permite controlar la cantidad desde ?preview_limit= (ej: 5,10,20,50,100,all)
+
             raw_limit = self.request.GET.get("preview_limit")
             max_rows = _parse_limit(raw_limit, default=5, max_cap=5000)
             preview_limit_actual = raw_limit if raw_limit is not None else "5"
 
             try:
                 preview = ImportacionService.preview_excel(expediente.excel_masivo, max_rows=max_rows)
-                # Si el back devolvió shown_rows/total_rows, ya quedan en preview
+
             except Exception as e:
                 preview_error = str(e)
 
-        # --- Opciones de tamaño para el desplegable de preview ---
-        # Podés ajustar estos valores a gusto.
         preview_limit_opciones = ["5", "10", "20", "50", "100", "all"]
 
-        # --- Técnicos visibles para admin/coordinador ---
         tecnicos = []
         if _is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia"):
             tecnicos = User.objects.filter(
@@ -300,8 +297,8 @@ class ExpedienteDetailView(DetailView):
             {
                 "legajos": expediente.expediente_ciudadanos.all(),
                 "confirm_form": ConfirmarEnvioForm(),
-                "preview": preview,                     # dict con headers, rows, total_rows, shown_rows
-                "preview_error": preview_error,         # string si falló
+                "preview": preview,                     
+                "preview_error": preview_error,        
                 "preview_limit_actual": str(preview_limit_actual or "5").lower(),
                 "preview_limit_opciones": preview_limit_opciones,
                 "tecnicos": tecnicos,
@@ -486,23 +483,17 @@ class AsignarTecnicoView(View):
 
 
 class SubirCruceExcelView(View):
-    """
-    Técnico sube el Excel con columna 'cuit' y ejecuta el cruce.
-    Cambia estados: ASIGNADO -> PROCESO_DE_CRUCE -> CRUCE_FINALIZADO (en service) y genera PRD.
-    Solo puede ejecutarlo el técnico asignado al expediente… o el admin.
-    Responde JSON (para la lista o modal).
-    """
+
 
     def post(self, request, pk):
         user = self.request.user
 
-        # Permisos: técnico asignado o admin
         if not (_is_admin(user) or _user_in_group(user, "TecnicoCeliaquia")):
             return JsonResponse({"success": False, "error": "Permiso denegado."}, status=403)
 
         expediente = get_object_or_404(Expediente, pk=pk)
 
-        # Si no es admin, debe ser el técnico asignado
+
         if not _is_admin(user):
             asignacion = getattr(expediente, "asignacion_tecnico", None)
             if not asignacion or asignacion.tecnico_id != user.id:
@@ -529,3 +520,29 @@ class SubirCruceExcelView(View):
 
     def get(self, *_a, **_k):
         return HttpResponseNotAllowed(["POST"])
+    
+@method_decorator(csrf_exempt, name="dispatch")
+class RevisarLegajoView(View):
+    def post(self, request, pk, legajo_id):
+        user = request.user
+        expediente = get_object_or_404(Expediente, pk=pk)
+
+
+        if not (_is_admin(user) or _user_in_group(user, "TecnicoCeliaquia")):
+            return JsonResponse({"success": False, "error": "Permiso denegado."}, status=403)
+        if not _is_admin(user):
+            asig = getattr(expediente, "asignacion_tecnico", None)
+            if not asig or asig.tecnico_id != user.id:
+                return JsonResponse({"success": False, "error": "No sos el técnico asignado."}, status=403)
+
+        leg = get_object_or_404(ExpedienteCiudadano, pk=legajo_id, expediente=expediente)
+
+        accion = (request.POST.get("accion") or "").upper()  
+        if accion not in ("APROBAR", "RECHAZAR"):
+            return JsonResponse({"success": False, "error": "Acción inválida."}, status=400)
+
+        leg.revision_tecnico = "APROBADO" if accion == "APROBAR" else "RECHAZADO"
+        leg.save(update_fields=["revision_tecnico", "modificado_en"])
+
+        return JsonResponse({"success": True, "estado": leg.revision_tecnico})
+

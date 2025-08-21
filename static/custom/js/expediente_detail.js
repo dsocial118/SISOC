@@ -4,6 +4,7 @@
  * - Confirmar Envío
  * - Subir/Reprocesar Excel de CUITs y ejecutar cruce (técnico)
  * - Paginación client-side para Preview y Legajos (con selector de tamaño de página)
+ * - NUEVO: Revisión de legajos (Aprobar / Rechazar)
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -24,6 +25,14 @@ document.addEventListener('DOMContentLoaded', () => {
       (headerBlock || document.body).prepend(zone);
     }
     return zone;
+  }
+  function showAlert(kind, html) {
+    const zone = ensureAlertsZone();
+    zone.innerHTML = `
+      <div class="alert alert-${kind} alert-dismissible fade show" role="alert">
+        ${html}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>`;
   }
 
   /* ====== Paginación genérica client-side ====== */
@@ -450,6 +459,118 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  /* ===== NUEVO: REVISIÓN DE LEGAJOS (Aprobar / Rechazar) ===== */
+  (function initRevisionLegajos(){
+    const buttons = document.querySelectorAll('.btn-revision');
+    if (!buttons.length) return;
+
+    function setLoading(btn, loading) {
+      if (!btn) return;
+      if (loading) {
+        btn.dataset._orig = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+      } else {
+        btn.disabled = false;
+        if (btn.dataset._orig) {
+          btn.innerHTML = btn.dataset._orig;
+          delete btn.dataset._orig;
+        }
+      }
+    }
+
+    function toggleActive(btnAprobar, btnRechazar, estado) {
+      // Limpia estilos previos
+      [btnAprobar, btnRechazar].forEach(b => {
+        if (!b) return;
+        b.classList.remove('active');
+        b.classList.remove('btn-success','btn-danger');
+        b.classList.add('btn-outline-success'); // defaults
+        if (b.dataset.accion === 'RECHAZAR') {
+          b.classList.remove('btn-outline-success');
+          b.classList.add('btn-outline-danger');
+        }
+      });
+
+      if (estado === 'APROBADO' && btnAprobar) {
+        btnAprobar.classList.add('active');
+        btnAprobar.classList.remove('btn-outline-success');
+        btnAprobar.classList.add('btn-success');
+      }
+      if (estado === 'RECHAZADO' && btnRechazar) {
+        btnRechazar.classList.add('active');
+        btnRechazar.classList.remove('btn-outline-danger');
+        btnRechazar.classList.add('btn-danger');
+      }
+    }
+
+    buttons.forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+
+        if (!window.REVISAR_URL_TEMPLATE) {
+          showAlert('danger', 'No se configuró la URL de revisión de legajos.');
+          return;
+        }
+
+        const legajoId = btn.getAttribute('data-legajo-id');
+        const accion = btn.getAttribute('data-accion'); // "APROBAR" | "RECHAZAR"
+        if (!legajoId || !accion) return;
+
+        const url = window.REVISAR_URL_TEMPLATE.replace('{id}', legajoId);
+
+        // Encuentra el "par" de botones dentro de la misma tarjeta
+        const container = btn.closest('.legajo-item') || document;
+        const btnAprobar  = container.querySelector(`.btn-revision[data-legajo-id="${legajoId}"][data-accion="APROBAR"]`);
+        const btnRechazar = container.querySelector(`.btn-revision[data-legajo-id="${legajoId}"][data-accion="RECHAZAR"]`);
+
+        // Loading solo sobre el botón clickeado
+        setLoading(btn, true);
+
+        try {
+          const fd = new FormData();
+          fd.append('accion', accion);
+
+          const resp = await fetch(url, {
+            method: 'POST',
+            body: fd,
+            credentials: 'same-origin',
+            headers: {
+              'X-CSRFToken': getCsrfToken(),
+              'X-Requested-With': 'XMLHttpRequest',
+              'Accept': 'application/json'
+            }
+          });
+
+          const ct = resp.headers.get('Content-Type') || '';
+          let data = {};
+          if (ct.includes('application/json')) {
+            data = await resp.json();
+          } else {
+            const text = await resp.text();
+            if (!resp.ok) throw new Error(text || `HTTP ${resp.status}`);
+            data = { success: true, estado: accion === 'APROBAR' ? 'APROBADO' : 'RECHAZADO' };
+          }
+
+          if (!resp.ok || data.success === false) {
+            const msg = data.error || `HTTP ${resp.status}`;
+            throw new Error(msg);
+          }
+
+          // Éxito: reflectar estado visual en los botones
+          toggleActive(btnAprobar, btnRechazar, data.estado || (accion === 'APROBAR' ? 'APROBADO' : 'RECHAZADO'));
+          showAlert('success', `Legajo ${legajoId}: estado actualizado a <b>${data.estado}</b>.`);
+
+        } catch (err) {
+          console.error('Revisión de legajo:', err);
+          showAlert('danger', `No se pudo actualizar el estado del legajo ${legajoId}. ${err.message}`);
+        } finally {
+          setLoading(btn, false);
+        }
+      });
+    });
+  })();
 
   /* ===== Inicializar paginación para PREVIEW ===== */
   (function initPreviewPagination(){

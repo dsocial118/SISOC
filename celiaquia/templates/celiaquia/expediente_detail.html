@@ -131,12 +131,11 @@
 {% elif preview_error %}
   <div class="alert alert-danger">{{ preview_error }}</div>
 {% endif %}
-
 <div class="p-3 rounded shadow mb-4" style="background-color: #1c2a3a; color: #e0e0e0;">
   <div class="d-flex justify-content-between align-items-center">
     <h5 class="mb-3">Legajos</h5>
 
-    {# Selector de registros por página (legajos) #}
+    <!-- Selector de registros por página (legajos) -->
     <div class="d-flex align-items-center gap-2">
       <label for="legajos-page-size" class="me-2 mb-0 small">Registros por página:</label>
       <select id="legajos-page-size" class="form-select form-select-sm" style="width: auto;">
@@ -150,51 +149,119 @@
 
   {% if legajos %}
     <div id="legajos-list" class="list-group">
-      {# Mostramos todos; el JS se encarga de paginar client-side #}
       {% for leg in legajos %}
         <div class="list-group-item border-0 mb-2 rounded shadow-sm legajo-item" style="background-color: #1f2d3d; color: #fff;">
-          <div class="row align-items-center">
-            <div class="col-md-3">
-              <strong>{{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}</strong><br>
+          <div class="row g-2 align-items-center">
+            <!-- Col: Persona -->
+            <div class="col-lg-3 col-md-4">
+              <div class="fw-semibold">{{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}</div>
               <small class="text-muted">DNI: {{ leg.ciudadano.documento }}</small>
             </div>
-            <div class="col-md-2">
-              <strong>Estado:</strong><br>
+
+            <!-- Col: Archivo (chico y truncado) -->
+            <div class="col-lg-4 col-md-5">
               {% if leg.archivo %}
-                <span class="badge bg-success">Con archivo</span>
+                <div class="small text-truncate" style="max-width:100%;">
+                  <a href="{{ leg.archivo.url }}" target="_blank" class="text-success text-decoration-underline">
+                    ✅ {{ leg.archivo.name|truncatechars:45 }}
+                  </a>
+                </div>
               {% else %}
-                <span class="badge bg-warning text-dark">Sin archivo</span>
+                <span class="small text-warning">⚠ Archivo pendiente</span>
               {% endif %}
             </div>
-            <div class="col-md-4">
-              {% if leg.archivo %}
-                <a href="{{ leg.archivo.url }}" target="_blank" class="text-success text-decoration-underline">✅ {{ leg.archivo.name }}</a>
-              {% else %}
-                <span class="text-warning">⚠ Archivo pendiente</span>
-              {% endif %}
+
+            <!-- Col: Estados (archivo + revisión técnico) -->
+            <div class="col-lg-2 col-md-3">
+              <div class="d-flex flex-column gap-1">
+                <div>
+                  <span class="small text-muted me-1">Archivo:</span>
+                  {% if leg.archivo %}
+                    <span class="badge bg-success">Con archivo</span>
+                  {% else %}
+                    <span class="badge bg-warning text-dark">Sin archivo</span>
+                  {% endif %}
+                </div>
+
+                <div>
+                  <span class="small text-muted me-1">Revisión:</span>
+                  {% if leg.revision_tecnico == 'APROBADO' %}
+                    <span class="badge bg-success">Aprobado</span>
+                  {% elif leg.revision_tecnico == 'RECHAZADO' %}
+                    <span class="badge bg-danger">Rechazado</span>
+                  {% else %}
+                    <span class="badge bg-secondary">Pendiente</span>
+                  {% endif %}
+                </div>
+              </div>
             </div>
-            <div class="col-md-3 text-end">
-              {% if not leg.archivo and expediente.estado.nombre == 'EN_ESPERA' %}
-                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalSubirArchivo" data-legajo-id="{{ leg.pk }}" data-expediente-id="{{ expediente.pk }}">
-                  Subir Archivo
-                </button>
-              {% elif leg.archivo %}
-                <button type="button"
-                        class="btn btn-warning btn-sm"
-                        data-bs-toggle="modal"
-                        data-bs-target="#modalSubirArchivo"
-                        data-legajo-id="{{ leg.pk }}"
-                        data-expediente-id="{{ expediente.pk }}">
-                  Editar Archivo
-                </button>
-              {% endif %}
+
+            <!-- Col: Acciones -->
+            <div class="col-lg-3 d-flex justify-content-lg-end">
+              <div class="btn-toolbar" role="toolbar" aria-label="Acciones del legajo">
+                {% if request.user|has_group:"TecnicoCeliaquia" and expediente.estado.nombre in 'ASIGNADO PROCESO_DE_CRUCE' %}
+                  <div class="btn-group btn-group-sm me-2" role="group" aria-label="Revisión técnico">
+                    <button type="button"
+                            class="btn btn-outline-success btn-revision"
+                            title="Aprobar"
+                            data-legajo-id="{{ leg.pk }}"
+                            data-accion="APROBAR">
+                      ✅ Aprobar
+                    </button>
+                    <button type="button"
+                            class="btn btn-outline-danger btn-revision"
+                            title="Rechazar"
+                            data-legajo-id="{{ leg.pk }}"
+                            data-accion="RECHAZAR">
+                      ❌ Rechazar
+                    </button>
+                    {% if not leg.archivo and expediente.estado.nombre == 'EN_ESPERA' %}
+                    <button type="button"
+                            class="btn btn-outline-info btn-revision"
+                            title="Subir archivo"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalSubirArchivo"
+                            data-legajo-id="{{ leg.pk }}"
+                            data-expediente-id="{{ expediente.pk }}">
+                      ⬆️ Subir
+                    </button>
+                  {% elif leg.archivo %}
+                    <button type="button"
+                            class="btn btn-outline-info btn-revision"
+                            title="Editar archivo"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalSubirArchivo"
+                            data-legajo-id="{{ leg.pk }}"
+                            data-expediente-id="{{ expediente.pk }}">
+                      ✏️ Editar
+                    </button>
+                  {% endif %}
+                  </div>
+                {% endif %}
+
+                  {% if not leg.archivo and expediente.estado.nombre == 'EN_ESPERA' %}
+                    <button type="button"
+                            class="btn btn-primary"
+                            title="Subir archivo"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalSubirArchivo"
+                            data-legajo-id="{{ leg.pk }}"
+                            data-expediente-id="{{ expediente.pk }}">
+                      ⬆️ Subir
+                    </button>
+                  {% endif %}
+
+
+               
+
+                
+              </div>
             </div>
           </div>
         </div>
       {% endfor %}
     </div>
 
-    {# Paginación (legajos) #}
     <nav class="mt-3">
       <ul id="legajos-pagination" class="pagination pagination-sm justify-content-center mb-0"></ul>
     </nav>
@@ -208,6 +275,7 @@
     </div>
   {% endif %}
 </div>
+
 
 {% if expediente.estado.id == 2 and request.user|has_group:"CoordinadorCeliaquia" %}
   <div class="card mb-4">
@@ -291,6 +359,7 @@
   window.CONFIRM_URL = "{% url 'expediente_confirm' expediente.pk %}";
   window.CRUCE_URL   = "{% url 'expediente_cruce_cuit' expediente.pk %}";
   window.CSRF_TOKEN  = "{{ csrf_token }}";
+  window.REVISAR_URL_TEMPLATE = "{% url 'legajo_revisar' expediente.pk 0 %}".replace("/0/", "/{id}/");
 </script>
 <script src="{% static 'custom/js/expediente_detail.js' %}"></script>
 {% endblock %}
