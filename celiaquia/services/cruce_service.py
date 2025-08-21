@@ -1,50 +1,66 @@
 # celiaquia/services/cruce_service.py
 """
-Breve descripción del cambio:
-- Servicio para el cruce por CUIT/DNI que ejecuta el técnico:
-  * Lee un Excel/CSV con encabezado 'cuit' o 'dni' (tolerante a variantes, mayúsculas/espacios).
-  * Normaliza y compara contra la nómina del expediente (ExpedienteCiudadano/Ciudadano).
-  * Marca cada legajo con cruce_ok=True/False y observacion_cruce.
-  * Genera un PRD (PDF vía WeasyPrint a partir de template HTML; si falla, ReportLab; si no, CSV fallback)
-    y lo guarda en Expediente.documento.
-  * Cambia el estado del expediente: ASIGNADO -> PROCESO_DE_CRUCE -> CRUCE_FINALIZADO.
+Servicio para el cruce por CUIT/DNI que ejecuta el técnico:
+
+- Lee un Excel/CSV con encabezado 'cuit' o 'dni' (tolerante a variantes).
+- Normaliza y compara contra la nómina APROBADA del expediente (ExpedienteCiudadano/Ciudadano).
+- Solo cruza legajos con revision_tecnico = 'APROBADO'.
+- Marca cada legajo aprobado con resultado_sintys = 'MATCH' / 'NO_MATCH'
+  y setea cruce_ok / observacion_cruce en consecuencia.
+- Genera un PRD (PDF vía WeasyPrint a partir de template HTML; si falla, ReportLab; si no, CSV fallback)
+  y lo guarda en Expediente.documento.
+- Cambia el estado del expediente: ASIGNADO -> PROCESO_DE_CRUCE -> CRUCE_FINALIZADO.
 """
 
-import logging
-import io
 import csv
+import io
+import logging
 import re
-from io import BytesIO
 from datetime import datetime
+from io import BytesIO
 
 import pandas as pd
-from django.core.files.base import ContentFile
 from django.core.exceptions import ValidationError
+from django.core.files.base import ContentFile
 from django.db import transaction
-from django.utils.text import slugify
 from django.template.loader import render_to_string
+from django.utils.text import slugify
 
 # WeasyPrint opcional
 try:
     from weasyprint import HTML as WPHTML  # type: ignore
+
     _WEASY_OK = True
 except Exception:
     _WEASY_OK = False
 
 from celiaquia.models import (
+    EstadoExpediente,
     Expediente,
     ExpedienteCiudadano,
-    EstadoExpediente,
 )
 
 logger = logging.getLogger(__name__)
 
 # Columnas candidatas alternativas a "cuit" y "dni"
 CUIT_COL_CANDIDATAS = {
-    "cuit", "c.u.i.t", "nro_cuit", "numero_cuit", "número_cuit", "cuit_nro", "cuit número"
+    "cuit",
+    "c.u.i.t",
+    "nro_cuit",
+    "numero_cuit",
+    "número_cuit",
+    "cuit_nro",
+    "cuit número",
 }
 DNI_COL_CANDIDATAS = {
-    "dni", "documento", "nro_dni", "numero_dni", "número_dni", "doc", "nro_doc", "num_doc"
+    "dni",
+    "documento",
+    "nro_dni",
+    "numero_dni",
+    "número_dni",
+    "doc",
+    "nro_doc",
+    "num_doc",
 }
 
 
@@ -76,6 +92,7 @@ class CruceService:
 
     @staticmethod
     def _resolver_cuit_ciudadano(ciudadano) -> str:
+        # Intenta distintos atributos posibles en tu modelo de Ciudadano
         for attr in ("cuit", "cuil", "cuil_cuit"):
             if hasattr(ciudadano, attr):
                 val = getattr(ciudadano, attr) or ""
@@ -84,7 +101,7 @@ class CruceService:
                     return val
         return ""
 
-    # --- FIX de robustez: leer bytes de múltiples tipos (UploadedFile, FieldFile, file-like, path str) ---
+    # --- Robustez: leer bytes de múltiples tipos (UploadedFile, FieldFile, file-like, path str) ---
     @staticmethod
     def _read_file_bytes(archivo_fileobj) -> bytes:
         # Ya son bytes
@@ -97,7 +114,6 @@ class CruceService:
                 return f.read()
 
         # Si es un objeto de Django File/FieldFile/UploadedFile o file-like
-        # Intentar open/read
         try:
             archivo_fileobj.open()
         except Exception:
@@ -112,9 +128,7 @@ class CruceService:
 
         # Si por alguna razón devolvió str (raro en binarios), lo convertimos a bytes
         if isinstance(raw, str):
-            # Excel/CSV binarios deberían ser bytes; si llegó str, encode como utf-8
             raw = raw.encode("utf-8")
-
         return raw
 
     @staticmethod
@@ -139,10 +153,14 @@ class CruceService:
                 try:
                     df = pd.read_csv(bio, dtype=str, sep=";")
                 except Exception:
-                    raise ValidationError("No se pudo leer el archivo. Formato no soportado (XLSX/XLS/CSV).")
+                    raise ValidationError(
+                        "No se pudo leer el archivo. Formato no soportado (XLSX/XLS/CSV)."
+                    )
 
         # Encabezados normalizados
-        df.columns = [str(c).strip().lower().replace("  ", " ").replace(" ", "_") for c in df.columns]
+        df.columns = [
+            str(c).strip().lower().replace("  ", " ").replace(" ", "_") for c in df.columns
+        ]
         return df
 
     @staticmethod
@@ -191,9 +209,12 @@ class CruceService:
                     dnis.add(dni)
 
         if not cuits and not dnis:
+            # ⚠️ FIX: 'y' -> 'and' (Python)
             if not col_cuit and not col_dni:
                 raise ValidationError("El archivo debe tener columna 'cuit' o 'dni'.")
-            raise ValidationError("El archivo no contiene identificadores (CUIT/DNI) válidos.")
+            raise ValidationError(
+                "El archivo no contiene identificadores (CUIT/DNI) válidos."
+            )
 
         return {"cuits": cuits, "dnis": dnis}
 
@@ -238,9 +259,6 @@ class CruceService:
 
     @staticmethod
     def _generar_prd_pdf_reportlab(expediente: Expediente, resumen: dict) -> bytes:
-        """
-        Fallback en caso de no contar con WeasyPrint. Diseño sencillo con ReportLab.
-        """
         from reportlab.lib.pagesizes import A4
         from reportlab.pdfgen import canvas
 
@@ -293,37 +311,86 @@ class CruceService:
         y -= 18
 
         c.setFont("Helvetica", 10)
-        items = [
-            ("Total legajos", total_legajos),
+        for label, value in [
+            ("Total legajos (aprobados)", total_legajos),
             ("Total CUITs (archivo)", total_cuits),
             ("Total DNIs (archivo)", total_dnis),
             (f"Matcheados ({pct_match:.1f}%)", matcheados),
             (f"No matcheados ({pct_no_match:.1f}%)", no_matcheados),
-        ]
-        for label, value in items:
+        ]:
             ensure_space()
             c.drawString(margin_x + 10, y, f"- {label}: {value}")
             y -= 14
 
-        y -= 10
-        ensure_space()
-
+        # Matcheados
+        detalle_ok = resumen.get("detalle_match", []) or []
+        ensure_space(90)
         c.setFont("Helvetica-Bold", 12)
-        c.drawString(margin_x, y, "Detalle no matcheados (primeros 30):")
-        y -= 18
+        c.drawString(margin_x, y, "Detalle de matcheados:")
+        y -= 16
         c.setFont("Helvetica", 9)
-
-        detalle = resumen.get("detalle_no_match", []) or []
-        for i, fila in enumerate(detalle[:30], start=1):
-            ensure_space()
-            c.drawString(margin_x + 10, y, f"{i}. {fila}")
+        if not detalle_ok:
+            c.drawString(margin_x + 10, y, "— Sin registros —")
             y -= 12
+        else:
+            c.drawString(margin_x + 10, y, "#")
+            c.drawString(margin_x + 30, y, "DNI")
+            c.drawString(margin_x + 120, y, "CUIT")
+            c.drawString(margin_x + 220, y, "Nombre")
+            c.drawString(margin_x + 340, y, "Apellido")
+            c.drawString(margin_x + 460, y, "Por")
+            y -= 12
+            for i, fila in enumerate(detalle_ok, start=1):
+                ensure_space()
+                dni = (fila.get("dni") or "")
+                cuit = (fila.get("cuit") or "")
+                nom = (fila.get("nombre") or "")
+                ape = (fila.get("apellido") or "")
+                por = (fila.get("por") or "")
+                c.drawString(margin_x + 10, y, str(i))
+                c.drawString(margin_x + 30, y, dni[:15])
+                c.drawString(margin_x + 120, y, cuit[:20])
+                c.drawString(margin_x + 220, y, nom[:18])
+                c.drawString(margin_x + 340, y, ape[:18])
+                c.drawString(margin_x + 460, y, por[:20])
+                y -= 12
+
+        ensure_space(120)
+        # No matcheados
+        detalle_bad = resumen.get("detalle_no_match", []) or []
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(margin_x, y, "Detalle de no matcheados:")
+        y -= 16
+        c.setFont("Helvetica", 9)
+        if not detalle_bad and no_matcheados > 0:
+            c.drawString(margin_x + 10, y, f"— Hay {no_matcheados} sin match, pero no se generó el detalle. —")
+            y -= 12
+        elif not detalle_bad:
+            c.drawString(margin_x + 10, y, "— Sin registros —")
+            y -= 12
+        else:
+            c.drawString(margin_x + 10, y, "#")
+            c.drawString(margin_x + 30, y, "DNI")
+            c.drawString(margin_x + 120, y, "CUIT esperado")
+            c.drawString(margin_x + 260, y, "Observación")
+            y -= 12
+            for i, fila in enumerate(detalle_bad, start=1):
+                ensure_space()
+                dni = (fila.get("dni") or "")
+                cuit = (fila.get("cuit") or "")
+                obs = (fila.get("observacion") or "No coincide por CUIT ni por DNI.")
+                c.drawString(margin_x + 10, y, str(i))
+                c.drawString(margin_x + 30, y, dni[:15])
+                c.drawString(margin_x + 120, y, cuit[:20])
+                c.drawString(margin_x + 260, y, obs[:90])
+                y -= 12
 
         c.showPage()
         c.save()
         pdf_bytes = buffer.getvalue()
         buffer.close()
         return pdf_bytes
+
 
     @staticmethod
     def _generar_prd_pdf(expediente: Expediente, resumen: dict) -> bytes:
@@ -368,6 +435,8 @@ class CruceService:
         """
         Guarda el Excel/CSV, cruza CUITs/DNIs contra la nómina y genera un PRD en el expediente.
         Cambia estados: ASIGNADO -> PROCESO_DE_CRUCE -> CRUCE_FINALIZADO.
+
+        REGLA: solo se cruzan legajos con revision_tecnico = 'APROBADO'.
         """
         if not expediente:
             raise ValidationError("Expediente inválido.")
@@ -376,8 +445,9 @@ class CruceService:
         estado_actual = expediente.estado.nombre
         estados_permitidos = ("ASIGNADO", "PROCESO_DE_CRUCE", "CRUCE_FINALIZADO")
         if estado_actual not in estados_permitidos:
-            raise ValidationError("El expediente no está en un estado válido para realizar el cruce.")
-
+            raise ValidationError(
+                "El expediente no está en un estado válido para realizar el cruce."
+            )
 
         # 1) Guardar el archivo de cruce en el expediente
         expediente.cruce_excel = archivo_excel
@@ -393,71 +463,86 @@ class CruceService:
         set_dnis_norm = ids_archivo["dnis"]
 
         # 3) Cruce sobre legajos
-        legajos = (
+        legajos_all = (
             ExpedienteCiudadano.objects
             .select_related("ciudadano")
             .filter(expediente=expediente)
         )
 
-        total_legajos = legajos.count()
+        # Solo los aprobados por técnico entran al cruce
+        legajos_aprobados = legajos_all.filter(revision_tecnico="APROBADO")
+
+        total_legajos_aprobados = legajos_aprobados.count()
+        if total_legajos_aprobados == 0:
+            raise ValidationError(
+                "No hay legajos APROBADOS por el técnico para cruzar con Syntys."
+            )
+
         matcheados = 0
         no_matcheados = 0
         detalle_no_match = []
-        detalle_match = []  
+        detalle_match = []
 
-        for leg in legajos:
-            ciudadano = leg.ciudadano
+        for leg in legajos_aprobados:
+            ciu = leg.ciudadano
+            cuit_ciud = CruceService._resolver_cuit_ciudadano(ciu)  # 11 dígitos o ''
+            dni_ciud = CruceService._normalize_dni_str(getattr(ciu, "documento", ""))
 
-            cuit_ciud = CruceService._resolver_cuit_ciudadano(ciudadano)  # 11 dígitos o ''
-            dni_ciud = CruceService._normalize_dni_str(getattr(ciudadano, "documento", ""))
-
-            match = False
-            motivo = None
-            by = None  # 'CUIT' o 'DNI'
-
-            # 1) match por CUIT exacto
+            # Match por CUIT o por DNI
+            by = None
             if cuit_ciud and cuit_ciud in set_cuits:
                 match = True
                 by = "CUIT"
-            # 2) match por DNI (normalizado)
             elif dni_ciud and dni_ciud in set_dnis_norm:
                 match = True
                 by = "DNI"
             else:
                 match = False
-                motivo = "No coincide por CUIT ni por DNI."
 
-            # Persistir resultado en el legajo
-            leg.cruce_ok = True if match else False
-            leg.observacion_cruce = None if match else motivo
-            leg.save(update_fields=["cruce_ok", "observacion_cruce", "modificado_en"])
+            # Persistimos resultado del cruce (solo para aprobados).
+            leg.cruce_ok = bool(match)
+            leg.resultado_sintys = "MATCH" if match else "NO_MATCH"
+            leg.observacion_cruce = None if match else "No coincide por CUIT ni por DNI."
+            leg.save(update_fields=["cruce_ok", "resultado_sintys", "observacion_cruce", "modificado_en"])
 
             if match:
                 matcheados += 1
-                # etiqueta amigable para el detalle de OK
-                etiqueta_ok = f"DNI:{getattr(ciudadano,'documento','')}"
-                if cuit_ciud:
-                    etiqueta_ok += f" / CUIT:{cuit_ciud}"
-                detalle_match.append(etiqueta_ok)
-
-                # opcional: contadores por tipo
-                if by == "CUIT":
-                    matcheados_por_cuit += 1
+                detalle_match.append({
+                    "dni": getattr(ciu, "documento", "") or "",
+                    "cuit": cuit_ciud or "",
+                    "por": by or "",
+                    "nombre": getattr(ciu, "nombre", "") or "",
+                    "apellido": getattr(ciu, "apellido", "") or "",
+                })
             else:
                 no_matcheados += 1
-                etiqueta_bad = f"DNI:{getattr(ciudadano, 'documento', '')}"
-                if cuit_ciud:
-                    etiqueta_bad += f" / CUIT esperado:{cuit_ciud}"
-                detalle_no_match.append(etiqueta_bad)
+                detalle_no_match.append({
+                    "dni": getattr(ciu, "documento", "") or "",
+                    "cuit": cuit_ciud or "",
+                    "observacion": "No está en archivo de Syntys"  # o "No coincide por CUIT ni por DNI."
+                })
+
+        # Métricas para tablero (usando TODOS los legajos del expediente)
+        aceptados = legajos_all.filter(revision_tecnico="APROBADO", resultado_sintys="MATCH").count()
+        rechazados_tecnico = legajos_all.filter(revision_tecnico="RECHAZADO").count()
+        rechazados_sintys = legajos_all.filter(
+            revision_tecnico="APROBADO", resultado_sintys="NO_MATCH"
+        ).count()
 
         resumen = {
-            "total_legajos": total_legajos,
+            # Totales del archivo
             "total_cuits_archivo": len(set_cuits),
             "total_dnis_archivo": len(set_dnis_norm),
+            # Totales del cruce (solo aprobados)
+            "total_legajos": total_legajos_aprobados,
             "matcheados": matcheados,
             "no_matcheados": no_matcheados,
-            "detalle_match": detalle_match,          # <= NUEVO
-            "detalle_no_match": detalle_no_match,            
+            "detalle_match": detalle_match,          # lista de dicts
+            "detalle_no_match": detalle_no_match,    # lista de dicts (incluye observación)
+            # Indicadores extra para la pantalla
+            "aceptados": aceptados,
+            "rechazados_tecnico": rechazados_tecnico,
+            "rechazados_sintys": rechazados_sintys,
         }
 
         # 5) Generar PRD y adjuntar a expediente (WeasyPrint -> ReportLab -> CSV)
@@ -477,7 +562,7 @@ class CruceService:
         expediente.save(update_fields=["documento", "estado", "usuario_modificador"])
 
         logger.info(
-            "Cruce finalizado para expediente %s: %s matcheados / %s no matcheados.",
-            expediente.codigo, matcheados, no_matcheados
+            "Cruce finalizado para expediente %s: %s matcheados / %s no matcheados (sobre %s aprobados).",
+            expediente.codigo, matcheados, no_matcheados, total_legajos_aprobados
         )
         return resumen

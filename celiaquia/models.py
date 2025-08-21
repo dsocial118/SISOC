@@ -5,7 +5,7 @@ from ciudadanos.models import Ciudadano
 User = get_user_model()
 
 
-# Estados dinámicos del Expediente
+
 class EstadoExpediente(models.Model):
     nombre = models.CharField(max_length=50, unique=True)
 
@@ -17,11 +17,11 @@ class EstadoExpediente(models.Model):
         return self.nombre
 
     def display_name(self):
-        # quita guiones bajos y capitaliza
+
         return self.nombre.replace("_", " ").capitalize()
 
 
-# Estados dinámicos del Legajo dentro de un expediente
+
 class EstadoLegajo(models.Model):
     nombre = models.CharField(max_length=50, unique=True)
 
@@ -33,7 +33,7 @@ class EstadoLegajo(models.Model):
         return self.nombre
 
 
-# Catálogo dinámico de organismos de cruce
+
 class Organismo(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
 
@@ -45,7 +45,7 @@ class Organismo(models.Model):
         return self.nombre
 
 
-# Catálogo dinámico de tipos de cruce (aprobado/rechazado)
+
 class TipoCruce(models.Model):
     nombre = models.CharField(max_length=50, unique=True)
 
@@ -57,7 +57,7 @@ class TipoCruce(models.Model):
         return self.nombre
 
 
-# Expediente principal
+
 class Expediente(models.Model):
     codigo = models.CharField(max_length=20, unique=True)
     usuario_provincia = models.ForeignKey(
@@ -119,6 +119,23 @@ class ExpedienteCiudadano(models.Model):
     creado_en = models.DateTimeField(auto_now_add=True)
     modificado_en = models.DateTimeField(auto_now=True)
 
+    REV_TEC_CHOICES = [
+        ("PENDIENTE", "Pendiente"),
+        ("APROBADO", "Aprobado por técnico"),
+        ("RECHAZADO", "Rechazado por técnico"),
+    ]
+    revision_tecnico = models.CharField(
+        max_length=10, choices=REV_TEC_CHOICES, default="PENDIENTE"
+    )
+    SINTYS_CHOICES = [
+        ("SIN_CRUCE", "Sin cruce"),
+        ("MATCH", "Matcheado"),
+        ("NO_MATCH", "No matcheado"),
+    ]
+    resultado_sintys = models.CharField(
+        max_length=10, choices=SINTYS_CHOICES, default="SIN_CRUCE"
+    )
+
     class Meta:
         unique_together = ("expediente", "ciudadano")
         verbose_name = "Expediente Ciudadano"
@@ -128,7 +145,7 @@ class ExpedienteCiudadano(models.Model):
         return f"{self.ciudadano.documento} - {self.ciudadano.nombre} {self.ciudadano.apellido}"
 
 
-# Asignación de técnico a Expediente
+
 class AsignacionTecnico(models.Model):
     expediente = models.OneToOneField(
         Expediente, on_delete=models.CASCADE, related_name="asignacion_tecnico"
