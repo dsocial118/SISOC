@@ -1,33 +1,66 @@
-{% load static %}
+{% load static %} {% load custom_filters %}
 <aside class="app-sidebar shadow">
-    <div class="sidebar-brand">
-        <a href="{% url 'dashboard' %}" class="brand-link">
-            <img src="{% static 'custom/img/presidencia.png' %}"
-                 alt="SISOC"
-                 class="brand-image mt-1" />
-            <span class="brand-text fw-bold pt-2">SiSOC</span>
-        </a>
+  <div class="sidebar-brand">
+    <a href="{% url 'dashboard' %}" class="brand-link">
+      <img
+        src="{% static 'custom/img/presidencia.png' %}"
+        alt="SISOC"
+        class="brand-image mt-1"
+      />
+      <span class="brand-text fw-bold pt-2">SiSOC</span>
+    </a>
+  </div>
+
+  <!-- Sección de Usuario -->
+  <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+    <div class="image">
+      <div class="user-avatar">
+        <i class="fas fa-user-circle"></i>
+      </div>
     </div>
-    <div class="sidebar-wrapper">
-        <div class="sidebar-search p-2 py-3 border-bottom sidebar-user-name">
-            <div class="input-group ">
-                <input class="form-control form-control-sidebar form-control-sm"
-                       type="search"
-                       placeholder="Buscar..."
-                       aria-label="Buscar" />
-                <button class="btn btn-outline-secondary btn-sm" type="button">
-                    <i class="fas fa-search"></i>
-                </button>
-            </div>
-        </div>
-        <nav class="mt-2">
-            <ul class="nav sidebar-menu flex-column"
-                data-lte-toggle="treeview"
-                role="menu"
-                data-accordion="false">
-                {% include 'includes/sidebar/new_opciones.html' %}
-                {% block menu-adicional %}{% endblock %}
-            </ul>
-        </nav>
+    <div class="info">
+      <div class="user-name">
+        {% if user.first_name and user.last_name %} {{ user.first_name }} {{
+        user.last_name }} {% else %} {{ user.username }} {% endif %}
+      </div>
+      <div class="user-role">
+        {% if request.user|has_group:"Tecnico Comedor" %} Dirección de comedores
+        {% elif request.user|has_group:"Abogado Dupla" %} Área Legal {% elif
+        request.user|has_group:"Area Legales" %} Área Legal {% elif
+        request.user|has_group:"Area Contable" %} Área Contable {% elif
+        request.user|has_group:"Admin" %} Administrador {% elif
+        request.user|has_group:"CDI" %} Centro de Desarrollo Infantil {% elif
+        request.user|has_group:"Ciudadanos" %} Área Ciudadanos {% elif
+        request.user|has_group:"Organizaciones" %} Área Organizaciones {% else
+        %} Usuario del sistema {% endif %}
+      </div>
     </div>
+  </div>
+
+  <div class="sidebar-wrapper">
+    <div class="sidebar-search p-2 py-3 border-bottom sidebar-user-name">
+      <div class="input-group">
+        <input
+          class="form-control form-control-sidebar form-control-sm"
+          type="search"
+          placeholder="Buscar..."
+          aria-label="Buscar"
+        />
+        <button class="btn btn-outline-secondary btn-sm" type="button">
+          <i class="fas fa-search"></i>
+        </button>
+      </div>
+    </div>
+    <nav class="mt-2">
+      <ul
+        class="nav sidebar-menu flex-column"
+        data-lte-toggle="treeview"
+        role="menu"
+        data-accordion="false"
+      >
+        {% include 'includes/sidebar/new_opciones.html' %} {% block
+        menu-adicional %}{% endblock %}
+      </ul>
+    </nav>
+  </div>
 </aside>
