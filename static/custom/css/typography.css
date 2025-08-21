@@ -215,6 +215,62 @@ small, .small {
   color: white !important;
   display: flex !important;
   align-items: center !important;
+  margin-bottom: 0.3rem !important;
+  line-height: 1.3 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* ROL/CARGO DEL USUARIO "Dirección de comedores" */
+.user-role {
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 0.9rem !important;
+  font-weight: 400 !important;
+  color: #ced4da !important;
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* SECCIÓN COMPLETA DEL USUARIO */
+.user-panel {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  padding: 1rem 1.25rem !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.user-panel .image {
+  margin-right: 1rem !important;
+  flex-shrink: 0 !important;
+}
+
+.user-avatar {
+  width: 50px !important;
+  height: 50px !important;
+  border-radius: 50% !important;
+  background-color: #6c757d !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #fff !important;
+  overflow: hidden !important;
+  border: 2px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.user-avatar i {
+  font-size: 30px !important;
+  color: #e9ecef !important;
+}
+
+.user-panel .info {
+  flex: 1 !important;
+  min-width: 0 !important;
 }
 
 /* CAMPO DE BÚSQUEDA - Placeholder */
@@ -680,6 +736,25 @@ small, .small {
 
 .dark-mode small,
 .dark-mode .small {
+  color: #adb5bd !important;
+}
+
+/* Estilos de modo oscuro para sección de usuario */
+.dark-mode .user-panel {
+  border-bottom-color: rgba(255, 255, 255, 0.15) !important;
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.dark-mode .user-avatar {
+  background-color: #495057 !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+.dark-mode .user-name {
+  color: #f8f9fa !important;
+}
+
+.dark-mode .user-role {
   color: #adb5bd !important;
 }
 
