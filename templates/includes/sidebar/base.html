@@ -1,26 +1,57 @@
-{% load static %}
+{% load static %} {% load custom_filters %}
 <aside class="app-sidebar bg-body-secondary shadow">
-    <div class="sidebar-brand">
-        <a href="{% url 'dashboard' %}" class="brand-link">
-            <img src="{% static 'custom/img/Logo_min_capital_humano.png' %}" alt="" style="max-width: 48px; margin-right: 1rem;">
-            <img src="{% static 'custom/img/logo_blanco.png' %}"
-                    alt="Logo SiSOC"
-                 class="brand-image opacity-75 shadow" />
-        
-        </a>
+  <div class="sidebar-brand">
+    <a href="{% url 'dashboard' %}" class="brand-link">
+      <img
+        src="{% static 'custom/img/Logo_min_capital_humano.png' %}"
+        alt=""
+        style="max-width: 48px; margin-right: 1rem"
+      />
+      <img
+        src="{% static 'custom/img/logo_blanco.png' %}"
+        alt="Logo SiSOC"
+        class="brand-image opacity-75 shadow"
+      />
+    </a>
+  </div>
+
+  <!-- Sección de Usuario -->
+  <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+    <div class="image">
+      <div class="user-avatar">
+        <i class="fas fa-user-circle"></i>
+      </div>
     </div>
-    <div class="sidebar-wrapper">
-
-
-
-        <nav class="mt-2">
-            <ul class="nav sidebar-menu flex-column"
-                data-lte-toggle="treeview"
-                role="menu"
-                data-accordion="false">
-                {% include 'includes/sidebar/opciones.html' %}
-                {% block menu-adicional %}{% endblock %}
-            </ul>
-        </nav>
+    <div class="info">
+      <div class="user-name">
+        {% if user.first_name and user.last_name %} {{ user.first_name }} {{
+        user.last_name }} {% else %} {{ user.username }} {% endif %}
+      </div>
+      <div class="user-role">
+        {% if request.user|has_group:"Tecnico Comedor" %} Dirección de comedores
+        {% elif request.user|has_group:"Abogado Dupla" %} Área Legal {% elif
+        request.user|has_group:"Area Legales" %} Área Legal {% elif
+        request.user|has_group:"Area Contable" %} Área Contable {% elif
+        request.user|has_group:"Admin" %} Administrador {% elif
+        request.user|has_group:"CDI" %} Centro de Desarrollo Infantil {% elif
+        request.user|has_group:"Ciudadanos" %} Área Ciudadanos {% elif
+        request.user|has_group:"Organizaciones" %} Área Organizaciones {% else
+        %} Usuario del sistema {% endif %}
+      </div>
     </div>
+  </div>
+
+  <div class="sidebar-wrapper">
+    <nav class="mt-2">
+      <ul
+        class="nav sidebar-menu flex-column"
+        data-lte-toggle="treeview"
+        role="menu"
+        data-accordion="false"
+      >
+        {% include 'includes/sidebar/opciones.html' %} {% block menu-adicional
+        %}{% endblock %}
+      </ul>
+    </nav>
+  </div>
 </aside>
