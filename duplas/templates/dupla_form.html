@@ -14,8 +14,7 @@
             {{ form.estado | as_crispy_field }}
             {{ form.tecnico | as_crispy_field }}
             {{ form.abogado | as_crispy_field }}
-            <button type="submit" class="btn btn-success">Guardar</button>
-            <a href="{% url 'dupla_list' %}" class="btn btn-secondary">Cancelar</a>
+            {% include 'components/form_buttons.html' with cancel_url='dupla_list' default_save=True save_text='Guardar' layout='between' %}
         </form>
     </div>
 {% endblock %}

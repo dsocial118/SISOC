@@ -1,39 +1,505 @@
 {% extends "includes/main.html" %}
 {% load static crispy_forms_tags %}
-;
 {% block title %}Comedores{% endblock %}
 {% block titulo-pagina %}Comedores{% endblock %}
 {% block breadcrumb %}
-    <ol class="breadcrumb float-sm-right px-3">
-        <li class="breadcrumb-item">
-            <a href="{% url 'comedores' %}">Comedores</a>
-        </li>
-        {% if request.resolver_match.url_name == "comedor_editar" %}
-            <li class="breadcrumb-item">
-                <a href="{% url 'comedor_detalle' comedor.id %}">{{ comedor.nombre }}</a>
-            </li>
-            <li class="breadcrumb-item active">Editar</li>
-        {% else %}
-            <li class="breadcrumb-item active">Agregar</li>
-        {% endif %}
-    </ol>
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
-;
 {% block content %}
     <link rel="stylesheet"
           href="{% static 'custom/css/comedorRelevamiento.css' %}" />
+    <style>
+  /* Estilos para replicar el diseño de la imagen original */
+  .imagenes-existentes-section {
+    margin-bottom: 30px;
+  }
+
+  .imagenes-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+
+  .imagen-existente {
+    background: #2c3e50;
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    flex: 0 0 calc(50% - 7.5px); /* Dos columnas con gap */
+    min-width: 300px;
+  }
+
+  .imagen-header {
+    color: #ecf0f1;
+    font-size: 16px;
+    margin-bottom: 20px;
+    opacity: 0.9;
+  }
+
+  .imagen-card-content {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .imagen-thumbnail-container {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    border: 2px solid #34495e;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #34495e;
+  }
+
+  .imagen-thumbnail {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 6px;
+  }
+
+  .imagen-info-content {
+    flex: 1;
+    color: #ecf0f1;
+  }
+
+  .imagen-filename-display {
+    font-size: 13px;
+    margin-bottom: 8px;
+    color: #bdc3c7;
+    word-break: break-word;
+  }
+
+  .imagen-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #2ecc71;
+  }
+
+  .imagen-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .btn-eliminar-custom {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .btn-eliminar-custom:hover {
+    background: #c0392b;
+    transform: scale(1.05);
+  }
+
+  .btn-eliminar-custom:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.3);
+  }
+
+  .checkbox-eliminar-custom {
+    width: 16px;
+    height: 16px;
+    margin-right: 5px;
+  }
+
+  /* Estilos para nuevas imágenes */
+  .seccion-nuevas {
+    margin-top: 30px;
+  }
+
+  .nuevas-header {
+    color: #7f8c8d;
+    font-size: 16px;
+    margin-bottom: 20px;
+  }
+
+  .btn-seleccionar {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.3s ease;
+  }
+
+  .btn-seleccionar:hover {
+    background: #2980b9;
+  }
+
+  .contador-imagenes {
+    color: #7f8c8d;
+    font-size: 13px;
+    margin-top: 15px;
+  }
+
+  .nuevas-imagenes-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 20px;
+  }
+
+  .preview-nueva-imagen {
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px;
+    position: relative;
+    flex: 0 0 calc(50% - 7.5px); /* Dos columnas como las existentes */
+    min-width: 250px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .preview-imagen {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+    background: #f8f9fa;
+    flex-shrink: 0;
+  }
+
+  .preview-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .preview-info-content {
+    color: #495057;
+    font-size: 13px;
+    margin-bottom: 5px;
+    word-break: break-word;
+    font-weight: 500;
+  }
+
+  .preview-size {
+    color: #6c757d;
+    font-size: 11px;
+  }
+
+  .preview-status {
+    color: #28a745;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 3px;
+  }
+
+  .btn-eliminar-preview {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .btn-eliminar-preview:hover {
+    background: #c82333;
+    transform: scale(1.05);
+  }
+
+  .preview-placeholder {
+    width: 60px;
+    height: 60px;
+    background: #e9ecef;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+
+  /* Overlay para imágenes marcadas para eliminar */
+  .imagen-eliminada {
+    opacity: 0.5;
+  }
+
+  .overlay-eliminar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(231, 76, 60, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    z-index: 10;
+  }
+
+  .overlay-text {
+    color: white;
+    font-weight: bold;
+    text-align: center;
+  }
+
+  .preview-error {
+    color: #e74c3c;
+    text-align: center;
+    padding: 20px;
+    font-size: 12px;
+  }
+
+  .preview-error i {
+    display: block;
+    font-size: 24px;
+    margin-bottom: 10px;
+  }
+
+  /* Estilos para foto de legajo */
+  .foto-legajo-existente {
+    background: #2c3e50;
+    border: 1px solid #34495e;
+    border-radius: 8px;
+    padding: 20px;
+  }
+
+  .foto-existente-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .foto-thumbnail-container {
+    width: 120px;
+    height: 120px;
+    border-radius: 8px;
+    border: 2px solid #34495e;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #34495e;
+    flex-shrink: 0;
+  }
+
+  .foto-thumbnail-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .foto-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .foto-nombre {
+    font-size: 14px;
+    font-weight: 500;
+    color: #ecf0f1;
+    margin-bottom: 8px;
+    word-break: break-word;
+  }
+
+  .foto-status {
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #bdc3c7;
+  }
+
+  .nueva-foto-section {
+    background: #34495e;
+    border: 2px dashed #5d6d7e;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+  }
+
+  .nueva-foto-section:hover {
+    border-color: #3498db;
+    background: #2c3e50;
+  }
+
+  .nueva-foto-preview {
+    background: #1e3d32;
+    border: 1px solid #27ae60;
+    border-radius: 8px;
+    padding: 20px;
+  }
+
+  .nueva-foto-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .foto-preview-wrapper {
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .foto-preview-img {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid #28a745;
+  }
+
+  .btn-remover-preview {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }
+
+  .btn-remover-preview:hover {
+    background: #c82333;
+    transform: scale(1.1);
+  }
+
+  .foto-preview-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .preview-nombre {
+    font-size: 14px;
+    font-weight: 500;
+    color: #ecf0f1;
+    margin-bottom: 5px;
+    word-break: break-word;
+  }
+
+  .preview-size {
+    font-size: 12px;
+    color: #bdc3c7;
+    margin-bottom: 8px;
+  }
+
+  .preview-status {
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #ecf0f1;
+  }
+
+  /* Modal para foto de legajo */
+  .modal-foto-legajo .modal-content {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  }
+
+  .modal-foto-legajo .modal-header {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .modal-foto-legajo .btn-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 18px;
+    opacity: 0.8;
+  }
+
+  .modal-foto-legajo .btn-close:hover {
+    opacity: 1;
+  }
+
+  .foto-legajo-modal-container {
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+  }
+
+  .foto-legajo-principal img {
+    max-width: 100%;
+    max-height: 70vh;
+    object-fit: contain;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .imagen-existente {
+      flex: 0 0 100%;
+    }
+
+    .preview-nueva-imagen {
+      flex: 0 0 calc(50% - 7.5px);
+    }
+
+    .foto-existente-container,
+    .nueva-foto-container {
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .foto-thumbnail-container,
+    .foto-preview-img {
+      width: 100px;
+      height: 100px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .preview-nueva-imagen {
+      flex: 0 0 100%;
+    }
+  }
+    </style>
     <div class="d-flex justify-content-between mb-3">
         <div>
             {% if comedor.id %}
                 <a href="{% url 'comedor_detalle' comedor.id %}"
-                   class='btn btn-secondary'>Volver</a>
+                   class="btn btn-secondary">Volver</a>
             {% else %}
-                <a href="{% url 'comedores' %}" class='btn btn-secondary'>Volver</a>
+                <a href="{% url 'comedores' %}" class="btn btn-secondary">Volver</a>
             {% endif %}
         </div>
         <div>
-            <a class='btn btn-secondary print mr-1 d-none d-sm-inline'>Imprimir</a>
-            <a href='#' onclick='window.history.back();' class='btn btn-secondary'>Cancelar</a>
+            <a class="btn btn-secondary print mr-1 d-none d-sm-inline">Imprimir</a>
+            <a href="#" onclick="window.history.back();" class="btn btn-secondary">Cancelar</a>
         </div>
     </div>
     <div class="row comedor-form">
@@ -85,8 +551,95 @@
                                     <div class="col-3">{{ form.longitud|as_crispy_field }}</div>
                                 </div>
                                 <div class="form-group row">
-                                    <div>{{ form.foto_legajo|as_crispy_field }}</div>
-                                    <div id="fotoLegajoPreviewContainer" class="mt-3 col-12"></div>
+                                    <div class="col-12">
+                                        <label for="{{ form.foto_legajo.id_for_label }}"
+                                               class="form-label text-dark font-weight-bold">
+                                            <i class="fas fa-camera mr-2"></i>
+                                            Foto de Legajo
+                                        </label>
+                                        <!-- Foto existente -->
+                                        {% if form.instance.foto_legajo %}
+                                            <div class="foto-legajo-existente mb-3">
+                                                <h6 class="text-light mb-2">
+                                                    <i class="fas fa-image mr-1"></i>
+                                                    Foto actual:
+                                                </h6>
+                                                <div class="foto-existente-container">
+                                                    <div class="foto-thumbnail-container"
+                                                         data-image-url="{{ form.instance.foto_legajo.url }}">
+                                                        <div class="preview-placeholder">
+                                                            <i class="fas fa-image"></i>
+                                                            <div class="loader">
+                                                                <div class="spinner-border spinner-border-sm" role="status">
+                                                                    <span class="sr-only">Cargando...</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="foto-info">
+                                                        <div class="foto-nombre">
+                                                            {% if "comedor/" in form.instance.foto_legajo.name %}
+                                                                {{ form.instance.foto_legajo.name|slice:"8:" }}
+                                                            {% else %}
+                                                                {{ form.instance.foto_legajo.name }}
+                                                            {% endif %}
+                                                        </div>
+                                                        <div class="foto-status">
+                                                            <i class="fas fa-check-circle text-success"></i>
+                                                            <span class="text-success">Guardada</span>
+                                                        </div>
+                                                    </div>
+                                                    <button type="button"
+                                                            class="btn btn-outline-primary btn-sm"
+                                                            onclick="ampliarFotoLegajo('{{ form.instance.foto_legajo.url|escapejs }}', '{{ form.instance.foto_legajo.name|escapejs }}')">
+                                                        <i class="fas fa-expand-alt mr-1"></i>
+                                                        Ver completa
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                        <!-- Input para nueva foto -->
+                                        <div class="nueva-foto-section">
+                                            <h6 class="text-light mb-2">
+                                                <i class="fas fa-upload mr-1"></i>
+                                                {% if form.instance.foto_legajo %}
+                                                    Cambiar foto:
+                                                {% else %}
+                                                    Seleccionar foto:
+                                                {% endif %}
+                                            </h6>
+                                            {{ form.foto_legajo }}
+                                        </div>
+                                        <!-- Previsualización de nueva foto -->
+                                        <div id="fotoLegajoPreviewContainer"
+                                             class="nueva-foto-preview mt-3 d-none">
+                                            <h6 class="text-light mb-2">
+                                                <i class="fas fa-eye mr-1"></i>
+                                                Vista previa:
+                                            </h6>
+                                            <div class="nueva-foto-container">
+                                                <div class="foto-preview-wrapper">
+                                                    <img id="fotoLegajoPreview"
+                                                         src=""
+                                                         alt="Vista previa de foto legajo"
+                                                         class="foto-preview-img" />
+                                                    <button type="button"
+                                                            class="btn-remover-preview"
+                                                            onclick="removerPreviewFotoLegajo()">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </div>
+                                                <div class="foto-preview-info">
+                                                    <div class="preview-nombre" id="fotoLegajoNombre">imagen.jpg</div>
+                                                    <div class="preview-size" id="fotoLegajoSize">0 KB</div>
+                                                    <div class="preview-status">
+                                                        <i class="fas fa-clock text-warning"></i>
+                                                        <span class="text-warning">Pendiente de guardar</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -114,44 +667,79 @@
                 <div class="card card-primary card-outline">
                     <div class="bs-stepper">
                         <div class="card-header mb-3">
-                            <h3 class="card-title">Imágenes</h3>
+                            <h3 class="card-title">
+                                <i class="fas fa-images mr-2"></i>
+                                Galería de Imágenes
+                            </h3>
                         </div>
                         <div class="card-body">
-                            {% for imagen in imagenes_borrar %}
-                                <div class="input-group mb-2">
-                                    <span class="input-group-text">Actualmente</span>
-                                    <div class="form-control d-flex h-auto">
-                                        <span class="text-break flex-grow-1">
-                                            <a href="" target=__blank>{{ imagen.imagen }}</a>
-                                        </span>
-                                        <span class="align-self-center ml-2">
-                                            <span class="form-check">
-                                                <input type="checkbox"
-                                                       name="imagen_ciudadano-borrar-{{ imagen.id }}"
-                                                       id="imagen_ciudadano-id-borrar"
-                                                       class="form-check-input" />
-                                                <label class="form-check-label mb-0" for="imagen_ciudadano-clear_id">Eliminar</label>
-                                            </span>
-                                        </span>
-                                    </div>
+                            <!-- Sección: Imágenes Existentes -->
+                            <div class="imagenes-existentes-section">
+                                <h5 class="imagen-header">Imágenes Existentes:</h5>
+                                <div class="imagenes-container">
+                                    {% for imagen in imagenes_borrar %}
+                                        <div class="imagen-existente imagen-item" data-image-id="{{ imagen.id }}">
+                                            <div class="imagen-card-content">
+                                                <div class="imagen-thumbnail-container"
+                                                     data-image-url="{{ imagen.imagen.url }}">
+                                                    <div class="preview-placeholder">
+                                                        <i class="fas fa-image"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="imagen-info-content">
+                                                    <div class="imagen-filename-display">
+                                                        {% if "comedor/" in imagen.imagen.name %}
+                                                            {{ imagen.imagen.name|slice:"8:" }}
+                                                        {% else %}
+                                                            {{ imagen.imagen.name }}
+                                                        {% endif %}
+                                                    </div>
+                                                    <div class="imagen-status">
+                                                        <i class="fas fa-check-circle"></i>
+                                                        Guardada
+                                                    </div>
+                                                </div>
+                                                <div class="imagen-actions">
+                                                    <input type="checkbox"
+                                                           name="imagen_ciudadano-borrar-{{ imagen.id }}"
+                                                           id="imagen_borrar_{{ imagen.id }}"
+                                                           class="checkbox-eliminar-custom"
+                                                           data-image-id="{{ imagen.id }}" />
+                                                    <button type="button" class="btn-eliminar-custom">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="overlay-eliminar d-none">
+                                                <div class="overlay-text">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                    <br />
+                                                    MARCADA PARA ELIMINAR
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
                                 </div>
-                            {% endfor %}
-                            <input type="file"
-                                   name="imagenes"
-                                   id="imagenesInput"
-                                   class="d-none"
-                                   multiple
-                                   accept="image/*" />
-                            <button type="button" id="addImagesBtn" class="btn btn-primary mb-3">
-                                <i class="fas fa-plus"></i> Agregar Imágenes
-                            </button>
-                            <!-- Contenedor para mostrar las imágenes seleccionadas -->
-                            <div id="selectedImagesInfo" class="mb-2 d-none">
-                                <small class="text-muted">
-                                    <span id="imageCount">0</span> imagen(es) seleccionada(s)
-                                </small>
                             </div>
-                            <div id="imagePreviewContainer" class="mt-3 row"></div>
+                            <!-- Sección: Agregar Nuevas Imágenes -->
+                            <div class="seccion-nuevas">
+                                <h5 class="nuevas-header">Agregar Nuevas Imágenes:</h5>
+                                <input type="file"
+                                       name="imagenes"
+                                       id="imagenesInput"
+                                       class="d-none"
+                                       multiple
+                                       accept="image/*" />
+                                <button type="button" id="addImagesBtn" class="btn-seleccionar">
+                                    <i class="fas fa-plus"></i>
+                                    Seleccionar Imágenes
+                                </button>
+                                <div id="selectedImagesInfo" class="contador-imagenes d-none">
+                                    <span id="imageCount">0</span> imagen(es) seleccionada(s)
+                                </div>
+                                <!-- Contenedor para mostrar las imágenes seleccionadas -->
+                                <div id="imagePreviewContainer" class="nuevas-imagenes-container"></div>
+                            </div>
                             <div class="d-flex justify-content-end">
                                 <div class="card-tools d-flex align-items-start my-3">
                                     <button type="button" class="btn btn-tool" data-card-widget="collapse"></button>
@@ -166,11 +754,61 @@
             </form>
         </div>
     </div>
+    <!-- Modal para vista ampliada de foto de legajo -->
+    <div class="modal fade"
+         id="fotoLegajoModal"
+         tabindex="-1"
+         aria-labelledby="fotoLegajoModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content modal-foto-legajo">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title" id="fotoLegajoModalLabel">
+                        <i class="fas fa-camera mr-2"></i>
+                        Foto de Legajo
+                    </h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Cerrar">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="foto-legajo-modal-container">
+                        <div class="foto-legajo-principal">
+                            <img id="fotoLegajoPrincipal"
+                                 src=""
+                                 alt="Foto de legajo ampliada"
+                                 class="img-fluid" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 justify-content-between">
+                    <div class="info-foto">
+                        <span class="nombre-archivo" id="nombreArchivoLegajo">foto_legajo.jpg</span>
+                    </div>
+                    <div class="acciones-foto">
+                        <button type="button"
+                                class="btn btn-outline-success btn-sm"
+                                onclick="descargarFotoLegajo()">
+                            <i class="fas fa-download mr-1"></i>Descargar
+                        </button>
+                        <button type="button"
+                                class="btn btn-secondary btn-sm"
+                                data-bs-dismiss="modal">
+                            <i class="fas fa-times mr-1"></i>Cerrar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}
 {% block customJS %}
     <script>
-        var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
-        var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
+  var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
+  var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
     </script>
     <script src="{% static 'custom/js/comedorform.js' %}"></script>
 {% endblock %}

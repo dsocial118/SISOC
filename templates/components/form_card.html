@@ -1,0 +1,24 @@
+<!-- Form Card Component -->
+{% load crispy_forms_tags %}
+<div class="card card-body shadow">
+    {% if title %}<h2 class="text-center display-4 mb-4">{{ title }}</h2>{% endif %}
+    <form method="post"
+          enctype="multipart/form-data"
+          {% if form_id %}id="{{ form_id }}"{% endif %}
+          {% if novalidate %}novalidate{% endif %}>
+        {% csrf_token %}
+        {{ form|crispy }}
+        <div class="text-center mt-4">
+            <button type="submit" class="btn btn-primary">{{ submit_text|default:"Guardar" }}</button>
+            {% if cancel_url %}
+                <a href="{{ cancel_url }}" class="btn btn-secondary ml-2">{{ cancel_text|default:"Cancelar" }}</a>
+            {% endif %}
+            {% if additional_buttons %}
+                {% for button in additional_buttons %}
+                    <a href="{{ button.url }}"
+                       class="btn btn-{{ button.type|default:'secondary' }} {{ button.class|default:'' }}">{{ button.text }}</a>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </form>
+</div>

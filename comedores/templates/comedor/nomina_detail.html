@@ -2,22 +2,10 @@
 {% load static %}
 {% block title %}Nómina – {{ object.nombre }}{% endblock %}
 {% block breadcrumb %}
-    <ol class="breadcrumb float-sm-right">
-        <li class="breadcrumb-item">
-            <a href="{% url 'comedores' %}">Comedores</a>
-        </li>
-        <li class="breadcrumb-item active">Nómina</li>
-    </ol>
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
 {% block content %}
-    <div class="row mb-3">
-        <div class="col-12">
-            <a href="{% url 'nomina_crear' object.id %}"
-               class="btn btn-primary mb-3">Agregar Persona</a>
-            <a href="{% url 'comedor_detalle' object.id %}"
-               class="btn btn-secondary mb-3">Volver</a>
-        </div>
-    </div>
+    {% include 'components/action_buttons.html' with buttons=action_buttons class="row mb-3" %}
     <div class="card shadow-sm">
         <div class="card-header">
             <h5 class="mb-0">Historial de Nómina</h5>
@@ -65,41 +53,11 @@
                 </table>
             </div>
         </div>
-        <div class="card-footer">
-            <nav>
-                <ul class="pagination justify-content-center mb-0">
-                    {% if nomina.has_previous %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ nomina.previous_page_number }}">&laquo;</a>
-                        </li>
-                    {% else %}
-                        <li class="page-item disabled">
-                            <span class="page-link">&laquo;</span>
-                        </li>
-                    {% endif %}
-                    {% for num in nomina.paginator.page_range %}
-                        {% if nomina.number == num %}
-                            <li class="page-item active">
-                                <span class="page-link">{{ num }}</span>
-                            </li>
-                        {% elif num > nomina.number|add:'-3' and num < nomina.number|add:'3' %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
-                            </li>
-                        {% endif %}
-                    {% endfor %}
-                    {% if nomina.has_next %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ nomina.next_page_number }}">&raquo;</a>
-                        </li>
-                    {% else %}
-                        <li class="page-item disabled">
-                            <span class="page-link">&raquo;</span>
-                        </li>
-                    {% endif %}
-                </ul>
-            </nav>
-        </div>
+        {% if nomina.has_other_pages %}
+            <div class="card-footer">
+                {% include 'components/pagination.html' with is_paginated=nomina.has_other_pages page_obj=nomina prev_text='‹' next_text='›' center=True %}
+            </div>
+        {% endif %}
     </div>
     <!-- Modal Editar -->
     <div class="modal fade"

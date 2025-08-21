@@ -61,8 +61,39 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def update_comedor(comedor_data, comedor_instance):
-        """Actualiza los campos de un comedor que envia GESTIONAR via API."""
+        """
+        Actualiza los campos de un comedor que envia GESTIONAR via API.
+        Si no existe municipio o localidad, los crea.
+        """
         try:
+            provincia = (
+                Provincia.objects.get(nombre=comedor_data["provincia"])
+                if comedor_data.get("provincia")
+                else comedor_instance.provincia
+            )
+
+            municipio = (
+                Municipio.objects.get_or_create(
+                    nombre=comedor_data["municipio"],
+                    provincia=provincia,
+                )[0]
+                if comedor_data.get("municipio")
+                else comedor_instance.municipio
+            )
+
+            localidad = (
+                Localidad.objects.get_or_create(
+                    nombre=comedor_data["localidad"],
+                    municipio=municipio,
+                )[0]
+                if comedor_data.get("localidad")
+                else comedor_instance.localidad
+            )
+
+            comedor_instance.provincia = provincia
+            comedor_instance.municipio = municipio
+            comedor_instance.localidad = localidad
+
             comedor_instance.numero = convert_string_to_int(
                 comedor_data.get("numero", comedor_instance.numero)
             )
@@ -78,33 +109,6 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             )
             comedor_instance.codigo_postal = convert_string_to_int(
                 comedor_data.get("codigo_postal", comedor_instance.codigo_postal)
-            )
-            comedor_instance.provincia = (
-                Provincia.objects.get(nombre=comedor_data.get("provincia"))
-                if comedor_data.get("provincia")
-                else comedor_instance.provincia
-            )
-            comedor_instance.municipio = (
-                Municipio.objects.get(
-                    nombre=comedor_data.get("municipio"),
-                )
-                if comedor_data.get("municipio")
-                else comedor_instance.municipio
-            )
-            comedor_instance.localidad = Localidad.objects.get(
-                nombre=comedor_data.get("localidad", comedor_instance.localidad),
-                municipio=(
-                    Municipio.objects.get(
-                        nombre=comedor_data.get("municipio"),
-                        provincia=(
-                            Provincia.objects.get(nombre=comedor_data.get("provincia"))
-                            if comedor_data.get("provincia")
-                            else comedor_instance.provincia
-                        ),
-                    )
-                    if comedor_data.get("municipio")
-                    else comedor_instance.municipio
-                ),
             )
             comedor_instance.partido = comedor_data.get(
                 "partido", comedor_instance.partido
@@ -125,10 +129,10 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             comedor_instance.save()
 
             return comedor_instance.id
-        except Exception as e:
-            logger.error(
-                f"Error en RelevamientoService.update_comedor para comedor: {comedor_data} {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                "Error en RelevamientoService.update_comedor",
+                extra={"comedor_data": comedor_data},
             )
             raise
 
@@ -148,10 +152,10 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             relevamiento.save()
 
             return relevamiento
-        except Exception as e:
-            logger.error(
-                f"Error en RelevamientoService.create_pendiente para comedor: {comedor_id} {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                "Error en RelevamientoService.create_pendiente",
+                extra={"comedor_id": comedor_id},
             )
             raise
 
@@ -178,14 +182,15 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
             return relevamiento
         except Relevamiento.DoesNotExist:
-            logger.error(
-                f"RelevamientoService.update_territorial: Relevamiento con ID {relevamiento_id} no encontrado."
+            logger.exception(
+                "RelevamientoService.update_territorial: Relevamiento no encontrado",
+                extra={"relevamiento_id": relevamiento_id},
             )
             return None
-        except Exception as e:
-            logger.error(
-                f"Error en RelevamientoService.update_territorial para relevamiento: {relevamiento_id} {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                "Error en RelevamientoService.update_territorial",
+                extra={"relevamiento_id": relevamiento_id},
             )
             raise
 
@@ -233,10 +238,10 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             relevamiento.save()
 
             return relevamiento
-        except Exception as e:
-            logger.error(
-                f"Error en RelevamientoService.populate_relevamiento: {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                "Error en RelevamientoService.populate_relevamiento",
+                extra={"relevamiento_form": relevamiento_form.data},
             )
             raise
 
@@ -253,11 +258,8 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 tipos_str = tipos_list[0]
 
             return tipos_str
-        except Exception as e:
-            logger.error(
-                f"Error en RelevamientoService.separate_string: {e}",
-                exc_info=True,
-            )
+        except Exception:
+            logger.exception("Error en RelevamientoService.separate_string")
             raise
 
     @staticmethod
@@ -424,10 +426,10 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
         except Relevamiento.DoesNotExist:
             return None
-        except Exception as e:
-            logger.error(
-                f"Error en RelevamientoService.get_relevamiento_detail_object: {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                "Error en RelevamientoService.get_relevamiento_detail_object",
+                extra={"relevamiento_id": relevamiento_id},
             )
             raise
 
@@ -470,11 +472,16 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 )
 
             return funcionamiento_instance
-        except Exception as e:
-            logger.error(
-                f"Error en RelevamientoService.create_or_update_funcionamiento: {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                "Error en RelevamientoService.create_or_update_funcionamiento",
+                extra={"funcionamiento_data": funcionamiento_data},
             )
+            payload = {
+                "metodo": "create_or_update_funcionamiento",
+                "body": {"excepcion": funcionamiento_data},
+            }
+            logger.info("payload", extra={"data": payload})
             raise
 
     @staticmethod
@@ -497,11 +504,16 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                     espacio_prestacion_instance, espacio_prestacion_data
                 )
             return espacio_prestacion_instance
-        except Exception as e:
-            logger.error(
-                f"Error en RelevamientoService.create_or_update_espacio_prestacion: {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                "Error en RelevamientoService.create_or_update_espacio_prestacion",
+                extra={"espacio_prestacion_data": espacio_prestacion_data},
             )
+            payload = {
+                "metodo": "create_or_update_espacio_prestacion",
+                "body": {"excepcion": espacio_prestacion_data},
+            }
+            logger.info("payload", extra={"data": payload})
             raise
 
     @staticmethod
@@ -562,11 +574,16 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             cocina_instance.save()
 
             return cocina_instance
-        except Exception as e:
-            logger.error(
-                f"Error en RelevamientoService.create_or_update_cocina: {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                "Error en RelevamientoService.create_or_update_cocina",
+                extra={"cocina_data": cocina_data},
             )
+            payload = {
+                "metodo": "create_or_update_cocina",
+                "body": {"excepcion": cocina_data},
+            }
+            logger.info("payload", extra={"data": payload})
             raise
 
     @staticmethod
@@ -625,11 +642,16 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 )
 
             return espacio_instance
-        except Exception as e:
-            logger.error(
-                f"Error en RelevamientoService.create_or_update_espacio: {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                "Error en RelevamientoService.create_or_update_espacio",
+                extra={"espacio_data": espacio_data},
             )
+            payload = {
+                "metodo": "create_or_update_espacio",
+                "body": {"excepcion": espacio_data},
+            }
+            logger.info("payload", extra={"data": payload})
             raise
 
     @staticmethod
@@ -648,10 +670,16 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                 )
 
             return colaboradores_instance
-        except Exception as e:
-            logger.error(
-                f"Error en RelevamientoService.create_or_update_colaboradores: {e}"
+        except Exception:
+            logger.exception(
+                "Error en RelevamientoService.create_or_update_colaboradores",
+                extra={"colaboradores_data": colaboradores_data},
             )
+            payload = {
+                "metodo": "create_or_update_colaboradores",
+                "body": {"excepcion": colaboradores_data},
+            }
+            logger.info("payload", extra={"data": payload})
             raise
 
     @staticmethod
@@ -715,11 +743,16 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             recursos_instance.save()
 
             return recursos_instance
-        except Exception as e:
-            logger.error(
-                f"Error en RelevamientoService.create_or_update_recursos: {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                "Error en RelevamientoService.create_or_update_recursos",
+                extra={"recursos_data": recursos_data},
             )
+            payload = {
+                "metodo": "create_or_update_recursos",
+                "body": {"excepcion": recursos_data},
+            }
+            logger.info("payload", extra={"data": payload})
             raise
 
     @staticmethod
@@ -780,11 +813,16 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                     compras_instance, compras_data
                 )
             return compras_instance
-        except Exception as e:
-            logger.error(
-                f"Error en RelevamientoService.create_or_update_compras: {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                "Error en RelevamientoService.create_or_update_compras",
+                extra={"compras_data": compras_data},
             )
+            payload = {
+                "metodo": "create_or_update_compras",
+                "body": {"excepcion": compras_data},
+            }
+            logger.info("payload", extra={"data": payload})
             raise
 
     @staticmethod
@@ -797,11 +835,16 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             else:
                 anexo_instance = assign_values_to_instance(anexo_instance, anexo_data)
             return anexo_instance
-        except Exception as e:
-            logger.error(
-                f"Error en RelevamientoService.create_or_update_anexo: {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                "Error en RelevamientoService.create_or_update_anexo",
+                extra={"anexo_data": anexo_data},
             )
+            payload = {
+                "metodo": "create_or_update_anexo",
+                "body": {"anexo": anexo_data},
+            }
+            logger.info("payload", extra={"data": payload})
             raise
 
     @staticmethod
@@ -897,11 +940,16 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             punto_entregas_instance.save()
 
             return punto_entregas_instance
-        except Exception as e:
-            logger.error(
-                f"Error en RelevamientoService.create_or_update_punto_entregas: {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                "Error en RelevamientoService.create_or_update_punto_entregas",
+                extra={"punto_entregas_data": punto_entregas_data},
             )
+            payload = {
+                "metodo": "create_or_update_punto_entregas",
+                "body": {"punto_entregas": punto_entregas_data},
+            }
+            logger.info("payload", extra={"data": payload})
             raise
 
     @staticmethod
@@ -964,11 +1012,16 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                     prestacion_instance, prestacion_data
                 )
             return prestacion_instance
-        except Exception as e:
-            logger.error(
-                f"Error en RelevamientoService.create_or_update_prestacion: {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                "Error en RelevamientoService.create_or_update_prestacion",
+                extra={"prestacion_data": prestacion_data},
             )
+            payload = {
+                "metodo": "create_or_update_prestacion",
+                "body": {"prestacion": prestacion_data},
+            }
+            logger.info("payload", extra={"data": payload})
             raise
 
     @staticmethod
@@ -1002,7 +1055,10 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
             return prestacion_data
         except Exception as e:
-            logger.error(f"Error en RelevamientoService.populate_prestacion_data: {e}")
+            logger.exception(
+                "Error en RelevamientoService.populate_prestacion_data",
+                extra={"error": str(e)},
+            )
             raise
 
     @staticmethod
@@ -1065,10 +1121,25 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             return responsable.id if responsable else None, (
                 referente.id if referente else None
             )
-        except Exception as e:
-            logger.error(
-                f"Error en RelevamientoService.create_or_update_responsable_y_referente: {e}"
+        except Exception:
+            logger.exception(
+                "Error en RelevamientoService.create_or_update_responsable_y_referente",
+                extra={
+                    "responsable_data": responsable_data,
+                    "referente_data": referente_data,
+                    "sisoc_id": sisoc_id,
+                },
             )
+            payload = {
+                "metodo": "create_or_update_responsable_y_referente",
+                "body": {"responsable": responsable_data, "sisoc_id": sisoc_id},
+            }
+            logger.info("payload", extra={"data": payload})
+            payload2 = {
+                "metodo": "create_or_update_responsable_y_referente",
+                "body": {"referente": referente_data, "sisoc_id": sisoc_id},
+            }
+            logger.info("payload", extra={"data": payload2})
             raise
 
     @staticmethod
@@ -1083,10 +1154,16 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                     excepcion_instance, excepcion_data
                 )
             return excepcion_instance
-        except Exception as e:
-            logger.error(
-                f"Error en RelevamientoService.create_or_update_excepcion: {e}"
+        except Exception:
+            logger.exception(
+                "Error en RelevamientoService.create_or_update_excepcion",
+                extra={"excepcion_data": excepcion_data},
             )
+            payload = {
+                "metodo": "create_or_update_excepcion",
+                "body": {"excepcion": excepcion_data},
+            }
+            logger.info("payload", extra={"data": payload})
             raise
 
     @staticmethod
@@ -1103,5 +1180,8 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
             return excepcion_data
         except Exception as e:
-            logger.error(f"Error en RelevamientoService.populate_excepcion_data: {e}")
+            logger.exception(
+                "Error en RelevamientoService.populate_excepcion_data",
+                extra={"error": str(e)},
+            )
             raise

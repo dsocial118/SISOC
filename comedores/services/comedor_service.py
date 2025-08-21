@@ -2,6 +2,7 @@ import re
 import logging
 from typing import Union
 
+from django.core.files.storage import default_storage
 from django.db.models import Q, Count, Prefetch
 from django.db import transaction
 from django.core.paginator import Paginator
@@ -12,21 +13,22 @@ from django.shortcuts import get_object_or_404
 
 from relevamientos.models import Relevamiento, ClasificacionComedor
 from relevamientos.service import RelevamientoService
+from ciudadanos.models import Ciudadano, HistorialCiudadanoProgramas, CiudadanoPrograma
 from comedores.forms.comedor_form import ImagenComedorForm
 from comedores.models import Comedor, ImagenComedor, Nomina, Observacion, Referente
-from ciudadanos.models import Ciudadano, HistorialCiudadanoProgramas, CiudadanoPrograma
 from comedores.utils import (
     get_object_by_filter,
     get_id_by_nombre,
     normalize_field,
     preload_valores_comida_cache,
 )
+from ciudadanos.models import Ciudadano, HistorialCiudadanoProgramas, CiudadanoPrograma
 
 from admisiones.models.admisiones import Admision
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 from intervenciones.models.intervenciones import Intervencion
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 class ComedorService:
@@ -72,6 +74,21 @@ class ComedorService:
                 imagenes_ids.append(imagen_id)
 
         ImagenComedor.objects.filter(id__in=imagenes_ids).delete()
+
+    @staticmethod
+    def borrar_foto_legajo(post, comedor_instance):
+        """Eliminar la foto del legajo si está marcada para borrar"""
+        if "foto_legajo_borrar" in post and comedor_instance.foto_legajo:
+            if comedor_instance.foto_legajo:
+                try:
+                    comedor_instance.foto_legajo.delete(save=False)
+                except Exception:
+                    logger.exception(
+                        "Error al eliminar la foto de legajo del comedor %s",
+                        comedor_instance.pk,
+                    )
+            comedor_instance.foto_legajo = None
+            comedor_instance.save(update_fields=["foto_legajo"])
 
     @staticmethod
     def get_comedores_filtrados(query: Union[str, None] = None):
@@ -211,50 +228,46 @@ class ComedorService:
     def get_presupuestos(comedor_id: int, relevamientos_prefetched=None):
         valor_map = preload_valores_comida_cache()
         if relevamientos_prefetched:
-            beneficiarios = (
-                relevamientos_prefetched[0] if relevamientos_prefetched else None
-            )
+            relevamiento = relevamientos_prefetched[0]
         else:
-            beneficiarios = (
+            relevamiento = (
                 Relevamiento.objects.select_related("prestacion")
                 .filter(comedor=comedor_id)
-                .only("prestacion")
+                .order_by("-fecha_visita")
+                .only("prestacion", "fecha_visita")
                 .first()
             )
-        count = {
-            "desayuno": 0,
-            "almuerzo": 0,
-            "merienda": 0,
-            "cena": 0,
-        }
-        if beneficiarios and beneficiarios.prestaciones:
-            for prestacion in beneficiarios.prestaciones.all():
-                dias = [
-                    "lunes",
-                    "martes",
-                    "miercoles",
-                    "jueves",
-                    "viernes",
-                    "sabado",
-                    "domingo",
-                ]
-                tipos = [
-                    "desayuno",
-                    "almuerzo",
-                    "merienda",
-                    "cena",
-                    "merienda_reforzada",
-                ]
-                for tipo in tipos:
-                    count[tipo] = sum(
-                        getattr(prestacion, f"{dia}_{tipo}_actual", 0) or 0
-                        for dia in dias
-                    )
+
+        count = {"desayuno": 0, "almuerzo": 0, "merienda": 0, "cena": 0}
+
+        if relevamiento and relevamiento.prestacion:
+            prestacion = relevamiento.prestacion
+            dias = [
+                "lunes",
+                "martes",
+                "miercoles",
+                "jueves",
+                "viernes",
+                "sabado",
+                "domingo",
+            ]
+            for tipo in [
+                "desayuno",
+                "almuerzo",
+                "merienda",
+                "cena",
+            ]:
+                count[tipo] = sum(
+                    (getattr(prestacion, f"{dia}_{tipo}_actual", 0) or 0)
+                    for dia in dias
+                )
+
         count_beneficiarios = sum(count.values())
         valor_cena = count["cena"] * valor_map.get("cena", 0)
         valor_desayuno = count["desayuno"] * valor_map.get("desayuno", 0)
         valor_almuerzo = count["almuerzo"] * valor_map.get("almuerzo", 0)
         valor_merienda = count["merienda"] * valor_map.get("merienda", 0)
+
         return (
             count_beneficiarios,
             valor_cena,

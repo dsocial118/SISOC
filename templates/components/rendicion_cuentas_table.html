@@ -1,0 +1,69 @@
+<!-- Rendición de Cuentas Table Component -->
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <table class="table table-bordered table-striped projects">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Comedor</th>
+                            <th>Fecha de modificacion</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                            <th>Validar</th>
+                            <th>Subsanar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for documento in documentos %}
+                            <tr class="documento-row estado-{{ documento.estado.nombre|lower|slugify }}">
+                                <td>{{ documento.tipo.nombre }}</td>
+                                <td>{{ documento.rendicion_final.comedor.nombre }}</td>
+                                <td>{{ documento.fecha_modificacion|date:"d/m/Y H:i"|default:"-" }}</td>
+                                <td>{{ documento.estado.nombre }}</td>
+                                <td>
+                                    {% if documento.documento %}
+                                        <a href="{{ documento.documento.url }}"
+                                           target="_blank"
+                                           class="btn btn-primary btn-sm">Visualizar</a>
+                                    {% else %}
+                                        <button class="btn btn-sm btn-secondary" disabled>Visualizar</button>
+                                    {% endif %}
+                                </td>
+                                {% if documento.estado.nombre == "En análisis" %}
+                                    <td>
+                                        <form method="post"
+                                              action="{% url 'validar_documento_rendicion_cuentas_final' documento.id %}"
+                                              onsubmit="return confirm('¿Estás seguro de que querés validar este documento?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-warning btn-sm">Validar</button>
+                                        </form>
+                                    </td>
+                                    <td>
+                                        <button type="button"
+                                                class="btn btn-danger btn-sm"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modalSubsanar"
+                                                data-documento-id="{{ documento.id }}">Subsanar</button>
+                                    </td>
+                                {% else %}
+                                    <td>
+                                        <button class="btn btn-sm btn-secondary" disabled>Validar</button>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-secondary" disabled>Subsanar</button>
+                                    </td>
+                                {% endif %}
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center">No se encontraron documentos.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

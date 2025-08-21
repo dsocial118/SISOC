@@ -39,9 +39,9 @@ class HistorialService:
                 object_id=object_id,
                 diferencias=diferencias,
             )
-        except Exception as e:
+        except Exception:
             logger.exception(
-                f"Error en HistorialService.registrar_historial para instancia {instancia}: {e}",
+                f"Error en HistorialService.registrar_historial para instancia {instancia}",
             )
             raise
 
@@ -65,9 +65,13 @@ class HistorialService:
                 object_id__in=map(str, documentos_ids),
             ).order_by("-fecha")
 
-        except Exception as e:
-            logger.error(
-                f"Error en HistorialService.get_historial_documentos_by_rendicion_cuentas_final: {e}",
-                exc_info=True,
+        except Exception:
+            logger.exception(
+                "Error en HistorialService.get_historial_documentos_by_rendicion_cuentas_final",
+                extra={
+                    "rendicion_cuentas_final_pk": getattr(
+                        rendicion_cuentas_final, "pk", None
+                    )
+                },
             )
             raise

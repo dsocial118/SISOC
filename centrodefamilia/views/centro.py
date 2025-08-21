@@ -103,25 +103,44 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
                 | Q(actividad__categoria__nombre__icontains=search_curso)
                 | Q(estado__icontains=search_curso)
             )
+
+        # Mantengo tu lista para métricas
         ctx["actividades"] = list(qs_acts)
+
+        # ✅ Paginación con orden estable (nombre + id como desempate)
+        page_curso = self.request.GET.get("page_actividades_curso", 1)
+        ctx["actividades_curso_paginadas"] = Paginator(
+            qs_acts.order_by("actividad__nombre", "id"), 5
+        ).get_page(page_curso)
+
+        # (opcional, por comodidad en el template)
+        ctx["search_actividades_curso_val"] = self.request.GET.get("search_actividades_curso", "")
         ctx["total_actividades"] = qs_acts.count()
         ctx["total_recaudado"] = sum((act.ganancia or 0) for act in ctx["actividades"])
 
         # 3) Actividades de otros centros
         search_otras = self.request.GET.get("search_actividades", "").strip().lower()
-        otras = ActividadCentro.objects.exclude(centro=centro).select_related(
-            "actividad", "actividad__categoria", "centro"
+        otras = (
+            ActividadCentro.objects.exclude(centro=centro)
+            .select_related("actividad", "actividad__categoria", "centro")
+            # ✅ Orden estable para evitar UnorderedObjectListWarning
+            .order_by("centro__nombre", "actividad__nombre", "id")
         )
         if search_otras:
-            otras = otras.filter(
-                Q(actividad__nombre__icontains=search_otras)
-                | Q(actividad__categoria__nombre__icontains=search_otras)
-                | Q(estado__icontains=search_otras)
-                | Q(centro__nombre__icontains=search_otras)
+            otras = (
+                otras.filter(
+                    Q(actividad__nombre__icontains=search_otras)
+                    | Q(actividad__categoria__nombre__icontains=search_otras)
+                    | Q(estado__icontains=search_otras)
+                    | Q(centro__nombre__icontains=search_otras)
+                )
+                # ✅ Mantener el mismo orden tras el filtro (por claridad)
+                .order_by("centro__nombre", "actividad__nombre", "id")
             )
-        ctx["actividades_paginados"] = Paginator(otras, 5).get_page(
-            self.request.GET.get("page_act")
-        )
+
+        ctx["actividades_paginados"] = Paginator(
+            otras, 5
+        ).get_page(self.request.GET.get("page_act"))
 
         # 4) Centros adheridos
         if centro.tipo == "faro":
@@ -171,6 +190,7 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         )
 
         return ctx
+
 
 
 class CentroCreateView(LoginRequiredMixin, CreateView):

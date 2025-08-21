@@ -166,4 +166,12 @@ urlpatterns = [
         relevamiento_crear_editar_ajax,
         name="relevamiento_create_edit_ajax",
     ),
+    # esto es prueba de nuevo front para el comedor
+    path(
+        "comedores_nuevo/<int:pk>",
+        group_required(["Comedores Ver", "Tecnico Comedor", "Abogado Dupla"])(
+            ComedorDetailView.as_view(template_name="comedor/new_comedor_detail.html")
+        ),
+        name="nuevo_comedor_detalle",
+    ),
 ]

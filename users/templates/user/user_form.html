@@ -29,10 +29,7 @@
                 {{ form.email | as_crispy_field }}
                 {{ form.password | as_crispy_field }}
                 {{ form.groups | as_crispy_field }}
-                <div class="mt-4 mx-2">
-                    <button type="submit" class="btn btn-primary mr-1">Confirmar</button>
-                    <a href="{% url 'usuarios' %}" class="btn btn-secondary">Cancelar</a>
-                </div>
+                {% include 'components/form_buttons.html' with cancel_url='usuarios' default_save=True save_text='Confirmar' layout='start' %}
             </form>
         </div>
     </div>
