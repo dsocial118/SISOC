@@ -291,11 +291,12 @@ class CategoriaComedor(models.Model):
 
 class TerritorialCache(models.Model):
     """
-    Modelo para cachear información de territoriales de GESTIONAR.
+    Modelo para cachear información de territoriales de GESTIONAR por provincia.
     """
 
-    gestionar_uid = models.CharField(max_length=100, unique=True)
+    gestionar_uid = models.CharField(max_length=100)
     nombre = models.CharField(max_length=200)
+    provincia = models.ForeignKey(to=Provincia, on_delete=models.CASCADE)
     activo = models.BooleanField(default=True)
 
     # Metadatos de cache
@@ -305,12 +306,16 @@ class TerritorialCache(models.Model):
 
     class Meta:
         db_table = "comedores_territorial_cache"
-        ordering = ["nombre"]
+        ordering = ["provincia__nombre", "nombre"]
         verbose_name = "Cache Territorial"
         verbose_name_plural = "Cache Territoriales"
+        unique_together = [['gestionar_uid', 'provincia']]
+        indexes = [
+            models.Index(fields=['provincia', 'activo']),
+        ]
 
     def __str__(self):
-        return f"{self.nombre} ({self.gestionar_uid})"
+        return f"{self.nombre} - {self.provincia.nombre} ({self.gestionar_uid})"
 
     @property
     def esta_desactualizado(self):
