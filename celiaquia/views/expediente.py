@@ -17,11 +17,10 @@ from django.http import (
     HttpResponseNotAllowed,
 )
 from django.contrib import messages
-from django.core.exceptions import ValidationError, PermissionDenied
+from django.core.exceptions import ValidationError, PermissionDenied, ObjectDoesNotExist
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
-
 from celiaquia.forms import ExpedienteForm, ConfirmarEnvioForm
 from celiaquia.models import (
     AsignacionTecnico,
@@ -42,11 +41,26 @@ def _user_in_group(user, group_name: str) -> bool:
     return user.is_authenticated and user.groups.filter(name=group_name).exists()
 
 def _is_admin(user) -> bool:
-
     return user.is_authenticated and user.is_superuser
 
 def _is_ajax(request) -> bool:
     return request.headers.get("X-Requested-With") == "XMLHttpRequest"
+
+# === NUEVO: helpers para usuarios provinciales ===
+def _is_provincial(user) -> bool:
+    if not user.is_authenticated:
+        return False
+    try:
+        return bool(user.profile.es_usuario_provincial and user.profile.provincia_id)
+    except ObjectDoesNotExist:
+        return False
+
+def _user_provincia(user):
+    try:
+        return user.profile.provincia
+    except ObjectDoesNotExist:
+        return None
+# === fin helpers ===
 
 
 def _parse_limit(value, default=5, max_cap=5000):
@@ -60,7 +74,7 @@ def _parse_limit(value, default=5, max_cap=5000):
         return default
     txt = str(value).strip().lower()
     if txt in ("all", "todos", "0", "none"):
-        return None 
+        return None
     try:
         n = int(txt)
         if n <= 0:
@@ -75,7 +89,7 @@ class ExpedienteListView(ListView):
     Descripción:
       - Única lista para todos los roles.
         * Admin (superuser): ve todos.
-        * ProvinciaCeliaquia: lista sólo sus expedientes.
+        * ProvinciaCeliaquia: lista expedientes de su provincia (todos los creados por usuarios de su provincia).
         * CoordinadorCeliaquia: lista CONFIRMACION_DE_ENVIO, RECEPCIONADO, ASIGNADO.
         * TecnicoCeliaquia: lista asignados a él.
       - Orden descendente por fecha_creacion.
@@ -89,10 +103,9 @@ class ExpedienteListView(ListView):
     def get_queryset(self):
         user = self.request.user
         qs = (
-            Expediente.objects.select_related("estado", "asignacion_tecnico__tecnico")
+            Expediente.objects.select_related("estado", "asignacion_tecnico__tecnico", "usuario_provincia")
             .only(
                 "id",
-                "codigo",
                 "fecha_creacion",
                 "estado__nombre",
                 "usuario_provincia_id",
@@ -100,28 +113,29 @@ class ExpedienteListView(ListView):
             )
         )
 
-
         if _is_admin(user):
             return qs.order_by("-fecha_creacion")
 
-    
         if _user_in_group(user, "CoordinadorCeliaquia"):
             return qs.filter(
                 estado__nombre__in=["CONFIRMACION_DE_ENVIO", "RECEPCIONADO", "ASIGNADO"]
             ).order_by("-fecha_creacion")
 
-
         if _user_in_group(user, "TecnicoCeliaquia"):
             return qs.filter(asignacion_tecnico__tecnico=user).order_by("-fecha_creacion")
 
-       
+        # NUEVO: usuario provincial ve expedientes de su provincia
+        if _is_provincial(user):
+            prov = _user_provincia(user)
+            return qs.filter(usuario_provincia__profile__provincia=prov).order_by("-fecha_creacion")
+
+        # Fallback: usuarios no provinciales ven solo los propios
         return qs.filter(usuario_provincia=user).order_by("-fecha_creacion")
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         user = self.request.user
         ctx["tecnicos"] = []
-       
         if _is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia"):
             ctx["tecnicos"] = User.objects.filter(
                 groups__name="TecnicoCeliaquia"
@@ -141,6 +155,9 @@ class ProcesarExpedienteView(View):
         user = self.request.user
         if _is_admin(user):
             expediente = get_object_or_404(Expediente, pk=pk)
+        elif _is_provincial(user):
+            prov = _user_provincia(user)
+            expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia__profile__provincia=prov)
         else:
             expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=user)
 
@@ -166,6 +183,9 @@ class CrearLegajosView(View):
         user = self.request.user
         if _is_admin(user):
             expediente = get_object_or_404(Expediente, pk=pk)
+        elif _is_provincial(user):
+            prov = _user_provincia(user)
+            expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia__profile__provincia=prov)
         else:
             expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=user)
 
@@ -245,13 +265,16 @@ class ExpedienteDetailView(DetailView):
     def get_queryset(self):
         user = self.request.user
         base = (
-            Expediente.objects.select_related("estado", "usuario_modificador", "asignacion_tecnico")
+            Expediente.objects.select_related("estado", "usuario_modificador", "asignacion_tecnico", "usuario_provincia")
             .prefetch_related("expediente_ciudadanos__ciudadano", "expediente_ciudadanos__estado")
         )
         if _is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia"):
             return base
         if _user_in_group(user, "TecnicoCeliaquia"):
             return base.filter(asignacion_tecnico__tecnico=user)
+        if _is_provincial(user):
+            prov = _user_provincia(user)
+            return base.filter(usuario_provincia__profile__provincia=prov)
         return base.filter(usuario_provincia=user)
 
     def get_context_data(self, **kwargs):
@@ -260,7 +283,7 @@ class ExpedienteDetailView(DetailView):
         user = self.request.user
 
         preview = preview_error = None
-        preview_limit_actual = None  
+        preview_limit_actual = None
 
         q = expediente.expediente_ciudadanos.select_related("ciudadano")
         ctx["legajos_aceptados"] = q.filter(revision_tecnico="APROBADO", resultado_sintys="MATCH")
@@ -272,14 +295,11 @@ class ExpedienteDetailView(DetailView):
         ctx["c_rech_sintys"] = ctx["legajos_rech_sintys"].count()
 
         if expediente.estado.nombre == "CREADO" and expediente.excel_masivo:
-
             raw_limit = self.request.GET.get("preview_limit")
             max_rows = _parse_limit(raw_limit, default=5, max_cap=5000)
             preview_limit_actual = raw_limit if raw_limit is not None else "5"
-
             try:
                 preview = ImportacionService.preview_excel(expediente.excel_masivo, max_rows=max_rows)
-
             except Exception as e:
                 preview_error = str(e)
 
@@ -297,8 +317,8 @@ class ExpedienteDetailView(DetailView):
             {
                 "legajos": expediente.expediente_ciudadanos.all(),
                 "confirm_form": ConfirmarEnvioForm(),
-                "preview": preview,                     
-                "preview_error": preview_error,        
+                "preview": preview,
+                "preview_error": preview_error,
                 "preview_limit_actual": str(preview_limit_actual or "5").lower(),
                 "preview_limit_opciones": preview_limit_opciones,
                 "tecnicos": tecnicos,
@@ -314,6 +334,9 @@ class ExpedienteImportView(View):
         user = self.request.user
         if _is_admin(user):
             expediente = get_object_or_404(Expediente, pk=pk)
+        elif _is_provincial(user):
+            prov = _user_provincia(user)
+            expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia__profile__provincia=prov)
         else:
             expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=user)
 
@@ -346,6 +369,9 @@ class ExpedienteConfirmView(View):
         user = self.request.user
         if _is_admin(user):
             expediente = get_object_or_404(Expediente, pk=pk)
+        elif _is_provincial(user):
+            prov = _user_provincia(user)
+            expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia__profile__provincia=prov)
         else:
             expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=user)
 
@@ -484,7 +510,6 @@ class AsignarTecnicoView(View):
 
 class SubirCruceExcelView(View):
 
-
     def post(self, request, pk):
         user = self.request.user
 
@@ -492,7 +517,6 @@ class SubirCruceExcelView(View):
             return JsonResponse({"success": False, "error": "Permiso denegado."}, status=403)
 
         expediente = get_object_or_404(Expediente, pk=pk)
-
 
         if not _is_admin(user):
             asignacion = getattr(expediente, "asignacion_tecnico", None)
@@ -521,12 +545,12 @@ class SubirCruceExcelView(View):
     def get(self, *_a, **_k):
         return HttpResponseNotAllowed(["POST"])
     
+
 @method_decorator(csrf_exempt, name="dispatch")
 class RevisarLegajoView(View):
     def post(self, request, pk, legajo_id):
         user = request.user
         expediente = get_object_or_404(Expediente, pk=pk)
-
 
         if not (_is_admin(user) or _user_in_group(user, "TecnicoCeliaquia")):
             return JsonResponse({"success": False, "error": "Permiso denegado."}, status=403)
@@ -537,7 +561,7 @@ class RevisarLegajoView(View):
 
         leg = get_object_or_404(ExpedienteCiudadano, pk=legajo_id, expediente=expediente)
 
-        accion = (request.POST.get("accion") or "").upper()  
+        accion = (request.POST.get("accion") or "").upper()
         if accion not in ("APROBAR", "RECHAZAR"):
             return JsonResponse({"success": False, "error": "Acción inválida."}, status=400)
 
@@ -545,4 +569,3 @@ class RevisarLegajoView(View):
         leg.save(update_fields=["revision_tecnico", "modificado_en"])
 
         return JsonResponse({"success": True, "estado": leg.revision_tecnico})
-

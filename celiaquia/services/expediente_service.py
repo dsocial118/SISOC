@@ -18,21 +18,16 @@ class ExpedienteService:
         """
         Crea un nuevo Expediente en estado 'CREADO' con metadatos y archivo.
         """
-        codigo = datos_metadatos.get("codigo")
-        if not codigo:
-            raise ValidationError("El código del expediente es obligatorio.")
-        if Expediente.objects.filter(codigo=codigo).exists():
-            raise ValidationError(f"Ya existe un expediente con código {codigo}.")
 
         estado, _ = EstadoExpediente.objects.get_or_create(nombre="CREADO")
         expediente = Expediente.objects.create(
-            codigo=codigo,
+            
             usuario_provincia=usuario_provincia,
             estado=estado,
             observaciones=datos_metadatos.get("observaciones", ""),
             excel_masivo=excel_masivo,
         )
-        logger.info("Expediente %s creado por %s", expediente.codigo, usuario_provincia.username)
+        logger.info("Expediente creado por %s",  usuario_provincia.username)
         return expediente
 
     @staticmethod
@@ -54,15 +49,15 @@ class ExpedienteService:
         expediente.estado = estado_procesado
         expediente.save(update_fields=["estado"])
         logger.info(
-            "Expediente %s procesado: %s legajos creados, %s errores",
-            expediente.codigo, result["validos"], result["errores"]
+            "Expediente  procesado: %s legajos creados, %s errores",
+            result["validos"], result["errores"]
         )
 
         # Estado EN_ESPERA
         estado_espera, _ = EstadoExpediente.objects.get_or_create(nombre="EN_ESPERA")
         expediente.estado = estado_espera
         expediente.save(update_fields=["estado"])
-        logger.info("Expediente %s pasó a estado EN_ESPERA", expediente.codigo)
+        logger.info("Expediente  pasó a estado EN_ESPERA")
 
         return {"creados": result["validos"], "errores": result["errores"]}
 
@@ -79,7 +74,7 @@ class ExpedienteService:
         estado, _ = EstadoExpediente.objects.get_or_create(nombre="CONFIRMACION_DE_ENVIO")
         expediente.estado = estado
         expediente.save(update_fields=["estado"])
-        logger.info("Expediente %s confirmado (ENVÍO) con %d legajos.", expediente.codigo, expediente.expediente_ciudadanos.count())
+        logger.info("Expediente %s confirmado (ENVÍO) con legajos.", expediente.expediente_ciudadanos.count())
         return {"validos": expediente.expediente_ciudadanos.count(), "errores": 0}
 
     @staticmethod
@@ -95,5 +90,5 @@ class ExpedienteService:
         estado, _ = EstadoExpediente.objects.get_or_create(nombre="ASIGNADO")
         expediente.estado = estado
         expediente.save(update_fields=["estado"])
-        logger.info("Técnico %s asignado al expediente %s", tecnico.username, expediente.codigo)
+        logger.info("Técnico %s asignado al expediente", tecnico.username)
         return expediente

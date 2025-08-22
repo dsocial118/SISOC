@@ -37,9 +37,9 @@ class TipoCruceAdmin(admin.ModelAdmin):
 
 @admin.register(Expediente)
 class ExpedienteAdmin(admin.ModelAdmin):
-    list_display = ("codigo", "usuario_provincia", "estado", "fecha_creacion")
+    list_display = ( "usuario_provincia", "estado", "fecha_creacion")
     list_filter = ("estado", "fecha_creacion")
-    search_fields = ("codigo",)
+    search_fields = ("usuario_provincia",)
     readonly_fields = ("fecha_creacion", "fecha_modificacion", "fecha_cierre")
 
 

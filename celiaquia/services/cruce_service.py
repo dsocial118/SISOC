@@ -223,7 +223,7 @@ class CruceService:
         y -= 20
 
         c.setFont("Helvetica", 10)
-        c.drawString(margin_x, y, f"Expediente: {expediente.codigo}")
+        c.drawString(margin_x, y, f"Expediente: ")
         y -= 15
 
         tecnico_txt = None
@@ -353,7 +353,7 @@ class CruceService:
         buffer = BytesIO()
         writer = csv.writer(buffer)
         writer.writerow(["PRD - Resultado de Cruce por CUIT/DNI"])
-        writer.writerow(["Expediente", expediente.codigo])
+        
         writer.writerow(["Fecha", datetime.now().strftime("%d/%m/%Y %H:%M")])
         writer.writerow([])
         writer.writerow(["Resumen"])
@@ -491,7 +491,7 @@ class CruceService:
             "rechazados_sintys": rechazados_sintys,
         }
 
-        nombre_base = slugify(f"{expediente.codigo}-prd-cruce-{datetime.now().strftime('%Y%m%d-%H%M%S')}")
+        nombre_base = slugify(f"prd-cruce-{datetime.now().strftime('%Y%m%d-%H%M%S')}")
         try:
             pdf_bytes = CruceService._generar_prd_pdf(expediente, resumen)
             expediente.documento.save(f"{nombre_base}.pdf", ContentFile(pdf_bytes), save=False)
@@ -506,9 +506,8 @@ class CruceService:
         expediente.save(update_fields=["documento", "estado", "usuario_modificador"])
 
         logger.info(
-            "Cruce finalizado para expediente %s: %s match / %s no-match (sobre %s aprobados). "
-            "Rechazados listados en 'detalle_no_match': %s filas.",
-            expediente.codigo, matcheados, no_matcheados_aprobados, total_legajos_aprobados,
+            "Cruce finalizado para expediente : %s  match / %s no-match (sobre %s aprobados). "
+            "Rechazados listados en 'detalle_no_match': %s filas.", matcheados, no_matcheados_aprobados, total_legajos_aprobados,
             len(detalle_no_match)
         )
         return resumen
