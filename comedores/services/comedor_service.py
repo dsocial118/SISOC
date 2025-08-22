@@ -2,7 +2,6 @@ import re
 import logging
 from typing import Union
 
-from django.core.files.storage import default_storage
 from django.db.models import Q, Count, Prefetch
 from django.db import transaction
 from django.core.paginator import Paginator
@@ -129,56 +128,53 @@ class ComedorService:
     def get_comedor_detail_object(comedor_id: int):
         """Fetch a comedor with all related objects optimized for detail view."""
         preload_valores_comida_cache()
-        return (
-            Comedor.objects.select_related(
-                "provincia",
-                "municipio",
-                "localidad",
-                "referente",
-                "organizacion",
-                "programa",
-                "tipocomedor",
-                "dupla",
-            )
-            .prefetch_related(
-                "expedientes_pagos",
-                Prefetch(
-                    "imagenes",
-                    queryset=ImagenComedor.objects.only("imagen"),
-                    to_attr="imagenes_optimized",
+        qs = Comedor.objects.select_related(
+            "provincia",
+            "municipio",
+            "localidad",
+            "referente",
+            "organizacion",
+            "programa",
+            "tipocomedor",
+            "dupla",
+        ).prefetch_related(
+            "expedientes_pagos",
+            Prefetch(
+                "imagenes",
+                queryset=ImagenComedor.objects.only("imagen"),
+                to_attr="imagenes_optimized",
+            ),
+            Prefetch(
+                "relevamiento_set",
+                queryset=Relevamiento.objects.select_related("prestacion").order_by(
+                    "-estado", "-id"
                 ),
-                Prefetch(
-                    "relevamiento_set",
-                    queryset=Relevamiento.objects.select_related("prestacion").order_by(
-                        "-estado", "-id"
-                    ),
-                    to_attr="relevamientos_optimized",
-                ),
-                Prefetch(
-                    "observacion_set",
-                    queryset=Observacion.objects.order_by("-fecha_visita")[:3],
-                    to_attr="observaciones_optimized",
-                ),
-                Prefetch(
-                    "clasificacioncomedor_set",
-                    queryset=ClasificacionComedor.objects.select_related(
-                        "categoria"
-                    ).order_by("-fecha"),
-                    to_attr="clasificaciones_optimized",
-                ),
-                Prefetch(
-                    "admision_set",
-                    queryset=Admision.objects.select_related("tipo_convenio", "estado"),
-                    to_attr="admisiones_optimized",
-                ),
-                Prefetch(
-                    "rendiciones_cuentas_mensuales",
-                    queryset=RendicionCuentaMensual.objects.only("id"),
-                    to_attr="rendiciones_optimized",
-                ),
-            )
-            .get(pk=comedor_id)
+                to_attr="relevamientos_optimized",
+            ),
+            Prefetch(
+                "observacion_set",
+                queryset=Observacion.objects.order_by("-fecha_visita")[:3],
+                to_attr="observaciones_optimized",
+            ),
+            Prefetch(
+                "clasificacioncomedor_set",
+                queryset=ClasificacionComedor.objects.select_related(
+                    "categoria"
+                ).order_by("-fecha"),
+                to_attr="clasificaciones_optimized",
+            ),
+            Prefetch(
+                "admision_set",
+                queryset=Admision.objects.select_related("tipo_convenio", "estado"),
+                to_attr="admisiones_optimized",
+            ),
+            Prefetch(
+                "rendiciones_cuentas_mensuales",
+                queryset=RendicionCuentaMensual.objects.only("id"),
+                to_attr="rendiciones_optimized",
+            ),
         )
+        return get_object_or_404(qs, pk=comedor_id)
 
     @staticmethod
     def get_ubicaciones_ids(data):
@@ -228,14 +224,13 @@ class ComedorService:
     def get_presupuestos(comedor_id: int, relevamientos_prefetched=None):
         valor_map = preload_valores_comida_cache()
         if relevamientos_prefetched:
-            beneficiarios = (
-                relevamientos_prefetched[0] if relevamientos_prefetched else None
-            )
+            relevamiento = relevamientos_prefetched[0]
         else:
-            beneficiarios = (
+            relevamiento = (
                 Relevamiento.objects.select_related("prestacion")
                 .filter(comedor=comedor_id)
-                .only("prestacion")
+                .order_by("-fecha_visita")
+                .only("prestacion", "fecha_visita")
                 .first()
             )
         count = {
@@ -272,6 +267,7 @@ class ComedorService:
         valor_desayuno = count["desayuno"] * valor_map.get("desayuno", 0)
         valor_almuerzo = count["almuerzo"] * valor_map.get("almuerzo", 0)
         valor_merienda = count["merienda"] * valor_map.get("merienda", 0)
+
         return (
             count_beneficiarios,
             valor_cena,

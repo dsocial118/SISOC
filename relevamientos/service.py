@@ -61,8 +61,39 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def update_comedor(comedor_data, comedor_instance):
-        """Actualiza los campos de un comedor que envia GESTIONAR via API."""
+        """
+        Actualiza los campos de un comedor que envia GESTIONAR via API.
+        Si no existe municipio o localidad, los crea.
+        """
         try:
+            provincia = (
+                Provincia.objects.get(nombre=comedor_data["provincia"])
+                if comedor_data.get("provincia")
+                else comedor_instance.provincia
+            )
+
+            municipio = (
+                Municipio.objects.get_or_create(
+                    nombre=comedor_data["municipio"],
+                    provincia=provincia,
+                )[0]
+                if comedor_data.get("municipio")
+                else comedor_instance.municipio
+            )
+
+            localidad = (
+                Localidad.objects.get_or_create(
+                    nombre=comedor_data["localidad"],
+                    municipio=municipio,
+                )[0]
+                if comedor_data.get("localidad")
+                else comedor_instance.localidad
+            )
+
+            comedor_instance.provincia = provincia
+            comedor_instance.municipio = municipio
+            comedor_instance.localidad = localidad
+
             comedor_instance.numero = convert_string_to_int(
                 comedor_data.get("numero", comedor_instance.numero)
             )
@@ -78,33 +109,6 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             )
             comedor_instance.codigo_postal = convert_string_to_int(
                 comedor_data.get("codigo_postal", comedor_instance.codigo_postal)
-            )
-            comedor_instance.provincia = (
-                Provincia.objects.get(nombre=comedor_data.get("provincia"))
-                if comedor_data.get("provincia")
-                else comedor_instance.provincia
-            )
-            comedor_instance.municipio = (
-                Municipio.objects.get(
-                    nombre=comedor_data.get("municipio"),
-                )
-                if comedor_data.get("municipio")
-                else comedor_instance.municipio
-            )
-            comedor_instance.localidad = Localidad.objects.get(
-                nombre=comedor_data.get("localidad", comedor_instance.localidad),
-                municipio=(
-                    Municipio.objects.get(
-                        nombre=comedor_data.get("municipio"),
-                        provincia=(
-                            Provincia.objects.get(nombre=comedor_data.get("provincia"))
-                            if comedor_data.get("provincia")
-                            else comedor_instance.provincia
-                        ),
-                    )
-                    if comedor_data.get("municipio")
-                    else comedor_instance.municipio
-                ),
             )
             comedor_instance.partido = comedor_data.get(
                 "partido", comedor_instance.partido

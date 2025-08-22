@@ -23,7 +23,7 @@ from centrodefamilia.services.informe_cabal_service import (
     persist_file_and_rows,
 )
 
-logger = logging.getLogger("django")
+logger = logging.getLogger(__name__)
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
@@ -69,11 +69,8 @@ class InformeCabalPreviewAjaxView(LoginRequiredMixin, TemplateView):
                 },
                 status=400,
             )
-        except Exception:
-            logger.exception(
-                "Error en preview CABAL",
-                extra={"filename": getattr(f, "name", None)},
-            )
+        except Exception as e:
+            logger.error("Error en preview CABAL: %s", e, exc_info=True)
             return JsonResponse(
                 {"ok": False, "error": "Error inesperado al previsualizar."}, status=500
             )
@@ -120,14 +117,8 @@ class InformeCabalProcessAjaxView(LoginRequiredMixin, TemplateView):
                 },
                 status=400,
             )
-        except Exception:
-            logger.exception(
-                "Error inesperado al procesar CABAL",
-                extra={
-                    "filename": getattr(f, "name", None),
-                    "user_pk": getattr(request.user, "pk", None),
-                },
-            )
+        except Exception as e:
+            logger.error("Error inesperado al procesar CABAL: %s", e, exc_info=True)
             return JsonResponse(
                 {"ok": False, "error": "Error inesperado al procesar."}, status=500
             )
@@ -177,6 +168,7 @@ class InformeCabalReprocessCenterAjaxView(LoginRequiredMixin, View):
                 "ReprocessError al reprocesar CABAL (codigo=%s): %s",
                 codigo,
                 e,
+                exc_info=True,
             )
             return JsonResponse(
                 {
@@ -186,10 +178,12 @@ class InformeCabalReprocessCenterAjaxView(LoginRequiredMixin, View):
                 status=400,
             )
 
-        except Exception:
-            logger.exception(
-                "Error inesperado al reprocesar CABAL",
-                extra={"codigo": codigo},
+        except Exception as e:
+            logger.error(
+                "Error inesperado al reprocesar CABAL (codigo=%s): %s",
+                codigo,
+                e,
+                exc_info=True,
             )
             return JsonResponse(
                 {"ok": False, "error": "Error inesperado al reprocesar el centro."},
