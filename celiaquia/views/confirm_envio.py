@@ -51,8 +51,8 @@ class ExpedienteConfirmView(LoginRequiredMixin, View):
             # 2) Ejecutar validaciones y transición de estado
             result = ExpedienteService.confirmar_envio(expediente)
             logger.info(
-                "Confirmación de envío OK. Expediente %s por %s",
-                expediente.codigo,
+                "Confirmación de envío OK. Expediente por %s",
+                
                 request.user.username,
             )
             return JsonResponse(

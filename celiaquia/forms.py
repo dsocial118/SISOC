@@ -51,7 +51,7 @@ class ExpedienteForm(BaseStyledForm):
 
     class Meta:
         model = Expediente
-        fields = ["codigo", "observaciones", "excel_masivo"]
+        fields = [ "observaciones", "excel_masivo"]
 
 
 class ConfirmarEnvioForm(forms.Form):

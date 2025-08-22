@@ -20,7 +20,7 @@ class UserCreationForm(forms.ModelForm):
     provincia = forms.ModelChoiceField(
         queryset=Provincia.objects.all(),
         required=False,
-        widget=forms.Select(attrs={"class": "select2"}),
+        widget=forms.Select(attrs={"class": "select"}),
         label="Provincia",
     )
 
