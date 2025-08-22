@@ -100,12 +100,30 @@ def invalidate_intervenciones_cache():
 
 
 def invalidate_territoriales_cache():
-    """Invalida cache de territoriales."""
+    """Invalida cache de territoriales (método legacy)."""
     keys_to_invalidate = [
-        "territoriales_list",
+        "territoriales_list",  # Legacy key
     ]
 
     invalidate_cache_keys(*keys_to_invalidate)
+
+def invalidate_territoriales_cache_provincia(provincia_id=None):
+    """Invalida cache territorial por provincia."""
+    if provincia_id:
+        cache_key = f"territoriales_provincia_{provincia_id}"
+        cache.delete(cache_key)
+        logger.info(f"Invalidado cache territorial para provincia {provincia_id}")
+    else:
+        # Invalidar todas las provincias
+        from core.models import Provincia
+        provincias = Provincia.objects.values_list('id', flat=True)
+        for prov_id in provincias:
+            cache.delete(f"territoriales_provincia_{prov_id}")
+        logger.info("Invalidado cache territorial para todas las provincias")
+
+# Import logger at the top level for the function above
+import logging
+logger = logging.getLogger("django")
 
 
 def invalidate_centrodefamilia_cache(user_id=None):
@@ -161,9 +179,17 @@ def invalidate_valor_comida_cache_on_change(sender, **kwargs):
 
 
 @receiver([post_save, post_delete], sender="comedores.TerritorialCache")
-def invalidate_territorial_cache_on_change(sender, **kwargs):
-    """Invalida cache cuando cambian datos de territoriales."""
+def invalidate_territorial_cache_on_change(sender, instance, **kwargs):
+    """Invalida cache cuando cambian datos de territoriales por provincia."""
+    # Invalidar cache legacy
     invalidate_territoriales_cache()
+    
+    # Invalidar cache específico por provincia si existe
+    if hasattr(instance, 'provincia_id') and instance.provincia_id:
+        invalidate_territoriales_cache_provincia(instance.provincia_id)
+    else:
+        # Fallback: invalidar todas las provincias
+        invalidate_territoriales_cache_provincia()
 
 
 # Funciones helper para uso en vistas
