@@ -239,9 +239,9 @@ class ComedorService:
             "merienda": 0,
             "cena": 0,
         }
-        if beneficiarios and beneficiarios.prestacion:
+        if relevamiento and relevamiento.prestacion:
             # Obtener prestación del relevamiento
-            prestacion = beneficiarios.prestacion
+            prestacion = relevamiento.prestacion
             dias = [
                 "lunes",
                 "martes",
