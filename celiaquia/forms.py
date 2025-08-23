@@ -6,36 +6,38 @@ from django.utils.translation import gettext_lazy as _
 from celiaquia.models import (
     Expediente,
     ExpedienteCiudadano,
-    Organismo,
-    TipoCruce,
 )
 
-# Custom Validators
-
-
+# === Validators ===
 def validate_file_size(value):
     max_mb = 5
-    if value.size > max_mb * 4024 * 4024:
+    if value.size > max_mb * 1024 * 1024:
         raise ValidationError(_(f"El archivo supera el tamaño máximo de {max_mb} MB."))
 
-
+# === Base forms (estilo uniforme) ===
 class BaseStyledForm(forms.ModelForm):
-    """Applies uniform styling; skips placeholder for non-text fields."""
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Recorremos directamente los campos sin desempaquetar name
         for field in self.fields.values():
             widget = field.widget
             input_type = getattr(widget, "input_type", "")
-            # Decidir clase CSS
             css_class = "form-control-file" if input_type == "file" else "form-control"
             widget.attrs.setdefault("class", css_class)
-            # Placeholder sólo para tipos textuales
             if input_type in ("text", "number", "email", "date"):
                 widget.attrs.setdefault("placeholder", field.label)
 
+class StyledForm(forms.Form):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            widget = field.widget
+            input_type = getattr(widget, "input_type", "")
+            css_class = "form-control-file" if input_type == "file" else "form-control"
+            widget.attrs.setdefault("class", css_class)
+            if input_type in ("text", "number", "email", "date"):
+                widget.attrs.setdefault("placeholder", field.label)
 
+# === Expediente ===
 class ExpedienteForm(BaseStyledForm):
     excel_masivo = forms.FileField(
         label=_("Archivo Excel"),
@@ -51,8 +53,7 @@ class ExpedienteForm(BaseStyledForm):
 
     class Meta:
         model = Expediente
-        fields = [ "observaciones", "excel_masivo"]
-
+        fields = ["observaciones", "excel_masivo"]
 
 class ConfirmarEnvioForm(forms.Form):
     confirm = forms.BooleanField(
@@ -61,7 +62,7 @@ class ConfirmarEnvioForm(forms.Form):
         required=True,
     )
 
-
+# === Legajo (archivo) ===
 class LegajoArchivoForm(BaseStyledForm):
     archivo = forms.FileField(
         label=_("Archivo de Legajo"),
@@ -77,7 +78,17 @@ class LegajoArchivoForm(BaseStyledForm):
         model = ExpedienteCiudadano
         fields = ["archivo"]
 
+# === Cupo (acciones de coordinador) ===
+class CupoBajaLegajoForm(StyledForm):
+    motivo = forms.CharField(
+        label=_("Motivo de la baja"),
+        widget=forms.Textarea(attrs={"rows": 2}),
+        required=True,
+    )
 
-
-
-
+class CupoSuspenderLegajoForm(StyledForm):
+    motivo = forms.CharField(
+        label=_("Motivo de la suspensión"),
+        widget=forms.Textarea(attrs={"rows": 2}),
+        required=True,
+    )

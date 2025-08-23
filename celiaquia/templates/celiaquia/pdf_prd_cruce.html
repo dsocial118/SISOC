@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   {% load math_extras %}
   <style>
-   
     @page {
       size: A4;
       margin: 3.5cm 2cm 2.5cm 2cm;
@@ -16,7 +15,6 @@
     }
     body { font-family: Arial, sans-serif; font-size: 10pt; margin: 0; color: #222; }
 
-    
     #header {
       position: running(header);
       height: 3cm;
@@ -50,7 +48,6 @@
       filter: grayscale(100%);
     }
 
-    
     h1, h2, h3, h4 { margin: 0; }
     h4 { text-align: center; margin-top: 12px; margin-bottom: 6px; }
     .title {
@@ -62,7 +59,6 @@
     }
     .subtle { color: #555; }
 
-    
     .meta {
       margin: 10px 0 16px 0;
       display: grid;
@@ -80,7 +76,6 @@
       color: #333;
     }
 
-   
     .cards {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -106,7 +101,6 @@
     .kpi .kv { line-height: 1.4; }
     .kpi .kv b { font-size: 11pt; }
 
-   
     .progress {
       height: 10px;
       background: #eee;
@@ -123,7 +117,6 @@
     .bar--ok  { background-color: #22c55e; }
     .bar--bad { background-color: #ef4444; }
 
-    
     table {
       width: 100%;
       border-collapse: collapse;
@@ -148,7 +141,6 @@
   </style>
 </head>
 <body>
-  <!-- Header fijo -->
   <div id="header">
     <div class="header-left">
       PROGRAMA CELIAQUIA<br/>
@@ -165,7 +157,6 @@
   <main>
     <div class="title">PRD — Resultado de Cruce por CUIT/DNI</div>
 
-    <!-- Meta -->
     <div class="meta">
       <div class="item">
         <b>Expediente:</b> {{ expediente.codigo }}
@@ -198,7 +189,6 @@
       </div>
     </div>
 
-    <!-- KPIs y barras -->
     <div class="cards">
       <div class="card">
         <h5>Resumen de archivo</h5>
@@ -237,6 +227,29 @@
       </div>
     </div>
 
+    {% if resumen.cupo or resumen.cupo_total_asignado %}
+      <div class="cards avoid-break">
+        <div class="card" style="grid-column: span 2;">
+          <h5>Cupo provincial</h5>
+          {% if resumen.cupo %}
+            <div class="kpi">
+              <div class="kv"><span class="muted">Total asignado</span><br><b>{{ resumen.cupo.total_asignado }}</b></div>
+              <div class="kv"><span class="muted">Usados</span><br><b>{{ resumen.cupo.usados }}</b></div>
+              <div class="kv"><span class="muted">Disponibles</span><br><b>{{ resumen.cupo.disponibles }}</b></div>
+              <div class="kv"><span class="muted">Fuera de cupo</span><br><b>{{ resumen.cupo_fuera_count|default:"—" }}</b></div>
+            </div>
+          {% else %}
+            <div class="kpi">
+              <div class="kv"><span class="muted">Total asignado</span><br><b>{{ resumen.cupo_total_asignado }}</b></div>
+              <div class="kv"><span class="muted">Usados</span><br><b>{{ resumen.cupo_usados }}</b></div>
+              <div class="kv"><span class="muted">Disponibles</span><br><b>{{ resumen.cupo_disponibles }}</b></div>
+              <div class="kv"><span class="muted">Fuera de cupo</span><br><b>{{ resumen.cupo_fuera_count|default:"—" }}</b></div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+
     {% if resumen.detalle_match and resumen.detalle_match|length > 0 %}
       <div class="section">
         <h4>Detalle de aprobado</h4>
@@ -265,10 +278,34 @@
       </div>
     {% endif %}
 
-    <!-- Salto de página antes de los no matcheados, si hay muchos matcheados -->
+    {% if resumen.detalle_fuera_cupo and resumen.detalle_fuera_cupo|length > 0 %}
+      <div class="section page-break">
+        <h4>Fuera de cupo (lista de espera)</h4>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 32px;"></th>
+              <th>Documento</th>
+              <th>Nombre</th>
+              <th>Apellido</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for fila in resumen.detalle_fuera_cupo %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{% firstof fila.dni fila.documento fila.cuit "" %}</td>
+                <td>{{ fila.nombre|default_if_none:"" }}</td>
+                <td>{{ fila.apellido|default_if_none:"" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+
     <div class="page-break"></div>
 
-    <!-- Detalle de no matcheados -->
     <div class="section">
       <h4>Detalle de no aprobado</h4>
       <table>
@@ -301,15 +338,13 @@
       </table>
     </div>
 
-
-    <!-- Notas -->
     <div class="section">
       <h4>Notas</h4>
       <ul>
         <li>Las coincidencias se determinan por CUIT exacto (11 dígitos) o por DNI normalizado (sin ceros a la izquierda).</li>
         <li>En columnas con rótulo “cuit” que contengan valores de 8 dígitos, se interpretan como DNI.</li>
         <li>Regla aplicada: sólo se cruzan legajos con revisión del técnico en estado “APROBADO”.</li>
-        <li>En “Observación” puede aparecer “No está en archivo de Syntys” o “No coincide por CUIT/DNI”. Si el legajo fue rechazado por el técnico, no se cruza y no aparece en esta lista.</li>
+        <li>Los “Fuera de cupo” son aprobados con match que no ingresan por falta de disponibilidad en la provincia.</li>
       </ul>
     </div>
   </main>

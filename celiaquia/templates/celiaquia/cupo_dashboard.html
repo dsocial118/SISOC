@@ -1,0 +1,75 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Cupos por provincia{% endblock %}
+
+{% block breadcrumb %}
+<ol class="breadcrumb float-sm-right">
+  <li class="breadcrumb-item"><a href="{% url 'expediente_list' %}">Expedientes</a></li>
+  <li class="breadcrumb-item active">Cupos</li>
+</ol>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="mb-0">Cupos por provincia</h4>
+</div>
+
+<div class="card">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Provincia</th>
+            <th class="text-end">Total asignado</th>
+            <th class="text-end">Usados</th>
+            <th class="text-end">Disponibles</th>
+            <th class="text-end">Fuera de cupo</th>
+            <th class="text-end">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+            <tr>
+              <td>{{ r.provincia }}</td>
+              <td class="text-end">
+                {% if r.total_asignado is not None %}
+                  {{ r.total_asignado }}
+                {% else %}
+                  <span class="badge bg-secondary">Sin configurar</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                {% if r.usados is not None %}
+                  {{ r.usados }}
+                {% else %}—{% endif %}
+              </td>
+              <td class="text-end">
+                {% if r.disponibles is not None %}
+                  {{ r.disponibles }}
+                {% else %}—{% endif %}
+              </td>
+              <td class="text-end">
+                {% if r.fuera is not None %}
+                  {{ r.fuera }}
+                {% else %}—{% endif %}
+              </td>
+              <td class="text-end">
+                <a class="btn btn-sm btn-outline-primary"
+                   href="{% url 'cupo_provincia_detail' r.provincia.id %}">
+                  Ver
+                </a>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="6" class="text-center text-muted py-4">No hay provincias para mostrar.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
