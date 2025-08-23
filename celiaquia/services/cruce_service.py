@@ -1,3 +1,7 @@
+"""
+[celiaquia/services/cruce_service.py]
+"""
+
 import csv
 import io
 import logging
@@ -22,6 +26,10 @@ from celiaquia.models import (
     EstadoExpediente,
     Expediente,
     ExpedienteCiudadano,
+)
+from celiaquia.services.cupo_service import (
+    CupoService,
+    CupoNoConfigurado,
 )
 
 logger = logging.getLogger(__name__)
@@ -103,9 +111,6 @@ class CruceService:
 
     @staticmethod
     def _leer_tabla(archivo_fileobj) -> pd.DataFrame:
-        """
-        Lee XLSX/XLS/CSV en un DataFrame y normaliza encabezados.
-        """
         raw = CruceService._read_file_bytes(archivo_fileobj)
         bio = io.BytesIO(raw)
         try:
@@ -140,10 +145,6 @@ class CruceService:
 
     @staticmethod
     def _leer_identificadores(archivo_excel) -> dict:
-        """
-        Devuelve {"cuits": set(...), "dnis": set(...)} a partir de XLSX/XLS/CSV.
-        Acepta columna 'cuit' y/o 'dni'. Si en 'cuit' vienen DNIs (8 dígitos), se tratan como DNI.
-        """
         df = CruceService._leer_tabla(archivo_excel)
         col_cuit = CruceService._col_por_preferencias(df, CUIT_COL_CANDIDATAS, "cuit")
         col_dni = CruceService._col_por_preferencias(df, DNI_COL_CANDIDATAS, "dni")
@@ -174,9 +175,6 @@ class CruceService:
 
     @staticmethod
     def _generar_prd_pdf_html(expediente: Expediente, resumen: dict) -> bytes:
-        """
-        Genera PDF con WeasyPrint a partir del template 'celiaquia/pdf_prd_cruce.html'.
-        """
         total_legajos = int(resumen.get("total_legajos", 0) or 0)
         matcheados = int(resumen.get("matcheados", 0) or 0)
         no_matcheados = int(resumen.get("no_matcheados", 0) or 0)
@@ -246,6 +244,18 @@ class CruceService:
         total_cuits = int(resumen.get("total_cuits_archivo", 0) or 0)
         total_dnis = int(resumen.get("total_dnis_archivo", 0) or 0)
 
+        # Métricas de cupo (acepta viejo esquema o 'cupo' dict)
+        cupo_total = resumen.get("cupo_total")
+        cupo_usados = resumen.get("cupo_usados")
+        cupo_disponibles = resumen.get("cupo_disponibles")
+        fuera_cupo = resumen.get("fuera_cupo")
+        if (cupo_total is None or cupo_usados is None or cupo_disponibles is None) and resumen.get("cupo"):
+            cupo_total = resumen["cupo"].get("total_asignado")
+            cupo_usados = resumen["cupo"].get("usados")
+            cupo_disponibles = resumen["cupo"].get("disponibles")
+        if fuera_cupo is None:
+            fuera_cupo = resumen.get("cupo_fuera_count")
+
         pct_match = (matcheados * 100.0 / total_legajos) if total_legajos else 0.0
         pct_no_match = (no_matcheados * 100.0 / total_legajos) if total_legajos else 0.0
 
@@ -265,7 +275,22 @@ class CruceService:
             c.drawString(margin_x + 10, y, f"- {label}: {value}")
             y -= 14
 
-        # ---- Matcheados (aprobados con MATCH) ----
+        if cupo_total is not None:
+            ensure_space()
+            c.setFont("Helvetica-Bold", 12)
+            c.drawString(margin_x, y, "Cupo:")
+            y -= 16
+            c.setFont("Helvetica", 10)
+            for label, value in [
+                ("Total asignado", cupo_total),
+                ("Usados", cupo_usados),
+                ("Disponibles", cupo_disponibles),
+                ("Fuera de cupo (lista de espera)", int(fuera_cupo or 0)),
+            ]:
+                ensure_space()
+                c.drawString(margin_x + 10, y, f"- {label}: {value}")
+                y -= 14
+
         detalle_ok = resumen.get("detalle_match", []) or []
         ensure_space(90)
         c.setFont("Helvetica-Bold", 12)
@@ -300,7 +325,6 @@ class CruceService:
                 c.drawString(margin_x + 460, y, por[:20])
                 y -= 12
 
-        # ---- No matcheados (aprobados sin match + rechazados) ----
         detalle_bad = resumen.get("detalle_no_match", []) or []
         ensure_space(120)
         c.setFont("Helvetica-Bold", 12)
@@ -332,12 +356,33 @@ class CruceService:
                 c.drawString(margin_x + 260, y, obs[:90])
                 y -= 12
 
+        detalle_fuera = resumen.get("detalle_fuera_cupo", []) or []
+        if detalle_fuera:
+            ensure_space(120)
+            c.setFont("Helvetica-Bold", 12)
+            c.drawString(margin_x, y, "Lista de espera (Fuera de cupo):")
+            y -= 16
+            c.setFont("Helvetica", 9)
+            c.drawString(margin_x + 10, y, "#")
+            c.drawString(margin_x + 30, y, "DNI")
+            c.drawString(margin_x + 120, y, "CUIT")
+            c.drawString(margin_x + 260, y, "Nombre")
+            c.drawString(margin_x + 380, y, "Apellido")
+            y -= 12
+            for i, fila in enumerate(detalle_fuera, start=1):
+                ensure_space()
+                c.drawString(margin_x + 10, y, str(i))
+                c.drawString(margin_x + 30, y, str(fila.get("dni", ""))[:15])
+                c.drawString(margin_x + 120, y, str(fila.get("cuit", ""))[:20])
+                c.drawString(margin_x + 260, y, str(fila.get("nombre", ""))[:18])
+                c.drawString(margin_x + 380, y, str(fila.get("apellido", ""))[:18])
+                y -= 12
+
         c.showPage()
         c.save()
         pdf_bytes = buffer.getvalue()
         buffer.close()
         return pdf_bytes
-
 
     @staticmethod
     def _generar_prd_pdf(expediente: Expediente, resumen: dict) -> bytes:
@@ -353,7 +398,7 @@ class CruceService:
         buffer = BytesIO()
         writer = csv.writer(buffer)
         writer.writerow(["PRD - Resultado de Cruce por CUIT/DNI"])
-        
+
         writer.writerow(["Fecha", datetime.now().strftime("%d/%m/%Y %H:%M")])
         writer.writerow([])
         writer.writerow(["Resumen"])
@@ -362,23 +407,36 @@ class CruceService:
         writer.writerow(["total_dnis_archivo", resumen.get("total_dnis_archivo", 0)])
         writer.writerow(["matcheados", resumen.get("matcheados", 0)])
         writer.writerow(["no_matcheados", resumen.get("no_matcheados", 0)])
+
+        # Cupo (acepta viejo esquema o 'cupo' dict)
+        writer.writerow([])
+        writer.writerow(["Cupo"])
+        if resumen.get("cupo"):
+            writer.writerow(["total_asignado", resumen["cupo"].get("total_asignado", "")])
+            writer.writerow(["usados", resumen["cupo"].get("usados", "")])
+            writer.writerow(["disponibles", resumen["cupo"].get("disponibles", "")])
+            writer.writerow(["fuera_de_cupo", resumen.get("cupo_fuera_count", 0)])
+        else:
+            writer.writerow(["total_asignado", resumen.get("cupo_total", "")])
+            writer.writerow(["usados", resumen.get("cupo_usados", "")])
+            writer.writerow(["disponibles", resumen.get("cupo_disponibles", "")])
+            writer.writerow(["fuera_de_cupo", resumen.get("fuera_cupo", 0)])
+
         writer.writerow([])
         writer.writerow(["Detalle_no_matcheados"])
         for fila in resumen.get("detalle_no_match", []):
             writer.writerow([fila])
+
+        writer.writerow([])
+        writer.writerow(["Detalle_fuera_de_cupo"])
+        for fila in resumen.get("detalle_fuera_cupo", []):
+            writer.writerow([fila])
+
         return buffer.getvalue()
 
     @staticmethod
     @transaction.atomic
     def procesar_cruce_por_cuit(expediente: Expediente, archivo_excel, usuario) -> dict:
-        """
-        Guarda el Excel/CSV, cruza CUITs/DNIs contra la nómina y genera un PRD en el expediente.
-        Cambia estados: ASIGNADO -> PROCESO_DE_CRUCE -> CRUCE_FINALIZADO.
-
-        REGLA: solo se cruzan legajos con revision_tecnico = 'APROBADO' para
-        actualizar resultado_sintys. Los 'RECHAZADO' no se cruzan, pero se
-        incluyen en el detalle de "no matcheados" con la observación adecuada.
-        """
         if not expediente:
             raise ValidationError("Expediente inválido.")
 
@@ -386,6 +444,13 @@ class CruceService:
         estados_permitidos = ("ASIGNADO", "PROCESO_DE_CRUCE", "CRUCE_FINALIZADO")
         if estado_actual not in estados_permitidos:
             raise ValidationError("El expediente no está en un estado válido para realizar el cruce.")
+
+        try:
+            metrics_iniciales = CupoService.metrics_por_provincia(expediente.provincia)
+        except CupoNoConfigurado as e:
+            raise ValidationError(
+                f"No hay cupo configurado para la provincia del expediente. {e}"
+            )
 
         expediente.cruce_excel = archivo_excel
         expediente.usuario_modificador = usuario
@@ -431,9 +496,18 @@ class CruceService:
             leg.cruce_ok = bool(match)
             leg.resultado_sintys = "MATCH" if match else "NO_MATCH"
             leg.observacion_cruce = None if match else "No está en archivo de Syntys"
-            leg.save(update_fields=["cruce_ok", "resultado_sintys", "observacion_cruce", "modificado_en"])
+            leg.save()
 
             if match:
+                try:
+                    _ = CupoService.reservar_slot(
+                        legajo=leg,
+                        usuario=usuario,
+                        motivo=f"Cruce expediente {expediente.codigo} ({by})",
+                    )
+                except CupoNoConfigurado as e:
+                    raise ValidationError(f"Error de cupo: {e}")
+
                 matcheados += 1
                 detalle_match.append({
                     "dni": getattr(ciu, "documento", "") or "",
@@ -472,6 +546,20 @@ class CruceService:
                 "observacion": obs,
             })
 
+        try:
+            metrics_finales = CupoService.metrics_por_provincia(expediente.provincia)
+        except CupoNoConfigurado:
+            metrics_finales = metrics_iniciales
+
+        fuera_qs = CupoService.lista_fuera_de_cupo_por_expediente(expediente.id)
+        detalle_fuera = [{
+            "dni": getattr(l.ciudadano, "documento", "") or "",
+            "cuit": CruceService._resolver_cuit_ciudadano(l.ciudadano) or "",
+            "nombre": getattr(l.ciudadano, "nombre", "") or "",
+            "apellido": getattr(l.ciudadano, "apellido", "") or "",
+        } for l in fuera_qs]
+        fuera_count = len(detalle_fuera)
+
         aceptados = legajos_all.filter(revision_tecnico="APROBADO", resultado_sintys="MATCH").count()
         rechazados_tecnico = legajos_all.filter(revision_tecnico="RECHAZADO").count()
         rechazados_sintys = legajos_all.filter(
@@ -489,6 +577,14 @@ class CruceService:
             "aceptados": aceptados,
             "rechazados_tecnico": rechazados_tecnico,
             "rechazados_sintys": rechazados_sintys,
+            # Métricas de cupo para PRD/UI (formato esperado por template)
+            "cupo": {
+                "total_asignado": metrics_finales.get("total_asignado"),
+                "usados": metrics_finales.get("usados"),
+                "disponibles": metrics_finales.get("disponibles"),
+            },
+            "cupo_fuera_count": fuera_count,
+            "detalle_fuera_cupo": detalle_fuera,
         }
 
         nombre_base = slugify(f"prd-cruce-{datetime.now().strftime('%Y%m%d-%H%M%S')}")
@@ -506,8 +602,9 @@ class CruceService:
         expediente.save(update_fields=["documento", "estado", "usuario_modificador"])
 
         logger.info(
-            "Cruce finalizado para expediente : %s  match / %s no-match (sobre %s aprobados). "
-            "Rechazados listados en 'detalle_no_match': %s filas.", matcheados, no_matcheados_aprobados, total_legajos_aprobados,
-            len(detalle_no_match)
+            "Cruce finalizado para expediente: %s  %s match / %s no-match (sobre %s aprobados). "
+            "Rechazados en detalle_no_match: %s. Fuera de cupo: %s.",
+            expediente.id, matcheados, no_matcheados_aprobados, total_legajos_aprobados,
+            len(detalle_no_match), fuera_count
         )
         return resumen

@@ -33,6 +33,7 @@ from celiaquia.services.ciudadano_service import CiudadanoService
 from celiaquia.services.expediente_service import ExpedienteService
 from celiaquia.services.importacion_service import ImportacionService
 from celiaquia.services.cruce_service import CruceService
+from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado  # <<<
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +47,7 @@ def _is_admin(user) -> bool:
 def _is_ajax(request) -> bool:
     return request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
-# === NUEVO: helpers para usuarios provinciales ===
+# --- helpers usuario provincial ---
 def _is_provincial(user) -> bool:
     if not user.is_authenticated:
         return False
@@ -60,16 +61,10 @@ def _user_provincia(user):
         return user.profile.provincia
     except ObjectDoesNotExist:
         return None
-# === fin helpers ===
+# --- fin helpers ---
 
 
 def _parse_limit(value, default=5, max_cap=5000):
-    """
-    Interpreta un parámetro de límite de filas para preview.
-    - 'all', 'ALL', '0' o 0 -> None (sin tope)
-    - número > 0 -> min(número, max_cap)
-    - inválido -> default
-    """
     if value is None:
         return default
     txt = str(value).strip().lower()
@@ -85,16 +80,6 @@ def _parse_limit(value, default=5, max_cap=5000):
 
 
 class ExpedienteListView(ListView):
-    """
-    Descripción:
-      - Única lista para todos los roles.
-        * Admin (superuser): ve todos.
-        * ProvinciaCeliaquia: lista expedientes de su provincia (todos los creados por usuarios de su provincia).
-        * CoordinadorCeliaquia: lista CONFIRMACION_DE_ENVIO, RECEPCIONADO, ASIGNADO.
-        * TecnicoCeliaquia: lista asignados a él.
-      - Orden descendente por fecha_creacion.
-    """
-
     model = Expediente
     template_name = "celiaquia/expediente_list.html"
     context_object_name = "expedientes"
@@ -124,12 +109,10 @@ class ExpedienteListView(ListView):
         if _user_in_group(user, "TecnicoCeliaquia"):
             return qs.filter(asignacion_tecnico__tecnico=user).order_by("-fecha_creacion")
 
-        # NUEVO: usuario provincial ve expedientes de su provincia
         if _is_provincial(user):
             prov = _user_provincia(user)
             return qs.filter(usuario_provincia__profile__provincia=prov).order_by("-fecha_creacion")
 
-        # Fallback: usuarios no provinciales ven solo los propios
         return qs.filter(usuario_provincia=user).order_by("-fecha_creacion")
 
     def get_context_data(self, **kwargs):
@@ -145,12 +128,6 @@ class ExpedienteListView(ListView):
 
 @method_decorator(csrf_exempt, name="dispatch")
 class ProcesarExpedienteView(View):
-    """
-    Procesa Excel de nómina y crea/relaciona legajos.
-    Cambia estados: CREADO -> PROCESADO -> EN_ESPERA (en service).
-    Respuesta JSON (para botón en lista).
-    """
-
     def post(self, request, pk):
         user = self.request.user
         if _is_admin(user):
@@ -175,10 +152,6 @@ class ProcesarExpedienteView(View):
 
 
 class CrearLegajosView(View):
-    """
-    Crea legajos (ExpedienteCiudadano) a partir de filas JSON.
-    """
-
     def post(self, request, pk):
         user = self.request.user
         if _is_admin(user):
@@ -213,14 +186,6 @@ class CrearLegajosView(View):
 
 @method_decorator(csrf_exempt, name="dispatch")
 class ExpedientePreviewExcelView(View):
-    """
-    Devuelve headers y primeras filas del Excel de nómina (preview).
-    Permite controlar la cantidad de filas con el parámetro 'limit' (GET o POST):
-      - limit=all / 0 / none => todas las filas
-      - limit=<número>        => n primeras filas (clamp al máximo)
-      - omitido               => 5 filas por defecto
-    """
-
     def post(self, request, *args, **kwargs):
         logger.debug("PREVIEW: %s %s", request.method, request.path)
         archivo = request.FILES.get("excel_masivo")
@@ -257,7 +222,6 @@ class ExpedienteCreateView(CreateView):
 
 
 class ExpedienteDetailView(DetailView):
-
     model = Expediente
     template_name = "celiaquia/expediente_detail.html"
     context_object_name = "expediente"
@@ -313,6 +277,13 @@ class ExpedienteDetailView(DetailView):
 
         faltan_archivos = expediente.expediente_ciudadanos.filter(archivo__isnull=True).exists()
 
+        # Cupo
+        try:
+            cupo_metrics = CupoService.metrics_por_provincia(expediente.provincia)
+        except CupoNoConfigurado:
+            cupo_metrics = None
+        fuera_count = expediente.expediente_ciudadanos.filter(estado_cupo="FUERA").count()
+
         ctx.update(
             {
                 "legajos": expediente.expediente_ciudadanos.all(),
@@ -323,10 +294,11 @@ class ExpedienteDetailView(DetailView):
                 "preview_limit_opciones": preview_limit_opciones,
                 "tecnicos": tecnicos,
                 "faltan_archivos": faltan_archivos,
+                "cupo_metrics": cupo_metrics,
+                "fuera_count": fuera_count,
             }
         )
         return ctx
-
 
 
 class ExpedienteImportView(View):
@@ -358,13 +330,6 @@ class ExpedienteImportView(View):
 
 
 class ExpedienteConfirmView(View):
-    """
-    Provincia confirma envío (EN_ESPERA → CONFIRMACION_DE_ENVIO) con validación servidor.
-    - Si es AJAX, responde JSON (para lista).
-    - Si no, redirige con messages.
-    Admin también puede confirmar.
-    """
-
     def post(self, request, pk):
         user = self.request.user
         if _is_admin(user):
@@ -412,13 +377,6 @@ class ExpedienteUpdateView(UpdateView):
 
 
 class RecepcionarExpedienteView(View):
-    """
-    Subsecretaría recepciona:
-    CONFIRMACION_DE_ENVIO -> RECEPCIONADO.
-    Responde JSON si es AJAX; si no, redirect con messages.
-    Admin también puede recepcionar.
-    """
-
     def post(self, request, pk):
         user = self.request.user
         if not (_is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia")):
@@ -449,13 +407,6 @@ class RecepcionarExpedienteView(View):
 
 
 class AsignarTecnicoView(View):
-    """
-    Subsecretaría asigna técnico:
-    RECEPCIONADO -> ASIGNADO (o cambio de técnico manteniendo ASIGNADO).
-    Responde JSON si es AJAX; si no, redirect con messages.
-    Admin también puede asignar.
-    """
-
     def post(self, request, pk):
         user = self.request.user
         if not (_is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia")):
@@ -509,7 +460,6 @@ class AsignarTecnicoView(View):
 
 
 class SubirCruceExcelView(View):
-
     def post(self, request, pk):
         user = self.request.user
 
@@ -544,7 +494,7 @@ class SubirCruceExcelView(View):
 
     def get(self, *_a, **_k):
         return HttpResponseNotAllowed(["POST"])
-    
+
 
 @method_decorator(csrf_exempt, name="dispatch")
 class RevisarLegajoView(View):
@@ -565,7 +515,24 @@ class RevisarLegajoView(View):
         if accion not in ("APROBAR", "RECHAZAR"):
             return JsonResponse({"success": False, "error": "Acción inválida."}, status=400)
 
-        leg.revision_tecnico = "APROBADO" if accion == "APROBAR" else "RECHAZADO"
-        leg.save(update_fields=["revision_tecnico", "modificado_en"])
+        # Si rechaza y estaba consumiendo cupo, liberar
+        cupo_liberado = False
+        if accion == "RECHAZAR" and leg.estado_cupo == "DENTRO":
+            try:
+                CupoService.liberar_slot(
+                    legajo=leg,
+                    usuario=user,
+                    motivo=f"Baja por rechazo técnico en expediente {expediente.codigo}",
+                )
+                cupo_liberado = True
+                # salir de lista/cupo
+                leg.estado_cupo = "NO_EVAL"
+                leg.es_titular_activo = False
+            except Exception as e:
+                logger.error("Error al liberar cupo para legajo %s: %s", leg.pk, e, exc_info=True)
+                # seguimos, pero informamos en respuesta
 
-        return JsonResponse({"success": True, "estado": leg.revision_tecnico})
+        leg.revision_tecnico = "APROBADO" if accion == "APROBAR" else "RECHAZADO"
+        leg.save(update_fields=["revision_tecnico", "estado_cupo", "es_titular_activo", "modificado_en"])
+
+        return JsonResponse({"success": True, "estado": leg.revision_tecnico, "cupo_liberado": cupo_liberado})

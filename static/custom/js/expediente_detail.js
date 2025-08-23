@@ -334,7 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const helpEl  = document.getElementById('cruce-help');
     const btnSubmit = document.getElementById('btn-cruce-submit');
 
-    // Cambiamos el título/ayuda según el botón que abre el modal
+    // Cambiar rótulos según modo
     modalCruce.addEventListener('show.bs.modal', (e) => {
       const trigger = e.relatedTarget;
       const mode = (trigger && trigger.getAttribute('data-mode')) || 'new';
@@ -417,7 +417,6 @@ document.addEventListener('DOMContentLoaded', () => {
           throw new Error(msg);
         }
 
-        // Detalle/PRD opcionales (si el backend los envía)
         const detalle = (data.detalle && `
           <ul class="mb-0">
             <li><strong>Leídos:</strong> ${data.detalle.leidos ?? '-'}</li>
@@ -481,13 +480,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function toggleActive(btnAprobar, btnRechazar, estado) {
-      // Limpia estilos previos
       [btnAprobar, btnRechazar].forEach(b => {
         if (!b) return;
         b.classList.remove('active');
         b.classList.remove('btn-success','btn-danger');
-        b.classList.add('btn-outline-success'); // defaults
-        if (b.dataset.accion === 'RECHAZAR') {
+        b.classList.add('btn-outline-success');
+        if (b && b.dataset.accion === 'RECHAZAR') {
           b.classList.remove('btn-outline-success');
           b.classList.add('btn-outline-danger');
         }
@@ -520,12 +518,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const url = window.REVISAR_URL_TEMPLATE.replace('{id}', legajoId);
 
-        // Encuentra el "par" de botones dentro de la misma tarjeta
         const container = btn.closest('.legajo-item') || document;
         const btnAprobar  = container.querySelector(`.btn-revision[data-legajo-id="${legajoId}"][data-accion="APROBAR"]`);
         const btnRechazar = container.querySelector(`.btn-revision[data-legajo-id="${legajoId}"][data-accion="RECHAZAR"]`);
 
-        // Loading solo sobre el botón clickeado
         setLoading(btn, true);
 
         try {
@@ -558,7 +554,6 @@ document.addEventListener('DOMContentLoaded', () => {
             throw new Error(msg);
           }
 
-          // Éxito: reflectar estado visual en los botones
           toggleActive(btnAprobar, btnRechazar, data.estado || (accion === 'APROBAR' ? 'APROBADO' : 'RECHAZADO'));
           showAlert('success', `Legajo ${legajoId}: estado actualizado a <b>${data.estado}</b>.`);
 
