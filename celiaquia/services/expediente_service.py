@@ -1,9 +1,8 @@
-# services/expediente_service.py
 import logging
+from functools import lru_cache
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
-
 from celiaquia.models import EstadoExpediente, Expediente
 from celiaquia.services.importacion_service import ImportacionService
 from celiaquia.services.legajo_service import LegajoService
@@ -11,84 +10,97 @@ from celiaquia.services.legajo_service import LegajoService
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
+
+@lru_cache(maxsize=16)
+def _estado_id(nombre: str) -> int:
+    return EstadoExpediente.objects.get_or_create(nombre=nombre)[0].pk
+
+
+def _set_estado(expediente: Expediente, nombre: str) -> None:
+    expediente.estado_id = _estado_id(nombre)
+    expediente.save(update_fields=["estado"])
+
+
 class ExpedienteService:
     @staticmethod
     @transaction.atomic
     def create_expediente(usuario_provincia, datos_metadatos, excel_masivo):
-        """
-        Crea un nuevo Expediente en estado 'CREADO' con metadatos y archivo.
-        """
-
-        estado, _ = EstadoExpediente.objects.get_or_create(nombre="CREADO")
-        expediente = Expediente.objects.create(
-            
+        create_kwargs = dict(
             usuario_provincia=usuario_provincia,
-            estado=estado,
+            estado_id=_estado_id("CREADO"),
             observaciones=datos_metadatos.get("observaciones", ""),
             excel_masivo=excel_masivo,
         )
-        logger.info("Expediente creado por %s",  usuario_provincia.username)
+        try:
+            if hasattr(Expediente, "provincia_id"):
+                create_kwargs["provincia_id"] = getattr(
+                    getattr(usuario_provincia, "profile", None), "provincia_id", None
+                )
+        except Exception:
+            pass
+
+        expediente = Expediente.objects.create(**create_kwargs)
+        logger.info("Expediente creado por usuario_provincia=%s id=%s",
+                    usuario_provincia.username, expediente.pk)
         return expediente
 
     @staticmethod
     @transaction.atomic
-    def procesar_expediente(expediente, usuario):
-        """
-        Crea o enlaza todos los legajos desde el Excel.
-        Cambia el estado a 'PROCESADO' y luego automáticamente a 'EN_ESPERA'.
-        """
+    def procesar_expediente(expediente: Expediente, usuario):
         if not expediente.excel_masivo:
             raise ValidationError("No hay archivo Excel cargado para procesar.")
 
         result = ImportacionService.importar_legajos_desde_excel(
             expediente, expediente.excel_masivo, usuario
         )
-
-        # Estado PROCESADO
-        estado_procesado, _ = EstadoExpediente.objects.get_or_create(nombre="PROCESADO")
-        expediente.estado = estado_procesado
-        expediente.save(update_fields=["estado"])
+        _set_estado(expediente, "PROCESADO")
         logger.info(
-            "Expediente  procesado: %s legajos creados, %s errores",
-            result["validos"], result["errores"]
+            "Expediente %s procesado: legajos_creados=%s errores=%s",
+            expediente.pk, result.get("validos", 0), result.get("errores", 0)
         )
 
-        # Estado EN_ESPERA
-        estado_espera, _ = EstadoExpediente.objects.get_or_create(nombre="EN_ESPERA")
-        expediente.estado = estado_espera
-        expediente.save(update_fields=["estado"])
-        logger.info("Expediente  pasó a estado EN_ESPERA")
+        _set_estado(expediente, "EN_ESPERA")
+        logger.info("Expediente %s pasó a estado EN_ESPERA", expediente.pk)
 
-        return {"creados": result["validos"], "errores": result["errores"]}
+        return {"creados": result.get("validos", 0), "errores": result.get("errores", 0)}
 
     @staticmethod
     @transaction.atomic
-    def confirmar_envio(expediente):
-        """
-        Verifica que todos los legajos tengan archivo (EN_ESPERA),
-        y luego cambia el estado a 'CONFIRMACION_DE_ENVIO'.
-        """
-        if not LegajoService.all_legajos_loaded(expediente):
+    def confirmar_envio(expediente: Expediente):
+        try:
+            if expediente.estado.nombre != "EN_ESPERA":
+                raise ValidationError("El expediente no está en EN_ESPERA.")
+        except AttributeError:
+            pass
+
+        faltan = None
+        if hasattr(expediente._meta.model._meta.apps.get_model("celiaquia", "ExpedienteCiudadano"), "archivos_ok"):
+            faltan = expediente.expediente_ciudadanos.filter(archivos_ok=False).exists()
+        if faltan is None:
+            faltan = not LegajoService.all_legajos_loaded(expediente)
+
+        if faltan:
             raise ValidationError("Debes subir un archivo para cada legajo antes de confirmar.")
 
-        estado, _ = EstadoExpediente.objects.get_or_create(nombre="CONFIRMACION_DE_ENVIO")
-        expediente.estado = estado
-        expediente.save(update_fields=["estado"])
-        logger.info("Expediente %s confirmado (ENVÍO) con legajos.", expediente.expediente_ciudadanos.count())
-        return {"validos": expediente.expediente_ciudadanos.count(), "errores": 0}
+        _set_estado(expediente, "CONFIRMACION_DE_ENVIO")
+        total = expediente.expediente_ciudadanos.count()
+        logger.info("Expediente %s confirmado (ENVÍO). Legajos=%s", expediente.pk, total)
+        return {"validos": total, "errores": 0}
 
     @staticmethod
     @transaction.atomic
-    def asignar_tecnico(expediente, tecnico):
-        """
-        Asigna un técnico y cambia el estado a 'ASIGNADO'.
-        """
+    def asignar_tecnico(expediente: Expediente, tecnico):
         if isinstance(tecnico, int):
             tecnico = User.objects.get(pk=tecnico)
-        expediente.asignacion_tecnico.tecnico = tecnico
-        expediente.asignacion_tecnico.save(update_fields=["tecnico"])
-        estado, _ = EstadoExpediente.objects.get_or_create(nombre="ASIGNADO")
-        expediente.estado = estado
-        expediente.save(update_fields=["estado"])
-        logger.info("Técnico %s asignado al expediente", tecnico.username)
+
+        asignacion, _ = getattr(expediente, "asignacion_tecnico", None), None
+        if asignacion is None:
+            from celiaquia.models import AsignacionTecnico  
+            asignacion, _ = AsignacionTecnico.objects.get_or_create(expediente=expediente)
+
+        asignacion.tecnico = tecnico
+        asignacion.save(update_fields=["tecnico"])
+
+        _set_estado(expediente, "ASIGNADO")
+        logger.info("Técnico %s asignado al expediente %s", tecnico.username, expediente.pk)
         return expediente

@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from ciudadanos.models import Ciudadano, Provincia
+from django.contrib.postgres.indexes import GinIndex
+from django.db.models import Q
 
 User = get_user_model()
 
@@ -109,14 +111,20 @@ class Expediente(models.Model):
     class Meta:
         verbose_name = "Expediente"
         verbose_name_plural = "Expedientes"
+        ordering = ("-fecha_creacion", "pk")
+        indexes = [
+            models.Index(fields=["usuario_provincia", "estado"], name="exp_prov_est_idx"),
+            models.Index(fields=["estado", "fecha_creacion"], name="exp_est_fecha_idx"),
+            models.Index(fields=["usuario_provincia", "fecha_creacion"], name="exp_prov_fecha_idx"),
+            models.Index(fields=["fecha_creacion"], name="exp_fecha_idx"),
+        ]
 
     def __str__(self):
-        return f"{self.codigo} - {self.usuario_provincia.username}"
+        return f"{self.usuario_provincia.username}"
     
     @property
     def provincia(self):
         try:
-            # Devuelve la provincia del usuario provincial dueño del expediente
             return self.usuario_provincia.profile.provincia
         except Exception:
             return None
@@ -135,6 +143,7 @@ class ExpedienteCiudadano(models.Model):
     archivo1 = models.FileField(upload_to="legajos/archivos/", null=True, blank=True)
     archivo2 = models.FileField(upload_to="legajos/archivos/", null=True, blank=True)
     archivo3 = models.FileField(upload_to="legajos/archivos/", null=True, blank=True)
+    archivos_ok = models.BooleanField(default=False, db_index=True)
     cruce_ok = models.BooleanField(null=True, blank=True)
     observacion_cruce = models.CharField(max_length=255, null=True, blank=True)
     creado_en = models.DateTimeField(auto_now_add=True)
@@ -160,6 +169,29 @@ class ExpedienteCiudadano(models.Model):
         unique_together = ("expediente", "ciudadano")
         verbose_name = "Expediente Ciudadano"
         verbose_name_plural = "Expedientes Ciudadano"
+        ordering = ("-creado_en", "pk")
+        indexes = [
+            models.Index(fields=["expediente", "revision_tecnico"], name="leg_exp_rev_idx"),
+            models.Index(fields=["expediente", "estado"], name="leg_exp_est_idx"),
+            models.Index(fields=["expediente", "estado_cupo"], name="leg_exp_cupo_idx"),
+            models.Index(fields=["expediente", "resultado_sintys"], name="leg_exp_sin_idx"),
+            models.Index(fields=["expediente", "es_titular_activo"], name="leg_exp_tit_idx"),
+            models.Index(fields=["creado_en"], name="leg_creado_idx"),
+            models.Index(
+                fields=["expediente"],
+                name="leg_subsanar_partial_idx",
+                condition=Q(revision_tecnico="SUBSANAR"),
+            ),
+            models.Index(fields=["ciudadano"], name="leg_ciud_idx"),
+        ]
+
+    def _recompute_archivos_ok(self):
+        self.archivos_ok = bool(self.archivo1 and self.archivo2 and self.archivo3)
+
+    def save(self, *args, **kwargs):
+        self._recompute_archivos_ok()
+        return super().save(*args, **kwargs)
+
 
     def __str__(self):
         return f"{self.ciudadano.documento} - {self.ciudadano.nombre} {self.ciudadano.apellido}"
@@ -190,9 +222,12 @@ class AsignacionTecnico(models.Model):
     class Meta:
         verbose_name = "Asignación de Técnico"
         verbose_name_plural = "Asignaciones de Técnico"
+        indexes = [
+            models.Index(fields=["tecnico"], name="asig_tecnico_idx"),
+        ]
 
     def __str__(self):
-        return f"{self.expediente.codigo} -> {self.tecnico.username}"
+        return f"{self.tecnico.username}"
 
 
 class ProvinciaCupo(models.Model):
@@ -221,7 +256,13 @@ class CupoMovimiento(models.Model):
     class Meta:
         verbose_name = "Movimiento de Cupo"
         verbose_name_plural = "Movimientos de Cupo"
-        ordering = ("-creado_en",)
+        ordering = ("-creado_en", "pk")
+        indexes = [
+            models.Index(fields=["provincia", "-creado_en"], name="cupo_prov_fecha_idx"),
+            models.Index(fields=["expediente", "-creado_en"], name="cupo_exp_fecha_idx"),
+            models.Index(fields=["legajo", "-creado_en"], name="cupo_leg_fecha_idx"),
+            models.Index(fields=["tipo", "provincia", "-creado_en"], name="cupo_tipo_prov_idx"),
+        ]
 
     def __str__(self):
         return f"{self.provincia} {self.tipo} {self.delta} ({self.creado_en:%Y-%m-%d %H:%M})"

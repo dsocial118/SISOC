@@ -459,16 +459,16 @@ class CruceService:
         legajos_all = (
             ExpedienteCiudadano.objects
             .select_related("ciudadano")
-            .filter(expediente=expediente)
+            .filter(expediente_id=expediente.id)
         )
 
-        legajos_aprobados = legajos_all.filter(revision_tecnico="APROBADO")
-        total_legajos_aprobados = legajos_aprobados.count()
+        legajos_aprobados = list(legajos_all.filter(revision_tecnico="APROBADO"))
+        total_legajos_aprobados = len(legajos_aprobados)
         if total_legajos_aprobados == 0:
             raise ValidationError("No hay legajos APROBADOS por el técnico para cruzar con Syntys.")
 
-        matcheados = 0
-        no_matcheados_aprobados = 0
+        matched_ids = []
+        unmatched_ids = []
         detalle_match = []
         detalle_no_match = []
 
@@ -487,21 +487,8 @@ class CruceService:
             else:
                 match = False
 
-            leg.cruce_ok = bool(match)
-            leg.resultado_sintys = "MATCH" if match else "NO_MATCH"
-            leg.observacion_cruce = None if match else "No está en archivo de Syntys"
-            leg.save()
-
             if match:
-                try:
-                    _ = CupoService.reservar_slot(
-                        legajo=leg,
-                        usuario=usuario,
-                    )
-                except CupoNoConfigurado as e:
-                    raise ValidationError(f"Error de cupo: {e}")
-
-                matcheados += 1
+                matched_ids.append(leg.pk)
                 detalle_match.append({
                     "dni": getattr(ciu, "documento", "") or "",
                     "cuit": cuit_ciud or "",
@@ -510,14 +497,30 @@ class CruceService:
                     "apellido": getattr(ciu, "apellido", "") or "",
                 })
             else:
-                no_matcheados_aprobados += 1
+                unmatched_ids.append(leg.pk)
                 detalle_no_match.append({
                     "dni": getattr(ciu, "documento", "") or "",
                     "cuit": cuit_ciud or "",
                     "observacion": "No está en archivo de Syntys",
                 })
 
-        legajos_rechazados = legajos_all.filter(revision_tecnico="RECHAZADO")
+        if matched_ids:
+            ExpedienteCiudadano.objects.filter(pk__in=matched_ids).update(
+                cruce_ok=True, resultado_sintys="MATCH", observacion_cruce=None
+            )
+        if unmatched_ids:
+            ExpedienteCiudadano.objects.filter(pk__in=unmatched_ids).update(
+                cruce_ok=False, resultado_sintys="NO_MATCH", observacion_cruce="No está en archivo de Syntys"
+            )
+
+        for leg in legajos_aprobados:
+            if leg.pk in matched_ids:
+                try:
+                    CupoService.reservar_slot(legajo=leg, usuario=usuario)
+                except CupoNoConfigurado as e:
+                    raise ValidationError(f"Error de cupo: {e}")
+
+        legajos_rechazados = legajos_all.filter(revision_tecnico="RECHAZADO").select_related("ciudadano")
         for leg in legajos_rechazados:
             ciu = leg.ciudadano
             cuit_ciud = CruceService._resolver_cuit_ciudadano(ciu)
@@ -528,10 +531,8 @@ class CruceService:
                 (dni_ciud and dni_ciud in set_dnis_norm)
             )
 
-            if presente_en_archivo:
-                obs = "Rechazado por técnico — presente en archivo de Syntys"
-            else:
-                obs = "Rechazado por técnico — no está en archivo de Syntys"
+            obs = "Rechazado por técnico — presente en archivo de Syntys" if presente_en_archivo \
+                else "Rechazado por técnico — no está en archivo de Syntys"
 
             detalle_no_match.append({
                 "dni": getattr(ciu, "documento", "") or "",
@@ -539,7 +540,7 @@ class CruceService:
                 "observacion": obs,
             })
 
-        legajos_subsanar = legajos_all.filter(revision_tecnico="SUBSANAR")
+        legajos_subsanar = legajos_all.filter(revision_tecnico="SUBSANAR").select_related("ciudadano")
         for leg in legajos_subsanar:
             ciu = leg.ciudadano
             cuit_ciud = CruceService._resolver_cuit_ciudadano(ciu)
@@ -555,7 +556,7 @@ class CruceService:
         except CupoNoConfigurado:
             metrics_finales = metrics_iniciales
 
-        fuera_qs = CupoService.lista_fuera_de_cupo_por_expediente(expediente.id)
+        fuera_qs = CupoService.lista_fuera_de_cupo_por_expediente(expediente.id).select_related("ciudadano")
         detalle_fuera = [{
             "dni": getattr(l.ciudadano, "documento", "") or "",
             "cuit": CruceService._resolver_cuit_ciudadano(l.ciudadano) or "",
@@ -564,19 +565,17 @@ class CruceService:
         } for l in fuera_qs]
         fuera_count = len(detalle_fuera)
 
-        aceptados = legajos_all.filter(revision_tecnico="APROBADO", resultado_sintys="MATCH").count()
+        aceptados = len(matched_ids)
         rechazados_tecnico = legajos_all.filter(revision_tecnico="RECHAZADO").count()
-        rechazados_sintys = legajos_all.filter(
-            revision_tecnico="APROBADO", resultado_sintys="NO_MATCH"
-        ).count()
+        rechazados_sintys = len(unmatched_ids)
         rechazados_subsanar = legajos_all.filter(revision_tecnico="SUBSANAR").count()
 
         resumen = {
             "total_cuits_archivo": len(set_cuits),
             "total_dnis_archivo": len(set_dnis_norm),
             "total_legajos": total_legajos_aprobados,
-            "matcheados": matcheados,
-            "no_matcheados": no_matcheados_aprobados,
+            "matcheados": aceptados,
+            "no_matcheados": rechazados_sintys,
             "detalle_match": detalle_match,
             "detalle_no_match": detalle_no_match,
             "aceptados": aceptados,
@@ -608,7 +607,7 @@ class CruceService:
 
         logger.info(
             "Cruce finalizado para expediente: %s  %s match / %s no-match (sobre %s aprobados). Rechazados en detalle_no_match: %s. Fuera de cupo: %s.",
-            expediente.id, matcheados, no_matcheados_aprobados, total_legajos_aprobados,
+            expediente.id, aceptados, rechazados_sintys, total_legajos_aprobados,
             len(detalle_no_match), fuera_count
         )
         return resumen
