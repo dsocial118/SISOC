@@ -1,7 +1,3 @@
-"""
-[celiaquia/services/cruce_service.py]
-"""
-
 import csv
 import io
 import logging
@@ -244,7 +240,6 @@ class CruceService:
         total_cuits = int(resumen.get("total_cuits_archivo", 0) or 0)
         total_dnis = int(resumen.get("total_dnis_archivo", 0) or 0)
 
-        # Métricas de cupo (acepta viejo esquema o 'cupo' dict)
         cupo_total = resumen.get("cupo_total")
         cupo_usados = resumen.get("cupo_usados")
         cupo_disponibles = resumen.get("cupo_disponibles")
@@ -408,7 +403,6 @@ class CruceService:
         writer.writerow(["matcheados", resumen.get("matcheados", 0)])
         writer.writerow(["no_matcheados", resumen.get("no_matcheados", 0)])
 
-        # Cupo (acepta viejo esquema o 'cupo' dict)
         writer.writerow([])
         writer.writerow(["Cupo"])
         if resumen.get("cupo"):
@@ -475,8 +469,8 @@ class CruceService:
 
         matcheados = 0
         no_matcheados_aprobados = 0
-        detalle_match: list[dict] = []
-        detalle_no_match: list[dict] = []
+        detalle_match = []
+        detalle_no_match = []
 
         for leg in legajos_aprobados:
             ciu = leg.ciudadano
@@ -503,7 +497,6 @@ class CruceService:
                     _ = CupoService.reservar_slot(
                         legajo=leg,
                         usuario=usuario,
-                        motivo=f"Cruce expediente {expediente.codigo} ({by})",
                     )
                 except CupoNoConfigurado as e:
                     raise ValidationError(f"Error de cupo: {e}")
@@ -546,6 +539,17 @@ class CruceService:
                 "observacion": obs,
             })
 
+        legajos_subsanar = legajos_all.filter(revision_tecnico="SUBSANAR")
+        for leg in legajos_subsanar:
+            ciu = leg.ciudadano
+            cuit_ciud = CruceService._resolver_cuit_ciudadano(ciu)
+            motivo = getattr(leg, "subsanacion_motivo", "") or "Subsanar solicitado"
+            detalle_no_match.append({
+                "dni": getattr(ciu, "documento", "") or "",
+                "cuit": cuit_ciud or "",
+                "observacion": f"Subsanar: {motivo}",
+            })
+
         try:
             metrics_finales = CupoService.metrics_por_provincia(expediente.provincia)
         except CupoNoConfigurado:
@@ -565,6 +569,7 @@ class CruceService:
         rechazados_sintys = legajos_all.filter(
             revision_tecnico="APROBADO", resultado_sintys="NO_MATCH"
         ).count()
+        rechazados_subsanar = legajos_all.filter(revision_tecnico="SUBSANAR").count()
 
         resumen = {
             "total_cuits_archivo": len(set_cuits),
@@ -577,7 +582,7 @@ class CruceService:
             "aceptados": aceptados,
             "rechazados_tecnico": rechazados_tecnico,
             "rechazados_sintys": rechazados_sintys,
-            # Métricas de cupo para PRD/UI (formato esperado por template)
+            "rechazados_subsanar": rechazados_subsanar,
             "cupo": {
                 "total_asignado": metrics_finales.get("total_asignado"),
                 "usados": metrics_finales.get("usados"),
@@ -602,8 +607,7 @@ class CruceService:
         expediente.save(update_fields=["documento", "estado", "usuario_modificador"])
 
         logger.info(
-            "Cruce finalizado para expediente: %s  %s match / %s no-match (sobre %s aprobados). "
-            "Rechazados en detalle_no_match: %s. Fuera de cupo: %s.",
+            "Cruce finalizado para expediente: %s  %s match / %s no-match (sobre %s aprobados). Rechazados en detalle_no_match: %s. Fuera de cupo: %s.",
             expediente.id, matcheados, no_matcheados_aprobados, total_legajos_aprobados,
             len(detalle_no_match), fuera_count
         )

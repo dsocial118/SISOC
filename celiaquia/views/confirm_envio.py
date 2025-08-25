@@ -1,38 +1,14 @@
-"""
-celiaquia/views/confirm_envio.py
-
-Breve descripción:
-- Endpoint POST que usa la Provincia para "Confirmar Envío" del expediente.
-- Valida en el servidor que:
-  1) El expediente pertenezca al usuario autenticado (provincia).
-  2) El estado actual sea EN_ESPERA.
-  3) Todos los legajos tengan archivo cargado.
-- Si todo ok, cambia el estado a CONFIRMACION_DE_ENVIO.
-
-Estados y flujos impactados:
-- EN_ESPERA → CONFIRMACION_DE_ENVIO (Provincia pasa a solo lectura).
-
-Dependencias:
-- services/expediente_service.py: ExpedienteService.confirmar_envio(expediente)
-- services/legajo_service.py: LegajoService.all_legajos_loaded(expediente)
-- urls.py: ruta 'expediente_confirm' ya mapea a esta vista
-- static/custom/js/expediente_detail.js: dispara fetch POST y espera JSON
-
-Mensajes y errores:
-- Devuelve JSON con {"success": True/False, ...}
-- ValidationError → 400 con mensaje claro
-- Errores inesperados → 500 con mensaje genérico y logger.error
-"""
-
 import logging
+from pyexpat.errors import messages
 from django.views import View
 from django.http import JsonResponse, HttpResponseNotAllowed
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.core.exceptions import ValidationError
 from django.contrib.auth.mixins import LoginRequiredMixin
-
+from django.db.models import Q
 from celiaquia.models import Expediente
 from celiaquia.services.expediente_service import ExpedienteService
+from celiaquia.views.expediente import _is_ajax
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +24,34 @@ class ExpedienteConfirmView(LoginRequiredMixin, View):
             usuario_provincia=request.user,
         )
         try:
+            # Validación: todos los legajos con los 3 archivos
+            faltantes_qs = expediente.expediente_ciudadanos.filter(
+                Q(archivo1__isnull=True) | Q(archivo2__isnull=True) | Q(archivo3__isnull=True)
+            )
+            if faltantes_qs.exists():
+                # Armamos un mensaje breve + devolvemos ids por si el front quiere resaltar
+                ejemplos = [
+                    f"{l.ciudadano.apellido}, {l.ciudadano.nombre} (DNI {l.ciudadano.documento})"
+                    for l in faltantes_qs.select_related("ciudadano")[:10]
+                ]
+                msg = (
+                    "No podés confirmar el envío: hay legajos sin los 3 archivos. "
+                    + "Ejemplos: " + "; ".join(ejemplos)
+                    + (" …" if faltantes_qs.count() > 10 else "")
+                )
+
+                if _is_ajax(request):
+                    return JsonResponse(
+                        {
+                            "success": False,
+                            "error": msg,
+                            "faltantes_ids": list(faltantes_qs.values_list("id", flat=True)),
+                        },
+                        status=400,
+                    )
+                messages.error(request, msg)
+                return redirect("expediente_detail", pk=pk)
+
             # 2) Ejecutar validaciones y transición de estado
             result = ExpedienteService.confirmar_envio(expediente)
             logger.info(

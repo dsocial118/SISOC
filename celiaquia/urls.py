@@ -1,4 +1,5 @@
 from django.urls import path
+from celiaquia.views.expediente_subsanacion import ExpedienteConfirmSubsanacionView
 from core.decorators import group_required
 
 from celiaquia.views.expediente import (
@@ -17,9 +18,8 @@ from celiaquia.views.expediente import (
 )
 
 from celiaquia.views.confirm_envio import ExpedienteConfirmView
-from celiaquia.views.legajo import LegajoArchivoUploadView
+from celiaquia.views.legajo import LegajoArchivoUploadView, LegajoSubsanarView
 
-# NUEVO: vistas de cupo
 from celiaquia.views.cupo import (
     CupoDashboardView,
     CupoProvinciaDetailView,
@@ -32,6 +32,11 @@ urlpatterns = [
         "expedientes/<int:pk>/legajos/<int:legajo_id>/revisar/",
         RevisarLegajoView.as_view(),
         name="legajo_revisar"
+    ),
+    path(
+        "expedientes/<int:pk>/legajos/<int:legajo_id>/subsanar/",
+        group_required(["TecnicoCeliaquia", "CoordinadorCeliaquia"])(LegajoSubsanarView.as_view()),
+        name="legajo_subsanar",
     ),
 
     path(
@@ -48,9 +53,7 @@ urlpatterns = [
     ),
     path(
         "expedientes/preview_excel/",
-        group_required(["ProvinciaCeliaquia"])(
-            ExpedientePreviewExcelView.as_view()
-        ),
+        group_required(["ProvinciaCeliaquia"])(ExpedientePreviewExcelView.as_view()),
         name="expediente_preview_excel",
     ),
     path(
@@ -111,9 +114,6 @@ urlpatterns = [
         name="expediente_subir_cruce",
     ),
 
-    # ========================
-    # Rutas de Cupo (Coordinador)
-    # ========================
     path(
         "cupos/",
         group_required(["CoordinadorCeliaquia"])(CupoDashboardView.as_view()),
@@ -133,5 +133,10 @@ urlpatterns = [
         "cupos/provincia/<int:provincia_id>/legajo/<int:legajo_id>/suspender/",
         group_required(["CoordinadorCeliaquia"])(CupoSuspenderLegajoView.as_view()),
         name="cupo_legajo_suspender",
+    ),
+    path(
+        "expedientes/<int:pk>/confirmar-subsanacion/",
+        ExpedienteConfirmSubsanacionView.as_view(),
+        name="expediente_confirm_subsanacion",
     ),
 ]

@@ -1,10 +1,9 @@
 /* static/custom/js/expediente_detail.js
  * - Procesar expediente
- * - Subir/editar archivo de legajo
+ * - Subir/editar archivo de legajo (archivo1/archivo2/archivo3)
  * - Confirmar Envío
  * - Subir/Reprocesar Excel de CUITs y ejecutar cruce (técnico)
- * - Paginación client-side para Preview y Legajos (con selector de tamaño de página)
- * - NUEVO: Revisión de legajos (Aprobar / Rechazar)
+ * - Revisión de legajos (Aprobar / Rechazar / Subsanar)
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -37,11 +36,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* ====== Paginación genérica client-side ====== */
   function paginate({
-    items,                   // NodeList/Array de elementos a paginar
-    pageSizeSelect,          // <select> para tamaño de página
-    paginationUl,            // <ul> .pagination para los botones
-    onPageChange,            // callback opcional cuando cambia de página
-    hideIfSinglePage = true, // oculta la barra si hay 0/1 páginas
+    items,
+    pageSizeSelect,
+    paginationUl,
+    onPageChange,
+    hideIfSinglePage = true,
   }) {
     const nodes = Array.from(items);
     if (!nodes.length || !pageSizeSelect || !paginationUl) return;
@@ -55,14 +54,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const totalPages = Math.max(1, Math.ceil(total / pageSize));
       if (page > totalPages) page = totalPages;
 
-      // Mostrar/ocultar items
       const start = (page - 1) * pageSize;
       const end = start + pageSize;
       nodes.forEach((el, i) => {
         el.style.display = (i >= start && i < end) ? '' : 'none';
       });
 
-      // Render paginador
       paginationUl.innerHTML = '';
       if (hideIfSinglePage && totalPages <= 1) {
         paginationUl.style.display = 'none';
@@ -74,7 +71,6 @@ document.addEventListener('DOMContentLoaded', () => {
         liPrev.addEventListener('click', (e) => { e.preventDefault(); if (page > 1) { page--; render(); }});
         paginationUl.appendChild(liPrev);
 
-        // Máx 7 botones (compacto)
         const maxBtns = 7;
         let startPage = Math.max(1, page - 3);
         let endPage = Math.min(totalPages, startPage + maxBtns - 1);
@@ -135,17 +131,14 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ===== PROCESAR EXPEDIENTE ===== */
   const btnProcess = document.getElementById('btn-process-expediente');
   if (btnProcess) {
-    const msgContainer = document.createElement('div');
-    msgContainer.id = 'process-msg';
-    const previewCard = document.querySelector('.card.mb-4');
-    if (previewCard) previewCard.parentNode.insertBefore(msgContainer, previewCard);
-
     btnProcess.addEventListener('click', async () => {
       btnProcess.disabled = true;
       const origHTML = btnProcess.innerHTML;
       btnProcess.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Procesando...';
 
       try {
+        if (!window.PROCESS_URL) throw new Error('No se configuró PROCESS_URL.');
+
         const resp = await fetch(window.PROCESS_URL, {
           method: 'POST',
           credentials: 'same-origin',
@@ -156,61 +149,83 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         });
 
-        const raw = await resp.text();
-        if (resp.status !== 200) throw new Error(`HTTP ${resp.status}: ${raw.trim()}`);
-        const data = JSON.parse(raw);
-        if (!data.success) throw new Error(data.error || 'Server returned success=false');
+        if (resp.redirected) {
+          showAlert('danger', 'Tu sesión expiró o no tenés permisos. Volvé a iniciar sesión.');
+          return;
+        }
 
-        msgContainer.innerHTML = `
-          <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <strong>¡Listo!</strong> Se crearon ${data.creados} legajos.
-            El expediente pasó a <strong>EN ESPERA</strong>.
-            ${data.errores ? `<br><small class="text-danger">${data.errores} errores.</small>` : ''}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>
-        `;
-        setTimeout(() => window.location.reload(), 1200);
+        const ct = resp.headers.get('Content-Type') || '';
+        let data = {};
+        if (ct.includes('application/json')) {
+          data = await resp.json();
+        } else {
+          const text = await resp.text();
+          if (!resp.ok) throw new Error(text || `HTTP ${resp.status}`);
+          data = { success: true, message: text };
+        }
+
+        if (!resp.ok || data.success === false) {
+          const msg = data.error || data.message || `HTTP ${resp.status}`;
+          throw new Error(msg);
+        }
+
+        showAlert(
+          'success',
+          `<strong>¡Listo!</strong> ${data.message || `Se crearon ${data.creados ?? '-'} legajos y el expediente pasó a <b>EN ESPERA</b>.`}`
+          + (data.errores ? `<br><small class="text-danger">${data.errores} errores.</small>` : '')
+        );
+
+        setTimeout(() => window.location.reload(), 1000);
 
       } catch (err) {
         console.error('Error procesar expediente:', err);
-        msgContainer.innerHTML = `
-          <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            Error al procesar expediente: ${err.message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>
-        `;
+        showAlert('danger', `Error al procesar el expediente: ${err.message}`);
         btnProcess.disabled = false;
-      } finally {
         btnProcess.innerHTML = origHTML;
       }
     });
   }
 
-  /* ===== MODAL SUBIR/EDITAR ARCHIVO DE LEGAJO ===== */
+  /* ===== MODAL SUBIR/EDITAR ARCHIVO DE LEGAJO (archivo1/2/3) ===== */
   const modalArchivo = document.getElementById('modalSubirArchivo');
   if (modalArchivo) {
     modalArchivo.addEventListener('show.bs.modal', function (event) {
       const button = event.relatedTarget;
       const legajoId = button.getAttribute('data-legajo-id');
       const expedienteId = button.getAttribute('data-expediente-id');
-      const form = modalArchivo.querySelector('#form-subir-archivo');
+      const defaultCampo = button?.getAttribute('data-file-field') || 'archivo1';
+      const uploadForm = modalArchivo.querySelector('#form-subir-archivo');
 
       const actionUrl = `/expedientes/${expedienteId}/ciudadanos/${legajoId}/archivo/`;
-      form.setAttribute('action', actionUrl);
+      uploadForm.setAttribute('action', actionUrl);
 
-      const inputArchivo = form.querySelector('input[type="file"]');
+      const selCampo = modalArchivo.querySelector('#campo-archivo');
+      if (selCampo) selCampo.value = defaultCampo;
+
+      const inputArchivo = uploadForm.querySelector('input[type="file"]');
       if (inputArchivo) inputArchivo.value = '';
 
       const alertas = modalArchivo.querySelector('#modal-alertas');
       if (alertas) alertas.innerHTML = '';
     });
 
-    const form = document.getElementById('form-subir-archivo');
-    form.addEventListener('submit', async (e) => {
+    const uploadForm = document.getElementById('form-subir-archivo');
+    uploadForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const url = form.getAttribute('action');
-      const formData = new FormData(form);
-      const btnSubmit = form.querySelector('button[type="submit"]');
+      const url = uploadForm.getAttribute('action');
+      const formData = new FormData(uploadForm);
+
+      // mapear campo -> slot (1/2/3) que espera el backend
+      const campo = (formData.get('campo') || '').toString().toLowerCase();
+      const slotMap = { 'archivo1': 1, 'archivo2': 2, 'archivo3': 3 };
+      const slot = slotMap[campo];
+      if (!slot) {
+        showAlert('danger', 'Campo inválido.');
+        return;
+      }
+      formData.append('slot', String(slot));
+
+      const btnSubmit = uploadForm.querySelector('button[type="submit"]');
       const originalHTML = btnSubmit.innerHTML;
       const alertas = modalArchivo.querySelector('#modal-alertas');
 
@@ -220,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         const resp = await fetch(url, {
           method: 'POST',
-          body: formData,
+          body: formData, // incluye 'campo', 'archivo' y 'slot'
           credentials: 'same-origin',
           headers: {
             'X-CSRFToken': getCsrfToken(),
@@ -228,12 +243,21 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         });
 
-        const data = await resp.json();
-        if (!data.success) throw new Error(data.message || 'Error desconocido');
+        const ct = resp.headers.get('Content-Type') || '';
+        let data = {};
+        if (ct.includes('application/json')) {
+          data = await resp.json();
+        } else {
+          const text = await resp.text();
+          if (!resp.ok) throw new Error(text || `HTTP ${resp.status}`);
+          data = { success: true, message: text };
+        }
+
+        if (!resp.ok || data.success === false) throw new Error(data.message || 'Error desconocido');
 
         alertas.innerHTML = `
           <div class="alert alert-success alert-dismissible fade show" role="alert">
-            ${data.message}
+            ${data.message || 'Archivo guardado correctamente.'}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
           </div>
         `;
@@ -242,7 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const modal = bootstrap.Modal.getInstance(modalArchivo);
           modal.hide();
           window.location.reload();
-        }, 1000);
+        }, 800);
 
       } catch (err) {
         alertas.innerHTML = `
@@ -258,6 +282,93 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+/* ===== MODAL SUBSANAR (técnico) ===== */
+  const modalSubsanar = document.getElementById('modalSubsanar');
+  if (modalSubsanar) {
+    // Pre-cargar el id del legajo en el hidden cuando se abre el modal
+    modalSubsanar.addEventListener('show.bs.modal', function (event) {
+      const trigger = event.relatedTarget;
+      const legajoId = trigger?.getAttribute('data-legajo-id') || '';
+      modalSubsanar.querySelector('#subsanar-legajo-id').value = legajoId;
+      const ta = modalSubsanar.querySelector('#subsanar-motivo');
+      if (ta) ta.value = '';
+    });
+
+    const formSubsanar = document.getElementById('form-subsanar');
+    formSubsanar.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const legajoId = modalSubsanar.querySelector('#subsanar-legajo-id').value;
+      const motivo = (modalSubsanar.querySelector('#subsanar-motivo').value || '').trim();
+      const btn = document.getElementById('btn-confirm-subsanar');
+      const original = btn.innerHTML;
+
+      if (!window.SUBSANAR_URL_TEMPLATE) {
+        showAlert('danger', 'No se configuró la URL de subsanación.');
+        return;
+      }
+      if (!legajoId) {
+        showAlert('danger', 'No se pudo identificar el legajo.');
+        return;
+      }
+      if (!motivo) {
+        showAlert('warning', 'Indicá el motivo de la subsanación.');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Guardando…';
+
+      try {
+        const url = window.SUBSANAR_URL_TEMPLATE.replace('{id}', legajoId);
+        const fd = new FormData();
+        // el backend acepta 'motivo' o 'comentario'
+        fd.append('motivo', motivo);
+
+        const resp = await fetch(url, {
+          method: 'POST',
+          body: fd,
+          credentials: 'same-origin',
+          headers: {
+            'X-CSRFToken': getCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          }
+        });
+
+        const ct = resp.headers.get('Content-Type') || '';
+        let data = {};
+        if (ct.includes('application/json')) {
+          data = await resp.json();
+        } else {
+          const text = await resp.text();
+          if (!resp.ok) throw new Error(text || `HTTP ${resp.status}`);
+          data = { success: true, message: text };
+        }
+
+        if (!resp.ok || data.success === false) {
+          const msg = data.error || data.message || `HTTP ${resp.status}`;
+          throw new Error(msg);
+        }
+
+        showAlert('success', data.message || `Legajo ${legajoId}: quedó en SUBSANAR.`);
+        setTimeout(() => {
+          const modal = bootstrap.Modal.getInstance(modalSubsanar);
+          modal.hide();
+          window.location.reload();
+        }, 800);
+
+      } catch (err) {
+        console.error('Subsanar legajo:', err);
+        showAlert('danger', `No se pudo solicitar la subsanación. ${err.message}`);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = original;
+      }
+    });
+  }
+
 
   /* ===== CONFIRMAR ENVÍO ===== */
   const btnConfirm = document.getElementById('btn-confirm');
@@ -334,7 +445,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const helpEl  = document.getElementById('cruce-help');
     const btnSubmit = document.getElementById('btn-cruce-submit');
 
-    // Cambiar rótulos según modo
     modalCruce.addEventListener('show.bs.modal', (e) => {
       const trigger = e.relatedTarget;
       const mode = (trigger && trigger.getAttribute('data-mode')) || 'new';
@@ -387,7 +497,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       try {
         const fd = new FormData(formCruce);
-        // La view espera 'archivo':
         fd.delete('excel_cuit');
         fd.append('archivo', input.files[0]);
 
@@ -459,7 +568,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  /* ===== NUEVO: REVISIÓN DE LEGAJOS (Aprobar / Rechazar) ===== */
+  /* ===== Revisión de legajos (Aprobar / Rechazar) ===== */
   (function initRevisionLegajos(){
     const buttons = document.querySelectorAll('.btn-revision');
     if (!buttons.length) return;
@@ -581,6 +690,58 @@ document.addEventListener('DOMContentLoaded', () => {
       onPageChange: null,
     });
   })();
+
+  // ===== CONFIRMAR SUBSANACIÓN =====
+  const btnConfirmSubs = document.getElementById('btn-confirm-subs');
+  if (btnConfirmSubs) {
+    const zone = ensureAlertsZone();
+    btnConfirmSubs.addEventListener('click', async () => {
+      if (!window.CONFIRM_SUBS_URL) {
+        showAlert('danger', 'No se configuró la URL de Confirmar Subsanación.');
+        return;
+      }
+      const original = btnConfirmSubs.innerHTML;
+      btnConfirmSubs.disabled = true;
+      btnConfirmSubs.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Enviando…';
+
+      try {
+        const resp = await fetch(window.CONFIRM_SUBS_URL, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'X-CSRFToken': getCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          }
+        });
+
+        const ct = resp.headers.get('Content-Type') || '';
+        let data = {};
+        if (ct.includes('application/json')) {
+          data = await resp.json();
+        } else {
+          const text = await resp.text();
+          if (!resp.ok) throw new Error(text || `HTTP ${resp.status}`);
+          data = { success: true, message: text };
+        }
+
+        if (!resp.ok || data.success === false) {
+          throw new Error(data.error || data.message || `HTTP ${resp.status}`);
+        }
+
+        showAlert('success', data.message || 'Subsanación confirmada.');
+        setTimeout(() => window.location.reload(), 800);
+
+      } catch (err) {
+        showAlert('danger', `No se pudo confirmar la subsanación. ${err.message}`);
+        btnConfirmSubs.disabled = false;
+        btnConfirmSubs.innerHTML = original;
+      }
+    });
+  }
+
+
+
 
   /* ===== Inicializar paginación para LEGAJOS ===== */
   (function initLegajosPagination(){

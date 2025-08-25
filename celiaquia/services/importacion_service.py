@@ -2,7 +2,7 @@
 import logging
 from io import BytesIO
 import re
-
+from django.db.models import Q
 import pandas as pd
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -184,9 +184,16 @@ class ImportacionService:
         logger.info(f"Import completo: {validos} válidos, {errores} errores")
 
         # Validación: todos los legajos con archivo antes de continuar
-        faltantes = ExpedienteCiudadano.objects.filter(
-            expediente=expediente, archivo__isnull=True
-        ).exists()
+        faltantes = (
+            ExpedienteCiudadano.objects
+            .filter(expediente=expediente)
+            .filter(
+                Q(archivo1__isnull=True) |
+                Q(archivo2__isnull=True) |
+                Q(archivo3__isnull=True)
+            )
+        )
+
         if faltantes:
             raise ValidationError(
                 "Debe subir un archivo para cada legajo antes de continuar."
