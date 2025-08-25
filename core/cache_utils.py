@@ -4,9 +4,13 @@ Utilidades para gestión de cache con invalidación automática.
 Este módulo proporciona funciones para invalidar cache cuando se actualizan los datos relacionados.
 """
 
+import logging
+
 from django.core.cache import cache
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
+
+logger = logging.getLogger("django")
 
 
 def invalidate_cache_keys(*cache_keys):
@@ -34,7 +38,6 @@ def invalidate_cache_pattern(pattern):
     # Nota: Django cache no soporta wildcard deletion por defecto
     # Para implementación completa necesitaríamos usar Redis con scan
     # Por ahora, usaremos claves específicas
-    logger = __import__("logging").getLogger("django")
     logger.warning(f"Pattern invalidation not implemented for pattern: {pattern}")
 
 
@@ -116,18 +119,12 @@ def invalidate_territoriales_cache_provincia(provincia_id=None):
         logger.info(f"Invalidado cache territorial para provincia {provincia_id}")
     else:
         # Invalidar todas las provincias
-        from core.models import Provincia
+        from core.models import Provincia  # pylint: disable=import-outside-toplevel
 
         provincias = Provincia.objects.values_list("id", flat=True)
         for prov_id in provincias:
             cache.delete(f"territoriales_provincia_{prov_id}")
         logger.info("Invalidado cache territorial para todas las provincias")
-
-
-# Import logger at the top level for the function above
-import logging
-
-logger = logging.getLogger("django")
 
 
 def invalidate_centrodefamilia_cache(user_id=None):
