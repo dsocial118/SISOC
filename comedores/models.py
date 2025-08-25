@@ -309,9 +309,9 @@ class TerritorialCache(models.Model):
         ordering = ["provincia__nombre", "nombre"]
         verbose_name = "Cache Territorial"
         verbose_name_plural = "Cache Territoriales"
-        unique_together = [['gestionar_uid', 'provincia']]
+        unique_together = [["gestionar_uid", "provincia"]]
         indexes = [
-            models.Index(fields=['provincia', 'activo']),
+            models.Index(fields=["provincia", "activo"]),
         ]
 
     def __str__(self):

@@ -29,7 +29,7 @@ class RelevamientoApiView(APIView):
                     f"Error procesando datos del relevamiento: {clean_error}",
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            
+
             if relevamiento_serializer.is_valid():
                 relevamiento_serializer.save()
                 relevamiento = relevamiento_serializer.instance
