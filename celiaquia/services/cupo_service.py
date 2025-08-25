@@ -1,4 +1,3 @@
-# celiaquia/services/cupo_service.py
 from __future__ import annotations
 
 import logging
@@ -6,7 +5,7 @@ from typing import Dict
 
 from django.db import transaction
 from django.core.exceptions import ValidationError
-from django.db.models import F
+from django.db.models import F, Exists, OuterRef
 
 from ciudadanos.models import Provincia
 from celiaquia.models import (
@@ -30,19 +29,17 @@ class CupoService:
     @staticmethod
     def metrics_por_provincia(provincia: Provincia) -> Dict[str, int]:
         try:
-            pc = ProvinciaCupo.objects.get(provincia=provincia)
+            pc = ProvinciaCupo.objects.only("total_asignado", "usados").get(provincia=provincia)
         except ProvinciaCupo.DoesNotExist:
             raise CupoNoConfigurado(f"La provincia '{provincia}' no tiene cupo configurado.")
         total = int(pc.total_asignado or 0)
         usados = int(pc.usados or 0)
         disponibles = max(total - usados, 0)
-        fuera = (
-            ExpedienteCiudadano.objects.filter(
-                expediente__usuario_provincia__profile__provincia=provincia,
-                estado_cupo=EstadoCupo.FUERA,
-                es_titular_activo=False,
-            ).count()
-        )
+        fuera = ExpedienteCiudadano.objects.filter(
+            expediente__usuario_provincia__profile__provincia=provincia,
+            estado_cupo=EstadoCupo.FUERA,
+            es_titular_activo=False,
+        ).count()
         return {
             "total_asignado": total,
             "usados": usados,
@@ -92,11 +89,9 @@ class CupoService:
             .select_related("expediente", "expediente__usuario_provincia", "expediente__usuario_provincia__profile")
             .get(pk=legajo.pk)
         )
-        if not (
-            legajo.revision_tecnico == RevisionTecnico.APROBADO
-            and legajo.resultado_sintys == ResultadoSintys.MATCH
-        ):
-            if legajo.estado_cupo != EstadoCupo.NO_EVAL:
+
+        if not (legajo.revision_tecnico == RevisionTecnico.APROBADO and legajo.resultado_sintys == ResultadoSintys.MATCH):
+            if legajo.estado_cupo != EstadoCupo.NO_EVAL or legajo.es_titular_activo:
                 legajo.estado_cupo = EstadoCupo.NO_EVAL
                 legajo.es_titular_activo = False
                 legajo.save(update_fields=["estado_cupo", "es_titular_activo", "modificado_en"])
@@ -107,39 +102,35 @@ class CupoService:
             raise ValidationError("El legajo no tiene provincia asociada al usuario del expediente.")
 
         try:
-            pc = ProvinciaCupo.objects.select_for_update().get(provincia=provincia)
+            pc = ProvinciaCupo.objects.select_for_update().only("id", "usados", "total_asignado").get(provincia=provincia)
         except ProvinciaCupo.DoesNotExist:
             raise CupoNoConfigurado(f"La provincia '{provincia}' no tiene cupo configurado.")
 
         if legajo.estado_cupo == EstadoCupo.DENTRO and legajo.es_titular_activo:
             return True
 
-        ya_ocupa = (
-            ExpedienteCiudadano.objects.select_for_update()
-            .filter(
-                ciudadano_id=legajo.ciudadano_id,
-                expediente__usuario_provincia__profile__provincia=provincia,
-                estado_cupo=EstadoCupo.DENTRO,
-                es_titular_activo=True,
-            )
-            .exclude(pk=legajo.pk)
-            .exists()
-        )
+        ya_ocupa = ExpedienteCiudadano.objects.filter(
+            ciudadano_id=legajo.ciudadano_id,
+            expediente__usuario_provincia__profile__provincia=provincia,
+            estado_cupo=EstadoCupo.DENTRO,
+            es_titular_activo=True,
+        ).exclude(pk=legajo.pk).exists()
         if ya_ocupa:
-            legajo.estado_cupo = EstadoCupo.FUERA
-            legajo.es_titular_activo = False
-            legajo.save(update_fields=["estado_cupo", "es_titular_activo", "modificado_en"])
+            if legajo.estado_cupo != EstadoCupo.FUERA or legajo.es_titular_activo:
+                legajo.estado_cupo = EstadoCupo.FUERA
+                legajo.es_titular_activo = False
+                legajo.save(update_fields=["estado_cupo", "es_titular_activo", "modificado_en"])
             return False
 
         disponibles = int(pc.total_asignado or 0) - int(pc.usados or 0)
         if disponibles <= 0:
-            legajo.estado_cupo = EstadoCupo.FUERA
-            legajo.es_titular_activo = False
-            legajo.save(update_fields=["estado_cupo", "es_titular_activo", "modificado_en"])
+            if legajo.estado_cupo != EstadoCupo.FUERA or legajo.es_titular_activo:
+                legajo.estado_cupo = EstadoCupo.FUERA
+                legajo.es_titular_activo = False
+                legajo.save(update_fields=["estado_cupo", "es_titular_activo", "modificado_en"])
             return False
 
-        pc.usados = F("usados") + 1
-        pc.save(update_fields=["usados"])
+        ProvinciaCupo.objects.filter(pk=pc.pk).update(usados=F("usados") + 1)
         pc.refresh_from_db(fields=["usados"])
 
         legajo.estado_cupo = EstadoCupo.DENTRO
@@ -171,19 +162,19 @@ class CupoService:
             raise ValidationError("El legajo no tiene provincia asociada al usuario del expediente.")
 
         try:
-            pc = ProvinciaCupo.objects.select_for_update().get(provincia=provincia)
+            pc = ProvinciaCupo.objects.select_for_update().only("id", "usados").get(provincia=provincia)
         except ProvinciaCupo.DoesNotExist:
             raise CupoNoConfigurado(f"La provincia '{provincia}' no tiene cupo configurado.")
 
         if not (legajo.estado_cupo == EstadoCupo.DENTRO and legajo.es_titular_activo):
-            legajo.estado_cupo = EstadoCupo.NO_EVAL
-            legajo.es_titular_activo = False
-            legajo.save(update_fields=["estado_cupo", "es_titular_activo", "modificado_en"])
+            if legajo.estado_cupo != EstadoCupo.NO_EVAL or legajo.es_titular_activo:
+                legajo.estado_cupo = EstadoCupo.NO_EVAL
+                legajo.es_titular_activo = False
+                legajo.save(update_fields=["estado_cupo", "es_titular_activo", "modificado_en"])
             return False
 
         if int(pc.usados or 0) > 0:
-            pc.usados = F("usados") - 1
-            pc.save(update_fields=["usados"])
+            ProvinciaCupo.objects.filter(pk=pc.pk).update(usados=F("usados") - 1)
             pc.refresh_from_db(fields=["usados"])
 
         legajo.estado_cupo = EstadoCupo.NO_EVAL

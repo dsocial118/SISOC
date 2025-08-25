@@ -1,7 +1,8 @@
 import logging
+from functools import lru_cache
 from django.db import transaction
 from django.core.exceptions import ValidationError
-
+from django.utils import timezone
 from celiaquia.models import (
     EstadoLegajo,
     ExpedienteCiudadano,
@@ -9,6 +10,28 @@ from celiaquia.models import (
 )
 
 logger = logging.getLogger(__name__)
+
+@lru_cache(maxsize=1)
+def _estado_archivo_cargado_id():
+    try:
+        return EstadoLegajo.objects.only("id").get(nombre="ARCHIVO_CARGADO").id
+    except EstadoLegajo.DoesNotExist:
+        return None
+
+
+def _set_estado_archivo_cargado(obj, update_fields):
+    eid = _estado_archivo_cargado_id()
+    if eid is not None and getattr(obj, "estado_id", None) != eid:
+        obj.estado_id = eid
+        update_fields.append("estado")
+
+
+def _recalc_archivos_ok(obj, update_fields):
+    if hasattr(obj, "archivos_ok"):
+        val = bool(obj.archivo1 and obj.archivo2 and obj.archivo3)
+        if obj.archivos_ok != val:
+            obj.archivos_ok = val
+            update_fields.append("archivos_ok")
 
 
 class LegajoService:
@@ -41,14 +64,8 @@ class LegajoService:
         else:
             raise ValidationError("Los tres archivos ya se encuentran cargados.")
 
-        try:
-            estado_cargado = EstadoLegajo.objects.get(nombre="ARCHIVO_CARGADO")
-        except EstadoLegajo.DoesNotExist:
-            estado_cargado = None
-
-        if estado_cargado:
-            exp_ciudadano.estado = estado_cargado
-            changed.append("estado")
+        _set_estado_archivo_cargado(exp_ciudadano, changed)
+        _recalc_archivos_ok(exp_ciudadano, changed)
 
         changed.append("modificado_en")
         exp_ciudadano.save(update_fields=changed)
@@ -60,18 +77,16 @@ class LegajoService:
     def subir_archivos_iniciales(exp_ciudadano: ExpedienteCiudadano, archivo1, archivo2, archivo3):
         if not archivo1 or not archivo2 or not archivo3:
             raise ValidationError("Debés adjuntar los tres archivos requeridos.")
-        try:
-            estado_cargado = EstadoLegajo.objects.get(nombre="ARCHIVO_CARGADO")
-        except EstadoLegajo.DoesNotExist:
-            estado_cargado = None
 
         exp_ciudadano.archivo1 = archivo1
         exp_ciudadano.archivo2 = archivo2
         exp_ciudadano.archivo3 = archivo3
-        update_fields = ["archivo1", "archivo2", "archivo3", "modificado_en"]
-        if estado_cargado:
-            exp_ciudadano.estado = estado_cargado
-            update_fields.append("estado")
+
+        update_fields = ["archivo1", "archivo2", "archivo3"]
+        _set_estado_archivo_cargado(exp_ciudadano, update_fields)
+        _recalc_archivos_ok(exp_ciudadano, update_fields)
+
+        update_fields.append("modificado_en")
         exp_ciudadano.save(update_fields=update_fields)
         logger.info("Legajo %s: tres archivos cargados.", exp_ciudadano.pk)
         return exp_ciudadano
@@ -97,6 +112,9 @@ class LegajoService:
         if not changed:
             raise ValidationError("Debés subir al menos un archivo para subsanar.")
 
+        _set_estado_archivo_cargado(exp_ciudadano, changed)
+        _recalc_archivos_ok(exp_ciudadano, changed)
+
         changed.append("modificado_en")
         exp_ciudadano.save(update_fields=changed)
         logger.info("Legajo %s: subsanación, archivos actualizados: %s.", exp_ciudadano.pk, ",".join(changed))
@@ -109,25 +127,30 @@ class LegajoService:
             raise ValidationError("Debés indicar un motivo de subsanación.")
         exp_ciudadano.revision_tecnico = RevisionTecnico.SUBSANAR
         exp_ciudadano.subsanacion_motivo = motivo.strip()[:500]
-        exp_ciudadano.subsanacion_solicitada_por = usuario
-        exp_ciudadano.save(update_fields=["revision_tecnico", "subsanacion_motivo", "subsanacion_solicitada_por", "modificado_en"])
+        exp_ciudadano.subsanacion_solicitada_en = timezone.now()
+        exp_ciudadano.save(update_fields=["revision_tecnico", "subsanacion_motivo", "subsanacion_solicitada_en", "modificado_en"])
         logger.info("Legajo %s: subsanación solicitada por %s.", exp_ciudadano.pk, getattr(usuario, "username", usuario))
         return exp_ciudadano
 
     @staticmethod
     def all_legajos_loaded(expediente) -> bool:
-        return not expediente.expediente_ciudadanos.filter(
-            archivo1__isnull=True
-        ).exists() and not expediente.expediente_ciudadanos.filter(
-            archivo2__isnull=True
-        ).exists() and not expediente.expediente_ciudadanos.filter(
-            archivo3__isnull=True
-        ).exists()
+        qs = expediente.expediente_ciudadanos
+        if hasattr(ExpedienteCiudadano, "archivos_ok"):
+            return not qs.filter(archivos_ok=False).exists()
+        return (
+            not qs.filter(archivo1__isnull=True).exists()
+            and not qs.filter(archivo2__isnull=True).exists()
+            and not qs.filter(archivo3__isnull=True).exists()
+        )
 
     @staticmethod
     def faltantes_archivos(expediente):
+        qs = expediente.expediente_ciudadanos.select_related("ciudadano")
+        if hasattr(ExpedienteCiudadano, "archivos_ok"):
+            qs = qs.filter(archivos_ok=False)
+
         faltantes = []
-        for leg in expediente.expediente_ciudadanos.select_related("ciudadano").all():
+        for leg in qs.iterator():
             miss = []
             if not leg.archivo1:
                 miss.append("archivo1")

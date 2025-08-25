@@ -1,7 +1,8 @@
-# services/ciudadano_service.py
-
 import logging
+from datetime import datetime, date
 from django.core.exceptions import ValidationError
+from django.contrib.auth import get_user_model
+
 from ciudadanos.models import (
     Ciudadano,
     CiudadanoPrograma,
@@ -16,19 +17,47 @@ from ciudadanos.models import (
     DimensionVivienda,
 )
 
-from django.contrib.auth import get_user_model
+from celiaquia.models import ExpedienteCiudadano
 
 logger = logging.getLogger(__name__)
 
 
 class CiudadanoService:
     @staticmethod
-    def get_or_create_ciudadano(datos: dict, usuario=None) -> Ciudadano:
+    def _to_date(value):
+        if value in (None, ""):
+            return None
+        if isinstance(value, date):
+            return value
+        # datetime -> date
+        if hasattr(value, "date"):
+            try:
+                return value.date()
+            except Exception:
+                pass
+        s = str(value).strip()
+        # cortar hora si viene "YYYY-MM-DD HH:MM:SS"
+        if " " in s:
+            s = s.split(" ")[0]
+        s = s.replace("/", "-")
+        for fmt in ("%Y-%m-%d", "%d-%m-%Y"):
+            try:
+                return datetime.strptime(s, fmt).date()
+            except Exception:
+                continue
+        try:
+            return datetime.fromisoformat(s).date()
+        except Exception:
+            raise ValidationError(f"Fecha de nacimiento inválida: {value}")
+
+    @staticmethod
+    def get_or_create_ciudadano(datos: dict, usuario=None, expediente=None, programa_id=3) -> Ciudadano:
         """
-        Busca o crea un Ciudadano usando datos de fila.
-        Convierte tipo_documento y sexo a instancias de sus modelos.
-        Inicializa dimensiones si es nuevo.
-        Si recibe un `usuario`, asigna el programa con ID=3.
+        - Busca o crea un Ciudadano con los datos provistos.
+        - Inicializa dimensiones si es nuevo.
+        - Si se pasa `expediente`, primero valida si existe el legajo (ExpedienteCiudadano);
+          si existe, asegura el registro en CiudadanoPrograma (lo crea si no está).
+        - Si NO se pasa `expediente` (compatibilidad), mantiene la lógica previa: intenta asignar programa.
         """
         # 1) Resolver FK TipoDocumento
         raw_td = datos.get("tipo_documento")
@@ -44,47 +73,80 @@ class CiudadanoService:
         except Exception:
             raise ValidationError(f"Sexo inválido: {raw_sex}")
 
-        # 3) Filtro único
+        # 3) Normalizar fecha de nacimiento
+        fecha_nac = CiudadanoService._to_date(datos.get("fecha_nacimiento"))
+
+        # 4) Filtro único
         filtro = {
             "tipo_documento": td,
             "documento": datos.get("documento"),
             "nombre": datos.get("nombre"),
             "apellido": datos.get("apellido"),
-            "fecha_nacimiento": datos.get("fecha_nacimiento"),
+            "fecha_nacimiento": fecha_nac,
         }
 
-        # 4) get_or_create con default para sexo
+        # 5) Crear/obtener ciudadano
         ciudadano, created = Ciudadano.objects.get_or_create(
             **filtro,
             defaults={"sexo": sx}
         )
 
         if created:
-            logger.info(f"Ciudadano creado: {ciudadano.pk}")
+            logger.info("Ciudadano creado: %s", ciudadano.pk)
             CiudadanoService._inicializar_dimensiones(ciudadano)
         else:
-            logger.debug(f"Ciudadano existente: {ciudadano.pk}")
+            logger.debug("Ciudadano existente: %s", ciudadano.pk)
 
-
-# 5) Asignar programa solo si recibimos un User válido
-
+        # 6) Asignación de programa condicionada a la existencia del legajo
         User = get_user_model()
         if isinstance(usuario, User):
-            try:
-                CiudadanoService.asignar_programa(ciudadano, usuario, programa_id=3)
-                logger.debug(f"Programa 3 asignado al ciudadano {ciudadano.pk}")
-            except Exception as e:
-                logger.warning(f"No se pudo asignar programa al ciudadano {ciudadano.pk}: {e}")
+            if expediente is not None:
+                existe_legajo = ExpedienteCiudadano.objects.filter(
+                    expediente=expediente, ciudadano=ciudadano
+                ).only("id").exists()
 
+                if existe_legajo:
+                    try:
+                        CiudadanoService.asignar_programa(
+                            ciudadano=ciudadano,
+                            usuario=usuario,
+                            programa_id=programa_id,
+                        )
+                        logger.debug(
+                            "Programa %s asegurado para ciudadano %s (con legajo existente).",
+                            programa_id, ciudadano.pk
+                        )
+                    except Exception as e:
+                        logger.warning(
+                            "No se pudo asegurar programa para ciudadano %s: %s",
+                            ciudadano.pk, e
+                        )
+                else:
+                    logger.debug(
+                        "No se asigna programa: no existe legajo para expediente/ciudadano (%s).",
+                        ciudadano.pk
+                    )
+            else:
+                try:
+                    CiudadanoService.asignar_programa(
+                        ciudadano=ciudadano,
+                        usuario=usuario,
+                        programa_id=programa_id,
+                    )
+                    logger.debug(
+                        "Programa %s asignado al ciudadano %s (sin validar legajo por no pasar expediente).",
+                        programa_id, ciudadano.pk
+                    )
+                except Exception as e:
+                    logger.warning(
+                        "No se pudo asignar programa al ciudadano %s: %s",
+                        ciudadano.pk, e
+                    )
 
         return ciudadano
 
-
     @staticmethod
     def _inicializar_dimensiones(ciudadano: Ciudadano):
-        """
-        Crea los registros en todas las dimensiones para un ciudadano nuevo.
-        """
         for Modelo in (
             DimensionEconomia,
             DimensionEducacion,
@@ -94,7 +156,7 @@ class CiudadanoService:
             DimensionVivienda,
         ):
             Modelo.objects.create(ciudadano=ciudadano)
-        logger.info(f"Dimensiones inicializadas para ciudadano {ciudadano.pk}")
+        logger.info("Dimensiones inicializadas para ciudadano %s", ciudadano.pk)
 
     @staticmethod
     def asignar_programa(ciudadano, usuario, programa_id=1):
