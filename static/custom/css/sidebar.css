@@ -1,0 +1,6 @@
+.sidebar-mini.sidebar-collapse .app-sidebar:hover .logo-grande{
+    display: block;
+}
+.sidebar-mini.sidebar-collapse .app-sidebar .logo-grande{
+    display: none;
+}
