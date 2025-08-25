@@ -5,38 +5,6 @@ from ciudadanos.models import Ciudadano, Provincia
 User = get_user_model()
 
 
-# =========================
-# Enumeraciones (TextChoices)
-# =========================
-
-class RevisionTecnico(models.TextChoices):
-    PENDIENTE = "PENDIENTE", "Pendiente"
-    APROBADO  = "APROBADO", "Aprobado por técnico"
-    RECHAZADO = "RECHAZADO", "Rechazado por técnico"
-
-
-class ResultadoSintys(models.TextChoices):
-    SIN_CRUCE = "SIN_CRUCE", "Sin cruce"
-    MATCH     = "MATCH", "Matcheado"
-    NO_MATCH  = "NO_MATCH", "No matcheado"
-
-
-class EstadoCupo(models.TextChoices):
-    NO_EVAL = "NO_EVAL", "No evaluado"
-    DENTRO  = "DENTRO", "Dentro de cupo"
-    FUERA   = "FUERA", "Fuera de cupo"
-
-
-class TipoMovimientoCupo(models.TextChoices):
-    ALTA   = "ALTA", "Alta (consumo de cupo)"
-    BAJA   = "BAJA", "Baja (liberación de cupo)"
-    AJUSTE = "AJUSTE", "Ajuste manual"
-
-
-# =========================
-# Catálogos básicos
-# =========================
-
 class EstadoExpediente(models.Model):
     nombre = models.CharField(max_length=50, unique=True)
 
@@ -84,9 +52,31 @@ class TipoCruce(models.Model):
         return self.nombre
 
 
-# =========================
-# Expediente
-# =========================
+class RevisionTecnico(models.TextChoices):
+    PENDIENTE = 'PENDIENTE', 'Pendiente'
+    APROBADO  = 'APROBADO',  'Aprobado por el tecnico'
+    RECHAZADO = 'RECHAZADO', 'Rechazado por el tecnico'
+    SUBSANAR  = 'SUBSANAR',  'Subsanar'
+    SUBSANADO = 'SUBSANADO', 'Subsanado'   
+
+
+class ResultadoSintys(models.TextChoices):
+    SIN_CRUCE = "SIN_CRUCE", "Sin cruce"
+    MATCH = "MATCH", "Matcheado"
+    NO_MATCH = "NO_MATCH", "No matcheado"
+
+
+class EstadoCupo(models.TextChoices):
+    NO_EVAL = "NO_EVAL", "No evaluado"
+    DENTRO = "DENTRO", "Dentro de cupo"
+    FUERA = "FUERA", "Fuera de cupo"
+
+
+class TipoMovimientoCupo(models.TextChoices):
+    ALTA = "ALTA", "Alta"
+    BAJA = "BAJA", "Baja"
+    AJUSTE = "AJUSTE", "Ajuste"
+
 
 class Expediente(models.Model):
     usuario_provincia = models.ForeignKey(
@@ -106,7 +96,6 @@ class Expediente(models.Model):
         EstadoExpediente, on_delete=models.PROTECT, related_name="expedientes"
     )
     observaciones = models.TextField(blank=True, null=True)
-
     excel_masivo = models.FileField(
         upload_to="expedientes/masivos/", null=True, blank=True
     )
@@ -123,15 +112,11 @@ class Expediente(models.Model):
 
     def __str__(self):
         return f"{self.codigo} - {self.usuario_provincia.username}"
-
-    # Helpers (compatibilidad con templates)
-    @property
-    def codigo(self) -> str:
-        return f"EXP-{self.pk:06d}" if self.pk else "EXP--"
-
+    
     @property
     def provincia(self):
         try:
+            # Devuelve la provincia del usuario provincial dueño del expediente
             return self.usuario_provincia.profile.provincia
         except Exception:
             return None
@@ -147,38 +132,50 @@ class ExpedienteCiudadano(models.Model):
     estado = models.ForeignKey(
         EstadoLegajo, on_delete=models.PROTECT, related_name="expediente_ciudadanos"
     )
-    archivo = models.FileField(upload_to="legajos/archivos/", null=True, blank=True)
-
+    archivo1 = models.FileField(upload_to="legajos/archivos/", null=True, blank=True)
+    archivo2 = models.FileField(upload_to="legajos/archivos/", null=True, blank=True)
+    archivo3 = models.FileField(upload_to="legajos/archivos/", null=True, blank=True)
     cruce_ok = models.BooleanField(null=True, blank=True)
     observacion_cruce = models.CharField(max_length=255, null=True, blank=True)
-
     creado_en = models.DateTimeField(auto_now_add=True)
     modificado_en = models.DateTimeField(auto_now=True)
-
     revision_tecnico = models.CharField(
-        max_length=10, choices=RevisionTecnico.choices, default=RevisionTecnico.PENDIENTE
+        max_length=24, choices=RevisionTecnico.choices, default=RevisionTecnico.PENDIENTE
     )
     resultado_sintys = models.CharField(
         max_length=10, choices=ResultadoSintys.choices, default=ResultadoSintys.SIN_CRUCE
     )
-
-    # Cupo por provincia
     estado_cupo = models.CharField(
         max_length=8, choices=EstadoCupo.choices, default=EstadoCupo.NO_EVAL
     )
-    es_titular_activo = models.BooleanField(default=True)
+    es_titular_activo = models.BooleanField(default=False)
+    subsanacion_motivo = models.TextField(null=True, blank=True)
+    subsanacion_solicitada_en = models.DateTimeField(null=True, blank=True)
+    subsanacion_enviada_en = models.DateTimeField(null=True, blank=True)
+    subsanacion_usuario = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.SET_NULL, related_name="subsanaciones_realizadas"
+    )
 
     class Meta:
         unique_together = ("expediente", "ciudadano")
         verbose_name = "Expediente Ciudadano"
         verbose_name_plural = "Expedientes Ciudadano"
-        indexes = [
-            models.Index(fields=["expediente", "estado_cupo"]),
-            models.Index(fields=["revision_tecnico", "resultado_sintys"]),
-        ]
 
     def __str__(self):
         return f"{self.ciudadano.documento} - {self.ciudadano.nombre} {self.ciudadano.apellido}"
+
+    def tiene_tres_archivos(self) -> bool:
+        return bool(self.archivo1 and self.archivo2 and self.archivo3)
+
+    def faltantes_archivos(self):
+        faltan = []
+        if not self.archivo1:
+            faltan.append("archivo1")
+        if not self.archivo2:
+            faltan.append("archivo2")
+        if not self.archivo3:
+            faltan.append("archivo3")
+        return faltan
 
 
 class AsignacionTecnico(models.Model):
@@ -198,56 +195,33 @@ class AsignacionTecnico(models.Model):
         return f"{self.expediente.codigo} -> {self.tecnico.username}"
 
 
-# =========================
-# Cupo por provincia
-# =========================
-
 class ProvinciaCupo(models.Model):
-    provincia = models.OneToOneField(
-        Provincia, on_delete=models.PROTECT, related_name="cupo_provincia"
-    )
+    provincia = models.OneToOneField(Provincia, on_delete=models.CASCADE, related_name="cupo")
     total_asignado = models.PositiveIntegerField(default=0)
     usados = models.PositiveIntegerField(default=0)
-    actualizado_en = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = "Cupo de Provincia"
-        verbose_name_plural = "Cupos de Provincia"
+        verbose_name = "Cupo por Provincia"
+        verbose_name_plural = "Cupos por Provincia"
 
     def __str__(self):
-        return f"Cupo {self.provincia} ({self.usados}/{self.total_asignado})"
-
-    @property
-    def disponibles(self) -> int:
-        val = int(self.total_asignado) - int(self.usados)
-        return val if val > 0 else 0
+        return f"{self.provincia} ({self.usados}/{self.total_asignado})"
 
 
 class CupoMovimiento(models.Model):
-    provincia = models.ForeignKey(
-        Provincia, on_delete=models.PROTECT, related_name="movimientos_cupo"
-    )
-    expediente = models.ForeignKey(
-        Expediente, on_delete=models.SET_NULL, null=True, blank=True, related_name="movimientos_cupo"
-    )
-    legajo = models.ForeignKey(
-        ExpedienteCiudadano, on_delete=models.SET_NULL, null=True, blank=True, related_name="movimientos_cupo"
-    )
+    provincia = models.ForeignKey(Provincia, on_delete=models.CASCADE, related_name="movimientos_cupo")
+    expediente = models.ForeignKey(Expediente, null=True, blank=True, on_delete=models.SET_NULL, related_name="movimientos_cupo")
+    legajo = models.ForeignKey(ExpedienteCiudadano, null=True, blank=True, on_delete=models.SET_NULL, related_name="movimientos_cupo")
     tipo = models.CharField(max_length=10, choices=TipoMovimientoCupo.choices)
-    delta = models.SmallIntegerField(default=0)
+    delta = models.IntegerField()
     motivo = models.CharField(max_length=255, blank=True)
-    usuario = models.ForeignKey(User, on_delete=models.PROTECT, related_name="movimientos_cupo_creados")
+    usuario = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="movimientos_cupo")
     creado_en = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = "Movimiento de Cupo"
         verbose_name_plural = "Movimientos de Cupo"
-        ordering = ["-creado_en"]
-        indexes = [
-            models.Index(fields=["provincia", "creado_en"]),
-            models.Index(fields=["tipo"]),
-        ]
+        ordering = ("-creado_en",)
 
     def __str__(self):
-        who = f"legajo #{self.legajo_id}" if self.legajo_id else f"expediente #{self.expediente_id}"
-        return f"[{self.creado_en:%Y-%m-%d %H:%M}] {self.provincia} {self.tipo} {self.delta:+d} ({who})"
+        return f"{self.provincia} {self.tipo} {self.delta} ({self.creado_en:%Y-%m-%d %H:%M})"

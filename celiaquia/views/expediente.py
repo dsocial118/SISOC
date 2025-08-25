@@ -1,7 +1,3 @@
-"""
-celiaquia/views/expediente.py
-"""
-
 import json
 import logging
 import time
@@ -16,11 +12,13 @@ from django.http import (
     HttpResponseBadRequest,
     HttpResponseNotAllowed,
 )
+from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.contrib import messages
 from django.core.exceptions import ValidationError, PermissionDenied, ObjectDoesNotExist
-from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
+from django.db.models import Q
+
 from celiaquia.forms import ExpedienteForm, ConfirmarEnvioForm
 from celiaquia.models import (
     AsignacionTecnico,
@@ -28,12 +26,14 @@ from celiaquia.models import (
     EstadoExpediente,
     Expediente,
     ExpedienteCiudadano,
+    RevisionTecnico,
 )
 from celiaquia.services.ciudadano_service import CiudadanoService
 from celiaquia.services.expediente_service import ExpedienteService
 from celiaquia.services.importacion_service import ImportacionService
 from celiaquia.services.cruce_service import CruceService
-from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado  # <<<
+from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado
+from celiaquia.views.legajo import _in_group
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,6 @@ def _is_admin(user) -> bool:
 def _is_ajax(request) -> bool:
     return request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
-# --- helpers usuario provincial ---
 def _is_provincial(user) -> bool:
     if not user.is_authenticated:
         return False
@@ -61,8 +60,6 @@ def _user_provincia(user):
         return user.profile.provincia
     except ObjectDoesNotExist:
         return None
-# --- fin helpers ---
-
 
 def _parse_limit(value, default=5, max_cap=5000):
     if value is None:
@@ -97,22 +94,17 @@ class ExpedienteListView(ListView):
                 "asignacion_tecnico__tecnico_id",
             )
         )
-
         if _is_admin(user):
             return qs.order_by("-fecha_creacion")
-
         if _user_in_group(user, "CoordinadorCeliaquia"):
             return qs.filter(
                 estado__nombre__in=["CONFIRMACION_DE_ENVIO", "RECEPCIONADO", "ASIGNADO"]
             ).order_by("-fecha_creacion")
-
         if _user_in_group(user, "TecnicoCeliaquia"):
             return qs.filter(asignacion_tecnico__tecnico=user).order_by("-fecha_creacion")
-
         if _is_provincial(user):
             prov = _user_provincia(user)
             return qs.filter(usuario_provincia__profile__provincia=prov).order_by("-fecha_creacion")
-
         return qs.filter(usuario_provincia=user).order_by("-fecha_creacion")
 
     def get_context_data(self, **kwargs):
@@ -126,7 +118,7 @@ class ExpedienteListView(ListView):
         return ctx
 
 
-@method_decorator(csrf_exempt, name="dispatch")
+@method_decorator(csrf_protect, name="dispatch")
 class ProcesarExpedienteView(View):
     def post(self, request, pk):
         user = self.request.user
@@ -184,7 +176,7 @@ class CrearLegajosView(View):
         return JsonResponse({"creados": creados, "existentes": existentes})
 
 
-@method_decorator(csrf_exempt, name="dispatch")
+@method_decorator(csrf_protect, name="dispatch")
 class ExpedientePreviewExcelView(View):
     def post(self, request, *args, **kwargs):
         logger.debug("PREVIEW: %s %s", request.method, request.path)
@@ -248,15 +240,22 @@ class ExpedienteDetailView(DetailView):
 
         preview = preview_error = None
         preview_limit_actual = None
+        ctx = super().get_context_data(**kwargs)
+        exp = self.object
+
+
 
         q = expediente.expediente_ciudadanos.select_related("ciudadano")
-        ctx["legajos_aceptados"] = q.filter(revision_tecnico="APROBADO", resultado_sintys="MATCH")
+        ctx["hay_subsanar"] = q.filter(revision_tecnico=RevisionTecnico.SUBSANAR).exists()
+        ctx["legajos_aceptados"]   = q.filter(revision_tecnico="APROBADO", resultado_sintys="MATCH")
         ctx["legajos_rech_tecnico"] = q.filter(revision_tecnico="RECHAZADO")
-        ctx["legajos_rech_sintys"] = q.filter(revision_tecnico="APROBADO", resultado_sintys="NO_MATCH")
+        ctx["legajos_rech_sintys"]  = q.filter(revision_tecnico="APROBADO", resultado_sintys="NO_MATCH")
+        ctx["legajos_subsanar"]     = q.filter(revision_tecnico=RevisionTecnico.SUBSANAR)
 
-        ctx["c_aceptados"] = ctx["legajos_aceptados"].count()
-        ctx["c_rech_tecnico"] = ctx["legajos_rech_tecnico"].count()
-        ctx["c_rech_sintys"] = ctx["legajos_rech_sintys"].count()
+        ctx["c_aceptados"]     = ctx["legajos_aceptados"].count()
+        ctx["c_rech_tecnico"]  = ctx["legajos_rech_tecnico"].count()
+        ctx["c_rech_sintys"]   = ctx["legajos_rech_sintys"].count()
+        ctx["c_subsanar"]      = ctx["legajos_subsanar"].count()
 
         if expediente.estado.nombre == "CREADO" and expediente.excel_masivo:
             raw_limit = self.request.GET.get("preview_limit")
@@ -275,14 +274,26 @@ class ExpedienteDetailView(DetailView):
                 groups__name="TecnicoCeliaquia"
             ).order_by("last_name", "first_name")
 
-        faltan_archivos = expediente.expediente_ciudadanos.filter(archivo__isnull=True).exists()
+        faltan_archivos = expediente.expediente_ciudadanos.filter(
+            Q(archivo1__isnull=True) | Q(archivo2__isnull=True) | Q(archivo3__isnull=True)
+        ).exists()
 
-        # Cupo
-        try:
-            cupo_metrics = CupoService.metrics_por_provincia(expediente.provincia)
-        except CupoNoConfigurado:
-            cupo_metrics = None
+        # Cupo: usar propiedad expediente.provincia (puede ser None)
+        cupo = None
+        cupo_metrics = None
+        cupo_error = None
+        prov = getattr(expediente, "provincia", None)
+        if prov:
+            try:
+                cupo_metrics = CupoService.metrics_por_provincia(prov)
+                cupo = cupo_metrics
+            except CupoNoConfigurado:
+                cupo_error = "La provincia no tiene cupo configurado."
+        else:
+            cupo_error = "No se pudo determinar la provincia del expediente."
+
         fuera_count = expediente.expediente_ciudadanos.filter(estado_cupo="FUERA").count()
+        ctx["fuera_de_cupo"] = q.filter(estado_cupo="FUERA")
 
         ctx.update(
             {
@@ -294,7 +305,9 @@ class ExpedienteDetailView(DetailView):
                 "preview_limit_opciones": preview_limit_opciones,
                 "tecnicos": tecnicos,
                 "faltan_archivos": faltan_archivos,
-                "cupo_metrics": cupo_metrics,
+                "cupo": cupo,                         # para el template actual
+                "cupo_metrics": cupo_metrics,         # compat si lo usás en JS/otros templates
+                "cupo_error": cupo_error,
                 "fuera_count": fuera_count,
             }
         )
@@ -339,6 +352,16 @@ class ExpedienteConfirmView(View):
             expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia__profile__provincia=prov)
         else:
             expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=user)
+
+        faltantes_qs = expediente.expediente_ciudadanos.filter(
+            Q(archivo1__isnull=True) | Q(archivo2__isnull=True) | Q(archivo3__isnull=True)
+        )
+        if faltantes_qs.exists():
+            msg = "No se puede enviar: hay legajos sin los 3 archivos requeridos."
+            if _is_ajax(request):
+                return JsonResponse({"success": False, "error": msg}, status=400)
+            messages.error(request, msg)
+            return redirect("expediente_detail", pk=pk)
 
         try:
             result = ExpedienteService.confirmar_envio(expediente)
@@ -496,7 +519,7 @@ class SubirCruceExcelView(View):
         return HttpResponseNotAllowed(["POST"])
 
 
-@method_decorator(csrf_exempt, name="dispatch")
+@method_decorator(csrf_protect, name="dispatch")
 class RevisarLegajoView(View):
     def post(self, request, pk, legajo_id):
         user = request.user
@@ -512,27 +535,37 @@ class RevisarLegajoView(View):
         leg = get_object_or_404(ExpedienteCiudadano, pk=legajo_id, expediente=expediente)
 
         accion = (request.POST.get("accion") or "").upper()
-        if accion not in ("APROBAR", "RECHAZAR"):
+        if accion not in ("APROBAR", "RECHAZAR", "SUBSANAR"):
             return JsonResponse({"success": False, "error": "Acción inválida."}, status=400)
 
-        # Si rechaza y estaba consumiendo cupo, liberar
-        cupo_liberado = False
-        if accion == "RECHAZAR" and leg.estado_cupo == "DENTRO":
+        if accion in ("RECHAZAR", "SUBSANAR") and leg.estado_cupo == "DENTRO":
             try:
                 CupoService.liberar_slot(
                     legajo=leg,
                     usuario=user,
-                    motivo=f"Baja por rechazo técnico en expediente {expediente.codigo}",
+                    motivo=f"Salida del cupo por {accion.lower()} técnico en expediente {expediente.codigo}",
                 )
-                cupo_liberado = True
-                # salir de lista/cupo
                 leg.estado_cupo = "NO_EVAL"
                 leg.es_titular_activo = False
             except Exception as e:
                 logger.error("Error al liberar cupo para legajo %s: %s", leg.pk, e, exc_info=True)
-                # seguimos, pero informamos en respuesta
 
-        leg.revision_tecnico = "APROBADO" if accion == "APROBAR" else "RECHAZADO"
-        leg.save(update_fields=["revision_tecnico", "estado_cupo", "es_titular_activo", "modificado_en"])
+        if accion == "APROBAR":
+            leg.revision_tecnico = "APROBADO"
+            leg.save(update_fields=["revision_tecnico", "modificado_en", "estado_cupo", "es_titular_activo"])
+            return JsonResponse({"success": True, "estado": leg.revision_tecnico, "cupo_liberado": False})
 
-        return JsonResponse({"success": True, "estado": leg.revision_tecnico, "cupo_liberado": cupo_liberado})
+        if accion == "RECHAZAR":
+            leg.revision_tecnico = "RECHAZADO"
+            leg.save(update_fields=["revision_tecnico", "modificado_en", "estado_cupo", "es_titular_activo"])
+            return JsonResponse({"success": True, "estado": leg.revision_tecnico, "cupo_liberado": True})
+
+        motivo = (request.POST.get("motivo") or "").strip()
+        if not motivo:
+            return JsonResponse({"success": False, "error": "Debe indicar un motivo de subsanación."}, status=400)
+        leg.revision_tecnico = RevisionTecnico.SUBSANAR
+        leg.subsanacion_pendiente = True
+        leg.subsanacion_motivo = motivo[:500]
+        leg.save(update_fields=["revision_tecnico", "subsanacion_pendiente", "subsanacion_motivo", "modificado_en", "estado_cupo", "es_titular_activo"])
+        return JsonResponse({"success": True, "estado": str(RevisionTecnico.SUBSANAR), "cupo_liberado": True})
+
