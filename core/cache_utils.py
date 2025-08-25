@@ -107,6 +107,7 @@ def invalidate_territoriales_cache():
 
     invalidate_cache_keys(*keys_to_invalidate)
 
+
 def invalidate_territoriales_cache_provincia(provincia_id=None):
     """Invalida cache territorial por provincia."""
     if provincia_id:
@@ -116,13 +117,16 @@ def invalidate_territoriales_cache_provincia(provincia_id=None):
     else:
         # Invalidar todas las provincias
         from core.models import Provincia
-        provincias = Provincia.objects.values_list('id', flat=True)
+
+        provincias = Provincia.objects.values_list("id", flat=True)
         for prov_id in provincias:
             cache.delete(f"territoriales_provincia_{prov_id}")
         logger.info("Invalidado cache territorial para todas las provincias")
 
+
 # Import logger at the top level for the function above
 import logging
+
 logger = logging.getLogger("django")
 
 
@@ -183,9 +187,9 @@ def invalidate_territorial_cache_on_change(sender, instance, **kwargs):
     """Invalida cache cuando cambian datos de territoriales por provincia."""
     # Invalidar cache legacy
     invalidate_territoriales_cache()
-    
+
     # Invalidar cache específico por provincia si existe
-    if hasattr(instance, 'provincia_id') and instance.provincia_id:
+    if hasattr(instance, "provincia_id") and instance.provincia_id:
         invalidate_territoriales_cache_provincia(instance.provincia_id)
     else:
         # Fallback: invalidar todas las provincias

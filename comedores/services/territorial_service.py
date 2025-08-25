@@ -22,7 +22,7 @@ class TerritorialService:
 
     CACHE_TIMEOUT = 3600  # 1 hora
     SYNC_TIMEOUT = 300  # 5 minutos para evitar syncs muy frecuentes
-    
+
     @classmethod
     def _get_cache_key_provincia(cls, provincia_id: int) -> str:
         """Genera la clave de cache para una provincia específica."""
@@ -45,33 +45,39 @@ class TerritorialService:
         """
         try:
             # 1. Obtener provincia del comedor
-            comedor = Comedor.objects.select_related('provincia').get(id=comedor_id)
+            comedor = Comedor.objects.select_related("provincia").get(id=comedor_id)
             provincia_id = comedor.provincia.id
             cache_key = cls._get_cache_key_provincia(provincia_id)
-            
+
             # 2. SIEMPRE mostrar cache primero (UX instantáneo)
             if not forzar_sync:
                 cache_data = cache.get(cache_key)
                 if cache_data:
-                    logger.info(f"Territoriales obtenidos desde Django cache provincia {provincia_id}")
+                    logger.info(
+                        f"Territoriales obtenidos desde Django cache provincia {provincia_id}"
+                    )
                     return {
                         "territoriales": cache_data,
                         "desactualizados": False,
                         "fuente": "cache_provincia",
-                        "provincia_id": provincia_id
+                        "provincia_id": provincia_id,
                     }
-            
+
             # 3. Obtener desde DB por provincia
             territoriales_db = cls._obtener_desde_db_por_provincia(provincia_id)
             if territoriales_db["territoriales"] and not forzar_sync:
                 # Actualizar Django cache
-                cache.set(cache_key, territoriales_db["territoriales"], cls.CACHE_TIMEOUT)
-                logger.info(f"Territoriales obtenidos desde DB local provincia {provincia_id}")
+                cache.set(
+                    cache_key, territoriales_db["territoriales"], cls.CACHE_TIMEOUT
+                )
+                logger.info(
+                    f"Territoriales obtenidos desde DB local provincia {provincia_id}"
+                )
                 return {
                     "territoriales": territoriales_db["territoriales"],
                     "desactualizados": territoriales_db["desactualizados"],
-                    "fuente": "db_provincia", 
-                    "provincia_id": provincia_id
+                    "fuente": "db_provincia",
+                    "provincia_id": provincia_id,
                 }
 
             api_key = os.getenv("GESTIONAR_API_KEY", "")
@@ -84,17 +90,27 @@ class TerritorialService:
             )
 
             # 4. Fetch desde GESTIONAR (usando comedor_id como antes, pero guardando por provincia)
-            if gestionar_disponible and (forzar_sync or cls._necesita_sincronizacion_provincia(provincia_id)):
-                sync_result = cls._sincronizar_con_gestionar_provincia(comedor_id, provincia_id)
+            if gestionar_disponible and (
+                forzar_sync or cls._necesita_sincronizacion_provincia(provincia_id)
+            ):
+                sync_result = cls._sincronizar_con_gestionar_provincia(
+                    comedor_id, provincia_id
+                )
                 if sync_result["exitoso"]:
-                    territoriales_actualizados = cls._obtener_desde_db_por_provincia(provincia_id)
+                    territoriales_actualizados = cls._obtener_desde_db_por_provincia(
+                        provincia_id
+                    )
                     # Actualizar cache Django
-                    cache.set(cache_key, territoriales_actualizados["territoriales"], cls.CACHE_TIMEOUT)
+                    cache.set(
+                        cache_key,
+                        territoriales_actualizados["territoriales"],
+                        cls.CACHE_TIMEOUT,
+                    )
                     return {
                         "territoriales": territoriales_actualizados["territoriales"],
                         "desactualizados": False,
                         "fuente": "gestionar_provincia_sync",
-                        "provincia_id": provincia_id
+                        "provincia_id": provincia_id,
                     }
 
             # 5. Fallback a datos existentes si falla sync
@@ -107,7 +123,7 @@ class TerritorialService:
                     "territoriales": territoriales_db["territoriales"],
                     "desactualizados": True,
                     "fuente": "fallback_provincia",
-                    "provincia_id": provincia_id
+                    "provincia_id": provincia_id,
                 }
 
             if not gestionar_disponible:
@@ -115,21 +131,34 @@ class TerritorialService:
                     f"GESTIONAR no disponible, usando datos de ejemplo para desarrollo provincia {provincia_id}"
                 )
                 cls._crear_datos_ejemplo_provincia(provincia_id)
-                territoriales_ejemplo = cls._obtener_desde_db_por_provincia(provincia_id)
+                territoriales_ejemplo = cls._obtener_desde_db_por_provincia(
+                    provincia_id
+                )
                 if territoriales_ejemplo["territoriales"]:
                     return {
                         "territoriales": territoriales_ejemplo["territoriales"],
                         "desactualizados": True,
                         "fuente": "datos_ejemplo",
-                        "provincia_id": provincia_id
+                        "provincia_id": provincia_id,
                     }
 
-            logger.error(f"No se pudieron obtener territoriales para provincia {provincia_id}")
-            return {"territoriales": [], "desactualizados": True, "fuente": "vacio", "provincia_id": provincia_id}
+            logger.error(
+                f"No se pudieron obtener territoriales para provincia {provincia_id}"
+            )
+            return {
+                "territoriales": [],
+                "desactualizados": True,
+                "fuente": "vacio",
+                "provincia_id": provincia_id,
+            }
 
         except Comedor.DoesNotExist:
             logger.error(f"Comedor {comedor_id} no encontrado")
-            return {"territoriales": [], "desactualizados": True, "fuente": "comedor_no_encontrado"}
+            return {
+                "territoriales": [],
+                "desactualizados": True,
+                "fuente": "comedor_no_encontrado",
+            }
         except Exception as e:
             logger.error(
                 f"Error en obtener_territoriales_para_comedor: {e}", exc_info=True
@@ -156,8 +185,7 @@ class TerritorialService:
         """Obtiene territoriales por provincia desde la base de datos local."""
         try:
             territoriales = TerritorialCache.objects.filter(
-                provincia_id=provincia_id,
-                activo=True
+                provincia_id=provincia_id, activo=True
             )
             hay_desactualizados = any(t.esta_desactualizado for t in territoriales)
 
@@ -166,7 +194,9 @@ class TerritorialService:
                 "desactualizados": hay_desactualizados,
             }
         except Exception as e:
-            logger.error(f"Error obteniendo territoriales provincia {provincia_id}: {e}")
+            logger.error(
+                f"Error obteniendo territoriales provincia {provincia_id}: {e}"
+            )
             return {"territoriales": [], "desactualizados": True}
 
     @classmethod
@@ -203,15 +233,13 @@ class TerritorialService:
             # Verificar si hay datos muy desactualizados para esta provincia (más de 1 hora)
             tiempo_limite = timezone.now() - timezone.timedelta(hours=1)
             territoriales_viejos = TerritorialCache.objects.filter(
-                provincia_id=provincia_id,
-                fecha_ultimo_sync__lt=tiempo_limite
+                provincia_id=provincia_id, fecha_ultimo_sync__lt=tiempo_limite
             ).count()
 
             # Verificar último sync exitoso para esta provincia
             ultimo_sync = (
                 TerritorialSyncLog.objects.filter(
-                    exitoso=True,
-                    comedor__provincia_id=provincia_id
+                    exitoso=True, comedor__provincia_id=provincia_id
                 )
                 .order_by("-fecha")
                 .first()
@@ -225,7 +253,9 @@ class TerritorialService:
             return territoriales_viejos > 0 or not ultimo_sync
 
         except Exception as e:
-            logger.error(f"Error verificando necesidad de sincronización provincia {provincia_id}: {e}")
+            logger.error(
+                f"Error verificando necesidad de sincronización provincia {provincia_id}: {e}"
+            )
             return False
 
     @classmethod
@@ -291,8 +321,10 @@ class TerritorialService:
 
             return {"exitoso": False, "mensaje": error_msg}
 
-    @classmethod 
-    def _sincronizar_con_gestionar_provincia(cls, comedor_id: int, provincia_id: int) -> Dict:
+    @classmethod
+    def _sincronizar_con_gestionar_provincia(
+        cls, comedor_id: int, provincia_id: int
+    ) -> Dict:
         """
         Sincroniza territoriales usando comedor_id (API) pero guarda por provincia_id (Cache).
 
@@ -357,7 +389,9 @@ class TerritorialService:
             }
 
         except Exception as e:
-            error_msg = f"Error en sincronización con GESTIONAR provincia {provincia_id}: {e}"
+            error_msg = (
+                f"Error en sincronización con GESTIONAR provincia {provincia_id}: {e}"
+            )
             logger.error(error_msg, exc_info=True)
 
             sync_log.exitoso = False
@@ -414,7 +448,9 @@ class TerritorialService:
         return contador
 
     @classmethod
-    def _actualizar_cache_db_provincia(cls, territoriales_data: List[Dict], provincia_id: int) -> int:
+    def _actualizar_cache_db_provincia(
+        cls, territoriales_data: List[Dict], provincia_id: int
+    ) -> int:
         """Actualiza cache DB por provincia (limpia y recrea)."""
         if not territoriales_data:
             return 0
@@ -428,7 +464,7 @@ class TerritorialService:
         for territorial_data in territoriales_data:
             TerritorialCache.objects.create(
                 gestionar_uid=territorial_data["gestionar_uid"],
-                nombre=territorial_data["nombre"], 
+                nombre=territorial_data["nombre"],
                 provincia_id=provincia_id,
                 activo=True,
                 fecha_ultimo_sync=timezone.now(),
@@ -485,7 +521,9 @@ class TerritorialService:
         """Crea datos de ejemplo para desarrollo cuando GESTIONAR no está disponible (método legacy)."""
         try:
             # Método legacy - se mantiene para compatibilidad
-            logger.warning("Usando método legacy _crear_datos_ejemplo. Se recomienda usar _crear_datos_ejemplo_provincia")
+            logger.warning(
+                "Usando método legacy _crear_datos_ejemplo. Se recomienda usar _crear_datos_ejemplo_provincia"
+            )
 
         except Exception as e:
             logger.error(f"Error creando datos de ejemplo: {e}")
@@ -496,11 +534,26 @@ class TerritorialService:
         try:
             # Datos de ejemplo para desarrollo
             territoriales_ejemplo = [
-                {"gestionar_uid": f"DEV{provincia_id:03d}_001", "nombre": f"Territorial Norte - Provincia {provincia_id} (Dev)"},
-                {"gestionar_uid": f"DEV{provincia_id:03d}_002", "nombre": f"Territorial Sur - Provincia {provincia_id} (Dev)"},
-                {"gestionar_uid": f"DEV{provincia_id:03d}_003", "nombre": f"Territorial Este - Provincia {provincia_id} (Dev)"},
-                {"gestionar_uid": f"DEV{provincia_id:03d}_004", "nombre": f"Territorial Oeste - Provincia {provincia_id} (Dev)"},
-                {"gestionar_uid": f"DEV{provincia_id:03d}_005", "nombre": f"Territorial Centro - Provincia {provincia_id} (Dev)"},
+                {
+                    "gestionar_uid": f"DEV{provincia_id:03d}_001",
+                    "nombre": f"Territorial Norte - Provincia {provincia_id} (Dev)",
+                },
+                {
+                    "gestionar_uid": f"DEV{provincia_id:03d}_002",
+                    "nombre": f"Territorial Sur - Provincia {provincia_id} (Dev)",
+                },
+                {
+                    "gestionar_uid": f"DEV{provincia_id:03d}_003",
+                    "nombre": f"Territorial Este - Provincia {provincia_id} (Dev)",
+                },
+                {
+                    "gestionar_uid": f"DEV{provincia_id:03d}_004",
+                    "nombre": f"Territorial Oeste - Provincia {provincia_id} (Dev)",
+                },
+                {
+                    "gestionar_uid": f"DEV{provincia_id:03d}_005",
+                    "nombre": f"Territorial Centro - Provincia {provincia_id} (Dev)",
+                },
             ]
 
             # Solo crear si no existen datos para esta provincia
@@ -518,4 +571,6 @@ class TerritorialService:
                 )
 
         except Exception as e:
-            logger.error(f"Error creando datos de ejemplo para provincia {provincia_id}: {e}")
+            logger.error(
+                f"Error creando datos de ejemplo para provincia {provincia_id}: {e}"
+            )
