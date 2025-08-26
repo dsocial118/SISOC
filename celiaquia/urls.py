@@ -24,6 +24,7 @@ from celiaquia.views.cupo import (
     CupoDashboardView,
     CupoProvinciaDetailView,
     CupoBajaLegajoView,
+    CupoReactivarLegajoView,
     CupoSuspenderLegajoView,
 )
 
@@ -138,5 +139,11 @@ urlpatterns = [
         "expedientes/<int:pk>/confirmar-subsanacion/",
         ExpedienteConfirmSubsanacionView.as_view(),
         name="expediente_confirm_subsanacion",
+    ),
+
+        path(
+        "cupo/<int:provincia_id>/legajo/<int:legajo_id>/reactivar/",
+        CupoReactivarLegajoView.as_view(),
+        name="cupo_legajo_reactivar",
     ),
 ]

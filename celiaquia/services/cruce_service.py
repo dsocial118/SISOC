@@ -22,6 +22,7 @@ from celiaquia.models import (
     EstadoExpediente,
     Expediente,
     ExpedienteCiudadano,
+    EstadoCupo,
 )
 from celiaquia.services.cupo_service import (
     CupoService,
@@ -459,6 +460,12 @@ class CruceService:
         legajos_all = (
             ExpedienteCiudadano.objects
             .select_related("ciudadano")
+            .only(
+                "id", "expediente_id", "ciudadano_id",
+                "revision_tecnico", "resultado_sintys",
+                "estado_cupo", "es_titular_activo",
+                "ciudadano__documento", "ciudadano__nombre", "ciudadano__apellido",
+            )
             .filter(expediente_id=expediente.id)
         )
 
@@ -513,6 +520,8 @@ class CruceService:
                 cruce_ok=False, resultado_sintys="NO_MATCH", observacion_cruce="No está en archivo de Syntys"
             )
 
+        # Reserva de cupo para los matcheados. Si el ciudadano ya ocupa (activo o suspendido),
+        # reservar_slot devolverá False y el legajo quedará FUERA (lista de espera) sin alterar usados.
         for leg in legajos_aprobados:
             if leg.pk in matched_ids:
                 try:
@@ -520,7 +529,11 @@ class CruceService:
                 except CupoNoConfigurado as e:
                     raise ValidationError(f"Error de cupo: {e}")
 
-        legajos_rechazados = legajos_all.filter(revision_tecnico="RECHAZADO").select_related("ciudadano")
+        legajos_rechazados = (
+            legajos_all
+            .filter(revision_tecnico="RECHAZADO")
+            .select_related("ciudadano")
+        )
         for leg in legajos_rechazados:
             ciu = leg.ciudadano
             cuit_ciud = CruceService._resolver_cuit_ciudadano(ciu)
@@ -540,7 +553,11 @@ class CruceService:
                 "observacion": obs,
             })
 
-        legajos_subsanar = legajos_all.filter(revision_tecnico="SUBSANAR").select_related("ciudadano")
+        legajos_subsanar = (
+            legajos_all
+            .filter(revision_tecnico="SUBSANAR")
+            .select_related("ciudadano")
+        )
         for leg in legajos_subsanar:
             ciu = leg.ciudadano
             cuit_ciud = CruceService._resolver_cuit_ciudadano(ciu)
@@ -556,7 +573,11 @@ class CruceService:
         except CupoNoConfigurado:
             metrics_finales = metrics_iniciales
 
-        fuera_qs = CupoService.lista_fuera_de_cupo_por_expediente(expediente.id).select_related("ciudadano")
+        fuera_qs = (
+            CupoService
+            .lista_fuera_de_cupo_por_expediente(expediente.id)
+            .select_related("ciudadano")
+        )
         detalle_fuera = [{
             "dni": getattr(l.ciudadano, "documento", "") or "",
             "cuit": CruceService._resolver_cuit_ciudadano(l.ciudadano) or "",

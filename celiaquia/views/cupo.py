@@ -6,8 +6,14 @@ from django.http import JsonResponse, HttpResponseNotAllowed
 from django.views.decorators.csrf import csrf_protect
 from django.utils.decorators import method_decorator
 from django.core.exceptions import ValidationError
+
 from ciudadanos.models import Provincia
-from celiaquia.models import CupoMovimiento, ProvinciaCupo, ExpedienteCiudadano
+from celiaquia.models import (
+    CupoMovimiento,
+    ProvinciaCupo,
+    ExpedienteCiudadano,
+    EstadoCupo,
+)
 from celiaquia.forms import CupoBajaLegajoForm, CupoSuspenderLegajoForm
 from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado
 
@@ -21,7 +27,12 @@ class CupoDashboardView(View):
 
     def get(self, request):
         rows = []
-        qs = ProvinciaCupo.objects.select_related("provincia").all().order_by("provincia__nombre")
+        qs = (
+            ProvinciaCupo.objects
+            .select_related("provincia")
+            .all()
+            .order_by("provincia__nombre")
+        )
         for pc in qs:
             try:
                 metrics = CupoService.metrics_por_provincia(pc.provincia)
@@ -45,8 +56,6 @@ class CupoDashboardView(View):
         return render(request, "celiaquia/cupo_dashboard.html", {"rows": rows})
 
 
-# celiaquia/views/cupo.py
-
 class CupoProvinciaDetailView(View):
     def get(self, request, provincia_id: int):
         provincia = get_object_or_404(Provincia, pk=provincia_id)
@@ -55,9 +64,30 @@ class CupoProvinciaDetailView(View):
         except CupoNoConfigurado:
             metrics = None
 
+        # Titulares activos (ocupan cupo)
         ocupados_qs = (
             CupoService.lista_ocupados_por_provincia(provincia)
             .select_related("ciudadano", "expediente", "expediente__usuario_provincia")
+        )
+        # Suspendidos: mantienen DENTRO (cupo ocupado) pero es_titular_activo = False
+        suspendidos_qs = (
+            ExpedienteCiudadano.objects
+            .select_related("ciudadano", "expediente", "expediente__usuario_provincia")
+            .filter(
+                expediente__usuario_provincia__profile__provincia=provincia,
+                estado_cupo=EstadoCupo.DENTRO,
+                es_titular_activo=False,
+            )
+        )
+
+        # Lista de espera: fuera de cupo
+        lista_espera_qs = (
+            ExpedienteCiudadano.objects
+            .select_related("ciudadano", "expediente", "expediente__usuario_provincia")
+            .filter(
+                expediente__usuario_provincia__profile__provincia=provincia,
+                estado_cupo=EstadoCupo.FUERA,
+            )
         )
 
         # Histórico de movimientos para la provincia (incluye fallback por expediente)
@@ -78,6 +108,8 @@ class CupoProvinciaDetailView(View):
             "provincia": provincia,
             "metrics": metrics,
             "ocupados": ocupados_qs,
+            "suspendidos": suspendidos_qs,
+            "lista_espera": lista_espera_qs,
             "form_baja": CupoBajaLegajoForm(),
             "form_suspender": CupoSuspenderLegajoForm(),
             "movimientos": movimientos,
@@ -114,7 +146,6 @@ class CupoProvinciaDetailView(View):
         except Exception as e:
             logger.error("Error al configurar cupo: %s", e, exc_info=True)
             return JsonResponse({"success": False, "message": "Error inesperado."}, status=500)
-
 
 
 class _BaseAccionLegajo(View):
@@ -175,7 +206,8 @@ class CupoBajaLegajoView(_BaseAccionLegajo):
 
 class CupoSuspenderLegajoView(_BaseAccionLegajo):
     """
-    Suspensión: libera cupo si estaba DENTRO y marca es_titular_activo=False.
+    Suspensión: mantiene el cupo ocupado (estado_cupo=DENTRO) y marca es_titular_activo=False.
+    No descuenta usados.
     Responde JSON.
     """
 
@@ -192,18 +224,53 @@ class CupoSuspenderLegajoView(_BaseAccionLegajo):
             return JsonResponse({"success": False, "message": str(ve)}, status=400)
 
         try:
-            CupoService.liberar_slot(
+            # IMPORTANTE: suspender (no liberar)
+            CupoService.suspender_slot(
                 legajo=legajo, usuario=request.user, motivo=f"Suspensión por coordinador: {motivo}"
             )
         except CupoNoConfigurado:
             logger.warning("Suspensión legajo %s sin cupo configurado.", legajo.id)
         except Exception as e:
-            logger.error("Error al liberar cupo en suspensión legajo %s: %s", legajo.id, e, exc_info=True)
-            return JsonResponse({"success": False, "message": "No se pudo liberar el cupo."}, status=500)
+            logger.error("Error al suspender legajo %s: %s", legajo.id, e, exc_info=True)
+            return JsonResponse({"success": False, "message": "No se pudo suspender el legajo."}, status=500)
 
-        legajo.es_titular_activo = False
-        legajo.save(update_fields=["es_titular_activo", "modificado_en"])
-        return JsonResponse({"success": True, "message": "Suspensión registrada y cupo actualizado."})
+        return JsonResponse({"success": True, "message": "Suspensión registrada."})
 
     def get(self, *_a, **_k):
         return HttpResponseNotAllowed(["POST"])
+    
+class CupoReactivarLegajoView(_BaseAccionLegajo):
+    """
+    Reactivación: mantiene estado_cupo=DENTRO y pone es_titular_activo=True.
+    No modifica 'usados'. Responde JSON.
+    """
+    @method_decorator(csrf_protect)
+    def post(self, request, provincia_id: int, legajo_id: int):
+        try:
+            legajo = self._get_legajo_validado(provincia_id, legajo_id)
+        except ValidationError as ve:
+            return JsonResponse({"success": False, "message": str(ve)}, status=400)
+
+        try:
+            ok = CupoService.reactivar_slot(
+                legajo=legajo,
+                usuario=request.user,
+                motivo="Reactivación por coordinador"
+            )
+            if not ok:
+                return JsonResponse({
+                    "success": False,
+                    "message": "El legajo no está suspendido o no está dentro de cupo."
+                }, status=400)
+        except CupoNoConfigurado:
+            logger.warning("Reactivación legajo %s sin cupo configurado.", legajo.id)
+            return JsonResponse({"success": False, "message": "Provincia sin cupo configurado."}, status=400)
+        except Exception as e:
+            logger.error("Error al reactivar legajo %s: %s", legajo.id, e, exc_info=True)
+            return JsonResponse({"success": False, "message": "No se pudo reactivar el legajo."}, status=500)
+
+        return JsonResponse({"success": True, "message": "Titular reactivado."})
+
+    def get(self, *_a, **_k):
+        return HttpResponseNotAllowed(["POST"])
+
